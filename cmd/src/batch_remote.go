@@ -78,8 +78,15 @@ Examples:
 		}
 		ui.ResolvingNamespaceSuccess(namespace.ID)
 
+		ui.SendingBatchChange()
+		batchChangeName, err := svc.UpsertBatchChange(ctx, spec.Name, namespace.ID)
+		if err != nil {
+			return err
+		}
+		ui.SendingBatchChangeSuccess()
+
 		ui.SendingBatchSpec()
-		batchSpecID, err := svc.UpsertBatchSpecInput(
+		batchSpecID, err := svc.CreateBatchSpecFromRaw(
 			ctx,
 			raw,
 			namespace.ID,
@@ -125,7 +132,7 @@ Examples:
 			"%s/%s/batch-changes/%s/executions/%s",
 			strings.TrimSuffix(cfg.Endpoint, "/"),
 			strings.TrimPrefix(namespace.URL, "/"),
-			spec.Name,
+			batchChangeName,
 			batchSpecID,
 		)
 		ui.RemoteSuccess(executionURL)

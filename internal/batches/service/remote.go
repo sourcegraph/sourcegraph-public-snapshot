@@ -15,15 +15,54 @@ func (svc *Service) areServerSideBatchChangesSupported() error {
 	return nil
 }
 
-const upsertBatchSpecInputQuery = `
-mutation UpsertBatchSpecInput(
+const upsertEmptyBatchChangeQuery = `
+mutation UpsertEmptyBatchChange(
+	$name: String!
+	$namespace: ID!
+) {
+	upsertEmptyBatchChange(
+		name: $name,
+		namespace: $namespace
+	) {
+		name
+	}
+}
+`
+
+func (svc *Service) UpsertBatchChange(
+	ctx context.Context,
+	name string,
+	namespaceID string,
+) (string, error) {
+	if err := svc.areServerSideBatchChangesSupported(); err != nil {
+		return "", err
+	}
+
+	var resp struct {
+		UpsertEmptyBatchChange struct {
+			Name string `json:"name"`
+		} `json:"upsertEmptyBatchChange"`
+	}
+
+	if ok, err := svc.client.NewRequest(upsertEmptyBatchChangeQuery, map[string]interface{}{
+		"name":      name,
+		"namespace": namespaceID,
+	}).Do(ctx, &resp); err != nil || !ok {
+		return "", err
+	}
+
+	return resp.UpsertEmptyBatchChange.Name, nil
+}
+
+const createBatchSpecFromRawQuery = `
+mutation CreateBatchSpecFromRaw(
     $batchSpec: String!,
     $namespace: ID!,
     $allowIgnored: Boolean!,
     $allowUnsupported: Boolean!,
     $noCache: Boolean!,
 ) {
-    upsertBatchSpecInput(
+    createBatchSpecFromRaw(
         batchSpec: $batchSpec,
         namespace: $namespace,
         allowIgnored: $allowIgnored,
@@ -35,7 +74,7 @@ mutation UpsertBatchSpecInput(
 }
 `
 
-func (svc *Service) UpsertBatchSpecInput(
+func (svc *Service) CreateBatchSpecFromRaw(
 	ctx context.Context,
 	batchSpec string,
 	namespaceID string,
@@ -48,12 +87,12 @@ func (svc *Service) UpsertBatchSpecInput(
 	}
 
 	var resp struct {
-		UpsertBatchSpecInput struct {
+		CreateBatchSpecFromRaw struct {
 			ID string `json:"id"`
-		} `json:"upsertBatchSpecInput"`
+		} `json:"createBatchSpecFromRaw"`
 	}
 
-	if ok, err := svc.client.NewRequest(upsertBatchSpecInputQuery, map[string]interface{}{
+	if ok, err := svc.client.NewRequest(createBatchSpecFromRawQuery, map[string]interface{}{
 		"batchSpec":        batchSpec,
 		"namespace":        namespaceID,
 		"allowIgnored":     allowIgnored,
@@ -63,7 +102,7 @@ func (svc *Service) UpsertBatchSpecInput(
 		return "", err
 	}
 
-	return resp.UpsertBatchSpecInput.ID, nil
+	return resp.CreateBatchSpecFromRaw.ID, nil
 }
 
 const executeBatchSpecQuery = `

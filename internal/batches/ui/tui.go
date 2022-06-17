@@ -223,6 +223,14 @@ func (ui *TUI) ApplyingBatchSpecSuccess(batchChangeURL string) {
 	block.Writef("%s", batchChangeURL)
 }
 
+func (ui *TUI) SendingBatchChange() {
+	ui.pending = batchCreatePending(ui.Out, "Sending batch change")
+}
+
+func (ui *TUI) SendingBatchChangeSuccess() {
+	batchCompletePending(ui.pending, "Sending batch change")
+}
+
 func (ui *TUI) SendingBatchSpec() {
 	ui.pending = batchCreatePending(ui.Out, "Sending batch spec")
 }
