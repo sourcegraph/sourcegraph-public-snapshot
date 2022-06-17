@@ -604,15 +604,15 @@ var deleteExpiredBatchSpecsQueryFmtstr = `
 DELETE FROM
   batch_specs
 WHERE
+  -- Has to be older than the TTL.
   created_at < %s
-AND NOT EXISTS (
-  SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
-)
--- Only delete expired batch specs that have been created by src-cli
-AND NOT created_from_raw
-AND NOT EXISTS (
-  SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
-)
+  AND
+  -- Only delete expired batch specs that have been created by src-cli.
+  NOT created_from_raw
+  -- And must not be applied to a batch change currently.
+  AND NOT EXISTS (
+    SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
+  )
 `
 
 // GetBatchSpecDiffStat calculates the total diff stat for the batch spec based

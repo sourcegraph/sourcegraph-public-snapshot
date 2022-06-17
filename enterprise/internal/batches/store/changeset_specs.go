@@ -425,35 +425,51 @@ func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, ba
 	return conflicts, err
 }
 
-// DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
+// DeleteStrayExpiredChangesetSpecs deletes each ChangesetSpec that has not been
 // attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
 // to a BatchSpec that is not applied and is not attached to a Changeset
 // within BatchSpecTTL.
 // TODO: Fix comment.
-func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
+func (s *Store) DeleteStrayExpiredChangesetSpecs(ctx context.Context) (err error) {
+	ctx, _, endObservation := s.operations.deleteStrayExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	changesetSpecTTLExpiration := s.now().Add(-btypes.ChangesetSpecTTL)
-	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
-	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration, batchSpecTTLExpiration)
+	q := sqlf.Sprintf(deleteStrayExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration)
 	return s.Store.Exec(ctx, q)
 }
 
-var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
+// DeleteAttachedExpiredChangesetSpecs deletes each ChangesetSpec that has not been
+// attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
+// to a BatchSpec that is not applied and is not attached to a Changeset
+// within BatchSpecTTL.
+// TODO: Fix comment.
+func (s *Store) DeleteAttachedExpiredChangesetSpecs(ctx context.Context) (err error) {
+	ctx, _, endObservation := s.operations.deleteAttachedExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
+	q := sqlf.Sprintf(deleteAttachedExpiredChangesetSpecsQueryFmtstr, batchSpecTTLExpiration)
+	return s.Store.Exec(ctx, q)
+}
+
+var deleteStrayExpiredChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteStrayExpiredChangesetSpecs
 DELETE FROM
   changeset_specs cspecs
 WHERE
-(
   -- The spec is older than the ChangesetSpecTTL
   created_at < %s
   AND
-  -- and it was never attached to a batch_spec
+  -- and it has never been attached to a batch_spec
   batch_spec_id IS NULL
-)
-OR
-(
+`
+
+var deleteAttachedExpiredChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteAttachedExpiredChangesetSpecs
+DELETE FROM
+  changeset_specs cspecs
+WHERE
   -- The spec is older than the BatchSpecTTL
   created_at < %s
   AND
@@ -465,7 +481,7 @@ OR
   AND
   -- and it is not created by SSBC
   NOT (SELECT created_from_raw FROM batch_specs WHERE id = cspecs.batch_spec_id)
-)`
+`
 
 type DeleteChangesetSpecsOpts struct {
 	BatchSpecID int64
