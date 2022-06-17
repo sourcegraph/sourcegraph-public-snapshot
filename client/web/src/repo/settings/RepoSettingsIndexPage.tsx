@@ -227,22 +227,22 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     <td>
                                                         {prettyBytesBigint(
                                                             BigInt(this.state.textSearchIndex.status.contentByteSize)
-                                                        )}{' '}
+                                                        )}
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <th>Shards</th>
-                                                    <td>{this.state.textSearchIndex.status.indexShardsCount} </td>
+                                                    <td>{this.state.textSearchIndex.status.indexShardsCount}</td>
                                                 </tr>
 
                                                 <tr>
                                                     <th>Files</th>
-                                                    <td>{this.state.textSearchIndex.status.contentFilesCount} </td>
+                                                    <td>{this.state.textSearchIndex.status.contentFilesCount}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Index size</th>
                                                     <td>
-                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)}{' '}
+                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)}
                                                     </td>
                                                 </tr>
                                                 <tr>
