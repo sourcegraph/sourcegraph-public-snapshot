@@ -19,6 +19,7 @@ import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, Insight
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
+import { SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
@@ -54,7 +55,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
-    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
+    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId, setSelectedSeriesIds } = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
@@ -105,6 +106,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
+                setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
         }
@@ -170,6 +172,11 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
 
+    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
+        setSeriesDisplayOptions(options)
+        setSelectedSeriesIds([])
+    }
+
     return (
         <InsightCard
             {...otherProps}
@@ -201,7 +208,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             originalSeriesDisplayOptions={parseSeriesDisplayOptions(
                                 insight.defaultSeriesDisplayOptions
                             )}
-                            onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
+                            onSeriesDisplayOptionsChange={handleSeriesDisplayOptionsChange}
                         />
                         <InsightContextMenu
                             insight={insight}
