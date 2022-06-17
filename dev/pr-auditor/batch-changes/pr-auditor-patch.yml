@@ -14,7 +14,8 @@ changesetTemplate:
   body: |
     This pull request updates the pr-auditor workflow.
 
-    Test plan: created action should correctly set a status on this pull request.
+    Test plan: We have tested the code itself in https://github.com/sourcegraph/sourcegraph/tree/main/dev/pr-auditor,
+    and the pr-auditor action should continue working as expected on this pull request.
   branch: update-pr-auditor
   commit:
     message: 'workflows: update pr-auditor workflow'
