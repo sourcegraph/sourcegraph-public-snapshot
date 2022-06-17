@@ -36,7 +36,7 @@ type Observer struct {
 	mu    sync.Mutex
 	alert *search.Alert
 	err   error
-	log   log.Logger
+	Log   log.Logger
 }
 
 // reposExist returns true if one or more repos resolve. If the attempt
@@ -223,7 +223,7 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		o.log.Error("Errors during search", log.Error(o.err))
+		o.Log.Error("Errors during search", log.Error(o.err))
 		return o.alert, nil
 	}
 

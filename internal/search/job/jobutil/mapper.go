@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -16,6 +18,7 @@ import (
 
 type Mapper struct {
 	MapJob func(job job.Job) job.Job
+	Log    log.Logger
 
 	// Search Jobs (leaf nodes)
 	MapCommitSearchJob              func(*commit.SearchJob) *commit.SearchJob
@@ -210,7 +213,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		if m.MapLimitJob != nil {
 			inputs, child = m.MapAlertJob(inputs, child)
 		}
-		return NewAlertJob(inputs, child)
+		return NewAlertJob(m.Log, inputs, child)
 
 	case *subRepoPermsFilterJob:
 		child := m.Map(j.child)

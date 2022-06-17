@@ -47,7 +47,7 @@ func NewPlanJob(log slog.Logger, inputs *run.SearchInputs, plan query.Plan) (job
 		jobTree = NewFeelingLuckySearchJob(log, jobTree, inputs, plan)
 	}
 
-	return NewAlertJob(inputs, jobTree), nil
+	return NewAlertJob(log, inputs, jobTree), nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
