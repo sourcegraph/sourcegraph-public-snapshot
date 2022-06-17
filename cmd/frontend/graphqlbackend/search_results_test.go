@@ -630,6 +630,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			name:        "simple search without filtering",
 			searchQuery: "foo",
 			wantCount:   3,
+			log:         logtest.Scoped(t),
 		},
 		{
 			name:        "simple search with filtering",
