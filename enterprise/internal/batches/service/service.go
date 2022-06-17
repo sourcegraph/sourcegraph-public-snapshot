@@ -231,7 +231,7 @@ type UpsertEmptyBatchChangeOpts struct {
 }
 
 // UpsertEmptyBatchChange creates a new batch change with an empty batch spec if a batch change with that name doesn't exist,
-// otherwise it returns the existing batch change.
+// otherwise it updates the existing batch change with an empty batch spec.
 // It enforces namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBatchChangeOpts) (*btypes.BatchChange, error) {
