@@ -234,7 +234,6 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     <th>Shards</th>
                                                     <td>{this.state.textSearchIndex.status.indexShardsCount}</td>
                                                 </tr>
-
                                                 <tr>
                                                     <th>Files</th>
                                                     <td>{this.state.textSearchIndex.status.contentFilesCount}</td>
