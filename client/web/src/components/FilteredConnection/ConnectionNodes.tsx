@@ -89,7 +89,7 @@ export interface ConnectionNodesDisplayProps {
     ariaLabelFunction?: (displayName: string) => string
 
     /** Displays the heading of a page */
-    pageHeading?: string
+    pageHeading?: React.ReactElement
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>

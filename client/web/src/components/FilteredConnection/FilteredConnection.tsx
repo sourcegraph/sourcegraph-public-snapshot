@@ -80,7 +80,7 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
     ariaLabelFunction?: (displayName: string) => string
 
     /** Displays the heading of a page */
-    pageHeading?: string
+    pageHeading?: React.ReactElement
 }
 
 /**
