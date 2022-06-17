@@ -2,8 +2,10 @@ package webhooks
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"sync"
 
@@ -68,6 +70,8 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	fmt.Println("Type of event:", reflect.TypeOf(e))
+	// fmt.Printf("event:%+v\n", e)
 
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extSvc, e)
@@ -84,6 +88,7 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
+	fmt.Printf("h.handlers:%+v\n", h.handlers)
 	for _, handler := range h.handlers[eventType] {
 		// capture the handler variable within this loop
 		handler := handler
@@ -98,14 +103,18 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
 func (h *GitHubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
+	fmt.Println("v2 Register...")
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.handlers == nil {
 		h.handlers = make(map[string][]WebhookHandler)
 	}
 	for _, eventType := range eventTypes {
+		fmt.Println("eventType:", eventType)
 		h.handlers[eventType] = append(h.handlers[eventType], handler)
 	}
+	fmt.Printf("h.handlers:%+v\n", h.handlers)
+
 }
 
 func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types.ExternalService, error) {
@@ -125,10 +134,13 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("eID:", externalServiceID)
 	e, err := h.ExternalServices.GetByID(r.Context(), externalServiceID)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("e:%+v\n", e)
+
 	c, err := e.Configuration()
 	if err != nil {
 		return nil, err
@@ -142,11 +154,13 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return an error to the client.
 	for _, hook := range gc.Webhooks {
+		fmt.Printf("hook:%+v\n", hook)
 		if hook.Secret == "" {
 			continue
 		}
 
 		if err = gh.ValidateSignature(sig, body, []byte(hook.Secret)); err == nil {
+			fmt.Printf("eVALIDATED:%+v\n", e)
 			return e, nil
 		}
 	}

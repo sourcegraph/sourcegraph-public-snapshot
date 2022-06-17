@@ -110,11 +110,13 @@ func (h Webhook) upsertChangesetEvent(
 		log15.Warn("Webhook event could not be matched to repo", "err", err)
 		return nil
 	}
+	fmt.Printf("Repo:%+v\n", r)
 
 	var kind btypes.ChangesetEventKind
 	if kind, err = btypes.ChangesetEventKindFor(ev); err != nil {
 		return err
 	}
+	fmt.Println("kind:", kind)
 
 	cs, err := tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              r.ID,
@@ -127,6 +129,7 @@ func (h Webhook) upsertChangesetEvent(
 		}
 		return err
 	}
+	fmt.Printf("changeset:%+v\n", cs)
 
 	now := h.Store.Clock()()
 	event := &btypes.ChangesetEvent{
@@ -137,12 +140,14 @@ func (h Webhook) upsertChangesetEvent(
 		UpdatedAt:   now,
 		Metadata:    ev,
 	}
+	fmt.Printf("changesetevent:%+v\n", event)
 
 	existing, err := tx.GetChangesetEvent(ctx, store.GetChangesetEventOpts{
 		ChangesetID: cs.ID,
 		Kind:        event.Kind,
 		Key:         event.Key,
 	})
+	fmt.Printf("existing:%+v\n", existing)
 
 	if err != nil && err != store.ErrNoResults {
 		return err
@@ -164,13 +169,18 @@ func (h Webhook) upsertChangesetEvent(
 	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
 		return err
 	}
+	fmt.Printf("event:%+v\n", event)
 
 	// The webhook may have caused the external state of the changeset to change
 	// so we need to update it. We need all events as we may have received more than just the
 	// event we are currently handling
+	fmt.Println("EVENTS...")
 	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
 	})
+	for _, event := range events {
+		fmt.Printf("event:%+v\n", event)
+	}
 	state.SetDerivedState(ctx, tx.Repos(), cs, events)
 	if err := tx.UpdateChangesetCodeHostState(ctx, cs); err != nil {
 		return err

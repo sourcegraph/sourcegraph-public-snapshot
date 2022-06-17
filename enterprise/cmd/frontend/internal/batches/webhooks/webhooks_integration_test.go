@@ -21,7 +21,7 @@ func TestWebhooksIntegration(t *testing.T) {
 	user := ct.CreateTestUser(t, db, false)
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, user.ID))
-	t.Run("BitbucketServerWebhook", testBitbucketServerWebhook(db, user.ID))
-	t.Run("GitLabWebhook", testGitLabWebhook(sqlDB))
-	t.Run("BitbucketCloudWebhook", testBitbucketCloudWebhook(sqlDB))
+	// t.Run("BitbucketServerWebhook", testBitbucketServerWebhook(db, user.ID))
+	// t.Run("GitLabWebhook", testGitLabWebhook(sqlDB))
+	// t.Run("BitbucketCloudWebhook", testBitbucketCloudWebhook(sqlDB))
 }

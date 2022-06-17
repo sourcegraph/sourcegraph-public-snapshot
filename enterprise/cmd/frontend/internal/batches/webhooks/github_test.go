@@ -68,7 +68,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 			}),
 		}
-		fmt.Println()
 		fmt.Printf("extSvc:%+v\n", extSvc)
 		fmt.Println()
 
@@ -82,7 +81,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
+		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph") // yaml GET req
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -121,6 +120,8 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		fmt.Println()
+		fmt.Printf("batchChangeAFTER%+v\n", batchChange)
 
 		// NOTE: Your sample payload should apply to a PR with the number matching below
 		changeset := &btypes.Changeset{
@@ -177,6 +178,9 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				ct.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
+				for _, event := range tc.ChangesetEvents {
+					fmt.Printf("event:%+v\n", event)
+				}
 
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
@@ -203,7 +207,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
 						rec := httptest.NewRecorder()
-						handler.ServeHTTP(rec, req) // 3 different webhook files for github why???
+						handler.ServeHTTP(rec, req)
 
 						resp := rec.Result()
 						fmt.Printf("RESP:%+v\n", resp)
