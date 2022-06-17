@@ -76,15 +76,6 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return previewPanel;
     }
 
-    @NotNull
-    public Date getLastPreviewUpdate() {
-        return lastPreviewUpdate;
-    }
-
-    public void setLastPreviewUpdate(@NotNull Date lastPreviewUpdate) {
-        this.lastPreviewUpdate = lastPreviewUpdate;
-    }
-
     @Override
     public void dispose() {
         if (browser != null) {
@@ -94,20 +85,28 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         previewPanel.dispose();
     }
 
-    public void indicateLoading() {
-        selectionMetadataPanel.clearSelectionMetadataLabel();
-        previewPanel.setLoading(true);
-        previewPanel.clearContent();
+    public void indicateLoadingIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setLoading(true);
+            previewPanel.clearContent();
+        }
     }
 
-    public void setPreviewContent(@NotNull PreviewContent previewContent) {
-        selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
-        previewPanel.setContent(previewContent);
+    public void setPreviewContentIfInTime(@NotNull PreviewContent previewContent) {
+        if (lastPreviewUpdate.before(previewContent.getReceivedDateTime())) {
+            this.lastPreviewUpdate = previewContent.getReceivedDateTime();
+            selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
+            previewPanel.setContent(previewContent);
+        }
     }
 
-    public void clearPreviewContent() {
-        selectionMetadataPanel.clearSelectionMetadataLabel();
-        previewPanel.setContent(null);
+    public void clearPreviewContentIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setContent(null);
+        }
     }
 
     public void setBrowserVisible(boolean visible) {
