@@ -97,7 +97,6 @@ $theme-colors: (
     --merged-3: #6b47d6;
     --light-text: var(--white);
     --dark-text: var(--gray-08);
-    --line-number-color: var(--gray-06);
     --header-icon-color: var(--gray-05);
     --tooltip-bg: var(--gray-08);
     --text-disabled: var(--gray-06);
@@ -169,6 +168,7 @@ $theme-colors: (
         rgba(215, 240, 253, 0.25) 83.64%
     );
     --modal-bg: #{rgba($gray-04, 0.5)};
+    --line-number-color: #536da1;
 }
 
 .theme-dark {
@@ -229,6 +229,7 @@ $theme-colors: (
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
     --marketing-gradient-25: linear-gradient(90.64deg, rgba(108, 8, 223, 0.25) 3.11%, rgba(0, 165, 213, 0.25) 83.64%);
     --modal-bg: #{rgba($gray-08, 0.5)};
+    --line-number-color: #bdc8df;
 }
 
 // Additional colors global colors.
