@@ -27,6 +27,9 @@ func CreateRepoDirWithName(t *testing.T, name string) string {
 	if name == "" {
 		name = t.Name()
 	}
+	if strings.Contains(name, "/") {
+		name = strings.ReplaceAll(name, "/", "-")
+	}
 	root, err := os.MkdirTemp("", name)
 	if err != nil {
 		t.Fatal(err)
