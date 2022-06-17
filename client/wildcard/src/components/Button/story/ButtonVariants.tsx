@@ -3,7 +3,7 @@ import React from 'react'
 import { startCase } from 'lodash'
 import 'storybook-addon-designs'
 
-import { Icon } from '../../Icon'
+import { Icon } from '../../deprecated/Icon'
 import { Button, ButtonProps } from '../Button'
 import { BUTTON_VARIANTS } from '../constants'
 

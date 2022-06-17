@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Icon } from '../Icon'
+import { Icon } from '../deprecated/Icon'
 
 import styles from './LoadingSpinner.module.scss'
 

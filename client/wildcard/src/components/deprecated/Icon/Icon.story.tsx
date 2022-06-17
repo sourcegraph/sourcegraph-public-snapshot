@@ -3,10 +3,10 @@ import { Story, Meta } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H3 } from '..'
-import { SourcegraphIcon } from '../SourcegraphIcon'
+import { H3 } from '../..'
+import { SourcegraphIcon } from '../../SourcegraphIcon'
 
-import { Icon } from './Icon'
+import { Icon } from './deprecated/Icon'
 
 const config: Meta = {
     title: 'wildcard/Icon',
