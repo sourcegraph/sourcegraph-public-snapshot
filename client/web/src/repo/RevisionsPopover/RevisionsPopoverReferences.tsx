@@ -114,6 +114,8 @@ interface RevisionsPopoverReferencesProps {
     showSpeculativeResults?: boolean
 
     onSelect?: (node: GitRefFields) => void
+
+    tabLabel: string
 }
 
 const BATCH_COUNT = 50
@@ -131,6 +133,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
     pluralNoun,
     showSpeculativeResults,
     onSelect,
+    tabLabel,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -176,6 +179,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
             summary={summary}
             inputValue={searchValue}
             onInputChange={setSearchValue}
+            inputAriaLabel={tabLabel}
         >
             {response.connection?.nodes.map((node, index) => (
                 <GitReferencePopoverNode

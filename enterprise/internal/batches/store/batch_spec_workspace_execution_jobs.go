@@ -22,7 +22,6 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
 	"batch_spec_workspace_execution_jobs.user_id",
-	"batch_spec_workspace_execution_jobs.access_token_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -47,7 +46,6 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
 	"batch_spec_workspace_execution_jobs.user_id",
-	"batch_spec_workspace_execution_jobs.access_token_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -416,27 +414,6 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 	)
 }
 
-// SetBatchSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
-func (s *Store) SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
-	ctx, _, endObservation := s.operations.setBatchSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(jobID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	q := sqlf.Sprintf(setSpecWorkspaceExecutionJobAccessTokenFmtstr, tokenID, jobID)
-	return s.Exec(ctx, q)
-}
-
-var setSpecWorkspaceExecutionJobAccessTokenFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:SetSpecWorkspaceExecutionJobAccessToken
-UPDATE
-	batch_spec_workspace_execution_jobs
-SET
-	access_token_id = %s
-WHERE
-	id = %s
-`
-
 func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
@@ -445,7 +422,6 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		&wj.ID,
 		&wj.BatchSpecWorkspaceID,
 		&wj.UserID,
-		&dbutil.NullInt64{N: &wj.AccessTokenID},
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},

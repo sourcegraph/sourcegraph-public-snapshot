@@ -89,7 +89,7 @@ func getUnsatisfiableChecks(t *testing.T) []check.Category[any] {
 
 func TestRunnerCheck(t *testing.T) {
 	t.Run("unfixed checks", func(t *testing.T) {
-		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), getUnsatisfiableChecks(t))
+		runner := check.NewRunner(nil, getOutput(io.Discard), getUnsatisfiableChecks(t))
 
 		err := runner.Check(context.Background(), nil)
 		require.Error(t, err)
@@ -97,7 +97,7 @@ func TestRunnerCheck(t *testing.T) {
 	})
 
 	t.Run("okay checks", func(t *testing.T) {
-		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), []check.Category[any]{
+		runner := check.NewRunner(nil, getOutput(io.Discard), []check.Category[any]{
 			{
 				Name: "I'm okay!",
 				Checks: []*check.Check[any]{
@@ -183,6 +183,7 @@ func TestRunnerFix(t *testing.T) {
 				},
 			},
 		})
+		runner.RunPostFixChecks = true
 
 		err := runner.Fix(context.Background(), nil)
 		assert.NoError(t, err)

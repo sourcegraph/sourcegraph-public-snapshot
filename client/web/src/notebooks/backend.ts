@@ -159,7 +159,7 @@ export function fetchNotebooks({
         starredByUserID: starredByUserID ?? null,
         namespace: namespace ?? null,
         orderBy: orderBy ?? GQL.NotebooksOrderBy.NOTEBOOK_UPDATED_AT,
-        descending: descending ?? false,
+        descending: descending ?? true,
     }).pipe(
         map(dataOrThrowErrors),
         map(data => data.notebooks)

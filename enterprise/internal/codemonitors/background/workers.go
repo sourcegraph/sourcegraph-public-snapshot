@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	eventRetentionInDays int = 7
+	eventRetentionInDays int = 30
 )
 
 func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
@@ -69,17 +69,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
-			// Delete logs without search results.
-			err := store.DeleteObsoleteTriggerJobs(ctx)
-			if err != nil {
-				return err
-			}
-			// Delete old logs, even if they have search results.
-			err = store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
-			if err != nil {
-				return err
-			}
-			return nil
+			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }

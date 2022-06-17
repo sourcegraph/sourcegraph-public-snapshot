@@ -1,6 +1,5 @@
 import { render, cleanup, RenderResult, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
@@ -61,11 +60,9 @@ const mockedTelemetryService = { ...NOOP_TELEMETRY_SERVICE, log: sinon.spy() }
 const setup = (overrideTasks?: TourTaskType[]): RenderResult =>
     render(
         <MemoryRouter initialEntries={['/']}>
-            <CompatRouter>
-                <MockTemporarySettings settings={{}}>
-                    <Tour telemetryService={mockedTelemetryService} id={TourId} tasks={overrideTasks ?? mockedTasks} />
-                </MockTemporarySettings>
-            </CompatRouter>
+            <MockTemporarySettings settings={{}}>
+                <Tour telemetryService={mockedTelemetryService} id={TourId} tasks={overrideTasks ?? mockedTasks} />
+            </MockTemporarySettings>
         </MemoryRouter>
     )
 

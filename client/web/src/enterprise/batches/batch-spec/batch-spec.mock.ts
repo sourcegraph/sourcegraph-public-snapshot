@@ -337,11 +337,16 @@ export const QUEUED_WORKSPACE = mockWorkspace(1, {
     changesetSpecs: [],
 })
 
-export const PROCESSING_WORKSPACE = mockWorkspace(1, {
+export const PROCESSING_WORKSPACE = mockWorkspace(0, {
     state: BatchSpecWorkspaceState.PROCESSING,
     finishedAt: null,
     diffStat: null,
     changesetSpecs: [],
+    steps: [
+        mockStep(1),
+        { ...mockStep(2), exitCode: null, finishedAt: null, diffStat: null },
+        { ...mockStep(3), exitCode: null, finishedAt: null, diffStat: null, startedAt: null },
+    ],
 })
 
 export const SKIPPED_WORKSPACE = mockWorkspace(1, {

@@ -7,19 +7,23 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	batchSpecs := make([]*btypes.BatchSpec, 0, 4)
 
 	t.Run("Create", func(t *testing.T) {
@@ -499,6 +503,61 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 	})
 
+	t.Run("GetBatchSpecDiffStat", func(t *testing.T) {
+		user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+		admin := ct.CreateTestUser(t, s.DatabaseDB(), true)
+		repo1, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		repo2, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		// Give access to repo1 but not repo2.
+		ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
+
+		batchSpec := &btypes.BatchSpec{
+			UserID:          user.ID,
+			NamespaceUserID: user.ID,
+		}
+
+		if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := s.CreateChangesetSpec(ctx,
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20},
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		assertDiffStat := func(wantAdded, wantChanged, wantDeleted int64) func(added, changed, deleted int64, err error) {
+			return func(added, changed, deleted int64, err error) {
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if added != wantAdded {
+					t.Errorf("invalid added returned, want=%d have=%d", wantAdded, added)
+				}
+
+				if changed != wantChanged {
+					t.Errorf("invalid changed returned, want=%d have=%d", wantChanged, changed)
+				}
+
+				if deleted != wantDeleted {
+					t.Errorf("invalid deleted returned, want=%d have=%d", wantDeleted, deleted)
+				}
+			}
+		}
+
+		t.Run("no user in context", func(t *testing.T) {
+			assertDiffStat(0, 0, 0)(s.GetBatchSpecDiffStat(ctx, batchSpec.ID))
+		})
+		t.Run("regular user in context with access to repo1", func(t *testing.T) {
+			assertDiffStat(10, 10, 10)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(user.ID)), batchSpec.ID))
+		})
+		t.Run("admin user in context", func(t *testing.T) {
+			assertDiffStat(30, 30, 30)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(admin.ID)), batchSpec.ID))
+		})
+	})
+
 	t.Run("DeleteExpiredBatchSpecs", func(t *testing.T) {
 		underTTL := clock.Now().Add(-btypes.BatchSpecTTL + 1*time.Minute)
 		overTTL := clock.Now().Add(-btypes.BatchSpecTTL - 1*time.Minute)
@@ -579,15 +638,15 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 func TestStoreGetBatchSpecStats(t *testing.T) {
 	ctx := context.Background()
-	c := &ct.TestClock{Time: timeutil.Now()}
+	c := &bt.TestClock{Time: timeutil.Now()}
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
 	db := database.NewDB(dbtest.NewDB(t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	admin := ct.CreateTestUser(t, db, true)
+	admin := bt.CreateTestUser(t, db, true)
 
 	var specIDs []int64
 	for _, setup := range []struct {
@@ -694,12 +753,12 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			clone := *job
 			clone.BatchSpecWorkspaceID = ws.ID
 			clone.UserID = spec.UserID
-			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
+			if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
 				t.Fatal(err)
 			}
 
 			job.ID = clone.ID
-			ct.UpdateJobState(t, ctx, s, job)
+			bt.UpdateJobState(t, ctx, s, job)
 		}
 
 	}
@@ -750,5 +809,74 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	}
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Errorf("unexpected batch spec stats:\n%s", diff)
+	}
+}
+
+func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
+	ctx := context.Background()
+
+	db := database.NewDB(dbtest.NewDB(t))
+	s := New(db, &observation.TestContext, nil)
+
+	// Create two repos, one of which will be visible to everyone, and one which
+	// won't be.
+	globalRepo, _ := bt.CreateTestRepo(t, ctx, db)
+	hiddenRepo, _ := bt.CreateTestRepo(t, ctx, db)
+
+	// One, two princes kneel before you...
+	//
+	// That is, we need an admin user and a regular one.
+	admin := bt.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, false)
+
+	// Create a batch spec with two changeset specs, one on each repo.
+	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID)
+	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+		User:      user.ID,
+		Repo:      globalRepo.ID,
+		BatchSpec: batchSpec.ID,
+		HeadRef:   "branch",
+	})
+	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+		User:      user.ID,
+		Repo:      hiddenRepo.ID,
+		BatchSpec: batchSpec.ID,
+		HeadRef:   "branch",
+	})
+
+	// Also create an empty batch spec, just for fun.
+	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID)
+
+	// Set up repo permissions.
+	bt.MockRepoPermissions(t, db, user.ID, globalRepo.ID)
+
+	// Now we can actually run some tests!
+	for name, tc := range map[string]struct {
+		batchSpecID int64
+		userID      int32
+		wantRepoIDs []api.RepoID
+	}{
+		"admin": {
+			batchSpecID: batchSpec.ID,
+			userID:      admin.ID,
+			wantRepoIDs: []api.RepoID{globalRepo.ID, hiddenRepo.ID},
+		},
+		"user": {
+			batchSpecID: batchSpec.ID,
+			userID:      user.ID,
+			wantRepoIDs: []api.RepoID{globalRepo.ID},
+		},
+		"empty": {
+			batchSpecID: emptyBatchSpec.ID,
+			userID:      admin.ID,
+			wantRepoIDs: []api.RepoID{},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			uctx := actor.WithActor(ctx, actor.FromUser(tc.userID))
+			have, err := s.ListBatchSpecRepoIDs(uctx, tc.batchSpecID)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, tc.wantRepoIDs, have)
+		})
 	}
 }

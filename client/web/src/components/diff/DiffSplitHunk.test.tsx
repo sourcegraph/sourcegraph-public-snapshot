@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -60,13 +59,11 @@ describe('DiffSplitHunk', () => {
     const renderWithProps = (props: DiffHunkProps): RenderResult =>
         render(
             <Router history={history}>
-                <CompatRouter>
-                    <table>
-                        <tbody>
-                            <DiffSplitHunk {...props} />
-                        </tbody>
-                    </table>
-                </CompatRouter>
+                <table>
+                    <tbody>
+                        <DiffSplitHunk {...props} />
+                    </tbody>
+                </table>
             </Router>
         )
 

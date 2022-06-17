@@ -36,18 +36,22 @@ func withDefaults(inputQuery string, defaults searchquery.Parameters) (string, e
 	return searchquery.StringHuman(modified.ToQ()), nil
 }
 
-// codeInsightsQueryDefaults returns the default query parameters for a Code Insights generated Sourcegraph query.
-func codeInsightsQueryDefaults() searchquery.Parameters {
+// CodeInsightsQueryDefaults returns the default query parameters for a Code Insights generated Sourcegraph query.
+func CodeInsightsQueryDefaults(allReposInsight bool) searchquery.Parameters {
+	forkArchiveValue := searchquery.No
+	if !allReposInsight {
+		forkArchiveValue = searchquery.Yes
+	}
 	return []searchquery.Parameter{
 		{
 			Field:      searchquery.FieldFork,
-			Value:      string(searchquery.No),
+			Value:      string(forkArchiveValue),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		},
 		{
 			Field:      searchquery.FieldArchived,
-			Value:      string(searchquery.No),
+			Value:      string(forkArchiveValue),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		},
@@ -67,11 +71,11 @@ func forRepoRevision(query, repo, revision string) string {
 	return fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repo), revision)
 }
 
-// SingleRepoQuery generates a Sourcegraph query with default values given a user specified query and a repository / revision target. The repository string
+// SingleRepoQuery generates a Sourcegraph query with the provided default values given a user specified query and a repository / revision target. The repository string
 // should be provided in plain text, and will be escaped for regexp before being added to the query.
-func SingleRepoQuery(query, repo, revision string) (string, error) {
+func SingleRepoQuery(query, repo, revision string, defaultParams searchquery.Parameters) (string, error) {
 	modified := withCountAll(query)
-	modified, err := withDefaults(modified, codeInsightsQueryDefaults())
+	modified, err := withDefaults(modified, defaultParams)
 	if err != nil {
 		return "", errors.Wrap(err, "WithDefaults")
 	}
@@ -80,10 +84,10 @@ func SingleRepoQuery(query, repo, revision string) (string, error) {
 	return modified, nil
 }
 
-// GlobalQuery generates a Sourcegraph query with default values given a user specified query. This query will be global (against all visible repositories).
-func GlobalQuery(query string) (string, error) {
+// GlobalQuery generates a Sourcegraph query with the provided default values given a user specified query. This query will be global (against all visible repositories).
+func GlobalQuery(query string, defaultParams searchquery.Parameters) (string, error) {
 	modified := withCountAll(query)
-	modified, err := withDefaults(modified, codeInsightsQueryDefaults())
+	modified, err := withDefaults(modified, defaultParams)
 	if err != nil {
 		return "", errors.Wrap(err, "WithDefaults")
 	}

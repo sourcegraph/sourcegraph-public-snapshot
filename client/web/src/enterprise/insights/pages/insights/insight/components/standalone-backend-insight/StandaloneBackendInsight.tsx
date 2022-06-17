@@ -30,6 +30,7 @@ import {
 import { useSeriesToggle } from '../../../../../components/insights-view-grid/components/backend-insight/components/backend-insight-chart/use-series-toggle'
 import { useVisibility } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
 import {
+    BackendInsightData,
     ALL_INSIGHTS_DASHBOARD,
     BackendInsight,
     CodeInsightsBackendContext,
@@ -37,7 +38,6 @@ import {
     InsightFilters,
     InsightType,
 } from '../../../../../core'
-import { BackendInsightData } from '../../../../../core/backend/code-insights-backend-types'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'

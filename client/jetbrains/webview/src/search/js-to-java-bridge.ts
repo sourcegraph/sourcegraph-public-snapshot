@@ -6,6 +6,7 @@ import {
     getRepoMatchUrl,
     PathMatch,
     SearchMatch,
+    SearchType,
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 
@@ -13,12 +14,17 @@ import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
-    fileName: string
-    path: string
+    resultType: SearchType
+    fileName?: string
+    repoUrl: string
+    path?: string
     content: string | null
-    lineNumber: number
-    absoluteOffsetAndLengths: number[][]
-    relativeUrl: string
+    symbolName?: string
+    symbolContainerName?: string
+    commitMessagePreview?: string
+    lineNumber?: number
+    absoluteOffsetAndLengths?: number[][]
+    relativeUrl?: string
 }
 
 export interface PreviewRequest {
@@ -152,17 +158,17 @@ export async function createPreviewContent(
     lineOrSymbolMatchIndex: number | undefined
 ): Promise<PreviewContent> {
     if (match.type === 'commit') {
+        const isCommitResult = match.content.startsWith('```COMMIT_EDITMSG')
         const content = prepareContent(
-            match.content.startsWith('```COMMIT_EDITMSG')
+            isCommitResult
                 ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
                 : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
         )
         return {
-            fileName: '',
-            path: '',
+            resultType: isCommitResult ? 'commit' : 'diff',
+            repoUrl: match.repository,
             content,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
+            commitMessagePreview: match.message.split('\n', 1)[0],
             relativeUrl: match.url,
         }
     }
@@ -177,11 +183,9 @@ export async function createPreviewContent(
 
     if (match.type === 'repo') {
         return {
-            fileName: '',
-            path: '',
+            resultType: match.type,
+            repoUrl: getRepoMatchUrl(match).slice(1),
             content: null,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
             relativeUrl: getRepoMatchUrl(match),
         }
     }
@@ -195,12 +199,9 @@ export async function createPreviewContent(
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
-        fileName: '',
-        path: '',
+        resultType: null,
+        repoUrl: '',
         content: null,
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
     }
 }
 
@@ -217,12 +218,13 @@ async function createPreviewContentForContentMatch(
     )
 
     return {
+        resultType: 'file',
         fileName,
+        repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
         lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
         absoluteOffsetAndLengths,
-        relativeUrl: '',
     }
 }
 
@@ -231,29 +233,32 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
     const content = await loadContent(match)
 
     return {
+        resultType: match.type,
         fileName,
+        repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
     }
 }
 
 async function createPreviewContentForSymbolMatch(
     match: SymbolMatch,
-    sybolMatchIndex: number
+    symbolMatchIndex: number
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
-    const symbolMatch = match.symbols[sybolMatchIndex]
+    const symbolMatch = match.symbols[symbolMatchIndex]
 
     console.log(symbolMatch)
 
     return {
+        resultType: match.type,
         fileName,
+        repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
+        symbolName: symbolMatch.name,
+        symbolContainerName: symbolMatch.containerName,
         lineNumber: getLineFromSourcegraphUrl(symbolMatch.url),
         absoluteOffsetAndLengths: getAbsoluteOffsetAndLengthsFromSourcegraphUrl(symbolMatch.url, content),
         relativeUrl: '',

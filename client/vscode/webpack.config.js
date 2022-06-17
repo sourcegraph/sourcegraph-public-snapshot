@@ -63,7 +63,7 @@ function getExtensionCoreConfiguration(targetType) {
         targetType === 'webworker'
           ? {
               path: require.resolve('path-browserify'),
-              './browserActionsNode': path.resolve(__dirname, 'src', 'link-commands', 'browserActionsWeb'),
+              './browserActionsNode': path.resolve(__dirname, 'src', 'commands', 'browserActionsWeb'),
             }
           : {
               path: require.resolve('path-browserify'),

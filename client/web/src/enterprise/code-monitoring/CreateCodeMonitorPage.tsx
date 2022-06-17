@@ -48,7 +48,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
 
     useEffect(
         () =>
-            eventLogger.logViewEvent('CreateCodeMonitorPage', {
+            eventLogger.logPageView('CreateCodeMonitorPage', {
                 hasTriggerQuery: !!triggerQuery,
                 hasDescription: !!description,
             }),
