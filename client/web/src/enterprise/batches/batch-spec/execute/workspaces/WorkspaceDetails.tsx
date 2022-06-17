@@ -483,8 +483,9 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                             .trim() === ''
                 )
             ) {
-                outputLines.push('stderr: This command did not produce any logs')
+                outputLines.push('stdout: This step was completed successfully')
             }
+
             if (step.exitCode !== null) {
                 outputLines.push(`\nstdout: \nstdout: Command exited with status ${step.exitCode}`)
             }
