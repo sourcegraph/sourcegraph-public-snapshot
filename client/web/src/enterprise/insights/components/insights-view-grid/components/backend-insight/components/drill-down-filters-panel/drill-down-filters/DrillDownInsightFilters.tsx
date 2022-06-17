@@ -198,7 +198,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             </header>
             <hr className={styles.headerSeparator} />
 
-            <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
+            <div className={classNames({ [styles.panelsHorizontalMode]: isHorizontalMode })}>
                 {showSeriesDisplayOptions && (
                     <FilterCollapseSection
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
@@ -207,6 +207,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
                         hasActiveFilter={hasSeriesDisplayOptionsChanged}
                         withSeparators={!isHorizontalMode}
+                        className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                     >
                         <SortFilterSeriesPanel
