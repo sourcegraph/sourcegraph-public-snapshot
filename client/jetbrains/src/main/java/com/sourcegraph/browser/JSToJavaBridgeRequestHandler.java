@@ -76,38 +76,19 @@ public class JSToJavaBridgeRequestHandler {
                             Thread.sleep(300);
                         } catch (InterruptedException ignored) {
                         }
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            Date previewLoadingDate = Date.from(Instant.from(
-                                DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())));
-                            if (findPopupPanel.getLastPreviewUpdate().before(previewLoadingDate)) {
-                                findPopupPanel.setLastPreviewUpdate(previewLoadingDate);
-                                findPopupPanel.indicateLoading();
-                            }
-                        });
+                        ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateLoadingIfInTime(Date.from(
+                            Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
                     }).start();
                     return createSuccessResponse(null);
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        if (findPopupPanel.getLastPreviewUpdate().before(previewContent.getReceivedDateTime())) {
-                            findPopupPanel.setLastPreviewUpdate(previewContent.getReceivedDateTime());
-                            findPopupPanel.setPreviewContent(previewContent);
-                            findPopupPanel.setSelectionMetadataLabel(previewContent);
-                        }
-                    });
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.setPreviewContentIfInTime(previewContent));
                     return createSuccessResponse(null);
                 case "clearPreview":
                     arguments = request.getAsJsonObject("arguments");
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        Date clearPreviewDate = Date.from(Instant.from(
-                            DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())));
-                        if (findPopupPanel.getLastPreviewUpdate().before(clearPreviewDate)) {
-                            findPopupPanel.setLastPreviewUpdate(clearPreviewDate);
-                            findPopupPanel.clearPreviewContent();
-                            findPopupPanel.clearSelectionMetadataLabel();
-                        }
-                    });
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.clearPreviewContentIfInTime(Date.from(
+                        Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
