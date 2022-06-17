@@ -86,6 +86,8 @@ const PreviewAction: React.FunctionComponent<React.PropsWithChildren<PreviewActi
             return <PreviewActionDetach className={className} />
         case ChangesetSpecOperation.ARCHIVE:
             return <PreviewActionArchive className={className} />
+        case ChangesetSpecOperation.REATTACH:
+            return <PreviewActionReattach className={className} />
         case ChangesetSpecOperation.SYNC:
         case ChangesetSpecOperation.SLEEP:
             // We don't want to expose these states.
@@ -212,6 +214,18 @@ export const PreviewActionArchive: React.FunctionComponent<
 > = ({ label = 'Archive', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be kept and marked as archived in this batch change">
+            <Icon className="text-muted mr-1" as={ArchiveIcon} aria-hidden={true} />
+        </Tooltip>
+        <span>{label}</span>
+    </div>
+)
+
+export const PreviewActionReattach: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Reattach', className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <Tooltip content="This changeset will be re-added to the batch change">
+            {/* TODO: change icon to something else */}
             <Icon className="text-muted mr-1" as={ArchiveIcon} aria-hidden={true} />
         </Tooltip>
         <span>{label}</span>
