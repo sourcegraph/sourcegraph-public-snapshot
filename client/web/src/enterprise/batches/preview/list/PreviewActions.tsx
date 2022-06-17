@@ -6,6 +6,7 @@ import BeakerQuestionIcon from 'mdi-react/BeakerQuestionIcon'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
 import ImportIcon from 'mdi-react/ImportIcon'
+import PaperclipIcon from 'mdi-react/PaperclipIcon'
 import SourceBranchCheckIcon from 'mdi-react/SourceBranchCheckIcon'
 import SourceBranchRefreshIcon from 'mdi-react/SourceBranchRefreshIcon'
 import SourceBranchSyncIcon from 'mdi-react/SourceBranchSyncIcon'
@@ -225,8 +226,7 @@ export const PreviewActionReattach: React.FunctionComponent<
 > = ({ label = 'Reattach', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be re-added to the batch change">
-            {/* TODO: change icon to something else */}
-            <Icon className="text-muted mr-1" as={ArchiveIcon} aria-hidden={true} />
+            <Icon className="text-muted mr-1" as={PaperclipIcon} aria-hidden={true} />
         </Tooltip>
         <span>{label}</span>
     </div>
