@@ -428,6 +428,7 @@ var jobStatuses = map[string]bool{
 	"queued":     true,
 	"processing": true,
 	"completed":  true,
+	"canceled":   true,
 	"errored":    true,
 	"failed":     true,
 }
@@ -442,7 +443,7 @@ func (r *Resolver) BitbucketProjectPermissionJobs(ctx context.Context, args *gra
 	}
 	loweredAndTrimmedStatus := strings.ToLower(strings.TrimSpace(getOrDefault(args.Status)))
 	if loweredAndTrimmedStatus != "" && !jobStatuses[loweredAndTrimmedStatus] {
-		return nil, errors.New("Please provide one of the following job statuses: queued, processing, completed, errored, failed")
+		return nil, errors.New("Please provide one of the following job statuses: queued, processing, completed, canceled, errored, failed")
 	}
 	args.Status = &loweredAndTrimmedStatus
 

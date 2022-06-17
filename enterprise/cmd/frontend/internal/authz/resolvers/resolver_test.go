@@ -1445,7 +1445,7 @@ query {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: "Please provide one of the following job statuses: queued, processing, completed, errored, failed",
+					Message: "Please provide one of the following job statuses: queued, processing, completed, canceled, errored, failed",
 					Path:    []any{"bitbucketProjectPermissionJobs"},
 				},
 			},
