@@ -3,24 +3,35 @@
 exports[`DiffStat expandedCounts 1`] = `
 <DocumentFragment>
   <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+    class=""
   >
-    <strong
-      class="a11y-ignore text-success mr-1"
+    <span
+      class="tooltip"
+      data-state="closed"
+      data-test-content="1 addition, 2 changes, 3 deletions"
+      role="presentation"
     >
-      +1
-    </strong>
-    <strong
-      class="a11y-ignore text-warning mr-1"
-    >
-      •2
-    </strong>
-    <strong
-      class="a11y-ignore text-danger"
-    >
-      −3
-    </strong>
+      <div
+        aria-label="1 addition, 2 changes, 3 deletions"
+        class="diffStat"
+      >
+        <strong
+          class="mr-1 a11y-ignore text-success"
+        >
+          +1
+        </strong>
+        <strong
+          class="mr-1 a11y-ignore text-warning"
+        >
+          •2
+        </strong>
+        <strong
+          class="a11y-ignore text-danger"
+        >
+          −3
+        </strong>
+      </div>
+    </span>
   </div>
 </DocumentFragment>
 `;
@@ -28,12 +39,23 @@ exports[`DiffStat expandedCounts 1`] = `
 exports[`DiffStat standard 1`] = `
 <DocumentFragment>
   <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+    class=""
   >
-    <small>
-      8
-    </small>
+    <span
+      class="tooltip"
+      data-state="closed"
+      data-test-content="1 addition, 2 changes, 3 deletions"
+      role="presentation"
+    >
+      <div
+        aria-label="1 addition, 2 changes, 3 deletions"
+        class="diffStat"
+      >
+        <small>
+          8
+        </small>
+      </div>
+    </span>
   </div>
 </DocumentFragment>
 `;
@@ -68,24 +90,35 @@ exports[`DiffStatStack 1`] = `
     class="d-flex flex-column align-items-center"
   >
     <div
-      class="diffStat pb-1"
-      data-tooltip="1 addition, 2 changes, 3 deletions"
+      class="pb-1"
     >
-      <strong
-        class="a11y-ignore text-success mr-1"
+      <span
+        class="tooltip"
+        data-state="closed"
+        data-test-content="1 addition, 2 changes, 3 deletions"
+        role="presentation"
       >
-        +1
-      </strong>
-      <strong
-        class="a11y-ignore text-warning mr-1"
-      >
-        •2
-      </strong>
-      <strong
-        class="a11y-ignore text-danger"
-      >
-        −3
-      </strong>
+        <div
+          aria-label="1 addition, 2 changes, 3 deletions"
+          class="diffStat"
+        >
+          <strong
+            class="mr-1 a11y-ignore text-success"
+          >
+            +1
+          </strong>
+          <strong
+            class="mr-1 a11y-ignore text-warning"
+          >
+            •2
+          </strong>
+          <strong
+            class="a11y-ignore text-danger"
+          >
+            −3
+          </strong>
+        </div>
+      </span>
     </div>
     <div
       class="squares"

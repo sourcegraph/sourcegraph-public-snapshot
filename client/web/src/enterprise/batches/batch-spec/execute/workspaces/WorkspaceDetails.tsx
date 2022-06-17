@@ -392,7 +392,11 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                         {node.description.headRef}
                     </span>
                 </div>
-                <DiffStat {...node.description.diffStat} expandedCounts={true} className="ml-3" />
+                <DiffStat
+                    {...node.description.diffStat}
+                    expandedCounts={true}
+                    className={classNames(styles.stepDiffStat, 'ml-3')}
+                />
             </CollapseHeader>
             <CollapsePanel>
                 <Card className={classNames('mt-2', styles.resultCard)}>
