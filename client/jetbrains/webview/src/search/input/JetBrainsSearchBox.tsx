@@ -109,6 +109,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
+                            /* eslint-disable-next-line no-restricted-syntax */
                             {...props}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
@@ -128,6 +129,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         <Search />
                     </div>
                     <LazyMonacoQueryInput
+                        /* eslint-disable-next-line no-restricted-syntax */
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
