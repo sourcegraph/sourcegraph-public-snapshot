@@ -16,6 +16,7 @@ const (
 	ReconcilerOperationSleep        ReconcilerOperation = "SLEEP"
 	ReconcilerOperationDetach       ReconcilerOperation = "DETACH"
 	ReconcilerOperationArchive      ReconcilerOperation = "ARCHIVE"
+	ReconcilerOperationReattach     ReconcilerOperation = "REATTACH"
 )
 
 // Valid returns true if the given ReconcilerOperation is valid.
@@ -32,7 +33,8 @@ func (r ReconcilerOperation) Valid() bool {
 		ReconcilerOperationReopen,
 		ReconcilerOperationSleep,
 		ReconcilerOperationDetach,
-		ReconcilerOperationArchive:
+		ReconcilerOperationArchive,
+		ReconcilerOperationReattach:
 		return true
 	default:
 		return false
