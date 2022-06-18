@@ -1336,6 +1336,7 @@ type ExtensionUsageStatistics struct {
 type CodeInsightsUsageStatistics struct {
 	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
 	WeeklyInsightsPageViews                 *int32
+	WeeklyStandaloneInsightPageViews        *int32
 	WeeklyInsightsGetStartedPageViews       *int32
 	WeeklyInsightsUniquePageViews           *int32
 	WeeklyInsightsGetStartedUniquePageViews *int32

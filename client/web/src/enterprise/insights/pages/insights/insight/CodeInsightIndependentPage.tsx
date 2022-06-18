@@ -1,4 +1,4 @@
-import { FunctionComponent, useContext, useMemo } from 'react'
+import { FunctionComponent, useContext, useEffect, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
@@ -24,6 +24,10 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
     const { getInsightById } = useContext(CodeInsightsBackendContext)
 
     const insight = useObservable(useMemo(() => getInsightById(insightId), [getInsightById, insightId]))
+
+    useEffect(() => {
+        telemetryService.logPageView('StandaloneInsightPage')
+    }, [telemetryService])
 
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />
