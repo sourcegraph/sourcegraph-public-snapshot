@@ -75,6 +75,7 @@ var baseEngineConfig = syntaxEngineConfig{
 	Overrides: map[string]EngineType{
 		"c#":      EngineTreeSitter,
 		"jsonnet": EngineTreeSitter,
+		"typescript": EngineTreeSitter,
 	},
 }
 

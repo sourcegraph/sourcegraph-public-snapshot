@@ -100,7 +100,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet )
+        create_configurations!( go, sql, c_sharp, jsonnet, typescript )
     };
 }
 

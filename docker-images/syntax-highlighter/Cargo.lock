@@ -1700,6 +1700,7 @@ dependencies = [
  "tree-sitter-highlight",
  "tree-sitter-jsonnet",
  "tree-sitter-sql",
+ "tree-sitter-typescript",
 ]
 
 [[package]]
@@ -2220,6 +2221,15 @@ dependencies = [
 name = "tree-sitter-sql"
 version = "0.0.2"
 source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-typescript"
+version = "0.20.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-typescript#1557edda57603a7f0e6adfeee3a9519fdef902c8"
 dependencies = [
  "cc",
  "tree-sitter",

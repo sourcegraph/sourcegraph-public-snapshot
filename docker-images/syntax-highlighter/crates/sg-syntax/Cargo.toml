@@ -39,5 +39,10 @@ tree-sitter-c-sharp = { git = "https://github.com/tree-sitter/tree-sitter-c-shar
 
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
 
+# As of 2022 Jun 17, the upstream crate uses the function name
+# `language_typescript` instead of `language` to load the grammar. We forked the
+# repo to rename this method for consistency with the other grammars.
+tree-sitter-typescript = { git = "https://github.com/sourcegraph/tree-sitter-typescript" }
+
 [dev-dependencies]
 insta = "1.11.0"

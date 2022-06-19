@@ -11,6 +11,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -111,6 +112,7 @@ var supportedFiletypes = map[string]struct{}{
 	"go":      {},
 	"c_sharp": {},
 	"jsonnet": {},
+	"typescript": {},
 }
 
 // Client represents a client connection to a syntect_server.

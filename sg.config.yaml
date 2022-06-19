@@ -32,7 +32,7 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
-  SRC_SYNTECT_SERVER: http://localhost:9238
+  SRC_SYNTECT_SERVER: http://localhost:8000
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
   PROMETHEUS_URL: http://localhost:9090
@@ -333,7 +333,7 @@ commands:
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
+    install_func: 'installDocsite'
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 
@@ -718,7 +718,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ""
+      EXTSVC_CONFIG_FILE: ''
 
   dotcom:
     <<: *enterprise_set
@@ -950,9 +950,9 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        provider: "gcloud"
-        project: "sourcegraph-ci"
-        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+        provider: 'gcloud'
+        project: 'sourcegraph-ci'
+        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
