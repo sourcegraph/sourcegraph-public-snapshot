@@ -20,6 +20,7 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { LoadingSpinner, useObservable, Icon, Link, Alert } from '@sourcegraph/wildcard'
@@ -168,6 +169,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             extensionsController,
             input,
         ])
+
+        const logEventOnCopy = useCallback(() => {
+            telemetryService.log(...codeCopiedEvent('notebook-file-block'))
+        }, [telemetryService])
+
         const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
         return (
@@ -221,6 +227,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}
+                            onCopy={logEventOnCopy}
                         />
                     </div>
                 )}
