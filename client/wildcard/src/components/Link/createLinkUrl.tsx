@@ -1,14 +1,14 @@
-export interface LinkComponents {
+export interface URLComponents {
     pathname?: string
     search?: string
     hash?: string
 }
 
 /**
- * Convenience method provided for translation of History.LocationDescriptorObject's
+ * Convenience method provided for translation of URLComponents
  * into strings that are accepted by the RouterLink component.
  */
-export const createLinkUrl = (location: LinkComponents): string => {
+export const createLinkUrl = (location: URLComponents): string => {
     const { pathname = '', search, hash } = location
 
     const components = [pathname]
