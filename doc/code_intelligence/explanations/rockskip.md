@@ -36,20 +36,6 @@ spec:
           value: "github.com/torvalds/linux,github.com/pallets/flask"
 ```
 
-```yaml
-# base/codeintel-db/codeintel-db.Deployment.yaml
-spec:
-  template:
-    spec:
-      containers:
-      - name: pgsql
-        resources:
-          limits:
-            memory: 8Gi # 👈 Increase RAM from 4g to 8g
-          requests:
-            memory: 8Gi # 👈 Increase RAM from 4g to 8g
-```
-
 For Docker Compose:
 
 ```yaml
@@ -61,9 +47,35 @@ services:
       - USE_ROCKSKIP=true
       # 👇 Uses Rockskip for the repositories in the comma separated list
       - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
+```
 
-  codeintel-db:
-    mem_limit: '8g' # 👈 Increase RAM from 2g to 8g
+For Helm:
+
+```yaml
+# kustomization.yaml
+patchesStrategicMerge:
+- rockskip.yaml
+```
+
+```yaml
+# rockskip.yaml
+cat rockskip.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: symbols
+spec:
+  template:
+    spec:
+      containers:
+        - name: symbols
+          env:
+            # 👇 Enables Rockskip
+            - name: USE_ROCKSKIP
+              value: "true"
+            # 👇 Uses Rockskip for the repositories in the comma separated list
+            - name: ROCKSKIP_REPOS
+              value: "github.com/crossplane/crossplane,github.com/sgtest/megarepo"
 ```
 
 For other deployments, make sure that:
