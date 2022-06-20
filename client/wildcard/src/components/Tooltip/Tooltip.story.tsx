@@ -101,7 +101,7 @@ export const DisabledTrigger: Story = () => (
 export const LongContent: Story = () => (
     <Grid columnCount={1}>
         <div>
-            <Tooltip content="Nulla porttitor accumsan tincidunt. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada.">
+            <Tooltip content="Nulla porttitor accumsan tincidunt. IAmVeryLongTextWithNoBreaksAndIWantToBeWrappedInMultipleLines. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada.">
                 <Button variant="primary">Example</Button>
             </Tooltip>
         </div>

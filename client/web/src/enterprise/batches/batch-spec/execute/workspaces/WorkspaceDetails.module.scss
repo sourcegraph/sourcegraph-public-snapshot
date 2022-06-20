@@ -65,6 +65,10 @@
 }
 
 .step-diff-stat {
+    // Bringing the element above the button so the tooltip is triggered on-hover
+    isolation: isolate;
+    z-index: 1;
+
     padding: 0 0.5rem;
     margin: 0 0.5rem;
 

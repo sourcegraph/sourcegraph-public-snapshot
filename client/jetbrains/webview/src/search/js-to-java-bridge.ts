@@ -14,6 +14,7 @@ import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
+    timeAsISOString: string
     resultType: SearchType
     fileName?: string
     repoUrl: string
@@ -27,9 +28,19 @@ export interface PreviewContent {
     relativeUrl?: string
 }
 
+export interface PreviewLoadingRequest {
+    action: 'previewLoading'
+    arguments: { timeAsISOString: string }
+}
+
 export interface PreviewRequest {
     action: 'preview'
     arguments: PreviewContent
+}
+
+interface ClearPreviewRequest {
+    action: 'clearPreview'
+    arguments: { timeAsISOString: string }
 }
 
 interface OpenRequest {
@@ -54,15 +65,12 @@ interface LoadLastSearchRequest {
     action: 'loadLastSearch'
 }
 
-interface ClearPreviewRequest {
-    action: 'clearPreview'
-}
-
 interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
 }
 
 export type Request =
+    | PreviewLoadingRequest
     | PreviewRequest
     | OpenRequest
     | GetConfigRequest
@@ -71,6 +79,8 @@ export type Request =
     | LoadLastSearchRequest
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
+
+let lastPreviewUpdateCallSendDateTime = new Date()
 
 export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
     try {
@@ -108,7 +118,21 @@ export async function indicateFinishedLoading(): Promise<void> {
 
 export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
-        await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
+        const initiationDateTime = new Date()
+        if (match.type === 'content' || match.type === 'path' || match.type === 'symbol') {
+            lastPreviewUpdateCallSendDateTime = initiationDateTime
+            await callJava({
+                action: 'previewLoading',
+                arguments: { timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+            })
+        }
+        const previewContent = await createPreviewContent(match, lineOrSymbolMatchIndex)
+        if (initiationDateTime < lastPreviewUpdateCallSendDateTime) {
+            // Apparently, the content was slow to load, and we already sent a newer request in the meantime.
+            // The best we can do is to ignore this change to prevent overwriting the newer content.
+            return
+        }
+        await callJava({ action: 'preview', arguments: previewContent })
     } catch (error) {
         console.error(`Failed to preview match: ${(error as Error).message}`)
     }
@@ -116,7 +140,11 @@ export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex
 
 export async function onPreviewClear(): Promise<void> {
     try {
-        await callJava({ action: 'clearPreview' })
+        lastPreviewUpdateCallSendDateTime = new Date()
+        await callJava({
+            action: 'clearPreview',
+            arguments: { timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+        })
     } catch (error) {
         console.error(`Failed to clear preview: ${(error as Error).message}`)
     }
@@ -165,6 +193,7 @@ export async function createPreviewContent(
                 : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
         )
         return {
+            timeAsISOString: new Date().toISOString(),
             resultType: isCommitResult ? 'commit' : 'diff',
             repoUrl: match.repository,
             content,
@@ -183,6 +212,7 @@ export async function createPreviewContent(
 
     if (match.type === 'repo') {
         return {
+            timeAsISOString: new Date().toISOString(),
             resultType: match.type,
             repoUrl: getRepoMatchUrl(match).slice(1),
             content: null,
@@ -199,6 +229,7 @@ export async function createPreviewContent(
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
+        timeAsISOString: new Date().toISOString(),
         resultType: null,
         repoUrl: '',
         content: null,
@@ -218,6 +249,7 @@ async function createPreviewContentForContentMatch(
     )
 
     return {
+        timeAsISOString: new Date().toISOString(),
         resultType: 'file',
         fileName,
         repoUrl: match.repository,
@@ -233,6 +265,7 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
     const content = await loadContent(match)
 
     return {
+        timeAsISOString: new Date().toISOString(),
         resultType: match.type,
         fileName,
         repoUrl: match.repository,
@@ -252,6 +285,7 @@ async function createPreviewContentForSymbolMatch(
     console.log(symbolMatch)
 
     return {
+        timeAsISOString: new Date().toISOString(),
         resultType: match.type,
         fileName,
         repoUrl: match.repository,

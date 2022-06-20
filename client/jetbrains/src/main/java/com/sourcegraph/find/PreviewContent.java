@@ -19,11 +19,15 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Objects;
 
 public class PreviewContent {
     private final Project project;
+    private final Date receivedDateTime;
     private final String resultType;
     private final String fileName;
     private final String repoUrl;
@@ -39,6 +43,7 @@ public class PreviewContent {
     private VirtualFile virtualFile;
 
     public PreviewContent(@NotNull Project project,
+                          @NotNull Date receivedDateTime,
                           @Nullable String resultType,
                           @Nullable String fileName,
                           @NotNull String repoUrl,
@@ -53,6 +58,7 @@ public class PreviewContent {
         this.project = project;
         // It seems like the constructor is not called when we use the JSON parser to create instances of this class, so
         // avoid adding any computation here.
+        this.receivedDateTime = receivedDateTime;
         this.resultType = resultType;
         this.fileName = fileName;
         this.repoUrl = repoUrl;
@@ -77,6 +83,7 @@ public class PreviewContent {
         }
 
         return new PreviewContent(project,
+            Date.from(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(json.get("timeAsISOString").getAsString()))),
             isNotNull(json, "resultType") ? json.get("resultType").getAsString() : null,
             isNotNull(json, "fileName") ? json.get("fileName").getAsString() : null,
             json.get("repoUrl").getAsString(),
@@ -92,6 +99,11 @@ public class PreviewContent {
 
     private static boolean isNotNull(@NotNull JsonObject json, String key) {
         return json.get(key) != null && !json.get(key).isJsonNull();
+    }
+
+    @NotNull
+    public Date getReceivedDateTime() {
+        return receivedDateTime;
     }
 
     @Nullable
