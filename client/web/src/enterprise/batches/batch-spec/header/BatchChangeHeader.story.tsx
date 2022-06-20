@@ -1,18 +1,25 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { BatchChangeHeader } from './BatchChangeHeader'
 
-const { add } = storiesOf('web/batches/batch-spec/header/BatchChangeHeader', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('creating a new batch change', () => (
+const config: Meta = {
+    title: 'web/batches/batch-spec/header/BatchChangeHeader',
+    decorators: [decorator],
+}
+
+export default config
+
+export const CreatingANewBatchChange: Story = () => (
     <WebStory>{props => <BatchChangeHeader {...props} title={{ text: 'Create batch change' }} />}</WebStory>
-))
+)
 
-add('batch change already exists', () => (
+CreatingANewBatchChange.storyName = 'creating a new batch change'
+
+export const BatchChangeAlreadyExists: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeHeader
@@ -23,4 +30,6 @@ add('batch change already exists', () => (
             />
         )}
     </WebStory>
-))
+)
+
+BatchChangeAlreadyExists.storyName = 'batch change already exists'
