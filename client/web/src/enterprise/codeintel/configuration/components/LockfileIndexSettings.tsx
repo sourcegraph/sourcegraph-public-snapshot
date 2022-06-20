@@ -1,13 +1,10 @@
 import React, { FunctionComponent } from 'react'
 
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Alert, Label, H3 } from '@sourcegraph/wildcard'
+import { Alert, H3 } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
-import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
+import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
-
-import { DurationSelect } from './DurationSelect'
 
 // This uses the same styles as the RetentionSettings component to style radio buttons
 import styles from './RetentionSettings.module.scss'
