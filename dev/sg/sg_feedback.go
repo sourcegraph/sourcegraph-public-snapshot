@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
@@ -53,7 +54,8 @@ var feedbackCommand = &cli.Command{
 }
 
 func feedbackExec(ctx *cli.Context) error {
-	title, body, err := gatherFeedback(ctx)
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Gathering feedback for sg %s ...", ctx.Command.FullName()))
+	title, body, err := gatherFeedback(std.Out, os.Stdin)
 	if err != nil {
 		return err
 	}
@@ -65,23 +67,21 @@ func feedbackExec(ctx *cli.Context) error {
 	return nil
 }
 
-func gatherFeedback(ctx *cli.Context) (string, string, error) {
-	std.Out.WriteNoticef("Gathering feedback for sg %s", ctx.Command.FullName())
-
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("What is the title of your feedback ?")
+func gatherFeedback(out *std.Output, in io.Reader) (string, string, error) {
+	reader := bufio.NewReader(in)
+	out.Promptf("What is the title of your feedback ?\n")
 	title, err := reader.ReadString('\n')
 	if err != nil {
 		return "", "", err
 	}
 
-	fmt.Println("Write your feedback below and press <CTRL+D> when you're done.")
-	body, err := io.ReadAll(os.Stdin)
-	if err != nil {
+	out.Promptf("Write your feedback below and press <CTRL+D> when you're done.\n")
+	body, err := io.ReadAll(in)
+	if err != nil && err != io.EOF {
 		return "", "", err
 	}
 
-	return title, string(body), nil
+	return strings.TrimSpace(title), strings.TrimSpace(string(body)), nil
 }
 
 func addSGInformation(ctx *cli.Context, body string) string {
