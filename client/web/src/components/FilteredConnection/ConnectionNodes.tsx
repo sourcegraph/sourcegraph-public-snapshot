@@ -85,9 +85,6 @@ export interface ConnectionNodesDisplayProps {
 
     /** A function that generates an aria label given a node display name */
     ariaLabelFunction?: (displayName: string) => string
-
-    /** Displays the heading of a page */
-    pageHeading?: React.ReactElement
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -144,7 +141,6 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     showMoreClassName,
     compact,
     withCenteredSummary,
-    pageHeading,
 }: ConnectionNodesProps<C, N, NP, HP>): JSX.Element => {
     const nextPage = hasNextPage(connection)
 
@@ -175,7 +171,6 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 
     return (
         <>
-            {pageHeading}
             <SummaryContainer compact={compact} centered={withCenteredSummary} className={summaryClassName}>
                 {connectionQuery && summary}
             </SummaryContainer>
