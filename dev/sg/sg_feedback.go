@@ -21,7 +21,8 @@ import (
 
 const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
 
-func addFeedbackSubcommand(commands []*cli.Command) {
+// addFeedbackFlags adds a '--feedback' flag to each command to generate feedback
+func addFeedbackFlags(commands []*cli.Command) {
 	giveFeedback := false
 	feedbackFlag := cli.BoolFlag{
 		Name:        "feedback",
