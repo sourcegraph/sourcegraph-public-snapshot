@@ -21,6 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Alert, Icon, Link, LoadingSpinner, Code, useObservable } from '@sourcegraph/wildcard'
@@ -35,7 +36,6 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
 import styles from './NotebookSymbolBlock.module.scss'
-import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
