@@ -203,8 +203,6 @@ describe('Search', () => {
                 await editor.focus()
                 await driver.page.keyboard.type('file:jwtmi')
                 await editor.waitForSuggestion('jwtmiddleware.go')
-                // This timeout seems to be necessary for Tab to select the entry in Codemirror
-                await driver.page.waitForTimeout(100)
                 // NOTE: This test assumes that the first suggestion is the one
                 // to be selected.
                 // It doesn't seem to be possible to otherwise "select" a specific
