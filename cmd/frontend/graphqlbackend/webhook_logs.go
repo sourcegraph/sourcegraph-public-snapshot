@@ -100,8 +100,6 @@ func (r *schemaResolver) WebhookLogs(ctx context.Context, args *globalWebhookLog
 }
 
 type webhookLogConnectionResolver struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	logger            log.Logger
 	args              *webhookLogsArgs
 	externalServiceID webhookLogsExternalServiceID

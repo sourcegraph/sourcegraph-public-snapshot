@@ -125,7 +125,7 @@ func NewHandler(
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
 func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
-	logger := sglog.Scoped("NewInternalHandler", "")
+	logger := sglog.Scoped("InternalHandler", "")
 	if m == nil {
 		m = apirouter.New(nil)
 	}

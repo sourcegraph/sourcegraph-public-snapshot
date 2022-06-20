@@ -128,7 +128,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
-	logger := sglog.Scoped("server error handler", "")
+	logger := sglog.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}

@@ -298,12 +298,4 @@ func TestFooBar(t *testing.T) {
 
 When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
 
-<<<<<<< HEAD
-## Conventions
-
-* The first scope of the logger should be the name of the service and following the same naming of the service. In general, if the logger is initialized as described in [handling logging](#handling-logging) the name should be correct.
-* The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
-* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `lib/log`, for example `import sglog "github.com/sourcegraph/log"`.
-=======
 If you can provide a `Logger` instance, `logtest.NoOp()` can be used to silence output. Levels can also be adjusted using `(Logger).IncreaseLevel`.
->>>>>>> 7f1aa182f1e3a0491f5a3b81f34c099db38cdd08
