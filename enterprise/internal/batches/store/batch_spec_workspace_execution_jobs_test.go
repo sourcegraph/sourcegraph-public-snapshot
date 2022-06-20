@@ -82,6 +82,26 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			}
 		})
 
+		t.Run("GetWithoutRank", func(t *testing.T) {
+			for i, job := range jobs {
+				// Copy job so we can modify it
+				job := *job
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					have, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: job.ID, ExcludeRank: true})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					job.PlaceInGlobalQueue = 0
+					job.PlaceInUserQueue = 0
+
+					if diff := cmp.Diff(have, &job); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+			}
+		})
+
 		t.Run("NoResults", func(t *testing.T) {
 			opts := GetBatchSpecWorkspaceExecutionJobOpts{ID: 0xdeadbeef}
 
@@ -200,6 +220,25 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			haveIDs := []int64{have[0].ID, have[1].ID}
 
 			if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ExcludeRank", func(t *testing.T) {
+			ranklessJobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, len(jobs))
+			for _, job := range jobs {
+				// Copy job so we can modify it
+				job := *job
+				job.PlaceInGlobalQueue = 0
+				job.PlaceInUserQueue = 0
+				ranklessJobs = append(ranklessJobs, &job)
+			}
+			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{ExcludeRank: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, ranklessJobs); diff != "" {
 				t.Fatal(diff)
 			}
 		})
