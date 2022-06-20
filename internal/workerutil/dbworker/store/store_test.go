@@ -84,8 +84,8 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
-	if count != 2 {
-		t.Errorf("unexpected count. want=%d have=%d", 2, count)
+	if count != 3 {
+		t.Errorf("unexpected count. want=%d have=%d", 3, count)
 	}
 }
 
@@ -147,9 +147,8 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 			(2, 'errored', NOW(),                          NOW() - '30 minutes'::interval, 2), -- oldest retryable error'd
 			(3, 'errored', NOW(),                          NOW() - '10 minutes'::interval, 2), -- retryable, but too young to be queued
 			(4, 'state2',  NOW() - '40 minutes'::interval, NULL,                           0), -- wrong state
-			(5, 'errored', NOW(),                          NOW() - '50 minutes'::interval, 3), -- non-retryable (max attempts exceeded)
-			(6, 'queued',  NOW() - '20 minutes'::interval, NULL,                           0), -- oldest queued
-			(7, 'failed',  NOW(),                          NOW() - '60 minutes'::interval, 1)  -- wrong state
+			(5, 'queued',  NOW() - '20 minutes'::interval, NULL,                           0), -- oldest queued
+			(6, 'failed',  NOW(),                          NOW() - '60 minutes'::interval, 1)  -- wrong state
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
@@ -358,7 +357,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
-			(3, 'errored', NOW() - '6 minute'::interval, 'error', 5, NOW() - '4 minutes'::interval),
+			(3, 'failed',  NOW() - '6 minute'::interval, 'error', 5, NOW() - '4 minutes'::interval),
 			(4, 'queued',                          NULL,    NULL, 0, NOW() - '1 minutes'::interval)
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
