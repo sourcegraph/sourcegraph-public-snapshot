@@ -1,8 +1,21 @@
-/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/type';
-
 :root {
     --monospace-font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
 }
 
 h1 {
@@ -135,5 +148,42 @@ label.text-uppercase small,
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         padding-right: 0.5em;
         text-align: right;
+    }
+}
+
+hr {
+    margin-top: $hr-margin-y;
+    margin-bottom: $hr-margin-y;
+    border: 0;
+    border-top: 1px solid $hr-border-color;
+}
+
+mark,
+.mark {
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding: 0.2em;
+    background-color: var(--type-mark-bg);
+}
+
+.lead {
+    font-size: 1.09375rem;
+    font-weight: 300;
+}
+
+.list-unstyled {
+    padding-left: 0;
+    list-style: none;
+}
+
+.list-inline {
+    padding-left: 0;
+    list-style: none;
+}
+
+.list-inline-item {
+    display: inline-block;
+
+    &:not(:last-child) {
+        margin-right: 0.5rem;
     }
 }
