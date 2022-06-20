@@ -276,9 +276,9 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
-		return nil, err
-	}
+	//if err := r.checkLicense(); err != nil {
+	//	return nil, err
+	//}
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

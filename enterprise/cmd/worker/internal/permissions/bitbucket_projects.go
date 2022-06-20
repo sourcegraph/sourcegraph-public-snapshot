@@ -3,7 +3,10 @@ package permissions
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -82,7 +85,9 @@ type bitbucketProjectPermissionsHandler struct {
 // Handle implements the workerutil.Handler interface.
 func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	logger = logger.Scoped("bitbucketProjectPermissionsHandler", "handles jobs to apply explicit permissions to all repositories of a Bitbucket Project")
+	start := time.Now()
 	defer func() {
+		logger.Info("Handling stuff took:", log.Duration("time", time.Since(start)))
 		if err != nil {
 			logger.Error("bitbucketProjectPermissionsHandler.Handle", log.Error(err))
 		}
@@ -101,13 +106,26 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	}
 
 	// get repos from the Bitbucket project
-	client, err := h.getBitbucketClient(ctx, svc)
-	if err != nil {
-		return errors.Wrapf(err, "failed to build Bitbucket client for external service %d", svc.ID)
+	//client, err := h.getBitbucketClient(ctx, svc)
+	//if err != nil {
+	//	return errors.Wrapf(err, "failed to build Bitbucket client for external service %d", svc.ID)
+	//}
+	//repos, err := client.ProjectRepos(ctx, job.ProjectKey)
+	//if err != nil {
+	//	return errors.Wrapf(err, "failed to list repositories of Bitbucket Project %q", job.ProjectKey)
+	//}
+
+	repos1 := []int{14, 31, 41, 42, 55, 56, 58, 60, 73, 80, 82, 83, 86, 94, 95, 97, 100, 101,
+		//106, 112, 123, 128, 132, 149, 150, 152, 153, 159, 169, 170, 184, 186, 191, 193, 196, 207, 218, 227, 239, 247, 251, 256, 265, 271, 272, 282, 284, 285, 287, 288, 290, 292, 293, 295, 298, 305, 310,
+		//312, 326,
+		//333, 335, 339, 353, 358, 369, 371, 376, 383, 384, 385, 392, 401, 405, 408, 410, 412, 424, 433, 435, 436, 437, 438, 441, 442, 443, 445, 448, 449, 456, 459, 462, 465, 466, 473, 474, 476, 477, 481, 485, 488, 489, 492, 494, 495, 496, 497, 501, 502, 503, 504, 506, 512, 516, 520, 521, 528, 529, 538,
+		//405, 408, 410, 412, 424, 433, 435, 436, 437, 438, 441, 442, 443, 445, 448, 449, 456, 459, 462, 465, 466, 473, 474, 476, 477, 481, 485, 488, 489, 492, 494, 495, 496, 497, 501, 502, 503, 504, 506, 512, 516, 520, 521, 528, 529, 538, 551, 556, 557, 574, 585, 593, 600, 602, 603, 631, 641, 4485,
+		1488228,
 	}
-	repos, err := client.ProjectRepos(ctx, job.ProjectKey)
-	if err != nil {
-		return errors.Wrapf(err, "failed to list repositories of Bitbucket Project %q", job.ProjectKey)
+	logger.Info("Got this many repos:", log.Int("repos", len(repos1)))
+	repos := make([]*bitbucketserver.Repo, len(repos1))
+	for i, repo := range repos1 {
+		repos[i] = &bitbucketserver.Repo{ID: repo}
 	}
 
 	if job.Unrestricted {
@@ -123,7 +141,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", job.ProjectKey)
 	}
-
+	logger.Info("AFTER SETTING PERMS")
 	return nil
 }
 
@@ -157,16 +175,27 @@ func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Co
 		return repos[i].ID < repos[j].ID
 	})
 	repoIDs := make([]int32, len(repos))
+	var sb strings.Builder
 	for i, repo := range repos {
 		repoIDs[i] = int32(repo.ID)
+		if i < 10 {
+			sb.WriteString(strconv.Itoa(repo.ID))
+			sb.WriteString("; ")
+		}
 	}
 
-	logger.Info("Setting bitbucket repositories to unrestricted", log.String("project_key", projectKey))
+	logger.Info("Setting bitbucket repositories to unrestricted",
+		log.String("project_key", projectKey),
+		log.Int("repos count", len(repoIDs)),
+		log.String("first ten IDs", sb.String()),
+	)
 
 	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIDs, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions to unrestricted for Bitbucket Project %q", projectKey)
 	}
+
+	logger.Info("Set permissions successfully!")
 
 	return nil
 }
@@ -227,7 +256,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 
 func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
-	if _, err := h.db.Repos().Get(ctx, repoID); err != nil {
+	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
 	}
 
@@ -267,6 +296,17 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		return errors.Wrapf(err, "failed to set pending permissions for repo %d", repoID)
 	}
 
+	return nil
+}
+
+func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, repoID api.RepoID) (err error) {
+	var id int
+	if err := h.db.QueryRowContext(ctx, fmt.Sprintf("SELECT id FROM repo WHERE id = %d", repoID)).Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("repo not found")
+		}
+		return err
+	}
 	return nil
 }
 

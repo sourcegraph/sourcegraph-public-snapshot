@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -548,6 +549,8 @@ SET unrestricted = %s
 WHERE repo_id = ANY (%s::int[])
 `
 	q := sqlf.Sprintf(format, unrestricted, pq.Array(ids))
+
+	log.Scoped("permsStore", "permsStore").Info("query", log.String("query", q.Query(sqlf.PostgresBindVar)))
 
 	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
 }
