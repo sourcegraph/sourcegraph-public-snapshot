@@ -213,38 +213,22 @@ func TestUpsertLockfileGraph(t *testing.T) {
 		}
 
 		// Now check whether the direct dependency was inserted
-		q := sqlf.Sprintf(`
-	SELECT package_name
-	FROM codeintel_lockfile_references
-	WHERE ARRAY[id] @> (
-		SELECT codeintel_lockfile_reference_ids
-		FROM codeintel_lockfiles lf
-		JOIN repo r ON r.id = lf.repository_id
-		WHERE r.name = %s AND lf.commit_bytea = %s
-	);
-    `,
-			"foo",
-			dbutil.CommitBytea(commit),
-		)
-
-		root, ok, err := basestore.ScanFirstString(store.db.Query(ctx, q))
+		names, err := queryDirectDeps(t, ctx, store, "foo", commit)
 		if err != nil {
 			t.Fatalf("database query error: %s", err)
 		}
-		if !ok {
-			t.Fatalf("no roots saved on codeintel_lockfiles entry")
-		}
 
-		if have, want := root, packageA.PackageSyntax(); have != want {
-			t.Fatalf("wrong root. want=%s, have=%s", want, have)
+		wantNames := []string{packageA.PackageSyntax()}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
 		}
 
 		// Check that all packages have been inserted
-		names, err := basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
+		names, err = basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
 		if err != nil {
 			t.Fatalf("database query error: %s", err)
 		}
-		wantNames := []string{}
+		wantNames = []string{}
 		for _, pkg := range deps {
 			wantNames = append(wantNames, pkg.PackageSyntax())
 		}
@@ -254,8 +238,54 @@ func TestUpsertLockfileGraph(t *testing.T) {
 	})
 
 	t.Run("without graph", func(t *testing.T) {
-		t.Skip("TODO: we need to write a test for this")
+		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
+		nilGraph := shared.SerializeDependencyGraph(nil)
+		commit := "d34df00d"
+
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, deps, nilGraph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		// Check that all dependencies have been inserted as direct dependencies
+		names, err := queryDirectDeps(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+
+		wantNames := make([]string, 0, len(deps))
+		for _, d := range deps {
+			wantNames = append(wantNames, d.PackageSyntax())
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected direct dependencies (-want +got):\n%s", diff)
+		}
 	})
+}
+
+func queryDirectDeps(t *testing.T, ctx context.Context, store *store, repoName, commit string) ([]string, error) {
+	t.Helper()
+
+	q := sqlf.Sprintf(`
+	SELECT package_name
+	FROM codeintel_lockfile_references
+	WHERE (
+		SELECT codeintel_lockfile_reference_ids
+		FROM codeintel_lockfiles lf
+		JOIN repo r ON r.id = lf.repository_id
+		WHERE r.name = %s AND lf.commit_bytea = %s
+	) @> ARRAY[id];
+    `,
+		repoName,
+		dbutil.CommitBytea(commit),
+	)
+
+	names, err := basestore.ScanStrings(store.db.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(names, func(i, j int) bool { return names[i] < names[j] })
+	return names, nil
 }
 
 func TestLockfileDependencies(t *testing.T) {

@@ -70,11 +70,9 @@ func SerializePackageDependency(dep reposource.PackageDependency) PackageDepende
 	}
 }
 
-// TODO:
 type DependencyGraph interface {
 	Roots() []PackageDependency
 	AllEdges() [][]PackageDependency
-
 	Empty() bool
 }
 
@@ -94,13 +92,14 @@ func (dg DependencyGraphLiteral) Roots() []PackageDependency      { return dg.Ro
 func (dg DependencyGraphLiteral) Empty() bool                     { return len(dg.RootPkgs) == 0 }
 
 func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph {
+	if graph == nil {
+		return nil
+	}
+
 	var (
 		edges [][]PackageDependency
 		roots []PackageDependency
 	)
-	if graph == nil {
-		return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}
-	}
 
 	for _, edge := range graph.AllEdges() {
 		edges = append(edges, []PackageDependency{

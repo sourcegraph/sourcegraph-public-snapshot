@@ -411,7 +411,7 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 
 	// If we don't have a graph, we insert all of the dependencies as direct
 	// dependencies and return.
-	if graph.Empty() {
+	if graph == nil {
 		idsArray := pq.Array(ids)
 		return tx.db.Exec(ctx, sqlf.Sprintf(
 			insertLockfilesQuery,
