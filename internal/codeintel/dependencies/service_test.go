@@ -345,7 +345,7 @@ func TestDependents(t *testing.T) {
 	}
 }
 
-func TestResolveDependencies(t *testing.T) {
+func TestIndexLockfiles(t *testing.T) {
 	// Ensure lockfile indexing is enabled
 	oldLockfileIndexingEnabled := lockfileIndexingEnabled
 	lockfileIndexingEnabled = func() bool { return true }
@@ -410,7 +410,7 @@ func TestResolveDependencies(t *testing.T) {
 		},
 	}
 
-	err := service.ResolveDependencies(ctx, repoRevs)
+	err := service.IndexLockfiles(ctx, repoRevs)
 	if err != nil {
 		t.Fatalf("unexpected error querying dependencies: %s", err)
 	}

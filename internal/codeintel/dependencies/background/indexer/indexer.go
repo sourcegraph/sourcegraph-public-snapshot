@@ -42,7 +42,6 @@ func (i *indexer) Handle(ctx context.Context) error {
 		repositoryMatchLimit = &val
 	}
 
-	// TODO: this needs to be
 	repositories, err := i.dbStore.SelectRepositoriesForLockfileIndexScan(
 		ctx,
 		"last_lockfile_scan",
@@ -60,8 +59,6 @@ func (i *indexer) Handle(ctx context.Context) error {
 	}
 
 	now := timeutil.Now()
-
-	fmt.Printf("LOCKFILE INDEXER: found %d repositories that need indexing", len(repositories))
 
 	for _, repositoryID := range repositories {
 		if repositoryErr := i.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
@@ -115,8 +112,7 @@ func (i *indexer) handleRepository(
 		}
 		repoRevs := map[api.RepoName]types.RevSpecSet{api.RepoName(repoName): revs}
 
-		fmt.Printf("LOCKFILE INDEXER: found %d revs in repo %s that are matched by lockfile indexing policy", len(revs), repoName)
-		if err := i.dependenciesSvc.ResolveDependencies(ctx, repoRevs); err != nil {
+		if err := i.dependenciesSvc.IndexLockfiles(ctx, repoRevs); err != nil {
 			return err
 		}
 

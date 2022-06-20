@@ -360,12 +360,12 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	return g.Wait()
 }
 
-// ResolveDependencies resolves the lockfile dependencies for a set of repository and revsisions
+// IndexLockfiles resolves the lockfile dependencies for a set of repository and revsisions
 // and writes them the database.
 //
 // This method is expected to be used only from background routines controlling lockfile indexing
 // scheduling. Additional users may impact the performance profile of the application as a whole.
-func (s *Service) ResolveDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (err error) {
+func (s *Service) IndexLockfiles(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (err error) {
 	if !lockfileIndexingEnabled() {
 		return nil
 	}

@@ -310,7 +310,7 @@ func TestLockfileDependencies(t *testing.T) {
 
 	depsAtCommit := map[string]struct {
 		list  []shared.PackageDependency
-		graph shared.DependencyGraphLiteral
+		graph shared.DependencyGraph
 	}{
 		"cafebabe": {
 			list: []shared.PackageDependency{packageA, packageB, packageC},
@@ -345,7 +345,10 @@ func TestLockfileDependencies(t *testing.T) {
 				Edges:    [][]shared.PackageDependency{},
 			},
 		},
-		"deadd00d": {list: nil, graph: shared.DependencyGraphLiteral{}},
+		// no list, no graph
+		"deadd00d": {list: nil, graph: nil},
+		// list, but no graph
+		"deadd002": {list: []shared.PackageDependency{packageA, packageB}, graph: nil},
 	}
 
 	for commit, deps := range depsAtCommit {
@@ -365,8 +368,9 @@ func TestLockfileDependencies(t *testing.T) {
 		// Query direct dependencies
 		for commit, expectedDeps := range depsAtCommit {
 			directDeps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
-				RepoName: "foo",
-				Commit:   commit,
+				RepoName:          "foo",
+				Commit:            commit,
+				IncludeTransitive: false,
 			})
 			if err != nil {
 				t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
@@ -376,10 +380,19 @@ func TestLockfileDependencies(t *testing.T) {
 			}
 			sort.Slice(directDeps, func(i, j int) bool { return directDeps[i].RepoName() < directDeps[j].RepoName() })
 
-			if a, b := len(expectedDeps.graph.RootPkgs), len(directDeps); a != b {
+			var wantDirectDeps []shared.PackageDependency
+			if expectedDeps.graph == nil {
+				// If we don't have a graph we expect all deps to be direct deps
+				wantDirectDeps = expectedDeps.list
+			} else {
+				graph := expectedDeps.graph.(shared.DependencyGraphLiteral)
+				wantDirectDeps = graph.RootPkgs
+			}
+
+			if a, b := len(wantDirectDeps), len(directDeps); a != b {
 				t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
 			}
-			if diff := cmp.Diff(expectedDeps.graph.RootPkgs, directDeps); diff != "" {
+			if diff := cmp.Diff(wantDirectDeps, directDeps); diff != "" {
 				t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 			}
 		}
