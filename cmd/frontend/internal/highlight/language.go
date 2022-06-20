@@ -73,6 +73,7 @@ var engineConfig = syntaxEngineConfig{
 var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineSyntect,
 	Overrides: map[string]EngineType{
+		"go":      EngineTreeSitter,
 		"c#":      EngineTreeSitter,
 		"jsonnet": EngineTreeSitter,
 		"typescript": EngineTreeSitter,

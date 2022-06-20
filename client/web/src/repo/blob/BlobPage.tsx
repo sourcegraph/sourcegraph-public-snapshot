@@ -136,7 +136,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
     const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
         void,
-        (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
+        (BlobInfo & { richHTML: string; aborted: boolean; lsif: string }) | null | ErrorLike
     >(
         useCallback(
             (clicks: Observable<void>) =>
@@ -156,12 +156,15 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             return blob
                         }
 
+                        let lsif = '{}'
+
                         // Replace html with lsif generated HTML, if available
                         if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
+                            lsif = blob.highlight.lsif
                             blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
                         }
 
-                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
+                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean; lsif: string } = {
                             content: blob.content,
                             html: blob.highlight.html,
                             repoName,
@@ -172,6 +175,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
+                            lsif,
                         }
                         return blobInfo
                     }),
@@ -378,6 +382,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     location={props.location}
                     disableStatusBar={false}
                     disableDecorations={false}
+                    lsif={blobInfoOrError.lsif}
                 />
             )}
         </>
