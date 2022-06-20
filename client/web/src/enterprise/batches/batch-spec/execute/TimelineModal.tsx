@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -53,49 +52,46 @@ interface ExecutionTimelineProps {
 
     /** For testing only. */
     now?: () => Date
-    expandStage?: string
+    expandedStage?: string
 }
 
 const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<ExecutionTimelineProps>> = ({
     node,
     className,
     now,
-    expandStage,
+    expandedStage,
 }) => {
     const stages = useMemo(
-        () => [
-            { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },
-            {
-                icon: <CheckIcon />,
-                text: 'Began processing',
-                date: node.startedAt,
-                className: 'bg-success',
-            },
+        () =>
+            [
+                { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },
+                {
+                    icon: <CheckIcon />,
+                    text: 'Began processing',
+                    date: node.startedAt,
+                    className: 'bg-success',
+                },
 
-            setupStage(node, expandStage === 'setup', now),
-            batchPreviewStage(node, expandStage === 'srcPreview', now),
-            teardownStage(node, expandStage === 'teardown', now),
+                setupStage(node, expandedStage === 'setup', now),
+                batchPreviewStage(node, expandedStage === 'srcPreview', now),
+                teardownStage(node, expandedStage === 'teardown', now),
 
-            node.state === BatchSpecWorkspaceState.COMPLETED
-                ? { icon: <CheckIcon />, text: 'Finished', date: node.finishedAt, className: 'bg-success' }
-                : node.state === BatchSpecWorkspaceState.CANCELED
-                ? { icon: <AlertCircleIcon />, text: 'Canceled', date: node.finishedAt, className: 'bg-secondary' }
-                : { icon: <AlertCircleIcon />, text: 'Failed', date: node.finishedAt, className: 'bg-danger' },
-        ],
-        [expandStage, node, now]
+                node.state === BatchSpecWorkspaceState.COMPLETED
+                    ? { icon: <CheckIcon />, text: 'Finished', date: node.finishedAt, className: 'bg-success' }
+                    : node.state === BatchSpecWorkspaceState.CANCELED
+                    ? { icon: <AlertCircleIcon />, text: 'Canceled', date: node.finishedAt, className: 'bg-secondary' }
+                    : { icon: <AlertCircleIcon />, text: 'Failed', date: node.finishedAt, className: 'bg-danger' },
+            ]
+                .filter(isDefined)
+                .filter<TimelineStage>((stage): stage is TimelineStage => stage.date !== null),
+        [expandedStage, node, now]
     )
-    return (
-        <Timeline
-            stages={stages.filter(isDefined)}
-            now={now}
-            className={classNames(className, styles.timelineMargin)}
-        />
-    )
+    return <Timeline stages={stages} now={now} className={className} />
 }
 
 const setupStage = (
     execution: VisibleBatchSpecWorkspaceFields,
-    expand: boolean,
+    expandedByDefault: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
     if (execution.stages === null) {
@@ -108,13 +104,13 @@ const setupStage = (
               details: execution.stages.setup.map(logEntry => (
                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
               )),
-              ...genericStage(execution.stages.setup, expand),
+              ...genericStage(execution.stages.setup, expandedByDefault),
           }
 }
 
 const batchPreviewStage = (
     execution: VisibleBatchSpecWorkspaceFields,
-    expand: boolean,
+    expandedByDefault: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
     if (execution.stages === null) {
@@ -127,13 +123,13 @@ const batchPreviewStage = (
               details: (
                   <ExecutionLogEntry key={execution.stages.srcExec.key} logEntry={execution.stages.srcExec} now={now} />
               ),
-              ...genericStage(execution.stages.srcExec, expand),
+              ...genericStage(execution.stages.srcExec, expandedByDefault),
           }
 }
 
 const teardownStage = (
     execution: VisibleBatchSpecWorkspaceFields,
-    expand: boolean,
+    expandedByDefault: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
     if (execution.stages === null) {
@@ -146,14 +142,14 @@ const teardownStage = (
               details: execution.stages.teardown.map(logEntry => (
                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
               )),
-              ...genericStage(execution.stages.teardown, expand),
+              ...genericStage(execution.stages.teardown, expandedByDefault),
           }
 }
 
 const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[],
-    expand: boolean
-): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
+    expandedByDefault: boolean
+): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expandedByDefault'> => {
     const finished = Array.isArray(value)
         ? value.every(logEntry => logEntry.exitCode !== null)
         : value.exitCode !== null
@@ -163,6 +159,6 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
         date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
-        expanded: expand || !(success || !finished),
+        expandedByDefault: expandedByDefault || !(success || !finished),
     }
 }

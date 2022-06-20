@@ -6,11 +6,11 @@ import { Icon } from './Icon'
 
 describe('Icon', () => {
     it('renders a simple inline icon correctly', () => {
-        const { asFragment } = render(<Icon as={SourcegraphIcon} />)
+        const { asFragment } = render(<Icon as={SourcegraphIcon} aria-hidden={true} />)
         expect(asFragment()).toMatchSnapshot()
     })
     it('renders a medium icon correctly', () => {
-        const { asFragment } = render(<Icon as={SourcegraphIcon} size="md" />)
+        const { asFragment } = render(<Icon as={SourcegraphIcon} size="md" aria-hidden={true} />)
         expect(asFragment()).toMatchSnapshot()
     })
 })

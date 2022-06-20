@@ -87,7 +87,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <div
                   class="ml-1 flex-shrink-past-contents text-truncate"
-                  data-state="closed"
                 >
                   <a
                     class="anchorLink"
@@ -340,7 +339,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <div
                   class="ml-1 flex-shrink-past-contents text-truncate"
-                  data-state="closed"
                 >
                   <a
                     class="anchorLink"
@@ -549,7 +547,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <div
                   class="ml-1 flex-shrink-past-contents text-truncate"
-                  data-state="closed"
                 >
                   <a
                     class="anchorLink"

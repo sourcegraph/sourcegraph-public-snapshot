@@ -70,6 +70,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import {
     AbsoluteRepoFile,
     FileSpec,
@@ -785,12 +786,17 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
+    const logEventOnCopy = useCallback(() => {
+        props.telemetryService.log(...codeCopiedEvent('blob'))
+    }, [props.telemetryService])
+
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
+                    onCopy={logEventOnCopy}
                     dangerouslySetInnerHTML={{
                         __html: blobInfo.html,
                     }}

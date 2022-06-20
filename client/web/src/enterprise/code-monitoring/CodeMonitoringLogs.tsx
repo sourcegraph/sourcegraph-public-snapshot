@@ -148,8 +148,8 @@ export const CodeMonitoringLogs: React.FunctionComponent<
             <Card className="p-3">
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList className={classNames(styles.grid, 'mb-0')}>
-                        {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
+                    {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
+                    <ConnectionList className={classNames('mb-0')}>
                         {monitors.map(monitor => (
                             <MonitorLogNode key={monitor.id} monitor={monitor} now={now} startOpen={_testStartOpen} />
                         ))}

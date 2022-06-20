@@ -155,6 +155,7 @@ Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
+    "batch_spec_workspace_execution_jobs_last_dequeue" btree (user_id, started_at DESC)
     "batch_spec_workspace_execution_jobs_state" btree (state)
     "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:
@@ -1203,10 +1204,12 @@ Indexes:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
+    "finished_at_insights_query_runner_jobs_idx" btree (finished_at)
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_processable_priority_id" btree (priority, id) WHERE state = 'queued'::text OR state = 'errored'::text
     "insights_query_runner_jobs_state_btree" btree (state)
+    "process_after_insights_query_runner_jobs_idx" btree (process_after)
 Referenced by:
     TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 

@@ -80,6 +80,43 @@ Example user flow state transitions:
 - User clicks on a search result, which opens a file -> state === `remote-browsing`
 - User copies some code, then focuses an editor for a local file -> state === `idle`
 
+## File Structure
+
+Below is a quick overview of the Sourcegraph extension file structure. It does not include all the files and folders.
+
+```
+client/vscode
+├── images
+├── scripts                       // Command line scripts, for example, script to release and publish the extension
+├── src                           // Extension source code
+│   └── extension.ts              // Extension entry file
+│   └── backend                   // All graphQL queries
+│   └── code-intel                // Build the extension host that processes code-intel data
+│   └── common                    // Commonly assets that can be shared among different contexts
+│   └── commands                  // Build and register commands
+│       └── browserActionsNode    // Browser action commands when running as a regular extension where Node.js is available
+│       └── browserActionsWeb     // Browser action commands when running as a web extension where Node.js is not available
+│   └── file-system               // Build and register the custom file system
+│   └── settings                  // Extension settings and configurations
+│   └── webview                   // Components to build the search panel and sidebars
+│       └── comlink               // Handle communications between contexts
+│       └── platform              // Platform context for the webview
+│       └── search-panel          // UI for the homepage and search panel
+│           └── alias             // Alias files for Web extension. See README file in this directory for details
+│       └── sidebars              // UI for all the sidebars
+│       └── theming               // Styling the webview using the predefined VS Code themes
+│       └── commands.ts           // Commands to build the webview views and panel
+├── tests                         // Extension test code
+├── .gitignore                    // Ignore build output and node_modules
+├── .vscodeignore                 // Ignore build output and node_modules
+├── CHANGELOG.md                  // An ordered list of changes and fixes
+├── CONTRIBUTING.md               // General guide for developers and contributors
+├── package.json                  // Extension manifest
+├── README.md                     // General information about the extension
+├── tsconfig.json                 // TypeScript configuration
+├── webpackconfig.js              // Webpack configuration
+```
+
 ## Development
 
 ### Build and Run
@@ -156,51 +193,23 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 
 The release process for the VS Code Extension for Sourcegraph is currently automated.
 
+#### Prerequisite
+
+- Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+
 #### Release Steps
 
-1. Make sure the main branch is up-to-date.
-2. Make a commit in the following format: `$RELEASE_TYPE release vsce`
-   - Replace $RELEASE_TYPE with one of the supporting types: `Major`, `minor`, and `patch`
-3. Run `git push origin main:vsce/release` to trigger the build pipeline for releasing the extension.
-   - The extension is built using the code from the release branch.
-   - The package name and changelog will also be updated automatically.
-   - The extension is published with the [auto-incremented](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version) version number by running the `vsce publish $RELEASE_TYPE` command provided by the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
-4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
-5. Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
+1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for release
+2. Run `yarn --cwd client/vscode release:$RELEASE_TYPE` in the root directory
+   - $RELEASE_TYPE: major, minor, patch, pre
+   - This command will:
+     - Update the package.json with the next version number
+     - Update the changelog format by listing everything under `Unreleased` to the updated version number
+     - Make a commit for the release and push to the current branch
+3. Merge the current branch into main
+4. Once the main branch has the updated version number and changelog, run `git push origin main:vsce/release`
+   - This will trigger the build pipeline for publishing the extension using the `yarn release` command
+   - The extension will be published with the correct package name via the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+5. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
 
-#### File Structure
-
-Below is a quick overview of the Sourcegraph extension file structure. It does not include all the files and folders.
-
-```
-client/vscode
-├── images
-├── scripts                       // Command line scripts, for example, script to release and publish the extension
-├── src                           // Extension source code
-│   └── extension.ts              // Extension entry file
-│   └── backend                   // All graphQL queries
-│   └── code-intel                // Build the extension host that processes code-intel data
-│   └── common                    // Commonly assets that can be shared among different contexts
-│   └── commands                  // Build and register commands
-│       └── browserActionsNode    // Browser action commands when running as a regular extension where Node.js is available
-│       └── browserActionsWeb     // Browser action commands when running as a web extension where Node.js is not available
-│   └── file-system               // Build and register the custom file system
-│   └── settings                  // Extension settings and configurations
-│   └── webview                   // Components to build the search panel and sidebars
-│       └── comlink               // Handle communications between contexts
-│       └── platform              // Platform context for the webview
-│       └── search-panel          // UI for the homepage and search panel
-│           └── alias             // Alias files for Web extension. See README file in this directory for details
-│       └── sidebars              // UI for all the sidebars
-│       └── theming               // Styling the webview using the predefined VS Code themes
-│       └── commands.ts           // Commands to build the webview views and panel
-├── tests                         // Extension test code
-├── .gitignore                    // Ignore build output and node_modules
-├── .vscodeignore                 // Ignore build output and node_modules
-├── CHANGELOG.md                  // An ordered list of changes and fixes
-├── CONTRIBUTING.md               // General guide for developers and contributors
-├── package.json                  // Extension manifest
-├── README.md                     // General information about the extension
-├── tsconfig.json                 // TypeScript configuration
-├── webpackconfig.js              // Webpack configuration
-```
+Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)

@@ -2508,6 +2508,78 @@ changesetTemplate:
 			}
 		})
 	})
+
+	t.Run("UpsertEmptyBatchChange", func(t *testing.T) {
+		t.Run("creates new batch change if it is non-existent", func(t *testing.T) {
+			name := "random-bc-name"
+
+			// verify that the batch change doesn't exist
+			_, err := s.GetBatchChange(ctx, store.GetBatchChangeOpts{
+				Name:            name,
+				NamespaceUserID: user.ID,
+			})
+
+			if err != store.ErrNoResults {
+				t.Fatalf("batch change %s should not exist", name)
+			}
+
+			batchChange, err := svc.UpsertEmptyBatchChange(ctx, UpsertEmptyBatchChangeOpts{
+				Name:            name,
+				NamespaceUserID: user.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if batchChange.ID == 0 {
+				t.Fatalf("BatchChange ID is 0")
+			}
+
+			if have, want := batchChange.NamespaceUserID, user.ID; have != want {
+				t.Fatalf("UserID is %d, want %d", have, want)
+			}
+		})
+
+		t.Run("returns existing Batch Change", func(t *testing.T) {
+			spec := &btypes.BatchSpec{
+				UserID:          user.ID,
+				NamespaceUserID: user.ID,
+				NamespaceOrgID:  0,
+			}
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			bc := testBatchChange(user.ID, spec)
+			if err := s.CreateBatchChange(ctx, bc); err != nil {
+				t.Fatal(err)
+			}
+
+			haveBatchChange, err := svc.UpsertEmptyBatchChange(ctx, UpsertEmptyBatchChangeOpts{
+				Name:            bc.Name,
+				NamespaceUserID: user.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if haveBatchChange == nil {
+				t.Fatal("expected to have matching batch change, but got nil")
+			}
+
+			if haveBatchChange.ID == 0 {
+				t.Fatal("BatchChange ID is 0")
+			}
+
+			if haveBatchChange.ID != bc.ID {
+				t.Fatal("expected same ID for batch change")
+			}
+
+			if haveBatchChange.BatchSpecID == bc.BatchSpecID {
+				t.Fatal("expected different spec ID for batch change")
+			}
+		})
+	})
 }
 
 func createJob(t *testing.T, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {

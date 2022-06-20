@@ -5,7 +5,7 @@ import { useHistory } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+// import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H4, Alert } from '@sourcegraph/wildcard'
 
@@ -18,7 +18,7 @@ import {
     GetBatchChangeToEditVariables,
     Scalars,
 } from '../../../../graphql-operations'
-import { BatchSpecDownloadLink } from '../../BatchSpec'
+// import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
@@ -155,10 +155,13 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
 
     const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState(false)
     const [isRunServerSideModalOpen, setIsRunServerSideModalOpen] = useState(false)
-    const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
-        'batches.downloadSpecModalDismissed',
-        false
-    )
+    // NOTE: Uncomment these lines to restore "Don't show this again" functionality for
+    // "Download spec for src-cli" modal.
+    // const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
+    //     'batches.downloadSpecModalDismissed',
+    //     false
+    // )
+
     /**
      * For managed instances we want to hide the `run server side` button by default. To do this we make use of a
      * feature flag to ensure Managed Instances.
@@ -173,6 +176,8 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 options={editor.executionOptions}
                 onChangeOptions={editor.setExecutionOptions}
             />
+            {/* NOTE: Uncomment these lines to restore "Don't show this again" functionality
+            for "Download spec for src-cli" modal.
             {downloadSpecModalDismissed ? (
                 <BatchSpecDownloadLink
                     name={batchChange.name}
@@ -182,16 +187,18 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 >
                     or download for src-cli
                 </BatchSpecDownloadLink>
-            ) : (
-                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                    or download for src-cli
-                </Button>
-            )}
+            ) : ( */}
+            <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                or download for src-cli
+            </Button>
+            {/* )} */}
         </>
     )
 
     const noActiveExecutorsActionButtons = (
         <>
+            {/* NOTE: Uncomment these lines to restore "Don't show this again" functionality
+            for "Download spec for src-cli" modal.
             {downloadSpecModalDismissed ? (
                 <BatchSpecDownloadLink
                     name={batchChange.name}
@@ -202,11 +209,11 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 >
                     Download for src-cli
                 </BatchSpecDownloadLink>
-            ) : (
-                <Button className="mb-2" variant="primary" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                    Download for src-cli
-                </Button>
-            )}
+            ) : ( */}
+            <Button className="mb-2" variant="primary" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                Download for src-cli
+            </Button>
+            {/* )} */}
 
             {!isRunBatchSpecButtonHidden && (
                 <Button
@@ -278,12 +285,14 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 </div>
             )}
 
-            {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
+            {isDownloadSpecModalOpen ? (
                 <DownloadSpecModal
                     name={batchChange.name}
                     originalInput={editor.code}
                     isLightTheme={isLightTheme}
-                    setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
+                    // NOTE: Uncomment this line to restore "Don't show this again"
+                    // functionality for "Download spec for src-cli" modal.
+                    // setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                     setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
                 />
             ) : null}
