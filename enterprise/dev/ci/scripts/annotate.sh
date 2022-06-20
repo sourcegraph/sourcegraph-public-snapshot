@@ -72,11 +72,13 @@ while IFS= read -r line; do
   fi
 done
 
+
 if [ -n "$SECTION" ]; then
   printf "**%s**\n" "$SECTION" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
 
 if [ "$MARKDOWN" = true ]; then
+  echo -e "<!--${BODY}-->"
   printf "%s\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 else
   printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
