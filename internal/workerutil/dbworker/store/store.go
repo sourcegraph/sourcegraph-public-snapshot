@@ -376,7 +376,6 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool) (_ int,
 		queuedCountQuery,
 		quote(s.options.TableName),
 		sqlf.Join(stateQueries, ","),
-		s.options.MaxNumRetries,
 	)))
 
 	return count, err
@@ -521,7 +520,6 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		retryAfter,
 		now,
 		retryAfter,
-		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
