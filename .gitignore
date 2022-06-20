@@ -177,3 +177,6 @@ go.work.sum
 
 # binary
 /sg
+
+# sg --feedback
+.FEEDBACK_MSG

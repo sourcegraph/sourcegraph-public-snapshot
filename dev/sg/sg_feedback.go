@@ -55,7 +55,7 @@ var feedbackCommand = &cli.Command{
 
 func feedbackExec(ctx *cli.Context) error {
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Gathering feedback for sg %s ...", ctx.Command.FullName()))
-	title, body, err := gatherFeedback(std.Out, os.Stdin)
+	title, body, err := gatherFeedback(ctx, std.Out, os.Stdin)
 	if err != nil {
 		return err
 	}
@@ -67,21 +67,23 @@ func feedbackExec(ctx *cli.Context) error {
 	return nil
 }
 
-func gatherFeedback(out *std.Output, in io.Reader) (string, string, error) {
-	reader := bufio.NewReader(in)
-	out.Promptf("What is the title of your feedback ?\n")
-	title, err := reader.ReadString('\n')
-	if err != nil {
-		return "", "", err
-	}
-
+func gatherFeedback(ctx *cli.Context, out *std.Output, in io.Reader) (string, string, error) {
 	out.Promptf("Write your feedback below and press <CTRL+D> when you're done.\n")
 	body, err := io.ReadAll(in)
 	if err != nil && err != io.EOF {
 		return "", "", err
 	}
 
-	return strings.TrimSpace(title), strings.TrimSpace(string(body)), nil
+	out.Promptf("The title of your feedback is going to be \"%s\". Anything else you want to add ?\n", ctx.Command.FullName())
+	reader := bufio.NewReader(in)
+	userTitle, err := reader.ReadString('\n')
+	if err != nil {
+		return "", "", err
+	}
+
+	title := "sg " + ctx.Command.FullName() + " - " + strings.TrimSpace(userTitle)
+
+	return title, strings.TrimSpace(string(body)), nil
 }
 
 func addSGInformation(ctx *cli.Context, body string) string {
