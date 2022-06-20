@@ -38,14 +38,14 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 		for _, j := range erroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(j, nil)
+				_, err := addCodeMonitorHook(logtest.Scoped(t), j, nil)
 				require.Error(t, err)
 			})
 		}
 	})
 
 	t.Run("error on multiple commit search jobs", func(t *testing.T) {
-		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.SearchJob{}, &commit.SearchJob{}), nil)
+		_, err := addCodeMonitorHook(logtest.Scoped(t), jobutil.NewAndJob(&commit.SearchJob{}, &commit.SearchJob{}), nil)
 		require.Error(t, err)
 	})
 
@@ -58,7 +58,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 		for _, j := range nonErroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(j, nil)
+				_, err := addCodeMonitorHook(logtest.Scoped(t), j, nil)
 				require.NoError(t, err)
 			})
 		}
@@ -78,7 +78,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			}
 			j, err := jobutil.NewPlanJob(log, inputs, plan)
 			require.NoError(t, err)
-			addCodeMonitorHook(j, nil)
+			addCodeMonitorHook(log, j, nil)
 		}
 
 		queries := []string{

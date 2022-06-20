@@ -156,7 +156,7 @@ func Search(log slog.Logger, ctx context.Context, db database.DB, query string, 
 				}
 			}
 		}
-		planJob, err = addCodeMonitorHook(planJob, hook)
+		planJob, err = addCodeMonitorHook(log, planJob, hook)
 		if err != nil {
 			return nil, errcode.MakeNonRetryable(err)
 		}
@@ -206,7 +206,7 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
 
-	planJob, err = addCodeMonitorHook(planJob, hook)
+	planJob, err = addCodeMonitorHook(log, planJob, hook)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 	// HACK(camdencheek): limit the concurrency of the commit search job
 	// because the db passed into this function might actually be a transaction
 	// and transactions cannot be used concurrently.
-	planJob = limitConcurrency(planJob)
+	planJob = limitConcurrency(log, planJob)
 
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
@@ -222,8 +222,8 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
 
-func limitConcurrency(in job.Job) job.Job {
-	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
+func limitConcurrency(log slog.Logger, in job.Job) job.Job {
+	return jobutil.MapAtom(log, in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.SearchJob:
 			jobCopy := *typedAtom
@@ -236,9 +236,9 @@ func limitConcurrency(in job.Job) job.Job {
 
 }
 
-func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
+func addCodeMonitorHook(log slog.Logger, in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0
-	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
+	return jobutil.MapAtom(log, in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.SearchJob:
 			commitSearchJobCount++
