@@ -39,7 +39,7 @@ export type IconProps = HiddenIconProps | ScreenReaderIconProps
 export const Icon = React.forwardRef(({ children, className, size, ...props }, reference) => {
     const iconStyle = classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)
 
-    if ('svgPath' in props && props.svgPath) {
+    if (props.svgPath) {
         const { svgPath, 'aria-label': ariaLabel, ...attributes } = props
 
         return (
