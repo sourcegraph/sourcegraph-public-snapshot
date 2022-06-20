@@ -1499,66 +1499,6 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	})
 }
 
-func TestHead(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	client := NewClient(database.NewMockDB())
-	t.Run("basic", func(t *testing.T) {
-		gitCommands := []string{
-			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		}
-		repo := MakeGitRepository(t, gitCommands...)
-		ctx := context.Background()
-
-		head, exists, err := client.Head(ctx, repo, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wantHead := "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"
-		if head != wantHead {
-			t.Fatalf("Want %q, got %q", wantHead, head)
-		}
-		if !exists {
-			t.Fatal("Should exist")
-		}
-	})
-
-	t.Run("with sub-repo permissions", func(t *testing.T) {
-		gitCommands := []string{
-			"touch file",
-			"git add file",
-			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		}
-		repo := MakeGitRepository(t, gitCommands...)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
-		})
-		checker := getTestSubRepoPermsChecker("file")
-		// call Head() when user doesn't have access to view the commit
-		_, exists, err := client.Head(ctx, repo, checker)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if exists {
-			t.Fatalf("exists should be false since the user doesn't have access to view the commit")
-		}
-		readAllChecker := getTestSubRepoPermsChecker()
-		// call Head() when user has access to view the commit; should return expected commit
-		head, exists, err := client.Head(ctx, repo, readAllChecker)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wantHead := "46619ad353dbe4ed4108ebde9aa59ef676994a0b"
-		if head != wantHead {
-			t.Fatalf("Want %q, got %q", wantHead, head)
-		}
-		if !exists {
-			t.Fatal("Should exist")
-		}
-	})
-}
-
 func TestCommitExists(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
