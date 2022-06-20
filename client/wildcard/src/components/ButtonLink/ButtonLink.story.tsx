@@ -8,7 +8,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { ButtonLink, H1, H2, Text } from '..'
 import { BUTTON_VARIANTS } from '../Button/constants'
 import { Grid } from '../Grid'
-import { Icon } from '../deprecated/Icon'
+import { Icon } from '../Icon'
 
 const Config: Meta = {
     title: 'wildcard/ButtonLink',

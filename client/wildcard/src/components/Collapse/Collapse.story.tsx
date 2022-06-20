@@ -10,7 +10,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { H2 } from '..'
 import { Button } from '../Button'
 import { Input } from '../Form'
-import { Icon } from '../deprecated/Icon'
+import { Icon } from '../Icon'
 
 import { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 

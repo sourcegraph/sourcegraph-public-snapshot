@@ -1,18 +1,27 @@
-import React, { ComponentType } from 'react'
+import React, { AriaRole, ComponentType } from 'react'
 
 import MDIIcon from '@mdi/react'
+import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../..'
 
-import { IconStyle, IconStyleProps } from './IconStyle'
+import { ICON_SIZES } from './constants'
 
-interface BaseIconProps extends IconStyleProps, Omit<React.ComponentProps<typeof MDIIcon>, 'size' | 'path' | 'color'> {
+import styles from './Icon.module.scss'
+
+interface BaseIconProps extends Omit<React.ComponentProps<typeof MDIIcon>, 'size' | 'path' | 'color'> {
     /**
      * Provide a custom `svgPath` to build an SVG.
      *
      * If using a Material Design icon, simply import the path from '@mdj/js'.
      */
     svgPath?: string
+    /**
+     * The variant style of the icon. defaults to 'sm'
+     */
+    size?: typeof ICON_SIZES[number]
+    className?: string
+    role?: AriaRole
 }
 
 interface ScreenReaderIconProps extends BaseIconProps {
@@ -26,24 +35,26 @@ interface HiddenIconProps extends BaseIconProps {
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
 // eslint-disable-next-line react/display-name
-export const IconV2 = React.forwardRef(({ children, className, ...props }, reference) => {
+export const Icon = React.forwardRef(({ children, className, size, ...props }, reference) => {
+    const iconStyle = classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)
+
     if ('svgPath' in props && props.svgPath) {
-        const { svgPath, ...attributes } = props
+        const { svgPath, 'aria-label': ariaLabel, ...attributes } = props
 
         return (
-            <IconStyle
-                as={MDIIcon}
+            <MDIIcon
                 ref={reference as React.RefObject<SVGSVGElement>}
                 path={svgPath}
-                className={className}
+                className={iconStyle}
+                title={ariaLabel}
                 {...attributes}
             />
         )
     }
 
-    const { as: IconComponent = 'svg', ...attributes } = props
+    const { as: IconComponent = 'svg', role = 'img', ...attributes } = props
 
-    return <IconStyle as={IconComponent} ref={reference} className={className} {...attributes} />
+    return <IconComponent ref={reference} className={iconStyle} role={role} {...attributes} />
 }) as ForwardReferenceComponent<ComponentType | 'svg', IconProps>
 
-IconV2.displayName = 'IconV2'
+Icon.displayName = 'Icon'

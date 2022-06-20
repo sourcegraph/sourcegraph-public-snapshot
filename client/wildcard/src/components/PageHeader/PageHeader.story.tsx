@@ -8,7 +8,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
-import { Icon } from '../deprecated/Icon'
+import { Icon } from '../Icon'
 import { Link } from '../Link'
 
 import { PageHeader } from './PageHeader'

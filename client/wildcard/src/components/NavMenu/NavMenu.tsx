@@ -5,7 +5,7 @@ import { MdiReactIconProps } from 'mdi-react'
 
 import { ForwardReferenceComponent, Position } from '../..'
 import { ButtonProps } from '../Button'
-import { Icon } from '../deprecated/Icon'
+import { Icon } from '../Icon'
 import { Link } from '../Link'
 import {
     Menu,

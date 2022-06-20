@@ -10,7 +10,7 @@ import { createAggregateError } from '@sourcegraph/common'
 
 import { useOffsetPagination, useDebounce } from '../../hooks'
 import { Button } from '../Button'
-import { Icon } from '../deprecated/Icon'
+import { Icon } from '../Icon'
 
 import styles from './PageSelector.module.scss'
 
