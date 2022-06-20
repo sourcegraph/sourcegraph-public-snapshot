@@ -219,7 +219,7 @@ export const visitorsTasksWithNotebook: TourTaskType[] = [
         steps: [
             {
                 id: 'FindAcrossYourReposNotebook',
-                label: 'Find Code Across All Your Repos',
+                label: 'Find code across all your repos',
                 action: {
                     type: 'new-tab-link',
                     value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM=',
@@ -234,7 +234,7 @@ export const visitorsTasksWithNotebook: TourTaskType[] = [
         steps: [
             {
                 id: 'SearchAndReviewCommitsNotebook',
-                label: 'Search & Review Commits',
+                label: 'Search & review commits',
                 action: {
                     type: 'new-tab-link',
                     value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTI=',
@@ -280,7 +280,7 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
     steps: [
         {
             id: 'InstallOrSignUp',
-            label: 'Register for a Free Account',
+            label: 'Register for a free account',
             tooltip:
                 'Registration unlocks additional features like IDE integrations, browser extensions, saved searches and more.',
             action: {
