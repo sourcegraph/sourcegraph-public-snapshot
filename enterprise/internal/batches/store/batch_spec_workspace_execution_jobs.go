@@ -164,6 +164,10 @@ func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, ids [
 type GetBatchSpecWorkspaceExecutionJobOpts struct {
 	ID                   int64
 	BatchSpecWorkspaceID int64
+	// ExcludeRank when true prevents joining against the queue table.
+	// Use this when not making use of the rank field later, as it's
+	// costly.
+	ExcludeRank bool
 }
 
 // GetBatchSpecWorkspaceExecutionJob gets a BatchSpecWorkspaceExecutionJob matching the given options.
@@ -195,14 +199,19 @@ SELECT
 	%s
 FROM
 	batch_spec_workspace_execution_jobs
-LEFT JOIN (` + executionPlaceInQueueFragment + `) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id
+-- Joins go here:
+%s
 WHERE
 	%s
 LIMIT 1
 `
 
 func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecutionJobOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	columns := BatchSpecWorkspaceExecutionJobColumns
+	var (
+		preds []*sqlf.Query
+		joins []*sqlf.Query
+	)
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = %s", opts.ID))
 	}
@@ -215,9 +224,16 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
+	if !opts.ExcludeRank {
+		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
+	} else {
+		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+	}
+
 	return sqlf.Sprintf(
 		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(columns.ToSqlf(), ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
