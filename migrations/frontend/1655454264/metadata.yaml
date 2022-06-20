@@ -1,2 +1,2 @@
-name: change_policy_boolean_to_tags
+name: add_lockfile_indexing_enabled_to_policy
 parents: [1655105391]

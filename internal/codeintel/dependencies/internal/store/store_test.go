@@ -392,6 +392,7 @@ func TestLockfileDependencies(t *testing.T) {
 			if a, b := len(wantDirectDeps), len(directDeps); a != b {
 				t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
 			}
+
 			if diff := cmp.Diff(wantDirectDeps, directDeps); diff != "" {
 				t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 			}
