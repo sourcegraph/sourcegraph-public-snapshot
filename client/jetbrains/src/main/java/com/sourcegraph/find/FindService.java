@@ -33,6 +33,8 @@ public class FindService implements Disposable {
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
     private static final Logger logger = Logger.getInstance(FindService.class);
+    private final Window projectParentWindow = getParentWindow(null);
+    private WindowListener popupWindowListener;
 
     public FindService(@NotNull Project project) {
         this.project = project;
@@ -145,10 +147,34 @@ public class FindService implements Disposable {
     }
 
     private void registerOutsideClickListener() {
-        Window projectParentWindow = getParentWindow(null);
+        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+            if (event instanceof WindowEvent) {
+                WindowEvent windowEvent = (WindowEvent) event;
+
+                // We only care for focus events
+                if (windowEvent.getID() != WINDOW_GAINED_FOCUS) {
+                    return;
+                }
+
+                // Detect if we're focusing the Sourcegraph popup
+                if (popup instanceof AbstractPopup) {
+                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
+
+                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
+                        return;
+                    }
+                }
+
+                // Detect if the newly focused window is a parent of the project root window
+                Window currentProjectParentWindow = getParentWindow(windowEvent.getComponent());
+                if (currentProjectParentWindow.equals(projectParentWindow)) {
+                    hidePopup();
+                }
+            }
+        }, AWTEvent.WINDOW_EVENT_MASK);
 
         //Added as a quickfix for the browser visibility not working https://github.com/sourcegraph/sourcegraph/issues/37322
-        projectParentWindow.addWindowListener(new WindowListener() {
+        popupWindowListener = new WindowListener() {
             @Override
             public void windowOpened(WindowEvent e) {
 
@@ -183,33 +209,8 @@ public class FindService implements Disposable {
             public void windowDeactivated(WindowEvent e) {
                 popup.setUiVisible(false);
             }
-        });
-
-        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-            if (event instanceof WindowEvent) {
-                WindowEvent windowEvent = (WindowEvent) event;
-
-                // We only care for focus events
-                if (windowEvent.getID() != WINDOW_GAINED_FOCUS) {
-                    return;
-                }
-
-                // Detect if we're focusing the Sourcegraph popup
-                if (popup instanceof AbstractPopup) {
-                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
-
-                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
-                        return;
-                    }
-                }
-
-                // Detect if the newly focused window is a parent of the project root window
-                Window currentProjectParentWindow = getParentWindow(windowEvent.getComponent());
-                if (currentProjectParentWindow.equals(projectParentWindow)) {
-                    hidePopup();
-                }
-            }
-        }, AWTEvent.WINDOW_EVENT_MASK);
+        };
+        projectParentWindow.addWindowListener(popupWindowListener);
     }
 
     // https://sourcegraph.com/github.com/JetBrains/intellij-community@27fee7320a01c58309a742341dd61deae57c9005/-/blob/platform/platform-impl/src/com/intellij/ui/popup/AbstractPopup.java?L475-493
@@ -229,6 +230,7 @@ public class FindService implements Disposable {
     public void dispose() {
         if (popup != null) {
             popup.dispose();
+            projectParentWindow.removeWindowListener(popupWindowListener);
         }
 
         mainPanel.dispose();
