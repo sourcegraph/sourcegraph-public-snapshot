@@ -186,33 +186,34 @@ func TestUpsertLockfileGraph(t *testing.T) {
 	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
 	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
 
-	deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
-	//    -> b -> E
-	//   /
-	// a --> c
-	//   \
-	//    -> d -> F
-	graph := shared.TestDependencyGraphLiteral(
-		[]shared.PackageDependency{packageA},
-		[][]shared.PackageDependency{
-			// A
-			{packageA, packageB},
-			{packageA, packageC},
-			{packageA, packageD},
-			// B
-			{packageB, packageE},
-			// D
-			{packageD, packageF},
-		},
-	)
-	commit := "d34df00d"
+	t.Run("with graph", func(t *testing.T) {
+		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
+		//    -> b -> E
+		//   /
+		// a --> c
+		//   \
+		//    -> d -> F
+		graph := shared.TestDependencyGraphLiteral(
+			[]shared.PackageDependency{packageA},
+			[][]shared.PackageDependency{
+				// A
+				{packageA, packageB},
+				{packageA, packageC},
+				{packageA, packageD},
+				// B
+				{packageB, packageE},
+				// D
+				{packageD, packageF},
+			},
+		)
+		commit := "d34df00d"
 
-	if err := store.UpsertLockfileGraph(ctx, "foo", commit, deps, graph); err != nil {
-		t.Fatalf("error: %s", err)
-	}
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
 
-	// Now check whether the direct dependency was inserted
-	q := sqlf.Sprintf(`
+		// Now check whether the direct dependency was inserted
+		q := sqlf.Sprintf(`
 	SELECT package_name
 	FROM codeintel_lockfile_references
 	WHERE ARRAY[id] @> (
@@ -222,34 +223,39 @@ func TestUpsertLockfileGraph(t *testing.T) {
 		WHERE r.name = %s AND lf.commit_bytea = %s
 	);
     `,
-		"foo",
-		dbutil.CommitBytea(commit),
-	)
+			"foo",
+			dbutil.CommitBytea(commit),
+		)
 
-	root, ok, err := basestore.ScanFirstString(store.db.Query(ctx, q))
-	if err != nil {
-		t.Fatalf("database query error: %s", err)
-	}
-	if !ok {
-		t.Fatalf("no roots saved on codeintel_lockfiles entry")
-	}
+		root, ok, err := basestore.ScanFirstString(store.db.Query(ctx, q))
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if !ok {
+			t.Fatalf("no roots saved on codeintel_lockfiles entry")
+		}
 
-	if have, want := root, packageA.PackageSyntax(); have != want {
-		t.Fatalf("wrong root. want=%s, have=%s", want, have)
-	}
+		if have, want := root, packageA.PackageSyntax(); have != want {
+			t.Fatalf("wrong root. want=%s, have=%s", want, have)
+		}
 
-	// Check that all packages have been inserted
-	names, err := basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
-	if err != nil {
-		t.Fatalf("database query error: %s", err)
-	}
-	wantNames := []string{}
-	for _, pkg := range deps {
-		wantNames = append(wantNames, pkg.PackageSyntax())
-	}
-	if diff := cmp.Diff(wantNames, names); diff != "" {
-		t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
-	}
+		// Check that all packages have been inserted
+		names, err := basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		wantNames := []string{}
+		for _, pkg := range deps {
+			wantNames = append(wantNames, pkg.PackageSyntax())
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("without graph", func(t *testing.T) {
+		t.Skip("TODO: we need to write a test for this")
+	})
 }
 
 func TestLockfileDependencies(t *testing.T) {

@@ -389,11 +389,12 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 	}
 
 	//
-	// Step 1: insert all packages into codeintel_lockfile_references table, return their names/ids
+	// Step 1: Insert all packages into codeintel_lockfile_references table,
+	//         return their names and IDs.
 	//
 	if err := batch.InsertValues(
 		ctx,
-		tx.db.Handle().DB(),
+		tx.db.Handle(),
 		"t_codeintel_lockfile_references",
 		batch.MaxNumPostgresParameters,
 		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version", "depends_on", "resolution_id"},
@@ -423,7 +424,8 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 	}
 
 	//
-	// Step 2: collect all the dependencies (i.e. pkg-A depends on B, C, D) and map them to database IDs
+	// Step 2: Collect all the dependencies (i.e. A depends on B, C, D;
+	//         B depends on E, F) and map them to database IDs.
 	//
 	dependencies := make(map[int][]int)
 	for _, edge := range graph.AllEdges() {
@@ -459,7 +461,8 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 	}
 
 	//
-	// Step 3: insert codeintel_lockfile, pointing to the roots of the graph (i.e. direct dependencies)
+	// Step 3: Insert codeintel_lockfile entry, pointing to the roots of the
+	//         graph (i.e. direct dependencies)
 	//
 	var roots []int
 	for _, r := range graph.Roots() {

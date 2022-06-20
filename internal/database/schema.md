@@ -1303,6 +1303,7 @@ Tracks the last time repository was checked for lockfile indexing.
  protected                   | boolean                  |           | not null | false
  repository_patterns         | text[]                   |           |          | 
  last_resolved_at            | timestamp with time zone |           |          | 
+ lockfile_indexing_enabled   | boolean                  |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -1318,6 +1319,8 @@ Triggers:
 **index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
+
+**lockfile_indexing_enabled**: Whether to index the lockfiles in the repositories matched by this policy
 
 **pattern**: A pattern used to match` names of the associated Git object type.
 

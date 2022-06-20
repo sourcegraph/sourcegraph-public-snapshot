@@ -9543,6 +9543,19 @@
           "Comment": ""
         },
         {
+          "Name": "lockfile_indexing_enabled",
+          "Index": 15,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Whether to index the lockfiles in the repositories matched by this policy"
+        },
+        {
           "Name": "name",
           "Index": 3,
           "TypeName": "text",

@@ -1728,7 +1728,8 @@ CREATE TABLE lsif_configuration_policies (
     index_intermediate_commits boolean NOT NULL,
     protected boolean DEFAULT false NOT NULL,
     repository_patterns text[],
-    last_resolved_at timestamp with time zone
+    last_resolved_at timestamp with time zone,
+    lockfile_indexing_enabled boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
@@ -1752,6 +1753,8 @@ COMMENT ON COLUMN lsif_configuration_policies.index_intermediate_commits IS 'If 
 COMMENT ON COLUMN lsif_configuration_policies.protected IS 'Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).';
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.';
+
+COMMENT ON COLUMN lsif_configuration_policies.lockfile_indexing_enabled IS 'Whether to index the lockfiles in the repositories matched by this policy';
 
 CREATE SEQUENCE lsif_configuration_policies_id_seq
     AS integer
@@ -4164,8 +4167,8 @@ INSERT INTO out_of_band_migrations VALUES (14, 'code-insights', 'db.insights_set
 
 SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
 
-INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL);
-INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL);
-INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL);
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
