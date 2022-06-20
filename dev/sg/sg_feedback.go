@@ -82,11 +82,7 @@ func gatherFeedback(ctx *cli.Context, out *std.Output, in io.Reader) (string, st
 	title := "sg " + ctx.Command.FullName()
 	userTitle = strings.TrimSpace(userTitle)
 	switch strings.ToLower(userTitle) {
-	case "":
-	case "na":
-	case "no":
-	case "nothing":
-	case "nope":
+	case "", "na", "no", "nothing", "nope":
 		// if the userTitle matches anyone of these words, don't add it to the final title
 		break
 	default:
