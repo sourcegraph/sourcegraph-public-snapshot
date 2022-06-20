@@ -1,7 +1,8 @@
-import React, { AriaRole, ComponentType } from 'react'
+import React, { AriaRole, ComponentType, ElementType } from 'react'
 
 import MDIIcon from '@mdi/react'
 import classNames from 'classnames'
+import { MdiReactIconProps } from 'mdi-react'
 
 import { ForwardReferenceComponent } from '../..'
 
@@ -55,6 +56,6 @@ export const Icon = React.forwardRef(({ children, className, size, ...props }, r
     const { as: IconComponent = 'svg', role = 'img', ...attributes } = props
 
     return <IconComponent ref={reference} className={iconStyle} role={role} {...attributes} />
-}) as ForwardReferenceComponent<ComponentType | 'svg', IconProps>
+}) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
 
 Icon.displayName = 'Icon'
