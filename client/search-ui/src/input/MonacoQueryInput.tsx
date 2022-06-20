@@ -70,7 +70,6 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
-    onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
@@ -160,7 +159,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     onBlur,
     onChange,
     onSubmit = noop,
-    onSuggestionsInitialized,
     onCompletionItemSelected,
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     autoFocus,
@@ -191,7 +189,14 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
             editor.getDomNode()?.setAttribute('aria-label', ariaLabel)
 
             setEditor(editor)
-            onEditorCreatedCallback?.(editor)
+            onEditorCreatedCallback?.({
+                focus() {
+                    editor.focus()
+                },
+                showSuggestions() {
+                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                },
+            })
         },
         [setEditor, onEditorCreatedCallback, ariaLabel]
     )
@@ -224,15 +229,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     })
 
     useQueryDiagnostics(editor, { patternType, interpretComments })
-
-    // Register suggestions handle
-    useEffect(() => {
-        if (editor) {
-            onSuggestionsInitialized?.({
-                trigger: () => editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {}),
-            })
-        }
-    }, [editor, onSuggestionsInitialized])
 
     // Register onCompletionSelected handler
     useEffect(() => {

@@ -64,6 +64,7 @@ pkgs.mkShell {
     # Lots of our tooling and go tests rely on git et al.
     git
     parallel
+    nssTools
 
     # CI lint tools you need locally
     shfmt
@@ -80,6 +81,7 @@ pkgs.mkShell {
     rustc
     rustfmt
     libiconv
+    clippy
   ];
 
   # Startup postgres

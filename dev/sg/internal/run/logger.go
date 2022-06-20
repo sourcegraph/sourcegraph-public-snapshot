@@ -24,7 +24,10 @@ func newCmdLogger(ctx context.Context, name string, out *output.Output) *process
 		// we flush partial lines, we don't want to add a newline character. What
 		// we need to do: extend the `*output.Output` type to have a
 		// `WritefNoNewline` (yes, bad name) method.
-		out.Writef("%s%s[%s]%s %s", output.StyleBold, color, name, output.StyleReset, data)
+		//
+		// About the 30 chars text justify, the longest command is 29 chars.
+		// How to quickly check that: cue eval --out=json sg.config.yaml | jq '.commands | keys'
+		out.Writef("%s%s[%+30s]%s %s", output.StyleBold, color, name, output.StyleReset, data)
 	}
 
 	return process.NewLogger(ctx, sink)
