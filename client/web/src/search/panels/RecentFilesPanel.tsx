@@ -1,14 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
+import { of } from 'rxjs'
 
 import { gql } from '@sourcegraph/http-client'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, useObservable } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import { authenticatedUser, AuthenticatedUser } from '../../auth'
 import { RecentFilesFragment } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -39,6 +43,8 @@ export const recentFilesFragment = gql`
         }
     }
 `
+
+type ComputeParseResult = [{ kind: string; value: string }]
 
 export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
@@ -97,6 +103,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         })
 
         if (data === undefined) {
+
             return
         }
         const node = data.node
@@ -132,13 +139,65 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         </div>
     )
 
+        const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
+        const gitRecentFiles = useObservable(
+            useMemo(
+                () =>
+                    checkHomePanelsFeatureFlag && authenticatedUser
+                        ? streamComputeQuery(
+                              'type:diff author:akhalifae@conncoll.edu'
+                          )
+                        : of([]),
+                [checkHomePanelsFeatureFlag]
+            )
+        )
+
+        const gitSet = useMemo(() => {
+            let gitRepositoryParsedString: ComputeParseResult[] = []
+            if (gitRecentFiles) {
+                gitRepositoryParsedString = gitRecentFiles.map(value => JSON.parse(value) as ComputeParseResult)
+            }
+            const gitReposList = gitRepositoryParsedString?.flat()
+
+            const gitSet = new Set<string>()
+            if (gitReposList) {
+                for (const git of gitReposList) {
+                    if (git.value) {
+                        gitSet.add(git.value)
+                    }
+                }
+            }
+
+            return gitSet
+        }, [gitRecentFiles])
+
+        console.log(gitSet)
+
+        const gitFilesDisplay = (
+            <div className="mt-2">
+                {gitSet.size > 0 && (
+                    <ul className="list-group">
+                        {Array.from(gitSet).map(file => (
+                            <li key={`${file}`} className="text-monsospace text-break mb-2">
+                                <small>
+                                    <Link to={`/search?q=repo:${file}`} onClick={logFileClicked}>
+                                        <SyntaxHighlightedSearchQuery query={`file:${file}`} />
+                                    </Link>
+                                </small>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        )
     return (
         <PanelContainer
             className={classNames(className, 'recent-files-panel')}
             title="Recent files"
             state={processedResults ? (processedResults.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
-            populatedContent={contentDisplay}
+            // I switched these two displays because it was returning false
+            populatedContent={gitSet.size > 0 ? contentDisplay : gitFilesDisplay}
             emptyContent={emptyDisplay}
         />
     )
