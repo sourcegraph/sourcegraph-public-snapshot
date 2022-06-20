@@ -115,7 +115,7 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	}
 	l.exitStatus = exitStatus
 
-	return stdoutBuf.Bytes(), stderrBuf.Bytes(), err
+	return stdoutBuf.Bytes(), bytes.TrimSpace(stderrBuf.Bytes()), err
 }
 
 func (l *LocalGitCommand) Output(ctx context.Context) ([]byte, error) {

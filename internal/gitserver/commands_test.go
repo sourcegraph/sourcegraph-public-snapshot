@@ -1449,7 +1449,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	t.Run("empty repo", func(t *testing.T) {
 		repo := MakeGitRepository(t)
 		_, err := client.FirstEverCommit(ctx, repo, nil)
-		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 129`
+		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 128`
 		if err.Error() != wantErr {
 			t.Errorf("expected :%s, got :%s", wantErr, err)
 		}
