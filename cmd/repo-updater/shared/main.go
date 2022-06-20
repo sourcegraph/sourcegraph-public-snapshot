@@ -2,12 +2,10 @@ package shared
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -17,9 +15,11 @@ import (
 
 	"github.com/golang/gddo/httputil"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
+	sentrylib "github.com/getsentry/sentry-go"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -41,17 +41,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const port = "3182"
@@ -61,7 +58,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -79,17 +76,20 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.HandleHelpFlag()
 
 	conf.Init()
-	logging.Init()
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
+
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
+
+	logger := log.Scoped("service", "repo-updater service")
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -101,7 +101,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 	if err := keyring.Init(ctx); err != nil {
-		log.Fatalf("error initialising encryption keyring: %v", err)
+		logger.Fatal("error initialising encryption keyring", log.Error(err))
 	}
 
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
@@ -109,7 +109,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("failed to initialize database store: %v", err)
+		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
 	db := database.NewDB(sqlDB)
 
@@ -121,7 +121,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
@@ -136,11 +136,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db, nil)
-		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
+		obsLogger := logger.Scoped("ObservedSource", "")
+		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}
 
-	updateScheduler := repos.NewUpdateScheduler(db)
+	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
+		Logger:                logger,
 		Store:                 store,
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
@@ -152,37 +154,40 @@ func Main(enterpriseInit EnterpriseInit) {
 	if err := server.RateLimitSyncer.SyncRateLimiters(ctx); err != nil {
 		// This is not a fatal error since the syncer has been added to the server above
 		// and will still be run whenever an external service is added or updated
-		log15.Error("Performing initial rate limit sync", "err", err)
+		logger.Error("Performing initial rate limit sync", log.Error(err))
 	}
 
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
+		Logger:  logger.Scoped("syncer", "repo syncer"),
 		Sourcer: src,
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
 		Synced:     make(chan repos.Diff),
-		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	go watchSyncer(ctx, syncer, updateScheduler, server.PermsSyncer)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer)
 	go func() {
-		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
+		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),
 			MinSyncInterval: repos.ConfRepoListUpdateInterval,
-		}))
+		})
+		if err != nil {
+			logger.Fatal("syncer.Run failure", log.Error(err))
+		}
 	}()
 	server.Syncer = syncer
 
-	go syncScheduler(ctx, updateScheduler, store)
+	go syncScheduler(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := rate.NewLimiter(.05, 1)
@@ -191,14 +196,16 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
-	if !envvar.SourcegraphDotComMode() {
-		// git-server repos purging thread
-		go repos.RunRepositoryPurgeWorker(ctx, db)
+	// git-server repos purging thread
+	var purgeTTL time.Duration
+	if envvar.SourcegraphDotComMode() {
+		purgeTTL = 14 * 24 * time.Hour // two weeks
 	}
+	go repos.RunRepositoryPurgeWorker(ctx, db, purgeTTL)
 
 	// Git fetches scheduler
-	go repos.RunScheduler(ctx, updateScheduler)
-	log15.Debug("started scheduler")
+	go repos.RunScheduler(ctx, logger, updateScheduler)
+	logger.Debug("started scheduler")
 
 	host := ""
 	if env.InsecureDev {
@@ -206,7 +213,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	log15.Info("repo-updater: listening", "addr", addr)
+	logger.Info("listening", log.String("addr", addr))
 
 	var handler http.Handler
 	{
@@ -214,7 +221,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		handler = repoupdater.ObservedHandler(
-			log15.Root(),
+			logger,
 			m,
 			opentracing.GlobalTracer(),
 		)(server.Handler())
@@ -245,7 +252,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -468,11 +475,12 @@ type permsSyncer interface {
 
 func watchSyncer(
 	ctx context.Context,
+	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
 	permsSyncer permsSyncer,
 ) {
-	log15.Debug("started new repo syncer updates scheduler relay thread")
+	logger.Debug("started new repo syncer updates scheduler relay thread")
 
 	for {
 		select {
@@ -514,7 +522,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store repos.Store) {
+func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {
@@ -530,7 +538,7 @@ func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store repo
 			IncludePrivate: true,
 		}
 		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			log15.Error("Listing indexable repos", "error", err)
+			logger.Error("listing indexable repos", log.Error(err))
 			return
 		} else {
 			// Ensure that uncloned indexable repos are known to the scheduler
@@ -543,7 +551,7 @@ func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store repo
 
 		uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
 		if err != nil {
-			log15.Warn("failed to fetch list of uncloned repositories", "error", err)
+			logger.Warn("failed to fetch list of uncloned repositories", log.Error(err))
 			return
 		}
 

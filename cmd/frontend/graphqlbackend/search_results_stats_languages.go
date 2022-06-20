@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -111,12 +111,12 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 				filesMap[key] = &fileStatsWork{}
 			}
 
-			if len(fileMatch.LineMatches) > 0 {
+			if len(fileMatch.ChunkMatches) > 0 {
 				// Only count matching lines. TODO(sqs): bytes are not counted for these files
 				if filesMap[key].partialFiles == nil {
 					filesMap[key].partialFiles = map[string]uint64{}
 				}
-				filesMap[key].partialFiles[fileMatch.Path] += uint64(len(fileMatch.LineMatches))
+				filesMap[key].partialFiles[fileMatch.Path] += uint64(fileMatch.ChunkMatches.MatchCount())
 			} else {
 				// Count entire file.
 				filesMap[key].fullEntries = append(filesMap[key].fullEntries, &fileInfo{
@@ -131,7 +131,7 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := git.GetDefaultBranch(ctx, db, repoName.Name)
+				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name)
 				if err != nil {
 					run.Error(err)
 					return

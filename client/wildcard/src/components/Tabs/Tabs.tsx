@@ -15,9 +15,12 @@ import {
 } from '@reach/tabs'
 import classNames from 'classnames'
 
+import { useElementObscuredArea } from '@sourcegraph/wildcard'
+
 import { ForwardReferenceComponent } from '../../types'
 
-import { TabPanelIndexContext, TabsSettingsContext, useTabsSettings } from './context'
+import { TabPanelIndexContext, TabsState, TabsStateContext, useTabsState } from './context'
+import { useScrollBackToActive } from './useScrollBackToActive'
 import { useShouldPanelRender } from './useShouldPanelRender'
 
 import styles from './Tabs.module.scss'
@@ -85,43 +88,136 @@ export const Tabs = React.forwardRef((props, reference) => {
         className,
         as = 'div',
         longTabList = 'wrap',
+        onChange,
         ...reachProps
     } = props
+
+    const [activeIndex, setActiveIndex] = React.useState(props.defaultIndex || 0)
+    const tabsStateContext: TabsState = React.useMemo(
+        () => ({
+            settings: {
+                size,
+                lazy,
+                behavior,
+                longTabList,
+            },
+            activeIndex,
+        }),
+        [activeIndex, behavior, lazy, longTabList, size]
+    )
+
+    const onChangePersistIndex = React.useCallback(
+        (index: number) => {
+            setActiveIndex(index)
+            if (onChange) {
+                onChange(index)
+            }
+        },
+        [onChange]
+    )
+
     return (
-        <TabsSettingsContext.Provider value={{ lazy, size, behavior, longTabList }}>
+        <TabsStateContext.Provider value={tabsStateContext}>
             <ReachTabs
                 className={classNames(styles.wildcardTabs, className)}
                 data-testid="wildcard-tabs"
                 ref={reference}
                 as={as}
+                onChange={onChangePersistIndex}
                 {...reachProps}
             />
-        </TabsSettingsContext.Provider>
+        </TabsStateContext.Provider>
     )
 }) as ForwardReferenceComponent<'div', TabsProps>
 
 export const TabList = React.forwardRef((props, reference) => {
-    const { actions, as = 'div', wrapperClassName, className, ...reachProps } = props
-    const { longTabList } = useTabsSettings()
+    const {
+        settings: { longTabList },
+    } = useTabsState()
+
+    if (longTabList === 'scroll') {
+        return <TabListScrolled ref={reference} {...props} />
+    }
+
+    return <TabListPlain ref={reference} {...props} />
+}) as ForwardReferenceComponent<'div', TabListProps>
+
+const TabListScrolled = React.forwardRef((props, passedReference) => {
+    const ownReference = React.useRef<HTMLDivElement | null>(null)
+
+    // This is required because ref can be passed as a ref object
+    // or callback. We need to support both cases
+    const saveAndPassReference = React.useCallback(
+        (element: HTMLDivElement) => {
+            ownReference.current = element
+            if (!passedReference) {
+                return
+            }
+            if ('current' in passedReference) {
+                passedReference.current = element
+            }
+            if (typeof passedReference === 'function') {
+                passedReference(element)
+            }
+        },
+        [passedReference]
+    )
+
+    const obscuredArea = useElementObscuredArea(ownReference)
+
+    const extraWrapperClasses = [
+        obscuredArea.left > 0 ? styles.tablistWrapperObscuredLeft : undefined,
+        obscuredArea.right > 0 ? styles.tablistWrapperObscuredRight : undefined,
+    ]
+
+    useScrollBackToActive(ownReference)
 
     return (
-        <div className={classNames(styles.tablistWrapper, wrapperClassName)}>
+        <TabListPlain
+            extraClasses={[styles.tabListScroll]}
+            extraWrapperClasses={extraWrapperClasses}
+            ref={saveAndPassReference}
+            {...props}
+        />
+    )
+}) as ForwardReferenceComponent<'div', TabListProps>
+
+const TabListPlain = React.forwardRef((props, reference) => {
+    const {
+        as,
+        actions,
+        className,
+        wrapperClassName,
+        extraClasses = [],
+        extraWrapperClasses = [],
+        ...restProps
+    } = props
+
+    return (
+        <div className={classNames(styles.tablistWrapper, wrapperClassName, ...extraWrapperClasses)}>
             <ReachTabList
                 data-testid="wildcard-tab-list"
                 as={as}
                 ref={reference}
-                className={classNames(className, styles.tabList, longTabList === 'scroll' && styles.tabListScroll)}
-                {...reachProps}
+                className={classNames(className, styles.tabList, ...extraClasses)}
+                {...restProps}
             />
             {actions}
         </div>
     )
-}) as ForwardReferenceComponent<'div', TabListProps>
+}) as ForwardReferenceComponent<
+    'div',
+    TabListProps & {
+        extraClasses?: (string | undefined)[]
+        extraWrapperClasses?: (string | undefined)[]
+    }
+>
 
 export const Tab = React.forwardRef((props, reference) => {
     const { as = 'button', ...reachProps } = props
-    const { size } = useTabsSettings()
-    const { longTabList } = useTabsSettings()
+    const {
+        settings: { size, longTabList },
+    } = useTabsState()
 
     return (
         <ReachTab

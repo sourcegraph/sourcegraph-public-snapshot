@@ -3,43 +3,41 @@ import React from 'react'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars } from '../../../graphql-operations'
+import { BatchChangeHeader } from '../batch-spec/header/BatchChangeHeader'
+import { TabBar, TabsConfig } from '../batch-spec/TabBar'
 
-import { CreateOrEditBatchChangePage } from './CreateOrEditBatchChangePage'
+import { ConfigurationForm } from './ConfigurationForm'
+import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
+import { useInsightTemplates } from './useInsightTemplates'
+import { useSearchTemplate } from './useSearchTemplate'
+
+import layoutStyles from '../batch-spec/Layout.module.scss'
 
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     // TODO: This can go away once we only have the new SSBC create page
     headingElement: 'h1' | 'h2'
-    /**
-     * The id for the namespace that the batch change should be created in, or that it
-     * already belongs to, if it already exists.
-     */
     initialNamespaceID?: Scalars['ID']
 }
 
 /**
- * CreateBatchChangePage is a wrapper around the create/edit batch change page that
- * determines if we should display the original create page or the new SSBC page.
+ * CreateBatchChangePage is a wrapper around the create batch change page that determines
+ * if we should display the original create page or the new server-side flow page.
  */
 export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChildren<CreateBatchChangePageProps>> = ({
     settingsCascade,
-    isLightTheme,
     headingElement,
-    initialNamespaceID,
+    ...props
 }) =>
     isBatchChangesExecutionEnabled(settingsCascade) ? (
-        <CreateOrEditBatchChangePage
-            isLightTheme={isLightTheme}
-            settingsCascade={settingsCascade}
-            initialNamespaceID={initialNamespaceID}
-        />
+        <NewBatchChangePageContent settingsCascade={settingsCascade} {...props} />
     ) : (
         <Page>
             <PageTitle title="Create batch change" />
@@ -59,3 +57,29 @@ export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChild
             <OldBatchChangePageContent />
         </Page>
     )
+
+const TABS_CONFIG: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
+
+const NewBatchChangePageContent: React.FunctionComponent<
+    React.PropsWithChildren<Omit<CreateBatchChangePageProps, 'headingElement'>>
+> = ({ settingsCascade, initialNamespaceID }) => {
+    const { renderTemplate: insightRenderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
+    const { renderTemplate: searchRenderTemplate } = useSearchTemplate()
+    return (
+        <div className={layoutStyles.pageContainer}>
+            <PageTitle title="Create new batch change" />
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
+            <div className={layoutStyles.headerContainer}>
+                <BatchChangeHeader title={{ text: 'Create batch change' }} />
+            </div>
+            <TabBar activeTabKey="configuration" tabsConfig={TABS_CONFIG} />
+            <ConfigurationForm
+                // the insight render template takes precendence over the search query render
+                renderTemplate={insightRenderTemplate || searchRenderTemplate}
+                insightTitle={insightTitle}
+                settingsCascade={settingsCascade}
+                initialNamespaceID={initialNamespaceID}
+            />
+        </div>
+    )
+}

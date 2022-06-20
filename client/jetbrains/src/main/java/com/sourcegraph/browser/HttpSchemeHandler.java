@@ -7,6 +7,8 @@ import org.cef.misc.IntRef;
 import org.cef.misc.StringRef;
 import org.cef.network.CefRequest;
 import org.cef.network.CefResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,7 +22,7 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
     private int responseHeader = 400;
     private int offset = 0;
 
-    public synchronized boolean processRequest(CefRequest request, CefCallback callback) {
+    public boolean processRequest(@NotNull CefRequest request, @NotNull CefCallback callback) {
         String extension = getExtension(request.getURL());
         mimeType = getMimeType(extension);
         String url = request.getURL();
@@ -30,7 +32,8 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
             data = loadResource(path);
             responseHeader = data != null ? 200 : 404;
             if (data == null) {
-                data = getDefaultContent(extension, path).getBytes();
+                String defaultContent = getDefaultContent(extension, path);
+                data = (defaultContent != null ? defaultContent : "").getBytes();
             }
             callback.Continue();
             return true;
@@ -46,7 +49,7 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
         responseLength.set(data.length);
     }
 
-    public synchronized boolean readResponse(
+    public boolean readResponse(
         byte[] dataOut, int bytesToRead, IntRef bytesRead, CefCallback callback) {
         boolean hasData = false;
 
@@ -64,7 +67,8 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
         return hasData;
     }
 
-    private byte[] loadResource(String resourceName) {
+    @Nullable
+    private byte[] loadResource(@NotNull String resourceName) {
         try (
             InputStream inStream = getClass().getResourceAsStream(resourceName)
         ) {
@@ -80,13 +84,15 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
         return null;
     }
 
-    public String getExtension(String filename) {
+    @Nullable
+    public String getExtension(@Nullable String filename) {
         return Optional.ofNullable(filename)
             .filter(f -> f.contains("."))
             .map(f -> f.substring(filename.lastIndexOf(".") + 1)).orElse(null);
     }
 
-    public String getDefaultContent(String extension, String path) {
+    @Nullable
+    public String getDefaultContent(@Nullable String extension, @NotNull String path) {
         final Map<String, String> extensionToDefaultContent = ImmutableMap.of(
             "html", "<html><head><title>Error 404</title></head>" +
                 "<body>" +
@@ -99,7 +105,8 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
         return extensionToDefaultContent.get(extension);
     }
 
-    public String getMimeType(String extension) {
+    @Nullable
+    public String getMimeType(@Nullable String extension) {
         final Map<String, String> extensionToMimeType = ImmutableMap.of(
             "html", "text/html",
             "js", "text/javascript",

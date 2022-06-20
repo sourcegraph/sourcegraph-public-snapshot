@@ -15,7 +15,7 @@ If no explicit configuration exists, the steps are [inferred from the repository
 - [Go](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Elib/codeintel/autoindex/inference/go%5C.go+func+InferGoIndexJobs%28&patternType=literal)
 - [TypeScript](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Elib/codeintel/autoindex/inference/typescript%5C.go+func+InferTypeScriptIndexJobs%28&patternType=literal)
 
-The steps to index the repository are serialized into an index record and [inserted into a task queue](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/stores/dbstore/indexes%5C.go+func+%28s+*Store%29+InsertIndexes%28&patternType=literal) to be processed asynchronously by a pool of task executors.
+The steps to index the repository are serialized into an index record and [inserted into a task queue](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Einternal/codeintel/stores/dbstore/indexes%5C.go+func+%28s+*Store%29+InsertIndexes%28&patternType=literal) to be processed asynchronously by a pool of task executors.
 
 ## Processing
 

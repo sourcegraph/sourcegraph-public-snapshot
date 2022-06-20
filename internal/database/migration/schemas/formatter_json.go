@@ -12,19 +12,7 @@ func NewJSONFormatter() SchemaFormatter {
 }
 
 func (f jsonFormatter) Format(schemaDescription SchemaDescription) string {
-	for i := range schemaDescription.Tables {
-		sortColumnsByName(schemaDescription.Tables[i].Columns)
-		sortIndexes(schemaDescription.Tables[i].Indexes)
-		sortConstraints(schemaDescription.Tables[i].Constraints)
-		sortTriggers(schemaDescription.Tables[i].Triggers)
-	}
-
-	sortEnums(schemaDescription.Enums)
-	sortFunctions(schemaDescription.Functions)
-	sortSequences(schemaDescription.Sequences)
-	sortTables(schemaDescription.Tables)
-	sortViews(schemaDescription.Views)
-
+	Canonicalize(schemaDescription)
 	serialized, _ := json.MarshalIndent(schemaDescription, "", "  ")
 	return string(serialized)
 }

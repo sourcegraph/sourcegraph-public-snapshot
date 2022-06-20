@@ -17,6 +17,9 @@ exports[`HoverOverlay actions and hover empty 1`] = `
         No hover information available.
       </small>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -40,6 +43,9 @@ exports[`HoverOverlay actions and hover error 1`] = `
         M2
       </div>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -63,6 +69,9 @@ exports[`HoverOverlay actions and hover loading 1`] = `
         />
       </div>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -90,19 +99,23 @@ exports[`HoverOverlay actions and hover present 1`] = `
       </span>
     </div>
     <div
-      class="actions"
+      class="actionsContainer"
     >
       <div
-        class="actionsInner"
+        class="actions"
       >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
+        <div
+          class="actionsInner"
         >
-            
-        </a>
+          <a
+            class="test-action-item action test-tooltip-untitled"
+            href=""
+            role="button"
+            tabindex="0"
+          >
+              
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -121,6 +134,9 @@ exports[`HoverOverlay actions empty 1`] = `
     <div
       class="hoverOverlayContents"
       data-testid="hover-overlay-contents"
+    />
+    <div
+      class="actionsContainer"
     />
   </div>
 </DocumentFragment>
@@ -150,6 +166,9 @@ exports[`HoverOverlay actions error, hover present 1`] = `
 
       </span>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -164,6 +183,9 @@ exports[`HoverOverlay actions loading 1`] = `
     <div
       class="hoverOverlayContents"
       data-testid="hover-overlay-contents"
+    />
+    <div
+      class="actionsContainer"
     />
   </div>
 </DocumentFragment>
@@ -181,19 +203,23 @@ exports[`HoverOverlay actions present 1`] = `
       data-testid="hover-overlay-contents"
     />
     <div
-      class="actions"
+      class="actionsContainer"
     >
       <div
-        class="actionsInner"
+        class="actions"
       >
-        <a
-          class="test-action-item action test-tooltip-some-title"
-          href=""
-          role="button"
-          tabindex="0"
+        <div
+          class="actionsInner"
         >
-           Some title 
-        </a>
+          <a
+            class="test-action-item action test-tooltip-some-title"
+            href=""
+            role="button"
+            tabindex="0"
+          >
+             Some title 
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -220,19 +246,23 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       </div>
     </div>
     <div
-      class="actions"
+      class="actionsContainer"
     >
       <div
-        class="actionsInner"
+        class="actions"
       >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
+        <div
+          class="actionsInner"
         >
-            
-        </a>
+          <a
+            class="test-action-item action test-tooltip-untitled"
+            href=""
+            role="button"
+            tabindex="0"
+          >
+              
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -299,19 +329,23 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       </div>
     </div>
     <div
-      class="actions"
+      class="actionsContainer"
     >
       <div
-        class="actionsInner"
+        class="actions"
       >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
+        <div
+          class="actionsInner"
         >
-            
-        </a>
+          <a
+            class="test-action-item action test-tooltip-untitled"
+            href=""
+            role="button"
+            tabindex="0"
+          >
+              
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -339,6 +373,9 @@ exports[`HoverOverlay hover error 1`] = `
         M
       </div>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -363,19 +400,23 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       </div>
     </div>
     <div
-      class="actions"
+      class="actionsContainer"
     >
       <div
-        class="actionsInner"
+        class="actions"
       >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
+        <div
+          class="actionsInner"
         >
-            
-        </a>
+          <a
+            class="test-action-item action test-tooltip-untitled"
+            href=""
+            role="button"
+            tabindex="0"
+          >
+              
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -401,6 +442,9 @@ exports[`HoverOverlay hover loading 1`] = `
         />
       </div>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -427,6 +471,9 @@ exports[`HoverOverlay hover present 1`] = `
 
       </span>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -453,6 +500,9 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
 
       </span>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -490,6 +540,9 @@ exports[`HoverOverlay multiple hovers present 1`] = `
 
       </span>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;

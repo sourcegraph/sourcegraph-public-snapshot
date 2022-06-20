@@ -61,7 +61,6 @@ describe('UserNavItem', () => {
                         authenticatedUser={USER}
                         showDotComMarketing={true}
                         isExtensionAlertAnimating={false}
-                        featureFlags={new Map()}
                         codeHostIntegrationMessaging="browser-extension"
                     />
                 </MemoryRouter>
@@ -79,7 +78,6 @@ describe('UserNavItem', () => {
                 authenticatedUser={USER}
                 showDotComMarketing={true}
                 isExtensionAlertAnimating={false}
-                featureFlags={new Map()}
                 codeHostIntegrationMessaging="browser-extension"
             />,
             {

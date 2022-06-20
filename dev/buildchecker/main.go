@@ -7,6 +7,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,6 +20,7 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,6 +30,7 @@ type Flags struct {
 	BuildkiteToken      string
 	Pipeline            string
 	Branch              string
+	SlackToken          string
 	FailuresThreshold   int
 	FailuresTimeoutMins int
 }
@@ -35,6 +39,8 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.BuildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
+	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
+
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
 	flag.Parse()
@@ -48,7 +54,6 @@ func main() {
 
 	checkFlags := &cmdCheckFlags{}
 	flag.StringVar(&checkFlags.githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
 	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
 	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
@@ -61,6 +66,8 @@ func main() {
 	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
+	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
+	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
 
 	flags.Parse()
 
@@ -80,7 +87,6 @@ func main() {
 }
 
 type cmdCheckFlags struct {
-	slackToken  string
 	githubToken string
 
 	slackAnnounceWebhooks  string
@@ -102,7 +108,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	)))
 
 	// Slack client
-	slc := slack.New(checkFlags.slackToken)
+	slc := slack.New(flags.SlackToken)
 
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -135,7 +141,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := slackSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
+		summary := generateBranchEventSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
 		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
 
 		// Post update first to avoid invisible changes
@@ -174,6 +180,10 @@ type cmdHistoryFlags struct {
 	resultsCsvPath   string
 	honeycombDataset string
 	honeycombToken   string
+
+	okayHQToken string
+
+	slackReportWebHook string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
@@ -286,7 +296,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		FailuresThreshold: flags.FailuresThreshold,
 		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
 	}
-	log.Printf("running analyses with options: %+v\n", checkOpts)
+	log.Printf("running analysis with options: %+v\n", checkOpts)
 	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
 	// Prepare output
@@ -341,7 +351,68 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			}
 		}
 	}
+	if historyFlags.okayHQToken != "" {
+		okayCli := okay.NewClient(http.DefaultClient, historyFlags.okayHQToken)
 
+		for _, record := range mapToRecords(totals) {
+			recordDateString := record[0]
+			eventTime, err := time.Parse("2006-01-02T00:00:00Z", recordDateString+"T00:00:00Z")
+			if err != nil {
+				log.Fatal("time.Parse: ", err)
+			}
+
+			metrics := map[string]okay.Metric{
+				"totalCount":       okay.Count(totals[recordDateString]),
+				"incidentDuration": okay.Duration(time.Duration(incidents[recordDateString]) * time.Minute),
+				"flakeCount":       okay.Count(flakes[recordDateString]),
+			}
+			event := okay.Event{
+				Name:      "buildStats",
+				Timestamp: eventTime,
+				UniqueKey: []string{"ts", "pipeline", "branch"},
+				Properties: map[string]string{
+					"ts":           eventTime.Format(time.RFC3339),
+					"organization": "sourcegraph",
+					"pipeline":     "sourcegraph",
+					"branch":       "main",
+				},
+				Metrics: metrics,
+			}
+
+			err = okayCli.Push(&event)
+			if err != nil {
+				log.Fatal("Error storing OKAYHQ event okay.Push: ", err.Error())
+			}
+		}
+		if err := okayCli.Flush(); err != nil {
+			log.Fatal("Error posting to OKAYHQ okay.Flush: ", err.Error())
+		}
+	}
+	if historyFlags.slackReportWebHook != "" {
+		var totalBuilds int
+		var totalTime int
+		var totalFlakes int
+
+		for _, total := range totals {
+			totalBuilds += total
+		}
+
+		for _, incident := range incidents {
+			totalTime += incident
+		}
+
+		for _, flake := range flakes {
+			totalFlakes += flake
+		}
+
+		avgFlakes := math.Round(float64(totalFlakes) / float64(totalBuilds) * 100)
+
+		message := generateWeeklySummary(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
+
+		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
+			log.Fatal("postSlackUpdate: ", err)
+		}
+	}
 	log.Println("done!")
 }
 

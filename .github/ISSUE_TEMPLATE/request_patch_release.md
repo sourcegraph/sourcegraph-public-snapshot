@@ -1,13 +1,13 @@
 ---
 name: Request patch release
-about: Sourcegraph teams, use this issue to request the Delivery team perform a patch release or include your changes in a patch release..
+about: Sourcegraph teams, use this issue to propose a patch release or include your changes in a patch release.
 title: ''
-labels: 'team/delivery,patch-release-request'
+labels: 'release-guild,patch-release-request'
 assignees: ''
 
 ---
 
-@sourcegraph/delivery I am requesting the following commits be included in a patch release. They are already merged into `main`:
+@sourcegraph/release-guild I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
 - <!-- LINK TO EXACT MERGED COMMITS HERE -->
 
@@ -51,7 +51,7 @@ I have read [when and why we perform patch releases](https://handbook.sourcegrap
     - [ ] Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) and open a PR to `main` to update it
       - [ ] Change `upcomingRelease` to the current patch release
       - [ ] Change `previousRelease` to the previous patch release version
-      - [ ] Change `releaseDate` to the current date (time is optional) along with `oneWorkingDayAfterRelease` and `oneWorkingDayBeforeRelease`
+      - [ ] Change `releaseDate` to the current date (time is optional) along with `oneWorkingDayAfterRelease` and `threeWorkingDaysBeforeRelease`
       - [ ] Change `captainSlackUsername` and `captainGitHubUsername` accordingly
     - [ ] `yarn release tracking:issues` 
     - [ ] Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)

@@ -4,7 +4,7 @@ import { kebabCase } from 'lodash'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -57,12 +57,26 @@ export const BatchSpec: React.FunctionComponent<React.PropsWithChildren<BatchSpe
 
 interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {
     className?: string
+    asButton: boolean
 }
 
 export const BatchSpecDownloadLink: React.FunctionComponent<
     React.PropsWithChildren<BatchSpecDownloadLinkProps>
-> = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput }) {
-    return (
+> = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
+    return asButton ? (
+        <Button
+            variant="primary"
+            as="a"
+            download={getFileName(name)}
+            href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={className}
+            data-tooltip={`Download ${getFileName(name)}`}
+        >
+            {children}
+        </Button>
+    ) : (
         <Link
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
@@ -74,6 +88,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
     )
 })
 
+// TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
     React.PropsWithChildren<BatchSpecProps & Pick<BatchChangeFields, 'name'>>
 > = React.memo(function BatchSpecDownloadButton(props) {
@@ -84,8 +99,9 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
             variant="secondary"
             outline={true}
             as={BatchSpecDownloadLink}
+            asButton={false}
         >
-            <Icon as={FileDownloadIcon} /> Download YAML
+            <Icon aria-hidden={true} as={FileDownloadIcon} /> Download YAML
         </Button>
     )
 })
@@ -97,9 +113,9 @@ export const BatchSpecMeta: React.FunctionComponent<React.PropsWithChildren<Batc
     lastApplier,
     lastAppliedAt,
 }) => (
-    <p className="mb-2">
+    <Text className="mb-2">
         {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
         {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
         <Timestamp date={lastAppliedAt ?? createdAt} /> by applying the following batch spec:
-    </p>
+    </Text>
 )

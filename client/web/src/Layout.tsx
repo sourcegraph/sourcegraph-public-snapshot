@@ -6,8 +6,8 @@ import { Observable } from 'rxjs'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
     KeyboardShortcutsProps,
@@ -36,7 +36,6 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -78,8 +77,7 @@ export interface LayoutProps
         SearchStreamingProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        FeatureFlagProps {
+        BatchChangesProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -212,7 +210,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
             />
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                settingsCascade={props.settingsCascade}
+                isSourcegraphDotCom={props.isSourcegraphDotCom}
+            />
             {!isSiteInit && <SurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar

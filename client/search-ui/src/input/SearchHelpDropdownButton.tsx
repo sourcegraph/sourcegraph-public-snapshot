@@ -16,6 +16,8 @@ import {
     MenuDivider,
     MenuHeader,
     Icon,
+    MenuText,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHelpDropdownButton.module.scss'
@@ -47,7 +49,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
             >
-                <Icon className="test-search-help-dropdown-button-icon" aria-hidden="true" as={HelpCircleOutlineIcon} />
+                <Icon aria-hidden={true} className="test-search-help-dropdown-button-icon" as={HelpCircleOutlineIcon} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
                 <MenuHeader>
@@ -57,86 +59,77 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 <MenuHeader>Finding matches:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <span className="text-muted small">Structural:</span>{' '}
-                        <code>
-                            <strong>if(:[my_match]) </strong>
-                        </code>
+                        <span className="text-muted small">Structural:</span> <Code weight="bold">if(:[my_match])</Code>
                     </li>
                     <li>
-                        <span className="text-muted small">Regexp:</span>{' '}
-                        <code>
-                            <strong>(read|write)File</strong>
-                        </code>
+                        <span className="text-muted small">Regexp:</span> <Code weight="bold">(read|write)File</Code>
                     </li>
                     <li>
-                        <span className="text-muted small">Exact:</span>{' '}
-                        <code>
-                            "<strong>fs.open(f)</strong>"
-                        </code>
+                        <span className="text-muted small">Exact:</span> <Code weight="bold">"fs.open(f)"</Code>
                     </li>
                 </ul>
                 <MenuDivider />
                 <MenuHeader>Common search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <code>
+                        <Code>
                             repo:<strong>my/repo</strong>
-                        </code>
+                        </Code>
                     </li>
                     {isSourcegraphDotCom && (
                         <li>
-                            <code>
+                            <Code>
                                 repo:<strong>github.com/myorg/</strong>
-                            </code>
+                            </Code>
                         </li>
                     )}
                     <li>
-                        <code>
+                        <Code>
                             file:<strong>my/file</strong>
-                        </code>
+                        </Code>
                     </li>
                     <li>
-                        <code>
+                        <Code>
                             lang:<strong>javascript</strong>
-                        </code>
+                        </Code>
                     </li>
                 </ul>
                 <MenuDivider />
                 <MenuHeader>Diff/commit search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <code>type:diff</code> <em className="text-muted small">or</em> <code>type:commit</code>
+                        <Code>type:diff</Code> <em className="text-muted small">or</em> <Code>type:commit</Code>
                     </li>
                     <li>
-                        <code>
+                        <Code>
                             after:<strong>"2 weeks ago"</strong>
-                        </code>
+                        </Code>
                     </li>
                     <li>
-                        <code>
+                        <Code>
                             author:<strong>alice@example.com</strong>
-                        </code>
+                        </Code>
                     </li>
                     <li className="text-nowrap">
-                        <code>
+                        <Code>
                             repo:<strong>r@*refs/heads/</strong>
-                        </code>{' '}
+                        </Code>{' '}
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
                 <MenuDivider className="mb-0" />
-                <Link
+                <MenuText
                     target="_blank"
                     rel="noopener"
+                    as={Link}
                     to={`${documentationUrlPrefix}/code_search/reference/queries`}
-                    className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <Icon className="small" as={ExternalLinkIcon} /> All search keywords
-                </Link>
+                    <Icon aria-hidden={true} className="small" as={ExternalLinkIcon} /> All search keywords
+                </MenuText>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">
-                        On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
+                        On Sourcegraph.com, use a <Code>repo:</Code> filter to narrow your search to &le;500
                         repositories.
                     </Alert>
                 )}

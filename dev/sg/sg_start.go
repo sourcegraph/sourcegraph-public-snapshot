@@ -37,7 +37,23 @@ var (
 		Name:      "start",
 		ArgsUsage: "[commandset]",
 		Usage:     "🌟 Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment",
-		Category:  CategoryDev,
+		UsageText: `
+# Run default environment, Sourcegraph enterprise:
+sg start
+
+# List available environments (defined under 'commandSets' in 'sg.config.yaml'):
+sg start -help
+
+# Run the enterprise environment with code-intel enabled:
+sg start enterprise-codeintel
+
+# Run the environment for Batch Changes development:
+sg start batches
+
+# Override the logger levels for specific services
+sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+		`,
+		Category: CategoryDev,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:        "debug",
@@ -80,19 +96,14 @@ var (
 			}
 			return
 		}),
-		Action: execAdapter(startExec),
+		Action: startExec,
 	}
 )
 
 func constructStartCmdLongHelp() string {
 	var out strings.Builder
 
-	fmt.Fprintf(&out, `Runs the given commandset.
-
-If no commandset is specified, it starts the commandset with the name 'default'.
-
-Use this to start your Sourcegraph environment!
-`)
+	fmt.Fprintf(&out, `Use this to start your Sourcegraph environment!`)
 
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
@@ -101,32 +112,33 @@ Use this to start your Sourcegraph environment!
 		return out.String()
 	}
 
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+	fmt.Fprintf(&out, "\n\n")
+	fmt.Fprintf(&out, "Available comamndsets in `%s`:\n", configFile)
 
 	var names []string
 	for name := range config.Commandsets {
 		switch name {
 		case "enterprise-codeintel":
-			names = append(names, fmt.Sprintf("  %s 🧠", name))
+			names = append(names, fmt.Sprintf("%s 🧠", name))
 		case "batches":
-			names = append(names, fmt.Sprintf("  %s 🦡", name))
+			names = append(names, fmt.Sprintf("%s 🦡", name))
 		default:
-			names = append(names, fmt.Sprintf("  %s", name))
+			names = append(names, fmt.Sprintf("%s", name))
 		}
 	}
 	sort.Strings(names)
-	fmt.Fprint(&out, strings.Join(names, "\n"))
+	fmt.Fprint(&out, "\n* "+strings.Join(names, "\n* "))
 
 	return out.String()
 }
 
-func startExec(ctx context.Context, args []string) error {
+func startExec(ctx *cli.Context) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
 	}
 
+	args := ctx.Args().Slice()
 	if len(args) > 2 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
@@ -182,7 +194,7 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	return startCommandSet(ctx, set, config)
+	return startCommandSet(ctx.Context, set, config)
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
@@ -221,11 +233,11 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
-	levelServices["debug"] = parseCsvs(debugStartServices.Value())
-	levelServices["info"] = parseCsvs(infoStartServices.Value())
-	levelServices["warn"] = parseCsvs(warnStartServices.Value())
-	levelServices["error"] = parseCsvs(errorStartServices.Value())
-	levelServices["crit"] = parseCsvs(critStartServices.Value())
+	levelServices["debug"] = debugStartServices.Value()
+	levelServices["info"] = infoStartServices.Value()
+	levelServices["warn"] = warnStartServices.Value()
+	levelServices["error"] = errorStartServices.Value()
+	levelServices["crit"] = critStartServices.Value()
 
 	overrides := make(map[string]string)
 	for level, services := range levelServices {
@@ -260,23 +272,4 @@ func pathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
-}
-
-func parseCsvs(inputs []string) []string {
-	var allValues []string
-	for _, i := range inputs {
-		values := parseCsv(i)
-		allValues = append(allValues, values...)
-	}
-	return allValues
-}
-
-// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
-func parseCsv(input string) []string {
-	tokens := strings.Split(input, ",")
-	results := make([]string, 0, len(tokens))
-	for _, token := range tokens {
-		results = append(results, strings.TrimSpace(token))
-	}
-	return results
 }

@@ -5,23 +5,20 @@ import { compact } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { Icon, Typography } from '@sourcegraph/wildcard'
+import { Icon, H4 } from '@sourcegraph/wildcard'
+
+import { BatchSpecContextErrors } from '../../BatchSpecContext'
 
 import styles from './EditorFeedbackPanel.module.scss'
 
 interface EditorFeedbackPanelProps {
-    errors: {
-        codeUpdate: string | Error | undefined
-        codeValidation: string | Error | undefined
-        preview: string | Error | undefined
-        execute: string | Error | undefined
-    }
+    errors: BatchSpecContextErrors
 }
 
 export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildren<EditorFeedbackPanelProps>> = ({
     errors,
 }) => {
-    const compactedErrors = compact(Object.values(errors))
+    const compactedErrors = compact<string | Error>(Object.values(errors))
     if (compactedErrors.length === 0) {
         return null
     }
@@ -30,9 +27,9 @@ export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
-            <Typography.H4 className="text-danger text-uppercase">
-                <Icon className="text-danger" as={AlertCircleIcon} /> {errorHeading}
-            </Typography.H4>
+            <H4 className="text-danger text-uppercase">
+                <Icon aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> {errorHeading}
+            </H4>
             {compactedErrors.map(error => (
                 <ErrorMessage className="text-monospace" error={error} key={String(error)} />
             ))}

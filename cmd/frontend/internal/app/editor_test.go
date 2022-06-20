@@ -57,7 +57,7 @@ func TestEditorRev(t *testing.T) {
 
 func TestEditorRedirect(t *testing.T) {
 	repos := database.NewMockRepoStore()
-	repos.GetFirstRepoNamesByCloneURLFunc.SetDefaultReturn("", nil)
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultReturn("", nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(

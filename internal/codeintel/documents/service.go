@@ -10,11 +10,11 @@ import (
 )
 
 type Service struct {
-	documentsStore Store
+	documentsStore store.Store
 	operations     *operations
 }
 
-func newService(documentsStore Store, observationContext *observation.Context) *Service {
+func newService(documentsStore store.Store, observationContext *observation.Context) *Service {
 	return &Service{
 		documentsStore: documentsStore,
 		operations:     newOperations(observationContext),
@@ -23,8 +23,7 @@ func newService(documentsStore Store, observationContext *observation.Context) *
 
 type Document = shared.Document
 
-type DocumentOpts struct {
-}
+type DocumentOpts struct{}
 
 func (s *Service) Document(ctx context.Context, opts DocumentOpts) (documents []Document, err error) {
 	ctx, _, endObservation := s.operations.document.With(ctx, &err, observation.Args{})

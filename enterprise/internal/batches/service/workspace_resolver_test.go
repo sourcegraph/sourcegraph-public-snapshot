@@ -25,7 +25,6 @@ import (
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -451,17 +450,17 @@ type defaultBranch struct {
 }
 
 func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultBranch) {
-	git.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
 		if res, ok := defaultBranches[repo]; ok {
 			return res.branch, res.commit, nil
 		}
 		return "", "", &gitdomain.RepoNotExistError{Repo: repo}
 	}
-	t.Cleanup(func() { git.Mocks.GetDefaultBranch = nil })
+	t.Cleanup(func() { gitserver.Mocks.GetDefaultBranch = nil })
 }
 
 func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
-	git.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
+	gitserver.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
 		hasBatchIgnore, ok := m[commit]
 		if !ok {
 			return nil, errors.Newf("unknown commit: %s", commit)
@@ -471,7 +470,7 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 		}
 		return nil, os.ErrNotExist
 	}
-	t.Cleanup(func() { git.Mocks.Stat = nil })
+	t.Cleanup(func() { gitserver.Mocks.Stat = nil })
 }
 
 func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {

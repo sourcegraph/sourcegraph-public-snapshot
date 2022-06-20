@@ -1,7 +1,7 @@
 package cliutil
 
 import (
-	"flag"
+	"context"
 	"fmt"
 
 	"github.com/inconshreveable/log15"
@@ -12,62 +12,48 @@ import (
 )
 
 func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
-	flags := []cli.Flag{
-		&cli.StringFlag{
-			Name:     "db",
-			Usage:    "The target `schema` to modify.",
-			Required: true,
-		},
-		&cli.IntFlag{
-			Name:     "version",
-			Usage:    "The migration `version` to log.",
-			Required: true,
-		},
-		&cli.BoolFlag{
-			Name:  "up",
-			Usage: "The migration direction.",
-			Value: true,
-		},
+	schemaNameFlag := &cli.StringFlag{
+		Name:     "db",
+		Usage:    "The target `schema` to modify.",
+		Required: true,
+	}
+	versionFlag := &cli.IntFlag{
+		Name:     "version",
+		Usage:    "The migration `version` to log.",
+		Required: true,
+	}
+	upFlag := &cli.BoolFlag{
+		Name:  "up",
+		Usage: "The migration direction.",
+		Value: true,
 	}
 
-	action := func(cmd *cli.Context) error {
-		out := outFactory()
-
-		if cmd.NArg() != 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
-			return flag.ErrHelp
-		}
-
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		var (
-			schemaName  = cmd.String("db")
-			versionFlag = cmd.Int("version")
-			upFlag      = cmd.Bool("up")
+			schemaName  = schemaNameFlag.Get(cmd)
+			versionFlag = versionFlag.Get(cmd)
+			upFlag      = upFlag.Get(cmd)
 		)
 
-		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaName})
-		if err != nil {
-			return err
-		}
-		store, err := r.Store(ctx, schemaName)
+		_, store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}
 
 		log15.Info("Writing new completed migration log", "schema", schemaName, "version", versionFlag, "up", upFlag)
-		return store.WithMigrationLog(ctx, definition.Definition{ID: versionFlag}, upFlag, noop)
-	}
+		return store.WithMigrationLog(ctx, definition.Definition{ID: versionFlag}, upFlag, func() error { return nil })
+	})
 
 	return &cli.Command{
 		Name:        "add-log",
 		UsageText:   fmt.Sprintf("%s add-log -db=<schema> -version=<version> [-up=true|false]", commandName),
 		Usage:       "Add an entry to the migration log",
 		Description: ConstructLongHelp(),
-		Flags:       flags,
 		Action:      action,
+		Flags: []cli.Flag{
+			schemaNameFlag,
+			versionFlag,
+			upFlag,
+		},
 	}
-}
-
-func noop() error {
-	return nil
 }

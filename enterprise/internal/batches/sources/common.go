@@ -7,9 +7,9 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ChangesetNotFoundError is returned by LoadChangeset if the changeset
@@ -149,7 +149,7 @@ func (c *Changeset) IsOutdated() (bool, error) {
 		return false, err
 	}
 
-	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
+	if gitdomain.EnsureRefPrefix(currentBaseRef) != gitdomain.EnsureRefPrefix(c.BaseRef) {
 		return true, nil
 	}
 

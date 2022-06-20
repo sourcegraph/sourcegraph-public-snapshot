@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -42,12 +41,12 @@ var registryExtensionNamesForTests = []struct {
 }
 
 func TestRegistryExtensions_validNames(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := Extensions(db)
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +70,7 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 }
 
 func TestRegistryExtensions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	releases := Releases(db)
@@ -121,11 +120,11 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := database.Orgs(db).Create(ctx, "o", nil)
+	org, err := db.Orgs().Create(ctx, "o", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -329,7 +328,7 @@ func TestRegistryExtensions(t *testing.T) {
 }
 
 func TestRegistryExtensions_ListCount(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	releases := Releases(db)
@@ -353,7 +352,7 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		}
 	}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -418,13 +417,13 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 }
 
 func TestFeaturedExtensions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	releases := Releases(db)
-	s := &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	s := &extensionStore{Store: basestore.NewWithHandle(db.Handle())}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

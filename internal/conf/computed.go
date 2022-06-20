@@ -155,8 +155,24 @@ func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
 
+func ExecutorsFrontendURL() string {
+	current := Get()
+	if current.ExecutorsFrontendURL != "" {
+		return current.ExecutorsFrontendURL
+	}
+
+	return current.ExternalURL
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func CodeIntelLockfileIndexingEnabled() bool {
+	if enabled := Get().CodeIntelLockfileIndexingEnabled; enabled != nil {
 		return *enabled
 	}
 	return false
@@ -232,14 +248,6 @@ func EventLoggingEnabled() bool {
 	val := ExperimentalFeatures().EventLogging
 	if val == "" {
 		return true
-	}
-	return val == "enabled"
-}
-
-func APIDocsSearchIndexingEnabled() bool {
-	val := ExperimentalFeatures().ApidocsSearchIndexing
-	if val == "" {
-		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
 	}
 	return val == "enabled"
 }

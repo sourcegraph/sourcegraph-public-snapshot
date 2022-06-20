@@ -5,7 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography } from '../..'
+import { H1, H2 } from '../..'
 import { Grid } from '../../Grid'
 
 import { RadioButton, RadioButtonProps } from './RadioButton'
@@ -76,22 +76,22 @@ const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid'
 
 export const RadioExamples: Story = () => (
     <>
-        <Typography.H1>Radio</Typography.H1>
+        <H1>Radio</H1>
         <Grid columnCount={4}>
             <div>
-                <Typography.H2>Standard</Typography.H2>
+                <H2>Standard</H2>
                 <BaseRadio name="standard-example" />
             </div>
             <div>
-                <Typography.H2>Valid</Typography.H2>
+                <H2>Valid</H2>
                 <BaseRadio name="valid-example" isValid={true} />
             </div>
             <div>
-                <Typography.H2>Invalid</Typography.H2>
+                <H2>Invalid</H2>
                 <BaseRadio name="invalid-example" isValid={false} />
             </div>
             <div>
-                <Typography.H2>Disabled</Typography.H2>
+                <H2>Disabled</H2>
                 <BaseRadio name="disabled-example" disabled={true} />
             </div>
         </Grid>

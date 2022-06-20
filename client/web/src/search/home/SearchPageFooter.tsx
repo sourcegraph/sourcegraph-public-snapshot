@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, H2, H3, H4 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { PageRoutes } from '../../routes.constants'
@@ -83,7 +83,7 @@ export const SearchPageFooter: React.FunctionComponent<
             <ul className={classNames('d-flex flex-wrap list-unstyled', styles.mainList)}>
                 {footerLinkSections.map(section => (
                     <li key={section.name} className={styles.linkSection}>
-                        <Typography.H2 className={styles.linkSectionHeading}>{section.name}</Typography.H2>
+                        <H2 className={styles.linkSectionHeading}>{section.name}</H2>
                         <ul className="list-unstyled">
                             {section.links.map(link => (
                                 <li key={link.name}>
@@ -111,7 +111,7 @@ export const SearchPageFooter: React.FunctionComponent<
                             className={styles.devToolTimeImage}
                         />
                         <div className={styles.devToolTimeText}>
-                            <Typography.H2 className={styles.linkSectionHeading}>Dev tool time</Typography.H2>
+                            <H2 className={styles.linkSectionHeading}>Dev tool time</H2>
                             <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
                         </div>
                     </Link>
@@ -120,9 +120,9 @@ export const SearchPageFooter: React.FunctionComponent<
         </footer>
     ) : (
         <footer className={classNames(styles.serverFooter, 'd-flex flex-column flex-lg-row align-items-center')}>
-            <Typography.H4 as={Typography.H3} className="mb-2 mb-lg-0">
+            <H4 as={H3} className="mb-2 mb-lg-0">
                 Explore and extend
-            </Typography.H4>
+            </H4>
             <span className="d-flex flex-column flex-md-row align-items-center">
                 <span className="d-flex flex-row mb-2 mb-md-0">
                     <Link

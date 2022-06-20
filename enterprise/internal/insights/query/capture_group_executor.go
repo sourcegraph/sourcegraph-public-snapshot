@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,11 +29,11 @@ type CaptureGroupExecutor struct {
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 }
 
-func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
+func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	executor := CaptureGroupExecutor{
 		justInTimeExecutor: justInTimeExecutor{
-			db:        database.NewDB(postgres),
-			repoStore: database.Repos(postgres),
+			db:        postgres,
+			repoStore: postgres.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 			filter: &compression.NoopFilter{},
 			clock:  clock,
@@ -63,6 +63,12 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 	if err != nil {
 		return nil, err
 	}
+	if len(streamResults.Errors) > 0 {
+		return nil, errors.Errorf("compute streaming search: errors: %v", streamResults.Errors)
+	}
+	if len(streamResults.Alerts) > 0 {
+		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
+	}
 	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
@@ -81,9 +87,13 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			return nil, errors.Wrapf(err, "FirstEverCommit")
+			if errors.Is(err, discovery.EmptyRepoErr) {
+				continue
+			} else {
+				return nil, errors.Wrapf(err, "FirstEverCommit")
+			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
 		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
@@ -105,7 +115,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
@@ -113,7 +123,11 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			log15.Debug("executing query", "query", modifiedQuery)
 			grouped, err := c.computeSearch(ctx, modifiedQuery)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
+				errorMsg := "failed to execute capture group search for repository:" + repository
+				if execution.Revision != "" {
+					errorMsg += " commit:" + execution.Revision
+				}
+				return nil, errors.Wrap(err, errorMsg)
 			}
 
 			sort.Slice(grouped, func(i, j int) bool {
@@ -125,7 +139,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				if _, ok := pivoted[value]; !ok {
 					pivoted[value] = generateTimes(plan)
 				}
-				pivoted[value][execution.RecordingTime] = timeGroupElement.Count
+				pivoted[value][execution.RecordingTime] += timeGroupElement.Count
 				for _, children := range execution.SharedRecordings {
 					pivoted[value][children] += timeGroupElement.Count
 				}

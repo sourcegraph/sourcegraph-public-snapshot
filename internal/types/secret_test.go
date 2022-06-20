@@ -20,12 +20,12 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 		{
 			kind: extsvc.KindGitHub,
 			in:   schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
-			out:  schema.GitHubConnection{Token: "REDACTED", Url: "https://github.com"},
+			out:  schema.GitHubConnection{Token: RedactedSecret, Url: "https://github.com"},
 		},
 		{
 			kind: extsvc.KindGitLab,
-			in:   schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com"},
-			out:  schema.GitLabConnection{Token: "REDACTED", Url: "https://gitlab.com"},
+			in:   schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
+			out:  schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.com", TokenOauthRefresh: RedactedSecret},
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -35,15 +35,15 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 				Url:      "https://bbs.org",
 			},
 			out: schema.BitbucketServerConnection{
-				Password: "REDACTED",
-				Token:    "REDACTED",
+				Password: RedactedSecret,
+				Token:    RedactedSecret,
 				Url:      "https://bbs.org",
 			},
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
 			in:   schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.com"},
-			out:  schema.BitbucketCloudConnection{AppPassword: "REDACTED", Url: "https://bitbucket.com"},
+			out:  schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.com"},
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
@@ -56,18 +56,18 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 				},
 			},
 			out: schema.AWSCodeCommitConnection{
-				SecretAccessKey: "REDACTED",
+				SecretAccessKey: RedactedSecret,
 				Region:          "us-east-9000z",
 				GitCredentials: schema.AWSCodeCommitGitCredentials{
 					Username: "username",
-					Password: "REDACTED",
+					Password: RedactedSecret,
 				},
 			},
 		},
 		{
 			kind: extsvc.KindPhabricator,
 			in:   schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
-			out:  schema.PhabricatorConnection{Token: "REDACTED", Url: "https://phabricator.biz"},
+			out:  schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.biz"},
 		},
 		{
 			kind: extsvc.KindGitolite,
@@ -77,22 +77,22 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 		{
 			kind: extsvc.KindPerforce,
 			in:   schema.PerforceConnection{P4User: "foo", P4Passwd: "bar"},
-			out:  schema.PerforceConnection{P4User: "foo", P4Passwd: "REDACTED"},
+			out:  schema.PerforceConnection{P4User: "foo", P4Passwd: RedactedSecret},
 		},
 		{
 			kind: extsvc.KindPagure,
 			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
-			out:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "REDACTED"},
+			out:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: RedactedSecret},
 		},
 		{
 			kind: extsvc.KindJVMPackages,
 			in:   schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Dependencies: []string{"baz"}}},
-			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "REDACTED", Dependencies: []string{"baz"}}},
+			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: RedactedSecret, Dependencies: []string{"baz"}}},
 		},
 		{
 			kind: extsvc.KindNpmPackages,
 			in:   schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
-			out:  schema.NpmPackagesConnection{Credentials: "REDACTED", Registry: "https://registry.npmjs.org"},
+			out:  schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://registry.npmjs.org"},
 		},
 		{
 			kind: extsvc.KindOther,
@@ -172,14 +172,14 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		{
 			kind: extsvc.KindGitHub,
 			old:  schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
-			in:   schema.GitHubConnection{Token: "REDACTED", Url: "https://ghe.sgdev.org"},
+			in:   schema.GitHubConnection{Token: RedactedSecret, Url: "https://ghe.sgdev.org"},
 			out:  schema.GitHubConnection{Token: "foobar", Url: "https://ghe.sgdev.org"},
 		},
 		{
 			kind: extsvc.KindGitLab,
-			old:  schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com"},
-			in:   schema.GitLabConnection{Token: "REDACTED", Url: "https://gitlab.corp.com"},
-			out:  schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.corp.com"},
+			old:  schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
+			in:   schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.corp.com", TokenOauthRefresh: RedactedSecret},
+			out:  schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.corp.com", TokenOauthRefresh: "refresh-it"},
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -189,8 +189,8 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				Url:      "https://bbs.org",
 			},
 			in: schema.BitbucketServerConnection{
-				Password: "REDACTED",
-				Token:    "REDACTED",
+				Password: RedactedSecret,
+				Token:    RedactedSecret,
 				Url:      "https://bbs.corp.org",
 			},
 			out: schema.BitbucketServerConnection{
@@ -202,7 +202,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		{
 			kind: extsvc.KindBitbucketCloud,
 			old:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.com"},
-			in:   schema.BitbucketCloudConnection{AppPassword: "REDACTED", Url: "https://bitbucket.corp.com"},
+			in:   schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
 			out:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
 		},
 		{
@@ -216,11 +216,11 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				},
 			},
 			in: schema.AWSCodeCommitConnection{
-				SecretAccessKey: "REDACTED",
+				SecretAccessKey: RedactedSecret,
 				Region:          "us-west-9000z",
 				GitCredentials: schema.AWSCodeCommitGitCredentials{
 					Username: "username",
-					Password: "REDACTED",
+					Password: RedactedSecret,
 				},
 			},
 			out: schema.AWSCodeCommitConnection{
@@ -235,7 +235,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		{
 			kind: extsvc.KindPhabricator,
 			old:  schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
-			in:   schema.PhabricatorConnection{Token: "REDACTED", Url: "https://phabricator.corp.biz"},
+			in:   schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.corp.biz"},
 			out:  schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.corp.biz"},
 		},
 		{
@@ -247,7 +247,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		{
 			kind: extsvc.KindPerforce,
 			old:  schema.PerforceConnection{P4User: "foo", P4Passwd: "bar"},
-			in:   schema.PerforceConnection{P4User: "baz", P4Passwd: "REDACTED"},
+			in:   schema.PerforceConnection{P4User: "baz", P4Passwd: RedactedSecret},
 			out:  schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
 		},
 		{
@@ -260,19 +260,19 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		{
 			kind: extsvc.KindPagure,
 			old:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
-			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "REDACTED"},
+			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: RedactedSecret},
 			out:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
 		},
 		{
 			kind: extsvc.KindJVMPackages,
 			old:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Dependencies: []string{"baz"}}},
-			in:   schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "REDACTED", Dependencies: []string{"bar"}}},
+			in:   schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: RedactedSecret, Dependencies: []string{"bar"}}},
 			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Dependencies: []string{"bar"}}},
 		},
 		{
 			kind: extsvc.KindNpmPackages,
 			old:  schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
-			in:   schema.NpmPackagesConnection{Credentials: "REDACTED", Registry: "https://private-registry.npmjs.org"},
+			in:   schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://private-registry.npmjs.org"},
 			out:  schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://private-registry.npmjs.org"},
 		},
 		{

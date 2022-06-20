@@ -10,6 +10,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
@@ -17,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {
@@ -25,7 +26,7 @@ type handler struct {
 	store         workerutil.Store
 	options       Options
 	operations    *command.Operations
-	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
+	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
 var (
@@ -99,12 +100,25 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	logger.Info("Creating workspace")
 
 	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
+	workspaceRoot, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.RepositoryDirectory, job.Commit, job.FetchTags, job.ShallowClone, job.SparseCheckout)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
 	defer func() {
-		_ = os.RemoveAll(workingDirectory)
+		if !h.options.KeepWorkspaces {
+			handle := commandLogger.Log("teardown.fs", nil)
+
+			handle.Write([]byte(fmt.Sprintf("Removing %s\n", workspaceRoot)))
+
+			if rmErr := os.RemoveAll(workspaceRoot); rmErr != nil {
+				handle.Write([]byte(fmt.Sprintf("Operation failed: %s\n", rmErr.Error())))
+			}
+
+			// We always finish this with exit code 0 even if it errored, because workspace
+			// cleanup doesn't fail the execution job. We can deal with it separately.
+			handle.Finalize(0)
+			handle.Close()
+		}
 	}()
 
 	vmNameSuffix, err := uuid.NewRandom()
@@ -129,7 +143,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
-	runner := h.runnerFactory(workingDirectory, commandLogger, options, h.operations)
+	runner := h.runnerFactory(workspaceRoot, commandLogger, options, h.operations)
 
 	// Construct a map from filenames to file content that should be accessible to jobs
 	// within the workspace. This consists of files supplied within the job record itself,
@@ -137,11 +151,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	workspaceFileContentsByPath := map[string][]byte{}
 
 	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
+		path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
 		if err != nil {
 			return err
 		}
-		if !strings.HasPrefix(path, workingDirectory) {
+		if !strings.HasPrefix(path, workspaceRoot) {
 			return errors.Errorf("refusing to write outside of working directory")
 		}
 
@@ -153,7 +167,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		scriptName := scriptNameFromJobStep(job, i)
 		scriptNames = append(scriptNames, scriptName)
 
-		path := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
+		path := filepath.Join(workspaceRoot, command.ScriptsPath, scriptName)
 		workspaceFileContentsByPath[path] = buildScript(dockerStep)
 	}
 
@@ -240,7 +254,12 @@ func scriptNameFromJobStep(job executor.Job, i int) string {
 }
 
 // writeFiles writes to the filesystem the content in the given map.
-func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.Logger) (err error) {
+func writeFiles(workspaceFileContentsByPath map[string][]byte, logger command.Logger) (err error) {
+	// Bail out early if nothing to do, we don't need to spawn an empty log group.
+	if len(workspaceFileContentsByPath) == 0 {
+		return nil
+	}
+
 	handle := logger.Log("setup.fs", nil)
 	defer func() {
 		if err == nil {
@@ -253,9 +272,16 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.L
 	}()
 
 	for path, content := range workspaceFileContentsByPath {
+		// Ensure the path exists.
+		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+			return err
+		}
+
 		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
 			return err
 		}
+
+		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
 	}
 
 	return nil

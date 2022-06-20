@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/output/outputtest"
 )
 
@@ -46,8 +45,8 @@ func TestStartCommandSet(t *testing.T) {
 		"✅ Everything installed! Booting up the system!",
 		"",
 		"Running test-cmd-1...",
-		"[test-cmd-1] horsegraph booted up. mount your horse.",
-		"[test-cmd-1] quitting. not horsing around anymore.",
+		"[     test-cmd-1] horsegraph booted up. mount your horse.",
+		"[     test-cmd-1] quitting. not horsing around anymore.",
 		"test-cmd-1 exited without error",
 	})
 }
@@ -92,18 +91,9 @@ func useOutputBuffer(t *testing.T) *outputtest.Buffer {
 	t.Helper()
 
 	buf := &outputtest.Buffer{}
-	bufferOut := output.NewOutput(buf, output.OutputOpts{
-		ForceTTY:    true,
-		ForceColor:  true,
-		ForceHeight: 25,
-		ForceWidth:  80,
-		Verbose:     true,
-	})
 
 	oldStdout := std.Out
-	std.Out = &std.Output{
-		Output: bufferOut,
-	}
+	std.Out = std.NewFixedOutput(buf, true)
 	t.Cleanup(func() { std.Out = oldStdout })
 
 	return buf

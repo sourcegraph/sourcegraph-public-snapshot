@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,6 +32,7 @@ type RepositoryComparisonInput struct {
 type FileDiffsConnectionArgs struct {
 	First *int32
 	After *string
+	Paths *[]string
 }
 
 type RepositoryComparisonInterface interface {
@@ -75,8 +75,9 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 		headRevspec = *args.Head
 	}
 
+	client := gitserver.NewClient(db)
 	getCommit := func(ctx context.Context, repo api.RepoName, revspec string) (*GitCommitResolver, error) {
-		if revspec == git.DevNullSHA {
+		if revspec == gitserver.DevNullSHA {
 			return nil, nil
 		}
 
@@ -86,7 +87,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := gitserver.NewClient(db).ResolveRevision(ctx, repo, revspec, opt)
+		commitID, err := client.ResolveRevision(ctx, repo, revspec, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +102,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 
 	// Find the common merge-base for the diff. That's the revision the diff applies to,
 	// not the baseRevspec.
-	mergeBaseCommit, err := git.MergeBase(ctx, db, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	mergeBaseCommit, err := client.MergeBase(ctx, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
 
 	// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
 	// applicable to the file from that revision.
@@ -225,12 +226,18 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
+			var paths []string
+			if args.Paths != nil {
+				paths = *args.Paths
+			}
+
 			var iter *gitserver.DiffFileIterator
 			iter, err = gitserver.NewClient(cmp.db).Diff(ctx, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),
 				RangeType: cmp.rangeType,
+				Paths:     paths,
 			})
 			if err != nil {
 				return
@@ -292,6 +299,7 @@ func NewFileDiffConnectionResolver(
 		head:    head,
 		first:   args.First,
 		after:   args.After,
+		paths:   args.Paths,
 		compute: compute,
 		newFile: newFileFunc,
 	}
@@ -303,12 +311,13 @@ type fileDiffConnectionResolver struct {
 	head    *GitCommitResolver
 	first   *int32
 	after   *string
+	paths   *[]string
 	compute ComputeDiffFunc
 	newFile NewFileFunc
 }
 
 func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, error) {
-	fileDiffs, afterIdx, _, err := r.compute(ctx, &FileDiffsConnectionArgs{First: r.first, After: r.after})
+	fileDiffs, afterIdx, _, err := r.compute(ctx, &FileDiffsConnectionArgs{First: r.first, After: r.after, Paths: r.paths})
 	if err != nil {
 		return nil, err
 	}

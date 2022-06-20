@@ -299,7 +299,7 @@ func TestIndexedSearch(t *testing.T) {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			zoektJob := &ZoektRepoSubsetSearchJob{
+			zoektJob := &RepoSubsetTextSearchJob{
 				Repos:          indexed,
 				Query:          zoektQuery,
 				Typ:            search.TextRequest,

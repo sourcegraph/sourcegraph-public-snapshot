@@ -30,18 +30,26 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       data-testid="action-form-email"
     >
       <label
-        for="code-monitoring-form-actions-recipients"
+        class="label w-100 mb-2"
       >
-        Recipients
+        <div
+          class="mb-2"
+        >
+          Recipients
+        </div>
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="form-control with-invalid-icon"
+            disabled=""
+            id="code-monitoring-form-actions-recipients"
+            required=""
+            type="text"
+            value="user@me.com (you)"
+          />
+        </div>
       </label>
-      <input
-        class="form-control mb-2"
-        disabled=""
-        id="code-monitoring-form-actions-recipients"
-        required=""
-        type="text"
-        value="user@me.com (you)"
-      />
       <small
         class="text-muted"
       >
@@ -88,6 +96,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         Send test email
       </button>
       <div
+        aria-live="polite"
         class="mt-2 testActionError"
       >
         Please provide a name for the code monitor before sending a test

@@ -28,6 +28,8 @@ import {
     Alert,
     ProductStatusBadge,
     Link,
+    Code,
+    Input,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -88,7 +90,7 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
-        <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
+        <Code className={styles.searchContextFormPreview} data-testid="search-context-preview">
             {/*
                 a11y-ignore
                 Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -102,7 +104,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
                 </>
             )}
             <span>{searchContextName}</span>
-        </code>
+        </Code>
     )
 }
 
@@ -335,24 +337,20 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             authenticatedUser={authenticatedUser}
                         />
                     </div>
-                    <div className="flex-1">
-                        <div id="context-name-label" className="mb-2">
-                            Context name
-                        </div>
-                        <input
-                            className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
-                            aria-labelledby="context-name-label"
-                            data-testid="search-context-name-input"
-                            value={name}
-                            type="text"
-                            pattern="^[a-zA-Z0-9_\-\/\.]+$"
-                            required={true}
-                            maxLength={MAX_NAME_LENGTH}
-                            onChange={event => {
-                                setName(event.target.value)
-                            }}
-                        />
-                    </div>
+                    <Input
+                        className="flex-1 mb-0"
+                        inputClassName={styles.searchContextFormNameInput}
+                        aria-labelledby="context-name-label"
+                        label={<span className="font-weight-normal">Context name</span>}
+                        data-testid="search-context-name-input"
+                        value={name}
+                        pattern="^[a-zA-Z0-9_\-\/\.]+$"
+                        required={true}
+                        maxLength={MAX_NAME_LENGTH}
+                        onChange={event => {
+                            setName(event.target.value)
+                        }}
+                    />
                 </div>
                 <div className="text-muted my-2">
                     <small>
@@ -367,7 +365,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className={classNames('mb-1', styles.searchContextFormPreviewTitle)}>Preview</div>
                     {searchContextSpecPreview}
                 </div>
-                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
                     <div className="mb-2">
                         Description <span className="text-muted">(optional)</span>
@@ -388,7 +386,9 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className="mt-1 text-muted">
                         <small>
                             <span>Markdown formatting is supported</span>
-                            <span className="px-1">&middot;</span>
+                            <span aria-hidden={true} className="px-1">
+                                &middot;
+                            </span>
                             <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
                         </small>
                     </div>
@@ -396,27 +396,31 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
                     {visibilityRadioButtons.map((radio, index) => (
-                        <RadioButton
-                            key={radio.visibility}
-                            id={`visibility_${index}`}
-                            className={styles.searchContextFormRadio}
-                            name="visibility"
-                            value={radio.visibility}
-                            checked={visibility === radio.visibility}
-                            required={true}
-                            onChange={() => setVisibility(radio.visibility)}
-                            label={
-                                <div>
-                                    <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
-                                    <div className="text-muted">
-                                        <small>{radio.description}</small>
+                        <>
+                            <RadioButton
+                                key={radio.visibility}
+                                id={`visibility_${index}`}
+                                className={styles.searchContextFormRadio}
+                                name="visibility"
+                                value={radio.visibility}
+                                checked={visibility === radio.visibility}
+                                required={true}
+                                onChange={() => setVisibility(radio.visibility)}
+                                label={
+                                    <div>
+                                        <strong className={styles.searchContextFormVisibilityTitle}>
+                                            {radio.title}
+                                        </strong>
                                     </div>
-                                </div>
-                            }
-                        />
+                                }
+                            />
+                            <div className="ml-4 mb-2">
+                                <small className="text-muted">{radio.description}</small>
+                            </div>
+                        </>
                     ))}
                 </div>
-                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
                     <div className="mb-1">Choose repositories and revisions</div>
                     <div className="text-muted mb-3">
@@ -517,10 +521,9 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <div className="flex-grow-1" />
                         <Button
                             data-testid="search-context-delete-button"
-                            className="text-danger"
                             onClick={toggleDeleteModal}
                             outline={true}
-                            variant="secondary"
+                            variant="danger"
                         >
                             Delete
                         </Button>

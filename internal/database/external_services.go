@@ -150,11 +150,6 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 	}
 }
 
-// ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServices(db dbutil.DB) ExternalServiceStore {
-	return &externalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
 	return &externalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -205,6 +200,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -513,8 +509,8 @@ func validateBitbucketServerConnection(bitbucketServerValidators []func(connecti
 		err = errors.Append(err, validate(c))
 	}
 
-	if c.Repos == nil && c.RepositoryQuery == nil {
-		err = errors.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+	if c.Repos == nil && c.RepositoryQuery == nil && c.ProjectKeys == nil {
+		err = errors.Append(err, errors.New("at least one of: repositoryQuery, projectKeys, or repos must be set"))
 	}
 	return err
 }
@@ -615,7 +611,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB()).ExternalServices()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDBWith(e.Store).ExternalServices()); err != nil {
 			return err
 		}
 	}
@@ -630,7 +626,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	return e.Store.Handle().DB().QueryRowContext(
+	return e.Store.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
 		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault, es.HasWebhooks,
@@ -972,7 +968,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
-	res, err := e.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := e.Store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}

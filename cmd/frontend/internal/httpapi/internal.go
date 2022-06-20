@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -49,7 +48,7 @@ func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *h
 		if err != nil {
 			return err
 		}
-		phabRepo, err := database.Phabricator(db).CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
+		phabRepo, err := db.Phabricator().CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
 		if err != nil {
 			return err
 		}
@@ -83,7 +82,7 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			}
 		}
 
-		services, err := database.ExternalServices(db).List(r.Context(), options)
+		services, err := db.ExternalServices().List(r.Context(), options)
 		if err != nil {
 			return err
 		}
@@ -137,7 +136,7 @@ func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *ht
 			}
 		}
 
-		services, err := database.ExternalServices(db).List(r.Context(), options)
+		services, err := db.ExternalServices().List(r.Context(), options)
 		if err != nil {
 			return err
 		}
@@ -163,7 +162,7 @@ func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *h
 		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		settings, err := database.Settings(db).GetLatest(r.Context(), subject)
+		settings, err := db.Settings().GetLatest(r.Context(), subject)
 		if err != nil {
 			return errors.Wrap(err, "Settings.GetLatest")
 		}
@@ -181,7 +180,7 @@ func serveOrgsListUsers(db database.DB) func(w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		orgMembers, err := database.OrgMembers(db).GetByOrgID(r.Context(), orgID)
+		orgMembers, err := db.OrgMembers().GetByOrgID(r.Context(), orgID)
 		if err != nil {
 			return errors.Wrap(err, "OrgMembers.GetByOrgID")
 		}
@@ -203,29 +202,11 @@ func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		org, err := database.Orgs(db).GetByName(r.Context(), orgName)
+		org, err := db.Orgs().GetByName(r.Context(), orgName)
 		if err != nil {
 			return errors.Wrap(err, "Orgs.GetByName")
 		}
 		if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
-func serveUsersGetByUsername(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var username string
-		err := json.NewDecoder(r.Body).Decode(&username)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		user, err := database.Users(db).GetByUsername(r.Context(), username)
-		if err != nil {
-			return errors.Wrap(err, "Users.GetByUsername")
-		}
-		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
 			return errors.Wrap(err, "Encode")
 		}
 		return nil
@@ -239,7 +220,7 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		email, _, err := database.UserEmails(db).GetPrimaryEmail(r.Context(), userID)
+		email, _, err := db.UserEmails().GetPrimaryEmail(r.Context(), userID)
 		if err != nil {
 			return errors.Wrap(err, "UserEmails.GetEmail")
 		}
@@ -252,13 +233,6 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
@@ -292,42 +266,10 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 	}
 }
 
-func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// used by zoekt-sourcegraph-mirror
-		vars := mux.Vars(r)
-		name := vars["RepoName"]
-		spec := vars["Commit"]
-
-		// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
-		repo := api.RepoName(name)
-		ctx := r.Context()
-		gitserverClient := gitserver.NewClient(db)
-		commit, err := gitserverClient.ResolveRevision(ctx, repo, spec, gitserver.ResolveRevisionOptions{})
-		if err != nil {
-			return err
-		}
-
-		opts := gitserver.ArchiveOptions{
-			Treeish: string(commit),
-			Format:  "tar",
-		}
-
-		location, err := gitserverClient.ArchiveURL(ctx, repo, opts)
-		if err != nil {
-			return err
-		}
-
-		w.Header().Set("Location", location.String())
-		w.WriteHeader(http.StatusFound)
-
-		return nil
-	}
-}
-
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
+		log15.Warn("The use of .internal/git/[repoID]/exec has been deprecated")
 		req := protocol.ExecRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return errors.Wrap(err, "Decode")
@@ -341,7 +283,7 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 		}
 
 		ctx := r.Context()
-		repo, err := database.Repos(db).Get(ctx, api.RepoID(repoID))
+		repo, err := db.Repos().Get(ctx, api.RepoID(repoID))
 		if err != nil {
 			return err
 		}

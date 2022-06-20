@@ -337,7 +337,8 @@ func (s *Store) listColumns(ctx context.Context) ([]column, error) {
 
 const listColumnsQuery = `
 -- source: internal/database/migration/store/store.go:listColumns
-WITH tables AS (
+WITH
+tables AS MATERIALIZED (
 	SELECT
 		t.table_schema,
 		t.table_name
@@ -346,6 +347,17 @@ WITH tables AS (
 		t.table_type = 'BASE TABLE' AND
 		t.table_schema NOT LIKE 'pg_%%' AND
 		t.table_schema != 'information_schema'
+),
+element_types AS MATERIALIZED (
+	SELECT
+		e.object_catalog,
+		e.object_schema,
+		e.object_name,
+		e.collection_type_identifier,
+		e.data_type
+	FROM information_schema.element_types e
+	WHERE
+		e.object_type = 'TABLE'
 )
 SELECT
 	c.table_schema AS schemaName,
@@ -367,10 +379,14 @@ SELECT
 	c.generation_expression AS generationExpression,
 	pg_catalog.col_description(c.table_name::regclass::oid, c.ordinal_position::int) AS comment
 FROM information_schema.columns c
-LEFT JOIN information_schema.element_types e ON
-	(c.table_catalog,  c.table_schema,  c.table_name, 'TABLE',        c.dtd_identifier) =
-	(e.object_catalog, e.object_schema, e.object_name, e.object_type, e.collection_type_identifier)
-WHERE (c.table_schema, c.table_name) IN (SELECT table_schema, table_name FROM tables)
+JOIN tables t ON
+	t.table_schema = c.table_schema AND
+	t.table_name = c.table_name
+LEFT JOIN element_types e ON
+	e.object_catalog = c.table_catalog AND
+	e.object_schema = c.table_schema AND
+	e.object_name = c.table_name AND
+	e.collection_type_identifier = c.dtd_identifier
 ORDER BY
 	c.table_schema,
 	c.table_name,

@@ -21,7 +21,7 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
-	"batch_spec_workspace_execution_jobs.access_token_id",
+	"batch_spec_workspace_execution_jobs.user_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -34,7 +34,8 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.worker_hostname",
 	"batch_spec_workspace_execution_jobs.cancel",
 
-	"exec.place_in_queue",
+	"exec.place_in_user_queue",
+	"exec.place_in_global_queue",
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
@@ -44,7 +45,7 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
-	"batch_spec_workspace_execution_jobs.access_token_id",
+	"batch_spec_workspace_execution_jobs.user_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -57,7 +58,8 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.worker_hostname",
 	"batch_spec_workspace_execution_jobs.cancel",
 
-	"NULL AS place_in_queue",
+	"NULL AS place_in_user_queue",
+	"NULL AS place_in_global_queue",
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
@@ -65,18 +67,17 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 const executionPlaceInQueueFragment = `
 SELECT
-	exec.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(exec.process_after, exec.created_at), exec.id) as place_in_queue
-FROM batch_spec_workspace_execution_jobs exec
-WHERE exec.state = 'queued'
+	id, place_in_user_queue, place_in_global_queue
+FROM batch_spec_workspace_execution_queue
 `
 
 const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
 INSERT INTO
-	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id)
 SELECT
-	batch_spec_workspaces.id
+	batch_spec_workspaces.id,
+	batch_specs.user_id
 FROM
 	batch_spec_workspaces
 JOIN batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
@@ -113,11 +114,14 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batch
 const createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobsForWorkspaces
 INSERT INTO
-	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id)
 SELECT
-	batch_spec_workspaces.id
+	batch_spec_workspaces.id,
+	batch_specs.user_id
 FROM
 	batch_spec_workspaces
+JOIN
+	batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
 WHERE
 	batch_spec_workspaces.id = ANY (%s)
 `
@@ -410,27 +414,6 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 	)
 }
 
-// SetBatchSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
-func (s *Store) SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
-	ctx, _, endObservation := s.operations.setBatchSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(jobID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	q := sqlf.Sprintf(setSpecWorkspaceExecutionJobAccessTokenFmtstr, tokenID, jobID)
-	return s.Exec(ctx, q)
-}
-
-var setSpecWorkspaceExecutionJobAccessTokenFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:SetSpecWorkspaceExecutionJobAccessToken
-UPDATE
-	batch_spec_workspace_execution_jobs
-SET
-	access_token_id = %s
-WHERE
-	id = %s
-`
-
 func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
@@ -438,7 +421,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	if err := s.Scan(
 		&wj.ID,
 		&wj.BatchSpecWorkspaceID,
-		&dbutil.NullInt64{N: &wj.AccessTokenID},
+		&wj.UserID,
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},
@@ -449,7 +432,8 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		pq.Array(&executionLogs),
 		&wj.WorkerHostname,
 		&wj.Cancel,
-		&dbutil.NullInt64{N: &wj.PlaceInQueue},
+		&dbutil.NullInt64{N: &wj.PlaceInUserQueue},
+		&dbutil.NullInt64{N: &wj.PlaceInGlobalQueue},
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {

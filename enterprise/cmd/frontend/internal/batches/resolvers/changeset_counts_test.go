@@ -79,8 +79,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.Repos(db)
-	esStore := database.ExternalServices(db)
+	repoStore := db.Repos()
+	esStore := db.ExternalServices()
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
 	if gitHubToken == "" {
@@ -179,7 +179,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

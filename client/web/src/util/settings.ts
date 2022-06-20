@@ -44,6 +44,21 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 }
 
 /**
+ * Whether user enabled experimental feature to display extensions decorations
+ * in separate columns (only for extensions supporting decorations column display).
+ */
+export function enableExtensionsDecorationsColumnViewFromSettings(settingsCascade: SettingsCascadeOrError): boolean {
+    if (!settingsCascade.final) {
+        return false
+    }
+    if (isErrorLike(settingsCascade.final)) {
+        return false
+    }
+
+    return settingsCascade.final.experimentalFeatures?.enableExtensionsDecorationsColumnView === true
+}
+
+/**
  * Returns undefined if the settings cannot be loaded or if the setting doesn't
  * exist.
  */

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, Suspense } from 'react'
 
 import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
@@ -7,7 +7,18 @@ import { useLocation } from 'react-router-dom'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon, TabPanels, TabPanel } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    PageHeader,
+    Tabs,
+    TabList,
+    Tab,
+    Icon,
+    TabPanels,
+    TabPanel,
+    LoadingSpinner,
+} from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
@@ -79,8 +90,14 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
-                        <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
-                            <Icon as={PlusIcon} /> Add dashboard
+                        <Button
+                            as={Link}
+                            to="/insights/add-dashboard"
+                            variant="secondary"
+                            className="mr-2"
+                            aria-label="add dashboard button"
+                        >
+                            <Icon aria-hidden={true} as={PlusIcon} /> Add dashboard
                         </Button>
                         <Button
                             as={Link}
@@ -88,7 +105,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                             variant="primary"
                             onClick={() => telemetryService.log('InsightAddMoreClick')}
                         >
-                            <Icon as={PlusIcon} /> Create insight
+                            <Icon aria-hidden={true} as={PlusIcon} /> Create insight
                         </Button>
                     </>
                 }
@@ -106,7 +123,9 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                         <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
                     </TabPanel>
                     <TabPanel>
-                        <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                        </Suspense>
                     </TabPanel>
                 </TabPanels>
             </Tabs>

@@ -19,6 +19,7 @@ import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
+    /** The current workspaces preview connection result used to render the list. */
     workspacesConnection: UseConnectionResult<
         PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
     >
@@ -49,6 +50,8 @@ interface WorkspacesPreviewListProps {
     cached?: Connection<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields>
     /** Error */
     error?: string
+    /** Whether or not the items presented in the list are read-only. */
+    isReadOnly?: boolean
 }
 
 export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewListProps>> = ({
@@ -58,6 +61,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     cached,
     workspacesConnection: { connection, hasNextPage, fetchMore },
     error,
+    isReadOnly,
 }) => {
     const connectionOrCached = showCached && cached ? cached : connection
 
@@ -66,12 +70,19 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
             {error && <ConnectionError errors={[error]} />}
             <ConnectionList className="list-group list-group-flush w-100">
                 {connectionOrCached?.nodes?.map(node => (
-                    <WorkspacesPreviewListItem key={node.id} workspace={node} isStale={isStale} exclude={excludeRepo} />
+                    <WorkspacesPreviewListItem
+                        key={node.id}
+                        workspace={node}
+                        isStale={isStale}
+                        exclude={excludeRepo}
+                        isReadOnly={isReadOnly}
+                    />
                 ))}
             </ConnectionList>
             {connectionOrCached && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
+                        centered={true}
                         noSummaryIfAllNodesVisible={true}
                         first={WORKSPACES_PER_PAGE_COUNT}
                         connection={connectionOrCached}
@@ -80,7 +91,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
                         hasNextPage={hasNextPage}
                         emptyElement={<span className="text-muted">No workspaces found</span>}
                     />
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                 </SummaryContainer>
             )}
         </ConnectionContainer>

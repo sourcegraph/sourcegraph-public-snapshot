@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/charmbracelet/glamour"
-
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -14,22 +12,62 @@ import (
 type Output struct {
 	*output.Output
 
-	// Buildkite indicates we are in a Buildkite environment.
-	Buildkite bool
+	// buildkite indicates we are in a buildkite environment.
+	buildkite bool
 }
 
 // Out is the standard output which is instantiated when sg gets run.
 var Out *Output
 
-// NewOutput instantiates a new output instance for local use, such as to get
+// NewOutput instantiates a new output instance for local use with inferred configuration.
 func NewOutput(dst io.Writer, verbose bool) *Output {
+	inBuildkite := os.Getenv("BUILDKITE") == "true"
+
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
 			ForceColor: true,
 			ForceTTY:   true,
 			Verbose:    verbose,
+
+			// Buildkite output is always against a dark background, so we disable the
+			// detection. Note that for some reason the dark background detection hangs
+			// indefinitely in Buildkite, so ForceDarkBackground being set is a required.
+			ForceDarkBackground: inBuildkite,
 		}),
-		Buildkite: os.Getenv("BUILDKITE") == "true",
+		buildkite: inBuildkite,
+	}
+}
+
+// NewFixedOutput instantiates a new output instance with fixed configuration, useful for
+// platforms/scenarios with problematic terminal detection.
+func NewFixedOutput(dst io.Writer, verbose bool) *Output {
+	return &Output{
+		Output: output.NewOutput(dst, newStaticOutputOptions(verbose)),
+	}
+}
+
+// NewSimpleOutput returns a fixed width and height output that does not forcibly enable
+// TTY and color, useful for testing and getting simpler output.
+func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
+	opts := newStaticOutputOptions(verbose)
+	opts.ForceTTY = false
+	opts.ForceColor = false
+
+	return &Output{
+		Output: output.NewOutput(dst, opts),
+	}
+}
+
+// newStaticOutputOptions creates static output options that disables all terminal
+// infernce.
+func newStaticOutputOptions(verbose bool) output.OutputOpts {
+	return output.OutputOpts{
+		ForceColor:          true,
+		ForceTTY:            true,
+		Verbose:             verbose,
+		ForceWidth:          80,
+		ForceHeight:         25,
+		ForceDarkBackground: true,
 	}
 }
 
@@ -38,7 +76,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeExpanded(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "+++"
 	}
 	o.WriteLine(line)
@@ -49,7 +87,7 @@ func (o *Output) writeExpanded(line output.FancyLine) {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeCollapsed(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "---"
 	}
 	o.WriteLine(line)
@@ -60,7 +98,7 @@ func (o *Output) writeCollapsed(line output.FancyLine) {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeExpandPrevious(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "^^^ +++" // ensure previous group is expanded
 	}
 	o.WriteLine(line)
@@ -75,7 +113,7 @@ func (o *Output) WriteSuccessf(fmtStr string, args ...any) {
 //
 // In Buildkite it expands the previous and current section to make them visible.
 func (o *Output) WriteFailuref(fmtStr string, args ...any) {
-	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
+	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleFailure, fmtStr, args...))
 }
 
 // WriteWarningf should be used to communicate a non-blocking failure to the user.
@@ -108,23 +146,15 @@ func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 	o.writeExpanded(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
 }
 
-// WriteMarkdown renders Markdown nicely!
-func (o *Output) WriteMarkdown(str string) error {
-	r, err := glamour.NewTermRenderer(
-		// detect background color and pick either the default dark or light theme
-		glamour.WithAutoStyle(),
-		// wrap output at specific width
-		glamour.WithWordWrap(120),
-		glamour.WithEmoji(),
-	)
-	if err != nil {
-		return err
-	}
+// Promptf prints a prompt for user input, and should be followed by an fmt.Scan or similar.
+func (o *Output) Promptf(fmtStr string, args ...any) {
+	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	l.Prompt = true
+	o.WriteLine(l)
+}
 
-	rendered, err := r.Render(str)
-	if err != nil {
-		return err
-	}
-	o.Write(rendered)
-	return nil
+// PromptPasswordf tries to securely prompt a user for sensitive input.
+func (o *Output) PromptPasswordf(input io.Reader, fmtStr string, args ...any) (string, error) {
+	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	return o.PromptPassword(input, l)
 }

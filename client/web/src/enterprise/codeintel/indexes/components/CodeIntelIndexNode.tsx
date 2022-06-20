@@ -3,11 +3,12 @@ import { FunctionComponent } from 'react'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, H3 } from '@sourcegraph/wildcard'
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
 import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../../shared/components/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from '../../shared/components/CodeIntelUploadOrIndexLastActivity'
@@ -29,15 +30,21 @@ export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeI
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <Typography.H3 className="m-0 d-block d-md-inline">
+                <H3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
-                </Typography.H3>
+                </H3>
             </div>
 
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
-                    <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                    <CodeIntelUploadOrIndexCommit node={node} />
+                    {node.tags.length > 0 && (
+                        <>
+                            , <CodeIntelUploadOrIndexCommitTags tags={node.tags} />,
+                        </>
+                    )}{' '}
+                    by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
 
                 <small className="text-mute">

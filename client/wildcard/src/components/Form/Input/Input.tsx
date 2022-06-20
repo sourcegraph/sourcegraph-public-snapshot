@@ -5,9 +5,9 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
+import { Label } from '../..'
 import { useAutoFocus } from '../../../hooks/useAutoFocus'
 import { ForwardReferenceComponent } from '../../../types'
-import { Label } from '../../Typography/Label'
 
 import styles from './Input.module.scss'
 
@@ -66,15 +66,24 @@ export const Input = forwardRef((props, reference) => {
     const messageClassName = 'form-text font-weight-normal mt-2'
     const inputWithMessage = (
         <>
-            <LoaderInput className={classNames('d-flex', !label && className)} loading={status === InputStatus.loading}>
+            <LoaderInput
+                className={classNames('loader-input', styles.loaderInput, !label && className)}
+                loading={status === InputStatus.loading}
+            >
                 <Component
                     disabled={disabled}
                     type={type}
-                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
-                        'is-valid': status === InputStatus.valid,
-                        'is-invalid': error || status === InputStatus.error,
-                        'form-control-sm': variant === 'small',
-                    })}
+                    className={classNames(
+                        inputClassName,
+                        status === InputStatus.loading && styles.inputLoading,
+                        'form-control',
+                        'with-invalid-icon',
+                        {
+                            'is-valid': status === InputStatus.valid,
+                            'is-invalid': error || status === InputStatus.error,
+                            'form-control-sm': variant === 'small',
+                        }
+                    )}
                     {...otherProps}
                     ref={mergedReference}
                     autoFocus={autoFocus}

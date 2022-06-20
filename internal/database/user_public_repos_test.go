@@ -11,11 +11,11 @@ import (
 
 func TestUserPublicRepos_Set(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	u := Users(db)
-	r := Repos(db)
-	upr := UserPublicRepos(db)
+	u := db.Users()
+	r := db.Repos()
+	upr := db.UserPublicRepos()
 
 	user, err := u.Create(ctx, NewUser{
 		Username: "u",
@@ -61,11 +61,11 @@ func TestUserPublicRepos_Set(t *testing.T) {
 
 func TestUserPublicRepos_SetUserRepos(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	u := Users(db)
-	r := Repos(db)
-	upr := UserPublicRepos(db)
+	u := db.Users()
+	r := db.Repos()
+	upr := db.UserPublicRepos()
 
 	user, err := u.Create(ctx, NewUser{
 		Username: "u",

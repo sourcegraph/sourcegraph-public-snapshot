@@ -13,10 +13,12 @@
     "directory": "client/jetbrains"
   },
   "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build": "yarn task:gulp webpack",
     "watch": "yarn task:gulp watchWebpack",
-    "standalone": "ts-node standalone/src/server.ts"
+    "standalone": "ts-node standalone/src/server.ts",
+    "lint": "yarn run lint:js && yarn run lint:css",
+    "lint:js": "eslint --cache 'webview/**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'webview/**/*.scss'"
   }
 }

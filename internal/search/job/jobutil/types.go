@@ -7,24 +7,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 var allJobs = []job.Job{
-	&zoekt.ZoektRepoSubsetSearchJob{},
-	&zoekt.ZoektSymbolSearchJob{},
-	&searcher.SearcherJob{},
-	&searcher.SymbolSearcherJob{},
+	&zoekt.RepoSubsetTextSearchJob{},
+	&zoekt.SymbolSearchJob{},
+	&searcher.TextSearchJob{},
+	&searcher.SymbolSearchJob{},
 	&run.RepoSearchJob{},
-	&zoekt.ZoektGlobalSearchJob{},
-	&structural.StructuralSearchJob{},
-	&commit.CommitSearchJob{},
-	&symbol.RepoUniverseSymbolSearchJob{},
-	&repos.ComputeExcludedReposJob{},
+	&zoekt.GlobalTextSearchJob{},
+	&structural.SearchJob{},
+	&commit.SearchJob{},
+	&zoekt.GlobalSymbolSearchJob{},
+	&repos.ComputeExcludedJob{},
 	&NoopJob{},
 
 	&repoPagerJob{},
+	&generatedSearchJob{},
+	&FeelingLuckySearchJob{},
 
 	&AndJob{},
 	&OrJob{},

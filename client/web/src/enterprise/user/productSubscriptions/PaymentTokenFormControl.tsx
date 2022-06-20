@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { CardElement } from '@stripe/react-stripe-js'
 import classNames from 'classnames'
-import { CardElement, ReactStripeElements } from 'react-stripe-elements'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -11,33 +11,33 @@ interface Props extends ThemeProps {
     disabled?: boolean
 }
 
-// Workaround for @types/stripe-v3 missing the new disabled attribute. See
-// https://github.com/stripe/react-stripe-elements/issues/136#issuecomment-424984951.
-type PatchedElementProps = ReactStripeElements.ElementProps & { disabled?: boolean }
-const PatchedCardElement: React.FunctionComponent<React.PropsWithChildren<PatchedElementProps>> = props => (
-    <CardElement {...props} />
-)
-
 /**
  * Displays a payment form control for the user to enter payment information to purchase a product subscription.
  */
-export const PaymentTokenFormControl: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const textColor = props.isLightTheme ? '#2b3750' : 'white'
+export const PaymentTokenFormControl: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    isLightTheme,
+    disabled,
+}) => {
+    const textColor = isLightTheme ? '#2b3750' : 'white'
+    const bgColor = isLightTheme ? 'white' : '#1d212f'
 
     return (
         <div className="payment-token-form-control">
-            <PatchedCardElement
-                className={classNames('form-control', styles.card, props.disabled && styles.cardDisabled)}
-                disabled={props.disabled}
-                style={{
-                    base: {
-                        fontFamily:
-                            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                        color: textColor,
-                        ':-webkit-autofill': {
+            <CardElement
+                className={classNames('form-control', styles.card, disabled && styles.cardDisabled)}
+                options={{
+                    style: {
+                        base: {
+                            fontFamily:
+                                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                            backgroundColor: bgColor,
                             color: textColor,
+                            ':-webkit-autofill': {
+                                color: textColor,
+                            },
                         },
                     },
+                    disabled,
                 }}
             />
         </div>

@@ -9,6 +9,21 @@ import { UserSubscriptionsEditProductSubscriptionPage } from './UserSubscription
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
+jest.mock('../../dotcom/productSubscriptions/features', () => ({
+    billingPublishableKey: 'publishable-key',
+}))
+
+jest.mock('@stripe/stripe-js', () => ({
+    ...jest.requireActual('@stripe/stripe-js'),
+    loadStripe: () =>
+        Promise.resolve({
+            elements: () => {},
+            createToken: () => {},
+            createPaymentMethod: () => {},
+            confirmCardPayment: () => {},
+        }),
+}))
+
 const history = H.createMemoryHistory()
 const location = H.createLocation('/')
 

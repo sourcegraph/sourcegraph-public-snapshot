@@ -3,7 +3,7 @@ import { parseISO } from 'date-fns'
 import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Typography } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -42,13 +42,13 @@ add('RecentSearchesPanel', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <Typography.H2>Populated</Typography.H2>
+                <H2>Populated</H2>
                 <RecentSearchesPanel {...props} />
 
-                <Typography.H2>Loading</Typography.H2>
+                <H2>Loading</H2>
                 <RecentSearchesPanel {...props} recentSearches={null} />
 
-                <Typography.H2>Empty</Typography.H2>
+                <H2>Empty</H2>
                 <RecentSearchesPanel {...props} recentSearches={{ recentSearchesLogs: emptyRecentSearches }} />
             </div>
         )}

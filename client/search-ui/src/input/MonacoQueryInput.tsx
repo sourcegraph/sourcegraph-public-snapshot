@@ -70,7 +70,6 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
-    onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
@@ -95,6 +94,8 @@ export interface MonacoQueryInputProps
      * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
      */
     placeholder?: string
+
+    ariaLabel?: string
 
     editorClassName?: string
 }
@@ -158,7 +159,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     onBlur,
     onChange,
     onSubmit = noop,
-    onSuggestionsInitialized,
     onCompletionItemSelected,
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     autoFocus,
@@ -176,15 +176,29 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     editorClassName,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
+    ariaLabel = 'Search query',
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     const onEditorCreated = useCallback(
         (editor: Monaco.editor.IStandaloneCodeEditor) => {
+            // `role` set to fix accessibility issues
+            // https://github.com/sourcegraph/sourcegraph/issues/34733
+            editor.getDomNode()?.setAttribute('role', 'textbox')
+            // `aria-label` to fix accessibility audit
+            editor.getDomNode()?.setAttribute('aria-label', ariaLabel)
+
             setEditor(editor)
-            onEditorCreatedCallback?.(editor)
+            onEditorCreatedCallback?.({
+                focus() {
+                    editor.focus()
+                },
+                showSuggestions() {
+                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                },
+            })
         },
-        [setEditor, onEditorCreatedCallback]
+        [setEditor, onEditorCreatedCallback, ariaLabel]
     )
 
     // Trigger a layout of the Monaco editor when its container gets resized.
@@ -215,15 +229,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     })
 
     useQueryDiagnostics(editor, { patternType, interpretComments })
-
-    // Register suggestions handle
-    useEffect(() => {
-        if (editor) {
-            onSuggestionsInitialized?.({
-                trigger: () => editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {}),
-            })
-        }
-    }, [editor, onSuggestionsInitialized])
 
     // Register onCompletionSelected handler
     useEffect(() => {

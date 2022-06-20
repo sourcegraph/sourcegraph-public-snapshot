@@ -2,14 +2,16 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,9 +31,9 @@ var registerer = prometheus.DefaultRegisterer
 // RequestMeter wraps a Prometheus request meter (counter + duration histogram) updated by requests made by derived
 // http.RoundTrippers.
 type RequestMeter struct {
-	counter   *prometheus.CounterVec
-	duration  *prometheus.HistogramVec
-	subsystem string
+	log      log.Logger
+	counter  *prometheus.CounterVec
+	duration *prometheus.HistogramVec
 }
 
 const (
@@ -80,7 +82,11 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 	}, []string{"category", "code", "host"})
 	registerer.MustRegister(requestDuration)
 
-	return &RequestMeter{counter: requestCounter, duration: requestDuration, subsystem: subsystem}
+	return &RequestMeter{
+		log:      log.Scoped(fmt.Sprintf("%s.RequestMeter", subsystem), help),
+		counter:  requestCounter,
+		duration: requestDuration,
+	}
 }
 
 // Transport returns an http.RoundTripper that updates rm for each request. The categoryFunc is called to
@@ -142,7 +148,11 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 	}).Inc()
 
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
-	log15.Debug("TRACE "+t.meter.subsystem, "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", d)
+	t.meter.log.Debug("request.trace",
+		log.String("host", r.URL.Host),
+		log.String("path", r.URL.Path),
+		log.String("code", code),
+		log.Duration("duration", d))
 	return
 }
 

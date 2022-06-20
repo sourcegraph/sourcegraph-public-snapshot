@@ -1,9 +1,28 @@
-import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-import { useObservable } from '@sourcegraph/wildcard'
+import { ObservableStatus, useObservableWithStatus } from '@sourcegraph/wildcard'
 
 import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
+
+type UseTemporarySettingsReturnType<K extends keyof TemporarySettings> = [
+    TemporarySettings[K],
+    (newValue: TemporarySettings[K] | ((previousValue: TemporarySettings[K]) => TemporarySettings[K])) => void,
+    TemporarySettingsLoadStatus
+]
+
+type TemporarySettingsLoadStatus = 'initial' | 'loaded' | 'error'
+
+const mapObservableStatusToStatus = (observableStatus: ObservableStatus): TemporarySettingsLoadStatus => {
+    switch (observableStatus) {
+        case 'initial':
+            return 'initial'
+        case 'error':
+            return 'error'
+        default:
+            return 'loaded'
+    }
+}
 
 /**
  * React Hook to get and set a single temporary setting.
@@ -19,13 +38,10 @@ import { TemporarySettingsContext } from './TemporarySettingsProvider'
 export const useTemporarySetting = <K extends keyof TemporarySettings>(
     key: K,
     defaultValue?: TemporarySettings[K]
-): [
-    TemporarySettings[K],
-    (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])) => void
-] => {
+): UseTemporarySettingsReturnType<K> => {
     const temporarySettings = useContext(TemporarySettingsContext)
 
-    const updatedValue = useObservable(
+    const [observableValue, observableStatus] = useObservableWithStatus(
         useMemo(
             () => temporarySettings.get(key, defaultValue),
             // `defaultValue` should not be a dependency, otherwise the
@@ -37,26 +53,27 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
         )
     )
 
-    // We want to avoid the setter function to be recreated whenever the
-    // temporary settings value changes. To do this, we create a reference that
-    // always points to the latest updated value.
-    const updatedValueReference = useRef<TemporarySettings[K] | undefined>(updatedValue)
-    useEffect(() => {
-        updatedValueReference.current = updatedValue
-    }, [updatedValue])
+    // Using useState to handle all setValueAndSave(previousValue => newValue) calls
+    // since when using directly temporary settings doesn't keep previousValue up to date
+    const [value, setValue] = useState(observableValue)
 
-    const setValueAndSave = useCallback(
-        (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])): void => {
-            let finalValue: TemporarySettings[K]
-            if (typeof newValue === 'function') {
-                finalValue = newValue(updatedValueReference.current)
-            } else {
-                finalValue = newValue
-            }
-            temporarySettings.set(key, finalValue)
-        },
+    // Using separate "status" state to be in sync with "value"
+    const [status, setStatus] = useState<TemporarySettingsLoadStatus>('initial')
+
+    useEffect(() => {
+        setStatus(mapObservableStatusToStatus(observableStatus))
+        setValue(observableValue)
+    }, [key, observableStatus, observableValue])
+
+    const setValueAndSave: typeof setValue = useCallback(
+        newValue =>
+            setValue(previousValue => {
+                const finalValue = typeof newValue === 'function' ? newValue(previousValue) : newValue
+                temporarySettings.set(key, finalValue)
+                return finalValue
+            }),
         [key, temporarySettings]
     )
 
-    return [updatedValue, setValueAndSave]
+    return [value, setValueAndSave, status]
 }

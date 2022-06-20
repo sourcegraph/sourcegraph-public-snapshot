@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 
+import classNames from 'classnames'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -8,8 +9,9 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
+import { TerminalLine } from '../auth/Terminal'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -20,6 +22,8 @@ import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operat
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+
+import styles from './SiteAdminRepositoriesPage.module.scss'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -44,14 +48,15 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <Icon as={CloudOutlineIcon} /> Not yet cloned
+                        <Icon as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
                     </small>
                 )}
             </div>
+
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon as={CloudDownloadIcon} /> Clone now
+                        <Icon as={CloudDownloadIcon} aria-hidden={true} /> Clone now
                     </Button>
                 )}{' '}
                 {
@@ -62,11 +67,20 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} /> Settings
+                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>
                 }{' '}
             </div>
         </div>
+
+        {node.mirrorInfo.lastError && (
+            <div className={classNames(styles.alertWrapper)}>
+                <Alert variant="warning">
+                    <TerminalLine>Error updating repo:</TerminalLine>
+                    <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+                </Alert>
+            </div>
+        )}
     </li>
 )
 
@@ -151,14 +165,14 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     statuses are displayed below.
                 </Alert>
             )}
-            <Typography.H2>Repositories</Typography.H2>
-            <p>
+            <H2>Repositories</H2>
+            <Text>
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
                     code host connections
                 </Link>
                 .
-            </p>
+            </Text>
             <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
                 noun="repository"

@@ -12,7 +12,7 @@ import LockIcon from 'mdi-react/LockIcon'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Link, Icon, Code, H1, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 
@@ -61,35 +61,37 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <SourcegraphLogo className={styles.sourcegraphLogo} />
                 </Link>
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
-                    Browser extension docs <Icon role="img" as={ExternalLinkIcon} aria-hidden={true} />
+                    Browser extension docs <Icon as={ExternalLinkIcon} aria-hidden={true} />
                 </Link>
             </div>
 
             <div className="container mt-3">
-                <Typography.H1>🎉 You’ve just installed the Sourcegraph browser extension!</Typography.H1>
-                <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
+                <H1>🎉 You’ve just installed the Sourcegraph browser extension!</H1>
+                <Text className="lead mb-0">
+                    We’ve gathered the most important information that will get your started:
+                </Text>
             </div>
 
             <section className="border-bottom py-5">
                 <div className="container">
-                    <Typography.H2 className="mb-4">How do I use the extension?</Typography.H2>
+                    <H2 className="mb-4">How do I use the extension?</H2>
                     <div className="row">
                         <div className="col-md-6">
-                            <Typography.H3>Code intelligence on your code host</Typography.H3>
-                            <p>
+                            <H3>Code intelligence on your code host</H3>
+                            <Text>
                                 Sourcegraph browser extension adds code intelligence to files and diffs on GitHub,
                                 GitHub Enterprise, GitLab, Phabricator, Bitbucket Server, and Gerrit.
-                            </p>
+                            </Text>
                             <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
                         </div>
                         {showSearchShortcut && (
                             <div className="col-md-6 mt-4 mt-md-0">
-                                <Typography.H3>Search shortcut in the URL location bar</Typography.H3>
-                                <p>
-                                    Type <code>src</code>
+                                <H3>Search shortcut in the URL location bar</H3>
+                                <Text>
+                                    Type <Code>src</Code>
                                     <kbd>tab</kbd> in the address bar of your browser to search for queries on
                                     Sourcegraph.
-                                </p>
+                                </Text>
                                 <Video {...props} name="BrowserShortcut" width={1196} height={720} />
                             </div>
                         )}
@@ -101,62 +103,37 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                 <div className="container">
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <Typography.H2 className="mb-4">Make it work on your codehost</Typography.H2>
+                            <H2 className="mb-4">Make it work on your codehost</H2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
-                                <Typography.H3 className={classNames('mb-3', styles.codeHostTitles)}>
-                                    <Icon
-                                        role="img"
-                                        className={styles.codeHostLogo}
-                                        as={GithubIcon}
-                                        aria-hidden={true}
-                                    />{' '}
+                                <H3 className={classNames('mb-3', styles.codeHostTitles)}>
+                                    <Icon className={styles.codeHostLogo} as={GithubIcon} aria-hidden={true} />{' '}
                                     github.com
-                                </Typography.H3>
-                                <p className="m-0">
-                                    <Icon role="img" as={CheckIcon} aria-hidden={true} /> No action required.Your
-                                    extension works here by default.
-                                </p>
+                                </H3>
+                                <Text className="m-0">
+                                    <Icon as={CheckIcon} aria-hidden={true} /> No action required.Your extension works
+                                    here by default.
+                                </Text>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
-                                <Typography.H3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
+                                <H3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <Icon
-                                            role="img"
-                                            className={styles.codeHostLogo}
-                                            as={GithubIcon}
-                                            aria-hidden={true}
-                                        />{' '}
+                                        <Icon className={styles.codeHostLogo} as={GithubIcon} aria-hidden={true} />{' '}
                                         GitHub Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon
-                                            role="img"
-                                            className={styles.codeHostLogo}
-                                            as={GitlabIcon}
-                                            aria-hidden={true}
-                                        />{' '}
+                                        <Icon className={styles.codeHostLogo} as={GitlabIcon} aria-hidden={true} />{' '}
                                         GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon
-                                            role="img"
-                                            className={styles.codeHostLogo}
-                                            as={BitbucketIcon}
-                                            aria-hidden={true}
-                                        />{' '}
+                                        <Icon className={styles.codeHostLogo} as={BitbucketIcon} aria-hidden={true} />{' '}
                                         Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon
-                                            role="img"
-                                            className={styles.codeHostLogo}
-                                            as={PhabricatorIcon}
-                                            aria-hidden={true}
-                                        />{' '}
+                                        <Icon className={styles.codeHostLogo} as={PhabricatorIcon} aria-hidden={true} />{' '}
                                         Phabricator
                                     </div>
-                                </Typography.H3>
-                                <p>Your extension needs explicit permissions to your code host:</p>
+                                </H3>
+                                <Text>Your extension needs explicit permissions to your code host:</Text>
                                 <ol className="m-0">
                                     <li>Navigate to any page on your code host.</li>
                                     <li>
@@ -187,19 +164,19 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                 <div className="container">
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <Typography.H2 className="mb-4">Make it work for private code</Typography.H2>
-                            <p>By default, the browser extension works only for public code.</p>
+                            <H2 className="mb-4">Make it work for private code</H2>
+                            <Text>By default, the browser extension works only for public code.</Text>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
-                                    <Icon role="img" as={LockIcon} aria-hidden={true} />
+                                    <Icon as={LockIcon} aria-hidden={true} />
                                 </div>
-                                <p className="m-0 ml-3">
+                                <Text className="m-0 ml-3">
                                     To use the browser extension with your private repositories, you need to set up a{' '}
                                     <strong>private Sourcegraph instance</strong> and connect the extension to it.
-                                </p>
+                                </Text>
                             </div>
                             <div className="bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
-                                <p>Follow these instructions:</p>
+                                <Text>Follow these instructions:</Text>
                                 <ol className="m-0 d-flex flex-column justify-content-around">
                                     <li>
                                         <strong>Install Sourcegraph</strong> (
@@ -236,12 +213,12 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
 
             <section className="py-5">
                 <div className="container">
-                    <Typography.H2 className="mb-4">Additional resources</Typography.H2>
+                    <H2 className="mb-4">Additional resources</H2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
-                            <Icon role="img" as={BookOpenPageVariantIcon} aria-hidden={true} />
+                            <Icon as={BookOpenPageVariantIcon} aria-hidden={true} />
                         </div>
-                        <p className="m-0 ml-3">
+                        <Text className="m-0 ml-3">
                             Read the{' '}
                             <Link
                                 to="https://docs.sourcegraph.com/integration/browser_extension"
@@ -251,7 +228,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                                 Sourcegraph docs
                             </Link>{' '}
                             to learn more about how we respect your privacy, troubleshooting and extension features.
-                        </p>
+                        </Text>
                     </div>
                 </div>
             </section>

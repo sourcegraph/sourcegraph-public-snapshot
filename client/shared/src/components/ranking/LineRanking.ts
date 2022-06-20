@@ -44,7 +44,6 @@ const calculateGroupPositions = (
         line: number
         character: number
         highlightLength: number
-        isInContext: boolean
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
@@ -147,7 +146,6 @@ export const calculateMatchGroupsSorted = (
                 line: match.line,
                 character: range.start,
                 highlightLength: range.highlightLength,
-                isInContext: maxMatches === 0 ? false : match.line > highestLineNumberWithinSubsetMatches,
             }))
         )
     ).map(group => calculateGroupPositions(group, context, highestLineNumberWithinSubsetMatches))

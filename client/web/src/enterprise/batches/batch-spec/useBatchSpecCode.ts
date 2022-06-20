@@ -10,7 +10,13 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 
-import { excludeRepo as excludeRepoFromYaml, hasOnOrImportChangesetsStatement } from './yaml-util'
+import helloWorldSample from './edit/library/hello-world.batch.yaml'
+import {
+    excludeRepo as excludeRepoFromYaml,
+    hasOnOrImportChangesetsStatement,
+    isMinimalBatchSpec,
+    insertNameIntoLibraryItem,
+} from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)
@@ -28,7 +34,8 @@ const formatError = (error: { instancePath: string; message?: string }): string 
 
 const DEBOUNCE_AMOUNT = 500
 
-interface UseBatchSpecCodeResult {
+/** API for state managing the batch spec input YAML code in the Monaco editor. */
+export interface UseBatchSpecCodeResult {
     /** The current YAML code in the editor. */
     code: string
     /** The value of `code` but trail debounced by `DEBOUNCE_AMOUNT` */
@@ -40,6 +47,11 @@ interface UseBatchSpecCodeResult {
      * spec schema requirements, or 'unknown' if validation has not yet recomputed.
      */
     isValid: boolean | 'unknown'
+    /**
+     * Whether or not the batch spec YAML on the server which was used to preview
+     * workspaces is up-to-date with that which is presently in the editor.
+     */
+    isServerStale: boolean
     /**
      * Any errors that occurred either while validating the batch spec YAML, or while
      * trying to automatically update it (i.e. to automatically exclude a repo).
@@ -58,15 +70,15 @@ interface UseBatchSpecCodeResult {
 }
 
 /**
- * Custom hook for "CreateOrEdit" page which packages up business logic and exposes an API
- * for managing the batch spec input YAML code that the user interacts with via the Monaco
+ * Custom hook for edit page which packages up business logic and exposes an API for
+ * managing the batch spec input YAML code that the user interacts with via the Monaco
  * editor.
  *
- * @param initialCode The initial YAML code that is displayed in the editor.
+ * @param originalInput The initial YAML code of the batch spec.
  * @param name The name of the batch change, which is used for validation.
  */
-export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpecCodeResult => {
-    const validateSpec = useMemo(() => {
+export const useBatchSpecCode = (originalInput: string, name: string): UseBatchSpecCodeResult => {
+    const validateFunction = useMemo(() => {
         const schemaID = `${batchSpecSchemaJSON.$id}/${name}`
 
         const existingValidateFunction = ajv.getSchema(schemaID)
@@ -90,53 +102,62 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
         return ajv.compile<BatchSpec>(schemaJSONWithName)
     }, [name])
 
-    const [code, setCode] = useState<string>(initialCode)
-    const debouncedCode = useDebounce(code, 250)
+    const validate = useCallback(
+        (code: string): [isValid: boolean, error?: string] => {
+            try {
+                const parsed = loadYAML(code)
+                const valid = validateFunction(parsed)
+                const hasOnOrImport = hasOnOrImportChangesetsStatement(code)
 
-    const [validationError, setValidationErrors] = useState<string>()
-    const [updateError, setUpdateError] = useState<string>()
+                const validationError =
+                    !valid && validateFunction.errors?.length
+                        ? `The entered spec is invalid:\n  * ${validateFunction.errors.map(formatError).join('\n  * ')}`
+                        : !hasOnOrImport
+                        ? 'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
+                        : undefined
+
+                return [valid && hasOnOrImport, validationError]
+            } catch (error: unknown) {
+                // Try to extract the error message.
+                const validationError =
+                    error && typeof error === 'object' && 'reason' in error
+                        ? (error as { reason: string }).reason
+                        : 'Unknown validation error occurred.'
+
+                return [false, validationError]
+            }
+        },
+        [validateFunction]
+    )
+
+    const [code, setCode] = useState<string>(() =>
+        // Start with the hello world sample code initially if the user hasn't written any
+        // batch spec code yet, otherwise show the latest spec code.
+        isMinimalBatchSpec(originalInput) ? insertNameIntoLibraryItem(helloWorldSample, name) : originalInput
+    )
+    const debouncedCode = useDebounce(code, DEBOUNCE_AMOUNT)
+
+    const [validationError, setValidationErrors] = useState<string | undefined>(() => validate(code)[1])
+    const [updateError, setUpdateError] = useState<string | undefined>()
 
     const clearErrors = useCallback(() => {
         setValidationErrors(undefined)
         setUpdateError(undefined)
     }, [])
 
-    const [isValid, setIsValid] = useState<boolean | 'unknown'>('unknown')
+    const [isValid, setIsValid] = useState<boolean | 'unknown'>(() => validate(code)[0])
 
-    const validate = useCallback(
+    const revalidate = useCallback(
         (newCode: string) => {
-            try {
-                const parsed = loadYAML(newCode)
-                const valid = validateSpec(parsed)
-                const hasOnOrImport = hasOnOrImportChangesetsStatement(newCode)
-                setIsValid(valid && hasOnOrImport)
-                if (!valid && validateSpec.errors?.length) {
-                    setValidationErrors(
-                        `The entered spec is invalid:\n  * ${validateSpec.errors.map(formatError).join('\n  * ')}`
-                    )
-                } else if (!hasOnOrImport) {
-                    setValidationErrors(
-                        'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
-                    )
-                }
-            } catch (error: unknown) {
-                setIsValid(false)
-                // Try to extract the error message.
-                if (error && typeof error === 'object' && 'reason' in error) {
-                    setValidationErrors((error as { reason: string }).reason)
-                } else {
-                    setValidationErrors('unknown validation error occurred')
-                }
-            }
+            const [isValid, validationError] = validate(newCode)
+            setIsValid(isValid)
+            setValidationErrors(validationError)
         },
-        [validateSpec]
+        [validate]
     )
 
-    // Run validation once for initial batch spec code.
-    useEffect(() => validate(initialCode), [initialCode, validate])
-
-    // Debounce validation to avoid excessive computation.
-    const debouncedValidate = useMemo(() => debounce(validate, DEBOUNCE_AMOUNT), [validate])
+    // Debounce revalidation to avoid excessive computation.
+    const debouncedValidate = useMemo(() => debounce(revalidate, DEBOUNCE_AMOUNT), [revalidate])
 
     // Stop the debounced function on dismount.
     useEffect(
@@ -183,6 +204,13 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
         debouncedCode,
         handleCodeChange,
         isValid,
+        // NOTE: The batch spec YAML code is considered stale if any part of it changes.
+        // This is because of a current limitation of the backend where we need to
+        // re-submit the batch spec code and wait for the new workspaces preview to finish
+        // resolving before we can execute, or else the execution will use an older batch
+        // spec. We will address this when we implement the "auto-saving" feature and
+        // decouple previewing workspaces from updating the batch spec code.
+        isServerStale: originalInput !== debouncedCode,
         errors: {
             validation: validationError,
             update: updateError,

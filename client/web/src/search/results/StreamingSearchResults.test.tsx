@@ -22,7 +22,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
@@ -52,7 +51,6 @@ describe('StreamingSearchResults', () => {
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
-        featureFlags: EMPTY_FEATURE_FLAGS,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
     }

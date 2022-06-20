@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -60,7 +61,7 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 	t.Helper()
 	root := CreateRepoDir(t)
 	remotes := filepath.Join(root, "remotes")
-	if err := os.MkdirAll(remotes, 0700); err != nil {
+	if err := os.MkdirAll(remotes, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	dir, err := os.MkdirTemp(remotes, strings.ReplaceAll(t.Name(), "/", "__"))
@@ -84,7 +85,10 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 func CreateGitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"))
+	c.Env = []string{"GIT_CONFIG=" + path.Join(dir, ".git", "config")}
+	if systemPath, ok := os.LookupEnv("PATH"); ok {
+		c.Env = append(c.Env, "PATH="+systemPath)
+	}
 	return c
 }
 
@@ -94,4 +98,46 @@ func AsJSON(v any) string {
 		panic(err)
 	}
 	return string(b)
+}
+
+func AppleTime(t string) string {
+	ti, _ := time.Parse(time.RFC3339, t)
+	return ti.Local().Format("200601021504.05")
+}
+
+var Times = []string{
+	AppleTime("2006-01-02T15:04:05Z"),
+	AppleTime("2014-05-06T19:20:21Z"),
+}
+
+// ComputeCommitHash Computes hash of last commit in a given repo dir
+// On Windows, content of a "link file" differs based on the tool that produced it.
+// For example:
+// - Cygwin may create four different link types, see https://cygwin.com/cygwin-ug-net/using.html#pathnames-symlinks,
+// - MSYS's ln copies target file
+// Such behavior makes impossible precalculation of SHA hashes to be used in TestRepository_FileSystem_Symlinks
+// because for example Git for Windows (http://git-scm.com) is not aware of symlinks and computes link file's SHA which
+// may differ from original file content's SHA.
+// As a temporary workaround, we calculating SHA hash by asking git/hg to compute it
+func ComputeCommitHash(repoDir string, git bool) string {
+	buf := &bytes.Buffer{}
+
+	if git {
+		// git cat-file tree "master^{commit}" | git hash-object -t commit --stdin
+		cat := exec.Command("git", "cat-file", "commit", "master^{commit}")
+		cat.Dir = repoDir
+		hash := exec.Command("git", "hash-object", "-t", "commit", "--stdin")
+		hash.Stdin, _ = cat.StdoutPipe()
+		hash.Stdout = buf
+		hash.Dir = repoDir
+		_ = hash.Start()
+		_ = cat.Run()
+		_ = hash.Wait()
+	} else {
+		hash := exec.Command("hg", "--debug", "id", "-i")
+		hash.Dir = repoDir
+		hash.Stdout = buf
+		_ = hash.Run()
+	}
+	return strings.TrimSpace(buf.String())
 }

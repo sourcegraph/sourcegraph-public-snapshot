@@ -16,7 +16,7 @@ import (
 
 // A Sourcer converts the given ExternalService to a Source whose yielded Repos
 // should be synced.
-type Sourcer func(*types.ExternalService) (Source, error)
+type Sourcer func(context.Context, *types.ExternalService) (Source, error)
 
 // NewSourcer returns a Sourcer that converts the given ExternalService
 // into a Source that uses the provided httpcli.Factory to create the
@@ -24,8 +24,8 @@ type Sourcer func(*types.ExternalService) (Source, error)
 //
 // The provided decorator functions will be applied to the Source.
 func NewSourcer(db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(db, svc, cf)
+	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
+		src, err := NewSource(ctx, db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -39,14 +39,14 @@ func NewSourcer(db database.DB, cf *httpcli.Factory, decs ...func(Source) Source
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
 	externalServicesStore := db.ExternalServices()
 
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
 		return NewGithubSource(externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(svc, cf)
+		return NewGitLabSource(ctx, db, svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(svc, cf)
 	case extsvc.KindBitbucketServer:
@@ -72,6 +72,8 @@ func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) 
 		return NewNpmPackagesSource(svc, cf)
 	case extsvc.KindPythonPackages:
 		return NewPythonPackagesSource(svc, cf)
+	case extsvc.KindRustPackages:
+		return NewRustPackagesSource(svc, cf)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:

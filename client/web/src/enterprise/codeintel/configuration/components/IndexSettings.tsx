@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Alert, Typography } from '@sourcegraph/wildcard'
+import { Alert, Label, H3 } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
@@ -53,7 +53,7 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
 
     return (
         <div className="form-group">
-            <Typography.H3>Auto-indexing</Typography.H3>
+            <H3>Auto-indexing</H3>
             <div className="mb-4 form-group">
                 <RadioButtons
                     nodes={radioButtons}
@@ -73,9 +73,9 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
                         </Alert>
                     )}
 
-                <label className="ml-4" htmlFor="index-commit-max-age">
+                <Label className="ml-4" htmlFor="index-commit-max-age">
                     Commit max age
-                </label>
+                </Label>
                 <DurationSelect
                     id="index-commit-max-age"
                     value={policy.indexCommitMaxAgeHours ? `${policy.indexCommitMaxAgeHours}` : null}
@@ -94,9 +94,9 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
                         onToggle={indexIntermediateCommits => updatePolicy({ indexIntermediateCommits })}
                         disabled={!policy.indexingEnabled}
                     />
-                    <label htmlFor="index-intermediate-commits" className="ml-2">
+                    <Label htmlFor="index-intermediate-commits" className="ml-2">
                         Index intermediate commits
-                    </label>
+                    </Label>
                 </div>
             )}
         </div>

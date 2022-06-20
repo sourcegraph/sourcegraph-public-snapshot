@@ -4,7 +4,7 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
@@ -35,19 +35,22 @@ const BUTTON_WIDTH = '1.25rem'
 // Match to `.list-container` class width
 const CONTENT_WIDTH = '14rem'
 
-interface LibraryPaneProps {
-    /**
-     * The name of the batch change, used for automatically filling in the name for any
-     * item selected from the library.
-     */
-    name: Scalars['String']
-    onReplaceItem: (item: string) => void
-}
+type LibraryPaneProps =
+    | {
+          /**
+           * The name of the batch change, used for automatically filling in the name for any
+           * item selected from the library.
+           */
+          name: Scalars['String']
+          onReplaceItem: (item: string) => void
+          isReadOnly?: false
+      }
+    | {
+          name: Scalars['String']
+          isReadOnly: true
+      }
 
-export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({
-    name,
-    onReplaceItem,
-}) => {
+export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({ name, ...props }) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
     const [collapsed, setCollapsed] = useState(defaultCollapsed)
@@ -92,12 +95,12 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
     )
 
     const onConfirm = useCallback(() => {
-        if (selectedItem) {
+        if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
             const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
-            onReplaceItem(codeWithName)
+            props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
-    }, [name, selectedItem, onReplaceItem])
+    }, [name, selectedItem, props])
 
     return (
         <>
@@ -119,7 +122,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             onClick={() => toggleCollapse(!collapsed)}
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
-                            <Icon as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
+                            <Icon aria-hidden={true} as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
                         </Button>
                     </div>
                 </div>
@@ -128,19 +131,19 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                     <ul className={styles.listContainer}>
                         {LIBRARY.map(item => (
                             <li className={styles.libraryItem} key={item.name}>
-                                <button
-                                    type="button"
+                                <Button
                                     className={styles.libraryItemButton}
+                                    disabled={'isReadOnly' in props && props.isReadOnly}
                                     onClick={() => setSelectedItem(item)}
                                 >
                                     {item.name}
-                                </button>
+                                </Button>
                             </li>
                         ))}
                     </ul>
-                    <p className={styles.lastItem}>
+                    <Text className={styles.lastItem}>
                         <Link to="https://github.com/sourcegraph/batch-change-examples">View more examples</Link>
-                    </p>
+                    </Text>
                 </animated.div>
             </animated.div>
         </>

@@ -19,8 +19,6 @@ import {
     CancelBatchSpecExecutionVariables,
     Scalars,
     WorkspaceStepFileDiffConnectionFields,
-    RetryBatchSpecExecutionResult,
-    RetryBatchSpecExecutionVariables,
     BatchSpecWorkspaceState,
     VisibleBatchSpecWorkspaceFields,
     HiddenBatchSpecWorkspaceFields,
@@ -44,6 +42,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             deleted
         }
         placeInQueue
+        placeInGlobalQueue
         onlyFetchWorkspace
         ignored
         unsupported
@@ -165,10 +164,21 @@ const batchSpecWorkspaceFieldsFragment = gql`
     }
 `
 
-const batchSpecExecutionFieldsFragment = gql`
+const batchSpecWorkspaceStatsFragment = gql`
+    fragment BatchSpecWorkspaceStats on BatchSpecWorkspacesStats {
+        errored
+        completed
+        processing
+        queued
+        ignored
+    }
+`
+
+export const batchSpecExecutionFieldsFragment = gql`
     fragment BatchSpecExecutionFields on BatchSpec {
         id
         originalInput
+        source
         state
         description {
             name
@@ -196,15 +206,13 @@ const batchSpecExecutionFieldsFragment = gql`
         workspaceResolution {
             workspaces {
                 stats {
-                    errored
-                    completed
-                    processing
-                    queued
-                    ignored
+                    ...BatchSpecWorkspaceStats
                 }
             }
         }
     }
+
+    ${batchSpecWorkspaceStatsFragment}
 `
 
 export const FETCH_BATCH_SPEC_EXECUTION = gql`
@@ -272,7 +280,7 @@ export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHook
     return result
 }
 
-const CANCEL_BATCH_SPEC_EXECUTION = gql`
+export const CANCEL_BATCH_SPEC_EXECUTION = gql`
     mutation CancelBatchSpecExecution($id: ID!) {
         cancelBatchSpecExecution(batchSpec: $id) {
             ...BatchSpecExecutionFields
@@ -356,7 +364,7 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
         })
     )
 
-const BATCH_SPEC_WORKSPACES = gql`
+export const BATCH_SPEC_WORKSPACES = gql`
     query BatchSpecWorkspaces(
         $node: ID!
         $first: Int
@@ -479,7 +487,7 @@ export const useRetryWorkspaceExecution = (
 ): MutationTuple<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables> =>
     useMutation(RETRY_WORKSPACE_EXECUTION, { variables: { id: workspaceID } })
 
-const RETRY_BATCH_SPEC_EXECUTION = gql`
+export const RETRY_BATCH_SPEC_EXECUTION = gql`
     mutation RetryBatchSpecExecution($id: ID!) {
         retryBatchSpecExecution(batchSpec: $id) {
             ...BatchSpecExecutionFields
@@ -488,8 +496,3 @@ const RETRY_BATCH_SPEC_EXECUTION = gql`
 
     ${batchSpecExecutionFieldsFragment}
 `
-
-export const useRetryBatchSpecExecution = (
-    batchSpecID: Scalars['ID']
-): MutationTuple<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables> =>
-    useMutation(RETRY_BATCH_SPEC_EXECUTION, { variables: { id: batchSpecID } })

@@ -18,7 +18,7 @@ interface UseExecuteBatchSpecResult {
 }
 
 /**
- * Custom hook for "CreateOrEdit" page which wraps `useMutation` for `EXECUTE_BATCH_SPEC`.
+ * Custom hook for edit page which wraps `useMutation` for `EXECUTE_BATCH_SPEC`.
  *
  * @param batchSpecID The current batch spec ID.
  */
@@ -38,7 +38,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatc
         submitBatchSpec({ variables: { batchSpec: batchSpecID } })
             .then(({ data }) => {
                 if (data?.executeBatchSpec) {
-                    history.push(
+                    history.replace(
                         `${data.executeBatchSpec.namespace.url}/batch-changes/${data.executeBatchSpec.description.name}/executions/${data.executeBatchSpec.id}`
                     )
                 }

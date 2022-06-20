@@ -2,54 +2,56 @@ package store
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Store struct {
-	*basestore.Store
+// Store provides the interface for policies storage.
+type Store interface {
+	List(ctx context.Context, opts ListOpts) (policies []shared.Policy, err error)
+}
+
+// store manages the policies store.
+type store struct {
+	db         *basestore.Store
 	operations *operations
 }
 
-func newStore(db dbutil.DB, observationContext *observation.Context) *Store {
-	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
+// New returns a new policies store.
+func New(db database.DB, observationContext *observation.Context) *store {
+	return &store{
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{
-		Store:      s.Store.With(other),
-		operations: s.operations,
-	}
-}
-
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
+// Transaction returns a transaction for the store.
+func (s *store) Transact(ctx context.Context) (*store, error) {
+	txBase, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{
-		Store:      txBase,
+	return &store{
+		db:         txBase,
 		operations: s.operations,
 	}, nil
 }
 
+// ListOpts specifies options for listing policies.
 type ListOpts struct {
 	Limit int
 }
 
-func (s *Store) List(ctx context.Context, opts ListOpts) (policies []shared.Policy, err error) {
+// List returns a list of policies.
+func (s *store) List(ctx context.Context, opts ListOpts) (policies []shared.Policy, err error) {
 	ctx, _, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -59,7 +61,7 @@ func (s *Store) List(ctx context.Context, opts ListOpts) (policies []shared.Poli
 
 	// This is only a stub and will be replaced or significantly modified
 	// in https://github.com/sourcegraph/sourcegraph/issues/33376
-	_, _ = scanPolicies(s.Query(ctx, sqlf.Sprintf(listQuery, opts.Limit)))
+	_, _ = scanPolicies(s.db.Query(ctx, sqlf.Sprintf(listQuery, opts.Limit)))
 	return nil, errors.Newf("unimplemented: policies.store.List")
 }
 

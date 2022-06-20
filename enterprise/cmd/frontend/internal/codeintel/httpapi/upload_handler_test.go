@@ -18,9 +18,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -80,7 +80,6 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -172,7 +171,6 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -234,7 +232,6 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -306,7 +303,6 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -381,7 +377,6 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -545,7 +540,6 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			false,
 			authValidators,
 			NewOperations(&observation.TestContext),
-			nil,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {

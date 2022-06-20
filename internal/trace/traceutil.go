@@ -16,10 +16,12 @@ import (
 	nettrace "golang.org/x/net/trace"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/otfields"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 // ID returns a trace ID, if any, found in the given context. If you need both trace and
@@ -71,6 +73,24 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	}
 
 	return nil
+}
+
+// Logger will set the TraceContext on l if ctx has one, and also assign the trace
+// family as a scope if a trace family is found. This is an expanded convenience function
+// around l.WithTrace for the common case.
+//
+// If you already set the family manually on the logger scope, then you might want to use
+// trace.Context(ctx) instead.
+func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
+	if t := TraceFromContext(ctx); t != nil {
+		if t.family != "" {
+			l = l.Scoped(t.family, "trace family")
+		}
+		if tc := ContextFromSpan(t.span); tc != nil {
+			l = l.WithTrace(*tc)
+		}
+	}
+	return l
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.

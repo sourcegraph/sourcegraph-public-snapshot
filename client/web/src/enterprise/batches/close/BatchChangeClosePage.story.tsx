@@ -4,6 +4,7 @@ import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../components/WebStory'
@@ -56,6 +57,7 @@ const batchChangeDefaults: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/specid',
     namespace: {
+        id: '1234',
         namespaceName: 'alice',
         url: '/users/alice',
     },
@@ -74,6 +76,7 @@ const batchChangeDefaults: BatchChangeFields = {
         id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
+        source: BatchSpecSource.REMOTE,
         codeHostsWithoutWebhooks: {
             nodes: [],
             pageInfo: { hasNextPage: false },

@@ -158,7 +158,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		}
 	}
 
-	usr, err := database.Users(db).Create(r.Context(), newUserData)
+	usr, err := db.Users().Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -183,7 +183,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
 		http.Error(w, message, statusCode)
 
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 			log15.Warn("Failed to log event SignUpFailed", "error", err)
 		}
 
@@ -201,7 +201,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = database.UserEmails(db).SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		} else if err = db.UserEmails().SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}
@@ -209,7 +209,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	// Write the session cookie
 	a := &actor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
+		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError, "err", err)
 	}
 
 	// Track user data
@@ -217,7 +217,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		log15.Warn("Failed to log event SignUpSucceeded", "error", err)
 	}
 }
@@ -324,7 +324,7 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 			UID: user.ID,
 		}
 		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
+			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError, "err", err)
 			return
 		}
 
@@ -381,7 +381,7 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
+	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 }
 
@@ -408,7 +408,7 @@ func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *htt
 			return
 		}
 
-		_, err = database.Namespaces(db).GetByName(r.Context(), username)
+		_, err = db.Namespaces().GetByName(r.Context(), username)
 		if err == database.ErrNamespaceNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

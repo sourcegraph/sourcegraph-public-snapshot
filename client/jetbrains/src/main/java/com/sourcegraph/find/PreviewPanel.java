@@ -1,103 +1,122 @@
 package com.sourcegraph.find;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.highlighting.HighlightManager;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class PreviewPanel extends JBPanelWithEmptyText {
+public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
+    private final String NO_PREVIEW_AVAILABLE_TEXT = "No preview available";
+    @SuppressWarnings("FieldCanBeLocal") // It's nicer to have these here at the top
+    private final String LOADING_TEXT = "Loading...";
+
     private final Project project;
     private JComponent editorComponent;
+    private PreviewContent previewContent;
     private Editor editor;
-    private VirtualFile virtualFile;
-    private String fileName;
-    private String fileContent;
-    private int lineNumber;
 
     public PreviewPanel(Project project) {
         super(new BorderLayout());
 
         this.project = project;
-        this.getEmptyText().setText("Type search query to find on Sourcegraph");
+        this.getEmptyText().setText(NO_PREVIEW_AVAILABLE_TEXT);
     }
 
-    public void setContent(@NotNull PreviewContent previewContent, boolean openInEditor) {
-        if (editorComponent != null &&
-            fileName.equals(previewContent.getFileName()) &&
-            fileContent.equals(previewContent.getContent()) &&
-            lineNumber == previewContent.getLineNumber() &&
-            !openInEditor) {
+    @Nullable
+    public PreviewContent getPreviewContent() {
+        return previewContent;
+    }
+
+    public void setContent(@Nullable PreviewContent previewContent) {
+        if (previewContent == null) {
+            setLoading(false);
+            clearContent();
             return;
         }
 
-        fileName = previewContent.getFileName();
-        fileContent = previewContent.getContent();
-        lineNumber = previewContent.getLineNumber();
+        if (editorComponent != null && previewContent.equals(this.previewContent)) {
+            return;
+        }
 
-        ApplicationManager.getApplication().invokeLater(() -> {
-            if (editorComponent != null) {
-                remove(editorComponent);
-            }
-            EditorFactory editorFactory = EditorFactory.getInstance();
-            virtualFile = new LightVirtualFile(fileName, fileContent);
-            Document document = editorFactory.createDocument(fileContent);
-            document.setReadOnly(true);
-            Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+        String fileContent = previewContent.getContent();
 
-            EditorSettings settings = editor.getSettings();
-            settings.setLineMarkerAreaShown(true);
-            settings.setFoldingOutlineShown(false);
-            settings.setAdditionalColumnsCount(0);
-            settings.setAdditionalLinesCount(0);
-            settings.setAnimatedScrolling(false);
-            settings.setAutoCodeFoldingEnabled(false);
+        /* If no content, just show "No preview available" */
+        if (fileContent == null) {
+            setLoading(false);
+            clearContent();
+            return;
+        }
 
-            this.editor = editor;
-            editorComponent = editor.getComponent();
-            add(editorComponent, BorderLayout.CENTER);
+        this.previewContent = previewContent;
 
-            addHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
+        if (editorComponent != null) {
+            remove(editorComponent);
+        }
+        if (editor != null) {
+            EditorFactory.getInstance().releaseEditor(editor);
+        }
+        EditorFactory editorFactory = EditorFactory.getInstance();
+        Document document = editorFactory.createDocument(fileContent);
+        document.setReadOnly(true);
 
-            invalidate(); // TODO: Is this needed? What does it do? Maybe use revalidate()? If needed then document
-            validate();
+        editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
 
-            if (openInEditor) {
-                // Open file in editor
-                OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
-                FileEditorManager.getInstance(project).openTextEditor(openFileDescriptor, true);
+        EditorSettings settings = editor.getSettings();
+        settings.setLineMarkerAreaShown(true);
+        settings.setFoldingOutlineShown(false);
+        settings.setAdditionalColumnsCount(0);
+        settings.setAdditionalLinesCount(0);
+        settings.setAnimatedScrolling(false);
+        settings.setAutoCodeFoldingEnabled(false);
 
-                // Suppress code issues
-                PsiFile file = PsiManager.getInstance(project).findFile(virtualFile);
-                if (file != null) {
-                    DaemonCodeAnalyzer.getInstance(project).setHighlightingEnabled(file, false);
-                }
-            }
-        });
+        editorComponent = editor.getComponent();
+        add(editorComponent, BorderLayout.CENTER);
+        validate();
+
+        addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
     }
 
-    private void addHighlights(Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+    public void setLoading(boolean isLoading) {
+        getEmptyText().setText(isLoading ? LOADING_TEXT : NO_PREVIEW_AVAILABLE_TEXT);
+    }
+
+    private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+        int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
-            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
+            if (firstOffset == -1) {
+                firstOffset = offsetAndLength[0] + offsetAndLength[1];
+            }
+
+            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.TEXT_SEARCH_RESULT_ATTRIBUTES, 0, null);
+        }
+
+        if (firstOffset != -1) {
+            editor.getScrollingModel().scrollTo(editor.offsetToLogicalPosition(firstOffset), ScrollType.CENTER);
         }
     }
 
     public void clearContent() {
         if (editorComponent != null) {
-            ApplicationManager.getApplication().invokeLater(() -> remove(editorComponent));
+            previewContent = null;
+            remove(editorComponent);
+            validate();
+            repaint();
+            editorComponent = null;
+        }
+    }
+
+    @Override
+    public void dispose() {
+        if (editor != null) {
+            EditorFactory.getInstance().releaseEditor(editor);
         }
     }
 }

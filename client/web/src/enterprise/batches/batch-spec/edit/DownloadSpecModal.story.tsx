@@ -4,11 +4,11 @@ import { WebStory } from '../../../../components/WebStory'
 
 import { DownloadSpecModal } from './DownloadSpecModal'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/DownloadSpecModal', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/batch-spec/edit', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-add('Download Spec Modal', () => (
+add('DownloadSpecModal', () => (
     <WebStory>
         {props => (
             <DownloadSpecModal
@@ -17,9 +17,9 @@ add('Download Spec Modal', () => (
                 setIsDownloadSpecModalOpen={function (): void {
                     throw new Error('Function not implemented.')
                 }}
-                setDownloadSpecModalDismissed={function (): void {
-                    throw new Error('Function not implemented.')
-                }}
+                // setDownloadSpecModalDismissed={function (): void {
+                //     throw new Error('Function not implemented.')
+                // }}
                 {...props}
             />
         )}

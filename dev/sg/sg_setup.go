@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,10 +26,10 @@ var setupCommand = &cli.Command{
 	Name:     "setup",
 	Usage:    "Set up your local dev environment!",
 	Category: CategoryEnv,
-	Action:   execAdapter(setupExec),
+	Action:   setupExec,
 }
 
-func setupExec(ctx context.Context, args []string) error {
+func setupExec(ctx *cli.Context) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
 		return NewEmptyExitErr(1)
@@ -40,19 +40,17 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	ctx, err := usershell.Context(ctx)
+	shellCtx, err := usershell.Context(ctx.Context)
 	if err != nil {
 		return err
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
-		}
-	}()
+	// Before a user interrupts and exits, let them know that they may need to take
+	// additiional actions.
+	interrupt.Register(func() {
+		std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
+		std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(shellCtx)))
+	})
 
 	var categories []dependencyCategory
 	if currentOS == "darwin" {
@@ -66,6 +64,8 @@ func setupExec(ctx context.Context, args []string) error {
 	_, err = root.RepositoryRoot()
 	inRepo := err == nil
 
+	// TODO create runner from checks
+
 	failed := []int{}
 	all := []int{}
 	skipped := []int{}
@@ -78,7 +78,7 @@ func setupExec(ctx context.Context, args []string) error {
 	for len(failed) != 0 {
 		std.Out.ClearScreen()
 
-		printSgSetupWelcomeScreen()
+		printSgSetupWelcomeScreen(std.Out)
 		std.Out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
@@ -92,7 +92,7 @@ func setupExec(ctx context.Context, args []string) error {
 			}
 
 			pending := std.Out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.name))
-			category.Update(ctx)
+			category.Update(shellCtx)
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
@@ -143,7 +143,7 @@ func setupExec(ctx context.Context, args []string) error {
 
 		std.Out.ClearScreen()
 
-		err = presentFailedCategoryWithOptions(ctx, idx, &selectedCategory)
+		err = presentFailedCategoryWithOptions(shellCtx, idx, &selectedCategory)
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -261,6 +261,7 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 		return nil
 	}
 	cmd := usershell.Cmd(ctx, cmdStr)
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -423,8 +424,8 @@ func (d *dependency) Update(ctx context.Context) {
 
 type dependencyCategory struct {
 	name               string
-	dependencies       []*dependency
-	requiresRepository bool
+	dependencies       []*dependency // checks
+	requiresRepository bool          // enabler
 
 	// autoFixingDependencies are only accounted for it the user asks to fix the category.
 	// Otherwise, they'll never be checked nor print an error, because the only thing that
@@ -595,7 +596,7 @@ func (l stringCommandBuilder) Build(ctx context.Context) string {
 	return l(ctx)
 }
 
-func printSgSetupWelcomeScreen() {
+func printSgSetupWelcomeScreen(out *std.Output) {
 	genLine := func(style output.Style, content string) string {
 		return fmt.Sprintf("%s%s%s", output.CombineStyles(output.StyleBold, style), content, output.StyleReset)
 	}
@@ -603,19 +604,19 @@ func printSgSetupWelcomeScreen() {
 	boxContent := func(content string) string { return genLine(output.StyleWhiteOnPurple, content) }
 	shadow := func(content string) string { return genLine(output.StyleGreyBackground, content) }
 
-	std.Out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
-	std.Out.Write(boxContent(`┃            _       __     __                             __                ┃`))
-	std.Out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                                           __              __               ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shadow(`  `))
-	std.Out.Write(`  ` + shadow(`                                                                              `))
-	std.Out.Write(`  ` + shadow(`                                                                              `))
+	out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
+	out.Write(boxContent(`┃            _       __     __                             __                ┃`))
+	out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                                           __              __               ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shadow(`  `))
+	out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shadow(`  `))
+	out.Write(`  ` + shadow(`                                                                              `))
+	out.Write(`  ` + shadow(`                                                                              `))
 }

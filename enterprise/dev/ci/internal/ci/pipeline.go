@@ -77,7 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.39.0"
+	const minimumUpgradeableVersion = "3.40.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -87,6 +87,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.PullRequest:
+		// First, we set up core test operations that apply both to PRs and to other run
+		// types such as main.
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
+			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
+			ClientLintOnlyChangedFiles: false,
+		}))
+
+		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
@@ -99,11 +109,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
-			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-		}))
+		if c.Diff.Has(changed.DockerImages) {
+			testBuilds := operations.NewNamedSet("Test builds")
+			scanBuilds := operations.NewNamedSet("Scan test builds")
+			for _, image := range images.SourcegraphDockerImages {
+				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag()))
+				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
+			}
+			ops.Merge(testBuilds)
+			ops.Merge(scanBuilds)
+		}
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
@@ -137,7 +152,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addVsceIntegrationTests,
 			wait,
-			addVsceReleaseSteps(buildOptions))
+			addVsceReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
@@ -171,7 +186,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+		}))
 		// Publish images after everything is done
 		ops.Append(
 			wait,
@@ -202,7 +219,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version))
+			publishExecutorDockerMirror(c.Version),
+		)
 
 	default:
 		// Slow async pipeline
@@ -235,6 +253,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 		}))
 
 		// Integration tests

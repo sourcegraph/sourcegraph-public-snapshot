@@ -58,7 +58,7 @@ export const UserAvatar: React.FunctionComponent<React.PropsWithChildren<Props>>
         }
 
         if (inline) {
-            return <Icon as="img" alt="" {...imgProps} />
+            return <Icon as="img" aria-hidden={true} {...imgProps} />
         }
 
         return <img alt="" {...imgProps} />
@@ -81,7 +81,7 @@ export const UserAvatar: React.FunctionComponent<React.PropsWithChildren<Props>>
     }
 
     if (inline) {
-        return <Icon as="div" {...props} />
+        return <Icon as="div" aria-hidden={true} {...props} />
     }
 
     return <div {...props} />

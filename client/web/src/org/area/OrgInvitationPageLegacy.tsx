@@ -10,7 +10,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, Alert, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -127,21 +127,21 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                     {this.props.org.viewerPendingInvitation ? (
                         <ModalPage icon={<OrgAvatar org={this.props.org.name} className="mt-2 mb-3" size="lg" />}>
                             <Form className="text-center">
-                                <Typography.H3 className="my-0 font-weight-normal">
+                                <H3 className="my-0 font-weight-normal">
                                     You've been invited to the{' '}
                                     <Link to={orgURL(this.props.org.name)}>
                                         <strong>{this.props.org.name}</strong>
                                     </Link>{' '}
                                     organization.
-                                </Typography.H3>
-                                <p>
+                                </H3>
+                                <Text>
                                     <small className="text-muted">
                                         Invited by{' '}
                                         <Link to={userURL(this.props.org.viewerPendingInvitation.sender.username)}>
                                             {this.props.org.viewerPendingInvitation.sender.username}
                                         </Link>
                                     </small>
-                                </p>
+                                </Text>
                                 <div className="mt-3">
                                     <Button
                                         type="submit"

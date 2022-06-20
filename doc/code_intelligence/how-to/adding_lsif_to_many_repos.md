@@ -59,11 +59,11 @@ Watch the video or follow the written directions below:
      Sourcegraph code host configuration (Site admin > Manage repositories) has the
      necessary scopes (`repo` and (`read:discussion` or `read:org`)).
   1. Verify that the GitHub action has run successfully in the repositories on GitHub.
-  1. Verify that the LSIF data has been successfully uploaded to Sourcegraph by
+  1. Verify that the index has been successfully uploaded to Sourcegraph by
      navigating to any repository page on Sourcegraph > Settings > Code
      intelligence: Uploads. You should also be able to explore the code at that
      revision with precise code navigation.
 
 1. Merge the pull requests created by the batch change and close the batch
-   change. The GitHub action should now run on each push, generating LSIF data for the
-   pushed revision and uploading this data to your Sourcegraph instance.
+   change. The GitHub action should now run on each push, generating an index for the
+   pushed revision and uploading it to your Sourcegraph instance.

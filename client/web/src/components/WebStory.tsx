@@ -7,7 +7,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
 // Add root Tooltip for Storybook
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
+
+import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
@@ -36,12 +38,13 @@ export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryP
     const Children = useMemo(() => withRouter(children), [children])
 
     usePrependStyles('web-styles', webStyles)
+    setExperimentalFeaturesForTesting()
 
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
-                    <Tooltip />
+                    <DeprecatedTooltip />
                     <Children
                         {...breadcrumbSetters}
                         isLightTheme={isLightTheme}

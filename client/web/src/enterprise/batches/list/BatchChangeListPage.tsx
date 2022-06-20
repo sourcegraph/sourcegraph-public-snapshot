@@ -7,7 +7,18 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container, Typography, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    CardBody,
+    Card,
+    Link,
+    Container,
+    H2,
+    H3,
+    H4,
+    Text,
+    screenReaderAnnounce,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -143,7 +154,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+                // TODO: As we haven't finished implementing support for orgs, we've
+                // temporary disabled setting a different namespace. Replace this line
+                // with the commented-out one that follows it to restore the preselected
+                // namespace behavior for orgs.
+                actions={canCreate ? <NewBatchChangeButton to="/batch-changes/create" /> : null}
+                // actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
@@ -155,13 +171,13 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <Typography.H3 as={Typography.H2} className="align-self-end flex-1">
+                                <H3 as={H2} className="align-self-end flex-1">
                                     {`${lastTotalCount} batch changes`}
-                                </Typography.H3>
+                                </H3>
                             )}
-                            <Typography.H4 as={Typography.H3} className="mb-0 mr-2">
+                            <H4 as={H3} className="mb-0 mr-2">
                                 Status
-                            </Typography.H4>
+                            </H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
@@ -196,6 +212,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         {connection && (
                             <SummaryContainer centered={true}>
                                 <ConnectionSummary
+                                    centered={true}
                                     noSummaryIfAllNodesVisible={true}
                                     first={BATCH_CHANGES_PER_PAGE_COUNT}
                                     connection={connection}
@@ -206,7 +223,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                         <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
                                     }
                                 />
-                                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                             </SummaryContainer>
                         )}
                     </ConnectionContainer>
@@ -245,9 +262,9 @@ const BatchChangeListEmptyElement: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeListEmptyElementProps>
 > = ({ canCreate, location }) => (
     <div className="w-100 py-5 text-center">
-        <p>
+        <Text>
             <strong>No batch changes have been created.</strong>
-        </p>
+        </Text>
         {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
     </div>
 )
@@ -310,12 +327,12 @@ const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>>
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
             <Card>
                 <CardBody className="text-center">
-                    <p>Create your first batch change</p>
-                    <Typography.H2 className="mb-0">
+                    <Text>Create your first batch change</Text>
+                    <H2 className="mb-0">
                         <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
-                    </Typography.H2>
+                    </H2>
                 </CardBody>
             </Card>
         </div>

@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -28,20 +29,21 @@ import (
 )
 
 func main() {
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
 	shared.Main(enterpriseInit)
 }
 
 func enterpriseInit(
+	logger log.Logger,
 	db ossDB.DB,
 	repoStore repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
+	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+	if debug {
+		logger.Info("enterprise edition")
+	}
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
@@ -56,7 +58,7 @@ func enterpriseInit(
 	}
 
 	permsStore := edb.Perms(db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
@@ -76,7 +78,7 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 				frontendAuthz.ProvidersFromConfig(
 					ctx,
 					conf.Get(),
-					ossDB.ExternalServices(db),
+					db.ExternalServices(),
 					db,
 				)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)

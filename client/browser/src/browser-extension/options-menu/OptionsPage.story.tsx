@@ -7,7 +7,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { Typography } from '@sourcegraph/wildcard'
+import { H1, H2, H3 } from '@sourcegraph/wildcard'
 
 import { OptionsPage, OptionsPageProps } from './OptionsPage'
 
@@ -72,36 +72,36 @@ const WithAdvancedSettings: Story = () => {
 
 export const AllOptionsPages: Story = () => (
     <div>
-        <Typography.H1 className="text-center mb-3">All Options Pages</Typography.H1>
+        <H1 className="text-center mb-3">All Options Pages</H1>
         <div>
             <div className="d-flex justify-content-center">
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">Interactive</Typography.H3>
+                    <H3 className="text-center">Interactive</H3>
                     <Interactive />
                 </div>
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">URL validation error</Typography.H3>
+                    <H3 className="text-center">URL validation error</H3>
                     <OptionsPageWrapper
                         validateSourcegraphUrl={invalidSourcegraphUrl}
                         sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
                     />
                 </div>
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">With advanced settings</Typography.H3>
+                    <H3 className="text-center">With advanced settings</H3>
                     <WithAdvancedSettings />
                 </div>
             </div>
 
             <div className="d-flex justify-content-center mt-5">
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">On Sourcegraph Cloud</Typography.H3>
+                    <H3 className="text-center">On Sourcegraph Cloud</H3>
                     <OptionsPageWrapper
                         requestPermissionsHandler={requestPermissionsHandler}
                         showSourcegraphCloudAlert={true}
                     />
                 </div>
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">Asking for permission</Typography.H3>
+                    <H3 className="text-center">Asking for permission</H3>
                     <OptionsPageWrapper
                         permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
                         requestPermissionsHandler={requestPermissionsHandler}
@@ -109,10 +109,10 @@ export const AllOptionsPages: Story = () => (
                 </div>
             </div>
 
-            <Typography.H2 className="mt-5 text-center">Not synced repository</Typography.H2>
+            <H2 className="mt-5 text-center">Not synced repository</H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">Sourcegraph Cloud</Typography.H3>
+                    <H3 className="text-center">Sourcegraph Cloud</H3>
                     <OptionsPageWrapper
                         sourcegraphUrl="https://sourcegraph.com"
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
@@ -121,7 +121,7 @@ export const AllOptionsPages: Story = () => (
                     />
                 </div>
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">Self-hosted</Typography.H3>
+                    <H3 className="text-center">Self-hosted</H3>
                     <OptionsPageWrapper
                         sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
@@ -130,7 +130,7 @@ export const AllOptionsPages: Story = () => (
                     />
                 </div>
                 <div className="mx-4">
-                    <Typography.H3 className="text-center">Self-hosted instance, user is admin</Typography.H3>
+                    <H3 className="text-center">Self-hosted instance, user is admin</H3>
                     <OptionsPageWrapper
                         sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}

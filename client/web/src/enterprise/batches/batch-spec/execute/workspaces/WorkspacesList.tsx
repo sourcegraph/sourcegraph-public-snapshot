@@ -44,7 +44,7 @@ export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<Wor
                         key={node.id}
                         workspace={node}
                         isSelected={node.id === selectedNode}
-                        onSelect={() => history.push(`${executionURL}/workspaces/${node.id}`)}
+                        onSelect={() => history.push(`${executionURL}/execution/workspaces/${node.id}`)}
                     />
                 ))}
             </ConnectionList>
@@ -53,6 +53,7 @@ export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<Wor
             {connection && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
+                        centered={true}
                         noSummaryIfAllNodesVisible={true}
                         first={20}
                         connection={connection}

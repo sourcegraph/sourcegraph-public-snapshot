@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { Typography, Link } from '@sourcegraph/wildcard'
+import { Link, H1 } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
@@ -39,7 +39,7 @@ export const HeroPage: React.FunctionComponent<React.PropsWithChildren<HeroPageP
                 )}
             </div>
         )}
-        {props.title && <Typography.H1 className={styles.title}>{props.title}</Typography.H1>}
+        {props.title && <H1 className={styles.title}>{props.title}</H1>}
         {props.subtitle && (
             <div data-testid="hero-page-subtitle" className={styles.subtitle}>
                 {props.subtitle}

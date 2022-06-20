@@ -11,15 +11,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    LoadingSpinner,
-    useEventObservable,
-    useObservable,
-    Button,
-    Link,
-    Icon,
-    Typography,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable, useObservable, Button, Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
@@ -113,9 +105,9 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
             ) : (
                 <>
                     <Button to={productSubscription.url} className="mb-3" variant="link" size="sm" as={Link}>
-                        <Icon as={ArrowLeftIcon} /> Subscription
+                        <Icon aria-hidden={true} as={ArrowLeftIcon} /> Subscription
                     </Button>
-                    <Typography.H2>Upgrade or change subscription {productSubscription.name}</Typography.H2>
+                    <H2>Upgrade or change subscription {productSubscription.name}</H2>
                     <ProductSubscriptionForm
                         accountID={user.id}
                         subscriptionID={productSubscription.id}

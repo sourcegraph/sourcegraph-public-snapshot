@@ -86,5 +86,5 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	database.SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }

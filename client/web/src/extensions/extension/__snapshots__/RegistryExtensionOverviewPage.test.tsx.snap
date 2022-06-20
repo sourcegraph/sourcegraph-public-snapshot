@@ -70,7 +70,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="d-flex"
           >
             <githubicon
+              aria-hidden="true"
               class="iconInline mr-1"
+              role="img"
             />
             <a
               class="anchorLink d-block"
@@ -239,7 +241,9 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
             class="d-flex"
           >
             <githubicon
+              aria-hidden="true"
               class="iconInline mr-1"
+              role="img"
             />
             <a
               class="anchorLink d-block"

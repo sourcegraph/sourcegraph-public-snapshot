@@ -2,55 +2,102 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Store struct {
-	*basestore.Store
+// Store provides the interface for package dependencies storage.
+type Store interface {
+	PreciseDependencies(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
+	PreciseDependents(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
+	LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error)
+	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error)
+	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error)
+	UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error)
+	LockfileDependents(ctx context.Context, repoName, commit string) (deps []api.RepoCommit, err error)
+	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
+	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
+	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
+}
+
+// store manages the database tables for package dependencies.
+type store struct {
+	db         *basestore.Store
 	operations *operations
 }
 
-func newStore(db dbutil.DB, op *operations) *Store {
-	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: op,
+// New returns a new store.
+func New(db database.DB, op *observation.Context) *store {
+	return &store{
+		db:         basestore.NewWithHandle(db.Handle()),
+		operations: newOperations(op),
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{
-		Store:      s.Store.With(other),
-		operations: s.operations,
-	}
+// PreciseDependencies returns package dependencies from precise indexes. It is assumed that
+// the given commit is the canonical 40-character hash.
+func (s *store) PreciseDependencies(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error) {
+	ctx, _, endObservation := s.operations.preciseDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return scanRepoRevSpecSets(s.db.Query(ctx, sqlf.Sprintf(preciseDependenciesQuery, repoName, commit)))
 }
 
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
+const preciseDependenciesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:PreciseDependencies
+SELECT pr.name, pu.commit
+FROM lsif_packages lp
+JOIN lsif_uploads pu ON pu.id = lp.dump_id
+JOIN repo pr ON pr.id = pu.repository_id
+JOIN lsif_references lr ON lr.scheme = lp.scheme AND lr.name = lp.name AND lr.version = lp.version
+JOIN lsif_uploads ru ON ru.id = lr.dump_id
+JOIN repo rr ON rr.id = ru.repository_id
+WHERE rr.name = %s AND ru.commit = %s
+`
 
-	return &Store{
-		Store:      txBase,
-		operations: s.operations,
-	}, nil
+// PreciseDependents returns package dependents from precise indexes. It is assumed that
+// the given commit is the canonical 40-character hash.
+func (s *store) PreciseDependents(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error) {
+	ctx, _, endObservation := s.operations.preciseDependents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return scanRepoRevSpecSets(s.db.Query(ctx, sqlf.Sprintf(preciseDependentsQuery, repoName, commit)))
 }
+
+const preciseDependentsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:PreciseDependents
+SELECT rr.name, ru.commit
+FROM lsif_packages lp
+JOIN lsif_uploads pu ON pu.id = lp.dump_id
+JOIN repo pr ON pr.id = pu.repository_id
+JOIN lsif_references lr ON lr.scheme = lp.scheme AND lr.name = lp.name AND lr.version = lp.version
+JOIN lsif_uploads ru ON ru.id = lr.dump_id
+JOIN repo rr ON rr.id = ru.repository_id
+WHERE pr.name = %s AND pu.commit = %s
+`
 
 // LockfileDependencies returns package dependencies from a previous lockfiles result for
 // the given repository and commit. It is assumed that the given commit is the canonical
 // 40-character hash.
-func (s *Store) LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error) {
+func (s *store) LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error) {
 	ctx, _, endObservation := s.operations.lockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
@@ -66,9 +113,9 @@ func (s *Store) LockfileDependencies(ctx context.Context, repoName, commit strin
 	if err != nil {
 		return nil, false, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = tx.db.Done(err) }()
 
-	deps, err = scanPackageDependencies(tx.Query(ctx, sqlf.Sprintf(
+	deps, err = scanPackageDependencies(tx.db.Query(ctx, sqlf.Sprintf(
 		lockfileDependenciesQuery,
 		repoName,
 		dbutil.CommitBytea(commit),
@@ -81,7 +128,7 @@ func (s *Store) LockfileDependencies(ctx context.Context, repoName, commit strin
 		// that just had an empty references list. Check to see if this is the case
 		// so we don't attempt to re-parse the lockfiles of this repo/commit from the
 		// dependencies service.
-		_, found, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		_, found, err = basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
 			lockfileDependenciesExistsQuery,
 			repoName,
 			dbutil.CommitBytea(commit),
@@ -107,6 +154,7 @@ WHERE id IN (
 	FROM codeintel_lockfiles
 	WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %s
 )
+ORDER BY repository_name, revspec
 `
 
 const lockfileDependenciesExistsQuery = `
@@ -119,7 +167,7 @@ WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %
 // UpsertLockfileDependencies inserts the given package dependencies if they do not exist
 // and inserts a new lockfiles result for the given repository and commit. It is assumed
 // that the given commit is the canonical 40-character hash.
-func (s *Store) UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error) {
+func (s *store) UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error) {
 	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
@@ -131,15 +179,15 @@ func (s *Store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = tx.db.Done(err) }()
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(temporaryLockfileReferencesTableQuery)); err != nil {
+	if err := tx.db.Exec(ctx, sqlf.Sprintf(temporaryLockfileReferencesTableQuery)); err != nil {
 		return err
 	}
 
 	if err := batch.InsertValues(
 		ctx,
-		tx.Handle().DB(),
+		tx.db.Handle(),
 		"t_codeintel_lockfile_references",
 		batch.MaxNumPostgresParameters,
 		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version"},
@@ -148,7 +196,7 @@ func (s *Store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 		return err
 	}
 
-	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(upsertLockfileReferencesQuery)))
+	ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferencesQuery)))
 	if err != nil {
 		return err
 	}
@@ -157,7 +205,7 @@ func (s *Store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 	}
 	idsArray := pq.Array(ids)
 
-	return tx.Exec(ctx, sqlf.Sprintf(
+	return tx.db.Exec(ctx, sqlf.Sprintf(
 		insertLockfilesQuery,
 		dbutil.CommitBytea(commit),
 		idsArray,
@@ -239,11 +287,11 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 
 // SelectRepoRevisionsToResolve selects the references lockfile packages to
 // possibly resolve them to repositories on the Sourcegraph instance.
-func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error) {
+func (s *store) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error) {
 	return s.selectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval, time.Now())
 }
 
-func (s *Store) selectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration, now time.Time) (_ map[string][]string, err error) {
+func (s *store) selectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration, now time.Time) (_ map[string][]string, err error) {
 	var count int
 	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{
@@ -252,7 +300,7 @@ func (s *Store) selectRepoRevisionsToResolve(ctx context.Context, batchSize int,
 		},
 	})
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery, now, int64(minimumCheckInterval/time.Hour), batchSize, now))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery, now, int64(minimumCheckInterval/time.Hour), batchSize, now))
 	if err != nil {
 		return nil, err
 	}
@@ -297,14 +345,14 @@ SELECT * FROM candidates
 
 // UpdateResolvedRevisions updates the lockfile packages that were resolved to
 // repositories/revisions pairs on the Sourcegraph instance.
-func (s *Store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
-	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
+func (s *store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
+	ctx, _, endObservation := s.operations.updateResolvedRevisions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	for repoName, resolvedRevs := range repoRevsToResolvedRevs {
 		for commit, resolvedCommit := range resolvedRevs {
 			// TODO - batch these updates
-			if err := s.Exec(ctx, sqlf.Sprintf(
+			if err := s.db.Exec(ctx, sqlf.Sprintf(
 				updateResolvedRevisionsQuery,
 				repoName,
 				dbutil.CommitBytea(resolvedCommit),
@@ -332,6 +380,37 @@ WHERE
 -- TODO - order before update to reduce contention
 `
 
+// LockfileDependents returns the set of repositories that have lockfile results pointing to the
+// given repo and commit (related to a particular resolved repo/commit of a lockfile reference).
+func (s *store) LockfileDependents(ctx context.Context, repoName, commit string) (deps []api.RepoCommit, err error) {
+	ctx, _, endObservation := s.operations.lockfileDependents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numDependencies", len(deps)),
+		}})
+	}()
+
+	return scanRepoCommits(s.db.Query(ctx, sqlf.Sprintf(lockfileDependentsQuery, repoName, dbutil.CommitBytea(commit))))
+}
+
+const lockfileDependentsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependents
+SELECT r.name, encode(lf.commit_bytea, 'hex') AS commit
+FROM codeintel_lockfiles lf
+JOIN repo r ON r.id = lf.repository_id
+WHERE lf.codeintel_lockfile_reference_ids @> (
+	SELECT array_agg(lr.id)
+	FROM codeintel_lockfile_references lr
+	JOIN repo r ON r.id = lr.repository_id
+	WHERE r.name = %s AND commit_bytea = %s
+)
+ORDER BY r.name, lf.commit_bytea
+`
+
+// ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme      string
 	Name        string
@@ -341,7 +420,7 @@ type ListDependencyReposOpts struct {
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
-func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
+func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
 	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
@@ -356,7 +435,7 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		sortDirection = "DESC"
 	}
 
-	return scanDependencyRepos(s.Query(ctx, sqlf.Sprintf(
+	return scanDependencyRepos(s.db.Query(ctx, sqlf.Sprintf(
 		listDependencyReposQuery,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
 		sqlf.Sprintf(sortDirection),
@@ -401,7 +480,7 @@ func makeLimit(limit int) *sqlf.Query {
 
 // UpsertDependencyRepos creates the given dependency repos if they don't yet exist. The values
 // that did not exist previously are returned.
-func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
+func (s *store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
 	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numDeps", len(deps)),
 	}})
@@ -433,7 +512,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 
 	err = batch.WithInserterWithReturn(
 		ctx,
-		s.Handle().DB(),
+		s.db.Handle(),
 		"lsif_dependency_repos",
 		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},
@@ -446,7 +525,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 }
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
-func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
+func (s *store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
 	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 	}})
@@ -456,7 +535,7 @@ func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err 
 		return nil
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
 }
 
 const deleteDependencyReposByIDQuery = `
@@ -464,3 +543,16 @@ const deleteDependencyReposByIDQuery = `
 DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `
+
+// Transact returns a store in a transaction.
+func (s *store) Transact(ctx context.Context) (*store, error) {
+	txBase, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &store{
+		db:         txBase,
+		operations: s.operations,
+	}, nil
+}

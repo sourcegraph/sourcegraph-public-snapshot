@@ -16,11 +16,12 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    TooltipController,
+    DeprecatedTooltipController,
     Icon,
     Link,
     ProductStatusBadge,
-    Typography,
+    H2,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
@@ -63,14 +64,14 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChild
 
     return (
         <section {...otherProps}>
-            <Typography.H2 id="code-insights-templates">Templates</Typography.H2>
-            <p className="text-muted">
+            <H2 id="code-insights-templates">Templates</H2>
+            <Text className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                     use cases
                 </Link>
                 .
-            </p>
+            </Text>
 
             <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
                 <TabList wrapperClassName={styles.tabList}>
@@ -207,7 +208,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
 
         requestAnimationFrame(() => {
-            TooltipController.forceUpdate()
+            DeprecatedTooltipController.forceUpdate()
         })
 
         event.preventDefault()
@@ -225,7 +226,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
                 aria-label="Copy Docker command to clipboard"
                 variant="icon"
             >
-                <Icon as={ContentCopyIcon} />
+                <Icon aria-hidden={true} as={ContentCopyIcon} />
             </Button>
         </CodeInsightsQueryBlock>
     )

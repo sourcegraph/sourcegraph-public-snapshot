@@ -3,7 +3,7 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { mockWorkspace } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview.mock'
+import { mockPreviewWorkspace } from '../batch-spec/batch-spec.mock'
 
 import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'
@@ -18,14 +18,14 @@ add('basic', () => (
         {props => (
             <>
                 <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(1)} />
+                    <Descriptor workspace={mockPreviewWorkspace(1)} />
                 </ListItem>
                 <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(2)} />
+                    <Descriptor workspace={mockPreviewWorkspace(2)} />
                 </ListItem>
                 <ListItem {...props}>
                     <Descriptor
-                        workspace={mockWorkspace(3, {
+                        workspace={mockPreviewWorkspace(3, {
                             repository: {
                                 __typename: 'Repository',
                                 id: 'with-long-name',
@@ -46,11 +46,11 @@ add('non-root path', () => (
         {props => (
             <>
                 <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(1, { path: 'path/to/workspace' })} />
+                    <Descriptor workspace={mockPreviewWorkspace(1, { path: 'path/to/workspace' })} />
                 </ListItem>
                 <ListItem {...props}>
                     <Descriptor
-                        workspace={mockWorkspace(2, {
+                        workspace={mockPreviewWorkspace(2, {
                             path:
                                 'a/really/deeply/nested/path/that/is/super/long/and/obnoxious/like/it/just/keeps/going/and-what-the-heck-is-this-folder-name-its-just-so-long/path/to/workspace',
                         })}
@@ -72,7 +72,7 @@ add('with status indicator', () => (
             <>
                 {STATUS_INDICATORS.map(([key, Component], index) => (
                     <ListItem {...props} key={key}>
-                        <Descriptor workspace={mockWorkspace(index + 1)} statusIndicator={<Component />} />
+                        <Descriptor workspace={mockPreviewWorkspace(index + 1)} statusIndicator={<Component />} />
                     </ListItem>
                 ))}
             </>
@@ -85,10 +85,10 @@ add('with click handler', () => (
         {props => (
             <>
                 <ListItem {...props} onClick={() => alert('Clicked workspace 1!')}>
-                    <Descriptor workspace={mockWorkspace(1)} />
+                    <Descriptor workspace={mockPreviewWorkspace(1)} />
                 </ListItem>
                 <ListItem {...props} onClick={() => alert('Clicked workspace 2!')}>
-                    <Descriptor workspace={mockWorkspace(2)} />
+                    <Descriptor workspace={mockPreviewWorkspace(2)} />
                 </ListItem>
             </>
         )}

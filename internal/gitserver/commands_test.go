@@ -2,12 +2,20 @@ package gitserver
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"reflect"
+	"runtime"
+	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -196,7 +204,7 @@ index 9bd8209..d2acfa9 100644
 +Another line
 `
 
-		var testDiffFileNames = []string{
+		testDiffFileNames := []string{
 			"INSTALL.md",
 			"JOKES.md",
 			"README.md",
@@ -386,7 +394,8 @@ func TestRepository_BlameFile(t *testing.T) {
 }
 
 func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
-	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk) {
+	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
+) {
 	t.Helper()
 	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, repo, path, opt, checker)
 	if err != nil {
@@ -539,5 +548,592 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		if commitID != "" {
 			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
 		}
+	}
+}
+
+func TestLsFiles(t *testing.T) {
+	t.Parallel()
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+	client := NewClient(database.NewMockDB())
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return client.LsFiles(ctx, checker, repo, "HEAD")
+	})
+}
+
+// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
+// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
+func runFileListingTest(t *testing.T,
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error),
+) {
+	t.Helper()
+	gitCommands := []string{
+		"touch file1",
+		"touch file2",
+		"touch file3",
+		"git add file1 file2 file3",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	files, err := listingFunctionToTest(ctx, checker, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"file1", "file2", "file3",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if content.Path == "file1" {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	files, err = listingFunctionToTest(ctx, checker, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = []string{
+		"file1",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestParseDirectoryChildrenRoot(t *testing.T) {
+	dirnames := []string{""}
+	paths := []string{
+		".github",
+		".gitignore",
+		"LICENSE",
+		"README.md",
+		"cmd",
+		"go.mod",
+		"go.sum",
+		"internal",
+		"protocol",
+	}
+
+	expected := map[string][]string{
+		"": paths,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+		"cmd/protocol/main.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestCleanDirectoriesForLsTree(t *testing.T) {
+	args := []string{"", "foo", "bar/", "baz"}
+	actual := cleanDirectoriesForLsTree(args)
+	expected := []string{".", "foo/", "bar/", "baz/"}
+
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	}
+}
+
+func TestListDirectoryChildren(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+	client := NewClient(database.NewMockDB())
+	gitCommands := []string{
+		"mkdir -p dir{1..3}/sub{1..3}",
+		"touch dir1/sub1/file",
+		"touch dir1/sub2/file",
+		"touch dir2/sub1/file",
+		"touch dir2/sub2/file",
+		"touch dir3/sub1/file",
+		"touch dir3/sub3/file",
+		"git add .",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	dirnames := []string{"dir1/", "dir2/", "dir3/"}
+	children, err := client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": {"dir2/sub1", "dir2/sub2"},
+		"dir3/": {"dir3/sub1", "dir3/sub3"},
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.Contains(content.Path, "dir1/") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	children, err = client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected = map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": nil,
+		"dir3/": nil,
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestListTags(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
+	gitCommands := []string{
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag t0",
+		"git tag t1",
+		dateEnv + " git tag --annotate -m foo t2",
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag t3",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+	wantTags := []*gitdomain.Tag{
+		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+	}
+
+	client := NewClient(database.NewMockDB())
+	tags, err := client.ListTags(context.Background(), repo)
+	require.Nil(t, err)
+
+	sort.Sort(gitdomain.Tags(tags))
+	sort.Sort(gitdomain.Tags(wantTags))
+
+	if diff := cmp.Diff(wantTags, tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
+
+	tags, err = client.ListTags(context.Background(), repo, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
+	require.Nil(t, err)
+	if diff := cmp.Diff(wantTags[:3], tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
+
+	tags, err = client.ListTags(context.Background(), repo, "afeafc4a918c144329807df307e68899e6b65018")
+	require.Nil(t, err)
+	if diff := cmp.Diff([]*gitdomain.Tag{wantTags[3]}, tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// See https://github.com/sourcegraph/sourcegraph/issues/5453
+func TestParseTags_WithoutCreatorDate(t *testing.T) {
+	have, err := parseTags([]byte(
+		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
+	))
+	if err != nil {
+		t.Fatalf("parseTags: have err %v, want nil", err)
+	}
+
+	want := []*gitdomain.Tag{
+		{
+			Name:        "v2.6.12",
+			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+			CreatorDate: time.Unix(1119037709, 0).UTC(),
+		},
+		{
+			Name:     "v2.6.11-tree",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+		{
+			Name:     "v2.6.11",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestExecSafe(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	tests := []struct {
+		args                   []string
+		wantStdout, wantStderr string
+		wantExitCode           int
+		wantError              bool
+	}{
+		{
+			args:       []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?"},
+			wantStdout: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 -\nauthor a\nauthor-date 2006-01-02 15:04:05 +0000\nparents \nsummary foo\n\nfilename ?\n",
+		},
+		{
+			args:       []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", "-m", "-i", "-n200", "--author=a@a.com"},
+			wantStdout: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 -\nauthor a\nauthor-date 2006-01-02 15:04:05 +0000\nparents \nsummary foo\n\nfilename ?\n",
+		},
+		{
+			args:       []string{"show"},
+			wantStdout: "commit ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8\nAuthor: a <a@a.com>\nDate:   Mon Jan 2 15:04:05 2006 +0000\n\n    foo\n",
+		},
+		{
+			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", ";show"},
+			wantStderr:   "fatal: ambiguous argument ';show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\n",
+			wantExitCode: 128,
+		},
+		{
+			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?;", "show"},
+			wantStderr:   "fatal: ambiguous argument 'show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\n",
+			wantExitCode: 128,
+		},
+		{
+			args:      []string{"rm"},
+			wantError: true,
+		},
+		{
+			args:      []string{"checkout"},
+			wantError: true,
+		},
+		{
+			args:      []string{"show;", "echo", "hello"},
+			wantError: true,
+		},
+	}
+
+	repo := MakeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
+
+	client := NewClient(database.NewMockDB())
+	for _, test := range tests {
+		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
+			stdout, stderr, exitCode, err := client.execSafe(context.Background(), repo, test.args)
+			if err == nil && test.wantError {
+				t.Errorf("got error %v, want error %v", err, test.wantError)
+			}
+			if test.wantError {
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(stdout) != test.wantStdout {
+				t.Errorf("got stdout %q, want %q", stdout, test.wantStdout)
+			}
+			if string(stderr) != test.wantStderr {
+				t.Errorf("got stderr %q, want %q", stderr, test.wantStderr)
+			}
+			if exitCode != test.wantExitCode {
+				t.Errorf("got exitCode %d, want %d", exitCode, test.wantExitCode)
+			}
+		})
+	}
+}
+
+func TestMerger_MergeBase(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	ctx := context.Background()
+	db := database.NewMockDB()
+	client := NewClient(db)
+
+	// TODO(sqs): implement for hg
+	// TODO(sqs): make a more complex test case
+
+	cmds := []string{
+		"echo line1 > f",
+		"git add f",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag testbase",
+		"git checkout -b b2",
+		"echo line2 >> f",
+		"git add f",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git checkout master",
+		"echo line3 > h",
+		"git add h",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	tests := map[string]struct {
+		repo api.RepoName
+		a, b string // can be any revspec; is resolved during the test
+
+		wantMergeBase string // can be any revspec; is resolved during test
+	}{
+		"git cmd": {
+			repo: MakeGitRepository(t, cmds...),
+			a:    "master", b: "b2",
+			wantMergeBase: "testbase",
+		},
+	}
+
+	for label, test := range tests {
+		a, err := client.ResolveRevision(ctx, test.repo, test.a, ResolveRevisionOptions{})
+		if err != nil {
+			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
+			continue
+		}
+
+		b, err := client.ResolveRevision(ctx, test.repo, test.b, ResolveRevisionOptions{})
+		if err != nil {
+			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
+			continue
+		}
+
+		want, err := client.ResolveRevision(ctx, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
+		if err != nil {
+			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
+			continue
+		}
+
+		mb, err := client.MergeBase(ctx, test.repo, a, b)
+		if err != nil {
+			t.Errorf("%s: MergeBase(%s, %s): %s", label, a, b, err)
+			continue
+		}
+
+		if mb != want {
+			t.Errorf("%s: MergeBase(%s, %s): got %q, want %q", label, a, b, mb, want)
+			continue
+		}
+	}
+}
+
+func TestRepository_FileSystem_Symlinks(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	db := database.NewMockDB()
+	gitCommands := []string{
+		"touch file1",
+		"mkdir dir1",
+		"ln -s file1 link1",
+		"ln -s ../file1 dir1/link2",
+		"touch --date=2006-01-02T15:04:05Z file1 link1 dir1/link2 || touch -t " + Times[0] + " file1 link1 dir1/link2",
+		"git add link1 file1 dir1/link2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	// map of path to size of content
+	symlinks := map[string]int64{
+		"link1":      5, // file1
+		"dir1/link2": 8, // ../file1
+	}
+
+	dir := InitGitRepository(t, gitCommands...)
+	repo := api.RepoName(filepath.Base(dir))
+
+	client := NewClient(db)
+
+	commitID := api.CommitID(ComputeCommitHash(dir, true))
+
+	ctx := context.Background()
+
+	// file1 should be a file.
+	file1Info, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, "file1")
+	if err != nil {
+		t.Fatalf("fs.Stat(file1): %s", err)
+	}
+	if !file1Info.Mode().IsRegular() {
+		t.Errorf("file1 Stat !IsRegular (mode: %o)", file1Info.Mode())
+	}
+
+	checkSymlinkFileInfo := func(name string, link fs.FileInfo) {
+		t.Helper()
+		if link.Mode()&os.ModeSymlink == 0 {
+			t.Errorf("link mode is not symlink (mode: %o)", link.Mode())
+		}
+		if link.Name() != name {
+			t.Errorf("got link.Name() == %q, want %q", link.Name(), name)
+		}
+	}
+
+	// Check symlinks are links
+	for symlink := range symlinks {
+		fi, err := client.LStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		if err != nil {
+			t.Fatalf("fs.lStat(%s): %s", symlink, err)
+		}
+		if runtime.GOOS != "windows" {
+			// TODO(alexsaveliev) make it work on Windows too
+			checkSymlinkFileInfo(symlink, fi)
+		}
+	}
+
+	// Also check the FileInfo returned by ReadDir to ensure it's
+	// consistent with the FileInfo returned by lStat.
+	entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
+	if err != nil {
+		t.Fatalf("fs.ReadDir(.): %s", err)
+	}
+	found := false
+	for _, entry := range entries {
+		if entry.Name() == "link1" {
+			found = true
+			if runtime.GOOS != "windows" {
+				checkSymlinkFileInfo("link1", entry)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("readdir did not return link1")
+	}
+
+	for symlink, size := range symlinks {
+		fi, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		if err != nil {
+			t.Fatalf("fs.Stat(%s): %s", symlink, err)
+		}
+		if fi.Mode()&fs.ModeSymlink == 0 {
+			t.Errorf("%s Stat is not a symlink (mode: %o)", symlink, fi.Mode())
+		}
+		if fi.Name() != symlink {
+			t.Errorf("got Name %q, want %q", fi.Name(), symlink)
+		}
+		if fi.Size() != size {
+			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), size)
+		}
+	}
+}
+
+func TestStat(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	db := database.NewMockDB()
+	gitCommands := []string{
+		"mkdir dir1",
+		"touch dir1/file1",
+		"git add dir1/file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	dir := InitGitRepository(t, gitCommands...)
+	repo := api.RepoName(filepath.Base(dir))
+	client := NewClient(db)
+
+	commitID := api.CommitID(ComputeCommitHash(dir, true))
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	fileInfo, err := client.Stat(ctx, checker, repo, commitID, "dir1/file1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "dir1/file1"
+	if diff := cmp.Diff(want, fileInfo.Name()); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.HasPrefix(content.Path, "dir2") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+
+	_, err = client.Stat(ctx, checker, repo, commitID, "dir1/file1")
+	if err == nil {
+		t.Fatal(err)
+	}
+	want = "ls-tree dir1/file1: file does not exist"
+	if diff := cmp.Diff(want, err.Error()); diff != "" {
+		t.Fatal(diff)
 	}
 }

@@ -365,6 +365,7 @@ const failedSteps: LsifIndexStepsFields = {
 const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt' | 'steps'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
+    tags: [],
     inputRoot: 'staging/src/k8s.io/apiextensions-apiserver/',
     inputIndexer: 'sourcegraph/lsif-go:latest',
     indexer: { name: 'lsif-go', url: '' },
@@ -446,6 +447,7 @@ Completed.args = {
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.COMPLETED,
+            tags: ['v4.2.0', 'v1.0.5', 'latest-banana-phone'],
             queuedAt: '2020-06-15T17:50:01+00:00',
             startedAt: '2020-06-15T17:56:01+00:00',
             finishedAt: '2020-06-15T18:00:10+00:00',

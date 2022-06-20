@@ -141,12 +141,12 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
-	src, err := NewSource(db, svc, nil)
+	src, err := NewSource(ctx, db, svc, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating source")
 	}
 	switch v := src.(type) {
-	case *GithubSource:
+	case *GitHubSource:
 		// Cached path
 		token := v.config.Token
 		if token == "" {
@@ -190,7 +190,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 		}
 
 		// Slow path
-		src, err := NewGitLabSource(svc, nil)
+		src, err := NewGitLabSource(ctx, db, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}

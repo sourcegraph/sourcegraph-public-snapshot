@@ -23,7 +23,10 @@ import {
     Icon,
     Modal,
     Input,
-    Typography,
+    Code,
+    Label,
+    H3,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
@@ -200,7 +203,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                         </>
                     ) : (
                         <>
-                            <Icon as={DeleteIcon} /> Delete
+                            <Icon as={DeleteIcon} aria-hidden={true} /> Delete
                         </>
                     )}
                 </Button>
@@ -340,9 +343,9 @@ const AddFeatureFlagOverride: FunctionComponent<
     return (
         <div>
             <Modal isOpen={showAddOverride} onDismiss={closeModal} aria-label="Add Feature Flag Override Modal">
-                <Typography.H3>Add feature flag override for {name}</Typography.H3>
+                <H3>Add feature flag override for {name}</H3>
                 <Form>
-                    <Typography.Label className="w-100 mt-4">
+                    <Label className="w-100 mt-4">
                         Override type
                         <RadioButtons
                             nodes={[
@@ -361,15 +364,15 @@ const AddFeatureFlagOverride: FunctionComponent<
                             }
                             selected={overrideType}
                         />
-                    </Typography.Label>
+                    </Label>
                     <Input
-                        className="mt-2"
+                        inputClassName="mt-2"
                         label={`${overrideType} ID`}
                         type="number"
                         value={namespaceID}
                         onChange={setInputValue}
                     />
-                    <Typography.Label className="w-100">
+                    <Label className="w-100">
                         <div className="mb-2 mt-2">Value</div>
                         <Toggle
                             title="Value"
@@ -379,7 +382,7 @@ const AddFeatureFlagOverride: FunctionComponent<
                             aria-describedby="add-feature-flag-override-value-toggle-description"
                         />
                         <span className="ml-1 text-capitalize">{Boolean(overrideValue).toString()}</span>
-                    </Typography.Label>
+                    </Label>
                     {error && <ErrorAlert prefix="Error adding override" error={error} />}
                     <div className="d-flex justify-content-end">
                         <Button onClick={closeModal} variant="secondary" className="mr-2">
@@ -416,13 +419,11 @@ const FeatureFlagOverridesHeader: FunctionComponent<
 
     return (
         <>
-            {type === 'FeatureFlagBoolean' && (
-                <AddFeatureFlagOverride
-                    name={name}
-                    value={(value as FeatureFlagBooleanValue).value}
-                    onOverrideAdded={onOverrideAdded}
-                />
-            )}
+            <AddFeatureFlagOverride
+                name={name}
+                value={type === 'FeatureFlagBoolean' ? (value as FeatureFlagBooleanValue).value : false}
+                onOverrideAdded={onOverrideAdded}
+            />
             <div className="mr-auto">{count}</div>
         </>
     )
@@ -563,16 +564,16 @@ const ManageFeatureFlag: FunctionComponent<
 
     return (
         <>
-            <Typography.H3>Name</Typography.H3>
-            <p>{name}</p>
+            <H3>Name</H3>
+            <Text>{name}</Text>
 
-            <Typography.H3>Type</Typography.H3>
-            <p>{type.slice('FeatureFlag'.length)}</p>
+            <H3>Type</H3>
+            <Text>{type.slice('FeatureFlag'.length)}</Text>
 
             <FeatureFlagValueSettings type={type} value={value} setFlagValue={setFlagValue} />
 
             <Collapsible
-                title={<Typography.H3>Overrides</Typography.H3>}
+                title={<H3>Overrides</H3>}
                 detail={
                     <FeatureFlagOverridesHeader
                         overrides={overrides || []}
@@ -619,25 +620,20 @@ const CreateFeatureFlag: React.FunctionComponent<
     }>
 > = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
     <>
-        <div className="form-group d-flex flex-column">
-            <label htmlFor="name">
-                <Typography.H3>Name</Typography.H3>
-            </label>
-            <input
-                id="name"
-                type="text"
-                className="form-control"
-                value={name}
-                onChange={({ target: { value } }) => {
-                    setFlagName(value)
-                }}
-            />
-            <small className="form-text text-muted">Required.</small>
-        </div>
+        <Input
+            id="name"
+            value={name}
+            onChange={({ target: { value } }) => {
+                setFlagName(value)
+            }}
+            className="form-group"
+            label={<H3>Name</H3>}
+            message="Required."
+        />
 
         <Select
             id="type"
-            label={<Typography.H3>Type</Typography.H3>}
+            label={<H3>Type</H3>}
             value={type}
             onChange={({ target: { value } }) => setFlagType(value as FeatureFlagType)}
             message="Required."
@@ -704,17 +700,16 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<
     }>
 > = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
-        <label htmlFor="rollout-value">
-            <Typography.H3>Value</Typography.H3>
-        </label>
-        <input
+        <Input
             type="range"
             id="rollout-value"
             name="rollout-value"
             step="10"
             min="0"
             max="10000"
-            className="w-25"
+            className="mb-0"
+            label={<H3>Value</H3>}
+            inputClassName="w-25"
             value={value.rolloutBasisPoints}
             onChange={({ target }) => {
                 update({ rolloutBasisPoints: parseInt(target.value, 10) })
@@ -737,9 +732,9 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<
     }>
 > = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
-        <label htmlFor="bool-value">
-            <Typography.H3>Value</Typography.H3>
-        </label>
+        <Label htmlFor="bool-value">
+            <H3>Value</H3>
+        </Label>
         <div className="d-flex">
             <div>
                 <Toggle
@@ -785,7 +780,7 @@ const ReferencesCollapsible: React.FunctionComponent<
     }
     return (
         <Collapsible
-            title={<Typography.H3>References</Typography.H3>}
+            title={<H3>References</H3>}
             detail={`${references.length} potential feature flag ${pluralize(
                 'reference',
                 references.length
@@ -799,7 +794,7 @@ const ReferencesCollapsible: React.FunctionComponent<
                 {references.map(reference => (
                     <div key={(flagName || '') + reference.file}>
                         <Link target="_blank" rel="noopener noreferrer" to={reference.searchURL}>
-                            <code>{reference.file}</code>
+                            <Code>{reference.file}</Code>
                         </Link>
                     </div>
                 ))}

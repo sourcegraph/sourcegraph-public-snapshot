@@ -6,20 +6,73 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestSanitizeEventURL(t *testing.T) {
+	cases := []struct {
+		input       string
+		externalURL string
+		output      string
+	}{{
+		input:       "https://about.sourcegraph.com/test",
+		externalURL: "https://sourcegraph.com",
+		output:      "https://about.sourcegraph.com/test",
+	}, {
+		input:       "https://test.sourcegraph.com/test",
+		externalURL: "https://sourcegraph.com",
+		output:      "https://test.sourcegraph.com/test",
+	}, {
+		input:       "https://test.sourcegraph.com/test",
+		externalURL: "https://customerinstance.com",
+		output:      "https://test.sourcegraph.com/test",
+	}, {
+		input:       "",
+		externalURL: "https://customerinstance.com",
+		output:      "",
+	}, {
+		input:       "https://github.com/my-private-info",
+		externalURL: "https://customerinstance.com",
+		output:      "",
+	}, {
+		input:       "https://github.com/my-private-info",
+		externalURL: "https://sourcegraph.com",
+		output:      "",
+	}, {
+		input:       "invalid url",
+		externalURL: "https://sourcegraph.com",
+		output:      "",
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalURL: tc.externalURL,
+				},
+			})
+			got := SanitizeEventURL(tc.input)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
 
 func TestEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
@@ -63,6 +116,74 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 				t.Errorf("have %+v, want %+v", have, want)
 			}
 		})
+	}
+}
+
+func TestEventLogs_CountUsersWithSetting(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := NewDB(dbtest.NewDB(t))
+	ctx := context.Background()
+
+	usersStore := db.Users()
+	settingsStore := db.TemporarySettings()
+	eventLogsStore := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	for i := 0; i < 24; i++ {
+		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		settings := fmt.Sprintf("{%s}", strings.Join([]string{
+			fmt.Sprintf(`"foo": %d`, user.ID%7),
+			fmt.Sprintf(`"bar": "%d"`, user.ID%5),
+			fmt.Sprintf(`"baz": %v`, user.ID%2 == 0),
+		}, ", "))
+
+		if err := settingsStore.OverwriteTemporarySettings(ctx, user.ID, settings); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, expectedCount := range []struct {
+		key           string
+		value         any
+		expectedCount int
+	}{
+		// foo, ints
+		{"foo", 0, 3},
+		{"foo", 1, 4},
+		{"foo", 2, 4},
+		{"foo", 3, 4},
+		{"foo", 4, 3},
+		{"foo", 5, 3},
+		{"foo", 6, 3},
+		{"foo", 7, 0}, // none
+
+		// bar, strings
+		{"bar", strconv.Itoa(0), 4},
+		{"bar", strconv.Itoa(1), 5},
+		{"bar", strconv.Itoa(2), 5},
+		{"bar", strconv.Itoa(3), 5},
+		{"bar", strconv.Itoa(4), 5},
+		{"bar", strconv.Itoa(5), 0}, // none
+
+		// baz, bools
+		{"baz", true, 12},
+		{"baz", false, 12},
+		{"baz", nil, 0}, // none
+	} {
+		count, err := eventLogsStore.CountUsersWithSetting(ctx, expectedCount.key, expectedCount.value)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if count != expectedCount.expectedCount {
+			t.Errorf("unexpected count for %q = %v. want=%d have=%d", expectedCount.key, expectedCount.value, expectedCount.expectedCount, count)
+		}
 	}
 }
 
@@ -252,7 +373,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	summary, err := el.siteUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -337,7 +458,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 		"codeintel.searchReferences",
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	count, err := el.codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
 	if err != nil {
 		t.Fatal(err)
@@ -375,7 +496,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 			repo.name,
 			repo.deletedAt,
 		)
-		if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
 	}
@@ -404,7 +525,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 			fmt.Sprintf("%040d", i),
 			uploadedAt,
 		)
-		if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
 
@@ -414,7 +535,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	query := sqlf.Sprintf(
 		"INSERT INTO lsif_index_configuration (repository_id, data, autoindex_enabled) VALUES (1, '', true)",
 	)
-	if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error preparing database: %s", err.Error())
 	}
 
@@ -429,7 +550,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		fmt.Sprintf("%040d", 2), time.Now().UTC().Add(-time.Hour*24*5), // 5 days
 		fmt.Sprintf("%040d", 3),
 	)
-	if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error preparing database: %s", err.Error())
 	}
 
@@ -547,7 +668,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	count, err := el.codeIntelligenceSettingsPageViewCount(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -611,7 +732,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -665,7 +786,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -745,7 +866,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	events, err := el.aggregatedCodeIntelInvestigationEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -1148,7 +1269,7 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	if _, err := db.Handle().DB().ExecContext(ctx, `
+	if _, err := db.Handle().ExecContext(ctx, `
 		INSERT INTO codeintel_langugage_support_requests (language_id, user_id)
 		VALUES
 			('foo', 1),

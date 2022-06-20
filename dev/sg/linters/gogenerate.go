@@ -2,42 +2,52 @@ package linters
 
 import (
 	"context"
-	"os/exec"
 	"strings"
 
+	"github.com/sourcegraph/run"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func lintGoGenerate(ctx context.Context, _ *repo.State) *lint.Report {
-	report := golang.Generate(ctx, nil, golang.QuietOutput)
-	if report.Err != nil {
-		return &lint.Report{
-			Header: "Go generate check",
-			Err:    report.Err,
+var goGenerateLinter = &linter{
+	Name: "Go generate check",
+	Check: func(ctx context.Context, out *std.Output, state *repo.State) error {
+		// Do not run in dirty state, because the dirty check we do later will be inaccurate.
+		// This is not the same as using repo.State
+		if state.Dirty {
+			return errors.New("cannot run go generate check with uncommitted changes")
 		}
-	}
 
-	cmd := exec.CommandContext(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")
-	out, err := cmd.CombinedOutput()
-	r := lint.Report{
-		Header: "Go generate check",
-	}
-	if err != nil {
-		var sb strings.Builder
-		reportOut := output.NewOutput(&sb, output.OutputOpts{
-			ForceColor: true,
-			ForceTTY:   true,
-		})
-		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		sb.WriteString("\n")
-		sb.WriteString(string(out))
-		r.Err = err
-		r.Output = sb.String()
-		return &r
-	}
+		report := golang.Generate(ctx, nil, false, golang.QuietOutput)
+		if report.Err != nil {
+			return report.Err
+		}
 
-	return &r
+		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code -- . :!go.sum")).String()
+		if err != nil && strings.TrimSpace(diffOutput) != "" {
+			out.WriteWarningf("Uncommitted changes found after running go generate:")
+			if err := out.WriteCode("diff", diffOutput); err != nil {
+				// Simply write the output
+				out.Writef("Failed to pretty print diff: %s, dumping output instead:", err.Error())
+				out.Write(diffOutput)
+			}
+
+			// Reset repo state
+			root.Run(run.Bash(ctx, "git add . && git reset HEAD --hard")).Wait()
+		}
+
+		return err
+	},
+	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
+		report := golang.Generate(ctx, nil, false, golang.QuietOutput)
+		if report.Err != nil {
+			return report.Err
+		}
+		return nil
+	},
 }

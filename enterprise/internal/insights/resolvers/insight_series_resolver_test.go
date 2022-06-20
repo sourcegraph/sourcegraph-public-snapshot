@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -22,8 +23,8 @@ func TestResolver_InsightSeries(t *testing.T) {
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		insightsDB := dbtest.NewInsightsDB(t)
-		postgres := dbtest.NewDB(t)
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+		postgres := database.NewDB(dbtest.NewDB(t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()

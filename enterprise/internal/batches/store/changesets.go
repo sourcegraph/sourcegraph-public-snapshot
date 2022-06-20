@@ -270,7 +270,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 	ctx, _, endObservation := s.operations.countChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
 	}
@@ -524,6 +524,7 @@ type ListChangesetsOpts struct {
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
 	RepoID               api.RepoID
+	BitbucketCloudCommit string
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -531,7 +532,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	ctx, _, endObservation := s.operations.listChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 	}
@@ -612,6 +613,19 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 	if opts.RepoID != 0 {
 		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
+	}
+	if len(opts.BitbucketCloudCommit) >= 12 {
+		// Bitbucket Cloud commit hashes in PR objects are generally truncated
+		// to 12 characters, but this isn't actually documented in the API
+		// documentation: they may be anything from 7 up. In practice, we've
+		// only observed 12. Given that, we'll look for 7, 12, and the full hash
+		// — since this hits an index, this should be relatively cheap.
+		preds = append(preds, sqlf.Sprintf(
+			"changesets.metadata->'source'->'commit'->>'hash' IN (%s, %s, %s)",
+			opts.BitbucketCloudCommit[0:7],
+			opts.BitbucketCloudCommit[0:12],
+			opts.BitbucketCloudCommit,
+		))
 	}
 
 	join := sqlf.Sprintf("")
@@ -1257,7 +1271,7 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}

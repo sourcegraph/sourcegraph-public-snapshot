@@ -189,6 +189,7 @@ describe('Extension Registry', () => {
                     session: { canSignOut: true },
                     viewerCanAdminister: true,
                     searchable: true,
+                    emails: [],
                 },
             }),
             RegistryExtensions: () => ({
@@ -276,10 +277,10 @@ describe('Extension Registry', () => {
             overrideGraphQLExtensionRegistry({ enabled: false })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
-            await driver.page.waitForSelector('.test-extension-registry-input')
+            await driver.page.waitForSelector('[data-testid=test-extension-registry-input]')
             const request = await testContext.waitForGraphQLRequest(async () => {
                 await driver.replaceText({
-                    selector: '.test-extension-registry-input',
+                    selector: '[data-testid=test-extension-registry-input]',
                     newText: 'sqs',
                     enterTextMethod: 'paste',
                 })

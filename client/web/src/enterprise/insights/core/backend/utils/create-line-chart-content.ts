@@ -4,7 +4,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { Series } from '../../../../../charts'
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
-import { semanticSort } from '../../../../../insights/utils/semantic-sort'
 import { PageRoutes } from '../../../../../routes.constants'
 import { InsightFilters, SearchBasedInsightSeries } from '../../types'
 import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backend-types'
@@ -36,27 +35,25 @@ export function createLineChartContent(
     const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
 
     return {
-        series: series
-            .map<Series<BackendInsightDatum>>(line => ({
-                id: line.seriesId,
-                data: line.points.map((point, index) => ({
-                    dateTime: new Date(point.dateTime),
-                    value: point.value,
-                    link: generateLinkURL({
-                        previousPoint: line.points[index - 1],
-                        series: seriesDefinitionMap[line.seriesId],
-                        point,
-                        includeRepoRegexp,
-                        excludeRepoRegexp,
-                    }),
-                })),
-                name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
-                color: seriesDefinitionMap[line.seriesId]?.stroke,
-                getYValue: datum => datum.value,
-                getXValue: datum => datum.dateTime,
-                getLinkURL: datum => datum.link,
-            }))
-            .sort((a, b) => semanticSort(a.name, b.name)),
+        series: series.map<Series<BackendInsightDatum>>(line => ({
+            id: line.seriesId,
+            data: line.points.map((point, index) => ({
+                dateTime: new Date(point.dateTime),
+                value: point.value,
+                link: generateLinkURL({
+                    previousPoint: line.points[index - 1],
+                    series: seriesDefinitionMap[line.seriesId],
+                    point,
+                    includeRepoRegexp,
+                    excludeRepoRegexp,
+                }),
+            })),
+            name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
+            color: seriesDefinitionMap[line.seriesId]?.stroke,
+            getYValue: datum => datum.value,
+            getXValue: datum => datum.dateTime,
+            getLinkURL: datum => datum.link,
+        })),
     }
 }
 

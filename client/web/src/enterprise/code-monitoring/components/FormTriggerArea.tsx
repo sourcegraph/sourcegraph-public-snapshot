@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H2, H3 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -109,8 +109,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
     const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () => isValidQuery && hasTypeDiffOrCommitFilter && hasRepoFilter && hasValidPatternTypeFilter,
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
+        () =>
+            isValidQuery &&
+            hasTypeDiffOrCommitFilter &&
+            (!isSourcegraphDotCom || hasRepoFilter) &&
+            hasValidPatternTypeFilter,
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
@@ -204,7 +208,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <Typography.H3 as={Typography.H2}>Trigger</Typography.H3>
+            <H3 as={H2}>Trigger</H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
@@ -231,9 +235,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
-                                    onSubmit={() => {}}
                                     globbing={false}
-                                    preventNewLine={false}
+                                    preventNewLine={true}
                                     autoFocus={true}
                                 />
                             </div>
@@ -250,6 +253,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 >
                                     Preview results{' '}
                                     <Icon
+                                        aria-hidden={true}
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
                                         as={OpenInNewIcon}
                                     />
@@ -264,7 +268,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <code>patternType:literal</code> or <code>patternType:regexp</code>
+                                    Is <Code>patternType:literal</Code> or <Code>patternType:regexp</Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -273,18 +277,21 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                     dataTestid="type-checkbox"
                                 >
-                                    Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                    Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
-                            <li>
-                                <ValidQueryChecklistItem
-                                    checked={hasRepoFilter}
-                                    hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
-                                    dataTestid="repo-checkbox"
-                                >
-                                    Contains a <code>repo:</code> filter
-                                </ValidQueryChecklistItem>
-                            </li>
+                            {/* Enforce repo filter on sourcegraph.com because otherwise it's too easy to generate a lot of load */}
+                            {isSourcegraphDotCom && (
+                                <li>
+                                    <ValidQueryChecklistItem
+                                        checked={hasRepoFilter}
+                                        hint="The repo: filter is required to narrow down your search."
+                                        dataTestid="repo-checkbox"
+                                    >
+                                        Contains a <Code>repo:</Code> filter
+                                    </ValidQueryChecklistItem>
+                                </li>
+                            )}
                             <li>
                                 <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                     Is a valid search query
@@ -330,12 +337,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 When there are new search results
                             </div>
                             {triggerCompleted ? (
-                                <code
+                                <Code
                                     className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}
-                                </code>
+                                </Code>
                             ) : (
                                 <span className="text-muted">
                                     This trigger will fire when new search results are found for a given search query.

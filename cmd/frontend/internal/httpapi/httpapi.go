@@ -37,6 +37,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type Handlers struct {
+	GitHubWebhook             webhooks.Registerer
+	GitLabWebhook             http.Handler
+	BitbucketServerWebhook    http.Handler
+	BitbucketCloudWebhook     http.Handler
+	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
+}
+
 // NewHandler returns a new API handler that uses the provided API
 // router, which must have been created by httpapi/router.New, or
 // creates a new one if nil.
@@ -47,12 +56,8 @@ func NewHandler(
 	db database.DB,
 	m *mux.Router,
 	schema *graphql.Schema,
-	githubWebhook webhooks.Registerer,
-	gitlabWebhook,
-	bitbucketServerWebhook http.Handler,
-	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
-	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimiter graphqlbackend.LimitWatcher,
+	handlers *Handlers,
 ) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
@@ -72,21 +77,22 @@ func NewHandler(
 	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
 	gh := webhooks.GitHubWebhook{
-		ExternalServices: database.ExternalServices(db),
+		ExternalServices: db.ExternalServices(),
 	}
 
 	webhookhandlers.Init(db, &gh)
 	webhookMiddleware := webhooks.NewLogMiddleware(
-		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
-	githubWebhook.Register(&gh)
+	handlers.GitHubWebhook.Register(&gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(gitlabWebhook)))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(bitbucketServerWebhook)))
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
+	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
+	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
+	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
+	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
@@ -135,7 +141,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	indexer := &searchIndexerServer{
 		db:            db,
 		ListIndexable: backend.NewRepos(db).ListIndexable,
-		RepoStore:     database.Repos(db),
+		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
@@ -150,14 +156,11 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
 	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail(db))))
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	m.Get(apirouter.GitExec).Handler(trace.Route(handler(serveGitExec(db))))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision(db))))
-	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar(db))))
 	gitService := &gitServiceHandler{
 		Gitserver: gitserver.NewClient(db),
 	}

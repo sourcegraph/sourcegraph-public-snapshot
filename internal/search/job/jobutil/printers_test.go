@@ -185,7 +185,7 @@ func TestPrettyJSON(t *testing.T) {
       "PARALLEL": [
         {
           "REPOPAGER": {
-            "ZoektRepoSubsetSearchJob": {
+            "ZoektRepoSubsetTextSearchJob": {
               "Repos": null,
               "Query": {
                 "Pattern": "bar",
@@ -200,13 +200,14 @@ func TestPrettyJSON(t *testing.T) {
           }
         },
         {
-          "ComputeExcludedReposJob": {
+          "ReposComputeExcludedJob": {
             "RepoOpts": {
               "RepoFilters": [
                 "foo"
               ],
               "MinusRepoFilters": null,
               "Dependencies": null,
+              "Dependents": null,
               "CaseSensitiveRepoFilters": false,
               "SearchContextSpec": "",
               "CommitAfter": "",
@@ -216,6 +217,7 @@ func TestPrettyJSON(t *testing.T) {
               "ForkSet": false,
               "NoForks": true,
               "OnlyForks": false,
+              "OnlyCloned": false,
               "ArchivedSet": false,
               "NoArchived": true,
               "OnlyArchived": false
@@ -226,7 +228,7 @@ func TestPrettyJSON(t *testing.T) {
           "PARALLEL": [
             {
               "REPOPAGER": {
-                "SearcherJob": {
+                "SearcherTextSearchJob": {
                   "PatternInfo": {
                     "Pattern": "bar",
                     "IsNegated": false,
@@ -249,7 +251,11 @@ func TestPrettyJSON(t *testing.T) {
                   },
                   "Repos": null,
                   "Indexed": false,
-                  "UseFullDeadline": true
+                  "UseFullDeadline": true,
+                  "Features": {
+                    "ContentBasedLangFilters": false,
+                    "HybridSearch": false
+                  }
                 }
               }
             },
@@ -262,6 +268,7 @@ func TestPrettyJSON(t *testing.T) {
                   ],
                   "MinusRepoFilters": null,
                   "Dependencies": null,
+                  "Dependents": null,
                   "CaseSensitiveRepoFilters": false,
                   "SearchContextSpec": "",
                   "CommitAfter": "",
@@ -271,6 +278,7 @@ func TestPrettyJSON(t *testing.T) {
                   "ForkSet": false,
                   "NoForks": true,
                   "OnlyForks": false,
+                  "OnlyCloned": false,
                   "ArchivedSet": false,
                   "NoArchived": true,
                   "OnlyArchived": false
@@ -278,7 +286,8 @@ func TestPrettyJSON(t *testing.T) {
                 "FilePatternsReposMustInclude": null,
                 "FilePatternsReposMustExclude": null,
                 "Features": {
-                  "ContentBasedLangFilters": false
+                  "ContentBasedLangFilters": false,
+                  "HybridSearch": false
                 },
                 "Mode": 0
               }

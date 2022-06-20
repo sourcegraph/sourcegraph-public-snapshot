@@ -2,7 +2,6 @@ package conversion
 
 import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 )
 
 // State is an in-memory representation of an uploaded LSIF index.
@@ -28,14 +27,6 @@ type State struct {
 	Monikers               *datastructures.DefaultIDSetMap         // maps (range ID | resultSet ID) -> moniker IDs
 	Contains               *datastructures.DefaultIDSetMap         // maps document ID -> range IDs that are contained in the document
 	Diagnostics            *datastructures.DefaultIDSetMap         // maps document ID -> diagnostic IDs
-
-	// Sourcegraph extensions
-	DocumentationResultsData  map[int]protocol.Documentation // maps documentationResult vertices -> their data
-	DocumentationStringsData  map[int]protocol.MarkupContent // maps documentationString vertices -> their data
-	DocumentationResultRoot   int                            // the documentationResult vertex corresponding to the project root.
-	DocumentationChildren     map[int][]int                  // maps documentationResult vertex -> ordered list of children documentationResult vertices
-	DocumentationStringLabel  map[int]int                    // maps documentationResult vertex -> label documentationString vertex
-	DocumentationStringDetail map[int]int                    // maps documentationResult vertex -> detail documentationString vertex
 }
 
 // newState create a new State with zero-valued map fields.
@@ -60,13 +51,5 @@ func newState() *State {
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
-
-		// Sourcegraph extensions
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 }

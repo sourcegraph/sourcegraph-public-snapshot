@@ -32,14 +32,28 @@ func getStore(ctx context.Context) *eventStore {
 // LogEvent tracks an event in the per-run analytics store, if analytics are enabled,
 // in the context of a command.
 //
-// Events can also be provided to indicate that something happened - for example, and
-// error or cancellation. These are treated as metrics with a count of 1.
-func LogEvent(ctx context.Context, name string, labels []string, startedAt time.Time, events ...string) {
-	store := getStore(ctx)
-	if store == nil {
-		return
+// In general, usage should be as follows:
+//
+// - category denotes the category of the event, such as "lint_runner:.
+// - labels denote subcategories this event belongs to, such as the specific lint runner.
+// - events denote what happened as part of this logged event, such as "failed" or
+//   "succeeded". These are treated as metrics with a count of 1.
+//
+// Events are automatically created with a duration relative to the provided start time,
+// and persisted to disk at the end of command execution.
+//
+// It returns the event that was created so that you can add additional metadata if
+// desired - use sparingly.
+func LogEvent(ctx context.Context, category string, labels []string, startedAt time.Time, events ...string) *okay.Event {
+	// Validate the incoming event
+	if category == "" {
+		panic("LogEvent.category must be set")
+	}
+	if startedAt.IsZero() {
+		panic("LogEvent.startedAt must be a valid time")
 	}
 
+	// Set events as metrics
 	metrics := map[string]okay.Metric{
 		"duration": okay.Duration(time.Since(startedAt)),
 	}
@@ -47,8 +61,9 @@ func LogEvent(ctx context.Context, name string, labels []string, startedAt time.
 		metrics[event] = okay.Count(1)
 	}
 
-	store.events = append(store.events, &okay.Event{
-		Name:      name,
+	// Create the event
+	event := &okay.Event{
+		Name:      category,
 		Labels:    labels,
 		Timestamp: startedAt, // Timestamp as start of event
 		Metrics:   metrics,
@@ -56,5 +71,13 @@ func LogEvent(ctx context.Context, name string, labels []string, startedAt time.
 		Properties: map[string]string{
 			"event_id": uuid.NewString(),
 		},
-	})
+	}
+
+	// Set to store
+	store := getStore(ctx)
+	if store != nil {
+		store.events = append(store.events, event)
+	}
+
+	return event
 }

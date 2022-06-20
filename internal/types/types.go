@@ -13,6 +13,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+// BatchChangeSource represents how a batch change can be created
+// it can either be created locally or via an executor (SSBC)
+type BatchChangeSource string
+
+const (
+	ExecutorBatchChangeSource BatchChangeSource = "executor"
+	LocalBatchChangeSource    BatchChangeSource = "local"
+)
+
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
 type SourceInfo struct {
 	ID       string
@@ -863,6 +872,93 @@ type BatchChangesUsageStatistics struct {
 	CurrentMonthUsersCount int64
 
 	BatchChangesCohorts []*BatchChangesCohort
+
+	// ActiveExecutorsCount is the count of executors that have had a heartbeat in the last
+	// 15 seconds.
+	ActiveExecutorsCount int32
+
+	// BulkOperationsCount is the count of bulk operations used to manage changesets
+	BulkOperationsCount []*BulkOperationsCount
+
+	// ChangesetDistribution is the distribution of batch changes per source and the amount of
+	// changesets created via the different sources
+	ChangesetDistribution []*ChangesetDistribution
+
+	// BatchChangeStatsBySource is the distribution of batch change x changesets statistics
+	// across multiple sources
+	BatchChangeStatsBySource []*BatchChangeStatsBySource
+
+	// MonthlyBatchChangesExecutorUsage is the number of users who ran a job on an
+	// executor in a given month
+	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
+
+	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BulkOperationsCount struct {
+	Name  string
+	Count int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type WeeklyBulkOperationStats struct {
+	// Week is the week of this cohort and is used to group batch changes by
+	// their creation date.
+	Week string
+
+	// Count is the number of bulk operations carried out in a particular week.
+	Count int32
+
+	BulkOperation string
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type MonthlyBatchChangesExecutorUsage struct {
+	// Month of the year corresponding to this executor usage data.
+	Month string
+
+	// The number of unique users who ran a job on an executor this month.
+	Count int32
+
+	// The cumulative number of minutes of executor usage for batch changes this month.
+	Minutes int64
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BatchChangeStatsBySource struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally.
+	Source BatchChangeSource
+
+	// the amount of changesets published using this batch change source.
+	PublishedChangesetsCount int32
+
+	// the amount of batch changes created from this source.
+	BatchChangesCount int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type ChangesetDistribution struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally
+	Source BatchChangeSource
+
+	// range of changeset distribution per batch_change
+	Range string
+
+	// number of batch changes with the range of changesets defined
+	BatchChangesCount int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

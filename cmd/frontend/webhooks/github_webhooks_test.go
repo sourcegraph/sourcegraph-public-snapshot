@@ -108,12 +108,12 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 
 	secret := "secret"
-	esStore := database.ExternalServices(db)
+	esStore := db.ExternalServices()
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
@@ -147,9 +147,14 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		return nil
 	}, "public")
 
+	u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	urls := []string{
 		// current webhook URLs, uses fast path for finding external service
-		extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/"),
+		u,
 		// old webhook URLs, finds external service by searching all configured external services
 		"https://example.com/.api/github-webhook",
 	}

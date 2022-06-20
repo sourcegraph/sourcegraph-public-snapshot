@@ -50,6 +50,81 @@ var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_spec_id"),
 }
 
+func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
+	ctx, _, endObservation := s.operations.upsertBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := s.upsertBatchChangeQuery(c)
+
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
+		return scanBatchChange(c, sc)
+	})
+}
+
+var upsertBatchChangeQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:UpsertBatchChange
+INSERT INTO batch_changes (%s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT (%s) WHERE %s
+DO UPDATE SET
+(%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING %s
+`
+
+func (s *Store) upsertBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = s.now()
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	conflictTarget := []*sqlf.Query{sqlf.Sprintf("name")}
+	predicate := sqlf.Sprintf("TRUE")
+
+	if c.NamespaceUserID != 0 {
+		conflictTarget = append(conflictTarget, sqlf.Sprintf("namespace_user_id"))
+		predicate = sqlf.Sprintf("namespace_user_id IS NOT NULL")
+	}
+
+	if c.NamespaceOrgID != 0 {
+		conflictTarget = append(conflictTarget, sqlf.Sprintf("namespace_org_id"))
+		predicate = sqlf.Sprintf("namespace_org_id IS NOT NULL")
+	}
+
+	return sqlf.Sprintf(
+		upsertBatchChangeQueryFmtstr,
+		sqlf.Join(batchChangeInsertColumns, ", "),
+		c.Name,
+		c.Description,
+		nullInt32Column(c.CreatorID),
+		nullInt32Column(c.LastApplierID),
+		nullTimeColumn(c.LastAppliedAt),
+		nullInt32Column(c.NamespaceUserID),
+		nullInt32Column(c.NamespaceOrgID),
+		c.CreatedAt,
+		c.UpdatedAt,
+		nullTimeColumn(c.ClosedAt),
+		c.BatchSpecID,
+		sqlf.Join(conflictTarget, ", "),
+		predicate,
+		sqlf.Join(batchChangeInsertColumns, ", "),
+		c.Name,
+		c.Description,
+		nullInt32Column(c.CreatorID),
+		nullInt32Column(c.LastApplierID),
+		nullTimeColumn(c.LastAppliedAt),
+		nullInt32Column(c.NamespaceUserID),
+		nullInt32Column(c.NamespaceOrgID),
+		c.CreatedAt,
+		c.UpdatedAt,
+		nullTimeColumn(c.ClosedAt),
+		c.BatchSpecID,
+		sqlf.Join(batchChangeColumns, ", "),
+	)
+}
+
 // CreateBatchChange creates the given batch change.
 func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
 	ctx, _, endObservation := s.operations.createBatchChange.With(ctx, &err, observation.Args{})
@@ -173,7 +248,7 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 	ctx, _, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
 	}
@@ -213,7 +288,7 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
@@ -358,7 +433,7 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
@@ -401,7 +476,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
 	}
@@ -460,7 +535,7 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 	ctx, _, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
 	}
@@ -520,7 +595,7 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {

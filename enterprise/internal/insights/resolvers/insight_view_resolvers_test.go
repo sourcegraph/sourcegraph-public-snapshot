@@ -2,22 +2,21 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func addrStr(input string) *string {
@@ -166,8 +165,8 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 		}
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
-		insightsDB := dbtest.NewInsightsDB(t)
-		postgres := dbtest.NewDB(t)
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+		postgres := database.NewDB(dbtest.NewDB(t))
 		permStore := store.NewInsightPermissionStore(postgres)
 		clock := timeutil.Now
 		timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
@@ -175,7 +174,7 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 			insightStore:    store.NewInsightStore(insightsDB),
 			dashboardStore:  store.NewDashboardStore(insightsDB),
 			insightsDB:      insightsDB,
-			workerBaseStore: basestore.NewWithDB(postgres, sql.TxOptions{}),
+			workerBaseStore: basestore.NewWithHandle(postgres.Handle()),
 			postgresDB:      postgres,
 			timeSeriesStore: timeseriesStore,
 		}
@@ -230,8 +229,8 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	a := actor.FromUser(1)
 	ctx := actor.WithActor(context.Background(), a)
 
-	insightsDB := dbtest.NewInsightsDB(t)
-	postgresDB := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	postgresDB := database.NewDB(dbtest.NewDB(t))
 	base := baseInsightResolver{
 		insightStore:   store.NewInsightStore(insightsDB),
 		dashboardStore: store.NewDashboardStore(insightsDB),

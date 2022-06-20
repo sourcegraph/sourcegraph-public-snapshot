@@ -59,6 +59,7 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
                         variant="primary"
                         as="label"
                     >
+                        {/* eslint-disable-next-line react/forbid-elements */}
                         <input
                             type="radio"
                             name="survey-score"

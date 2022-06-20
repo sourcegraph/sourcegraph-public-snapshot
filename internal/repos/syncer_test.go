@@ -15,6 +15,8 @@ import (
 	"github.com/lib/pq"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -146,7 +148,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		}
 
 		q := sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`)
-		_, err := s.Handle().DB().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err := s.Handle().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -533,6 +535,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 		for _, tc := range testCases {
 			if tc.name == "" {
+				t.Error("Test case name is blank")
 				continue
 			}
 
@@ -545,7 +548,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 						t.Fatalf("%q panicked: %v", tc.name, err)
 					}
 				}()
-
+				if st == nil {
+					t.Fatal("nil store")
+				}
 				now := tc.now
 				if now == nil {
 					clock := timeutil.NewFakeClock(time.Now(), time.Second)
@@ -557,7 +562,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					ctx = context.Background()
 				}
 
-				if st != nil && len(tc.stored) > 0 {
+				if len(tc.stored) > 0 {
 					cloned := tc.stored.Clone()
 					if err := st.RepoStore().Create(ctx, cloned...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
@@ -565,31 +570,45 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := &repos.Syncer{
+					Logger:  logtest.Scoped(t),
 					Sourcer: tc.sourcer,
 					Store:   st,
 					Now:     now,
 				}
 
 				for _, svc := range tc.svcs {
-					err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond)
+					before, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
 
+					err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond)
 					if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 						t.Errorf("error %q doesn't contain %q", have, want)
 					}
+
+					after, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					// last_synced should always be updated
+					if before.LastSyncAt == after.LastSyncAt {
+						t.Log(before.LastSyncAt, after.LastSyncAt)
+						t.Errorf("Service %q last_synced was not updated", svc.DisplayName)
+					}
 				}
 
-				if st != nil {
-					var want, have types.Repos
-					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
-					have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
+				var want, have types.Repos
+				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
+				have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
 
-					want = want.With(typestest.Opt.RepoID(0))
-					have = have.With(typestest.Opt.RepoID(0))
-					sort.Sort(want)
-					sort.Sort(have)
+				want = want.With(typestest.Opt.RepoID(0))
+				have = have.With(typestest.Opt.RepoID(0))
+				sort.Sort(want)
+				sort.Sort(have)
 
-					typestest.Assert.ReposEqual(want...)(t, have)
-				}
+				typestest.Assert.ReposEqual(want...)(t, have)
 			}))
 		}
 	}
@@ -692,7 +711,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				q := sqlf.Sprintf("DELETE FROM repo")
-				_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -704,6 +723,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := &repos.Syncer{
+					Logger: logtest.Scoped(t),
 					Now:    time.Now,
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
@@ -775,6 +795,7 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		}
 
 		syncer := &repos.Syncer{
+			Logger:  logtest.Scoped(t),
 			Sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
 			Store:   store,
 			Synced:  make(chan repos.Diff),
@@ -915,7 +936,8 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		}
 
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s, ok := sourcers[service.ID]
 				if !ok {
 					t.Fatalf("sourcer not found: %d", service.ID)
@@ -950,7 +972,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		var jobCount int
 		for i := 0; i < 10; i++ {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
-			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
 				t.Fatal(err)
 			}
 			if jobCount == len(services) {
@@ -983,7 +1005,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		var jobsCompleted int
 		for i := 0; i < 10; i++ {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
-			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)
 			}
 			if jobsCompleted == len(services) {
@@ -1043,7 +1065,9 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1055,7 +1079,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 		}
 
 		// Sync second service
-		syncer.Sourcer = func(service *types.ExternalService) (repos.Source, error) {
+		syncer.Sourcer = func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
 		}
@@ -1070,7 +1094,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 		assertDeletedRepoCount(ctx, t, store, 0)
 
 		// Remove the repo from one service and sync again
-		syncer.Sourcer = func(services *types.ExternalService) (repos.Source, error) {
+		syncer.Sourcer = func(ctx context.Context, services *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil)
 			return s, nil
 		}
@@ -1094,7 +1118,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 		assertDeletedRepoCount(ctx, t, store, 0)
 
 		// Remove the repo from the second service and sync again
-		syncer.Sourcer = func(service *types.ExternalService) (repos.Source, error) {
+		syncer.Sourcer = func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil)
 			return s, nil
 		}
@@ -1142,7 +1166,8 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 		}
 
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1200,7 +1225,8 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1213,7 +1239,8 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return s, nil
 			},
@@ -1257,7 +1284,8 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		// Start syncing using tx1
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, updatedRepo)
 				return s, nil
 			},
@@ -1269,7 +1297,8 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 		}
 
 		syncer2 := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
 					r.Description = newDescription
 				}))
@@ -1354,7 +1383,8 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1367,7 +1397,8 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return s, nil
 			},
@@ -1408,7 +1439,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		var userID int32
 		q := sqlf.Sprintf("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id")
-		err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
+		err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
 			Scan(&userID)
 		if err != nil {
 			t.Fatal(err)
@@ -1469,7 +1500,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Admin service will sync both repos
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(adminService, nil, publicRepo, privateRepo)
 				return s, nil
 			},
@@ -1485,7 +1517,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Unsync the repo to clean things up
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(adminService, nil)
 				return s, nil
 			},
@@ -1501,7 +1534,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// By default, user service can only sync public code, even if they have access to private code
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return s, nil
 			},
@@ -1523,7 +1557,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		})
 
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return s, nil
 			},
@@ -1544,13 +1579,14 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			pq.Array([]string{database.TagAllowUserExternalServicePrivate}),
 			userID,
 		)
-		_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return s, nil
 			},
@@ -1564,14 +1600,15 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		// Confirm that there are two relationships
 		assertSourceCount(ctx, t, store, 2)
 		q = sqlf.Sprintf("UPDATE users SET tags = '{}' WHERE id = %s", userID)
-		_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Attempt to add some repos with a per user limit set
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
 				return s, nil
 			},
@@ -1585,7 +1622,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Attempt to add some repos with a total limit set
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
 				return s, nil
 			},
@@ -1653,7 +1691,8 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo1)
 				return s, nil
 			},
@@ -1666,7 +1705,8 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
-			Sourcer: func(*types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo2)
 				return s, nil
 			},
@@ -1684,7 +1724,8 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer = &repos.Syncer{
-			Sourcer: func(*types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, renamedRepo1)
 				return s, nil
 			},
@@ -1757,7 +1798,8 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1770,7 +1812,8 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return s, nil
 			},
@@ -1881,7 +1924,8 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				Logger: logtest.Scoped(t),
+				Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 					s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
 					return s, nil
 				},
@@ -2013,10 +2057,13 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 		}
 
 		repoIdx := 0
+
+		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				Logger: logger,
+				Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 					s := repos.NewFakeSource(svc, nil, reposToSync[repoIdx], reposToSync[repoIdx+1])
 					return s, nil
 				},
@@ -2038,7 +2085,7 @@ func assertSourceCount(ctx context.Context, t *testing.T, store repos.Store, wan
 	t.Helper()
 	var rowCount int
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos")
-	if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
+	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {
@@ -2050,7 +2097,7 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store
 	t.Helper()
 	var rowCount int
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_at is not null")
-	if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
+	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {
@@ -2171,6 +2218,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for _, repoName := range repoNames {
 		dbRepo := (&types.Repo{
 			Name:        repoName,
@@ -2203,6 +2251,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 
 	syncer := &repos.Syncer{
+		Logger: logtest.Scoped(t),
 		Now:    time.Now,
 		Store:  s,
 		Synced: make(chan repos.Diff, 1),

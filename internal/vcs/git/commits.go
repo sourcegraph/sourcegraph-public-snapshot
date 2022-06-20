@@ -540,7 +540,7 @@ func CommitsExist(ctx context.Context, db database.DB, repoCommits []api.RepoCom
 
 var GetCommits = getCommits
 
-// getCommits returns a git commit object describing each of the give repository and commit pairs. This
+// getCommits returns a git commit object describing each of the given repository and commit pairs. This
 // function returns a slice of the same size as the input slice. Values in the output slice may be nil if
 // their associated repository or commit are unresolvable.
 //
@@ -580,6 +580,7 @@ func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommi
 				// Treat as not-found
 				return nil
 			}
+
 			return errors.Wrap(err, "failed to perform git log")
 		}
 

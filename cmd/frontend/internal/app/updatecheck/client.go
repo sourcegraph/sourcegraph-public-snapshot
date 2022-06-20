@@ -98,19 +98,19 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Users(db).Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	defer recordOperation("hasRepos")(&err)
-	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
+	rs, err := db.Repos().List(ctx, database.ReposListOptions{
 		LimitOffset: &database.LimitOffset{Limit: 1},
 	})
 	return len(rs) > 0, err
@@ -123,7 +123,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
-	return database.UserEmails(db).GetInitialSiteAdminInfo(ctx)
+	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
 }
 
 func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -620,7 +620,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
+	kinds, err = db.ExternalServices().DistinctKinds(ctx)
 	return kinds, err
 }
 

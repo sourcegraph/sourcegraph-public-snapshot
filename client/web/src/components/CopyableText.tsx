@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import styles from './CopyableText.module.scss'
 
@@ -23,6 +23,9 @@ interface Props {
 
     /** Whether or not the text to be copied is a password. */
     password?: boolean
+
+    /** The label used for screen readers */
+    label?: string
 
     /** Callback for when the content is copied  */
     onCopy?: () => void
@@ -45,17 +48,23 @@ export class CopyableText extends React.PureComponent<Props, State> {
         return (
             <div className={classNames('form-inline', this.props.className)}>
                 <div className={classNames('input-group', this.props.flex && 'flex-1')}>
-                    <input
+                    <Input
                         type={this.props.password ? 'password' : 'text'}
-                        className={classNames('form-control', styles.input)}
+                        inputClassName={styles.input}
+                        aria-label={this.props.label}
                         value={this.props.text}
                         size={this.props.size}
                         readOnly={true}
                         onClick={this.onClickInput}
                     />
                     <div className="input-group-append">
-                        <Button onClick={this.onClickButton} disabled={this.state.copied} variant="secondary">
-                            <Icon as={ContentCopyIcon} /> {this.state.copied ? 'Copied' : 'Copy'}
+                        <Button
+                            onClick={this.onClickButton}
+                            disabled={this.state.copied}
+                            variant="secondary"
+                            aria-label="Copy"
+                        >
+                            <Icon as={ContentCopyIcon} aria-hidden={true} /> {this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
                 </div>

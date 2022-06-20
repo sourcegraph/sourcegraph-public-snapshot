@@ -3,7 +3,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 )
 
 // LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable

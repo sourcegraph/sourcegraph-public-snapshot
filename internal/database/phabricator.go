@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,12 +29,7 @@ type phabricatorStore struct {
 	*basestore.Store
 }
 
-// Phabricator instantiates and returns a new PhabricatorStore with prepared statements.
-func Phabricator(db dbutil.DB) PhabricatorStore {
-	return &phabricatorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore using the other store handle.
+// PhabricatorWith instantiates and returns a new PhabricatorStore using the other store handle.
 func PhabricatorWith(other basestore.ShareableStore) PhabricatorStore {
 	return &phabricatorStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -65,7 +59,7 @@ func (p *phabricatorStore) Create(ctx context.Context, callsign string, name api
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := p.Handle().DB().QueryRowContext(
+	err := p.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO phabricator_repos(callsign, repo_name, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.Name, r.URL).Scan(&r.ID)
@@ -81,7 +75,7 @@ func (p *phabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, 
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := p.Handle().DB().QueryRowContext(
+	err := p.Handle().QueryRowContext(
 		ctx,
 		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE repo_name=$3 RETURNING id",
 		r.Callsign, r.URL, r.Name).Scan(&r.ID)
@@ -106,7 +100,7 @@ func (p *phabricatorStore) CreateIfNotExists(ctx context.Context, callsign strin
 }
 
 func (p *phabricatorStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.PhabricatorRepo, error) {
-	rows, err := p.Handle().DB().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
+	rows, err := p.Handle().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}

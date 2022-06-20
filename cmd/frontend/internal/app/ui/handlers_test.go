@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -64,7 +65,7 @@ func TestRedirects(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
-			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
+			check(t, "/", http.StatusTemporaryRedirect, "https://about.sourcegraph.com", "Mozilla/5.0")
 		})
 	})
 
@@ -401,7 +402,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+			gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 				return test.mockStat, nil
 			}
 			t.Cleanup(git.ResetMocks)

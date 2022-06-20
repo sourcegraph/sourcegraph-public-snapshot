@@ -37,7 +37,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		return edb.NewAuthzStore(db, clock)
 	}
 
-	extsvcStore := database.ExternalServices(db)
+	extsvcStore := db.ExternalServices()
 
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.

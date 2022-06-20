@@ -1,42 +1,49 @@
 import React from 'react'
 
+import { MockedResponse } from '@apollo/client/testing'
 import { Meta, Story } from '@storybook/react'
-import { Observable, of, throwError } from 'rxjs'
-import { delay } from 'rxjs/operators'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Typography } from '@sourcegraph/wildcard'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, SearchBackendBasedInsight, SeriesChartContent } from '../../../../core'
+import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
+import { SeriesChartContent, SearchBasedInsight } from '../../../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import {
-    BackendInsight as BackendInsightType,
-    InsightExecutionType,
-    InsightType,
-    isCaptureGroupInsight,
-} from '../../../../core/types'
+import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types'
 
 import { BackendInsightView } from './BackendInsight'
 
 const defaultStory: Meta = {
     title: 'web/insights/BackendInsight',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
+        chromatic: {
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default defaultStory
 
-const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
+const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
     title: 'Backend Insight Mock',
-    series: [],
+    repositories: [],
+    series: [
+        { id: 'series_001', query: '', name: 'A metric', stroke: 'var(--warning)' },
+        { id: 'series_002', query: '', name: 'B metric', stroke: 'var(--warning)' },
+    ],
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+    seriesDisplayOptions: {},
+    dashboards: [],
 }
 
 interface BackendInsightDatum {
@@ -105,27 +112,103 @@ const LINE_CHART_CONTENT_MOCK_EMPTY: SeriesChartContent<BackendInsightDatum> = {
     ],
 }
 
-const mockInsightAPI = ({
+function generateSeries(chartContent: SeriesChartContent<BackendInsightDatum>, isFetchingHistoricalData: boolean) {
+    return chartContent.series.map(series => ({
+        seriesId: series.id,
+        label: series.name,
+        points: series.data.map(point => ({
+            dateTime: new Date(point.x).toUTCString(),
+            value: point.value,
+            __typename: 'InsightDataPoint',
+        })),
+        status: {
+            backfillQueuedAt: '2021-06-06T15:48:11Z',
+            completedJobs: 0,
+            pendingJobs: isFetchingHistoricalData ? 10 : 0,
+            failedJobs: 0,
+            __typename: 'InsightSeriesStatus',
+        },
+        __typename: 'InsightsSeries',
+    }))
+}
+
+const mockInsightAPIResponse = ({
     isFetchingHistoricalData = false,
     delayAmount = 0,
     throwProcessingError = false,
     hasData = true,
-} = {}) => ({
-    getBackendInsightData: (insight: BackendInsightType): Observable<BackendInsightData> => {
-        if (isCaptureGroupInsight(insight)) {
-            throw new Error('This demo does not support capture group insight')
-        }
+} = {}): MockedResponse[] => {
+    if (throwProcessingError) {
+        return [
+            {
+                request: {
+                    query: GET_INSIGHT_VIEW_GQL,
+                    variables: {
+                        id: 'searchInsights.insight.mock_backend_insight_id',
+                        filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+                        seriesDisplayOptions: {
+                            limit: undefined,
+                            sortOptions: undefined,
+                        },
+                    },
+                },
+                error: new InsightInProcessError(),
+            },
+        ]
+    }
 
-        if (throwProcessingError) {
-            return throwError(new InsightInProcessError())
-        }
-
-        return of({
-            content: hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY,
-            isFetchingHistoricalData,
-        }).pipe(delay(delayAmount))
-    },
-})
+    return [
+        {
+            request: {
+                query: GET_INSIGHT_VIEW_GQL,
+                variables: {
+                    id: 'searchInsights.insight.mock_backend_insight_id',
+                    filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+                    seriesDisplayOptions: {
+                        limit: undefined,
+                        sortOptions: undefined,
+                    },
+                },
+            },
+            result: {
+                data: {
+                    insightViews: {
+                        nodes: [
+                            {
+                                id: 'searchInsights.insight.mock_backend_insight_id',
+                                appliedSeriesDisplayOptions: {
+                                    limit: 20,
+                                    sortOptions: {
+                                        mode: 'RESULT_COUNT',
+                                        direction: 'DESC',
+                                        __typename: 'SeriesSortOptions',
+                                    },
+                                    __typename: 'SeriesDisplayOptions',
+                                },
+                                defaultSeriesDisplayOptions: {
+                                    limit: null,
+                                    sortOptions: {
+                                        mode: null,
+                                        direction: null,
+                                        __typename: 'SeriesSortOptions',
+                                    },
+                                    __typename: 'SeriesDisplayOptions',
+                                },
+                                dataSeries: generateSeries(
+                                    hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY,
+                                    isFetchingHistoricalData
+                                ),
+                                __typename: 'InsightView',
+                            },
+                        ],
+                        __typename: 'InsightViewConnection',
+                    },
+                },
+            },
+            delay: delayAmount,
+        },
+    ]
+}
 
 const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <BackendInsightView
@@ -136,48 +219,1060 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
     />
 )
 
-export const BackendInsight: Story = () => (
+const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
+    type: InsightType.SearchBased,
+    executionType: InsightExecutionType.Backend,
+    id: 'backend-mock',
+    title: 'Backend Insight Mock',
+    series: [
+        { id: '001', name: 'wildcard', query: '', stroke: 'blue' },
+        { id: '002', name: 'branded', query: '', stroke: 'orange' },
+        { id: '003', name: 'shared', query: '', stroke: 'red' },
+    ],
+    step: { weeks: 2 },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    dashboardReferenceCount: 0,
+    isFrozen: false,
+    repositories: [],
+    dashboards: [],
+}
+
+const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
+    type: InsightType.SearchBased,
+    executionType: InsightExecutionType.Backend,
+    id: 'backend-mock',
+    title: 'Backend Insight Mock',
+    series: [
+        { id: '001', name: 'requestGraphql', query: '', stroke: 'blue' },
+        { id: '002', name: 'queryGraphQL | mutateGraphQL', query: '', stroke: 'orange' },
+        { id: '003', name: 'useMutation | useQuery | useConnection hooks', query: '', stroke: 'red' },
+    ],
+    step: { weeks: 2 },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    dashboardReferenceCount: 0,
+    isFrozen: false,
+    repositories: [],
+    dashboards: [],
+}
+
+const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
+    type: InsightType.CaptureGroup,
+    executionType: InsightExecutionType.Backend,
+    id: 'backend-mock',
+    title: 'Backend Insight Mock',
+    step: { weeks: 2 },
+    repositories: [],
+    query: '',
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    dashboardReferenceCount: 0,
+    isFrozen: false,
+    dashboards: [],
+}
+
+const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewResult> = {
+    request: {
+        query: GET_INSIGHT_VIEW_GQL,
+        variables: {
+            id: 'backend-mock',
+            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+            seriesDisplayOptions: {
+                limit: undefined,
+                sortOptions: undefined,
+            },
+        },
+    },
+    result: {
+        data: {
+            insightViews: {
+                nodes: [
+                    {
+                        id: 'aW5zaWdodF92aWV3OiIyNU9aNFFpTERPMGRQVUZSQWNtYnBvZ1hhWnMi',
+                        defaultSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC,
+                            },
+                        },
+                        appliedSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC,
+                            },
+                        },
+                        dataSeries: [
+                            {
+                                seriesId: '001',
+                                label: 'Wildcard components',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:03:19Z',
+                                        value: 1311,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:43Z',
+                                        value: 586,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:25Z',
+                                        value: 586,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 1212,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 1164,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 490,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 393,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 357,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 348,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 276,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 213,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 192,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 81,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 0,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '002',
+                                label: 'Branded components',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:03:24Z',
+                                        value: 538,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:44Z',
+                                        value: 283,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:25Z',
+                                        value: 283,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 516,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 513,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 275,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 267,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 261,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 252,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 243,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 216,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 213,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 213,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 0,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '003',
+                                label: 'Shared components',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:03:37Z',
+                                        value: 468,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:44Z',
+                                        value: 328,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:25Z',
+                                        value: 328,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 475,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 477,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 671,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 660,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 648,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 642,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 621,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 606,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 573,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 564,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 0,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                        ],
+                        __typename: 'InsightView',
+                    },
+                ],
+                __typename: 'InsightViewConnection',
+            },
+        },
+    },
+}
+
+const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> = {
+    request: {
+        query: GET_INSIGHT_VIEW_GQL,
+        variables: {
+            id: 'backend-mock',
+            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+            seriesDisplayOptions: {
+                limit: undefined,
+                sortOptions: undefined,
+            },
+        },
+    },
+    result: {
+        data: {
+            insightViews: {
+                nodes: [
+                    {
+                        id: 'aW5zaWdodF92aWV3OiIyNU9ZY1VQdThxeXpvcnR1WmJXZE9qdVh2Y2Yi',
+                        defaultSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC,
+                            },
+                        },
+                        appliedSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC,
+                            },
+                        },
+                        dataSeries: [
+                            {
+                                seriesId: '001',
+                                label: 'requestGraphQL',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:02:30Z',
+                                        value: 235,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T00:13:43Z',
+                                        value: 239,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T00:13:20Z',
+                                        value: 228,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-20T00:00:00Z',
+                                        value: 232,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-20T00:00:00Z',
+                                        value: 226,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-20T00:00:00Z',
+                                        value: 217,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-20T00:00:00Z',
+                                        value: 214,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-20T00:00:00Z',
+                                        value: 212,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-20T00:00:00Z',
+                                        value: 227,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-20T00:00:00Z',
+                                        value: 218,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-20T00:00:00Z',
+                                        value: 211,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-20T00:00:00Z',
+                                        value: 213,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-20T00:00:00Z',
+                                        value: 200,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T00:31:57Z',
+                                    completedJobs: 9,
+                                    pendingJobs: 0,
+                                    failedJobs: 0,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '002',
+                                label: 'queryGraphQL | mutateGraphQL',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:02:31Z',
+                                        value: 71,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T00:13:42Z',
+                                        value: 71,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T00:13:20Z',
+                                        value: 73,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-20T00:00:00Z',
+                                        value: 73,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-20T00:00:00Z',
+                                        value: 74,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-20T00:00:00Z',
+                                        value: 73,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-20T00:00:00Z',
+                                        value: 73,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-20T00:00:00Z',
+                                        value: 75,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-20T00:00:00Z',
+                                        value: 76,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-20T00:00:00Z',
+                                        value: 79,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-20T00:00:00Z',
+                                        value: 80,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-20T00:00:00Z',
+                                        value: 80,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-20T00:00:00Z',
+                                        value: 82,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T00:31:57Z',
+                                    completedJobs: 9,
+                                    pendingJobs: 0,
+                                    failedJobs: 0,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '003',
+                                label: 'useMutation | useQuery | useConnection hooks',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:02:53Z',
+                                        value: 227,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T00:13:48Z',
+                                        value: 219,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T00:13:21Z',
+                                        value: 200,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-20T00:00:00Z',
+                                        value: 156,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-20T00:00:00Z',
+                                        value: 109,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-20T00:00:00Z',
+                                        value: 102,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-20T00:00:00Z',
+                                        value: 85,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-20T00:00:00Z',
+                                        value: 62,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-20T00:00:00Z',
+                                        value: 49,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-20T00:00:00Z',
+                                        value: 24,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-20T00:00:00Z',
+                                        value: 11,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-20T00:00:00Z',
+                                        value: 5,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-20T00:00:00Z',
+                                        value: 5,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T00:31:57Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 0,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                        ],
+                        __typename: 'InsightView',
+                    },
+                ],
+                __typename: 'InsightViewConnection',
+            },
+        },
+    },
+}
+
+const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightViewResult> = {
+    request: {
+        query: GET_INSIGHT_VIEW_GQL,
+        variables: {
+            id: 'backend-mock',
+            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+            seriesDisplayOptions: {
+                limit: undefined,
+                sortOptions: undefined,
+            },
+        },
+    },
+    result: {
+        data: {
+            insightViews: {
+                nodes: [
+                    {
+                        id: 'aW5zaWdodF92aWV3OiIyNU9lSm8xcTZub05nUkh3aG9MWEdCdUdtN3Yi',
+                        defaultSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC,
+                            },
+                        },
+                        appliedSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC,
+                            },
+                        },
+                        dataSeries: [
+                            {
+                                seriesId: '25OeJqBD4dOacJDmOA1cXY97Iyb',
+                                label: 'v 1.x',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:03:02Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:41Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:19Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 544,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '25OeJrXQQNK0fjqOqybnEMsHnyR',
+                                label: 'v 2.x',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:03:05Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:41Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:20Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 12,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 0,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 544,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '25OeJlaDvpkh02abDBsPisvDSdi',
+                                label: 'v 3.x',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:02:49Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:41Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:20Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 4,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 544,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                            {
+                                seriesId: '25OeJmiafuCZe66UR7yQFV3663S',
+                                label: 'v 4.x',
+                                points: [
+                                    {
+                                        dateTime: '2022-04-26T00:02:59Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-04-21T01:13:43Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-03-21T01:13:20Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-02-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2022-01-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-12-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-11-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-10-21T00:00:00Z',
+                                        value: 2,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-09-21T00:00:00Z',
+                                        value: 0,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-08-21T00:00:00Z',
+                                        value: 0,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-07-21T00:00:00Z',
+                                        value: 0,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-06-21T00:00:00Z',
+                                        value: 0,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                    {
+                                        dateTime: '2021-05-21T00:00:00Z',
+                                        value: 0,
+                                        __typename: 'InsightDataPoint',
+                                    },
+                                ],
+                                status: {
+                                    backfillQueuedAt: '2022-02-21T01:33:48Z',
+                                    completedJobs: 10,
+                                    pendingJobs: 0,
+                                    failedJobs: 544,
+                                    __typename: 'InsightSeriesStatus',
+                                },
+                                __typename: 'InsightsSeries',
+                            },
+                        ],
+                        __typename: 'InsightView',
+                    },
+                ],
+                __typename: 'InsightViewConnection',
+            },
+        },
+    },
+}
+
+export const BackendInsightDemoCasesShowcase: Story = () => (
+    <div>
+        <MockedTestProvider mocks={[BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK]}>
+            <BackendInsightView
+                style={{ width: 400, height: 400 }}
+                insight={COMPONENT_MIGRATION_INSIGHT_CONFIGURATION}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                innerRef={() => {}}
+            />
+        </MockedTestProvider>
+
+        <MockedTestProvider mocks={[BACKEND_INSIGHT_DATA_FETCHING_MOCK]}>
+            <BackendInsightView
+                style={{ width: 400, height: 400 }}
+                insight={DATA_FETCHING_INSIGHT_CONFIGURATION}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                innerRef={() => {}}
+            />
+        </MockedTestProvider>
+
+        <MockedTestProvider mocks={[BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK]}>
+            <BackendInsightView
+                style={{ width: 400, height: 400 }}
+                insight={TERRAFORM_INSIGHT_CONFIGURATION}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                innerRef={() => {}}
+            />
+        </MockedTestProvider>
+    </div>
+)
+
+export const BackendInsightVitrine: Story = () => (
     <section>
         <article>
-            <Typography.H2>Card</Typography.H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
+            <H2>Card</H2>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse()}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
-            <Typography.H2>Card with delay API</Typography.H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ delayAmount: 2000 })}>
+            <H2>Card with delay API</H2>
+            <MockedTestProvider mocks={mockInsightAPIResponse({ delayAmount: 2000 })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
-            <Typography.H2>Card backfilling data</Typography.H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ isFetchingHistoricalData: true })}>
+            <H2>Card backfilling data</H2>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse({ isFetchingHistoricalData: true })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
-            <Typography.H2>Card no data</Typography.H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ hasData: false })}>
+            <H2>Card no data</H2>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse({ hasData: false })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
-            <Typography.H2>Card insight syncing</Typography.H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ throwProcessingError: true })}>
+            <H2>Card insight syncing</H2>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse({ throwProcessingError: true })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
-            <Typography.H2>Locked Card insight</Typography.H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
+            <H2>Locked Card insight</H2>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse()}>
                 <BackendInsightView
                     style={{ width: 400, height: 400 }}
                     insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     innerRef={() => {}}
                 />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
     </section>
 )

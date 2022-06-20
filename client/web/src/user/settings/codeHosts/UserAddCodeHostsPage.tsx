@@ -4,7 +4,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Typography } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, H4, Text } from '@sourcegraph/wildcard'
 
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
@@ -22,7 +22,7 @@ import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
+import { githubRepoScopeRequired, gitlabAPIScopeRequired, gitlabTokenExpired, Owner } from '../cloud-ga'
 
 import { CodeHostItem, ParentWindow } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
@@ -151,16 +151,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
     const isGitHubAppLoading = flagsOverridesResult.loading
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
-    // update their scope
-    const isGitHubTokenUpdateRequired = scopes.github
-        ? !isGitHubAppEnabled && githubRepoScopeRequired(owner.tags, scopes.github)
-        : false
-    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(owner.tags, scopes.gitlab) : false
-
-    const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
-        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(owner.tags, scopes.github),
-        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(owner.tags, scopes.gitlab),
-    }
+    // update their token
+    const [isTokenUpdateRequired, setTokenUpdateRequired] = useState<Partial<Record<ExternalServiceKind, boolean>>>({})
 
     useEffect(() => {
         eventLogger.logPageView('UserSettingsCodeHostConnections')
@@ -206,13 +198,20 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
             return accumulator
         }, {})
 
+        setTokenUpdateRequired({
+            [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(owner.tags, scopes.github),
+            [ExternalServiceKind.GITLAB]:
+                gitlabAPIScopeRequired(owner.tags, scopes.gitlab) ||
+                gitlabTokenExpired(services[ExternalServiceKind.GITLAB]?.config),
+        })
+
         setStatusOrError(services)
 
         await checkAndSetOutageAlert(services)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [owner.id, onUserExternalServicesOrRepositoriesUpdate])
+    }, [owner.id, owner.tags, scopes.github, scopes.gitlab, onUserExternalServicesOrRepositoriesUpdate])
 
     const handleServiceUpsert = useCallback(
         (service: ListExternalServiceFields): void => {
@@ -271,7 +270,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
         if (serviceConfig.pending) {
             return (
                 <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
-                    <Typography.H4>GitHub code host connection pending</Typography.H4>
+                    <H4>GitHub code host connection pending</H4>
                     An installation request was sent to your GitHub organization’s owners. After the request is
                     approved, finish connecting with GitHub to choose repositories to sync with Sourcegraph.
                 </Alert>
@@ -298,8 +297,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
             <Alert className="my-3" role="alert" key="add-repos" variant="success">
-                <Typography.H4 className="align-middle mb-1">Connected with {services.join(', ')}</Typography.H4>
-                <p className="align-middle mb-0">
+                <H4 className="align-middle mb-1">Connected with {services.join(', ')}</H4>
+                <Text className="align-middle mb-0">
                     Next,{' '}
                     <Link
                         className="font-weight-normal"
@@ -309,7 +308,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                         add repositories
                     </Link>{' '}
                     to search with Sourcegraph.
-                </p>
+                </Text>
             </Alert>
         ) : null
 
@@ -382,8 +381,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
             getRequestSuccessBanner(
                 isServicesByKind(statusOrError) ? statusOrError[ExternalServiceKind.GITHUB] : undefined
             ),
-            getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
-            getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
+            getGitHubUpdateAuthBanner(isTokenUpdateRequired?.[ExternalServiceKind.GITHUB] || false),
+            getGitLabUpdateAuthBanner(isTokenUpdateRequired?.[ExternalServiceKind.GITLAB] || false),
         ]
     }
 
@@ -403,8 +402,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <Alert className="my-3" key={service.id} variant="warning">
-            <Typography.H4 className="align-middle mb-1">Can’t connect with {service.displayName}</Typography.H4>
-            <p className="align-middle mb-0">
+            <H4 className="align-middle mb-1">Can’t connect with {service.displayName}</H4>
+            <Text className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
                     <Button
@@ -418,7 +417,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                     <span className="align-middle">reconnecting the code host connection</span>
                 )}{' '}
                 <span className="align-middle">with {service.displayName} to restore access.</span>
-            </p>
+            </Text>
         </Alert>
     )
 
@@ -426,10 +425,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
         <Alert className="my-3" key={servicesDown[0]} variant="warning">
             {servicesDown?.map(svc => (
                 <div key={svc}>
-                    <Typography.H4 className="align-middle mb-1">
-                        We’re having trouble connecting to {svc}{' '}
-                    </Typography.H4>
-                    <p className="align-middle mb-0">
+                    <H4 className="align-middle mb-1">We’re having trouble connecting to {svc} </H4>
+                    <Text className="align-middle mb-0">
                         <span className="align-middle">Verify that</span> {svc}
                         <span className="align-middle">
                             {' '}
@@ -444,7 +441,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                                 </Link>
                             )}
                         </span>{' '}
-                    </p>
+                    </Text>
                 </div>
             ))}
         </Alert>
@@ -579,10 +576,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
             )}
 
             <SelfHostedCta className="mt-5" page="settings/code-hosts" telemetryService={telemetryService}>
-                <p className="mb-2">
+                <Text className="mb-2">
                     <strong>Require support for Bitbucket, or nearly any other code host?</strong>
-                </p>
-                <p className="mb-2">You may need our self-hosted installation.</p>
+                </Text>
+                <Text className="mb-2">You may need our self-hosted installation.</Text>
             </SelfHostedCta>
         </div>
     )

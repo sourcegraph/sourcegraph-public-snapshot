@@ -57,7 +57,6 @@ var (
 			"lsif_data_apidocs_num_pages",
 			"lsif_data_apidocs_num_search_results_private",
 			"lsif_data_apidocs_num_search_results_public",
-			"rockskip_ancestry",
 		},
 		FS: getFSForPath("codeintel"),
 	}

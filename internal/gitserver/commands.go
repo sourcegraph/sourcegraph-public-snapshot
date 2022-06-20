@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -11,17 +12,18 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
+	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -46,6 +48,8 @@ type DiffOptions struct {
 	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
 	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
 	RangeType string
+
+	Paths []string
 }
 
 // Diff returns an iterator that can be used to access the diff between two
@@ -67,7 +71,7 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
 	}
 
-	rdr, err := c.execReader(ctx, opts.Repo, []string{
+	rdr, err := c.execReader(ctx, opts.Repo, append([]string{
 		"diff",
 		"--find-renames",
 		// TODO(eseliger): Enable once we have support for copy detection in go-diff
@@ -79,7 +83,7 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 		"--no-prefix",
 		rangeSpec,
 		"--",
-	})
+	}, opts.Paths...))
 	if err != nil {
 		return nil, errors.Wrap(err, "executing git diff")
 	}
@@ -155,7 +159,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !gitdomain.IsAllowedGitCmd(args) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := c.GitCommand(repo, args...)
@@ -919,4 +923,535 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
+}
+
+// LsFiles returns the output of `git ls-files`
+func (c *ClientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error) {
+	if Mocks.LsFiles != nil {
+		return Mocks.LsFiles(repo, commit)
+	}
+	args := []string{
+		"ls-files",
+		"-z",
+		"--with-tree",
+		string(commit),
+	}
+
+	if len(pathspecs) > 0 {
+		args = append(args, "--")
+		for _, pathspec := range pathspecs {
+			args = append(args, string(pathspec))
+		}
+	}
+
+	cmd := c.GitCommand(repo, args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	files := strings.Split(string(out), "\x00")
+	// Drop trailing empty string
+	if len(files) > 0 && files[len(files)-1] == "" {
+		files = files[:len(files)-1]
+	}
+	return filterPaths(ctx, repo, checker, files)
+}
+
+// ListFiles returns a list of root-relative file paths matching the given
+// pattern in a particular commit of a repository.
+func (c *ClientImplementor) ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
+	cmd := c.GitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var matching []string
+	for _, path := range strings.Split(string(out), "\n") {
+		if pattern.MatchString(path) {
+			matching = append(matching, path)
+		}
+	}
+
+	return filterPaths(ctx, repo, checker, matching)
+}
+
+// 🚨 SECURITY: All git methods that deal with file or path access need to have
+// sub-repo permissions applied
+func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, paths []string) ([]string, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return paths, nil
+	}
+	a := actor.FromContext(ctx)
+	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering paths")
+	}
+	return filtered, nil
+}
+
+// ListDirectoryChildren fetches the list of children under the given directory
+// names. The result is a map keyed by the directory names with the list of files
+// under each.
+func (c *ClientImplementor) ListDirectoryChildren(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	dirnames []string,
+) (map[string][]string, error) {
+	args := []string{"ls-tree", "--name-only", string(commit), "--"}
+	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
+	cmd := c.GitCommand(repo, args...)
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	paths := strings.Split(string(out), "\n")
+	if authz.SubRepoEnabled(checker) {
+		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return parseDirectoryChildren(dirnames, paths), nil
+}
+
+// cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
+// few peculiarities handled here:
+//
+//   1. The root of the tree must be indicated with `.`, and
+//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+func cleanDirectoriesForLsTree(dirnames []string) []string {
+	var args []string
+	for _, dir := range dirnames {
+		if dir == "" {
+			args = append(args, ".")
+		} else {
+			if !strings.HasSuffix(dir, "/") {
+				dir += "/"
+			}
+			args = append(args, dir)
+		}
+	}
+
+	return args
+}
+
+// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
+// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
+// under that directory. If dirnames contains a directory that encloses another, then the paths will
+// be placed into the key sharing the longest path prefix.
+func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
+	childrenMap := map[string][]string{}
+
+	// Ensure each directory has an entry, even if it has no children
+	// listed in the gitserver output.
+	for _, dirname := range dirnames {
+		childrenMap[dirname] = nil
+	}
+
+	// Order directory names by length (biggest first) so that we assign
+	// paths to the most specific enclosing directory in the following loop.
+	sort.Slice(dirnames, func(i, j int) bool {
+		return len(dirnames[i]) > len(dirnames[j])
+	})
+
+	for _, path := range paths {
+		if strings.Contains(path, "/") {
+			for _, dirname := range dirnames {
+				if strings.HasPrefix(path, dirname) {
+					childrenMap[dirname] = append(childrenMap[dirname], path)
+					break
+				}
+			}
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
+			// No need to loop here. If we have a root input directory it
+			// will necessarily be the last element due to the previous
+			// sorting step.
+			childrenMap[""] = append(childrenMap[""], path)
+		}
+	}
+
+	return childrenMap
+}
+
+// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
+func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
+	defer span.Finish()
+
+	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
+	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
+	// using committerdate).
+	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
+
+	for _, commit := range commitObjs {
+		args = append(args, "--points-at", commit)
+	}
+
+	cmd := c.GitCommand(repo, args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	return parseTags(out)
+}
+
+func parseTags(in []byte) ([]*gitdomain.Tag, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+	if len(in) == 0 {
+		return nil, nil // no tags
+	}
+	lines := bytes.Split(in, []byte("\n"))
+	tags := make([]*gitdomain.Tag, len(lines))
+	for i, line := range lines {
+		parts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(parts) != 3 {
+			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+		}
+
+		tag := &gitdomain.Tag{
+			Name:     string(parts[1]),
+			CommitID: api.CommitID(parts[0]),
+		}
+
+		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		if err == nil {
+			tag.CreatorDate = time.Unix(date, 0).UTC()
+		}
+
+		tags[i] = tag
+	}
+	return tags, nil
+}
+
+// GetDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranch != nil {
+		return Mocks.GetDefaultBranch(repo)
+	}
+	return c.getDefaultBranch(ctx, repo, false)
+}
+
+// GetDefaultBranchShort returns the short name of the default branch for the
+// given repository and the commit it's currently at. A short name would return
+// something like `main` instead of `refs/heads/main`.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranchShort != nil {
+		return Mocks.GetDefaultBranchShort(repo)
+	}
+	return c.getDefaultBranch(ctx, repo, true)
+}
+
+// getDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+	args := []string{"symbolic-ref", "HEAD"}
+	if short {
+		args = append(args, "--short")
+	}
+	refBytes, _, exitCode, err := c.execSafe(ctx, repo, args)
+	refName = string(bytes.TrimSpace(refBytes))
+
+	if err == nil && exitCode == 0 {
+		// Check that our repo is not empty
+		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+
+	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	if err != nil {
+		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
+		}
+		return "", "", err
+	}
+
+	return refName, commit, nil
+}
+
+// execSafe executes a Git subcommand iff it is allowed according to a allowlist.
+//
+// An error is only returned when there is a failure unrelated to the actual
+// command being executed. If the executed command exits with a nonzero exit
+// code, err == nil. This is similar to how http.Get returns a nil error for HTTP
+// non-2xx responses.
+//
+// execSafe should NOT be exported. We want to limit direct git calls to this
+// package.
+func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
+	if Mocks.ExecSafe != nil {
+		return Mocks.ExecSafe(params)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
+	defer span.Finish()
+
+	if len(params) == 0 {
+		return nil, nil, 0, errors.New("at least one argument required")
+	}
+
+	if !gitdomain.IsAllowedGitCmd(c.logger, params) {
+		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
+	}
+
+	cmd := c.GitCommand(repo, params...)
+	stdout, stderr, err = cmd.DividedOutput(ctx)
+	exitCode = cmd.ExitStatus()
+	if exitCode != 0 && err != nil {
+		err = nil // the error must just indicate that the exit code was nonzero
+	}
+	return stdout, stderr, exitCode, err
+}
+
+// MergeBase returns the merge base commit for the specified commits.
+func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	if Mocks.MergeBase != nil {
+		return Mocks.MergeBase(repo, a, b)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
+	span.SetTag("A", a)
+	span.SetTag("B", b)
+	defer span.Finish()
+
+	cmd := c.GitCommand(repo, "merge-base", "--", string(a), string(b))
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+	return api.CommitID(bytes.TrimSpace(out)), nil
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func (c *ClientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.GitCommand(api.RepoName(repo), RevListArgs(commit)...)
+	command.DisableTimeout()
+	stdout, err := command.StdoutReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return c.RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func (c *ClientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// revspecs).
+func (c *ClientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(left); err != nil {
+		return nil, err
+	}
+	if err := checkSpecArgSafety(right); err != nil {
+		return nil, err
+	}
+
+	cmd := c.GitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		return nil, err
+	}
+	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+}
+
+// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
+// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
+func (c *ClientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
+	if Mocks.ReadFile != nil {
+		return Mocks.ReadFile(commit, name)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
+	span.SetTag("Name", name)
+	defer span.Finish()
+
+	br, err := c.NewFileReader(ctx, repo, commit, name, checker)
+	if err != nil {
+		return nil, err
+	}
+	defer br.Close()
+
+	r := io.Reader(br)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// NewFileReader returns an io.ReadCloser reading from the named file at commit.
+// The caller should always close the reader after use
+func (c *ClientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+	if Mocks.NewFileReader != nil {
+		return Mocks.NewFileReader(commit, name)
+	}
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
+	span.SetTag("Name", name)
+	defer span.Finish()
+
+	name = util.Rel(name)
+	br, err := c.newBlobReader(ctx, repo, commit, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
+	}
+	return br, nil
+}
+
+// blobReader, which should be created using newBlobReader, is a struct that allows
+// us to get a ReadCloser to a specific named file at a specific commit
+type blobReader struct {
+	c      *ClientImplementor
+	ctx    context.Context
+	repo   api.RepoName
+	commit api.CommitID
+	name   string
+	cmd    GitCommand
+	rc     io.ReadCloser
+}
+
+func (c *ClientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
+	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
+
+	cmd := c.GitCommand(repo, "show", string(commit)+":"+name)
+	stdout, err := cmd.StdoutReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &blobReader{
+		c:      c,
+		ctx:    ctx,
+		repo:   repo,
+		commit: commit,
+		name:   name,
+		cmd:    cmd,
+		rc:     stdout,
+	}, nil
+}
+
+func (br *blobReader) Read(p []byte) (int, error) {
+	n, err := br.rc.Read(p)
+	if err != nil {
+		return n, br.convertError(err)
+	}
+	return n, nil
+}
+
+func (br *blobReader) Close() error {
+	return br.rc.Close()
+}
+
+// convertError converts an error returned from 'git show' into a more appropriate error type
+func (br *blobReader) convertError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if err == io.EOF {
+		return err
+	}
+	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
+		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
+	}
+	if strings.Contains(err.Error(), "fatal: bad object ") {
+		// Could be a git submodule.
+		fi, err := br.c.Stat(br.ctx, authz.DefaultSubRepoPermsChecker, br.repo, br.commit, br.name)
+		if err != nil {
+			return err
+		}
+		// Return EOF for a submodule for now which indicates zero content
+		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
+			return io.EOF
+		}
+	}
+	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
+}
+
+// Stat returns a FileInfo describing the named file at commit.
+func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	if Mocks.Stat != nil {
+		return Mocks.Stat(commit, path)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
+	span.SetTag("Commit", commit)
+	span.SetTag("Path", path)
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	path = util.Rel(path)
+
+	fi, err := c.LStat(ctx, checker, repo, commit, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return fi, nil
 }

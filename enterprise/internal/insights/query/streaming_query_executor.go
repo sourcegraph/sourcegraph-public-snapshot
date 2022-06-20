@@ -5,17 +5,16 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,11 +23,11 @@ type StreamingQueryExecutor struct {
 	justInTimeExecutor
 }
 
-func NewStreamingExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *StreamingQueryExecutor {
+func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
 		justInTimeExecutor: justInTimeExecutor{
-			db:        database.NewDB(postgres),
-			repoStore: database.Repos(postgres),
+			db:        postgres,
+			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},
@@ -51,9 +50,13 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	timeseries := []TimeDataPoint{}
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			return nil, errors.Wrapf(err, "FirstEverCommit")
+			if errors.Is(err, discovery.EmptyRepoErr) {
+				continue
+			} else {
+				return nil, errors.Wrapf(err, "FirstEverCommit")
+			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
 		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
@@ -75,7 +78,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				continue
 			}
 
-			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
@@ -87,9 +90,14 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 
 			tr := *tabulationResult
-
+			if len(tr.SkippedReasons) > 0 {
+				log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", query)
+			}
 			if len(tr.Errors) > 0 {
-				log15.Error("streaming errors", "errors", tr.Errors)
+				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)
+			}
+			if len(tr.Alerts) > 0 {
+				return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
 			}
 
 			points[execution.RecordingTime] += tr.TotalCount

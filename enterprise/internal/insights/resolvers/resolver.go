@@ -2,18 +2,18 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
@@ -29,14 +29,14 @@ type baseInsightResolver struct {
 
 	// including the DB references for any one off stores that may need to be created.
 	insightsDB dbutil.DB
-	postgresDB dbutil.DB
+	postgresDB database.DB
 }
 
-func WithBase(insightsDB dbutil.DB, primaryDB dbutil.DB, clock func() time.Time) *baseInsightResolver {
+func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() time.Time) *baseInsightResolver {
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
-	workerBaseStore := basestore.NewWithDB(primaryDB, sql.TxOptions{})
+	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
 
 	return &baseInsightResolver{
 		insightStore:    insightStore,
@@ -53,24 +53,26 @@ type Resolver struct {
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
+	backfiller           *background.ScopedBackfiller
 
 	baseInsightResolver
 }
 
 // New returns a new Resolver whose store uses the given Postgres DBs.
-func New(db, postgres dbutil.DB) graphqlbackend.InsightsResolver {
+func New(db edb.InsightsDB, postgres database.DB) graphqlbackend.InsightsResolver {
 	return newWithClock(db, postgres, timeutil.Now)
 }
 
 // newWithClock returns a new Resolver whose store uses the given Postgres DBs and the given clock
 // for timestamps.
-func newWithClock(db, postgres dbutil.DB, clock func() time.Time) *Resolver {
+func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Time) *Resolver {
 	base := WithBase(db, postgres, clock)
 	return &Resolver{
 		baseInsightResolver:  *base,
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
+		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
 	}
 }
 
@@ -87,14 +89,14 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 		workerBaseStore:      r.workerBaseStore,
 		insightMetadataStore: r.insightMetadataStore,
 		ids:                  idList,
-		orgStore:             database.Orgs(r.workerBaseStore.Handle().DB()),
+		orgStore:             database.NewDBWith(r.workerBaseStore).Orgs(),
 	}, nil
 }
 
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return &dashboardConnectionResolver{
 		baseInsightResolver: r.baseInsightResolver,
-		orgStore:            database.Orgs(r.postgresDB),
+		orgStore:            r.postgresDB.Orgs(),
 		args:                args,
 	}, nil
 }

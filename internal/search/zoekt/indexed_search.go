@@ -366,9 +366,9 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 			continue
 		}
 
-		var lines []*result.LineMatch
+		var hms result.ChunkMatches
 		if typ != search.SymbolRequest {
-			lines = zoektFileMatchToLineMatches(&file)
+			hms = zoektFileMatchToMultilineMatches(&file)
 		}
 
 		for _, inputRev := range inputRevs {
@@ -379,8 +379,8 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
 			fm := result.FileMatch{
-				LineMatches: lines,
-				Symbols:     symbols,
+				ChunkMatches: hms,
+				Symbols:      symbols,
 				File: result.File{
 					InputRev: &inputRev,
 					CommitID: api.CommitID(file.Version),
@@ -400,28 +400,43 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	})
 }
 
-func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
-	lines := make([]*result.LineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
+	hms := make(result.ChunkMatches, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
 		}
 
-		offsets := make([][2]int32, len(l.LineFragments))
-		for k, m := range l.LineFragments {
+		for _, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-			offsets[k] = [2]int32{int32(offset), int32(length)}
+
+			hms = append(hms, result.ChunkMatch{
+				Content: string(l.Line),
+				// zoekt line numbers are 1-based rather than 0-based so subtract 1
+				ContentStart: result.Location{
+					Offset: l.LineStart,
+					Line:   l.LineNumber - 1,
+					Column: 0,
+				},
+				Ranges: result.Ranges{{
+					Start: result.Location{
+						Offset: int(m.Offset),
+						Line:   l.LineNumber - 1,
+						Column: offset,
+					},
+					End: result.Location{
+						Offset: int(m.Offset) + m.MatchLength,
+						Line:   l.LineNumber - 1,
+						Column: offset + length,
+					},
+				}},
+			})
 		}
-		lines = append(lines, &result.LineMatch{
-			Preview:          string(l.Line),
-			LineNumber:       int32(l.LineNumber - 1),
-			OffsetAndLengths: offsets,
-		})
 	}
 
-	return lines
+	return hms
 }
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
@@ -516,7 +531,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	return indexed, unindexed
 }
 
-type ZoektRepoSubsetSearchJob struct {
+type RepoSubsetTextSearchJob struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	Typ            search.IndexedRequestType
@@ -526,10 +541,9 @@ type ZoektRepoSubsetSearchJob struct {
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
-func (z *ZoektRepoSubsetSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
+func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(z.Tags))
 
 	if z.Repos == nil {
 		return nil, nil
@@ -546,11 +560,11 @@ func (z *ZoektRepoSubsetSearchJob) Run(ctx context.Context, clients job.RuntimeC
 	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
-func (*ZoektRepoSubsetSearchJob) Name() string {
-	return "ZoektRepoSubsetSearchJob"
+func (*RepoSubsetTextSearchJob) Name() string {
+	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *ZoektRepoSubsetSearchJob) Tags() []log.Field {
+func (z *RepoSubsetTextSearchJob) Tags() []log.Field {
 	tags := []log.Field{
 		trace.Stringer("query", z.Query),
 		log.String("type", string(z.Typ)),
@@ -565,16 +579,15 @@ func (z *ZoektRepoSubsetSearchJob) Tags() []log.Field {
 	return tags
 }
 
-type ZoektGlobalSearchJob struct {
+type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
 }
 
-func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, t)
+func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(t.Tags))
 
 	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
@@ -583,15 +596,15 @@ func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClien
 	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
-func (*ZoektGlobalSearchJob) Name() string {
-	return "ZoektGlobalSearchJob"
+func (*GlobalTextSearchJob) Name() string {
+	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *ZoektGlobalSearchJob) Tags() []log.Field {
+func (t *GlobalTextSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),
-		log.Bool("includePrivate", t.GlobalZoektQuery.includePrivate),
+		trace.Stringer("query", t.GlobalZoektQuery.Query),
+		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
+		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
 		log.String("type", string(t.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", t.ZoektArgs.Select),

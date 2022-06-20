@@ -2,25 +2,38 @@ import { FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
+import { isEqual, noop } from 'lodash'
+import ArrowCollapseIcon from 'mdi-react/ArrowCollapseIcon'
+import ArrowExpandIcon from 'mdi-react/ArrowExpandIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Icon, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
+import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
+import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
+import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
-import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../form/hooks/useForm'
+import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
+import { SortFilterSeriesPanel } from '../../sort-filter-series-panel/SortFilterSeriesPanel'
 import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInput'
-import { FilterCollapseSection } from '../filter-collapse-section/FilterCollapseSection'
+import { FilterCollapseSection, FilterPreviewPill } from '../filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchContextFilter'
 
-import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, validRegexp } from './utils'
+import {
+    getSerializedRepositoriesFilter,
+    getSerializedSearchContextFilter,
+    getSortPreview,
+    parseSeriesDisplayOptions,
+    validRegexp,
+} from './utils'
 import { createSearchContextValidator, getFilterInputStatus } from './validators'
 
 import styles from './DrillDownInsightFilters.module.scss'
 
 enum FilterSection {
+    SortFilter,
     SearchContext,
     RegularExpressions,
 }
@@ -28,6 +41,7 @@ enum FilterSection {
 export enum FilterSectionVisualMode {
     CollapseSections,
     HorizontalSections,
+    Preview,
 }
 
 export interface DrillDownFiltersFormValues {
@@ -45,14 +59,22 @@ interface DrillDownInsightFilters {
 
     className?: string
 
+    showSeriesDisplayOptions: boolean
+
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
     /** Fires whenever the user clicks the save/update filter button. */
-    onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
+    onFilterSave: (filters: DrillDownFiltersFormValues, displayOptions: SeriesDisplayOptionsInput) => SubmissionResult
+
+    originalSeriesDisplayOptions: SeriesDisplayOptionsInputRequired
+
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInputRequired) => void
 
     /** Fires whenever the user clicks the create insight button. */
     onCreateInsightRequest: () => void
+
+    onVisualModeChange?: (nextVisualMode: FilterSectionVisualMode) => void
 }
 
 export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = props => {
@@ -61,26 +83,30 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalValues,
         className,
         visualMode,
+        showSeriesDisplayOptions,
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
+        originalSeriesDisplayOptions,
+        onSeriesDisplayOptionsChange,
+        onVisualModeChange = noop,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
 
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
         onChange: onFiltersChange,
-        onSubmit: onFilterSave,
+        onSubmit: values => onFilterSave(values, seriesDisplayOptions),
     })
 
     const client = useApolloClient()
-    const contextValidator = useMemo(() => createSearchContextValidator(client), [client])
 
     const contexts = useField({
         name: 'context',
         formApi: formAPI,
-        validators: { async: contextValidator },
+        validators: { async: useMemo(() => createSearchContextValidator(client), [client]) },
     })
 
     const includeRegex = useField({
@@ -97,7 +123,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
-    const hasAppliedFilters = hasActiveFilters(originalValues)
+    const hasSeriesDisplayOptionsChanged = !isEqual(DEFAULT_SERIES_DISPLAY_OPTIONS, seriesDisplayOptions)
+    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged && !hasSeriesDisplayOptionsChanged
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
         if (!opened) {
@@ -111,37 +138,94 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
+        setSeriesDisplayOptions(originalSeriesDisplayOptions)
+        onSeriesDisplayOptionsChange(originalSeriesDisplayOptions)
     }
 
+    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
+        setSeriesDisplayOptions(options)
+        onSeriesDisplayOptionsChange(options)
+    }
     const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections
+    const isPreviewMode = visualMode === FilterSectionVisualMode.Preview
+
+    if (isPreviewMode) {
+        return (
+            <header className={classNames(className, styles.header)}>
+                <H4 className={styles.heading}>Filters</H4>
+
+                <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
+                <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
+
+                <Button
+                    variant="link"
+                    className={classNames(styles.actionButton, styles.actionButtonWithCollapsed)}
+                    onClick={() => onVisualModeChange(FilterSectionVisualMode.HorizontalSections)}
+                    aria-label="Switch to horizontal mode"
+                >
+                    <Icon as={ArrowExpandIcon} aria-hidden={true} />
+                </Button>
+            </header>
+        )
+    }
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <Typography.H4 className={styles.heading}>Filter repositories</Typography.H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
-                    disabled={!hasActiveFilters(values)}
+                    disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
                     variant="link"
                     size="sm"
-                    className={styles.clearFilters}
+                    className={styles.actionButton}
                     onClick={handleClear}
                 >
                     Clear filters
                 </Button>
-            </header>
 
+                {isHorizontalMode && (
+                    <Button
+                        variant="link"
+                        className={styles.actionButton}
+                        onClick={() => onVisualModeChange(FilterSectionVisualMode.Preview)}
+                        aria-label="Switch to preview mode"
+                    >
+                        <Icon as={ArrowCollapseIcon} aria-hidden={true} />
+                    </Button>
+                )}
+            </header>
             <hr className={styles.headerSeparator} />
 
-            <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
+            <div className={classNames({ [styles.panelsHorizontalMode]: isHorizontalMode })}>
+                {showSeriesDisplayOptions && (
+                    <FilterCollapseSection
+                        open={isHorizontalMode || activeSection === FilterSection.SortFilter}
+                        title="Data series"
+                        aria-label="sort and limit filter section"
+                        preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
+                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
+                        withSeparators={!isHorizontalMode}
+                        className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
+                        onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
+                    >
+                        <SortFilterSeriesPanel
+                            limit={seriesDisplayOptions.limit}
+                            selectedOption={seriesDisplayOptions.sortOptions}
+                            onChange={handleSeriesDisplayOptionsChange}
+                        />
+                    </FilterCollapseSection>
+                )}
+
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"
+                    aria-label="search context filter section"
                     preview={getSerializedSearchContextFilter(contexts.input.value)}
                     hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
-                    className={styles.panel}
                     withSeparators={!isHorizontalMode}
+                    className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
                     onOpenChange={opened => handleCollapseState(FilterSection.SearchContext, opened)}
                 >
                     <small className={styles.sectionDescription}>
@@ -159,7 +243,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <DrillDownSearchContextFilter
                         spellCheck={false}
                         autoComplete="off"
-                        autoFocus={true}
+                        autoFocus={!isHorizontalMode}
                         className={styles.input}
                         status={getFilterInputStatus(contexts)}
                         {...contexts.input}
@@ -169,12 +253,13 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.RegularExpressions}
                     title="Regular expression"
+                    aria-label="regular expressions filter section"
                     preview={getSerializedRepositoriesFilter(currentRepositoriesFilters)}
                     hasActiveFilter={
                         hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)
                     }
-                    className={styles.panel}
                     withSeparators={!isHorizontalMode}
+                    className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
                     onOpenChange={opened => handleCollapseState(FilterSection.RegularExpressions, opened)}
                 >
                     <small className={styles.sectionDescription}>
@@ -242,7 +327,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         loading={formAPI.submitting}
                         label={getSubmitButtonText({ submitting: formAPI.submitting, hasAppliedFilters })}
                         type="submit"
-                        disabled={!formAPI.valid || formAPI.submitting || !hasFiltersChanged}
+                        disabled={
+                            !formAPI.valid ||
+                            formAPI.submitting ||
+                            (!hasFiltersChanged && !hasSeriesDisplayOptionsChanged)
+                        }
                         variant="secondary"
                         size="sm"
                         outline={true}
@@ -253,10 +342,10 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         type="button"
                         variant="secondary"
                         size="sm"
-                        disabled={!hasFiltersChanged || !formAPI.valid}
+                        disabled={(!hasFiltersChanged && !hasSeriesDisplayOptionsChanged) || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
-                        <Icon className="mr-1" as={PlusIcon} />
+                        <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
                         Save as new view
                     </Button>
                 </div>

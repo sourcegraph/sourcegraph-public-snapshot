@@ -7,7 +7,7 @@ import { useLocation } from 'react-router'
 
 import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
 
-import { NavItem, NavLink } from '.'
+import { NavItem, NavLink, NavLinkProps } from '.'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -22,7 +22,7 @@ interface NavDropdownProps {
         icon: React.ComponentType<{ className?: string }>
         // Alternative path to match against if item is active
         altPath?: string
-    }
+    } & Pick<NavLinkProps, 'variant'>
     // An extra item on mobile devices in the dropdown menu that serves as the "home" item instead of the toggle item.
     // It uses the path from the toggleItem.
     mobileHomeItem: Omit<NavDropdownItem, 'path'>
@@ -137,13 +137,14 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon
-                                                role="img"
                                                 className={navItemStyles.icon}
                                                 as={toggleItem.icon}
                                                 aria-hidden={true}
                                             />
                                             <span
-                                                className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}
+                                                className={classNames(navItemStyles.text, navItemStyles.iconIncluded, {
+                                                    [navItemStyles.isCompact]: toggleItem.variant === 'compact',
+                                                })}
                                             >
                                                 {toggleItem.content}
                                             </span>
@@ -159,7 +160,6 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon
-                                                role="img"
                                                 className={navItemStyles.icon}
                                                 as={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                                                 aria-hidden={true}

@@ -11,6 +11,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
@@ -26,11 +28,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3189"
@@ -42,11 +42,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
 		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
-		"codeintel-upload-janitor":              codeintel.NewUploadJanitorJob(),
-		"codeintel-upload-expirer":              codeintel.NewUploadExpirerJob(),
-		"codeintel-commitgraph-updater":         codeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
-		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
 		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 	}
@@ -67,7 +63,6 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	conf.Init()
 	logging.Init()
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

@@ -24,7 +24,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
-	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+	gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -40,7 +40,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
-	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
+	gitserver.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
 		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
 		return []byte(wantDefaultBranchRef), nil, 0, nil
 	}
@@ -62,7 +62,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	defer gitserver.ResetClientMocks()
 
-	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
+	mkResult := func(path string, lineNumbers ...int) *result.FileMatch {
 		rn := types.MinimalRepo{
 			Name: "r",
 		}

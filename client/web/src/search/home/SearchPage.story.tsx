@@ -14,7 +14,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
-import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
@@ -62,7 +62,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
 
 if (!window.context) {
@@ -159,7 +158,11 @@ add('Cloud with panels and collaborators', () => (
 
 add('Cloud marketing home', () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
+        {webProps => (
+            <MockedFeatureFlagsProvider overrides={{}}>
+                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />
+            </MockedFeatureFlagsProvider>
+        )}
     </WebStory>
 ))
 

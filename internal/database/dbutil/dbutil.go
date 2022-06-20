@@ -13,31 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// A DB captures the essential method of a sql.DB: QueryContext.
+// A DB captures the methods shared between a *sql.DB and a *sql.Tx
 type DB interface {
 	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
-// A Tx captures the essential methods of a sql.Tx.
-type Tx interface {
-	Rollback() error
-	Commit() error
-}
-
-// A TxBeginner captures BeginTx method of a sql.DB
-type TxBeginner interface {
-	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
-}
-
-// An Unwrapper unwraps itself into its nested DB.
-// This is necessary because the concrete type of a dbutil.DB
-// is used to assert interfaces like `Tx` and `TxBeginner`, so
-// wrapping a dbutil.DB breaks those interface assertions.
-type Unwrapper interface {
-	// Unwrap returns the inner DB. If defined, it must return a valid DB (never nil).
-	Unwrap() DB
 }
 
 func IsPostgresError(err error, codename string) bool {

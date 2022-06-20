@@ -22,8 +22,8 @@ public class JSToJavaBridge implements Disposable {
             try {
                 JsonObject requestAsJson = JsonParser.parseString(requestAsString).getAsJsonObject();
                 return requestHandler.handle(requestAsJson);
-            } catch (JsonSyntaxException e) {
-                return requestHandler.handleInvalidRequest();
+            } catch (Exception e) {
+                return requestHandler.handleInvalidRequest(e);
             }
         });
 

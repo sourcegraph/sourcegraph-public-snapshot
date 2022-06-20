@@ -24,7 +24,7 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 		return nil, err
 	}
 
-	userEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	userEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: r.user.ID,
 	})
 	if err != nil {
@@ -178,7 +178,7 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 		}
 	}
 
-	if err := database.UserEmails(r.db).SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+	if err := r.db.UserEmails().SetPrimaryEmail(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 

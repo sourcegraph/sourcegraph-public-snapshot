@@ -8,7 +8,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -80,6 +81,9 @@ const (
 )
 
 type CommitSearcher struct {
+	// Logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this Logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree
 	Revisions            []protocol.RevisionSpecifier
@@ -152,7 +156,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String()))
+			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
 		}
 	}()
 
@@ -186,7 +190,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	return scanner.Err()
 }
 
-func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) error {
+func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, logger log.Logger) error {
 	if ctx.Err() != nil {
 		// Ignore errors when context is cancelled
 		return nil
@@ -195,7 +199,7 @@ func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) 
 		// Ignore no commits error error
 		return nil
 	}
-	log15.Warn("git search command exited with non-zero status code", "stderr", stderr)
+	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr))
 	return err
 }
 

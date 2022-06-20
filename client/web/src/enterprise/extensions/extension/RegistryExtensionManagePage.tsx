@@ -13,17 +13,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import {
-    Button,
-    LoadingSpinner,
-    Link,
-    CardHeader,
-    CardBody,
-    Card,
-    Alert,
-    Icon,
-    Typography,
-} from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -165,7 +155,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             return (
                 <div className="registry-extension-manage-page">
                     <PageTitle title="Manage extension" />
-                    <Typography.H2>Manage extension</Typography.H2>
+                    <H2>Manage extension</H2>
                     <Form onSubmit={this.onSubmit}>
                         <RegistryPublisherFormGroup
                             className={styles.input}
@@ -184,9 +174,9 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             this.state.name !== this.props.extension.registryExtension.name && (
                                 <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
-                                    <code id="registry-extension__extensionID">
-                                        <strong>{extensionID}</strong>
-                                    </code>
+                                    <Code id="registry-extension__extensionID" weight="bold">
+                                        {extensionID}
+                                    </Code>
                                 </Alert>
                             )}
                         <div aria-live="polite">
@@ -204,7 +194,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                     <LoadingSpinner />
                                 ) : (
                                     <span className="text-success ml-2">
-                                        <Icon as={CheckCircleIcon} /> Updated extension successfully.
+                                        <Icon aria-hidden={true} as={CheckCircleIcon} /> Updated extension successfully.
                                     </span>
                                 ))}
                         </div>

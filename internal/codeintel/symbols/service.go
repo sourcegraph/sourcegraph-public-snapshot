@@ -10,11 +10,11 @@ import (
 )
 
 type Service struct {
-	symbolsStore Store
+	symbolsStore store.Store
 	operations   *operations
 }
 
-func newService(symbolsStore Store, observationContext *observation.Context) *Service {
+func newService(symbolsStore store.Store, observationContext *observation.Context) *Service {
 	return &Service{
 		symbolsStore: symbolsStore,
 		operations:   newOperations(observationContext),
@@ -23,8 +23,7 @@ func newService(symbolsStore Store, observationContext *observation.Context) *Se
 
 type Symbol = shared.Symbol
 
-type SymbolOpts struct {
-}
+type SymbolOpts struct{}
 
 func (s *Service) Symbol(ctx context.Context, opts SymbolOpts) (symbols []Symbol, err error) {
 	ctx, _, endObservation := s.operations.symbol.With(ctx, &err, observation.Args{})

@@ -15,7 +15,6 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
@@ -57,7 +56,6 @@ const defaultProps: StreamingSearchResultsProps = {
     streamSearch: () => of(streamingSearchResult),
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
-    featureFlags: EMPTY_FEATURE_FLAGS,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
 }

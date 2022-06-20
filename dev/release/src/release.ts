@@ -23,7 +23,15 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL } from './util'
+import {
+    cacheFolder,
+    formatDate,
+    timezoneLink,
+    hubSpotFeedbackFormStub,
+    ensureDocker,
+    changelogURL,
+    ensureReleaseBranchUpToDate,
+} from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -123,7 +131,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingDayBeforeRelease),
+                    ...calendarTime(config.threeWorkingDaysBeforeRelease),
                 },
                 {
                     title: `Release Sourcegraph ${name}`,
@@ -161,7 +169,7 @@ const steps: Step[] = [
             const {
                 releaseDate,
                 captainGitHubUsername,
-                oneWorkingDayBeforeRelease,
+                threeWorkingDaysBeforeRelease,
                 oneWorkingDayAfterRelease,
                 captainSlackUsername,
                 slackAnnounceChannel,
@@ -175,7 +183,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDate: date,
-                oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
+                threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 dryRun: dryRun.trackingIssues || false,
             })
@@ -223,7 +231,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         base: 'main',
                         head: `changelog-${release.version}`,
                         title: prMessage,
-                        commitMessage: prMessage,
+                        commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${release.format()}'`)
@@ -295,6 +303,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
+            ensureReleaseBranchUpToDate(branch)
             await createTag(
                 await getAuthenticatedGitHubClient(),
                 {
@@ -515,7 +524,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         repo: 'deploy-sourcegraph-helm',
                         base: `release/${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
-                        commitMessage: defaultPRMessage,
+                        commitMessage: defaultPRMessage + '\n\nTest Plan: n/a',
                         title: defaultPRMessage,
                         edits: [
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,

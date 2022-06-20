@@ -3,7 +3,7 @@
 # This function installs the comby dependency for cmd/searcher.
 # The CI pipeline calls this script to install or upgrade comby
 # for tests or development environments.
-REQUIRE_VERSION="0.18.1"
+REQUIRE_VERSION="1.7.1"
 
 RELEASE_VERSION=$REQUIRE_VERSION
 RELEASE_TAG=$REQUIRE_VERSION
@@ -88,7 +88,7 @@ if [ "$CHECK" == "broken" ]; then
   if [ $OS == "macos" ]; then
     printf "[*] brew install comby\n"
   else
-    printf "[*] sudo apt-get install libpcre3-dev && bash <(curl -sL get.comby.dev)\n"
+    printf "[*] sudo apt-get install libpcre3-dev && bash <(curl -sL get-comby.netlify.app)\n"
   fi
   rm -f "$TMP/$RELEASE_BIN"
   exit 1

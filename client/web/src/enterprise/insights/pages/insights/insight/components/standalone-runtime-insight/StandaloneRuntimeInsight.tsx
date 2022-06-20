@@ -6,6 +6,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ParentSize } from '../../../../../../../charts'
+import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import {
     CategoricalBasedChartTypes,
     CategoricalChart,
@@ -17,7 +18,7 @@ import {
     SeriesChart,
 } from '../../../../../components'
 import { useInsightData } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
-import { CodeInsightsBackendContext, LangStatsInsight, SearchRuntimeBasedInsight } from '../../../../../core'
+import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../../core'
 import { InsightContentType } from '../../../../../core/types/insight/common'
 import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
@@ -26,13 +27,14 @@ import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightC
 import styles from './StandaloneRuntimeInsight.module.scss'
 
 interface StandaloneRuntimeInsightProps extends TelemetryProps {
-    insight: SearchRuntimeBasedInsight | LangStatsInsight
+    insight: LangStatsInsight
     className?: string
 }
 
 export function StandaloneRuntimeInsight(props: StandaloneRuntimeInsightProps): React.ReactElement {
     const { insight, telemetryService, className } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
+    const seriesToggleState = useSeriesToggle()
 
     const insightCardReference = useRef<HTMLDivElement>(null)
 
@@ -80,6 +82,7 @@ export function StandaloneRuntimeInsight(props: StandaloneRuntimeInsightProps): 
                                     zeroYAxisMin={zeroYAxisMin}
                                     locked={insight.isFrozen}
                                     onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
                                     {...state.data.content}
                                 />
                             ) : (

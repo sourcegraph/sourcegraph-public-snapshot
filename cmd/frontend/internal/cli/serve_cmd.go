@@ -20,6 +20,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
+	sglog "github.com/sourcegraph/log"
+
+	sentrylib "github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -29,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -48,13 +52,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -73,7 +75,7 @@ var (
 
 	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
 
-	// dev browser browser extension ID. You can find this by going to chrome://extensions
+	// dev browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
@@ -125,15 +127,14 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	defer liblog.Sync()
 
 	logger := sglog.Scoped("server", "the frontend server program")
-
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
@@ -165,6 +166,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
 	conf.Init()
 	conf.MustValidateDefaults()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
@@ -185,14 +187,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
@@ -314,14 +315,17 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	externalHandler := newExternalHTTPHandler(
 		db,
 		schema,
-		enterprise.GitHubWebhook,
-		enterprise.GitLabWebhook,
-		enterprise.BitbucketServerWebhook,
-		enterprise.NewCodeIntelUploadHandler,
+		rateLimiter,
+		&httpapi.Handlers{
+			GitHubWebhook:             enterprise.GitHubWebhook,
+			GitLabWebhook:             enterprise.GitLabWebhook,
+			BitbucketServerWebhook:    enterprise.BitbucketServerWebhook,
+			BitbucketCloudWebhook:     enterprise.BitbucketCloudWebhook,
+			NewCodeIntelUploadHandler: enterprise.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
+		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
-		enterprise.NewComputeStreamHandler,
-		rateLimiter,
 	)
 	httpServer := &http.Server{
 		Handler:      externalHandler,

@@ -33,7 +33,25 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
-func Squash(database db.Database, commit string) error {
+func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath string) error {
+	definitions, err := readDefinitions(database)
+	if err != nil {
+		return err
+	}
+	var leafIDs []int
+	for _, leaf := range definitions.Leaves() {
+		leafIDs = append(leafIDs, leaf.ID)
+	}
+
+	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, skipTeardown)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
+}
+
+func Squash(database db.Database, commit string, inContainer, skipTeardown bool) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -48,7 +66,7 @@ func Squash(database db.Database, commit string) error {
 	}
 
 	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID})
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, skipTeardown)
 	if err != nil {
 		return err
 	}
@@ -162,21 +180,16 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 }
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
-// of a database up to a given migration index. This function will launch a daemon Postgres container,
-// migrate a fresh database up to the given migration index, then dump and sanitize the contents.
-func generateSquashedMigrations(database db.Database, targetVersions []int) (up, down string, err error) {
-	postgresDSN := fmt.Sprintf(
-		"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
-		squasherContainerExposedPort,
-		database.Name,
-	)
-
-	teardown, err := runPostgresContainer(database.Name)
+// of a database up to a given migration index.
+func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, skipTeardown bool) (up, down string, err error) {
+	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer)
 	if err != nil {
 		return "", "", err
 	}
 	defer func() {
-		err = teardown(err)
+		if !skipTeardown {
+			err = teardown(err)
+		}
 	}()
 
 	if err := runTargetedUpMigrations(database, targetVersions, postgresDSN); err != nil {
@@ -189,6 +202,31 @@ func generateSquashedMigrations(database db.Database, targetVersions []int) (up,
 	}
 
 	return upMigration, "-- Nothing\n", nil
+}
+
+// setupDatabaseForSquash prepares a database for use in running a schema up to a certain point so it
+// can be reliably dumped. If the provided inContainer flag is true, then this function will launch a
+// daemon Postgres container. Otherwise, a new database on the host Postgres instance will be created.
+func setupDatabaseForSquash(database db.Database, runInContainer bool) (string, func(error) error, error) {
+	if runInContainer {
+		postgresDSN := fmt.Sprintf(
+			"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
+			squasherContainerExposedPort,
+			database.Name,
+		)
+		teardown, err := runPostgresContainer(database.Name)
+		return postgresDSN, teardown, err
+	}
+
+	databaseName := fmt.Sprintf("sg-squasher-%s", database.Name)
+	postgresDSN := fmt.Sprintf(
+		"postgres://%s@127.0.0.1:%s/%s?sslmode=disable",
+		os.Getenv("PGUSER"),
+		os.Getenv("PGPORT"),
+		databaseName,
+	)
+	teardown, err := setupLocalDatabase(databaseName)
+	return postgresDSN, teardown, err
 }
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
@@ -206,10 +244,24 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 		}
 	}()
 
+	var dbs []*sql.DB
+	defer func() {
+		for _, db := range dbs {
+			_ = db.Close()
+		}
+	}()
+
 	dsns := map[string]string{
 		database.Name: postgresDSN,
 	}
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		// Stash the databases that are passed to us here. On exit of this function
+		// we want to make sure that we close the database connections. They're not
+		// able to be used on exit and they will block external commands modifying
+		// the target database (such as dropdb on cleanup) as it will be seen as
+		// in-use.
+		dbs = append(dbs, db)
+
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 	r, err := connections.RunnerFromDSNs(dsns, "sg", storeFactory)
@@ -228,6 +280,46 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 			},
 		},
 	})
+}
+
+func setupLocalDatabase(databaseName string) (_ func(error) error, err error) {
+	pending := std.Out.Pending(output.Line("", output.StylePending, fmt.Sprintf("Creating local Postgres database %s...", databaseName)))
+	defer func() {
+		if err == nil {
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, fmt.Sprintf("Created local Postgres database %s", databaseName)))
+		} else {
+			pending.Destroy()
+		}
+	}()
+
+	createLocalDatabase := func() error {
+		cmd := exec.Command("createdb", databaseName)
+		_, err := run.InRoot(cmd)
+		return err
+	}
+
+	dropLocalDatabase := func() error {
+		cmd := exec.Command("dropdb", databaseName)
+		_, err := run.InRoot(cmd)
+		return err
+	}
+
+	// Drop in case it already exists; ignore error
+	_ = dropLocalDatabase()
+
+	// Try to create new database
+	if err := createLocalDatabase(); err != nil {
+		return nil, err
+	}
+
+	// Drop database on exit
+	teardown := func(err error) error {
+		if dropErr := dropLocalDatabase(); dropErr != nil {
+			err = errors.Append(err, dropErr)
+		}
+		return err
+	}
+	return teardown, nil
 }
 
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.

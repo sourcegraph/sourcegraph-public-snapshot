@@ -22,14 +22,13 @@ var (
 var generateCommand = &cli.Command{
 	Name:      "generate",
 	ArgsUsage: "[target]",
-	Usage:     "Run code and docs generation tasks",
-	Description: `Run code and docs generation tasks - if no target is provided, all target are run with default arguments.
-
-Verbose mode can be enabled with the global verbose flag, e.g.
-
-	sg --verbose generate ...
+	UsageText: `
+sg --verbose generate ... # Enable verbose output
 `,
-	Category: CategoryDev,
+	Usage:       "Run code and docs generation tasks",
+	Description: "If no target is provided, all target are run with default arguments.",
+	Aliases:     []string{"gen"},
+	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "quiet",
@@ -63,7 +62,7 @@ func runGenerateAndReport(ctx context.Context, t generate.Target, args []string)
 	report := t.Runner(ctx, args)
 	fmt.Printf(report.Output)
 	std.Out.WriteSuccessf("Target %q done (%ds)", t.Name, report.Duration/time.Second)
-	return nil
+	return report.Err
 }
 
 type generateTargets []generate.Target
@@ -85,7 +84,7 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 			if err != nil {
 				return err
 			}
-			report := c.Runner(cmd.Context, cmd.Args().Tail())
+			report := c.Runner(cmd.Context, cmd.Args().Slice())
 			fmt.Printf(report.Output)
 			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
 			return nil

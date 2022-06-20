@@ -24,7 +24,12 @@ func lint(ctx context.Context, args []string) error {
 		args = lints.DefaultLints
 	}
 
-	graph, err := graph.Load()
+	root, err := findRoot()
+	if err != nil {
+		return err
+	}
+
+	graph, err := graph.Load(root)
 	if err != nil {
 		return err
 	}

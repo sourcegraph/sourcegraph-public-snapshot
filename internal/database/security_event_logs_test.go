@@ -15,7 +15,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -61,7 +61,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := SecurityEventLogs(db).Insert(ctx, tc.event)
+			err := db.SecurityEventLogs().Insert(ctx, tc.event)
 			got := fmt.Sprintf("%v", err)
 			assert.Equal(t, tc.err, got)
 		})

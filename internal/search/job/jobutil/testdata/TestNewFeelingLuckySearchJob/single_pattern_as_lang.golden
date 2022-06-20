@@ -1,0 +1,10 @@
+{
+  "GeneratedSearchJob": {
+    "Child": {},
+    "ProposedQuery": {
+      "Description": "apply language filter for pattern",
+      "Query": "context:global lang:Python",
+      "PatternType": 1
+    }
+  }
+}

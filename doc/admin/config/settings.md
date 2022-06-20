@@ -37,7 +37,7 @@ Notices can be added in global, organization, or user settings. The `notices` se
 
 1. `message`: the markdown copy to be displayed in the banner
 1. `location`: where the banner will be shown. Either on the home page with `"home"` or at the top of the page with `"top"`
-1. `dismissable`: boolean (`true` or `false`). If true, users will be able to close the notice and not see it again. If false, it will persist on the instance until the configuration is removed.
+1. `dismissible`: boolean (`true` or `false`). If true, users will be able to close the notice and not see it again. If false, it will persist on the instance until the configuration is removed.
 
 ### Example settings:
 

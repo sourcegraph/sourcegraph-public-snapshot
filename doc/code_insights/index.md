@@ -45,6 +45,7 @@ Code Insights is based on our universal code search, making it precise and confi
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
 <a class="btn" href="language_insight_quickstart">Language Insight Quickstart</a>
+<a class="btn" href="references/requirements">Requirements</a>
 </div>
 
 ## [Explanations](explanations/index.md)
@@ -67,3 +68,4 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
 - [Licensing and limited access](references/license.md)
 - [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)
+- [Requirements](references/requirements.md)

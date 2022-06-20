@@ -31,10 +31,10 @@ Install the indexer for the required programming language of your repository by 
   1. [Dart](https://github.com/sourcegraph/lsif-dart)
   1. [Go](https://github.com/sourcegraph/lsif-go)
   1. [Haskell](https://github.com/mpickering/hie-lsif)
-  1. [Java](https://github.com/sourcegraph/lsif-java)
-  1. [JavaScript/TypeScript](https://github.com/sourcegraph/lsif-node)
+  1. [Java](https://github.com/sourcegraph/scip-java)
+  1. [JavaScript/TypeScript](https://github.com/sourcegraph/scip-typescript)
   1. [Jsonnet](https://github.com/sourcegraph/lsif-jsonnet)
-  1. [Python](https://github.com/sourcegraph/lsif-py)
+  1. [Python](https://github.com/sourcegraph/scip-python)
   1. [OCaml](https://github.com/rvantonder/lsif-ocaml)
   1. [Scala](https://github.com/sourcegraph/lsif-semanticdb)
 
@@ -49,13 +49,13 @@ The upload step is the same for all languages. Make sure the current working dir
 #### To a private Sourcegraph instance (on prem)
 
 ```
-$ SRC_ENDPOINT=https://sourcegraph.mycompany.com src lsif upload -file=dump.lsif
+$ SRC_ENDPOINT=https://sourcegraph.mycompany.com src code-intel upload -file=dump.lsif
 ```
 
 #### To cloud based Sourcegraph.com
 
 ```
-$ src lsif upload -github-token=YourGitHubToken -file=dump.lsif
+$ src code-intel upload -github-token=YourGitHubToken -file=dump.lsif
 ```
 
 The `src-cli` upload command will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0 or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.

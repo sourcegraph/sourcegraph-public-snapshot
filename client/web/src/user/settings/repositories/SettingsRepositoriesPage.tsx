@@ -18,7 +18,10 @@ import {
     Alert,
     Link,
     Icon,
-    Typography,
+    H3,
+    H4,
+    Code,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -93,9 +96,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
     const NoAddedReposBanner = (
         <Container className="text-center">
-            <Typography.H4>
-                {owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph
-            </Typography.H4>
+            <H4>{owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph</H4>
 
             {externalServices?.length !== 0 ? (
                 <span className="text-muted">
@@ -305,17 +306,17 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
         <Alert className="my-3" role="alert" key="add-repos" variant="success">
-            <Typography.H4 className="align-middle mb-1">Added repositories</Typography.H4>
-            <p className="align-middle mb-0">
+            <H4 className="align-middle mb-1">Added repositories</H4>
+            <Text className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
-                <code className="user-code-hosts-page__code--inline">
+                <Code className="user-code-hosts-page__code--inline">
                     <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
                         context:
                     </Link>
                     @{orgName}
-                </code>
+                </Code>
                 .
-            </p>
+            </Text>
         </Alert>
     )
 
@@ -379,7 +380,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon as={AddIcon} /> Add repositories
+                                <Icon as={AddIcon} aria-hidden={true} /> Add repositories
                             </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
                             <Button
@@ -388,7 +389,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon as={AddIcon} /> Add repositories
+                                <Icon as={AddIcon} aria-hidden={true} /> Add repositories
                             </Button>
                         ) : (
                             <Button
@@ -397,7 +398,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon as={AddIcon} /> Connect code hosts
+                                <Icon as={AddIcon} aria-hidden={true} /> Connect code hosts
                             </Button>
                         )}
                     </span>
@@ -405,9 +406,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                 className="mb-3"
             />
             {isErrorLike(status) ? (
-                <Typography.H3 className="text-muted">
-                    Sorry, we couldn’t fetch your repositories. Try again?
-                </Typography.H3>
+                <H3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</H3>
             ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner />

@@ -32,14 +32,15 @@ If a user's organization settings or user settings explicitly disable the extens
 
 ## Publish extensions to a private extension registry
 
-If you want to create extensions that are only visible to users on your Sourcegraph instance, you can use Sourcegraph Enterprise's private extension registry feature. This is enabled by default on Sourcegraph Enterprise.
+If you want to create extensions that are only visible to users on your Sourcegraph instance or make use of extensions from the [sourcegraph.com extensions registry](https://sourcegraph.com/extensions) on the air-gapped instances, you can use Sourcegraph Enterprise's private extension registry feature. This is enabled by default on Sourcegraph Enterprise.
 
-To publish an extension to your instance's private extension registry:
-
+To publish an extension to your instance's private extension registry (requires Internet access):
 1. Configure your [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) with the URL and an access token for your Sourcegraph instance.
-1. Depending on whether or not the extension already exists on Sourcegraph.com:
+2. Depending on whether or not the extension already exists on Sourcegraph.com:
   - If the extension already exists on Sourcegraph.com, you can copy it to your private extension registry with `src extensions copy -extension-id=... -current-user=...`
   - If this is a new extension, run `src extensions publish` in the extension directory.
+
+If you want to publish extensions to the air-gapped instance's private registry follow [this guide](https://github.com/sourcegraph/sourcegraph-extensions-cloning-scripts).
 
 On Sourcegraph Free, the only way to publish extensions is to publish them to the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions), where anyone on the web can view them.
 
@@ -67,7 +68,23 @@ Note: When enabling this setting, desired extensions and languages need to be sp
 }
 ```
 You will also need to manually enable language extensions for Code Intelligence to work properly by adding them to `"DefaultSettings"` in your site configuration. List of languages can be found here: [Sourcegraph default language settings](
-https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51)
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51).
+
+## Allow only extensions authored by Sourcegraph
+
+On Sourcegraph Enterprise, you can restrict users to using only Sourcegraph-authored extensions by setting [`extensions.allowOnlySourcegraphAuthoredExtensions`](../config/site_config.md) to `true` in your site configuration.
+
+```json
+{
+  "extensions": { "allowOnlySourcegraphAuthoredExtensions": true }
+}
+```
+
+If not set, all extensions may be used from the remote registry.
+
+If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting will be ignored.
+
+To completely disable the remote registry, set `remoteRegistry` to `false`.
 
 ## [Client-side security and privacy](../../extensions/security.md)
 

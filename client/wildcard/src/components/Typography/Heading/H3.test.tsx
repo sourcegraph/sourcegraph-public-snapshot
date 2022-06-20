@@ -1,14 +1,14 @@
 import { render } from '@testing-library/react'
 
-import { Typography } from '../..'
+import { H3 } from '../..'
 
 describe('H3', () => {
     it('should render correctly', () => {
         expect(
             render(
-                <Typography.H3 alignment="left" mode="single-line">
+                <H3 alignment="left" mode="single-line">
                     This is H3
-                </Typography.H3>
+                </H3>
             ).asFragment()
         ).toMatchSnapshot()
     })
@@ -16,9 +16,9 @@ describe('H3', () => {
     it('should render correctly with `as`', () => {
         expect(
             render(
-                <Typography.H3 alignment="left" mode="single-line" as="p">
+                <H3 alignment="left" mode="single-line" as="p">
                     This is a p
-                </Typography.H3>
+                </H3>
             ).asFragment()
         ).toMatchSnapshot()
     })

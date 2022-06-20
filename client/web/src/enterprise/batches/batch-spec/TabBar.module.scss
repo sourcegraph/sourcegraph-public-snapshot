@@ -1,0 +1,35 @@
+.nav-link-disabled {
+    opacity: 0.25;
+
+    &:hover {
+        border-bottom: 2px solid transparent !important;
+    }
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+
+    // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+    &::after {
+        content: attr(data-tab-content);
+        height: 0;
+        visibility: hidden; // a11y: avoid detection for voice over
+        overflow: hidden;
+        user-select: none;
+        pointer-events: none;
+        font-weight: 700;
+    }
+}
+
+// Unset Button-y styles
+.button {
+    font-weight: unset;
+    padding: var(--nav-link-padding-y) var(--nav-link-padding-x);
+    letter-spacing: unset;
+    font-size: unset;
+    line-height: unset;
+    user-select: unset;
+}

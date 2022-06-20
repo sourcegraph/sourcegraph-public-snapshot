@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -40,7 +39,14 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 		}
 		children = append(children, child)
 	}
-	return NewAlertJob(inputs, NewOrJob(children...)), nil
+
+	jobTree := NewOrJob(children...)
+
+	if inputs.PatternType == query.SearchTypeLucky {
+		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+	}
+
+	return NewAlertJob(inputs, jobTree), nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -88,7 +94,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				}
 				addJob(&repoPagerJob{
 					child:            job,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -112,7 +118,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				}
 				addJob(&repoPagerJob{
 					child:            job,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -121,17 +127,19 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
-			addJob(&commit.CommitSearchJob{
+			repoOptionsCopy := repoOptions
+			repoOptionsCopy.OnlyCloned = true
+			addJob(&commit.SearchJob{
 				Query:                commit.QueryToGitQuery(b, diff),
-				RepoOpts:             repoOptions,
+				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
-				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Concurrency:          4,
 			})
 		}
 
-		addJob(&searchrepos.ComputeExcludedReposJob{
+		addJob(&searchrepos.ComputeExcludedJob{
 			RepoOpts: repoOptions,
 		})
 	}
@@ -173,7 +181,80 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		basicJob = NewTimeoutJob(timeout, basicJob)
 	}
 
+	{
+		// WORKAROUND: On Sourcegraph.com not all repositories are
+		// indexed. So searcher (which does no ranking) can race with
+		// Zoekt (which does ranking). This leads to unpleasant results,
+		// especially due to the large index on Sourcegraph.com. We have
+		// this hacky workaround here to ensure we search Zoekt first.
+		// Context:
+		// https://github.com/sourcegraph/sourcegraph/issues/35993
+		// https://github.com/sourcegraph/sourcegraph/issues/35994
+
+		if inputs.OnSourcegraphDotCom && b.Pattern != nil {
+			if _, ok := b.Pattern.(query.Pattern); ok {
+				basicJob = orderSearcherJob(basicJob)
+			}
+		}
+
+	}
+
 	return basicJob, nil
+}
+
+// orderSearcherJob ensures that, if a searcher job exists, then it is only ever
+// run sequentially after a Zoekt search has returned all its results.
+func orderSearcherJob(j job.Job) job.Job {
+	// First collect the searcher job, if any, and delete it from the tree.
+	// This job will be sequentially ordered after any Zoekt jobs. We assume
+	// at most one searcher job exists.
+	var pagedSearcherJob job.Job
+	collector := Mapper{
+		MapJob: func(current job.Job) job.Job {
+			if pager, ok := current.(*repoPagerJob); ok {
+				if _, ok := pager.child.(*searcher.TextSearchJob); ok {
+					pagedSearcherJob = pager
+					return &NoopJob{}
+				}
+			}
+			return current
+		},
+	}
+
+	newJob := collector.Map(j)
+
+	if pagedSearcherJob == nil {
+		// No searcher job, nothing to worry about.
+		return j
+	}
+
+	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
+	// We assume at most one of either two Zoekt search jobs may exist.
+	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
+	orderer := Mapper{
+		MapJob: func(current job.Job) job.Job {
+			if pager, ok := current.(*repoPagerJob); ok {
+				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
+					seenZoektRepoSearch = true
+					return NewSequentialJob(false, current, pagedSearcherJob)
+				}
+			}
+			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
+				seenZoektGlobalSearch = true
+				return NewSequentialJob(false, current, pagedSearcherJob)
+			}
+			return current
+		},
+	}
+
+	newJob = orderer.Map(newJob)
+
+	if !seenZoektRepoSearch && !seenZoektGlobalSearch {
+		// There were no Zoekt jobs, so no need to modify the tree. Return original.
+		return j
+	}
+
+	return newJob
 }
 
 // NewFlatJob creates all jobs that are built from a query.Flat.
@@ -210,15 +291,16 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				searcherJob := &searcher.SearcherJob{
+				searcherJob := &searcher.TextSearchJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
+					Features:        features,
 				}
 
 				addJob(&repoPagerJob{
 					child:            searcherJob,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
@@ -229,14 +311,14 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				symbolSearchJob := &searcher.SymbolSearcherJob{
+				symbolSearchJob := &searcher.SymbolSearchJob{
 					PatternInfo: patternInfo,
 					Limit:       maxResults,
 				}
 
 				addJob(&repoPagerJob{
 					child:            symbolSearchJob,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
@@ -259,9 +341,10 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
+				Features:        features,
 			}
 
-			addJob(&structural.StructuralSearchJob{
+			addJob(&structural.SearchJob{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         f.Index(),
@@ -547,6 +630,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
 		Dependencies:      b.Dependencies(),
+		Dependents:        b.Dependents(),
 		SearchContextSpec: searchContextSpec,
 		ForkSet:           b.Fork() != nil,
 		OnlyForks:         fork == query.Only,
@@ -608,13 +692,13 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 
 	switch typ {
 	case search.SymbolRequest:
-		return &symbol.RepoUniverseSymbolSearchJob{
+		return &zoekt.GlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
-			RepoOptions:      b.repoOptions,
+			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.ZoektGlobalSearchJob{
+		return &zoekt.GlobalTextSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOpts:         b.repoOptions,
@@ -631,13 +715,13 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoekt.ZoektSymbolSearchJob{
+		return &zoekt.SymbolSearchJob{
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.ZoektRepoSubsetSearchJob{
+		return &zoekt.RepoSubsetTextSearchJob{
 			Query:          zoektQuery,
 			Typ:            typ,
 			FileMatchLimit: b.fileMatchLimit,
@@ -704,15 +788,16 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
-func toFeatures(flags featureflag.FlagSet) search.Features {
-	if flags == nil {
-		flags = featureflag.FlagSet{}
+func toFeatures(flagSet *featureflag.FlagSet) search.Features {
+	if flagSet == nil {
+		flagSet = &featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
 		log15.Warn("search feature flags are not available")
 	}
 
 	return search.Features{
-		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 	}
 }
 

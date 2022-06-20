@@ -38,6 +38,8 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
 		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
+		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
+		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -293,6 +295,35 @@ func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
 func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
 func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
 func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
+}
+
+// RepoDependentsPredicate represents the `repo:dependents(regex@rev)`
+// predicate, which filters to repos that depend on the repos matching the
+// given of regex.
+type RepoDependentsPredicate struct{}
+
+func (f *RepoDependentsPredicate) ParseParams(params string) (err error) {
+	re := params
+	if n := strings.LastIndex(params, "@"); n > 0 {
+		re = re[:n]
+	}
+
+	if re == "" {
+		return errors.Errorf("empty repo:dependents predicate parameter %q", params)
+	}
+
+	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return errors.Errorf("invalid repo:dependents predicate parameter %q: %v", params, err)
+	}
+
+	return nil
+}
+
+func (f *RepoDependentsPredicate) Field() string { return FieldRepo }
+func (f *RepoDependentsPredicate) Name() string  { return "dependents" }
+func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 

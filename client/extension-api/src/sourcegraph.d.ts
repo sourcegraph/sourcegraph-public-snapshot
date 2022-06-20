@@ -618,6 +618,15 @@ declare module 'sourcegraph' {
         dark?: ThemableDecorationAttachmentStyle
     }
 
+    interface TextDocumentDecorationTypeConfig {
+        /**
+         * Defines whether to show decorations inline (default) or in a separate column.
+         * Column display can only be applied if `enableExtensionsDecorationsColumnView`
+         * experimental feature is enabled.
+         */
+        display: 'inline' | 'column'
+    }
+
     /**
      * Represents a handle to a set of decorations.
      *
@@ -625,8 +634,12 @@ declare module 'sourcegraph' {
      * {@link sourcegraph.app.createDecorationType}
      */
     export interface TextDocumentDecorationType {
+        readonly extensionID?: string
+
         /** An opaque identifier. */
         readonly key: string
+
+        readonly config: TextDocumentDecorationTypeConfig
     }
 
     /**
@@ -1143,7 +1156,7 @@ declare module 'sourcegraph' {
          * Use this to create a unique handle to a set of decorations, that can be applied to
          * text editors using {@link setDecorations}.
          */
-        export function createDecorationType(): TextDocumentDecorationType
+        export function createDecorationType(config?: TextDocumentDecorationType['config']): TextDocumentDecorationType
 
         /**
          * Creates a statusBarItemType that can be used to add a status bar item to
@@ -1824,14 +1837,17 @@ declare module 'sourcegraph' {
             variables: TVariables
         ): Promise<GraphQLResult<TResult>>
 
-        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult<T>
 
         export interface SuccessGraphQLResult<T> {
             data: T
             errors: undefined
         }
-        export interface ErrorGraphQLResult {
-            data: undefined
+        export interface ErrorGraphQLResult<T> {
+            // It might be possible that even with errored response we have
+            // a partially resolved data
+            // See https://github.com/sourcegraph/sourcegraph/pull/36033
+            data: T | null
             errors: readonly import('graphql').GraphQLError[]
         }
     }

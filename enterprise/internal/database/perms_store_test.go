@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"sync"
@@ -24,11 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func cleanupPermsTables(t *testing.T, s *permsStore) {
@@ -66,7 +64,7 @@ func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
-func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_LoadUserPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
 			s := perms(db, clock)
@@ -198,7 +196,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
 			s := perms(db, time.Now)
@@ -259,8 +257,65 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Run("found matching", func(t *testing.T) {
+			ctx := context.Background()
+			s := perms(db, clock)
+			if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				cleanupReposTable(t, s)
+				cleanupPermsTables(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2),
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "github", "https://github.com/")
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "repos", []api.RepoID{1}, repos)
+		})
+		t.Run("skips non matching", func(t *testing.T) {
+			ctx := context.Background()
+			s := perms(db, clock)
+			if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				cleanupReposTable(t, s)
+				cleanupPermsTables(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2),
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "gitlab", "https://gitlab.com/")
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "repos", []api.RepoID{}, repos)
+		})
+	}
+}
+
 func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
-	rows, err := s.Handle().DB().QueryContext(context.Background(), sql)
+	rows, err := s.Handle().QueryContext(context.Background(), sql)
 	if err != nil {
 		return err
 	}
@@ -303,7 +358,7 @@ func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint3
 	return nil
 }
 
-func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
 
 	tests := []struct {
@@ -544,7 +599,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetRepoPermissionsUnrestricted(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		assertUnrestricted := func(ctx context.Context, t *testing.T, s *permsStore, id int32, want bool) {
 			t.Helper()
@@ -585,8 +640,12 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) 
 			assertUnrestricted(ctx, t, s, 1, true)
 			assertUnrestricted(ctx, t, s, 2, true)
 
-			// Set them back to false again
-			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, false); err != nil {
+			// Set them back to false again, also checking that more than 65535 IDs
+			// can be processed without an error
+			var ids [66000]int32
+			ids[0] = 1
+			ids[65900] = 2
+			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
 				t.Fatal(err)
 			}
 			assertUnrestricted(ctx, t, s, 1, false)
@@ -595,7 +654,7 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) 
 	}
 }
 
-func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 	tests := []struct {
 		name            string
 		updates         []*authz.RepoPermissions
@@ -797,7 +856,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_TouchRepoPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now().Unix()
 		s := perms(db, func() time.Time {
@@ -845,7 +904,7 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_LoadUserPendingPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching with different account ID", func(t *testing.T) {
 			s := perms(db, clock)
@@ -1024,7 +1083,7 @@ func checkUserPendingPermsTable(
 	err error,
 ) {
 	q := `SELECT id, service_type, service_id, bind_id, object_ids_ints FROM user_pending_permissions`
-	rows, err := s.Handle().DB().QueryContext(ctx, q)
+	rows, err := s.Handle().QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1074,7 +1133,7 @@ func checkRepoPendingPermsTable(
 	idToSpecs map[int32]extsvc.AccountSpec,
 	expects map[int32][]extsvc.AccountSpec,
 ) error {
-	rows, err := s.Handle().DB().QueryContext(ctx, `SELECT repo_id, user_ids_ints FROM repo_pending_permissions`)
+	rows, err := s.Handle().QueryContext(ctx, `SELECT repo_id, user_ids_ints FROM repo_pending_permissions`)
 	if err != nil {
 		return err
 	}
@@ -1135,7 +1194,7 @@ func checkRepoPendingPermsTable(
 	return nil
 }
 
-func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetRepoPendingPermissions(db database.DB) func(*testing.T) {
 	alice := extsvc.AccountSpec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
@@ -1411,7 +1470,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
+func testPermsStore_ListPendingUsers(db database.DB) func(*testing.T) {
 	type update struct {
 		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
@@ -1521,7 +1580,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_GrantPendingPermissions(db database.DB) func(*testing.T) {
 	alice := extsvc.AccountSpec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
@@ -2043,7 +2102,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 
 // This test is used to ensure we ignore invalid pending user IDs on updating repository pending permissions
 // because permissions have been granted for those users.
-func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetPendingPermissionsAfterGrant(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		defer cleanupPermsTables(t, s)
@@ -2099,7 +2158,7 @@ func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T)
 	}
 }
 
-func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_DeleteAllUserPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		t.Cleanup(func() {
@@ -2153,7 +2212,7 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_DeleteAllUserPendingPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		t.Cleanup(func() {
@@ -2210,7 +2269,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 	}
 }
 
-func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
+func testPermsStore_DatabaseDeadlocks(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2317,109 +2376,7 @@ func cleanupUsersTable(t *testing.T, s *permsStore) {
 	}
 }
 
-func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		s := perms(db, time.Now)
-		t.Cleanup(func() {
-			cleanupUsersTable(t, s)
-		})
-
-		ctx := context.Background()
-
-		// Set up test users and external accounts
-		extSQL := `
-INSERT INTO
-	user_external_accounts(user_id, service_type, service_id, account_id, client_id, auth_data, created_at, updated_at, deleted_at, expired_at)
-VALUES
-	(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-`
-		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
-
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", nil, clock(), clock(), nil, nil),                      // ID=1
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", `{"access_token":"123"}`, clock(), clock(), nil, nil), // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", nil, clock(), clock(), nil, nil),                          // ID=3
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", nil, clock(), clock(), clock(), nil),                      // ID=4
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "expired", "expired_client_id", nil, clock(), clock(), nil, clock()),                            // ID=5
-		}
-		for _, q := range qs {
-			if err := s.execute(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		{
-			// Check external accounts for "alice"
-			accounts, err := s.ListExternalAccounts(ctx, 1)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			aliceGitHubAuthData := json.RawMessage(`{"access_token":"123"}`)
-			expAccounts := []*extsvc.Account{
-				{
-					ID:     1,
-					UserID: 1,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeGitLab,
-						ServiceID:   "https://gitlab.com/",
-						AccountID:   "alice_gitlab",
-						ClientID:    "alice_gitlab_client_id",
-					},
-					CreatedAt: clock(),
-					UpdatedAt: clock(),
-				},
-				{
-					ID:     2,
-					UserID: 1,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-						AccountID:   "alice_github",
-						ClientID:    "alice_github_client_id",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: &aliceGitHubAuthData,
-					},
-					CreatedAt: clock(),
-					UpdatedAt: clock(),
-				},
-			}
-			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
-				t.Fatalf(diff)
-			}
-		}
-
-		{
-			// Check external accounts for "bob"
-			accounts, err := s.ListExternalAccounts(ctx, 2)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			expAccounts := []*extsvc.Account{
-				{
-					ID:     3,
-					UserID: 2,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeGitLab,
-						ServiceID:   "https://gitlab.com/",
-						AccountID:   "bob_gitlab",
-						ClientID:    "bob_gitlab_client_id",
-					},
-					CreatedAt: clock(),
-					UpdatedAt: clock(),
-				},
-			}
-			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
-				t.Fatalf(diff)
-			}
-		}
-	}
-}
-
-func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(*testing.T) {
+func testPermsStore_GetUserIDsByExternalAccounts(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2481,7 +2438,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	}
 }
 
-func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIDsWithOutdatedPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		ctx := context.Background()
@@ -2591,7 +2548,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIDsWithNoPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2659,7 +2616,7 @@ func cleanupReposTable(t *testing.T, s *permsStore) {
 	}
 }
 
-func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_RepoIDsWithNoPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2731,7 +2688,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIDsWithOldestPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		ctx := context.Background()
@@ -2835,7 +2792,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 	}
 }
 
-func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_ReposIDsWithOldestPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		ctx := context.Background()
@@ -2956,7 +2913,7 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 	}
 }
 
-func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		ctx := context.Background()
@@ -2975,7 +2932,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		//  1. Is not a member of any organization
 		//  2. Is a member of an organization without a code host connection
 		//  3. Is a member of an organization with a code host connection
-		users := database.Users(db)
+		users := db.Users()
 		alice, err := users.Create(ctx,
 			database.NewUser{
 				Email:           "alice@example.com",
@@ -3001,19 +2958,19 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		)
 		require.NoError(t, err)
 
-		orgs := database.Orgs(db)
+		orgs := db.Orgs()
 		bobOrg, err := orgs.Create(ctx, "bob-org", nil)
 		require.NoError(t, err)
 		cindyOrg, err := orgs.Create(ctx, "cindy-org", nil)
 		require.NoError(t, err)
 
-		orgMembers := database.OrgMembers(db)
+		orgMembers := db.OrgMembers()
 		_, err = orgMembers.Create(ctx, bobOrg.ID, bob.ID)
 		require.NoError(t, err)
 		_, err = orgMembers.Create(ctx, cindyOrg.ID, cindy.ID)
 		require.NoError(t, err)
 
-		err = database.ExternalServices(db).Create(ctx,
+		err = db.ExternalServices().Create(ctx,
 			func() *conf.Unified { return &conf.Unified{} },
 			&types.ExternalService{
 				Kind:           extsvc.KindGitHub,
@@ -3038,7 +2995,71 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 	}
 }
 
-func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
+func testPermsStore_MapUsers(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := perms(db, clock)
+		ctx := context.Background()
+		t.Cleanup(func() {
+			if t.Failed() {
+				return
+			}
+
+			q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
+			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		// Set up 3 users
+		users := db.Users()
+		igor, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "igor@example.com",
+				Username:        "igor",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+		shreah, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "shreah@example.com",
+				Username:        "shreah",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+		omar, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "omar@example.com",
+				Username:        "omar",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+
+		// emails: map with a mixed load of existing, space only and non existing users
+		has, err := s.MapUsers(ctx, []string{"igor@example.com", "", "omar@example.com", "  	", "sayako@example.com"}, &schema.PermissionsUserMapping{BindID: "email"})
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int32{
+			"igor@example.com": igor.ID,
+			"omar@example.com": omar.ID,
+		}, has)
+
+		// usernames: map with a mixed load of existing, space only and non existing users
+		has, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "username"})
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int32{
+			"igor":   igor.ID,
+			"shreah": shreah.ID,
+		}, has)
+
+		// use a non-existing mapping
+		_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
+		assert.Error(t, err)
+	}
+}
+
+func testPermsStore_Metrics(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 
@@ -3125,7 +3146,7 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func setupTestPerms(t *testing.T, db dbutil.DB, clock func() time.Time) *permsStore {
+func setupTestPerms(t *testing.T, db database.DB, clock func() time.Time) *permsStore {
 	t.Helper()
 	s := perms(db, clock)
 	t.Cleanup(func() {

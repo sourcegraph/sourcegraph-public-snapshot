@@ -358,10 +358,9 @@ Once you approve all of the changes, the Percy check will turn green ✅
 
 It is possible to run our Percy visual regression tests locally.
 
-1. Go to https://percy.io/Sourcegraph/Sourcegraph/settings#token
-2. Copy the token named as `PERCY_TOKEN`
-3. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
-4. Once the tests finish, Percy should output a URL to the created build.
+1. Get `PERCY_TOKEN` from 1Password [here](https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/wo7p6waf5jtqayl2vkynonxspy).
+1. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
+1. Once the tests finish, Percy should output a URL to the created build.
 
 #### Adding a new visual snapshot test
 

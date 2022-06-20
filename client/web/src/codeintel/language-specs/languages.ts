@@ -384,7 +384,9 @@ export const languageSpecs: LanguageSpec[] = [
  * matches is configured with the given identifier an error is thrown.
  */
 export function findLanguageSpec(languageID: string): LanguageSpec {
-    const languageSpec = languageSpecs.find(spec => spec.languageID === languageID)
+    const languageSpec = languageSpecs.find(
+        spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID)
+    )
     if (languageSpec) {
         return languageSpec
     }

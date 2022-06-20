@@ -6,6 +6,7 @@ const PASSING_VALIDATION = {
     isValidOperator: true,
     isValidPatternType: true,
     isNotRepo: true,
+    isNotContext: true,
     isNotCommitOrDiff: true,
     isNoNewLines: true,
 }

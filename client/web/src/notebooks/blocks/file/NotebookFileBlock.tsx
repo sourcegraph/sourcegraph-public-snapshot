@@ -13,13 +13,14 @@ import { startWith } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { LoadingSpinner, useObservable, Icon, Link, Alert } from '@sourcegraph/wildcard'
@@ -115,7 +116,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
                     url: fileURL,
                 },
             ],
@@ -127,7 +128,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -168,6 +169,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             extensionsController,
             input,
         ])
+
+        const logEventOnCopy = useCallback(() => {
+            telemetryService.log(...codeCopiedEvent('notebook-file-block'))
+        }, [telemetryService])
+
         const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
         return (
@@ -221,6 +227,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}
+                            onCopy={logEventOnCopy}
                         />
                     </div>
                 )}
@@ -239,7 +246,7 @@ const NotebookFileBlockHeader: React.FunctionComponent<
 > = ({ repositoryName, filePath, revision, lineRange, fileURL }) => (
     <>
         <div className="mr-2">
-            <Icon as={FileDocumentIcon} />
+            <Icon aria-hidden={true} as={FileDocumentIcon} />
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">

@@ -8,7 +8,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import { Redirect } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -84,12 +84,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             >
                                 {provider.serviceType === 'github' && (
                                     <>
-                                        <Icon as={GithubIcon} />{' '}
+                                        <Icon as={GithubIcon} aria-hidden={true} />{' '}
                                     </>
                                 )}
                                 {provider.serviceType === 'gitlab' && (
                                     <>
-                                        <Icon as={GitlabIcon} />{' '}
+                                        <Icon as={GitlabIcon} aria-hidden={true} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}
@@ -98,11 +98,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     ))}
                 </div>
                 {props.context.allowSignup ? (
-                    <p>
+                    <Text>
                         New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
-                    </p>
+                    </Text>
                 ) : (
-                    <p className="text-muted">Need an account? Contact your site admin</p>
+                    <Text className="text-muted">Need an account? Contact your site admin</Text>
                 )}
             </div>
         )

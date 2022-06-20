@@ -10,6 +10,37 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          aria-live="polite"
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -21,7 +52,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               class="header"
             >
               <svg
-                aria-hidden="true"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -36,29 +67,30 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               <div
                 class="mx-1 headerDivider"
               />
+              <span
+                class="tooltip"
+                data-state="closed"
+                data-test-content="github.com"
+                role="presentation"
+              >
+                <svg
+                  aria-label="github.com"
+                  class="mdi-icon iconInline text-muted flex-shrink-0"
+                  fill="currentColor"
+                  height="24"
+                  role="img"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                  />
+                </svg>
+              </span>
               <div
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  aria-label="github.com"
-                  role="img"
-                  title="github.com"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="mdi-icon iconInline text-muted flex-shrink-0"
-                    fill="currentColor"
-                    height="24"
-                    role="img"
-                    viewBox="0 0 24 24"
-                    width="24"
-                  >
-                    <path
-                      d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                    />
-                  </svg>
-                </span>
                 <div
                   class="ml-1 flex-shrink-past-contents text-truncate"
                 >
@@ -100,7 +132,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -236,6 +268,37 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          aria-live="polite"
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -247,7 +310,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               class="header"
             >
               <svg
-                aria-hidden="true"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -262,29 +325,30 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               <div
                 class="mx-1 headerDivider"
               />
+              <span
+                class="tooltip"
+                data-state="closed"
+                data-test-content="github.com"
+                role="presentation"
+              >
+                <svg
+                  aria-label="github.com"
+                  class="mdi-icon iconInline text-muted flex-shrink-0"
+                  fill="currentColor"
+                  height="24"
+                  role="img"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                  />
+                </svg>
+              </span>
               <div
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  aria-label="github.com"
-                  role="img"
-                  title="github.com"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="mdi-icon iconInline text-muted flex-shrink-0"
-                    fill="currentColor"
-                    height="24"
-                    role="img"
-                    viewBox="0 0 24 24"
-                    width="24"
-                  >
-                    <path
-                      d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                    />
-                  </svg>
-                </span>
                 <div
                   class="ml-1 flex-shrink-past-contents text-truncate"
                 >
@@ -328,7 +392,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -418,6 +482,37 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          aria-live="polite"
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -429,7 +524,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               class="header"
             >
               <svg
-                aria-hidden="true"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -444,29 +539,30 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               <div
                 class="mx-1 headerDivider"
               />
+              <span
+                class="tooltip"
+                data-state="closed"
+                data-test-content="github.com"
+                role="presentation"
+              >
+                <svg
+                  aria-label="github.com"
+                  class="mdi-icon iconInline text-muted flex-shrink-0"
+                  fill="currentColor"
+                  height="24"
+                  role="img"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                  />
+                </svg>
+              </span>
               <div
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  aria-label="github.com"
-                  role="img"
-                  title="github.com"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="mdi-icon iconInline text-muted flex-shrink-0"
-                    fill="currentColor"
-                    height="24"
-                    role="img"
-                    viewBox="0 0 24 24"
-                    width="24"
-                  >
-                    <path
-                      d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                    />
-                  </svg>
-                </span>
                 <div
                   class="ml-1 flex-shrink-past-contents text-truncate"
                 >
@@ -508,7 +604,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -567,7 +663,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <DocumentFragment>
   <div
+    aria-label="Loading"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
+    role="img"
   />
 </DocumentFragment>
 `;
@@ -575,7 +673,9 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <DocumentFragment>
   <div
+    aria-label="Loading"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
+    role="img"
   />
 </DocumentFragment>
 `;

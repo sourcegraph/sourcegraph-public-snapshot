@@ -20,9 +20,7 @@ var updateCommand = &cli.Command{
 	Usage: "Update local sg installation",
 	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
-  sg version changelog -next
-
-Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
+    sg version changelog -next`,
 	Category: CategoryUtil,
 	Action: func(cmd *cli.Context) error {
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
@@ -59,7 +57,7 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := download.Exeuctable(downloadURL, currentExecPath); err != nil {
+	if err := download.Executable(ctx, downloadURL, currentExecPath); err != nil {
 		return "", err
 	}
 	return currentExecPath, nil

@@ -5,13 +5,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Executor() *monitoring.Container {
+func Executor() *monitoring.Dashboard {
 	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"
 
 	// frontend is sometimes called sourcegraph-frontend in various contexts
 	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "executor",
 		Title:       "Executor",
 		Description: `Executes jobs in an isolated environment.`,

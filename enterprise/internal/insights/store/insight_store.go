@@ -9,10 +9,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,13 +22,14 @@ type InsightStore struct {
 }
 
 // NewInsightStore returns a new InsightStore backed by the given Postgres db.
-func NewInsightStore(db dbutil.DB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+func NewInsightStore(db edb.InsightsDB) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+// NewInsightStoreWith returns a new InsightStore backed by the given Postgres db.
+func NewInsightStoreWith(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(other.Handle()), Now: time.Now}
+}
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
@@ -221,6 +222,16 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
+		var sortOptions *types.SeriesSortOptions
+		// TODO what only one of these is set? I think the idea is that they have to be set together, but it's not enforced
+		// in the database..
+		if seriesSet[0].SeriesSortMode != nil && seriesSet[0].SeriesSortDirection != nil {
+			sortOptions = &types.SeriesSortOptions{
+				Mode:      *seriesSet[0].SeriesSortMode,
+				Direction: *seriesSet[0].SeriesSortDirection,
+			}
+		}
+
 		results = append(results, types.Insight{
 			ViewID:          seriesSet[0].ViewID,
 			DashboardViewId: seriesSet[0].DashboardViewID,
@@ -236,6 +247,10 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
 			IsFrozen:         seriesSet[0].IsFrozen,
+			SeriesOptions: types.SeriesDisplayOptions{
+				SortOptions: sortOptions,
+				Limit:       seriesSet[0].SeriesLimit,
+			},
 		})
 	}
 
@@ -335,6 +350,7 @@ type GetDataSeriesArgs struct {
 	BackfillIncomplete  bool
 	SeriesID            string
 	GlobalOnly          bool
+	ExcludeJustInTime   bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -360,6 +376,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if args.GlobalOnly {
 		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
+	}
+	if args.ExcludeJustInTime {
+		preds = append(preds, sqlf.Sprintf("just_in_time = false"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -391,6 +410,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.GeneratedFromCaptureGroups,
 			&temp.JustInTime,
 			&temp.GenerationMethod,
+			pq.Array(&temp.Repositories),
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -456,6 +476,9 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.GenerationMethod,
 			&temp.IsFrozen,
 			pq.Array(&temp.DefaultFilterSearchContexts),
+			&temp.SeriesSortMode,
+			&temp.SeriesSortDirection,
+			&temp.SeriesLimit,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -581,6 +604,9 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
+		view.SeriesSortMode,
+		view.SeriesSortDirection,
+		view.SeriesLimit,
 		view.UniqueID,
 	))
 	var id int
@@ -894,7 +920,8 @@ returning id;`
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
-default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s
+default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s, series_sort_mode = %s, series_sort_direction = %s,
+series_limit = %s
 WHERE unique_id = %s
 RETURNING id;`
 
@@ -914,7 +941,7 @@ i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -928,7 +955,7 @@ i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -943,7 +970,7 @@ const getInsightDataSeriesSql = `
 select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method
+just_in_time, generation_method, repositories
 from insight_series
 WHERE %s
 `
@@ -970,7 +997,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

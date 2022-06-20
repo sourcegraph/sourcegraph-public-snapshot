@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -35,8 +35,8 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
-            <Typography.H3 id={LABEL_ID}>Re-enqueue changesets</Typography.H3>
-            <p className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</p>
+            <H3 id={LABEL_ID}>Re-enqueue changesets</H3>
+            <Text className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <Button
