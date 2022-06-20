@@ -10,6 +10,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationConfig" preload="true"/>
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"
@@ -19,6 +20,7 @@
         />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
+        <postStartupActivity implementation="com.sourcegraph.activities.PostStartupActivity"/>
     </extensions>
 
     <actions>
