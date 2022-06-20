@@ -79,7 +79,7 @@ func Test_setRepos(t *testing.T) {
 }`).Equal(t, test(
 		NewParallelJob(
 			&zoekt.RepoSubsetTextSearchJob{},
-			&searcher.TextSearchJob{},
+			&searcher.TextSearchJob{Log: logtest.Scoped(t)},
 		),
 	))
 }

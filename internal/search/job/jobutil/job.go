@@ -299,6 +299,7 @@ func NewFlatJob(log slog.Logger, searchInputs *run.SearchInputs, f query.Flat) (
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
 					Features:        features,
+					Log:             log,
 				}
 
 				addJob(&repoPagerJob{
