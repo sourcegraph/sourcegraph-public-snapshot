@@ -74,14 +74,26 @@ func gatherFeedback(ctx *cli.Context, out *std.Output, in io.Reader) (string, st
 		return "", "", err
 	}
 
-	out.Promptf("The title of your feedback is going to be \"%s\". Anything else you want to add ?\n", ctx.Command.FullName())
+	out.Promptf("The title of your feedback is going to be \"sg %s\". Anything else you want to add ?\n", ctx.Command.FullName())
 	reader := bufio.NewReader(in)
 	userTitle, err := reader.ReadString('\n')
 	if err != nil {
 		return "", "", err
 	}
 
-	title := "sg " + ctx.Command.FullName() + " - " + strings.TrimSpace(userTitle)
+	title := "sg " + ctx.Command.FullName()
+	userTitle = strings.TrimSpace(userTitle)
+	switch strings.ToLower(userTitle) {
+	case "":
+	case "na":
+	case "no":
+	case "nothing":
+	case "nope":
+		// if the userTitle matches anyone of these words, don't add it to the final title
+		break
+	default:
+		title = title + userTitle
+	}
 
 	return title, strings.TrimSpace(string(body)), nil
 }
