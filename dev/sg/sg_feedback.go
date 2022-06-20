@@ -72,7 +72,7 @@ func gatherFeedback(ctx *cli.Context, out *std.Output, in io.Reader) (string, st
 		return "", "", err
 	}
 
-	out.Promptf("The title of your feedback is going to be \"sg %s\". Anything else you want to add ?\n", ctx.Command.FullName())
+	out.Promptf("The title of your feedback is going to be \"sg %s\". Anything else you want to add? (press <Enter> to skip)", ctx.Command.FullName())
 	reader := bufio.NewReader(in)
 	userTitle, err := reader.ReadString('\n')
 	if err != nil {
