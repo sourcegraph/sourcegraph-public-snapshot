@@ -209,7 +209,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		}
 
 		// Then, dry-run the rewirer to simulate how the changeset would look like _after_ an apply operation.
-		rewirer := rewirer.New(btypes.RewirerMappings{{
+		changesetRewirer := rewirer.New(btypes.RewirerMappings{{
 			ChangesetSpecID: r.mapping.ChangesetSpecID,
 			ChangesetID:     r.mapping.ChangesetID,
 			RepoID:          r.mapping.RepoID,
@@ -218,7 +218,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
 		}}, batchChange.ID)
-		changesets, err := rewirer.Rewire()
+		changesets, err := changesetRewirer.Rewire()
 		if err != nil {
 			r.planErr = err
 			return
