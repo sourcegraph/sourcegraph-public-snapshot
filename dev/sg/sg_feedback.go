@@ -21,8 +21,6 @@ import (
 
 const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
 
-type stopReadFunc func(lastRead string, err error) bool
-
 func addFeedbackSubcommand(commands []*cli.Command) {
 	giveFeedback := false
 	feedbackFlag := cli.BoolFlag{
@@ -38,7 +36,6 @@ func addFeedbackSubcommand(commands []*cli.Command) {
 			if giveFeedback {
 				return feedbackExec(ctx)
 			}
-
 			return action(ctx)
 		}
 
@@ -122,13 +119,11 @@ Flags: {{ inline_code .Flags}}
 	var buf bytes.Buffer
 	data := struct {
 		Content string
-		Tick    string
 		Commit  string
 		Command string
 		Flags   string
 	}{
 		body,
-		"`",
 		BuildCommit,
 		"sg " + ctx.Command.FullName(),
 		strings.Join(flagPair, " "),
