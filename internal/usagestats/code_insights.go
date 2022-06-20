@@ -50,12 +50,13 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
         COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
         COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
+        COUNT(*) FILTER (WHERE name = 'StandaloneInsightDashboardClick') 			AS dashboard_clicks,
         COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
 		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
 		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
 		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks
 	FROM event_logs
-	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
+	WHERE name in ('InsightAddition', 'InsightEdit', 'StandaloneInsightDashboardClick', InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp)
 	GROUP BY insight_type;
 	`
@@ -75,6 +76,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 			&weeklyInsightUsageStatistics.InsightType,
 			&weeklyInsightUsageStatistics.Additions,
 			&weeklyInsightUsageStatistics.Edits,
+			&weeklyInsightUsageStatistics.DashboardClicks,
 			&weeklyInsightUsageStatistics.Removals,
 			&weeklyInsightUsageStatistics.Hovers,
 			&weeklyInsightUsageStatistics.UICustomizations,

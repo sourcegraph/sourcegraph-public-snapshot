@@ -1365,6 +1365,7 @@ type InsightUsageStatistics struct {
 	InsightType      *string
 	Additions        *int32
 	Edits            *int32
+	DashboardClicks  *int32
 	Removals         *int32
 	Hovers           *int32
 	UICustomizations *int32
