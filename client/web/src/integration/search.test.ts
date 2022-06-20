@@ -408,8 +408,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-
             await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
                 waitForCodeHighlighting: true,
             })
@@ -430,7 +428,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
                 waitForCodeHighlighting: true,
@@ -449,7 +446,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshotWithVariants(
                 driver.page,
@@ -471,7 +467,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-file-match-children-item', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
                 waitForCodeHighlighting: true,
