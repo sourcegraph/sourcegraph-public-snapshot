@@ -1352,7 +1352,6 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				for i, date := range tc.commitDates {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
 				}
-
 				repo := MakeGitRepository(t, gitCommands...)
 				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, nil)
 				if err != nil || got != tc.want {
@@ -1384,7 +1383,6 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
-				repo = MakeGitRepository(t, gitCommands...)
 				got, err = client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
 				if err != nil {
 					t.Errorf("got error: %s", err)

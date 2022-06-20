@@ -1700,11 +1700,14 @@ func (c *ClientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *ClientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	fmt.Println("listing commits...")
 	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}, checker); err != nil {
+		fmt.Printf("Got error listing commits: %s\n", err)
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
 	}
+	fmt.Println("no commits")
 	return false, nil
 }
 
