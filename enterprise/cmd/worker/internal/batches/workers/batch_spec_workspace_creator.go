@@ -32,17 +32,11 @@ type batchSpecWorkspaceCreator struct {
 
 // HandlerFunc returns a workeruitl.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
-func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
+func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.BatchSpecResolutionJob)
 
-		tx, err := e.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
-
-		return e.process(ctx, tx, service.NewWorkspaceResolver, job)
+		return r.process(ctx, service.NewWorkspaceResolver, job)
 	}
 }
 
@@ -60,11 +54,10 @@ type workspaceCacheKey struct {
 
 func (r *batchSpecWorkspaceCreator) process(
 	ctx context.Context,
-	tx *store.Store,
 	newResolver service.WorkspaceResolverBuilder,
 	job *btypes.BatchSpecResolutionJob,
 ) error {
-	spec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
 	if err != nil {
 		return err
 	}
@@ -81,7 +74,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	resolver := newResolver(tx)
+	resolver := newResolver(r.store)
 	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
 	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec)
 	if err != nil {
@@ -176,7 +169,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry, len(allStepCacheKeys))
 	if len(allStepCacheKeys) > 0 {
-		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
+		entries, err := r.store.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
 			UserID: spec.UserID,
 			Keys:   allStepCacheKeys,
 		})
@@ -278,18 +271,24 @@ func (r *batchSpecWorkspaceCreator) process(
 		changesetsByWorkspace[workspace.dbWorkspace] = specs
 	}
 
-	// Mark all used cache entries as recently used for cache eviction purposes.
-	if err := tx.MarkUsedBatchSpecExecutionCacheEntries(ctx, usedCacheEntries); err != nil {
-		return err
-	}
-
 	// If there are "importChangesets" statements in the spec we evaluate
 	// them now and create ChangesetSpecs for them.
-	im, err := changesetSpecsForImports(ctx, tx, evaluatableSpec.ImportChangesets, spec.ID, spec.UserID)
+	im, err := changesetSpecsForImports(ctx, r.store, evaluatableSpec.ImportChangesets, spec.ID, spec.UserID)
 	if err != nil {
 		return err
 	}
 	cs = append(cs, im...)
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Mark all used cache entries as recently used for cache eviction purposes.
+	if err := tx.MarkUsedBatchSpecExecutionCacheEntries(ctx, usedCacheEntries); err != nil {
+		return err
+	}
 
 	if err = tx.CreateChangesetSpec(ctx, cs...); err != nil {
 		return err
@@ -305,10 +304,10 @@ func (r *batchSpecWorkspaceCreator) process(
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
 
-func changesetSpecsForImports(ctx context.Context, tx *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {
+func changesetSpecsForImports(ctx context.Context, s *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {
 	cs := []*btypes.ChangesetSpec{}
 
-	reposStore := tx.Repos()
+	reposStore := s.Repos()
 
 	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, importChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
 		if len(repoNames) == 0 {
