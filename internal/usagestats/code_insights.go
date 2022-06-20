@@ -21,6 +21,8 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	SELECT
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       		AS weekly_insights_page_views,
 		COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageViewed')				AS weekly_standalone_insight_page_views,
+		COUNT(*) FILTER (WHERE name = 'StandaloneInsightDashboardClick') 			AS weekly_dashboard_clicks,
+        COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageEditClick') 			AS weekly_standalone_edits_clicks,
 		COUNT(*) FILTER (WHERE name = 'ViewInsightsGetStartedPage')         		AS weekly_insights_get_started_page_views,
 		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        		AS weekly_insights_unique_page_views,
 		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsightsGetStartedPage')  AS weekly_insights_get_started_unique_page_views,
@@ -29,13 +31,15 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 						AS weekly_insight_configure_click,
 		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 						AS weekly_insight_add_more_click
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
+	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick', ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
 	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
 		&stats.WeeklyInsightsPageViews,
 		&stats.WeeklyStandaloneInsightPageViews,
+		&stats.WeeklyDashboardClicks,
+		&stats.WeeklyStandaloneEditsClicks,
 		&stats.WeeklyInsightsGetStartedPageViews,
 		&stats.WeeklyInsightsUniquePageViews,
 		&stats.WeeklyInsightsGetStartedUniquePageViews,
@@ -50,13 +54,12 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
         COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
         COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
-        COUNT(*) FILTER (WHERE name = 'StandaloneInsightDashboardClick') 			AS dashboard_clicks,
         COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
 		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
 		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
 		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks
 	FROM event_logs
-	WHERE name in ('InsightAddition', 'InsightEdit', 'StandaloneInsightDashboardClick', InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
+	WHERE name in ('InsightAddition', 'InsightEdit', InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp)
 	GROUP BY insight_type;
 	`
@@ -76,7 +79,6 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 			&weeklyInsightUsageStatistics.InsightType,
 			&weeklyInsightUsageStatistics.Additions,
 			&weeklyInsightUsageStatistics.Edits,
-			&weeklyInsightUsageStatistics.DashboardClicks,
 			&weeklyInsightUsageStatistics.Removals,
 			&weeklyInsightUsageStatistics.Hovers,
 			&weeklyInsightUsageStatistics.UICustomizations,

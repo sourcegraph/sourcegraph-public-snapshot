@@ -46,6 +46,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
             />
 
             <StandaloneInsightDashboardPills
+                telemetryService={telemetryService}
                 dashboards={insight.dashboards}
                 insightId={insight.id}
                 className={styles.dashboards}
