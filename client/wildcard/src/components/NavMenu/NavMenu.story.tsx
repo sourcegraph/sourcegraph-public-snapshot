@@ -13,8 +13,8 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Badge } from '../Badge'
 import { Button } from '../Button'
-import { Icon } from '../Icon'
 import { Select } from '../Form'
+import { Icon } from '../Icon'
 
 import { NavMenu, NavMenuSectionProps } from './NavMenu'
 

@@ -12,6 +12,7 @@ describe('Icon', () => {
             const { asFragment } = render(<Icon as={SourcegraphIcon} aria-hidden={true} />)
             expect(asFragment()).toMatchSnapshot()
         })
+
         it('renders a medium icon correctly', () => {
             const { asFragment } = render(<Icon as={SourcegraphIcon} size="md" aria-label="Sourcegraph logo" />)
             expect(asFragment()).toMatchSnapshot()
@@ -23,6 +24,7 @@ describe('Icon', () => {
             const { asFragment } = render(<Icon as={CloseIcon} aria-hidden={true} />)
             expect(asFragment()).toMatchSnapshot()
         })
+
         it('renders a medium icon correctly', () => {
             const { asFragment } = render(<Icon as={CloseIcon} size="md" aria-label="Checkmark" />)
             expect(asFragment()).toMatchSnapshot()
