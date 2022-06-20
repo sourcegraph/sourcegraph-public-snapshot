@@ -137,6 +137,7 @@ func NewInserterWithReturn(
 	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
 	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
+	logger := sglog.Scoped("Inserter", "")
 
 	return &Inserter{
 		db:                   db,
@@ -149,7 +150,7 @@ func NewInserterWithReturn(
 		onConflictSuffix:     onConflictSuffix,
 		returningSuffix:      returningSuffix,
 		returningScanner:     returningScanner,
-		operations:           getOperations(sglog.Scoped("Inserter", "")),
+		operations:           getOperations(logger),
 		commonLogFields: []log.Field{
 			log.String("tableName", tableName),
 			log.String("columnNames", strings.Join(columnNames, ",")),
