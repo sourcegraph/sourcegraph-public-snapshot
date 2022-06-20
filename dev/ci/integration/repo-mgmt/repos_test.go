@@ -1,16 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func prefixStrings(strs []string) []string {
+	res := make([]string, len(strs))
+	for i, s := range strs {
+		res[i] = fmt.Sprintf("github.com/%s", s)
+	}
+	return res
+}
 
 func TestIndexReposThenSearch(t *testing.T) {
 	if len(*githubToken) == 0 {
@@ -38,14 +43,21 @@ func TestIndexReposThenSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		// err := client.DeleteExternalService(esID, false)
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		println(esID)
+		err := client.DeleteExternalService(esID, false)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}()
 
-	err = waitForReposToBeIndexed(client, hugeReposList...)
+	hugeReposListWithPrefix := prefixStrings(hugeReposList)
+
+	err = client.WaitForReposToBeCloned(hugeReposListWithPrefix...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeIndexed(hugeReposListWithPrefix...)
+	// err = waitForReposToBeIndexed(client, hugeReposList...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,82 +79,6 @@ func TestIndexReposThenSearch(t *testing.T) {
 		t.Log("expected to find 'github.com/genjidb/genji' in the results, but did not")
 		t.Fail()
 	}
-}
-
-func waitForReposToBeIndexed(c *gqltestutil.Client, repos ...string) error {
-	timeout := 3000 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	var missing []string
-	for {
-		select {
-		case <-ctx.Done():
-			return errors.Errorf("wait for repos to be indexed timed out in %s, still missing %v", timeout, missing)
-		default:
-		}
-
-		var err error
-		missing, err = queryReposToBeIndexed(c, repos...)
-		if err != nil {
-			return errors.Wrap(err, "wait for repos to be indexd")
-		}
-		if len(missing) == 0 {
-			break
-		}
-
-		time.Sleep(100 * time.Millisecond)
-	}
-	return nil
-}
-
-func queryReposToBeIndexed(c *gqltestutil.Client, repos ...string) ([]string, error) {
-	var resp struct {
-		Data struct {
-			Repositories struct {
-				Nodes []struct {
-					Name       string `json:"name"`
-					MirrorInfo struct {
-						Cloned bool `json:"cloned"`
-					} `json:"mirrorInfo"`
-				} `json:"nodes"`
-			} `json:"repositories"`
-		} `json:"data"`
-	}
-	query := `{
-   repositories(first: 1000, notIndexed: false) {
-    totalCount(precise: true)
-    nodes {
-      name
-      mirrorInfo {
-        cloned
-      }
-    }
-  }   
-}`
-	err := c.GraphQL("", query, nil, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
-	}
-
-	repoSet := make(map[string]struct{}, len(repos))
-	for _, repo := range repos {
-		repoSet[fmt.Sprintf("%s%s", "github.com/", repo)] = struct{}{}
-	}
-	for _, node := range resp.Data.Repositories.Nodes {
-		if node.MirrorInfo.Cloned {
-			delete(repoSet, node.Name)
-		}
-	}
-	if len(repoSet) > 0 {
-		missing := make([]string, 0, len(repoSet))
-		for name := range repoSet {
-			missing = append(missing, name)
-		}
-		return missing, nil
-	}
-
-	return nil, nil
 }
 
 var hugeReposList = []string{
