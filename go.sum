@@ -2167,6 +2167,8 @@ github.com/sourcegraph/log v0.0.0-20220613150728-bb50c87ba841 h1:kiYxuyQ1zSNA4YP
 github.com/sourcegraph/log v0.0.0-20220613150728-bb50c87ba841/go.mod h1:A+9F6IicYvBbl2aT0R81lMraKcXjVfdfw352yPe2yJI=
 github.com/sourcegraph/log v0.0.0-20220615162128-abf79fa7246a h1:Xs/Lr9yr4fEo1lHx01y1rXLTXCh28q5dKXhbXDAJFnw=
 github.com/sourcegraph/log v0.0.0-20220615162128-abf79fa7246a/go.mod h1:A+9F6IicYvBbl2aT0R81lMraKcXjVfdfw352yPe2yJI=
+github.com/sourcegraph/log v0.0.0-20220617181905-c18b18da1202 h1:VJ1N9G0lrzwMF3oQypWkqsIveHGgRd+U7POY+6gef+c=
+github.com/sourcegraph/log v0.0.0-20220617181905-c18b18da1202/go.mod h1:A+9F6IicYvBbl2aT0R81lMraKcXjVfdfw352yPe2yJI=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
