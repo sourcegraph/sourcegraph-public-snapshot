@@ -5286,7 +5286,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app"gitserver",code=~"2.."}[5m]))`
+Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="gitserver",code=~"2.."}[5m]))`
 
 </details>
 
@@ -12488,7 +12488,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app"repo-updater",code=~"2.."}[5m]))`
+Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="repo-updater",code=~"2.."}[5m]))`
 
 </details>
 

@@ -19,7 +19,7 @@ func (http) NewHandlersGroup(name string) monitoring.Group {
 				{
 					Name:           "healthy_request_rate",
 					Description:    "requests per second, by route, when status code is 200",
-					Query:          fmt.Sprintf("sum by (route) (rate(src_http_request_duration_seconds_count{app\"%s\",code=~\"2..\"}[5m]))", name),
+					Query:          fmt.Sprintf("sum by (route) (rate(src_http_request_duration_seconds_count{app=\"%s\",code=~\"2..\"}[5m]))", name),
 					NoAlert:        true,
 					Panel:          monitoring.Panel().Unit(monitoring.Number),
 					Owner:          monitoring.ObservableOwnerRepoManagement,
