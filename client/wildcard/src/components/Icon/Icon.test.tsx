@@ -41,4 +41,15 @@ describe('Icon', () => {
             expect(asFragment()).toMatchSnapshot()
         })
     })
+
+    describe('styled as icons', () => {
+        it('renders a simple span', () => {
+            const { asFragment } = render(
+                <Icon as="span" aria-label="Smile">
+                    :)
+                </Icon>
+            )
+            expect(asFragment()).toMatchSnapshot()
+        })
+    })
 })

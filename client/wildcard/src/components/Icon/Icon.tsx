@@ -55,7 +55,11 @@ export const Icon = React.forwardRef(({ children, className, size, ...props }, r
 
     const { as: IconComponent = 'svg', role = 'img', ...attributes } = props
 
-    return <IconComponent ref={reference} className={iconStyle} role={role} {...attributes} />
+    return (
+        <IconComponent ref={reference} className={iconStyle} role={role} {...attributes}>
+            {children}
+        </IconComponent>
+    )
 }) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
 
 Icon.displayName = 'Icon'
