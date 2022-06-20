@@ -27,12 +27,13 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
     fi
   done
 
+  # Non-zero exit code and not a soft fail: upload the logs.
+  echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
+  ./enterprise/dev/ci/scripts/upload-build-logs.sh
+fi
+
 # upload annotations if they are available
 if [ -d "./annotations" ]; then
     buildkite-agent artifact upload --job-id "$BUILDKITE_JOB_ID" ./annotations
 fi
 
-  # Non-zero exit code and not a soft fail: upload the logs.
-  echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
-  ./enterprise/dev/ci/scripts/upload-build-logs.sh
-fi
