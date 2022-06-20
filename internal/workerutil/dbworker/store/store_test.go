@@ -31,7 +31,7 @@ func TestStoreQueuedCount(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -55,7 +55,7 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), true, nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), true)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -80,32 +80,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, nil)
-	if err != nil {
-		t.Fatalf("unexpected error getting queued count: %s", err)
-	}
-	if count != 2 {
-		t.Errorf("unexpected count. want=%d have=%d", 2, count)
-	}
-}
-
-func TestStoreQueuedCountConditions(t *testing.T) {
-	db := setupStoreTest(t)
-
-	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, created_at)
-		VALUES
-			(1, 'queued', NOW() - '1 minute'::interval),
-			(2, 'queued', NOW() - '2 minute'::interval),
-			(3, 'state2', NOW() - '3 minute'::interval),
-			(4, 'queued', NOW() - '4 minute'::interval),
-			(5, 'state2', NOW() - '5 minute'::interval)
-	`); err != nil {
-		t.Fatalf("unexpected error inserting records: %s", err)
-	}
-
-	conditions := []*sqlf.Query{sqlf.Sprintf("workerutil_test.id < 4")}
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, conditions)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}

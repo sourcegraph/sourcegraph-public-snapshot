@@ -78,8 +78,8 @@ type Store interface {
 	// handle of the other ShareableStore.
 	With(other basestore.ShareableStore) Store
 
-	// QueuedCount returns the number of queued records. If includeProcessing is true it returns the number of queued _and_
-	// processing records.
+	// QueuedCount returns the number of queued and errored records. If includeProcessing
+	// is true it returns the number of queued _and_ processing records.
 	QueuedCount(ctx context.Context, includeProcessing bool) (int, error)
 
 	// MaxDurationInQueue returns the maximum age of queued records in this store. Returns 0 if there are no queued records.
