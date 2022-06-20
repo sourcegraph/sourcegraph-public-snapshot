@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"time"
 
@@ -227,7 +228,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 
 func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
-	if _, err := h.db.Repos().Get(ctx, repoID); err != nil {
+	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
 	}
 
@@ -267,6 +268,17 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		return errors.Wrapf(err, "failed to set pending permissions for repo %d", repoID)
 	}
 
+	return nil
+}
+
+func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, repoID api.RepoID) (err error) {
+	var id int
+	if err := h.db.QueryRowContext(ctx, fmt.Sprintf("SELECT id FROM repo WHERE id = %d", repoID)).Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("repo not found")
+		}
+		return err
+	}
 	return nil
 }
 
