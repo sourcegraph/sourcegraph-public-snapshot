@@ -34,6 +34,6 @@ fi
 
 # upload annotations if they are available
 if [ -d "./annotations" ]; then
-    buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" ./annotations
+    buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" ./annotations/*
 fi
 
