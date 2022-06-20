@@ -862,12 +862,12 @@ func TestExecSafe(t *testing.T) {
 		},
 		{
 			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", ";show"},
-			wantStderr:   "fatal: ambiguous argument ';show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\n",
+			wantStderr:   "fatal: ambiguous argument ';show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'",
 			wantExitCode: 128,
 		},
 		{
 			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?;", "show"},
-			wantStderr:   "fatal: ambiguous argument 'show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\n",
+			wantStderr:   "fatal: ambiguous argument 'show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'",
 			wantExitCode: 128,
 		},
 		{
