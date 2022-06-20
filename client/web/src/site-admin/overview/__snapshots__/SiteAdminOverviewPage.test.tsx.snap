@@ -370,28 +370,24 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="mdi-icon iconInline icon iconDown"
-                        fill="currentColor"
-                        height="24"
-                        role="img"
+                        class="iconInline icon iconDown"
+                        role="presentation"
                         viewBox="0 0 24 24"
-                        width="24"
                       >
                         <path
                           d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                          style="fill: currentColor;"
                         />
                       </svg>
                       <svg
                         aria-hidden="true"
-                        class="mdi-icon iconInline icon iconRight"
-                        fill="currentColor"
-                        height="24"
-                        role="img"
+                        class="iconInline icon iconRight"
+                        role="presentation"
                         viewBox="0 0 24 24"
-                        width="24"
                       >
                         <path
                           d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                          style="fill: currentColor;"
                         />
                       </svg>
                     </span>
@@ -401,16 +397,18 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   </div>
                   <div>
                     <svg
-                      aria-label="Not completed"
-                      class="mdi-icon iconInline text-muted"
-                      fill="currentColor"
-                      height="24"
-                      role="img"
+                      aria-labelledby="icon_labelledby_6"
+                      class="iconInline text-muted"
                       viewBox="0 0 24 24"
-                      width="24"
                     >
+                      <title
+                        id="icon_labelledby_6"
+                      >
+                        Not completed
+                      </title>
                       <path
                         d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                        style="fill: currentColor;"
                       />
                     </svg>
                   </div>
