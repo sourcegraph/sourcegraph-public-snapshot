@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -20,11 +21,12 @@ type repoPagerJob struct {
 	useIndex         query.YesNoOnly // whether to include indexed repos
 	containsRefGlobs bool            // whether to include repositories with refs
 	child            job.Job         // child job tree that need populating a repos field to run
+	log              slog.Logger
 }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
-func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.RepositoryRevisions) job.Job {
+func setRepos(log slog.Logger, job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.RepositoryRevisions) job.Job {
 	setZoektRepos := func(job *zoekt.RepoSubsetTextSearchJob) *zoekt.RepoSubsetTextSearchJob {
 		jobCopy := *job
 		jobCopy.Repos = indexed
@@ -50,6 +52,7 @@ func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.R
 	}
 
 	setRepos := Mapper{
+		Log:                             log,
 		MapZoektRepoSubsetTextSearchJob: setZoektRepos,
 		MapZoektSymbolSearchJob:         setZoektSymbolRepos,
 		MapSearcherTextSearchJob:        setSearcherRepos,
@@ -79,7 +82,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 			return err
 		}
 
-		job := setRepos(p.child, indexed, unindexed)
+		job := setRepos(p.log, p.child, indexed, unindexed)
 		alert, err := job.Run(ctx, clients, stream)
 		maxAlerter.Add(alert)
 		return err

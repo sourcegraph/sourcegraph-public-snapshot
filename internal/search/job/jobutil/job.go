@@ -194,7 +194,7 @@ func NewBasicJob(log slog.Logger, inputs *run.SearchInputs, b query.Basic) (job.
 
 		if inputs.OnSourcegraphDotCom && b.Pattern != nil {
 			if _, ok := b.Pattern.(query.Pattern); ok {
-				basicJob = orderSearcherJob(basicJob)
+				basicJob = orderSearcherJob(log, basicJob)
 			}
 		}
 
@@ -205,7 +205,7 @@ func NewBasicJob(log slog.Logger, inputs *run.SearchInputs, b query.Basic) (job.
 
 // orderSearcherJob ensures that, if a searcher job exists, then it is only ever
 // run sequentially after a Zoekt search has returned all its results.
-func orderSearcherJob(j job.Job) job.Job {
+func orderSearcherJob(log slog.Logger, j job.Job) job.Job {
 	// First collect the searcher job, if any, and delete it from the tree.
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
@@ -220,6 +220,7 @@ func orderSearcherJob(j job.Job) job.Job {
 			}
 			return current
 		},
+		Log: log,
 	}
 
 	newJob := collector.Map(j)
@@ -246,6 +247,7 @@ func orderSearcherJob(j job.Job) job.Job {
 			}
 			return current
 		},
+		Log: log,
 	}
 
 	newJob = orderer.Map(newJob)

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -26,7 +27,7 @@ func Test_setRepos(t *testing.T) {
 
 	// Test function
 	test := func(job job.Job) string {
-		job = setRepos(job, indexed, unindexed)
+		job = setRepos(logtest.Scoped(t), job, indexed, unindexed)
 		return "\n" + PrettyJSONVerbose(job)
 	}
 
