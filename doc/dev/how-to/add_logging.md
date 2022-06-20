@@ -37,6 +37,7 @@ For example, a typical initialization process looks like this:
 ```go
 import (
   "github.com/sourcegraph/log"
+  
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
   "github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -113,18 +114,6 @@ In general:
 Example:
 
 ```go
-import "github.com/sourcegraph/log"
-
-func newWorker(/* ... */) *Worker {
-  logger := log.Scoped("worker", "the worker process handles ...").
-    WithTrace(/* ... */).
-    With(log.String("name", options.Name))
-  // ...
-  return &Worker{
-    logger: logger,
-
-    /* ... */
-  }
 func NewClient() *Client {
   return &Client{logger: log.Scoped("Client", "client for a certain thing")}
 }
