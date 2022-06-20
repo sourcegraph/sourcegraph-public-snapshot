@@ -45,11 +45,11 @@ export const Simple: Story = () => (
         <H3>
             Legacy <Code>mdi-react</Code> Icon
         </H3>
-        <Icon svgPath={mdiClose} size="md" aria-label="Close" />
+        <Icon as={CloseIcon} size="md" aria-label="Close" />
 
         <H3>
             New <Code>@mdi/react</Code> Icon
         </H3>
-        <Icon as={CloseIcon} size="md" aria-label="Close" />
+        <Icon svgPath={mdiClose} size="md" aria-label="Close" />
     </>
 )
