@@ -13,7 +13,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1a"
 	"github.com/sourcegraph/go-rendezvous"
 
-	"github.com/cespare/xxhash"
+	"github.com/cespare/xxhash/v2"
 )
 
 func TestConsistentHashing(t *testing.T) {
