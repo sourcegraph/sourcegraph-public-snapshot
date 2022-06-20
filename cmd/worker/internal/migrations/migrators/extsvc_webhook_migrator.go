@@ -16,8 +16,6 @@ import (
 // has_webhooks field on external services based on the external service
 // configuration.
 type ExternalServiceWebhookMigrator struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	logger    log.Logger
 	store     *basestore.Store
 	BatchSize int

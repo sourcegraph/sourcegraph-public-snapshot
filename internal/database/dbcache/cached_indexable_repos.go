@@ -53,8 +53,6 @@ type reposCache struct {
 // IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	logger log.Logger
 	store  database.RepoStore
 	*reposCache

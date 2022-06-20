@@ -67,8 +67,6 @@ func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
 
 type db struct {
 	*basestore.Store
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	logger log.Logger
 }
 

@@ -15,8 +15,6 @@ import (
 )
 
 type Runner struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	logger         log.Logger
 	storeFactories map[string]StoreFactory
 	schemas        []*schemas.Schema
@@ -37,8 +35,6 @@ func NewRunnerWithSchemas(logger log.Logger, storeFactories map[string]StoreFact
 }
 
 type schemaContext struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	logger               log.Logger
 	schema               *schemas.Schema
 	store                Store
