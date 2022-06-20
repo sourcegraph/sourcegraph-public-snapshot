@@ -1,8 +1,7 @@
 import * as React from 'react'
 
+import { mdiInformationOutline, mdiClipboardPulseOutline } from '@mdi/js'
 import classNames from 'classnames'
-import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
@@ -53,13 +52,13 @@ export const StreamingProgressCount: React.FunctionComponent<
                 >
                     <Icon
                         className="ml-1"
-                        as={InformationOutlineIcon}
                         tabIndex={0}
                         aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                             'repository',
                             progress.repositoriesCount,
                             'repositories'
                         )}`}
+                        svgPath={mdiInformationOutline}
                     />
                 </Tooltip>
             )}
@@ -67,7 +66,7 @@ export const StreamingProgressCount: React.FunctionComponent<
         {showTrace && progress.trace && (
             <small className="d-flex ml-2">
                 <Link to={progress.trace}>
-                    <Icon aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
+                    <Icon aria-hidden={true} className="mr-2" svgPath={mdiClipboardPulseOutline} />
                     View trace
                 </Link>
             </small>
