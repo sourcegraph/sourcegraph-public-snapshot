@@ -1153,8 +1153,8 @@ CREATE TABLE codeintel_lockfile_references (
     repository_id integer,
     commit_bytea bytea,
     last_check_at timestamp with time zone,
-    depends_on integer[] NOT NULL,
-    resolution_id text NOT NULL
+    depends_on integer[] DEFAULT '{}'::integer[],
+    resolution_id text
 );
 
 COMMENT ON TABLE codeintel_lockfile_references IS 'Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.';

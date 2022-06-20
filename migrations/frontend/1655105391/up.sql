@@ -7,8 +7,9 @@ ALTER TABLE codeintel_lockfiles
 COMMENT ON COLUMN codeintel_lockfiles.resolution_id IS 'Unique identifier for the resolution of a lockfile in the given repository and the given commit. Correponds to `codeintel_lockfile_references.resolution_id`.';
 
 ALTER TABLE codeintel_lockfile_references
-  ADD COLUMN IF NOT EXISTS depends_on integer[] NOT NULL,
-  ADD COLUMN IF NOT EXISTS resolution_id text NOT NULL;
+  -- We can't make them non-nullable to stay backwards compatible
+  ADD COLUMN IF NOT EXISTS depends_on integer[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS resolution_id text;
 
 COMMENT ON COLUMN codeintel_lockfile_references.depends_on IS 'IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.';
 

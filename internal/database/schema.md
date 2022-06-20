@@ -684,8 +684,8 @@ Indexes:
  repository_id   | integer                  |           |          | 
  commit_bytea    | bytea                    |           |          | 
  last_check_at   | timestamp with time zone |           |          | 
- depends_on      | integer[]                |           | not null | 
- resolution_id   | text                     |           | not null | 
+ depends_on      | integer[]                |           |          | '{}'::integer[]
+ resolution_id   | text                     |           |          | 
 Indexes:
     "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_id)
