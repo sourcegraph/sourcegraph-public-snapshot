@@ -224,6 +224,25 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			}
 		})
 
+		t.Run("ExcludeRank", func(t *testing.T) {
+			ranklessJobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, len(jobs))
+			for _, job := range jobs {
+				// Copy job so we can modify it
+				job := *job
+				job.PlaceInGlobalQueue = 0
+				job.PlaceInUserQueue = 0
+				ranklessJobs = append(ranklessJobs, &job)
+			}
+			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{ExcludeRank: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, ranklessJobs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
 		t.Run("BatchSpecID", func(t *testing.T) {
 			workspaceIDByBatchSpecID := map[int64]int64{}
 			for i := 0; i < 3; i++ {

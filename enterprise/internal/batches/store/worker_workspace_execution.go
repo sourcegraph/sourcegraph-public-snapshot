@@ -94,6 +94,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 		Cancel:         &t,
 		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		WorkerHostname: executorName,
+		ExcludeRank:    true,
 	})
 	if err != nil {
 		return nil, err
