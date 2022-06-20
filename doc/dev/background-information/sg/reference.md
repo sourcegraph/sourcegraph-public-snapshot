@@ -83,13 +83,9 @@ Available commands in `sg.config.yaml`:
 * bext
 * caddy
 * codeintel-executor
+* codeintel-worker
 * debug-env
 * docsite
-* enterprise-frontend
-* enterprise-repo-updater
-* enterprise-symbols
-* enterprise-web
-* enterprise-worker
 * executor-template
 * frontend
 * github-proxy
@@ -99,8 +95,12 @@ Available commands in `sg.config.yaml`:
 * loki
 * minio
 * monitoring-generator
+* oss-frontend
+* oss-repo-updater
+* oss-symbols
+* oss-web
+* oss-worker
 * postgres_exporter
-* precise-code-intel-worker
 * prometheus
 * redis-postgres
 * repo-updater
@@ -112,12 +112,12 @@ Available commands in `sg.config.yaml`:
 * web-standalone-http
 * web-standalone-http-prod
 * worker
-* zoekt-indexserver-0
-* zoekt-indexserver-1
+* zoekt-index-0
+* zoekt-index-1
 * zoekt-indexserver-template
-* zoekt-webserver-0
-* zoekt-webserver-1
-* zoekt-webserver-template
+* zoekt-web-0
+* zoekt-web-1
+* zoekt-web-template
 
 ```sh
 # Run specific commands:
