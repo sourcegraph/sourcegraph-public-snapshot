@@ -24,7 +24,16 @@ const { add } = storiesOf('web/batches/create/CreateBatchChangePage', module)
 
 add('experimental execution disabled', () => (
     <WebStory>
-        {props => <CreateBatchChangePage {...props} headingElement="h1" settingsCascade={EMPTY_SETTINGS_CASCADE} />}
+        {props => (
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: { experimentalFeatures: { batchChangesExecution: false } },
+                }}
+            />
+        )}
     </WebStory>
 ))
 
@@ -52,9 +61,6 @@ add('experimental execution enabled', () => (
                 headingElement="h1"
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
-                    final: {
-                        experimentalFeatures: { batchChangesExecution: true },
-                    },
                     subjects: [
                         { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
                         { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },

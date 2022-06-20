@@ -2030,6 +2030,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "batch_spec_workspace_execution_jobs_last_dequeue",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "batch_spec_workspace_execution_jobs_state",
           "IsPrimaryKey": false,
           "IsUnique": false,

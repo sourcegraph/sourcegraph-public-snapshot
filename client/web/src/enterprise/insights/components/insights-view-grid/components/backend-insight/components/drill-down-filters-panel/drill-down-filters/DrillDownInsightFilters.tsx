@@ -152,7 +152,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     if (isPreviewMode) {
         return (
             <header className={classNames(className, styles.header)}>
-                <H4 className={styles.heading}>Filter repositories</H4>
+                <H4 className={styles.heading}>Filters</H4>
 
                 <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
@@ -173,7 +173,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filter repositories</H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
                     disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
@@ -202,7 +202,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 {showSeriesDisplayOptions && (
                     <FilterCollapseSection
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
-                        title="Sort & Limit"
+                        title="Data series"
                         aria-label="sort and limit filter section"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
                         hasActiveFilter={hasSeriesDisplayOptionsChanged}

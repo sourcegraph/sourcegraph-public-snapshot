@@ -15,6 +15,7 @@ import {
     InsightViewFiltersInput,
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
+import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import { InsightCard, InsightCardHeader, InsightCardLoading } from '../../../../../components'
 import { FORM_ERROR, FormChangeEvent, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import {
@@ -27,7 +28,6 @@ import {
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import { useSeriesToggle } from '../../../../../components/insights-view-grid/components/backend-insight/components/backend-insight-chart/use-series-toggle'
 import { useVisibility } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
 import {
     BackendInsightData,
@@ -55,7 +55,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
-    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
+    const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
@@ -203,16 +203,11 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         {...insightData}
                         locked={insight.isFrozen}
                         zeroYAxisMin={zeroYAxisMin}
-                        isSeriesSelected={isSeriesSelected}
-                        isSeriesHovered={isSeriesHovered}
                         onDatumClick={trackDatumClicks}
-                        onLegendItemClick={seriesId => toggle(seriesId, mapSeriesIds(insightData))}
-                        setHoveredId={setHoveredId}
+                        seriesToggleState={seriesToggleState}
                     />
                 )}
             </InsightCard>
         </div>
     )
 }
-
-const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)

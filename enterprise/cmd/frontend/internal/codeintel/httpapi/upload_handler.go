@@ -53,7 +53,7 @@ var errUnprocessableRequest = errors.New("unprocessable request: missing expecte
 // POST /upload
 //
 // handleEnqueue dispatches to the correct handler function based on the request's query args. Running
-// the `src lsif upload` command will cause one of two sequences of requests to occur. For uploads that
+// the `src code-intel upload` command will cause one of two sequences of requests to occur. For uploads that
 // are small enough repos (that can be uploaded in one-shot), only one request will be made:
 //
 //    - POST `/upload?repositoryId,commit,root,indexerName`

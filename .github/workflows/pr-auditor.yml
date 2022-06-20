@@ -1,19 +1,20 @@
-# See dev/pr-auditor/README.md
+# See https://docs.sourcegraph.com/dev/background-information/ci#pr-auditor
 name: pr-auditor
 on:
   pull_request:
     types: [ closed, edited, opened, synchronize, ready_for_review ]
+
 jobs:
-    pr-auditor:
-      runs-on: ubuntu-latest
-      name: pr-auditor
-      steps:
-        - uses: actions/checkout@v2
-          with: { repository: 'sourcegraph/sourcegraph' }
-        - uses: actions/setup-go@v2
-          with: { go-version: '1.18' }
-        - run: ./dev/pr-auditor/check-pr.sh
-          env:
-            GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
-            GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}
-            GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  check-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with: { repository: 'sourcegraph/sourcegraph' }
+      - uses: actions/setup-go@v2
+        with: { go-version: '1.18' }
+
+      - run: ./dev/pr-auditor/check-pr.sh
+        env:
+          GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
+          GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}
+          GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
