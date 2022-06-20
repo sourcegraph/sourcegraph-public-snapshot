@@ -551,6 +551,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.Skip("Disabled because flaky, https://sourcegraph.slack.com/archives/C02FLQDD3TQ/p1655734350458149?thread_ts=1655733289.661469&cid=C02FLQDD3TQ"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
