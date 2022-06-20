@@ -227,7 +227,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 
 func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
-	if _, err := h.db.Repos().Get(ctx, repoID); err != nil {
+	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
 	}
 
@@ -267,6 +267,20 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		return errors.Wrapf(err, "failed to set pending permissions for repo %d", repoID)
 	}
 
+	return nil
+}
+
+func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, repoID api.RepoID) (err error) {
+	row, err := h.db.Repos().Query(ctx, sqlf.Sprintf("SELECT id FROM repo WHERE id = %s", repoID))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = basestore.CloseRows(row, err)
+	}()
+	if !row.Next() {
+		return errcode.MakeNonRetryable(errors.New("repo doesn't exist"))
+	}
 	return nil
 }
 
