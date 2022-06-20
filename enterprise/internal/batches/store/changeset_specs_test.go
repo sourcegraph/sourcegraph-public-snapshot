@@ -422,6 +422,61 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
+	t.Run("DeleteUnattachedExpiredChangesetSpecs", func(t *testing.T) {
+		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
+
+		type testCase struct {
+			createdAt   time.Time
+			wantDeleted bool
+		}
+
+		printTestCase := func(tc testCase) string {
+			var tooOld bool
+			if tc.createdAt.Equal(overTTL) {
+				tooOld = true
+			}
+
+			return fmt.Sprintf("[tooOld=%t]", tooOld)
+		}
+
+		tests := []testCase{
+			// ChangesetSpec was created but never attached to a BatchSpec
+			{createdAt: underTTL, wantDeleted: false},
+			{createdAt: overTTL, wantDeleted: true},
+		}
+
+		for _, tc := range tests {
+
+			changesetSpec := &btypes.ChangesetSpec{
+				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
+				RepoID:    repo.ID,
+				CreatedAt: tc.createdAt,
+			}
+
+			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := s.DeleteUnattachedExpiredChangesetSpecs(ctx); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
+			if err != nil && err != ErrNoResults {
+				t.Fatal(err)
+			}
+
+			if tc.wantDeleted && err == nil {
+				t.Fatalf("tc=%s\n\t want changeset spec to be deleted, but was NOT", printTestCase(tc))
+			}
+
+			if !tc.wantDeleted && err == ErrNoResults {
+				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
+			}
+		}
+	})
+
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
 		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
 		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
@@ -430,7 +485,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		type testCase struct {
 			createdAt time.Time
 
-			hasBatchSpec     bool
 			batchSpecApplied bool
 
 			isCurrentSpec  bool
@@ -446,53 +500,47 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 
 			return fmt.Sprintf(
-				"[tooOld=%t, hasBatchSpec=%t, batchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
-				tooOld, tc.hasBatchSpec, tc.batchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
+				"[tooOld=%t, batchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
+				tooOld, tc.batchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
 			)
 		}
 
 		tests := []testCase{
-			// ChangesetSpec was created but never attached to a BatchSpec
-			{hasBatchSpec: false, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: false, createdAt: overTTL, wantDeleted: true},
-
 			// Attached to BatchSpec that's applied to a BatchChange
-			{hasBatchSpec: true, batchSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, batchSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
+			{batchSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
+			{batchSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
 
 			// BatchSpec is not applied to a BatchChange anymore and the
 			// ChangesetSpecs are now the PreviousSpec.
-			{hasBatchSpec: true, isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
+			{isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
+			{isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
 
 			// Has a BatchSpec, but that BatchSpec is not applied
 			// anymore, and the ChangesetSpec is neither the current, nor the
 			// previous spec.
-			{hasBatchSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: false},
-			{hasBatchSpec: true, createdAt: overBatchSpecTTL, wantDeleted: true},
+			{createdAt: underTTL, wantDeleted: false},
+			{createdAt: overTTL, wantDeleted: false},
+			{createdAt: overBatchSpecTTL, wantDeleted: true},
 		}
 
 		for _, tc := range tests {
 			batchSpec := &btypes.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
 
-			if tc.hasBatchSpec {
-				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+				t.Fatal(err)
+			}
 
-				if tc.batchSpecApplied {
-					batchChange := &btypes.BatchChange{
-						Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
-						BatchSpecID:     batchSpec.ID,
-						CreatorID:       batchSpec.UserID,
-						NamespaceUserID: batchSpec.NamespaceUserID,
-						LastApplierID:   batchSpec.UserID,
-						LastAppliedAt:   time.Now(),
-					}
-					if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-						t.Fatal(err)
-					}
+			if tc.batchSpecApplied {
+				batchChange := &btypes.BatchChange{
+					Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+					BatchSpecID:     batchSpec.ID,
+					CreatorID:       batchSpec.UserID,
+					NamespaceUserID: batchSpec.NamespaceUserID,
+					LastApplierID:   batchSpec.UserID,
+					LastAppliedAt:   time.Now(),
+				}
+				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+					t.Fatal(err)
 				}
 			}
 
