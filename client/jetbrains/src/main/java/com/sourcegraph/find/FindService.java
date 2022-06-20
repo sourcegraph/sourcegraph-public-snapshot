@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 
 import static java.awt.event.InputEvent.ALT_DOWN_MASK;
 import static java.awt.event.WindowEvent.WINDOW_GAINED_FOCUS;
@@ -67,7 +69,6 @@ public class FindService implements Disposable {
             .setTitleIcon(new ActiveIcon(Icons.Logo))
             .setProject(project)
             .setModalContext(false)
-            .setCancelOnClickOutside(true)
             .setRequestFocus(true)
             .setCancelKeyEnabled(false)
             .setResizable(true)
@@ -145,6 +146,44 @@ public class FindService implements Disposable {
 
     private void registerOutsideClickListener() {
         Window projectParentWindow = getParentWindow(null);
+
+        //Added as a quickfix for the browser visibility not working https://github.com/sourcegraph/sourcegraph/issues/37322
+        projectParentWindow.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+                popup.setUiVisible(false);
+            }
+        });
 
         Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
             if (event instanceof WindowEvent) {
