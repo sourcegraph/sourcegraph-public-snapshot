@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"time"
 
@@ -271,15 +272,12 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 }
 
 func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, repoID api.RepoID) (err error) {
-	row, err := h.db.Repos().Query(ctx, sqlf.Sprintf("SELECT id FROM repo WHERE id = %s", repoID))
-	if err != nil {
+	var id int
+	if err := h.db.QueryRowContext(ctx, fmt.Sprintf("SELECT id FROM repo WHERE id = %d", repoID)).Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("repo not found")
+		}
 		return err
-	}
-	defer func() {
-		err = basestore.CloseRows(row, err)
-	}()
-	if !row.Next() {
-		return errcode.MakeNonRetryable(errors.New("repo doesn't exist"))
 	}
 	return nil
 }
