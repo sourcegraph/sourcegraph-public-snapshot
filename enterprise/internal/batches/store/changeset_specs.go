@@ -425,47 +425,64 @@ func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, ba
 	return conflicts, err
 }
 
-// DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
-// attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
-// to a BatchSpec that is not applied and is not attached to a Changeset
-// within BatchSpecTTL.
-// TODO: Fix comment.
-func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
+// DeleteUnattachedExpiredChangesetSpecs deletes each ChangesetSpec that has not been
+// attached to a BatchSpec within ChangesetSpecTTL.
+func (s *Store) DeleteUnattachedExpiredChangesetSpecs(ctx context.Context) (err error) {
+	ctx, _, endObservation := s.operations.deleteUnattachedExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	changesetSpecTTLExpiration := s.now().Add(-btypes.ChangesetSpecTTL)
-	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
-	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration, batchSpecTTLExpiration)
+	q := sqlf.Sprintf(deleteUnattachedExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration)
 	return s.Store.Exec(ctx, q)
 }
 
-var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
+var deleteUnattachedExpiredChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteUnattachedExpiredChangesetSpecs
 DELETE FROM
-  changeset_specs cspecs
+  changeset_specs
 WHERE
-(
   -- The spec is older than the ChangesetSpecTTL
   created_at < %s
   AND
   -- and it was never attached to a batch_spec
   batch_spec_id IS NULL
+`
+
+// DeleteExpiredChangesetSpecs deletes each ChangesetSpec that is attached
+// to a BatchSpec that is not applied and is not attached to a Changeset
+// within BatchSpecTTL, and that hasn't been created by SSBC.
+func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
+	ctx, _, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, batchSpecTTLExpiration)
+	return s.Store.Exec(ctx, q)
+}
+
+var deleteExpiredChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
+WITH candidates AS (
+	SELECT cs.id
+	FROM changeset_specs cs
+	JOIN batch_specs bs ON bs.id = cs.batch_spec_id
+	LEFT JOIN batch_changes bc ON bs.id = bc.batch_spec_id
+	LEFT JOIN changesets c ON (c.current_spec_id = cs.id OR c.previous_spec_id = cs.id)
+	WHERE
+		-- The spec is older than the BatchSpecTTL
+		cs.created_at < %s
+		-- and it is not created by SSBC
+		AND NOT bs.created_from_raw
+		-- and the batch spec it is attached to is not applied to a batch change
+		AND bc.id IS NULL
+		-- and it is not attached to a changeset
+		AND c.id IS NULL
+	FOR UPDATE OF cs
 )
-OR
-(
-  -- The spec is older than the BatchSpecTTL
-  created_at < %s
-  AND
-  -- and the batch_spec it is attached to is not applied to a batch_change
-  NOT EXISTS (SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
-  AND
-  -- and it is not attached to a changeset
-  NOT EXISTS (SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
-  AND
-  -- and it is not created by SSBC
-  NOT (SELECT created_from_raw FROM batch_specs WHERE id = cspecs.batch_spec_id)
-)`
+DELETE FROM changeset_specs
+WHERE
+	id IN (SELECT id FROM candidates)
+`
 
 type DeleteChangesetSpecsOpts struct {
 	BatchSpecID int64
