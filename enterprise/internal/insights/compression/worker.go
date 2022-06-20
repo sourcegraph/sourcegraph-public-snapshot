@@ -51,7 +51,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 	commitStore := NewCommitStore(insights)
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(repoStore),
+		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),

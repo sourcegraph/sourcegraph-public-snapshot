@@ -29,7 +29,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	// We'll search for collaborators in 25 of the user's most-starred repositories.
 	const maxReposToScan = 25
 	db := r.db
-	pickedRepos, err := backend.NewRepos(db).List(ctx, database.ReposListOptions{
+	pickedRepos, err := backend.NewRepos(r.logger, db).List(ctx, database.ReposListOptions{
 		// SECURITY: This must be the authenticated user's ID.
 		UserID:                 a.UID,
 		IncludeUserPublicRepos: false,

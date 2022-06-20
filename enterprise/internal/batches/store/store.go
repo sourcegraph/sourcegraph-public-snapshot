@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -62,6 +64,7 @@ func RandomID() (string, error) {
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
+	logger log.Logger
 	*basestore.Store
 	key                encryption.Key
 	now                func() time.Time
@@ -78,6 +81,7 @@ func New(db database.DB, observationContext *observation.Context, key encryption
 // clock for timestamps.
 func NewWithClock(db database.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
+		logger:             observationContext.Logger,
 		Store:              basestore.NewWithHandle(db.Handle()),
 		key:                key,
 		now:                clock,
@@ -98,7 +102,7 @@ func (s *Store) Clock() func() time.Time { return s.now }
 // instantiated with.
 // It's here for legacy reason to pass the database.DB to a repos.Store while
 // repos.Store doesn't accept a basestore.TransactableHandle yet.
-func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s) }
+func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
 
 var _ basestore.ShareableStore = &Store{}
 
@@ -107,6 +111,7 @@ var _ basestore.ShareableStore = &Store{}
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
+		logger:             s.logger,
 		Store:              s.Store.With(other),
 		key:                s.key,
 		operations:         s.operations,
@@ -124,6 +129,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
+		logger:             s.logger,
 		Store:              txBase,
 		key:                s.key,
 		operations:         s.operations,
@@ -134,12 +140,12 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 // Repos returns a database.RepoStore using the same connection as this store.
 func (s *Store) Repos() database.RepoStore {
-	return database.ReposWith(s)
+	return database.ReposWith(s.logger, s)
 }
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
 func (s *Store) ExternalServices() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s.observationContext.Logger, s)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
