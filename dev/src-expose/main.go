@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -11,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peterbourgon/ff/ffcli"
+	"github.com/peterbourgon/ff/v3/ffcli"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -61,8 +62,8 @@ func explainSnapshotter(s *Snapshotter) string {
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
 	var w strings.Builder
 	_, _ = fmt.Fprintf(&w, "%q %s\nSee '%s --help'.\n", cmdPath, err.Error(), cmdPath)
-	if cmd.Usage != "" {
-		_, _ = fmt.Fprintf(&w, "\nUsage:  %s\n", cmd.Usage)
+	if cmd.ShortUsage != "" {
+		_, _ = fmt.Fprintf(&w, "\nUsage:  %s\n", cmd.ShortUsage)
 	}
 	if cmd.ShortHelp != "" {
 		_, _ = fmt.Fprintf(&w, "\n%s\n", cmd.ShortHelp)
@@ -79,8 +80,8 @@ func shortenErrHelp(cmd *ffcli.Command, cmdPath string) {
 	cmdPath = strings.TrimSpace(cmdPath + " " + cmd.Name)
 
 	exec := cmd.Exec
-	cmd.Exec = func(args []string) error {
-		err := exec(args)
+	cmd.Exec = func(ctx context.Context, args []string) error {
+		err := exec(ctx, args)
 		if errors.HasType(err, &usageError{}) {
 			var w io.Writer
 			if cmd.FlagSet != nil {
@@ -175,16 +176,16 @@ func main() {
 	}
 
 	serve := &ffcli.Command{
-		Name:      "serve",
-		Usage:     "src-expose [flags] serve [flags] [path/to/dir/containing/git/dirs]",
-		ShortHelp: "Serve git repos for Sourcegraph to list and clone.",
+		Name:       "serve",
+		ShortUsage: "src-expose [flags] serve [flags] [path/to/dir/containing/git/dirs]",
+		ShortHelp:  "Serve git repos for Sourcegraph to list and clone.",
 		LongHelp: `src-expose serve will serve the git repositories over HTTP. These can be git
 cloned, and they can be discovered by Sourcegraph.
 
 See "src-expose -h" for the flags that can be passed.
 
 src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
-		Exec: func(args []string) error {
+		Exec: func(ctx context.Context, args []string) error {
 			var repoDir string
 			switch len(args) {
 			case 0:
@@ -215,10 +216,10 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 	}
 
 	sync := &ffcli.Command{
-		Name:      "sync",
-		Usage:     "src-expose [flags] sync [flags] <src1> [<src2> ...]",
-		ShortHelp: "Do a one-shot sync of directories",
-		Exec: func(args []string) error {
+		Name:       "sync",
+		ShortUsage: "src-expose [flags] sync [flags] <src1> [<src2> ...]",
+		ShortHelp:  "Do a one-shot sync of directories",
+		Exec: func(ctx context.Context, args []string) error {
 			s, err := parseSnapshotter(args)
 			if err != nil {
 				return err
@@ -228,9 +229,9 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 	}
 
 	root := &ffcli.Command{
-		Name:      "src-expose",
-		Usage:     "src-expose [flags] <src1> [<src2> ...]",
-		ShortHelp: "Periodically sync directories src1, src2, ... and serve them.",
+		Name:       "src-expose",
+		ShortUsage: "src-expose [flags] <src1> [<src2> ...]",
+		ShortHelp:  "Periodically sync directories src1, src2, ... and serve them.",
 		LongHelp: `Periodically sync directories src1, src2, ... and serve them.
 
 See "src-expose -h" for the flags that can be passed.
@@ -239,7 +240,7 @@ For more advanced uses specify --config pointing to a yaml file.
 See https://github.com/sourcegraph/sourcegraph/tree/main/dev/src-expose/examples`,
 		Subcommands: []*ffcli.Command{serve, sync},
 		FlagSet:     globalFlags,
-		Exec: func(args []string) error {
+		Exec: func(ctx context.Context, args []string) error {
 			s, err := parseSnapshotter(args)
 			if err != nil {
 				return err
@@ -280,7 +281,12 @@ See https://github.com/sourcegraph/sourcegraph/tree/main/dev/src-expose/examples
 
 	shortenErrHelp(root, "")
 
-	if err := root.Run(os.Args[1:]); err != nil {
+	if err := root.Parse(os.Args[1:]); err != nil {
+		_, _ = fmt.Fprintf(root.FlagSet.Output(), "\nparse arguments error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := root.Run(context.Background()); err != nil {
 		if !errors.IsAny(err, flag.ErrHelp, errSilent) {
 			_, _ = fmt.Fprintf(root.FlagSet.Output(), "\nerror: %v\n", err)
 		}
