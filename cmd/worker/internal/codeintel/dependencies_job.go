@@ -53,6 +53,8 @@ func (j *dependenciesJob) Routines(ctx context.Context, logger log.Logger) ([]go
 		return nil, err
 	}
 
+	// gitSvc := live.NewGitService(database.NewDB(db))
+
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
