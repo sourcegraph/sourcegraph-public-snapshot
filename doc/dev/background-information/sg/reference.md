@@ -310,6 +310,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to annotations directory
+* `--fix, -f`: Try to fix any lint issues
 
 ### sg lint urls
 

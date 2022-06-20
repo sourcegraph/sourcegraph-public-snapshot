@@ -49,7 +49,6 @@ type BatchSpecWorkspaceExecutionJob struct {
 
 	BatchSpecWorkspaceID int64
 	UserID               int32
-	AccessTokenID        int64
 
 	State           BatchSpecWorkspaceExecutionJobState
 	FailureMessage  *string

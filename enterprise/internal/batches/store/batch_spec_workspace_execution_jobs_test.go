@@ -426,22 +426,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		})
 	})
 
-	t.Run("SetBatchSpecWorkspaceExecutionJobAccessToken", func(t *testing.T) {
-		err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobs[0].ID, 12345)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		reloadedJob, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: jobs[0].ID})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if reloadedJob.AccessTokenID != 12345 {
-			t.Fatalf("wrong access token ID: %d", reloadedJob.AccessTokenID)
-		}
-	})
-
 	t.Run("CreateBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
 		cacheEntry := &btypes.BatchSpecExecutionCacheEntry{Key: "one", Value: "two"}
 		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, cacheEntry); err != nil {

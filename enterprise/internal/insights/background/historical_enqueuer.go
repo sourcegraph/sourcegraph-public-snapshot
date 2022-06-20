@@ -629,7 +629,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	}
 
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
-	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision)
+	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 	if err != nil {
 		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return

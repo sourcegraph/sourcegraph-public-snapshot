@@ -567,6 +567,7 @@ WITH potential_candidates AS (
 		)
 		%s
 	ORDER BY %s
+	LIMIT 50
 ),
 candidate AS (
 	SELECT

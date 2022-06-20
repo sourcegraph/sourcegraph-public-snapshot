@@ -220,6 +220,7 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
+    "vscode:prepublish": "yarn build",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
     "build:esbuild:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp esbuild",
@@ -234,6 +235,10 @@
     "watch:test": "NODE_ENV=development TARGET_TYPE=webworker IS_TEST=true yarn task:gulp watchWebpack",
     "test-integration": "TS_NODE_PROJECT=tests/tsconfig.json mocha --parallel=$CI --retries=2 ./tests/**/*.test.ts",
     "check:version": "ts-node ./scripts/version-check.ts",
-    "release": "ts-node ./scripts/release.ts"
+    "release": "ts-node ./scripts/publish.ts",
+    "release:major": "VSCE_RELEASE_TYPE=major ts-node ./scripts/release.ts",
+    "release:minor": "VSCE_RELEASE_TYPE=minor ts-node ./scripts/release.ts",
+    "release:patch": "VSCE_RELEASE_TYPE=patch ts-node ./scripts/release.ts",
+    "release:pre": "VSCE_RELEASE_TYPE=prerelease ts-node ./scripts/release.ts"
   }
 }

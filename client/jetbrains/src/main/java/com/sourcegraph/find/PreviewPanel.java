@@ -13,6 +13,10 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
+    private final String NO_PREVIEW_AVAILABLE_TEXT = "No preview available";
+    @SuppressWarnings("FieldCanBeLocal") // It's nicer to have these here at the top
+    private final String LOADING_TEXT = "Loading...";
+
     private final Project project;
     private JComponent editorComponent;
     private PreviewContent previewContent;
@@ -22,7 +26,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         super(new BorderLayout());
 
         this.project = project;
-        this.getEmptyText().setText("No preview available");
+        this.getEmptyText().setText(NO_PREVIEW_AVAILABLE_TEXT);
     }
 
     @Nullable
@@ -32,6 +36,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
     public void setContent(@Nullable PreviewContent previewContent) {
         if (previewContent == null) {
+            setLoading(false);
             clearContent();
             return;
         }
@@ -44,6 +49,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
         /* If no content, just show "No preview available" */
         if (fileContent == null) {
+            setLoading(false);
             clearContent();
             return;
         }
@@ -77,6 +83,10 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
     }
 
+    public void setLoading(boolean isLoading) {
+        getEmptyText().setText(isLoading ? LOADING_TEXT : NO_PREVIEW_AVAILABLE_TEXT);
+    }
+
     private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
         int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
@@ -93,7 +103,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         }
     }
 
-    private void clearContent() {
+    public void clearContent() {
         if (editorComponent != null) {
             previewContent = null;
             remove(editorComponent);

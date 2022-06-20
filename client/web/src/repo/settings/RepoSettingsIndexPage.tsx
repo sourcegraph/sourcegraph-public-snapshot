@@ -47,6 +47,10 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
                                     displayName
                                     url
                                 }
+                                skippedIndexed {
+                                    count
+                                    query
+                                }
                                 indexed
                                 current
                                 indexedCommit {
@@ -102,6 +106,16 @@ const TextSearchIndexedReference: React.FunctionComponent<
                         </LinkOrSpan>
                     </Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                    {indexedRef.skippedIndexed && indexedRef.skippedIndexed.count > 0 ? (
+                        <span>
+                            .&nbsp;
+                            <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
+                                {indexedRef.skippedIndexed.count} {pluralize('file', indexedRef.skippedIndexed.count)}{' '}
+                                not indexed
+                            </Link>
+                            .
+                        </span>
+                    ) : null}
                 </span>
             ) : (
                 <span>&nbsp;&mdash; initial indexing in progress</span>
@@ -213,25 +227,21 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     <td>
                                                         {prettyBytesBigint(
                                                             BigInt(this.state.textSearchIndex.status.contentByteSize)
-                                                        )}{' '}
-                                                        ({this.state.textSearchIndex.status.contentFilesCount}{' '}
-                                                        {pluralize(
-                                                            'file',
-                                                            this.state.textSearchIndex.status.contentFilesCount
                                                         )}
-                                                        )
                                                     </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Shards</th>
+                                                    <td>{this.state.textSearchIndex.status.indexShardsCount}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Files</th>
+                                                    <td>{this.state.textSearchIndex.status.contentFilesCount}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Index size</th>
                                                     <td>
-                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
-                                                        {this.state.textSearchIndex.status.indexShardsCount}{' '}
-                                                        {pluralize(
-                                                            'shard',
-                                                            this.state.textSearchIndex.status.indexShardsCount
-                                                        )}
-                                                        )
+                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)}
                                                     </td>
                                                 </tr>
                                                 <tr>

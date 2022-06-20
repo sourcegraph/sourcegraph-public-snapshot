@@ -140,7 +140,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20220613150728-bb50c87ba841
+	github.com/sourcegraph/log v0.0.0-20220615162128-abf79fa7246a
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -168,7 +168,7 @@ require (
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d
+	golang.org/x/sys v0.0.0-20220614162138-6c1b26c55098
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
 	google.golang.org/api v0.77.0
@@ -418,7 +418,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220614124951-145fe8284adc
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220616095046-d20ed38dd968
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

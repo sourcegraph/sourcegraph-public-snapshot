@@ -269,6 +269,7 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
+		log15.Warn("The use of .internal/git/[repoID]/exec has been deprecated")
 		req := protocol.ExecRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return errors.Wrap(err, "Decode")
