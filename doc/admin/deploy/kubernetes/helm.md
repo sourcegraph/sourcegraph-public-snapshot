@@ -500,6 +500,8 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver]. For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
 
+Uncomment the `provisioner` that your Amazon EKS cluster implements.
+
 <!--[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)-->
 ```yaml
 frontend:
@@ -515,7 +517,8 @@ frontend:
 storageClass:
   create: true
   type: gp2 # This configures SSDs (recommended).
-  provisioner: ebs.csi.aws.com
+#  provisioner: ebs.csi.aws.com # use this provisioner if using the self-managed Amazon EBS Container Storage Interface driver 
+#  provisioner: kubernetes.io/aws-ebs # use this provisioner if using the Amazon EKS add-on
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
 ```
