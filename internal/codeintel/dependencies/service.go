@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -13,9 +12,11 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -244,7 +245,6 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 		}); err != nil {
 			return nil, notFound, errors.Wrap(err, "store.LockfileDependencies")
 		} else if !ok {
-			fmt.Printf("no dependencies found for %s at %s\n", repoCommit.Repo, repoCommit.ResolvedCommit)
 			notFound = append(notFound, repoCommit)
 		} else {
 			deps = append(deps, repoDeps...)
@@ -306,26 +306,49 @@ func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, re
 // given repo-commit pair and persists the result to the database. This aids in both caching
 // and building an inverted index to power dependents search.
 func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
-	repoDeps, graph, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+	results, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
 
-	serializableRepoDeps := shared.SerializePackageDependencies(repoDeps)
-	serializableGraph := shared.SerializeDependencyGraph(graph)
-
-	err = s.dependenciesStore.UpsertLockfileGraph(
-		ctx,
-		string(repoCommit.Repo),
-		repoCommit.ResolvedCommit,
-		serializableRepoDeps,
-		serializableGraph,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
+	if len(results) == 0 {
+		// If we haven't found anything in that repository, we still persist
+		// the result to make sure we can tell the user that we have or haven't
+		// indexed the repository.
+		// TODO: There should be a better solution for that.
+		results = append(results, &lockfiles.Result{Lockfile: "NOT-FOUND", Deps: []reposource.PackageDependency{}})
 	}
 
-	return serializableRepoDeps, nil
+	var (
+		allDeps []shared.PackageDependency
+		set     = make(map[string]struct{})
+	)
+
+	for _, result := range results {
+		serializableRepoDeps := shared.SerializePackageDependencies(result.Deps)
+		serializableGraph := shared.SerializeDependencyGraph(result.Graph)
+
+		err = s.dependenciesStore.UpsertLockfileGraph(
+			ctx,
+			string(repoCommit.Repo),
+			repoCommit.ResolvedCommit,
+			serializableRepoDeps,
+			serializableGraph,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
+		}
+
+		for _, d := range serializableRepoDeps {
+			k := d.PackageSyntax() + d.PackageVersion()
+			if _, ok := set[k]; !ok {
+				set[k] = struct{}{}
+				allDeps = append(allDeps, d)
+			}
+		}
+	}
+
+	return allDeps, nil
 }
 
 // sync invokes the Syncer for every repo in the supplied slice.

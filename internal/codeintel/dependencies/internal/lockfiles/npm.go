@@ -116,6 +116,7 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 				deps = append(deps, dep)
 				byName[name] = dep
 				current = dep
+				dependencyNames[current] = []string{}
 				name = ""
 			}
 			continue
@@ -143,7 +144,7 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 			parsingDependencies = true
 		}
 
-		if line[:4] == "    " && parsingDependencies {
+		if line[:4] == "    " && parsingDependencies && current != nil {
 			var dependencyname string
 			if dependencyname, _, err = parsePackageDependency(line); err != nil {
 				continue

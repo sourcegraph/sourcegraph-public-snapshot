@@ -108,8 +108,8 @@ func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph 
 		})
 	}
 
-	for root := range graph.Roots() {
-		roots = append(roots, root)
+	for _, root := range graph.Roots() {
+		roots = append(roots, SerializePackageDependency(root))
 	}
 
 	return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}

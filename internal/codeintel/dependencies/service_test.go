@@ -367,16 +367,31 @@ func TestIndexLockfiles(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, *lockfiles.DependencyGraph, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]*lockfiles.Result, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-			return nil, nil, nil
+			return []*lockfiles.Result{}, nil
 		}
 
-		return []reposource.PackageDependency{
+		mavenPackages := []reposource.PackageDependency{
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
-		}, nil, nil
+		}
+
+		graph1 := &lockfiles.DependencyGraph{}
+		graph2 := &lockfiles.DependencyGraph{}
+
+		switch rev {
+		case "deadbeef1":
+			return []*lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph1}}, nil
+		case "deadbeef2":
+			return []*lockfiles.Result{
+				{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph2},
+				{Lockfile: "pom2.xml", Deps: mavenPackages, Graph: nil},
+			}, nil
+		default:
+			return []*lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: nil}}, nil
+		}
 	})
 
 	// UpsertDependencyRepos influences the value that syncer.Sync is called with (asserted below)
@@ -416,14 +431,15 @@ func TestIndexLockfiles(t *testing.T) {
 	}
 
 	// Assert `store.UpsertLockfileDependencies` was called
-	mockassert.CalledN(t, mockStore.UpsertLockfileGraphFunc, 6)
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
+	mockassert.CalledN(t, mockStore.UpsertLockfileGraphFunc, 7)
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip, mockassert.Skip))
+	// deadbeef2 has 2 results
+	mockassert.CalledNWith(t, mockStore.UpsertLockfileGraphFunc, 2, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip, mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip, nil))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip, nil))
 	// We make sure that "0 dependencies" is also recorded as a result
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}, nil))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}, nil))
 
 	// Assert `syncer.Sync` was called correctly
 	syncHistory := syncer.SyncFunc.History()

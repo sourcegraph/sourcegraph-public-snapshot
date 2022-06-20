@@ -3,6 +3,7 @@ package lockfiles
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -34,14 +35,18 @@ func (dg *DependencyGraph) addDependency(a, b reposource.PackageDependency) {
 	dg.edges[Edge{a, b}] = struct{}{}
 }
 
-func (dg *DependencyGraph) Roots() map[reposource.PackageDependency]struct{} {
-	roots := make(map[reposource.PackageDependency]struct{}, len(dg.dependencies))
+func (dg *DependencyGraph) Roots() (roots []reposource.PackageDependency) {
+	set := make(map[reposource.PackageDependency]struct{}, len(dg.dependencies))
 	for pkg := range dg.dependencies {
-		roots[pkg] = struct{}{}
+		set[pkg] = struct{}{}
 	}
 
 	for edge := range dg.edges {
-		delete(roots, edge.Target)
+		delete(set, edge.Target)
+	}
+
+	for k := range set {
+		roots = append(roots, k)
 	}
 
 	return roots
@@ -57,7 +62,11 @@ func (dg *DependencyGraph) AllEdges() (edges []Edge) {
 func (dg *DependencyGraph) String() string {
 	var out strings.Builder
 
-	for root := range dg.Roots() {
+	roots := dg.Roots()
+	sort.Slice(roots, func(i, j int) bool { return roots[i].Less(roots[j]) })
+	fmt.Printf("sorting!!\n")
+
+	for _, root := range roots {
 		printDependencies(&out, dg, 0, root)
 	}
 
@@ -73,7 +82,10 @@ func printDependencies(out io.Writer, graph *DependencyGraph, level int, node re
 
 	fmt.Fprintf(out, "%s%s:\n", strings.Repeat("\t", level), node.RepoName())
 
-	for _, dep := range deps {
+	sortedDeps := deps
+	sort.Slice(sortedDeps, func(i, j int) bool { return sortedDeps[i].Less(sortedDeps[j]) })
+
+	for _, dep := range sortedDeps {
 		printDependencies(out, graph, level+1, dep)
 	}
 }
