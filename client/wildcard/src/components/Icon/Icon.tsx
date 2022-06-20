@@ -48,6 +48,8 @@ export const Icon = React.forwardRef(({ children, className, size, ...props }, r
                 path={svgPath}
                 className={iconStyle}
                 title={ariaLabel}
+                // Maintains same behavior as mdi-react - fill only set on root <svg>
+                color="inherit"
                 {...attributes}
             />
         )
