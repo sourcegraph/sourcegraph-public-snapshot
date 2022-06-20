@@ -155,6 +155,7 @@ Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
+    "batch_spec_workspace_execution_jobs_last_dequeue" btree (user_id, started_at DESC)
     "batch_spec_workspace_execution_jobs_state" btree (state)
     "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:

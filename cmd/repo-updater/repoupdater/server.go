@@ -59,15 +59,15 @@ type Server struct {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	})
-	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
-	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
-	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
-	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
-	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
-	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
+	}))
+	mux.HandleFunc("/repo-update-scheduler-info", trace.WithRouteName("repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo))
+	mux.HandleFunc("/repo-lookup", trace.WithRouteName("repo-lookup", s.handleRepoLookup))
+	mux.HandleFunc("/enqueue-repo-update", trace.WithRouteName("enqueue-repo-update", s.handleEnqueueRepoUpdate))
+	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
+	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
+	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
 	return mux
 }
 

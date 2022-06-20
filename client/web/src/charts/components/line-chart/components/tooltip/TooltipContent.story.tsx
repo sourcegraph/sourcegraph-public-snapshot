@@ -4,6 +4,7 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { Series } from '../../../../types'
+import { getSeriesData, SeriesWithData } from '../../utils'
 
 import { MinimumPointInfo, TooltipContent } from './TooltipContent'
 
@@ -49,6 +50,8 @@ const SERIES: Series<Datum>[] = [
     },
 ]
 
+const SERIES_WITH_DATA: SeriesWithData<Datum>[] = getSeriesData({ series: SERIES, stacked: false })
+
 const LONG_NAMED_SERIES: Series<Datum>[] = [
     {
         id: 'a',
@@ -76,6 +79,11 @@ const LONG_NAMED_SERIES: Series<Datum>[] = [
     },
 ]
 
+const LONG_NAMED_SERIES_WITH_DATA: SeriesWithData<Datum>[] = getSeriesData({
+    series: LONG_NAMED_SERIES,
+    stacked: false,
+})
+
 const ACTIVE_POINT: MinimumPointInfo<Datum> = {
     seriesId: 'a',
     value: 200,
@@ -86,17 +94,17 @@ export const TooltipLayouts: Story = () => (
     <div className="d-flex flex-column" style={{ gap: 20 }}>
         <div>
             <H2>Regular tooltip</H2>
-            <TooltipContent stacked={false} series={SERIES} activePoint={ACTIVE_POINT} />
+            <TooltipContent stacked={false} series={SERIES_WITH_DATA} activePoint={ACTIVE_POINT} />
         </div>
 
         <div>
             <H2>With stacked value</H2>
-            <TooltipContent stacked={true} series={SERIES} activePoint={ACTIVE_POINT} />
+            <TooltipContent stacked={true} series={SERIES_WITH_DATA} activePoint={ACTIVE_POINT} />
         </div>
 
         <div>
             <H2>With long named series</H2>
-            <TooltipContent stacked={true} series={LONG_NAMED_SERIES} activePoint={ACTIVE_POINT} />
+            <TooltipContent stacked={true} series={LONG_NAMED_SERIES_WITH_DATA} activePoint={ACTIVE_POINT} />
         </div>
     </div>
 )

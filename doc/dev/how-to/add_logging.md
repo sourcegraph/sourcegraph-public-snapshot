@@ -64,7 +64,16 @@ func main() {
 }
 ```
 
-Once initialized, you can use `log.Scoped()` to create some top-level loggers to propagate, from which you can:
+### Basic conventions
+
+- The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
+- In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
+- When testing, provide [test loggers](#testing-usage) for improved output management.
+- For more conventions, see relevant subsections in this guide, such as [top-level loggers](#top-level-loggers), [sub-loggers](#sub-loggers), and [writing log messages](#writing-log-messages).
+
+### Top-level loggers
+
+Once initialized, you can use `log.Scoped()` to create some top-level loggers to propagate. From each logger, you can:
 
 - [create sub-loggers](#sub-loggers)
 - [write log entries](#writing-log-messages)
@@ -72,11 +81,6 @@ Once initialized, you can use `log.Scoped()` to create some top-level loggers to
 The first top-level scoped logger is typically `"server"`, since most logging is related to server initialization and service-level logging - the name of the service itself is already logged as part of the [`Resource` field](https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-resource) provided during initialization.
 
 Background jobs, etc. can have additional top-level loggers created that better describe each components.
-
-### Basic conventions
-
-- The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
-- In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
 
 ### Sub-loggers
 
@@ -92,7 +96,7 @@ Using sub-loggers allows you to easily trace, for example, the execution of an e
 
 #### Scoped loggers
 
-Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occured.
+Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occurred.
 
 There are several ways to create scoped loggers:
 
@@ -104,8 +108,9 @@ In general:
 - From the caller, only add a scope if, as a caller, you care that the log output enough to want to differentiate it
   - For example, if you create multiple clients for a service, you will probably want to create a separate scoped logger for each
 - From the callee, add a scope if you will be logging output that should be meaningfully differentiated (e.g. inside a client, or inside a significant helper function)
+- Scope names should be `CamelCase` or `camelCase`, and the scope description should follow [the same conventions as a log message](#writing-log-messages).
 
-Scope names should be `CamelCase` or `camelCase`, and the scope description should follow [the same conventions as a log message](#writing-log-messages).
+Example:
 
 ```go
 import "github.com/sourcegraph/log"
@@ -232,6 +237,17 @@ Guidance on when to use each log level is available on the docstrings of each re
 
 See [observability: logs](../../admin/observability/logs.md) in the administration docs.
 
+### Automatic error Reporting with Sentry
+
+If the optional sink [`log.NewSentrySink()`](https://doctree.org/github.com/sourcegraph/log/-/go/-//?id=NewSentrySink) is passed when initializing the logger, when an error is passed in a field to the logger with `log.Error(err)`, it will be reported to Sentry automatically if and only if the log level is above or equal to `Warn`.
+The log message and all fields will be used to annotate the error report and the logger scope will be used as a tag, which being indexed by Sentry, enables to group reports. 
+
+For example, the Sentry search query `is:unresolved scope:*codeintel*` will surface all error reports coming from errors that were logged by loggers whose scope includes `codeintel`.
+
+If multiple error fields are passed, an individual report will be created for each of them.
+
+The Sentry project to which the reports are sent is configured through the `log.sentry.backendDSN` site-config entry.
+
 ## Development usage
 
 With `SRC_DEVELOPMENT=true` and `SRC_LOG_FORMAT=condensed` or `SRC_LOG_FORMAT=console`, loggers will generate a human-readable summary format like the following:
@@ -252,28 +268,14 @@ Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.
 
 For testing purposes, we also provide:
 
-1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal)
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+lang:go&patternType=literal)
+1. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+lang:go&patternType=literal)
    1. The standard `log.Scoped` will also work after `logtest.Init`
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
+   3. Can be provided in code that accepts [injected loggers](#injected-loggers)
+2. An *optional* initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal).
+   1. Useful for testing code that [*does not* accept injected loggers](#instantiated-loggers)
 
-In the absense of `log.Init` in `main()`, `github.com/sourcegraph/log` can be initialized using `libtest` in packages that use `log.Scoped`:
-
-```go
-import (
-  "os"
-  "testing"
-
-  "github.com/sourcegraph/log/logtest"
-)
-
-func TestMain(m *testing.M) {
-  logtest.Init(m)
-  os.Exit(m.Run())
-}
-```
-
-You can control the log level used during initialization with `logtest.InitWithLevel`.
+### Injected loggers
 
 If the code you are testing accepts `Logger` instances as a parameter, you can skip the above and simply use `logtest.Scoped` to instantiate a `Logger` to provide. You can also use `logtest.Captured`, which also provides a callback for exporting logs, though be wary of making overly strict assertions on log entries to avoid brittle tests:
 
@@ -298,4 +300,24 @@ func TestFooBar(t *testing.T) {
 
 When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
 
-If you can provide a `Logger` instance, `logtest.NoOp()` can be used to silence output. Levels can also be adjusted using `(Logger).IncreaseLevel`.
+Alternatively, `logtest.NoOp()` creates a logger that can be used to silence output. Levels can also be adjusted using `(Logger).IncreaseLevel`.
+
+### Instantiated loggers
+
+In the absense of `log.Init` in `main()`, testing code that instantiates loggers with `log.Scoped` (as opposed to `(Logger).Scoped`), `github.com/sourcegraph/log` can be initialized using `libtest` in packages that use `log.Scoped`:
+
+```go
+import (
+  "os"
+  "testing"
+
+  "github.com/sourcegraph/log/logtest"
+)
+
+func TestMain(m *testing.M) {
+  logtest.Init(m)
+  os.Exit(m.Run())
+}
+```
+
+You can control the log level used during initialization with `logtest.InitWithLevel`.

@@ -52,9 +52,8 @@ func (j *bitbucketProjectPermissionsJob) Description() string {
 	return "Applies explicit permissions to all repositories of a Bitbucket Project."
 }
 
-// TODO(asdine): Load environment variables from here if needed.
 func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
-	return []env.Config{}
+	return []env.Config{ConfigInst}
 }
 
 // Routines is called by the worker service to start the worker.
@@ -69,8 +68,8 @@ func (j *bitbucketProjectPermissionsJob) Routines(ctx context.Context, logger lo
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 
 	return []goroutine.BackgroundRoutine{
-		newBitbucketProjectPermissionsWorker(db, bbProjectMetrics),
-		newBitbucketProjectPermissionsResetter(db, bbProjectMetrics),
+		newBitbucketProjectPermissionsWorker(db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsResetter(db, ConfigInst, bbProjectMetrics),
 	}, nil
 }
 
@@ -273,23 +272,22 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-// TODO(asdine): Fine tune the retry strategy and make some parameters configurable.
-func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
+func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
-		NumHandlers:       3,
-		Interval:          1 * time.Second,
+		NumHandlers:       cfg.WorkerConcurrency,
+		Interval:          cfg.WorkerPollInterval,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker(context.Background(), createBitbucketProjectPermissionsStore(db), &bitbucketProjectPermissionsHandler{db: db}, options)
+	return dbworker.NewWorker(context.Background(), createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
-func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter {
-	workerStore := createBitbucketProjectPermissionsStore(db)
+func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter {
+	workerStore := createBitbucketProjectPermissionsStore(db, cfg)
 
 	options := dbworker.ResetterOptions{
 		Name:     "explicit_permissions_bitbucket_projects_jobs_worker_resetter",
@@ -305,8 +303,7 @@ func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, metrics bitbuck
 
 // createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
-// TODO(asdine): Fine tune the retry strategy and make some parameters configurable.
-func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworkerstore.Store {
+func createBitbucketProjectPermissionsStore(s basestore.ShareableStore, cfg *config) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:      "explicit_permissions_bitbucket_projects_jobs_store",
 		TableName: "explicit_permissions_bitbucket_projects_jobs",
@@ -333,7 +330,7 @@ func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworker
 			return j, ok, err
 		},
 		StalledMaxAge:     60 * time.Second,
-		RetryAfter:        10 * time.Second,
+		RetryAfter:        cfg.WorkerRetryInterval,
 		MaxNumRetries:     5,
 		OrderByExpression: sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.id"),
 	})

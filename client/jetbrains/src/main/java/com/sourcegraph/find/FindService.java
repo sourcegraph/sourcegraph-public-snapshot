@@ -77,6 +77,7 @@ public class FindService implements Disposable {
             .setCancelOnWindowDeactivation(false)
             .setCancelOnClickOutside(true)
             .setBelongsToGlobalPopupStack(true)
+            .setMinSize(new Dimension(750, 420))
             .setNormalWindowLevel(true);
 
         // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
