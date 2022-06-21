@@ -254,6 +254,38 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                             },
                         ],
                     },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-helm',
+                        base: 'main',
+                        head: `changelog-${release.version}`,
+                        title: prMessage,
+                        commitMessage: prMessage,
+                        body: prMessage + '\n\n ## Test plan\n\nn/a',
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${release.format()}'`)
+                                const changelogPath = path.join(directory, 'charts', 'sourcegraph', changelogFile)
+                                let changelogContents = readFileSync(changelogPath).toString()
+
+                                // Convert 'unreleased' to a release
+                                const releaseHeader = `## ${release.format()}`
+                                const releaseUpdate =
+                                    releaseHeader + `\n\n- Sourcegraph ${release.format()} is now available\n`
+                                const unreleasedHeader = '## Unreleased\n'
+                                changelogContents = changelogContents.replace(unreleasedHeader, releaseUpdate)
+
+                                // Add a blank changelog template for the next release
+                                changelogContents = changelogContents.replace(
+                                    changelog.divider,
+                                    changelog.simpleReleaseTemplate
+                                )
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ],
+                    },
                 ],
                 dryRun: config.dryRun.changesets,
             })
@@ -490,7 +522,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
-                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${
+                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR ${
                                 notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
                             }`,
                         ]),
@@ -524,8 +556,9 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         repo: 'deploy-sourcegraph-helm',
                         base: `release/${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
-                        commitMessage: defaultPRMessage + '\n\nTest Plan: n/a',
+                        commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
+                        body: defaultPRMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
