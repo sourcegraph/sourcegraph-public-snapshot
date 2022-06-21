@@ -170,7 +170,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const authRequired = useObservable(authRequiredObservable)
 
     const themeProps = useThemeProps()
-    const [enableHighContrastSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
+    const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -215,7 +215,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     return (
         <div
-            className={classNames(styles.layout, enableHighContrastSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME)}
+            className={classNames(
+                styles.layout,
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
+            )}
         >
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
