@@ -1,13 +1,18 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 import { SourcegraphContext } from '../jscontext'
 
 import { SavedSearchForm, SavedSearchFormProps } from './SavedSearchForm'
 
-const { add } = storiesOf('web/savedSearches/SavedSearchForm', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/savedSearches/SavedSearchForm',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
@@ -29,7 +34,7 @@ const commonProps: SavedSearchFormProps = {
     },
 }
 
-add('new saved search', () => (
+export const NewSavedSearch: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -41,9 +46,11 @@ add('new saved search', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('existing saved search, notifications disabled', () => (
+NewSavedSearch.storyName = 'new saved search'
+
+export const ExistingSavedSearchNotifcationsDisabled: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -60,9 +67,11 @@ add('existing saved search, notifications disabled', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('existing saved search, notifications enabled', () => (
+ExistingSavedSearchNotifcationsDisabled.storyName = 'existing saved search, notifications disabled'
+
+export const ExistingSavedSearchNotifcationsEnabled: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -79,9 +88,11 @@ add('existing saved search, notifications enabled', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('existing saved search, notifications enabled, with invalid query warning', () => (
+ExistingSavedSearchNotifcationsEnabled.storyName = 'existing saved search, notifications enabled'
+
+export const ExistingSavedSearchNotificationsEnabledWithInvalidQueryWarning: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -98,4 +109,7 @@ add('existing saved search, notifications enabled, with invalid query warning', 
             />
         )}
     </WebStory>
-))
+)
+
+ExistingSavedSearchNotificationsEnabledWithInvalidQueryWarning.storyName =
+    'existing saved search, notifications enabled, with invalid query warning'
