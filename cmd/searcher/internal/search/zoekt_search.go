@@ -3,7 +3,6 @@ package search
 import (
 	"archive/tar"
 	"context"
-	"github.com/inconshreveable/log15"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"sync"
 	"sync/atomic"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -159,7 +160,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 		defer wg.Done()
 		err = structuralSearch(ctx, comby.TarInput{TarInputEventC: tarInputEventC}, all, ".generic", args.Pattern, args.CombyRule, args.Languages, repo, sender)
 		if err != nil {
-			log15.Error("error during structural search", err)
+			log.NamedError("structural search error", err)
 		}
 	}()
 

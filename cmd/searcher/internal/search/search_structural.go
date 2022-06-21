@@ -6,8 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"fmt"
 	"io"
 	"path/filepath"
 	"sort"
@@ -22,12 +21,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
@@ -382,15 +383,13 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 		NumWorkers:    numWorkers,
 	}
 
-	switch inputType.(type) {
+	switch combyInput := inputType.(type) {
 	case comby.TarInput:
-		tarInput := inputType.(comby.TarInput)
-		wg := sync.WaitGroup{}
-
 		cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 		if err != nil {
 			return err
 		}
+		wg := sync.WaitGroup{}
 
 		wg.Add(1)
 		go func() {
@@ -398,13 +397,13 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 			defer stdin.Close()
 
 			tw := tar.NewWriter(stdin)
-			for tb := range tarInput.TarInputEventC {
+			for tb := range combyInput.TarInputEventC {
 				if err := tw.WriteHeader(&tb.Header); err != nil {
-					log15.Warn("failed to write tar header for file", tb.Header.Name)
+					log.NamedError(fmt.Sprintf("failed to write tar header for file %s", tb.Header.Name), err)
 					continue
 				}
 				if _, err := tw.Write(tb.Content); err != nil {
-					log15.Warn("failed to write file content to tar format", tb.Header.Name)
+					log.NamedError(fmt.Sprintf("failed to write file content to tar format for file %s", tb.Header.Name), err)
 					continue
 				}
 			}
@@ -424,7 +423,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 				b := scanner.Bytes()
 				if err := scanner.Err(); err != nil {
 					// warn on scanner errors and skip
-					log15.Warn("comby error: skipping scanner error line", "err", err.Error())
+					log.NamedError("comby error: skipping scanner error line", err)
 					continue
 				}
 				if r := comby.ToCombyFileMatchWithChunks(b); r != nil {
@@ -441,8 +440,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 		wg.Wait()
 
 	case comby.ZipPath:
-		zipPath := inputType.(comby.ZipPath)
-		zipReader, err := zip.OpenReader(string(zipPath))
+		zipReader, err := zip.OpenReader(string(combyInput))
 		if err != nil {
 			return err
 		}
@@ -456,7 +454,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 		for _, combyMatch := range combyMatches {
 			fm, err := toFileMatch(&zipReader.Reader, combyMatch)
 			if err != nil {
-				log15.Warn("error converting comby match to FileMatch, skipping", "err", err.Error())
+				log.NamedError("error converting comby match to FileMatch, skipping", err)
 				continue
 			}
 			sender.Send(fm)

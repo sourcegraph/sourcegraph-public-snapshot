@@ -3,7 +3,6 @@ package search
 import (
 	"archive/tar"
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
