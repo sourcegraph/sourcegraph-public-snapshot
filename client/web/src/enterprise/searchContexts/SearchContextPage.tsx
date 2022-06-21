@@ -155,7 +155,7 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
                             <LoadingSpinner inline={false} />
