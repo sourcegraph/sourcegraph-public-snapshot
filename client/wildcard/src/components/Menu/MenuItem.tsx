@@ -18,6 +18,6 @@ export type MenuItemProps = ReachMenuItemProps
  */
 export const MenuItem = React.forwardRef(({ children, className, ...props }, reference) => (
     <ReachMenuItem ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
-        {children}
+        <span className={styles.dropdownItemContent}>{children}</span>
     </ReachMenuItem>
 )) as ForwardReferenceComponent<'div', MenuItemProps>

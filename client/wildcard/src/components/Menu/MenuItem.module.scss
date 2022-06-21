@@ -38,9 +38,22 @@
             background-color: unset;
             color: unset;
         }
+
         &[data-selected]:not(:active) {
             background-color: var(--dropdown-link-hover-bg);
             color: unset;
+        }
+
+        &[data-selected]:not(:hover) {
+            outline: none;
+            box-shadow: none;
+
+            > .dropdown-item-content {
+                width: 100%;
+                display: inline-block;
+                outline: 0;
+                box-shadow: var(--focus-box-shadow);
+            }
         }
     }
 }
