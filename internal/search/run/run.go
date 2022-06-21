@@ -121,6 +121,8 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
+		case "standard":
+			searchType = query.SearchTypeStandard
 		case "literal":
 			searchType = query.SearchTypeLiteral
 		case "regexp":
@@ -155,6 +157,8 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	}
 	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
 		switch value {
+		case "standard":
+			searchType = query.SearchTypeStandard
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
