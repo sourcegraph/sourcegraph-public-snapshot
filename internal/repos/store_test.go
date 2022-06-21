@@ -12,6 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -146,7 +148,7 @@ func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Cleanup(func() {
 					q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
-					if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+					if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 						t.Fatal(err)
 					}
 				})
@@ -189,13 +191,14 @@ func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 
 func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
-			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -211,7 +214,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &service)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &service)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -220,7 +223,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 			t.Helper()
 			var count int
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
-			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 				t.Fatal(err)
 			}
 			if count != want {
@@ -244,7 +247,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 
 		// If we change status to processing it should not add a new row
 		q := sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")
-		if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 		err = store.EnqueueSingleSyncJob(ctx, service.ID)
@@ -255,7 +258,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 
 		// If we change status to completed we should be able to enqueue another one
 		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
-		if _, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 		err = store.EnqueueSingleSyncJob(ctx, service.ID)
@@ -266,7 +269,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 
 		// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
 		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
-		if _, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -284,7 +287,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 
 		// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
 		q = sqlf.Sprintf("DELETE FROM external_service_sync_jobs")
-		if _, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -298,6 +301,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 
 func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -306,7 +310,7 @@ DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -326,7 +330,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -347,7 +351,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 		`, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
-			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -366,6 +370,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 
 func testStoreListExternalServicePrivateRepoIDsByUserID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -374,7 +379,7 @@ DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -394,7 +399,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -417,7 +422,7 @@ VALUES
 		`, svc.ID, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
-			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		}

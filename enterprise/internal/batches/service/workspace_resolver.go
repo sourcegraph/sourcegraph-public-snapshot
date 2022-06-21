@@ -11,6 +11,8 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,7 +29,6 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -68,10 +69,11 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
+	return &workspaceResolver{logger: log.Scoped("workspaceResolver", ""), store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {
+	logger              log.Logger
 	store               *store.Store
 	frontendInternalURL string
 }
@@ -91,7 +93,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 	}
 
 	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.store), repos)
+	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.logger, wr.store), repos)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +273,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 
 	return repoToRepoRevisionWithDefaultBranch(
 		ctx,
-		database.NewDBWith(wr.store),
+		database.NewDBWith(wr.logger, wr.store),
 		repo,
 		// Directly resolved repos don't have any file matches.
 		[]string{},
@@ -290,7 +292,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := gitserver.NewClient(database.NewDBWith(wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+	commit, err := gitserver.NewClient(database.NewDBWith(wr.logger, wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -366,8 +368,9 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		for path := range repoFileMatches[repo.ID] {
 			fileMatches = append(fileMatches, path)
 		}
+		// Sort file matches so cache results always match.
 		sort.Strings(fileMatches)
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.store), repo, fileMatches)
+		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.logger, wr.store), repo, fileMatches)
 		if err != nil {
 			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
 			if errcode.IsNotFound(err) {
@@ -451,7 +454,7 @@ func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_
 	}()
 
 	const path = ".batchignore"
-	stat, err := git.Stat(ctx, db, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
+	stat, err := gitserver.NewClient(db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

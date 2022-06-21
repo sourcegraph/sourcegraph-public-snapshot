@@ -1,17 +1,20 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 
 import { gql } from '@apollo/client'
 import classNames from 'classnames'
+import { of } from 'rxjs'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Text } from '@sourcegraph/wildcard'
+import { Link, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
+import { streamComputeQuery } from '../../../../shared/src/search/stream'
 import { AuthenticatedUser } from '../../auth'
 import { RecentlySearchedRepositoriesFragment } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -46,11 +49,14 @@ export const recentlySearchedRepositoriesFragment = gql`
     }
 `
 
+type ComputeParseResult = [{ kind: string; value: string }]
+
 export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     telemetryService,
     recentlySearchedRepositories,
     fetchMore,
+    authenticatedUser,
 }) => {
     const [searchEventLogs, setSearchEventLogs] = useState<
         null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
@@ -132,6 +138,8 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
             {repoFilterValues?.length && (
                 <ul className="list-group">
                     {repoFilterValues.map((repoFilterValue, index) => (
+                        // The repo is not guaranteed to be unique on its own, so we use index as well.
+                        // eslint-disable-next-line react/no-array-index-key
                         <li key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
                             <small>
                                 <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
@@ -148,13 +156,69 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         </div>
     )
 
+    // Get the user's repos from their commit history and extract all unique repos
+    const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
+    const gitRepository = useObservable(
+        useMemo(
+            () =>
+                checkHomePanelsFeatureFlag && authenticatedUser
+                    ? streamComputeQuery(
+                          `content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`
+                      )
+                    : of([]),
+            [authenticatedUser, checkHomePanelsFeatureFlag]
+        )
+    )
+
+    const gitSet = useMemo(() => {
+        let gitRepositoryParsedString: ComputeParseResult[] = []
+        if (gitRepository) {
+            gitRepositoryParsedString = gitRepository.map(value => JSON.parse(value) as ComputeParseResult)
+        }
+        const gitReposList = gitRepositoryParsedString?.flat()
+
+        const gitSet = new Set<string>()
+        if (gitReposList) {
+            for (const git of gitReposList) {
+                if (git.value) {
+                    gitSet.add(git.value)
+                }
+            }
+        }
+
+        return gitSet
+    }, [gitRepository])
+
+    const gitHistoryDisplay = (
+        <div className="mt-2">
+            {gitSet.size > 0 && (
+                <ul className="list-group">
+                    {Array.from(gitSet).map(repo => (
+                        <li key={`${repo}`} className="text-monospace text-break mb-2">
+                            <small>
+                                <Link to={`/search?q=repo:${repo}`} onClick={logRepoClicked}>
+                                    <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
+                                </Link>
+                            </small>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    )
+
+    // Wait for both the search event logs and the git history to be loaded
+    const isLoading = !gitRepository || !repoFilterValues
+    // If neither search event logs or git history have items, then display the empty display
+    const isEmpty = repoFilterValues?.length === 0 && gitSet.size === 0
+
     return (
         <PanelContainer
             className={classNames(className, 'repositories-panel')}
             title="Repositories"
-            state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') : 'loading'}
+            state={isLoading ? 'loading' : isEmpty ? 'empty' : 'populated'}
             loadingContent={loadingDisplay}
-            populatedContent={contentDisplay}
+            populatedContent={gitSet.size > 0 ? gitHistoryDisplay : contentDisplay}
             emptyContent={emptyDisplay}
         />
     )

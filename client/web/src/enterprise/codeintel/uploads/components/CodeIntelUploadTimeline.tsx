@@ -36,9 +36,9 @@ export const CodeIntelUploadTimeline: FunctionComponent<React.PropsWithChildren<
 
     const stages = useMemo(
         () =>
-            [uploadStages, processingStages, terminalStages].flatMap(stageConstructor =>
-                stageConstructor(upload, failedStage)
-            ),
+            [uploadStages, processingStages, terminalStages]
+                .flatMap(stageConstructor => stageConstructor(upload, failedStage))
+                .filter(stage => stage.date !== null) as TimelineStage[],
         [upload, failedStage]
     )
 
@@ -78,7 +78,10 @@ const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null)
     },
 ]
 
-const processingStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
+const processingStages = (
+    upload: LsifUploadFields,
+    failedStage: FailedStage | null
+): (TimelineStage | { date: null })[] => [
     {
         icon: (
             <Icon
@@ -107,7 +110,7 @@ const processingStages = (upload: LsifUploadFields, failedStage: FailedStage | n
     },
 ]
 
-const terminalStages = (upload: LsifUploadFields): TimelineStage[] =>
+const terminalStages = (upload: LsifUploadFields): (TimelineStage | { date: null })[] =>
     upload.state === LSIFUploadState.COMPLETED
         ? [
               {

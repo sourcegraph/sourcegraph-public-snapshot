@@ -46,6 +46,13 @@ func cmdFixes(cmds ...string) check.FixAction[CheckArgs] {
 	}
 }
 
+func enableOnlyInSourcegraphRepo() check.EnableFunc[CheckArgs] {
+	return func(ctx context.Context, args CheckArgs) error {
+		_, err := root.RepositoryRoot()
+		return err
+	}
+}
+
 func enableForTeammatesOnly() check.EnableFunc[CheckArgs] {
 	return func(ctx context.Context, args CheckArgs) error {
 		if !args.Teammate {
@@ -206,7 +213,19 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
-	return conn.Ping(ctx)
+	for {
+		err := conn.Ping(ctx)
+		if err != nil {
+			// If database is starting up we keep waiting
+			if strings.Contains(err.Error(), "database system is starting up") {
+				time.Sleep(5 * time.Millisecond)
+				continue
+			}
+			return errors.Wrapf(err, "failed to ping Sourcegraph Postgres database at %s", dsn)
+		} else {
+			return nil
+		}
+	}
 }
 
 func checkRedisConnection(context.Context) error {

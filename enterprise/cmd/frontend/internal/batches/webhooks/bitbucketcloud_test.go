@@ -14,12 +14,15 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -418,13 +421,17 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 // bitbucketCloudTestSetup instantiates the stores and a clock for use within
 // tests. Any changes made to the stores will be rolled back after the test is
 // complete.
-func bitbucketCloudTestSetup(t *testing.T, db *sql.DB) *bstore.Store {
+func bitbucketCloudTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
+
+	logger := logtest.Scoped(t)
 	clock := &bt.TestClock{Time: timeutil.Now()}
-	tx := dbtest.NewTx(t, db)
+	tx := dbtest.NewTx(t, sqlDB)
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return bstore.NewWithClock(database.NewUntypedDB(&nestedTx{tx}), &observation.TestContext, nil, clock.Now)
+	db := database.NewDBWith(logger, basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
+
+	return bstore.NewWithClock(db, &observation.TestContext, nil, clock.Now)
 }
 
 // createBitbucketCloudExternalService creates a mock Bitbucket Cloud service

@@ -27,44 +27,47 @@ export const CodeIntelIndexTimeline: FunctionComponent<React.PropsWithChildren<C
     className,
 }) => {
     const stages = useMemo(
-        () => [
-            {
-                icon: <Icon as={TimerSandIcon} aria-label="Success" />,
-                text: 'Queued',
-                date: index.queuedAt,
-                className: 'bg-success',
-            },
-            {
-                icon: <Icon as={CheckIcon} aria-label="Success" />,
-                text: 'Began processing',
-                date: index.startedAt,
-                className: 'bg-success',
-            },
+        () =>
+            [
+                {
+                    icon: <Icon as={TimerSandIcon} aria-label="Success" />,
+                    text: 'Queued',
+                    date: index.queuedAt,
+                    className: 'bg-success',
+                },
+                {
+                    icon: <Icon as={CheckIcon} aria-label="Success" />,
+                    text: 'Began processing',
+                    date: index.startedAt,
+                    className: 'bg-success',
+                },
 
-            indexSetupStage(index, now),
-            indexPreIndexStage(index, now),
-            indexIndexStage(index, now),
-            indexUploadStage(index, now),
-            indexTeardownStage(index, now),
+                indexSetupStage(index, now),
+                indexPreIndexStage(index, now),
+                indexIndexStage(index, now),
+                indexUploadStage(index, now),
+                indexTeardownStage(index, now),
 
-            index.state === LSIFIndexState.COMPLETED
-                ? {
-                      icon: <Icon as={CheckIcon} aria-label="Success" />,
-                      text: 'Finished',
-                      date: index.finishedAt,
-                      className: 'bg-success',
-                  }
-                : {
-                      icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
-                      text: 'Failed',
-                      date: index.finishedAt,
-                      className: 'bg-danger',
-                  },
-        ],
+                index.state === LSIFIndexState.COMPLETED
+                    ? {
+                          icon: <Icon as={CheckIcon} aria-label="Success" />,
+                          text: 'Finished',
+                          date: index.finishedAt,
+                          className: 'bg-success',
+                      }
+                    : {
+                          icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                          text: 'Failed',
+                          date: index.finishedAt,
+                          className: 'bg-danger',
+                      },
+            ]
+                .filter(isDefined)
+                .filter<TimelineStage>((stage): stage is TimelineStage => stage.date !== null),
         [index, now]
     )
 
-    return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
+    return <Timeline stages={stages} now={now} className={className} />
 }
 
 const indexSetupStage = (index: LsifIndexFields, now?: () => Date): TimelineStage | undefined =>
@@ -148,7 +151,7 @@ const indexTeardownStage = (index: LsifIndexFields, now?: () => Date): TimelineS
 
 const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[]
-): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
+): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expandedByDefault'> => {
     const finished = Array.isArray(value)
         ? value.every(logEntry => logEntry.exitCode !== null)
         : value.exitCode !== null
@@ -164,6 +167,6 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
         ),
         date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
-        expanded: !(success || !finished),
+        expandedByDefault: !(success || !finished),
     }
 }

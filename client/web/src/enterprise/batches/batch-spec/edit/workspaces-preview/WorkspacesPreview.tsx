@@ -193,10 +193,30 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         </>
     )
 
+    const totalCount = useMemo(() => {
+        if (shouldShowConnection) {
+            if (cachedWorkspacesPreview && (showCached || !connection?.nodes.length)) {
+                return (
+                    <span className={styles.totalCount}>
+                        Displaying {cachedWorkspacesPreview.nodes.length} of {cachedWorkspacesPreview.totalCount}
+                    </span>
+                )
+            }
+            if (connection) {
+                return (
+                    <span className={styles.totalCount}>
+                        Displaying {connection.nodes.length} of {connection?.totalCount}
+                    </span>
+                )
+            }
+        }
+        return null
+    }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
+
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
             <WorkspacesListHeader>
-                Workspaces {isReadOnly ? '' : 'preview '}
+                <span>Workspaces {isReadOnly ? '' : 'preview '}</span>
                 {(isServerStale || resolutionState === 'CANCELED' || !hasPreviewed) &&
                     shouldShowConnection &&
                     !isWorkspacesPreviewInProgress &&
@@ -208,6 +228,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                             aria-label="The workspaces previewed below may not be up-to-date."
                         />
                     )}
+                {totalCount}
             </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (

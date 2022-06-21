@@ -82,7 +82,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 	i := -1
 	return batch.WithInserterWithReturn(
 		ctx,
-		s.Handle().DB(),
+		s.Handle(),
 		"batch_spec_workspace_execution_jobs",
 		batch.MaxNumPostgresParameters,
 		[]string{"batch_spec_workspace_id", "user_id", "created_at", "updated_at"},
@@ -91,7 +91,6 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"batch_spec_workspace_execution_jobs.id",
 			"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
 			"batch_spec_workspace_execution_jobs.user_id",
-			"batch_spec_workspace_execution_jobs.access_token_id",
 			"batch_spec_workspace_execution_jobs.state",
 			"batch_spec_workspace_execution_jobs.failure_message",
 			"batch_spec_workspace_execution_jobs.started_at",

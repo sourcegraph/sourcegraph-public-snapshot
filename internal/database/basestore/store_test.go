@@ -8,6 +8,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -15,7 +18,8 @@ import (
 )
 
 func TestTransaction(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 
@@ -45,12 +49,12 @@ func TestTransaction(t *testing.T) {
 
 	// Check what's visible pre-commit/rollback
 	assertCounts(t, db, map[int]int{1: 42})
-	assertCounts(t, tx1.handle.DB(), map[int]int{1: 42, 2: 43})
-	assertCounts(t, tx2.handle.DB(), map[int]int{1: 42, 3: 44})
+	assertCounts(t, tx1.handle, map[int]int{1: 42, 2: 43})
+	assertCounts(t, tx2.handle, map[int]int{1: 42, 3: 44})
 
 	// Finalize transactions
 	rollbackErr := errors.New("rollback")
-	if err := tx1.Done(rollbackErr); err != rollbackErr {
+	if err := tx1.Done(rollbackErr); !errors.Is(err, rollbackErr) {
 		t.Fatalf("unexpected error rolling back transaction. want=%q have=%q", rollbackErr, err)
 	}
 	if err := tx2.Done(nil); err != nil {
@@ -61,8 +65,55 @@ func TestTransaction(t *testing.T) {
 	assertCounts(t, db, map[int]int{1: 42, 3: 44})
 }
 
+func TestConcurrentTransactions(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
+	setupStoreTest(t, db)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t.Run("creating transactions concurrently does not fail", func(t *testing.T) {
+		var g errgroup.Group
+		for i := 0; i < 2; i++ {
+			g.Go(func() (err error) {
+				tx, err := store.Transact(ctx)
+				if err != nil {
+					return err
+				}
+				defer func() { err = tx.Done(err) }()
+
+				return tx.Exec(ctx, sqlf.Sprintf(`select pg_sleep(0.1)`))
+			})
+		}
+		require.NoError(t, g.Wait())
+	})
+
+	t.Run("parallel insertion on a single transaction does not fail but logs an error", func(t *testing.T) {
+		tx, err := store.Transact(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		capturingLogger, export := logtest.Captured(t)
+		tx.handle.(*txHandle).logger = capturingLogger
+
+		var g errgroup.Group
+		for i := 0; i < 2; i++ {
+			g.Go(func() (err error) {
+				return tx.Exec(ctx, sqlf.Sprintf(`select pg_sleep(0.1)`))
+			})
+		}
+		err = g.Wait()
+		require.NoError(t, err)
+
+		captured := export()
+		require.Greater(t, len(captured), 0)
+		require.Equal(t, "transaction used concurrently", captured[0].Message)
+	})
+}
+
 func TestSavepoints(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 
 	NumSavepointTests := 10
@@ -88,7 +139,8 @@ func TestSavepoints(t *testing.T) {
 }
 
 func TestSetLocal(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 
@@ -144,7 +196,7 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 			doneErr = errors.New("rollback")
 		}
 
-		if err := tx.Done(doneErr); err != doneErr {
+		if err := tx.Done(doneErr); !errors.Is(err, doneErr) {
 			t.Fatalf("unexpected error closing transaction. want=%q have=%q", doneErr, err)
 		}
 	}()

@@ -1010,3 +1010,35 @@
     // .hl-typed-TagDelimiter {
     // }
 }
+
+// Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+// https://github.com/sourcegraph/sourcegraph/issues/36251
+.theme-light .theme-contrast-compliant-syntax-highlighting {
+    --hl-yellow: #7f6102;
+    --hl-green: #226a00;
+    --hl-red: #ce0804;
+    --hl-orange: #af4001;
+    --hl-blue: #006bb7;
+    --hl-cyan: #545454;
+    --hl-eggshell: #c8c7c5;
+    --hl-purple: #555bc2;
+    --hl-pink: #c32974;
+    --hl-gray-0: #666666;
+    --hl-gray-1: #666666;
+    --hl-gray-2: ##666666;
+    --hl-gray-3: #606060;
+}
+.theme-dark .theme-contrast-compliant-syntax-highlighting {
+    --hl-dark-green: #90c29a;
+    --hl-dark-blue-1: #62b4f9;
+    --hl-dark-blue-3: #7ac3fe;
+
+    .hl-keyword.hl-other.hl-unit {
+        color: #dba291;
+    }
+
+    .hl-punctuation.hl-section.hl-embedded,
+    .hl-variable.hl-interpolation {
+        color: var(--hl-gray-2);
+    }
+}

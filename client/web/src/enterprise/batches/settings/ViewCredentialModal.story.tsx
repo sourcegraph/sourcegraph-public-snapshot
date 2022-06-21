@@ -1,19 +1,10 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
 
 import { ViewCredentialModal } from './ViewCredentialModal'
-
-const { add } = storiesOf('web/batches/settings/ViewCredentialModal', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
-        chromatic: {
-            // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
-            delay: 2000,
-        },
-    })
 
 const credential: BatchChangesCredentialFields = {
     id: '123',
@@ -22,7 +13,16 @@ const credential: BatchChangesCredentialFields = {
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 }
 
-add('View', () => (
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/ViewCredentialModal',
+    decorators: [decorator],
+}
+
+export default config
+
+export const View: Story = () => (
     <WebStory>
         {props => (
             <ViewCredentialModal
@@ -39,4 +39,11 @@ add('View', () => (
             />
         )}
     </WebStory>
-))
+)
+
+View.parameters = {
+    chromatic: {
+        // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
+        delay: 2000,
+    },
+}

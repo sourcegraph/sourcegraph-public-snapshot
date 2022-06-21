@@ -7,6 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,7 +18,8 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true

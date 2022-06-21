@@ -58,6 +58,7 @@ public class ThemeUtil {
 
     @NotNull
     public static String getPanelBackgroundColorHexString() {
+        //noinspection ConstantConditions - UIUtil.getPanelBackground() can't be null, so our return value can't be null.
         return getHexString(UIUtil.getPanelBackground());
     }
 
@@ -68,7 +69,12 @@ public class ThemeUtil {
     @Nullable
     private static String getHexString(@Nullable Color color) {
         if (color != null) {
-            return "#" + Integer.toHexString(color.getRGB()).substring(2);
+            String colorString = Integer.toHexString(color.getRGB());
+            if (colorString.length() > 2) {
+                return "#" + colorString.substring(2);
+            } else {
+                return "#000000";
+            }
         } else {
             return null;
         }

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,7 +26,8 @@ import (
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -42,7 +44,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 
 	// See the `output` var below
 	cacheEntryKeys := []string{
-		"Nsw12JxoLSHN4ta6D3G7FQ",
 		"JkC7Q0OOCZZ3Acv79QfwSA-step-0",
 		"0ydsSXJ77syIPdwNrsGlzQ-step-1",
 		"utgLpuQ3njDtLe3eztArAQ-step-2",
@@ -52,7 +53,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 
 	// Log entries with cache entries that'll be used to build the changeset specs.
 	output := `
-stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"diff --git README.md README.md\nindex 1914491..d6782d3 100644\n--- README.md\n+++ README.md\n@@ -3,4 +3,7 @@ This repository is used to test opening and closing pull request with Automation\n \n (c) Copyright Sourcegraph 2013-2020.\n (c) Copyright Sourcegraph 2013-2020.\n-(c) Copyright Sourcegraph 2013-2020.\n\\ No newline at end of file\n+(c) Copyright Sourcegraph 2013-2020.this is step 2\n+this is step 3\n+this is step 4\n+previous_step.modified_files=[README.md]\ndiff --git README.txt README.txt\nnew file mode 100644\nindex 0000000..888e1ec\n--- /dev/null\n+++ README.txt\n@@ -0,0 +1 @@\n+this is step 1\ndiff --git my-output.txt my-output.txt\nnew file mode 100644\nindex 0000000..257ae8e\n--- /dev/null\n+++ my-output.txt\n@@ -0,0 +1 @@\n+this is step 5\n","changedFiles":{"modified":["README.md"],"added":["README.txt","my-output.txt"],"deleted":null,"renamed":null},"outputs":{"myOutput":"my-output.txt"},"Path":""}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"ZGlmZiAtLWdpdCBSRUFETUUudHh0IFJFQURNRS50eHQKbmV3IGZpbGUgbW9kZSAxMDA2NDQKaW5kZXggMDAwMDAwMC4uODg4ZTFlYwotLS0gL2Rldi9udWxsCisrKyBSRUFETUUudHh0CkBAIC0wLDAgKzEgQEAKK3RoaXMgaXMgc3RlcCAxCg==","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"0ydsSXJ77syIPdwNrsGlzQ-step-1","value":{"stepIndex":1,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLjVjMmI3MmQgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDQgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCmRpZmYgLS1naXQgUkVBRE1FLnR4dCBSRUFETUUudHh0Cm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjg4OGUxZWMKLS0tIC9kZXYvbnVsbAorKysgUkVBRE1FLnR4dApAQCAtMCwwICsxIEBACit0aGlzIGlzIHN0ZXAgMQo=","outputs":{},"previousStepResult":{"Files":{"modified":null,"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"utgLpuQ3njDtLe3eztArAQ-step-2","value":{"stepIndex":2,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLmNkMmNjYmYgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDUgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCit0aGlzIGlzIHN0ZXAgMwpkaWZmIC0tZ2l0IFJFQURNRS50eHQgUkVBRE1FLnR4dApuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi44ODhlMWVjCi0tLSAvZGV2L251bGwKKysrIFJFQURNRS50eHQKQEAgLTAsMCArMSBAQAordGhpcyBpcyBzdGVwIDEK","outputs":{"myOutput":"my-output.txt"},"previousStepResult":{"Files":{"modified":["README.md"],"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
@@ -68,10 +68,9 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		logger:                  logtest.Scoped(t),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
+		logger:             logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
@@ -80,18 +79,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
 		ct.UpdateJobState(t, ctx, s, job)
-	}
-
-	attachAccessToken := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
 	}
 
 	assertJobState := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -153,7 +140,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	t.Run("success", func(t *testing.T) {
 		job, workspace := setupEntities(t)
 		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
 
 		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 		if !ok || err != nil {
@@ -202,7 +188,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			}
 			entry := entries[0]
 
-			var cachedExecutionResult *execution.Result
+			var cachedExecutionResult *execution.AfterStepResult
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {
 				t.Fatal(err)
 			}
@@ -210,29 +196,11 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 				t.Fatalf("wrong diff extracted")
 			}
 		}
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err != database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was not deleted")
-		}
-	})
-
-	t.Run("no token set", func(t *testing.T) {
-		job, _ := setupEntities(t)
-		setProcessing(t, job)
-
-		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-		}
-
-		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	})
 
 	t.Run("worker hostname mismatch", func(t *testing.T) {
 		job, _ := setupEntities(t)
 		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
 
 		opts := opts
 		opts.WorkerHostname = "DOESNT-MATCH"
@@ -246,53 +214,14 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 		assertWorkspaceChangesets(t, job, []int64{})
 
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err == database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was deleted")
-		} else if err != nil {
-			t.Fatal(err)
-		}
-
-		assertNoChangesetSpecsCreated(t)
-	})
-
-	t.Run("token set but deletion fails", func(t *testing.T) {
-		job, _ := setupEntities(t)
-		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
-
-		accessTokens := database.NewMockAccessTokenStore()
-		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			if id != tokenID {
-				t.Fatalf("wrong token deleted")
-			}
-			return errors.New("internal database error")
-		})
-
-		prevDeleter := executionStore.accessTokenDeleterForTX
-		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
-			return accessTokens.HardDeleteByID
-		}
-		t.Cleanup(func() {
-			executionStore.accessTokenDeleterForTX = prevDeleter
-		})
-
-		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-		}
-
-		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
-
-		assertWorkspaceChangesets(t, job, []int64{})
-
 		assertNoChangesetSpecsCreated(t)
 	})
 }
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -319,7 +248,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 
 	// See the `output` var below
 	cacheEntryKeys := []string{
-		"Nsw12JxoLSHN4ta6D3G7FQ",
 		"JkC7Q0OOCZZ3Acv79QfwSA-step-0",
 		"0ydsSXJ77syIPdwNrsGlzQ-step-1",
 		"utgLpuQ3njDtLe3eztArAQ-step-2",
@@ -329,7 +257,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 
 	// Log entries with cache entries that'll be used to build the changeset specs.
 	output := `
-stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"diff --git README.md README.md\nindex 1914491..d6782d3 100644\n--- README.md\n+++ README.md\n@@ -3,4 +3,7 @@ This repository is used to test opening and closing pull request with Automation\n \n (c) Copyright Sourcegraph 2013-2020.\n (c) Copyright Sourcegraph 2013-2020.\n-(c) Copyright Sourcegraph 2013-2020.\n\\ No newline at end of file\n+(c) Copyright Sourcegraph 2013-2020.this is step 2\n+this is step 3\n+this is step 4\n+previous_step.modified_files=[README.md]\ndiff --git README.txt README.txt\nnew file mode 100644\nindex 0000000..888e1ec\n--- /dev/null\n+++ README.txt\n@@ -0,0 +1 @@\n+this is step 1\ndiff --git my-output.txt my-output.txt\nnew file mode 100644\nindex 0000000..257ae8e\n--- /dev/null\n+++ my-output.txt\n@@ -0,0 +1 @@\n+this is step 5\n","changedFiles":{"modified":["README.md"],"added":["README.txt","my-output.txt"],"deleted":null,"renamed":null},"outputs":{"myOutput":"my-output.txt"},"Path":""}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"ZGlmZiAtLWdpdCBSRUFETUUudHh0IFJFQURNRS50eHQKbmV3IGZpbGUgbW9kZSAxMDA2NDQKaW5kZXggMDAwMDAwMC4uODg4ZTFlYwotLS0gL2Rldi9udWxsCisrKyBSRUFETUUudHh0CkBAIC0wLDAgKzEgQEAKK3RoaXMgaXMgc3RlcCAxCg==","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"0ydsSXJ77syIPdwNrsGlzQ-step-1","value":{"stepIndex":1,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLjVjMmI3MmQgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDQgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCmRpZmYgLS1naXQgUkVBRE1FLnR4dCBSRUFETUUudHh0Cm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjg4OGUxZWMKLS0tIC9kZXYvbnVsbAorKysgUkVBRE1FLnR4dApAQCAtMCwwICsxIEBACit0aGlzIGlzIHN0ZXAgMQo=","outputs":{},"previousStepResult":{"Files":{"modified":null,"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"utgLpuQ3njDtLe3eztArAQ-step-2","value":{"stepIndex":2,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLmNkMmNjYmYgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDUgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCit0aGlzIGlzIHN0ZXAgMwpkaWZmIC0tZ2l0IFJFQURNRS50eHQgUkVBRE1FLnR4dApuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi44ODhlMWVjCi0tLSAvZGV2L251bGwKKysrIFJFQURNRS50eHQKQEAgLTAsMCArMSBAQAordGhpcyBpcyBzdGVwIDEK","outputs":{"myOutput":"my-output.txt"},"previousStepResult":{"Files":{"modified":["README.md"],"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
@@ -350,10 +277,9 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		logger:                  logtest.Scoped(t),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
+		logger:             logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 	errMsg := "this job was no good"
@@ -363,18 +289,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
 		ct.UpdateJobState(t, ctx, s, job)
-	}
-
-	attachAccessToken := func(t *testing.T) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
 	}
 
 	assertJobState := func(t *testing.T, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -391,7 +305,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	t.Run("success", func(t *testing.T) {
 		setProcessing(t)
-		tokenID := attachAccessToken(t)
 
 		ok, err := executionStore.MarkFailed(context.Background(), int(job.ID), errMsg, opts)
 		if !ok || err != nil {
@@ -424,18 +337,13 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			}
 			entry := entries[0]
 
-			var cachedExecutionResult *execution.Result
+			var cachedExecutionResult *execution.AfterStepResult
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {
 				t.Fatal(err)
 			}
 			if cachedExecutionResult.Diff == "" {
 				t.Fatalf("wrong diff extracted")
 			}
-		}
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err != database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was not deleted")
 		}
 	})
 
@@ -452,7 +360,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	t.Run("worker hostname mismatch", func(t *testing.T) {
 		setProcessing(t)
-		tokenID := attachAccessToken(t)
 
 		opts := opts
 		opts.WorkerHostname = "DOESNT-MATCH"
@@ -463,48 +370,13 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err == database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was deleted")
-		} else if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("token set but deletion fails", func(t *testing.T) {
-		setProcessing(t)
-		tokenID := attachAccessToken(t)
-
-		accessTokens := database.NewMockAccessTokenStore()
-		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			if id != tokenID {
-				t.Fatalf("wrong token deleted")
-			}
-			return errors.New("internal database error")
-		})
-
-		prevDeleter := executionStore.accessTokenDeleterForTX
-		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
-			return accessTokens.HardDeleteByID
-		}
-		t.Cleanup(func() {
-			executionStore.accessTokenDeleterForTX = prevDeleter
-		})
-
-		ok, err := executionStore.MarkFailed(context.Background(), int(job.ID), errMsg, opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkFailed failed. ok=%t, err=%s", ok, err)
-		}
-
-		// It should still be "failed".
-		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 	})
 }
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -530,11 +402,10 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 		t.Fatal(err)
 	}
 
-	cacheEntryKeys := []string{"Nsw12JxoLSHN4ta6D3G7FQ", "JkC7Q0OOCZZ3Acv79QfwSA-step-0"}
+	cacheEntryKeys := []string{"JkC7Q0OOCZZ3Acv79QfwSA-step-0"}
 
 	// Log entries with cache entries that'll be used to build the changeset specs.
 	output := `
-stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"","changedFiles":{"modified":null,"added":null,"deleted":null,"renamed":null},"outputs":{},"Path":""}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}`
 
 	entry := workerutil.ExecutionLogEntry{
@@ -550,25 +421,15 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Fatal(err)
 	}
 
-	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext, accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID }}
-	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
-
-	attachAccessToken := func(t *testing.T) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
+		Store:              workStore,
+		observationContext: &observation.TestContext,
 	}
+	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
 	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 	job.WorkerHostname = opts.WorkerHostname
 	ct.UpdateJobState(t, ctx, s, job)
-	tokenID := attachAccessToken(t)
 
 	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 	if !ok || err != nil {
@@ -595,35 +456,35 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			t.Fatal("cache entry not found")
 		}
 	}
-
-	_, err = db.AccessTokens().GetByID(ctx, tokenID)
-	if err != database.ErrAccessTokenNotFound {
-		t.Fatalf("access token was not deleted")
-	}
 }
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
-
-	user := ct.CreateTestUser(t, db, true)
-	user2 := ct.CreateTestUser(t, db, true)
-	user3 := ct.CreateTestUser(t, db, true)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
 	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
+	user1 := ct.CreateTestUser(t, db, true)
+	user2 := ct.CreateTestUser(t, db, true)
+	user3 := ct.CreateTestUser(t, db, true)
+
+	user1BatchSpec := setupUserBatchSpec(t, ctx, s, user1)
+	user2BatchSpec := setupUserBatchSpec(t, ctx, s, user2)
+	user3BatchSpec := setupUserBatchSpec(t, ctx, s, user3)
+
 	// We create multiple jobs for each user because this test ensures jobs are
 	// dequeued in a round-robin fashion, starting with the user who dequeued
 	// the longest ago.
-	job1 := setupBatchSpecAssociation(ctx, s, t, user, repo)  // User_ID: 1
-	job2 := setupBatchSpecAssociation(ctx, s, t, user, repo)  // User_ID: 1
-	job3 := setupBatchSpecAssociation(ctx, s, t, user2, repo) // User_ID: 2
-	job4 := setupBatchSpecAssociation(ctx, s, t, user2, repo) // User_ID: 2
-	job5 := setupBatchSpecAssociation(ctx, s, t, user3, repo) // User_ID: 3
-	job6 := setupBatchSpecAssociation(ctx, s, t, user3, repo) // User_ID: 3
+	job1 := setupBatchSpecAssociation(ctx, s, t, user1BatchSpec, repo) // User_ID: 1
+	job2 := setupBatchSpecAssociation(ctx, s, t, user1BatchSpec, repo) // User_ID: 1
+	job3 := setupBatchSpecAssociation(ctx, s, t, user2BatchSpec, repo) // User_ID: 2
+	job4 := setupBatchSpecAssociation(ctx, s, t, user2BatchSpec, repo) // User_ID: 2
+	job5 := setupBatchSpecAssociation(ctx, s, t, user3BatchSpec, repo) // User_ID: 3
+	job6 := setupBatchSpecAssociation(ctx, s, t, user3BatchSpec, repo) // User_ID: 3
 
 	want := []int64{job1, job3, job5, job2, job4, job6}
 	have := []int64{}
@@ -631,7 +492,10 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	// We dequeue records until there are no more left. Then, we check in which
 	// order they were returned.
 	for {
-		r, found, _ := workerStore.Dequeue(ctx, "test-worker", nil)
+		r, found, err := workerStore.Dequeue(ctx, "test-worker", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if !found {
 			break
 		}
@@ -643,20 +507,105 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	}
 }
 
-func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user *types.User, repo *types.Repo) int64 {
-	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
-		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
-	}}
-	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDequeue(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	s := New(db, &observation.TestContext, nil)
+	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+
+	user1 := ct.CreateTestUser(t, db, true)
+	user2 := ct.CreateTestUser(t, db, true)
+	user3 := ct.CreateTestUser(t, db, true)
+
+	user1BatchSpec := setupUserBatchSpec(t, ctx, s, user1)
+	user2BatchSpec := setupUserBatchSpec(t, ctx, s, user2)
+	user3BatchSpec := setupUserBatchSpec(t, ctx, s, user3)
+
+	// We create multiple jobs for each user because this test ensures jobs are
+	// dequeued in a round-robin fashion, starting with the user who dequeued
+	// the longest ago.
+	for i := 0; i < 100; i++ {
+		setupBatchSpecAssociation(ctx, s, t, user1BatchSpec, repo)
+		setupBatchSpecAssociation(ctx, s, t, user2BatchSpec, repo)
+		setupBatchSpecAssociation(ctx, s, t, user3BatchSpec, repo)
 	}
 
+	have := []int64{}
+	var haveLock sync.Mutex
+
+	errs := make(chan error)
+
+	// We dequeue records until there are no more left. We spawn 8 concurrent
+	// "workers" to find potential locking issues.
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				r, found, err := workerStore.Dequeue(ctx, "test-worker", nil)
+				if err != nil {
+					errs <- err
+				}
+				if !found {
+					break
+				}
+				haveLock.Lock()
+				have = append(have, int64(r.RecordID()))
+				haveLock.Unlock()
+			}
+		}()
+	}
+	var multiErr error
+	errDone := make(chan struct{})
+	go func() {
+		for err := range errs {
+			multiErr = errors.Append(multiErr, err)
+		}
+		close(errDone)
+	}()
+
+	wg.Wait()
+	close(errs)
+	<-errDone
+
+	if multiErr != nil {
+		t.Fatal(multiErr)
+	}
+
+	// Check for duplicates.
+	seen := make(map[int64]struct{})
+	for _, h := range have {
+		if _, ok := seen[h]; ok {
+			t.Fatal("duplicate dequeue")
+		}
+		seen[h] = struct{}{}
+	}
+}
+
+func setupUserBatchSpec(t *testing.T, ctx context.Context, s *Store, user *types.User) *btypes.BatchSpec {
+	t.Helper()
+	bs := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
+	}}
+	if err := s.CreateBatchSpec(ctx, bs); err != nil {
+		t.Fatal(err)
+	}
+	return bs
+}
+
+func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, batchSpec *btypes.BatchSpec, repo *types.Repo) int64 {
 	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
 	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}
 
-	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: user.ID}
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: batchSpec.UserID}
 	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}

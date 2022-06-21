@@ -628,52 +628,42 @@ CREATE VIEW batch_spec_workspace_execution_queue AS
             max(exec.started_at) AS latest_dequeue
            FROM batch_spec_workspace_execution_jobs exec
           GROUP BY exec.user_id
-        ), materialized_queue_candidates AS MATERIALIZED (
+        ), queue_candidates AS (
          SELECT exec.id,
-            exec.batch_spec_workspace_id,
-            exec.state,
-            exec.failure_message,
-            exec.started_at,
-            exec.finished_at,
-            exec.process_after,
-            exec.num_resets,
-            exec.num_failures,
-            exec.execution_logs,
-            exec.worker_hostname,
-            exec.last_heartbeat_at,
-            exec.created_at,
-            exec.updated_at,
-            exec.cancel,
-            exec.access_token_id,
-            exec.queued_at,
-            exec.user_id,
             rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
            FROM (batch_spec_workspace_execution_jobs exec
              JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
- SELECT row_number() OVER () AS place_in_global_queue,
-    materialized_queue_candidates.id,
-    materialized_queue_candidates.batch_spec_workspace_id,
-    materialized_queue_candidates.state,
-    materialized_queue_candidates.failure_message,
-    materialized_queue_candidates.started_at,
-    materialized_queue_candidates.finished_at,
-    materialized_queue_candidates.process_after,
-    materialized_queue_candidates.num_resets,
-    materialized_queue_candidates.num_failures,
-    materialized_queue_candidates.execution_logs,
-    materialized_queue_candidates.worker_hostname,
-    materialized_queue_candidates.last_heartbeat_at,
-    materialized_queue_candidates.created_at,
-    materialized_queue_candidates.updated_at,
-    materialized_queue_candidates.cancel,
-    materialized_queue_candidates.access_token_id,
-    materialized_queue_candidates.queued_at,
-    materialized_queue_candidates.user_id,
-    materialized_queue_candidates.place_in_user_queue
-   FROM materialized_queue_candidates;
+ SELECT queue_candidates.id,
+    row_number() OVER () AS place_in_global_queue,
+    queue_candidates.place_in_user_queue
+   FROM queue_candidates;
+
+CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
+ SELECT j.id,
+    j.batch_spec_workspace_id,
+    j.state,
+    j.failure_message,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.execution_logs,
+    j.worker_hostname,
+    j.last_heartbeat_at,
+    j.created_at,
+    j.updated_at,
+    j.cancel,
+    j.access_token_id,
+    j.queued_at,
+    j.user_id,
+    q.place_in_global_queue,
+    q.place_in_user_queue
+   FROM (batch_spec_workspace_execution_jobs j
+     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
 
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
@@ -3482,11 +3472,13 @@ CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batc
 
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
 
+CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC);
+
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
 
-CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id);
-
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
+
+CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id);
 
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
@@ -3596,6 +3588,8 @@ CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree
 
 CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btree (namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
+CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
+
 CREATE INDEX gitserver_repos_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloned'::text);
 
 CREATE INDEX gitserver_repos_cloning_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloning'::text);
@@ -3679,6 +3673,8 @@ CREATE INDEX org_invitations_org_id ON org_invitations USING btree (org_id) WHER
 CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (recipient_user_id) WHERE (deleted_at IS NULL);
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
+
+CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
 
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
 

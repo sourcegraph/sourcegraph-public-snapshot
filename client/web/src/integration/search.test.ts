@@ -203,8 +203,6 @@ describe('Search', () => {
                 await editor.focus()
                 await driver.page.keyboard.type('file:jwtmi')
                 await editor.waitForSuggestion('jwtmiddleware.go')
-                // This timeout seems to be necessary for Tab to select the entry in Codemirror
-                await driver.page.waitForTimeout(100)
                 // NOTE: This test assumes that the first suggestion is the one
                 // to be selected.
                 // It doesn't seem to be possible to otherwise "select" a specific
@@ -408,8 +406,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-
             await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
                 waitForCodeHighlighting: true,
             })
@@ -430,7 +426,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
                 waitForCodeHighlighting: true,
@@ -449,7 +444,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshotWithVariants(
                 driver.page,
@@ -471,7 +465,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-file-match-children-item', {
                 visible: true,
             })
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
                 waitForCodeHighlighting: true,

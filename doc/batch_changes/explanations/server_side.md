@@ -1,6 +1,6 @@
 # Running batch changes server-side
 
-<aside class="experimental">This feature is experimental.</aside>
+<aside class="experimental">This feature is in beta.</aside>
 
 By default, Batch Changes uses a command line interface in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
@@ -17,10 +17,7 @@ This allows to:
 
 This is a one-time process. Once a site-admin of the Sourcegraph instance sets up executors and enables running batch changes server-side, all users of the Sourcegraph instance can get started with no additional setup required.
 
-Make sure that
-
-- [Executors are deployed and are online](../../admin/deploy_executors.md).
-- The feature flag `experimentalFeatures.batchChangesExecution` is set to `true` in the global config or for specific users.
+Make sure that [executors are deployed and are online](../../admin/deploy_executors.md).
 
 ## Explanations
 
@@ -34,6 +31,8 @@ This feature is experimental. In particular, it comes with the following limitat
 - Running batch changes server-side requires setting up executors. Executors are only available as a self-hosted offering. This means we cannot offer managed executors at this time. Managed instances customers can still run batch changes server-side by setting up executors on their own infrastructure.
 - The execution UX is work in progress and will change a lot before the GA release.
 - Documentation is minimal and will change a lot before the GA release.
+- Running batch changes server-side will be limited to user namespaces in this release.
+- The newly introduced APIs for server-side are still experimental and will likely change as we evolve the product towards GA.
 - Executors can only be deployed using Terraform (AWS or GCP) or using pre-built binaries (see [deploying executors](../../admin/deploy_executors.md)).
 
 Running batch changes server-side has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.

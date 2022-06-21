@@ -108,7 +108,7 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		uniqueSeries[seriesID] = series
 
 		// Construct the search query that will generate data for this repository and time (revision) tuple.
-		modifiedQuery, err := querybuilder.GlobalQuery(series.Query)
+		modifiedQuery, err := querybuilder.GlobalQuery(series.Query, querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0))
 		if err != nil {
 			multi = errors.Append(multi, errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID))
 			continue

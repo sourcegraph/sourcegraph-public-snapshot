@@ -135,6 +135,8 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
     startedAt: subHours(now, 1).toISOString(),
     finishedAt: subMinutes(now, 4).toISOString(),
     applyURL: '/some/preview/url',
+    failureMessage:
+        "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that.",
     workspaceResolution: {
         __typename: 'BatchSpecWorkspaceResolution',
         workspaces: {
@@ -146,27 +148,6 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
                 queued: 0,
                 processing: 0,
                 completed: 22,
-            },
-        },
-    },
-})
-
-export const FAILED_BATCH_SPEC = mockFullBatchSpec({
-    state: BatchSpecState.FAILED,
-    startedAt: subHours(now, 1).toISOString(),
-    finishedAt: now.toISOString(),
-    failureMessage: 'Something went wrong.',
-    workspaceResolution: {
-        __typename: 'BatchSpecWorkspaceResolution',
-        workspaces: {
-            __typename: 'BatchSpecWorkspaceConnection',
-            stats: {
-                __typename: 'BatchSpecWorkspacesStats',
-                errored: 10,
-                ignored: 0,
-                queued: 14,
-                processing: 7,
-                completed: 21,
             },
         },
     },
@@ -356,11 +337,16 @@ export const QUEUED_WORKSPACE = mockWorkspace(1, {
     changesetSpecs: [],
 })
 
-export const PROCESSING_WORKSPACE = mockWorkspace(1, {
+export const PROCESSING_WORKSPACE = mockWorkspace(0, {
     state: BatchSpecWorkspaceState.PROCESSING,
     finishedAt: null,
     diffStat: null,
     changesetSpecs: [],
+    steps: [
+        mockStep(1),
+        { ...mockStep(2), exitCode: null, finishedAt: null, diffStat: null },
+        { ...mockStep(3), exitCode: null, finishedAt: null, diffStat: null, startedAt: null },
+    ],
 })
 
 export const SKIPPED_WORKSPACE = mockWorkspace(1, {

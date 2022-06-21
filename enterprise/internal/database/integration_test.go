@@ -4,6 +4,8 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -29,13 +31,17 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 	t.Parallel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
 
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T)
 	}{
 		{"LoadUserPermissions", testPermsStore_LoadUserPermissions(db)},
+		{"FetchReposByUserAndExternalService", testPermsStore_FetchReposByUserAndExternalService(db)},
 		{"LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
 		{"SetUserPermissions", testPermsStore_SetUserPermissions(db)},
 		{"SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},

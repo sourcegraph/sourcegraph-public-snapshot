@@ -4,16 +4,15 @@ import { isDefined } from '@sourcegraph/common'
 import { H3 } from '@sourcegraph/wildcard'
 
 import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
-import { Series } from '../../../../types'
 import { Point } from '../../types'
-import { isValidNumber, formatYTick } from '../../utils'
+import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 
 import styles from './TooltipContent.module.scss'
 
-export function getLineStroke<Datum>(line: Series<Datum>): string {
-    return line?.color ?? DEFAULT_FALLBACK_COLOR
+export function getLineStroke<Datum>(line: SeriesWithData<Datum>): string {
+    return line.color ?? DEFAULT_FALLBACK_COLOR
 }
 
 const MAX_ITEMS_IN_TOOLTIP = 10
@@ -21,7 +20,7 @@ const MAX_ITEMS_IN_TOOLTIP = 10
 export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'seriesId' | 'value' | 'time'>
 
 export interface TooltipContentProps<Datum> {
-    series: Series<Datum>[]
+    series: SeriesWithData<Datum>[]
     activePoint: MinimumPointInfo<Datum>
     stacked: boolean
 }
@@ -40,10 +39,10 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
         const sortedSeries = series
             .map(line => {
-                const seriesDatum = line.data.find(
-                    datum => line.getXValue(datum).getTime() === activePoint.time.getTime()
+                const seriesDatum = (line.data as SeriesDatum<Datum>[]).find(
+                    datum => datum.x.getTime() === activePoint.time.getTime()
                 )
-                const value = seriesDatum ? line.getYValue(seriesDatum) : null
+                const value = seriesDatum ? getDatumValue(seriesDatum) : null
 
                 if (!isValidNumber(value)) {
                     return

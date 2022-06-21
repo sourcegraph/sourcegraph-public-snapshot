@@ -7,10 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -105,6 +108,7 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 }
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if !licensing.EnforceTiers {
 		licensing.EnforceTiers = true
 		defer func() { licensing.EnforceTiers = false }()
@@ -163,7 +167,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			hook := NewAfterCreateUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), database.NewUntypedDB(db), user)
+				err := NewAfterCreateUserHook()(context.Background(), database.NewDBWith(logger, basestore.NewWithHandle(db)), user)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -180,19 +184,12 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 }
 
 type fakeDB struct {
+	basestore.TransactableHandle
 	execContext func(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
-func (db *fakeDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	panic("implement me")
 }
 
 func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return db.execContext(ctx, query, args...)
-}
-
-func (db *fakeDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	panic("implement me")
 }
 
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {

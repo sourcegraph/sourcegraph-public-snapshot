@@ -13,22 +13,76 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestSanitizeEventURL(t *testing.T) {
+	cases := []struct {
+		input       string
+		externalURL string
+		output      string
+	}{{
+		input:       "https://about.sourcegraph.com/test",
+		externalURL: "https://sourcegraph.com",
+		output:      "https://about.sourcegraph.com/test",
+	}, {
+		input:       "https://test.sourcegraph.com/test",
+		externalURL: "https://sourcegraph.com",
+		output:      "https://test.sourcegraph.com/test",
+	}, {
+		input:       "https://test.sourcegraph.com/test",
+		externalURL: "https://customerinstance.com",
+		output:      "https://test.sourcegraph.com/test",
+	}, {
+		input:       "",
+		externalURL: "https://customerinstance.com",
+		output:      "",
+	}, {
+		input:       "https://github.com/my-private-info",
+		externalURL: "https://customerinstance.com",
+		output:      "",
+	}, {
+		input:       "https://github.com/my-private-info",
+		externalURL: "https://sourcegraph.com",
+		output:      "",
+	}, {
+		input:       "invalid url",
+		externalURL: "https://sourcegraph.com",
+		output:      "",
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalURL: tc.externalURL,
+				},
+			})
+			got := SanitizeEventURL(tc.input)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
 
 func TestEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -72,8 +126,9 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	usersStore := db.Users()
@@ -140,8 +195,9 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -186,8 +242,9 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -243,8 +300,9 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -359,8 +417,9 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
@@ -422,8 +481,9 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	now := time.Now()
 
@@ -445,7 +505,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 			repo.name,
 			repo.deletedAt,
 		)
-		if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
 	}
@@ -474,7 +534,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 			fmt.Sprintf("%040d", i),
 			uploadedAt,
 		)
-		if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
 
@@ -484,7 +544,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	query := sqlf.Sprintf(
 		"INSERT INTO lsif_index_configuration (repository_id, data, autoindex_enabled) VALUES (1, '', true)",
 	)
-	if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error preparing database: %s", err.Error())
 	}
 
@@ -499,7 +559,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		fmt.Sprintf("%040d", 2), time.Now().UTC().Add(-time.Hour*24*5), // 5 days
 		fmt.Sprintf("%040d", 3),
 	)
-	if _, err := db.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error preparing database: %s", err.Error())
 	}
 
@@ -564,8 +624,9 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{
@@ -632,8 +693,9 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
@@ -711,8 +773,9 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -762,8 +825,9 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{
@@ -838,8 +902,9 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -897,8 +962,9 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
@@ -1063,8 +1129,9 @@ func TestEventLogs_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1123,8 +1190,9 @@ func TestEventLogs_LatestPing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
@@ -1214,11 +1282,12 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	if _, err := db.Handle().DB().ExecContext(ctx, `
+	if _, err := db.Handle().ExecContext(ctx, `
 		INSERT INTO codeintel_langugage_support_requests (language_id, user_id)
 		VALUES
 			('foo', 1),

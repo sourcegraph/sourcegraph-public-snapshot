@@ -11,7 +11,7 @@ interface Props {
     authState: 'initial' | 'validating' | 'success' | 'failure'
 }
 
-export const StatusBar: React.FunctionComponent<Props> = ({ progress, progressState, authState }: Props) => (
+export const StatusBar: React.FunctionComponent<Props> = ({ progress, progressState }: Props) => (
     <div className={styles.statusBar}>
         {progressState !== null && (
             <StreamingProgressCount
@@ -22,6 +22,5 @@ export const StatusBar: React.FunctionComponent<Props> = ({ progress, progressSt
             />
         )}
         <div className={styles.spacer} />
-        <div>Auth state: {authState}</div>
     </div>
 )

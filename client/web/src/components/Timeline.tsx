@@ -1,9 +1,12 @@
-import { FunctionComponent, ReactNode } from 'react'
+import React, { FunctionComponent, ReactNode, useState } from 'react'
 
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Collapsible } from './Collapsible'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
+
 import { Timestamp } from './time/Timestamp'
 
 import styles from './Timeline.module.scss'
@@ -12,95 +15,79 @@ export interface TimelineStage {
     icon: ReactNode
     text: ReactNode
     details?: ReactNode
-    date?: string | null
+    date: string
     className?: string
-    expanded?: boolean
+    expandedByDefault?: boolean
 }
 
 export interface TimelineProps {
     stages: TimelineStage[]
-    withoutPreviousDate?: boolean
-    now?: () => Date
     className?: string
+    showDurations?: boolean
+    /** For testing only */
+    now?: () => Date
 }
 
 export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>> = ({
     stages,
     now,
     className,
-    withoutPreviousDate = false,
+    showDurations = true,
 }) => (
-    <div className={className}>
-        {stages.map((stage, stageIndex) => {
-            if (!stage.date) {
-                return null
-            }
-
-            const previousDate = stages
-                .map(stage => stage.date)
-                .filter((date, index) => !!date && index < stageIndex)
-                .reverse()?.[0]
-
-            const meta = <TimelineMeta stage={{ ...stage, date: stage.date }} now={now} />
-
-            return (
-                // Use index as key because the values in each step may not be unique. This is
-                // OK here because this list will not be updated during this component's lifetime.
-                /* eslint-disable react/no-array-index-key */
-                <div key={stageIndex}>
-                    {previousDate && (
-                        <div className="d-flex align-items-center">
-                            <div className="flex-0">
-                                <div className={styles.executorTaskSeparator} />
-                            </div>
-                            {!withoutPreviousDate && (
-                                <div className="flex-1">
-                                    <span className="text-muted ml-4">
-                                        {formatDistance(new Date(stage.date), new Date(previousDate))}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {stage.details ? (
-                        <>
-                            <Collapsible
-                                title={meta}
-                                className="p-0 font-weight-normal"
-                                buttonClassName="mb-0"
-                                titleAtStart={true}
-                                defaultExpanded={stage.expanded}
-                            >
-                                <div className={styles.executorTaskDetails}>{stage.details}</div>
-                            </Collapsible>
-                        </>
-                    ) : (
-                        meta
-                    )}
-                </div>
-            )
-        })}
+    <div className={classNames('w-100', className)}>
+        {stages.map((stage, stageIndex) => (
+            <>
+                {stageIndex !== 0 && (
+                    <div className="d-flex align-items-center">
+                        <div className={styles.separator} />
+                        {showDurations && (
+                            <span className="flex-1 text-muted ml-4">
+                                {formatDistance(new Date(stage.date), new Date(stages[stageIndex - 1]?.date))}
+                            </span>
+                        )}
+                    </div>
+                )}
+                <TimelineStage key={`${stage.text}+${stage.date}`} stage={stage} now={now} />
+            </>
+        ))}
     </div>
 )
 
-export interface TimelineMetaProps {
-    stage: TimelineStage & { date: string }
+interface TimelineStageProps {
+    stage: TimelineStage
     now?: () => Date
 }
 
-export const TimelineMeta: FunctionComponent<React.PropsWithChildren<TimelineMetaProps>> = ({ stage, now }) => (
-    <>
+const TimelineStage: FunctionComponent<React.PropsWithChildren<TimelineStageProps>> = ({
+    stage: { className, details, date, expandedByDefault = false, icon, text },
+    now,
+}) => {
+    const [isExpanded, setIsExpanded] = useState(expandedByDefault)
+
+    const stageLabel = (
         <div className="d-flex align-items-center">
-            <div className="flex-0 m-2">
-                <div className={classNames(styles.executorTaskIcon, stage.className)}>{stage.icon}</div>
-            </div>
+            <div className={classNames(styles.icon, className)}>{icon}</div>
             <div className="flex-1">
-                {stage.text}{' '}
-                <span className="text-muted">
-                    <Timestamp date={stage.date} now={now} noAbout={true} />
+                {text}
+                <span className="text-muted ml-1">
+                    <Timestamp date={date} now={now} noAbout={true} />
                 </span>
             </div>
         </div>
-    </>
-)
+    )
+
+    return details ? (
+        <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={expandedByDefault}>
+            <CollapseHeader
+                as={Button}
+                className="p-0 m-0 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+            >
+                {stageLabel}
+                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+            </CollapseHeader>
+            <CollapsePanel className={styles.details}>{details}</CollapsePanel>
+        </Collapse>
+    ) : (
+        stageLabel
+    )
+}

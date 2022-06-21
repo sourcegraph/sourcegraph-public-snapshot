@@ -84,12 +84,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             >
                                 {provider.serviceType === 'github' && (
                                     <>
-                                        <Icon as={GithubIcon} />{' '}
+                                        <Icon as={GithubIcon} aria-hidden={true} />{' '}
                                     </>
                                 )}
                                 {provider.serviceType === 'gitlab' && (
                                     <>
-                                        <Icon as={GitlabIcon} />{' '}
+                                        <Icon as={GitlabIcon} aria-hidden={true} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}

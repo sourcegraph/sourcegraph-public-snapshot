@@ -16,7 +16,35 @@ You can always try Rockskip for a while and if it doesn't help then you can disa
 
 ## How do I enable Rockskip?
 
-**Step 1:** Give your `codeintel-db` has a few extra GB of RAM and set environment variables on the `symbols` container:
+**Step 1:** Set environment variables on the `symbols` container:
+
+For Docker Compose:
+
+```yaml
+services:
+
+  symbols-0:
+    environment:
+      # 👇 Enables Rockskip
+      - USE_ROCKSKIP=true
+      # 👇 Uses Rockskip for the repositories in the comma separated list
+      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
+```
+
+For Helm:
+
+
+```yaml
+# overrides.yaml
+symbols:
+  env:
+    # 👇 Enables Rockskip
+    USE_ROCKSHIP:
+      value: "true"
+    # 👇 Uses Rockskip for the repositories in the comma separated list
+    ROCKSKIP_REPOS:
+      value: "github.com/crossplane/crossplane,github.com/sgtest/megarepo"
+```
 
 For Kubernetes:
 
@@ -36,37 +64,7 @@ spec:
           value: "github.com/torvalds/linux,github.com/pallets/flask"
 ```
 
-```yaml
-# base/codeintel-db/codeintel-db.Deployment.yaml
-spec:
-  template:
-    spec:
-      containers:
-      - name: pgsql
-        resources:
-          limits:
-            memory: 8Gi # 👈 Increase RAM from 4g to 8g
-          requests:
-            memory: 8Gi # 👈 Increase RAM from 4g to 8g
-```
-
-For Docker Compose:
-
-```yaml
-services:
-
-  symbols-0:
-    environment:
-      # 👇 Enables Rockskip
-      - USE_ROCKSKIP=true
-      # 👇 Uses Rockskip for the repositories in the comma separated list
-      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
-
-  codeintel-db:
-    mem_limit: '8g' # 👈 Increase RAM from 2g to 8g
-```
-
-For other deployments, make sure that:
+For all deployments, make sure that:
 
 - The `symbols` service has access to the codeintel DB
 - The `symbols` service has the environment variables set

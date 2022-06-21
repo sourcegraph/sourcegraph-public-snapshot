@@ -12,19 +12,22 @@ export interface BatchSpecStateBadgeProps {
 const getProps = (state: BatchSpecState): [variant: BadgeVariantType, tooltip: string] => {
     switch (state) {
         case BatchSpecState.PENDING:
-            return ['secondary', 'Not started']
+            return ['secondary', 'Execution has not been started.']
         case BatchSpecState.QUEUED:
-            return ['secondary', 'Waiting for executor']
+            return ['secondary', 'Waiting for the next available executor.']
         case BatchSpecState.PROCESSING:
-            return ['secondary', 'Currently executing']
+            return ['secondary', 'The batch spec is actively being executed.']
         case BatchSpecState.CANCELED:
-            return ['secondary', 'Execution has been canceled']
+            return ['secondary', 'Execution of this batch spec has been canceled.']
         case BatchSpecState.CANCELING:
-            return ['secondary', 'Canceling execution']
+            return ['secondary', 'Execution of this batch spec is being canceled.']
         case BatchSpecState.FAILED:
-            return ['danger', 'Execution failed']
+            return [
+                'danger',
+                "Execution didn't finish successfully in all workspaces. Some changesets may be missing in preview.",
+            ]
         case BatchSpecState.COMPLETED:
-            return ['success', 'Execution finished successfully']
+            return ['success', 'Execution finished successfully in all workspaces.']
     }
 }
 

@@ -189,7 +189,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
                 </div>
 
-                <ActionButtons className="ml-2">
+                <ActionButtons className="ml-2 flex-shrink-0">
                     <ActionsMenu />
                 </ActionButtons>
             </div>

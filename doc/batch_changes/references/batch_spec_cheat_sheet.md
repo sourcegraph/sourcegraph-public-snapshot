@@ -207,7 +207,7 @@ steps:
             - name: Generate LSIF data
               run: lsif-go
             - name: Upload LSIF data
-              run: src lsif upload -github-token=${{ "\\${{secrets.GITHUB_TOKEN}}" }}
+              run: src code-intel upload -github-token=${{ "\\${{secrets.GITHUB_TOKEN}}" }}
       EOF
 ```
 

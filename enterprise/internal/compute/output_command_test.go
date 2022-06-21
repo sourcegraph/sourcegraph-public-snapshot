@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,7 +52,7 @@ train(commuter, lightrail)`).
 }
 
 func fileMatch(content string) result.Match {
-	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+	gitserver.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
