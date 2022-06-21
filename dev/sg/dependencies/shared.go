@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -225,19 +224,18 @@ func opLoginFix() check.FixAction[CheckArgs] {
 			return errors.New("interactive input required")
 		}
 
-		cio.Write("Enter secret key:")
-		var key string
-		if _, err := fmt.Fscan(cio.Input, &key); err != nil {
+		key, err := cio.Output.PromptPasswordf(cio.Input, "Enter secret key:")
+		if err != nil {
 			return err
 		}
-		cio.Write("Enter account email:")
-		var email string
-		if _, err := fmt.Fscan(cio.Input, &email); err != nil {
+
+		email, err := cio.Output.PromptPasswordf(cio.Input, "Enter account email:")
+		if err != nil {
 			return err
 		}
-		cio.Write("Enter account password:")
-		var password string
-		if _, err := fmt.Fscan(cio.Input, &password); err != nil {
+
+		password, err := cio.Output.PromptPasswordf(cio.Input, "Enter account password:")
+		if err != nil {
 			return err
 		}
 
