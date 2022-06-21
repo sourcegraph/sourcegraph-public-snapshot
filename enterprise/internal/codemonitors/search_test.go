@@ -68,7 +68,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			require.NoError(t, err)
 			inputs := &run.SearchInputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteralDefault,
+				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}

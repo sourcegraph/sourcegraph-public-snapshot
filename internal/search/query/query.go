@@ -93,7 +93,7 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 func For(searchType SearchType) step {
 	var processType step
 	switch searchType {
-	case SearchTypeLiteralDefault:
+	case SearchTypeLiteral:
 		processType = succeeds(substituteConcat(space))
 	case SearchTypeRegex:
 		processType = succeeds(escapeParensHeuristic, substituteConcat(fuzzyRegexp))
@@ -117,7 +117,7 @@ func Init(in string, searchType SearchType) step {
 
 // InitLiteral is Init where SearchType is Literal.
 func InitLiteral(in string) step {
-	return Init(in, SearchTypeLiteralDefault)
+	return Init(in, SearchTypeLiteral)
 }
 
 // InitRegexp is Init where SearchType is Regex.
