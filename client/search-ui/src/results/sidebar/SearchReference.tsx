@@ -603,7 +603,7 @@ const SearchReference = React.memo(
                 <Text className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-label="Open in a new tab" as={ExternalLinkIcon} />
                         </Link>
                     </small>
                 </Text>
