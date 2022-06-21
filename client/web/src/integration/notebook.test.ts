@@ -378,7 +378,7 @@ describe('Search Notebook', () => {
         await driver.page.waitForFunction(
             (fileBlockSelector: string) => {
                 const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
-                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('#')
+                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('/')
             },
             {},
             fileBlockSelector
@@ -388,7 +388,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/web/index.ts#1-20github.com/sourcegraph/sourcegraph@branch')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/web/index.ts')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
@@ -431,7 +431,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')
     })
 
     it('Should update the notebook title', async () => {
@@ -630,7 +630,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
                 document.querySelector<HTMLDivElement>(symbolBlockSelectedSymbolNameSelector)?.textContent,
             symbolBlockSelectedSymbolNameSelector
         )
-        expect(selectedSymbolName).toEqual('func class')
+        expect(selectedSymbolName).toEqual('func')
     })
 
     it('Should add an empty markdown block through the command palette', async () => {
@@ -710,7 +710,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')
     })
 
     const getHighlightedOutlineHeading = async () => {
