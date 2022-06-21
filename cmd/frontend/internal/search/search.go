@@ -56,16 +56,13 @@ type streamHandler struct {
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-
 	args, err := parseURLQuery(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
+	tr, ctx := trace.New(r.Context(), "search.ServeStream", args.Query,
 		trace.Tag{Key: "version", Value: args.Version},
 		trace.Tag{Key: "pattern_type", Value: args.PatternType},
 	)
