@@ -170,7 +170,7 @@ var sg = &cli.App{
 		addSuggestionHooks(cmd.App.Commands)
 
 		// Add feedback subcommand to all commands and subcommands
-		addFeedbackSubcommand(cmd.App.Commands)
+		addFeedbackFlags(cmd.App.Commands)
 
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
