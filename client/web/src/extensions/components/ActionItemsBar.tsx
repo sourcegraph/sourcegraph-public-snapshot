@@ -283,8 +283,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
-                <ul className="list-unstyled m-0">
-                    <li className={styles.listItem}>
+                <div className="list-unstyled m-0">
+                    <div className={styles.listItem}>
                         <Link
                             to="/extensions"
                             className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
@@ -293,8 +293,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         >
                             <Icon as={PlusIcon} aria-hidden={true} />
                         </Link>
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </ErrorBoundary>
         </div>
     )
