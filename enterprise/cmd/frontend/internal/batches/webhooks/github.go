@@ -70,7 +70,6 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 	}
 
 	for _, pr := range prs {
-		fmt.Printf("pr:%+v\n", pr)
 		if pr == (PR{}) {
 			continue
 		}
