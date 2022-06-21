@@ -257,11 +257,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                   outline: this.props.actionItemStyleProps?.actionItemOutline,
               }
             : {}
-        const disabled =
-            !this.props.active ||
-            ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                this.state.actionOrError === LOADING) ||
-            this.props.disabledWhen
+        const disabled = this.isDisabled()
+
+        // TODO don't run action when disabled
 
         return (
             <ButtonLink
@@ -312,6 +310,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             return
         }
 
+        if (this.isDisabled()) {
+            return
+        }
+
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
 
@@ -341,6 +343,12 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             args: action.commandArguments,
         })
     }
+
+    private isDisabled = (): boolean | undefined =>
+        !this.props.active ||
+        ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+            this.state.actionOrError === LOADING) ||
+        this.props.disabledWhen
 }
 
 export function urlForClientCommandOpen(
