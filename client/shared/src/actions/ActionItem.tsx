@@ -8,14 +8,7 @@ import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
-import {
-    LoadingSpinner,
-    Button,
-    ButtonLink,
-    ButtonLinkProps,
-    WildcardThemeContext,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
@@ -288,66 +281,64 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         if (!to) {
             return (
-                <Tooltip className={this.props.tooltipClassName} content={tooltipOrErrorMessage || null}>
-                    <Button
-                        {...sharedProps}
-                        {...buttonLinkProps}
-                        className={classNames(
-                            'test-action-item',
-                            this.props.className,
-                            showLoadingSpinner && styles.actionItemLoading,
-                            pressed && [this.props.pressedClassName],
-                            sharedProps.disabled && this.props.inactiveClassName
-                        )}
-                        onClick={this.runAction}
-                        data-action-item-pressed={pressed}
-                        aria-pressed={pressed}
-                        aria-label={tooltipOrErrorMessage}
-                    >
-                        {content}{' '}
-                        {showLoadingSpinner && (
-                            <div className={styles.loader} data-testid="action-item-spinner">
-                                <LoadingSpinner inline={false} className={this.props.iconClassName} />
-                            </div>
-                        )}
-                    </Button>
-                </Tooltip>
-            )
-        }
-
-        return (
-            <Tooltip className={this.props.tooltipClassName} content={tooltipOrErrorMessage || null}>
-                <ButtonLink
-                    data-content={this.props.dataContent}
-                    disabledClassName={this.props.inactiveClassName}
-                    data-action-item-pressed={pressed}
+                <Button
+                    {...sharedProps}
+                    {...buttonLinkProps}
+                    data-tooltip={tooltipOrErrorMessage}
                     className={classNames(
                         'test-action-item',
                         this.props.className,
                         showLoadingSpinner && styles.actionItemLoading,
                         pressed && [this.props.pressedClassName],
-                        buttonLinkProps.variant === 'link' && styles.actionItemLink
+                        sharedProps.disabled && this.props.inactiveClassName
                     )}
-                    pressed={pressed}
-                    onSelect={this.runAction}
-                    // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
-                    // it as a button that executes the command.
-                    to={to}
-                    {...newTabProps}
-                    {...buttonLinkProps}
-                    {...sharedProps}
+                    onClick={this.runAction}
+                    data-action-item-pressed={pressed}
+                    aria-pressed={pressed}
+                    aria-label={tooltipOrErrorMessage}
                 >
                     {content}{' '}
-                    {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                        <OpenInNewIcon className={this.props.iconClassName} />
-                    )}
                     {showLoadingSpinner && (
                         <div className={styles.loader} data-testid="action-item-spinner">
                             <LoadingSpinner inline={false} className={this.props.iconClassName} />
                         </div>
                     )}
-                </ButtonLink>
-            </Tooltip>
+                </Button>
+            )
+        }
+
+        return (
+            <ButtonLink
+                data-tooltip={tooltipOrErrorMessage}
+                data-content={this.props.dataContent}
+                disabledClassName={this.props.inactiveClassName}
+                data-action-item-pressed={pressed}
+                className={classNames(
+                    'test-action-item',
+                    this.props.className,
+                    showLoadingSpinner && styles.actionItemLoading,
+                    pressed && [this.props.pressedClassName],
+                    buttonLinkProps.variant === 'link' && styles.actionItemLink
+                )}
+                pressed={pressed}
+                onSelect={this.runAction}
+                // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
+                // it as a button that executes the command.
+                to={to}
+                {...newTabProps}
+                {...buttonLinkProps}
+                {...sharedProps}
+            >
+                {content}{' '}
+                {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
+                    <OpenInNewIcon className={this.props.iconClassName} />
+                )}
+                {showLoadingSpinner && (
+                    <div className={styles.loader} data-testid="action-item-spinner">
+                        <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                    </div>
+                )}
+            </ButtonLink>
         )
     }
 

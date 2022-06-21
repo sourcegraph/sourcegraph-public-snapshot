@@ -238,7 +238,6 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                             this.props.actionItemClassName,
                                             index === selectedIndex && this.props.selectedActionItemClassName
                                         )}
-                                        tooltipClassName="d-block"
                                         {...item}
                                         ref={index === selectedIndex ? this.setSelectedItem : undefined}
                                         title={
