@@ -602,7 +602,6 @@ query {
 }
 ```
 
-
 <br />
 
 ## Permissions for multiple code hosts
