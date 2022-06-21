@@ -74,11 +74,19 @@ export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormP
                 </Button>
             </div>
 
-            {state === State.Queued && queueResult !== undefined && (
-                <Alert className="mt-3 mb-0" variant="success">
-                    {queueResult} index jobs enqueued.
-                </Alert>
-            )}
+            {state === State.Queued &&
+                queueResult !== undefined &&
+                (queueResult > 0 ? (
+                    <Alert className="mt-3 mb-0" variant="success">
+                        {queueResult} auto-indexing jobs enqueued.
+                    </Alert>
+                ) : (
+                    <Alert className="mt-3 mb-0" variant="info">
+                        Failed to enqueue any auto-indexing jobs.
+                        <br />
+                        Check if the auto-index configuration is up-to-date.
+                    </Alert>
+                ))}
         </>
     )
 }
