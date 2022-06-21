@@ -92,23 +92,6 @@ var Mac = []category{
 				Fix:         cmdFix(`brew install nss`),
 			},
 			{
-				Name:    "docker",
-				Enabled: disableInCI(), // Very wonky in CI
-				Check: checkAction(check.Combine(
-					check.WrapErrMessage(check.InPath("docker"),
-						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
-				)),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, `brew install --cask docker`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-
-					cio.Verbose("Docker installed - attempting to start docker")
-
-					return usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
-				},
-			},
-			{
 				Name:  "asdf",
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
@@ -125,6 +108,29 @@ var Mac = []category{
 				Description: "Required for yarn installation.",
 				Check:       checkAction(check.InPath("gpg")),
 				Fix:         cmdFix("brew install gpg"),
+			},
+		},
+	},
+	{
+		Name:      depsDocker,
+		Enabled:   disableInCI(), // Very wonky in CI
+		DependsOn: []string{depsHomebrew},
+		Checks: []*dependency{
+			{
+				Name: "docker",
+				Check: checkAction(check.Combine(
+					check.WrapErrMessage(check.InPath("docker"),
+						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
+				)),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := usershell.Run(ctx, `brew install --cask docker`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+
+					cio.Write("Docker installed - attempting to start docker")
+
+					return usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
+				},
 			},
 		},
 	},
