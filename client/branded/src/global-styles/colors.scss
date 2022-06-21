@@ -97,6 +97,7 @@ $theme-colors: (
     --merged-3: #6b47d6;
     --light-text: var(--white);
     --dark-text: var(--gray-08);
+    --line-number-color: var(--gray-06);
     --header-icon-color: var(--gray-05);
     --tooltip-bg: var(--gray-08);
     --text-disabled: var(--gray-06);
@@ -240,4 +241,14 @@ $theme-colors: (
     --btn-link-disabled-color: var(--primary-2);
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
     --text-muted-transparent: #{rgba($gray-06, 0.3)};
+}
+
+// Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+// https://github.com/sourcegraph/sourcegraph/issues/36251
+.theme-light.feature-highlight-contrast {
+    --line-number-color: #536da1;
+}
+
+.theme-dark.feature-highlight-contrast {
+    --line-number-color: #bdc8df;
 }

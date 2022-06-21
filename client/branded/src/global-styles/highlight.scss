@@ -84,15 +84,15 @@
 
     // These colors are my description of them.
     // They don't match up with other defined colors.
-    --hl-yellow: #7f6102;
-    --hl-green: #226a00;
-    --hl-red: #ce0804;
-    --hl-orange: #af4001;
-    --hl-blue: #006bb7;
-    --hl-cyan: #545454;
-    --hl-eggshell: #c8c7c5;
-    --hl-purple: #555bc2;
-    --hl-pink: #c32974;
+    --hl-yellow: #b58900;
+    --hl-green: #859900;
+    --hl-red: #dc322f;
+    --hl-orange: #cb5b16;
+    --hl-blue: #268bd2;
+    --hl-cyan: #2aa198;
+    --hl-eggshell: #eee8d5;
+    --hl-purple: #6c71c4;
+    --hl-pink: #d33682;
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // Define these in a way that are good. These are just the same values as before.
@@ -103,10 +103,10 @@
 
     // These grays are not ordered at all,
     // they're just in the order they were defined
-    --hl-gray-0: #666666;
-    --hl-gray-1: #666666;
-    --hl-gray-2: ##666666;
-    --hl-gray-3: #606060;
+    --hl-gray-0: #767676;
+    --hl-gray-1: #839496;
+    --hl-gray-2: #93a1a1;
+    --hl-gray-3: #657b83;
     --hl-gray-4: #586e75;
     --hl-gray-5: #2b3750;
 
@@ -701,10 +701,10 @@
     --hl-gray-4: #4f5b66;
     --hl-gray-5: #96b5b4;
     --hl-gray-6: #969896;
-    --hl-dark-green: #90c29a;
-    --hl-dark-blue-1: #62b4f9;
+    --hl-dark-green: #359448;
+    --hl-dark-blue-1: #329af0;
     --hl-dark-blue-2: #268bd2;
-    --hl-dark-blue-3: #7ac3fe;
+    --hl-dark-blue-3: #35a5ff;
     --hl-dark-yellow: #ebcb8b;
     --hl-dark-red: #bf616a;
     --hl-blue: #72c3fc;
@@ -838,8 +838,7 @@
 
     // Units
     .hl-keyword.hl-other.hl-unit {
-        // TODO: Make semantic?
-        color: #dba291;
+        color: var(--hl-orange);
     }
 
     // Code
@@ -866,11 +865,11 @@
         color: var(--hl-dark-red);
     }
 
-    // // Embedded
-    // .hl-punctuation.hl-section.hl-embedded,
-    // .hl-variable.hl-interpolation {
-    //     color: var(--hl-brown);
-    // }
+    // Embedded
+    .hl-punctuation.hl-section.hl-embedded,
+    .hl-variable.hl-interpolation {
+        color: var(--hl-brown);
+    }
 
     // Diff
     .hl-source.hl-diff {
@@ -1010,4 +1009,37 @@
     // }
     // .hl-typed-TagDelimiter {
     // }
+}
+
+// Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+// https://github.com/sourcegraph/sourcegraph/issues/36251
+.theme-light.feature-highlight-contrast {
+    --hl-yellow: #7f6102;
+    --hl-green: #226a00;
+    --hl-red: #ce0804;
+    --hl-orange: #af4001;
+    --hl-blue: #006bb7;
+    --hl-cyan: #545454;
+    --hl-eggshell: #c8c7c5;
+    --hl-purple: #555bc2;
+    --hl-pink: #c32974;
+
+    --hl-gray-0: #666666;
+    --hl-gray-1: #666666;
+    --hl-gray-2: ##666666;
+    --hl-gray-3: #606060;
+}
+.theme-dark.feature-highlight-contrast {
+    --hl-dark-green: #90c29a;
+    --hl-dark-blue-1: #62b4f9;
+    --hl-dark-blue-3: #7ac3fe;
+
+    .hl-keyword.hl-other.hl-unit {
+        color: #dba291;
+    }
+
+    .hl-punctuation.hl-section.hl-embedded,
+    .hl-variable.hl-interpolation {
+        color: var(--hl-gray-2);
+    }
 }
