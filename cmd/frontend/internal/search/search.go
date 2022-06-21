@@ -75,18 +75,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
-	eventWriter, err := streamhttp.NewWriter(w)
+	streamWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Log events to trace
+	streamWriter.StatHook = eventStreamOTHook(tr.LogFields)
+
+	eventWriter := newEventWriter(streamWriter)
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]any{})
-
-	// Log events to trace
-	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	defer eventWriter.Done()
 
 	events, inputs, results := h.startSearch(ctx, args)
 
@@ -113,15 +114,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		RepoNamer:    repoNamer(ctx, h.db),
 	}
 
-	sendProgress := func() {
-		_ = eventWriter.Event("progress", progress.Current())
-	}
-
 	// Store marshalled matches and flush periodically or when we go over
 	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
 	// still write more than that.
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
-		return eventWriter.EventBytes("matches", data)
+		return eventWriter.MatchesJSON(data)
 	})
 	matchesFlush := func() {
 		if err := matchesBuf.Flush(); err != nil {
@@ -130,7 +127,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if progress.Dirty {
-			sendProgress()
+			eventWriter.Progress(progress.Current())
 		}
 	}
 	flushTicker := time.NewTicker(h.flushTickerInternal)
@@ -140,25 +137,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer pingTicker.Stop()
 
 	filters := &streaming.SearchFilters{}
-	filtersFlush := func() {
-		if fs := filters.Compute(); len(fs) > 0 {
-			buf := make([]streamhttp.EventFilter, 0, len(fs))
-			for _, f := range fs {
-				buf = append(buf, streamhttp.EventFilter{
-					Value:    f.Value,
-					Label:    f.Label,
-					Count:    f.Count,
-					LimitHit: f.IsLimitHit,
-					Kind:     f.Kind,
-				})
-			}
-
-			if err := eventWriter.Event("filters", buf); err != nil {
-				// EOF
-				return
-			}
-		}
-	}
 
 	var wgLogLatency sync.WaitGroup
 	defer wgLogLatency.Wait()
@@ -208,7 +186,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if first && matchesBuf.Len() > 0 {
 			first = false
 			matchesFlush()
-			filtersFlush()
+			eventWriter.Filters(filters.Compute())
 			logLatency()
 		}
 	}
@@ -222,38 +200,26 @@ LOOP:
 			}
 			handleEvent(event)
 		case <-flushTicker.C:
-			filtersFlush()
+			eventWriter.Filters(filters.Compute())
 			matchesFlush()
 		case <-pingTicker.C:
-			sendProgress()
+			eventWriter.Progress(progress.Current())
 		}
 	}
 
-	filtersFlush()
+	eventWriter.Filters(filters.Compute())
 	matchesFlush()
 
 	alert, err := results()
 	if err != nil {
-		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
+		eventWriter.Error(err)
 		return
 	}
-
 	if alert != nil {
-		var pqs []streamhttp.ProposedQuery
-		for _, pq := range alert.ProposedQueries {
-			pqs = append(pqs, streamhttp.ProposedQuery{
-				Description: pq.Description,
-				Query:       pq.QueryString(),
-			})
-		}
-		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:           alert.Title,
-			Description:     alert.Description,
-			ProposedQueries: pqs,
-		})
+		eventWriter.Alert(alert)
 	}
 
-	_ = eventWriter.Event("progress", progress.Final())
+	eventWriter.Progress(progress.Final())
 
 	var status, alertType string
 	status = graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
