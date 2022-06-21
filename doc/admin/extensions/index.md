@@ -35,6 +35,7 @@ If a user's organization settings or user settings explicitly disable the extens
 If you want to create extensions that are only visible to users on your Sourcegraph instance or make use of extensions from the [sourcegraph.com extensions registry](https://sourcegraph.com/extensions) on the air-gapped instances, you can use Sourcegraph Enterprise's private extension registry feature. This is enabled by default on Sourcegraph Enterprise.
 
 To publish an extension to your instance's private extension registry (requires Internet access):
+
 1. Configure your [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) with the URL and an access token for your Sourcegraph instance.
 2. Depending on whether or not the extension already exists on Sourcegraph.com:
   - If the extension already exists on Sourcegraph.com, you can copy it to your private extension registry with `src extensions copy -extension-id=... -current-user=...`

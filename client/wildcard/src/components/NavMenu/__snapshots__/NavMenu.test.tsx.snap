@@ -119,7 +119,6 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
       <div
         aria-disabled="true"
         class="dropdownItem"
-        data-disabled=""
         data-reach-menu-item=""
         data-valuetext="Help"
         id="option-6--menu-1"
