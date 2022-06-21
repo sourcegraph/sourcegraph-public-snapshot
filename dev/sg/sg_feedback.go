@@ -98,7 +98,7 @@ func addSGInformation(ctx *cli.Context, body string) string {
 	}).Parse(`{{.Content}}
 
 
-### {{ inline_code "sg" }} Information
+### {{ inline_code "sg" }} information
 
 Commit: {{ inline_code .Commit}}
 Command: {{ inline_code .Command}}
