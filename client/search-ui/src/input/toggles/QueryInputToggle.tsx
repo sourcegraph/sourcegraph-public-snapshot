@@ -81,7 +81,6 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
         : { tabIndex: -1, 'aria-hidden': true }
 
     return (
-        // TODO: Test changes here
         // Click events here are defined in useEffect
         <Tooltip content={tooltipValue} placement="bottom">
             <Button
