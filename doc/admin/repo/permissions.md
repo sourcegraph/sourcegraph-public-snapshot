@@ -523,7 +523,7 @@ This API lets site admins set the same permissions for all the users across all 
 
 First, obtain the project key from the Bitbucket code host.
 
-Next, get the code host ID. Visit the `Manage code hosts` page from the site admin panel in the Sourcegraph instance and click on "Edit" for the code host under which the above project is located. Copy the ID from the URL. For example in the URL https://sourcegraph.example.com/site-admin/external-services/RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==, the code host ID is `RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==`.
+Next, get the code host ID. Visit the **Manage code hosts** page from the site admin panel in the Sourcegraph instance and click on "Edit" for the code host under which the above project is located. Copy the ID from the URL. For example in the URL https://sourcegraph.example.com/site-admin/external-services/RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==, the code host ID is `RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==`.
 
 Next, set the list of users allowed to access all repositories under the project:
 
@@ -549,7 +549,7 @@ To get the state of currently queued or running tasks you can run the following 
 
 ```graphql
 query {
-	bitbucketProjectPermissionJobs(projectKeys: ["<project key 1>", "<project key 2>"]) {
+    bitbucketProjectPermissionJobs(projectKeys: ["<project key 1>", "<project key 2>"]) {
     nodes{
       InternalJobID,
       State,
@@ -569,10 +569,41 @@ query {
 }
 ```
 
+The API also supports filtering against task `status`, which can be one of the following:
+
+- `queued`
+- `canceled`
+- `failed`
+- `completed`
+
+Additionally, the API supports users to control the number of tasks returned in the output by using the argument `count` upto an upper limit of 500.
+
+Here's an example with all the query arguments in the API call:
+
+```graphql
+query {
+    bitbucketProjectPermissionJobs(projectKeys: ["a", "b"], status: "queued", count: 200) {
+    nodes{
+      InternalJobID,
+      State,
+      FailureMessage,
+      QueuedAt,
+      StartedAt,
+      FinishedAt,
+      ProcessAfter,
+      ExternalServiceID,
+      Permissions{
+        bindID,
+        permission,
+      },
+      Unrestricted,
+    }
+  }
+}
+```
+
+
 <br />
-
-#### Get information about project permissions job state
-
 
 ## Permissions for multiple code hosts
 
