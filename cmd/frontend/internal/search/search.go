@@ -162,6 +162,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var wgLogLatency sync.WaitGroup
 	defer wgLogLatency.Wait()
+	logLatency := func() {
+		wgLogLatency.Add(1)
+		go func() {
+			defer wgLogLatency.Done()
+			metricLatency.WithLabelValues(string(GuessSource(r))).
+				Observe(time.Since(start).Seconds())
+
+			graphqlbackend.LogSearchLatency(ctx, h.db, inputs, int32(time.Since(start).Milliseconds()))
+		}()
+	}
 
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
@@ -199,11 +209,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			first = false
 			matchesFlush()
 			filtersFlush()
-
-			metricLatency.WithLabelValues(string(GuessSource(r))).
-				Observe(time.Since(start).Seconds())
-
-			graphqlbackend.LogSearchLatency(ctx, h.db, &wgLogLatency, inputs, int32(time.Since(start).Milliseconds()))
+			logLatency()
 		}
 	}
 
