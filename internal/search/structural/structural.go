@@ -64,6 +64,7 @@ type searchRepos struct {
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
 		searcherJob := &searcher.TextSearchJob{
+			Log:             slog.Scoped("", ""),
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
