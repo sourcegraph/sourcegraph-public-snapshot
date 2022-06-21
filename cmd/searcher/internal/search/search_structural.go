@@ -368,7 +368,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return nil
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender, log slog.Logger) (err error) {
+func structuralSearchWithZoekt(log slog.Logger, ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -390,7 +390,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil, log)
+	zoektMatches, _, _, err := zoektSearch(log, ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil)
 	if err != nil {
 		return err
 	}

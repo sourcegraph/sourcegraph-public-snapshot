@@ -97,7 +97,7 @@ func GetIndexOptions(
 	// future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
 	results := make([][]byte, len(repos))
-	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c, log)
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(log, c)
 
 	for i := range repos {
 		sema <- struct{}{}
@@ -203,7 +203,7 @@ func getIndexOptions(
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
-func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration, slog log.Logger) revsRuleFunc {
+func siteConfigRevisionsRuleFunc(slog log.Logger, c *schema.SiteConfiguration) revsRuleFunc {
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}

@@ -102,7 +102,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
 		} else {
-			m.log.Warn("meteredSearcher: Error injecting new span context into map: %s", slog.Error(err))
+			m.log.Warn("meteredSearcher: Error injecting new span context into map:", slog.Error(err))
 		}
 	}
 

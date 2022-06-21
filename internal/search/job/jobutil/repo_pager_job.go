@@ -36,6 +36,7 @@ func setRepos(log slog.Logger, job job.Job, indexed *zoekt.IndexedRepoRevs, unin
 	setSearcherRepos := func(job *searcher.TextSearchJob) *searcher.TextSearchJob {
 		jobCopy := *job
 		jobCopy.Repos = unindexed
+		job.Log = log
 		return &jobCopy
 	}
 
