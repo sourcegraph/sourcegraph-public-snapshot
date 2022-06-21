@@ -13,7 +13,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,7 +39,7 @@ type migratorAndOption struct {
 
 var _ goroutine.BackgroundRoutine = &Runner{}
 
-func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
+func NewRunnerWithDB(db database.DB, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
 	return newRunner(NewStoreWithDB(db), glock.NewRealTicker(refreshInterval), observationContext)
 }
 

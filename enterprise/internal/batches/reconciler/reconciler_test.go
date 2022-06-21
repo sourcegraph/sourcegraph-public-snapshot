@@ -26,8 +26,8 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	log := logtest.Scoped(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -148,7 +148,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				sourcer:           sourcer,
 				store:             store,
 			}
-			err := rec.process(ctx, log, store, changeset)
+			err := rec.process(ctx, logger, store, changeset)
 			if err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}

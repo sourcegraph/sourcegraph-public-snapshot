@@ -157,7 +157,7 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     <LoadingSpinner inline={true} className={classNames('ml-auto', 'mr-3')} />
                                 ) : successfulInvites.has(person.email) ? (
                                     <span className="text-muted ml-auto mr-3">
-                                        <Icon className="mr-1" as={CheckCircleIcon} />
+                                        <Icon className="mr-1" as={CheckCircleIcon} aria-hidden={true} />
                                         Invited
                                     </span>
                                 ) : (

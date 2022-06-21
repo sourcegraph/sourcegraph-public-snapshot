@@ -52,7 +52,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(mainAppDb).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(logger, mainAppDb).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
@@ -62,7 +62,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, database.NewDB(mainAppDb), insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, database.NewDB(logger, mainAppDb), insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() job.Job {

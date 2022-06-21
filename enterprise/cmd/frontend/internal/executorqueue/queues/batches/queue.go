@@ -2,7 +2,6 @@ package batches
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/log"
 
@@ -11,7 +10,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -23,7 +21,7 @@ func QueueOptions(db database.DB, accessToken func() string, observationContext 
 		return transformRecord(ctx, logger, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), accessToken())
 	}
 
-	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
+	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(db.Handle(), observationContext)
 	return handler.QueueOptions{
 		Name:                   "batches",
 		Store:                  store,

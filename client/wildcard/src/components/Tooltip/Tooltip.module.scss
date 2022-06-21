@@ -26,6 +26,7 @@
     color: var(--tooltip-color);
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
     user-select: text;
+    word-wrap: break-word;
 }
 
 .tooltip-arrow {

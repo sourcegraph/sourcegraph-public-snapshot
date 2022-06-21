@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -49,6 +51,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -89,6 +92,7 @@ func TestSyncerRun(t *testing.T) {
 		}, nil)
 
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			metrics:          makeMetrics(&observation.TestContext),
@@ -119,6 +123,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -139,6 +144,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        newTestStore(),
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -227,6 +233,7 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	t.Cleanup(syncerCancel)
 
 	syncer := &changesetSyncer{
+		logger:      logtest.Scoped(t),
 		syncStore:   syncStore,
 		codeHostURL: codeHostURL,
 		syncFunc: func(ctx context.Context, id int64) error {

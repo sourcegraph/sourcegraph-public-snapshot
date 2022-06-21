@@ -396,9 +396,8 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
                     {visibilityRadioButtons.map((radio, index) => (
-                        <>
+                        <React.Fragment key={radio.visibility}>
                             <RadioButton
-                                key={radio.visibility}
                                 id={`visibility_${index}`}
                                 className={styles.searchContextFormRadio}
                                 name="visibility"
@@ -417,7 +416,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             <div className="ml-4 mb-2">
                                 <small className="text-muted">{radio.description}</small>
                             </div>
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
                 <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />

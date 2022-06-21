@@ -5,13 +5,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestDeleteOldAuditLogs(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	// Sanity check for syntax only

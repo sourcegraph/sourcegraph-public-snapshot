@@ -10,13 +10,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // NewFilter calls gitserver to retrieve the ignore-file. If the file doesn't
 // exist we return an empty ignore.Matcher.
 func NewFilter(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
-	ignoreFile, err := git.ReadFile(ctx, db, repo, commit, ignore.IgnoreFile, nil)
+	ignoreFile, err := gitserver.NewClient(db).ReadFile(ctx, repo, commit, ignore.IgnoreFile, nil)
 	if err != nil {
 		// We do not ignore anything if the ignore file does not exist.
 		if strings.Contains(err.Error(), "file does not exist") {

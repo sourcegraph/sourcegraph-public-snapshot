@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	notebooksapitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks/resolvers/apitest"
@@ -178,9 +180,9 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 }
 
 func TestSingleNotebookCRUD(t *testing.T) {
+	logger := logtest.Scoped(t)
 	internalCtx := actor.WithInternalActor(context.Background())
-	testdb := database.NewDB(dbtest.NewDB(t))
-	db := database.NewDB(testdb)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
@@ -548,7 +550,8 @@ func createNotebookStars(t *testing.T, db database.DB, notebookID int64, userIDs
 }
 
 func TestListNotebooks(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
 	o := db.Orgs()
@@ -597,8 +600,7 @@ func TestListNotebooks(t *testing.T) {
 		return ids
 	}
 
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

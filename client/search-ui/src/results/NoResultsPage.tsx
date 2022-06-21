@@ -311,7 +311,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
-                                        Learn more <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                                        Learn more <Icon aria-label="Open in a new tab" as={ExternalLinkIcon} />
                                     </Link>
                                 </small>
                             </Text>
@@ -350,7 +350,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
-                                Sourcegraph Learn <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                                Sourcegraph Learn <Icon as={ExternalLinkIcon} aria-label="Open in a new tab" />
                             </Link>
                             <br />
                             <Link
@@ -358,7 +358,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
-                                Sourcegraph cheat sheet <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                                Sourcegraph cheat sheet <Icon as={ExternalLinkIcon} aria-label="Open in a new tab" />
                             </Link>
                         </Text>
                     </Container>

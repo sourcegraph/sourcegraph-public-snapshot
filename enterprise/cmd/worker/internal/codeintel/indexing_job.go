@@ -72,12 +72,12 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
-	extSvcStore := database.NewDB(db).ExternalServices()
+	extSvcStore := database.NewDB(logger, db).ExternalServices()
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 	enqueuerDBStoreShim := &autoindexing.DBStoreShim{Store: dbStore}
 	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
 	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
-	indexEnqueuer := autoindexing.GetService(database.NewDB(db), enqueuerDBStoreShim, gitserverClient, repoUpdaterClient)
+	indexEnqueuer := autoindexing.GetService(database.NewDB(logger, db), enqueuerDBStoreShim, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewDependencySyncScheduler(dbStoreShim, dependencySyncStore, extSvcStore, syncMetrics, observationContext),

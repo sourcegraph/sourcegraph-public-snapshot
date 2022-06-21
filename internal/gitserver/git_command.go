@@ -99,13 +99,14 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	cmd.Stderr = &stderrBuf
 
 	dir := protocol.NormalizeRepo(l.Repo())
-	path := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)), ".git")
-	cmd.Dir = path
+	repoPath := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)))
+	gitPath := filepath.Join(repoPath, ".git")
+	cmd.Dir = repoPath
 	if cmd.Env == nil {
 		// Do not strip out existing env when setting.
 		cmd.Env = os.Environ()
 	}
-	cmd.Env = append(cmd.Env, "GIT_DIR="+path)
+	cmd.Env = append(cmd.Env, "GIT_DIR="+gitPath)
 
 	err := cmd.Run()
 	exitStatus := -10810
@@ -114,7 +115,7 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	}
 	l.exitStatus = exitStatus
 
-	return stdoutBuf.Bytes(), stderrBuf.Bytes(), err
+	return stdoutBuf.Bytes(), bytes.TrimSpace(stderrBuf.Bytes()), err
 }
 
 func (l *LocalGitCommand) Output(ctx context.Context) ([]byte, error) {

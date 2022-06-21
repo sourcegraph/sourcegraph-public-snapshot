@@ -223,7 +223,7 @@
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }

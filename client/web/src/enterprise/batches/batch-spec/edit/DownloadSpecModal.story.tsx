@@ -17,9 +17,9 @@ add('DownloadSpecModal', () => (
                 setIsDownloadSpecModalOpen={function (): void {
                     throw new Error('Function not implemented.')
                 }}
-                setDownloadSpecModalDismissed={function (): void {
-                    throw new Error('Function not implemented.')
-                }}
+                // setDownloadSpecModalDismissed={function (): void {
+                //     throw new Error('Function not implemented.')
+                // }}
                 {...props}
             />
         )}

@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	sentrylib "github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -66,13 +66,12 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 
 	defer liblog.Sync()
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Ready immediately
@@ -80,7 +79,7 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	logger := log.Scoped("service", "the github-proxy service")
+	logger := log.Scoped("server", "the github-proxy service")
 
 	p := &githubProxy{
 		logger: logger,

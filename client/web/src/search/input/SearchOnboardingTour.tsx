@@ -11,7 +11,7 @@ import Tour from 'shepherd.js/src/types/tour'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { QueryState } from '@sourcegraph/search'
-import { MonacoQueryInputProps } from '@sourcegraph/search-ui'
+import { IEditor, MonacoQueryInputProps } from '@sourcegraph/search-ui'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
@@ -342,7 +342,7 @@ interface UseSearchOnboardingTourOptions {
  * The subset of MonacoQueryInput props should be passed down to the input component.
  */
 interface UseSearchOnboardingTourReturnValue
-    extends Pick<MonacoQueryInputProps, 'onCompletionItemSelected' | 'onSuggestionsInitialized' | 'onFocus'> {
+    extends Pick<MonacoQueryInputProps, 'onCompletionItemSelected' | 'onEditorCreated' | 'onFocus'> {
     /**
      * Whether the query input should be focused by default
      * (`false` on the search homepage when the tour is active).
@@ -412,7 +412,7 @@ export const useSearchOnboardingTour = ({
     }, [tour, shouldShowTour])
 
     // A handle allowing to trigger display of the MonacoQueryInput suggestions widget.
-    const [suggestions, onSuggestionsInitialized] = useState<{ trigger: () => void }>()
+    const [editor, setEditor] = useState<IEditor | null>(null)
 
     // On query or step changes, advance the Tour if appropriate.
     const currentStep = useCurrentStep(tour)
@@ -425,13 +425,13 @@ export const useSearchOnboardingTour = ({
             return
         }
         if (shouldTriggerSuggestions(currentStep, queryTokens)) {
-            suggestions?.trigger()
+            editor?.showSuggestions()
         } else if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
             tour.show('add-query-term')
         } else if (shouldShowSubmitSearch(currentStep, queryTokens)) {
             tour.show('submit-search')
         }
-    }, [suggestions, queryTokens, tour, currentStep])
+    }, [editor, queryTokens, tour, currentStep])
 
     // When a completion item is selected,
     // advance the repo or lang step if appropriate.
@@ -444,7 +444,7 @@ export const useSearchOnboardingTour = ({
     return {
         onCompletionItemSelected,
         onFocus,
-        onSuggestionsInitialized,
+        onEditorCreated: setEditor,
         shouldFocusQueryInput: !shouldShowTour,
     }
 }

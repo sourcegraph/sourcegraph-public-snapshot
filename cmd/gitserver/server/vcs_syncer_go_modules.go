@@ -32,7 +32,7 @@ func NewGoModulesSyncer(
 	}
 
 	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
+		logger:      log.Scoped("GoModulesSyncer", "sync Go modules"),
 		typ:         "go_modules",
 		scheme:      dependencies.GoModulesScheme,
 		placeholder: placeholder,

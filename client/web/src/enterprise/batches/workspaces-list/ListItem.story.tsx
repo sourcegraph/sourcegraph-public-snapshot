@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { mockPreviewWorkspace } from '../batch-spec/batch-spec.mock'
@@ -9,11 +9,21 @@ import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'
 import { ListItem } from './ListItem'
 
-const { add } = storiesOf('web/batches/workspaces-list/ListItem', module).addDecorator(story => (
-    <div className="list-group w-100">{story()}</div>
-))
+const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
+    ['cached', CachedIcon],
+    ['exclude', ExcludeIcon],
+]
 
-add('basic', () => (
+const decorator: DecoratorFn = story => <div className="list-group w-100">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/workspaces-list/ListItem',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Basic: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -39,9 +49,11 @@ add('basic', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-add('non-root path', () => (
+Basic.storyName = 'basic'
+
+export const NonRootPath: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -59,14 +71,11 @@ add('non-root path', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
-    ['cached', CachedIcon],
-    ['exclude', ExcludeIcon],
-]
+NonRootPath.storyName = 'non-root path'
 
-add('with status indicator', () => (
+export const WithStatusIndicator: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -78,9 +87,11 @@ add('with status indicator', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-add('with click handler', () => (
+WithStatusIndicator.storyName = 'with status indicator'
+
+export const WithClickHandler: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -93,4 +104,6 @@ add('with click handler', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+WithClickHandler.storyName = 'with click handler'

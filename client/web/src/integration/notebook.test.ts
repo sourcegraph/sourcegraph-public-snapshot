@@ -767,10 +767,11 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         // The "Title 2" heading in the outline should be highlighted
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
     })
-    it('Notebook explore page should be accessible', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=explore')
+
+    it('Notebooks list page should be accessible', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=notebooks')
         await driver.page.waitForSelector('[data-testid="filtered-connection-nodes"]', { visible: true })
-        await percySnapshotWithVariants(driver.page, 'Explore notebooks')
+        await percySnapshotWithVariants(driver.page, 'Notebooks list')
         await accessibilityAudit(driver.page)
     })
 })

@@ -48,7 +48,7 @@ func (j *janitor) handleSourcedCommits(ctx context.Context, tx DBStore, sourcedC
 
 func (j *janitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int, repositoryName, commit string) error {
 	var shouldDelete bool
-	_, err := gitserver.NewClient(database.NewDBWith(tx)).ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserver.NewClient(database.NewDBWith(j.logger, tx)).ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false

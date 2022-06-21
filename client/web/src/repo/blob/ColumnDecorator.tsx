@@ -54,7 +54,14 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
             const cleanup = (): void => {
                 // remove added cells
                 for (const [cell] of addedCells) {
+                    const row = cell.closest('tr')
                     cell.remove()
+
+                    // if no other columns with decorations
+                    if (!row?.querySelector(`.${styles.decoration}`)) {
+                        // remove line number cell extra horizontal padding
+                        row?.querySelector('td.line')?.classList.remove('px-2')
+                    }
                 }
 
                 // reset state
@@ -74,9 +81,20 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                             cell = row.insertCell(1)
                             cell.classList.add(styles.decoration, className)
 
+                            // add line number cell extra horizontal padding
+                            row.querySelector('td.line')?.classList.add('px-2')
+
+                            // add decorations wrapper
                             const wrapper = document.createElement('div')
                             wrapper.classList.add(styles.wrapper)
-                            cell.prepend(wrapper)
+                            cell.append(wrapper)
+
+                            // add extra spacers to first and last rows
+                            if (index === 0 || index === table.rows.length - 1) {
+                                const spacer = document.createElement('div')
+                                spacer.classList.add(index === 0 ? 'top-spacer' : 'bottom-spacer')
+                                cell[index === 0 ? 'prepend' : 'append'](spacer)
+                            }
                         }
 
                         const currentLineDecorations = decorations.get(index + 1)
@@ -119,7 +137,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         className={styles.item}
                                         // eslint-disable-next-line react/forbid-dom-props
                                         style={{ color: style.color }}
-                                        data-tooltip={attachment.hoverMessage}
                                         to={attachment.linkURL}
                                         // Use target to open external URLs
                                         target={
@@ -129,6 +146,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         }
                                         // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                                         rel="noreferrer noopener"
+                                        data-tooltip={attachment.hoverMessage || null}
                                         onMouseEnter={selectRow}
                                         onMouseLeave={deselectRow}
                                         onFocus={selectRow}
@@ -142,7 +160,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                     </LinkOrSpan>
                                 )
                             }),
-                            portalRoot.firstChild as HTMLDivElement
+                            portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
                         )
                     )
                     .toArray()}

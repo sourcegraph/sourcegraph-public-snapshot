@@ -34,7 +34,7 @@ func NewRustPackagesSyncer(
 	placeholder := assertRustParsesPlaceholder()
 
 	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
+		logger:      log.Scoped("RustPackagesSyncer", "sync Rust packages"),
 		typ:         "rust_packages",
 		scheme:      dependencies.RustPackagesScheme,
 		placeholder: placeholder,

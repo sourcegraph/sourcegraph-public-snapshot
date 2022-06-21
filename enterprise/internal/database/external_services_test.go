@@ -403,7 +403,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: includes(
 				"url is required",
 				"username is required",
-				"at least one of repositoryQuery or repos must be set",
+				"at least one of: repositoryQuery, projectKeys, or repos must be set",
 			),
 		},
 		{

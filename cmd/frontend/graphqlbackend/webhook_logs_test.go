@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -137,14 +136,10 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		logs = append(logs, &types.WebhookLog{})
 	}
 
-	// We also need a fake TransactableHandle to be able to construct
-	// webhookLogResolvers.
-	db := &basestore.TransactableHandle{}
-
 	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
 		store := database.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
-		store.HandleFunc.SetDefaultReturn(db)
+		store.HandleFunc.SetDefaultReturn(nil)
 
 		return store
 	}
