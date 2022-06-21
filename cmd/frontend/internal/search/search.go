@@ -502,6 +502,8 @@ func repoIDs(results []result.Match) []api.RepoID {
 	return res
 }
 
+// newEventHandler creates a stream that can write streaming search events to
+// an HTTP stream.
 func newEventHandler(
 	ctx context.Context,
 	db database.DB,
@@ -538,7 +540,7 @@ func newEventHandler(
 
 	// Schedule the first flushes
 	eh.flushTimer = time.AfterFunc(eh.flushInterval, eh.flushTick)
-	eh.progressTimer = time.AfterFunc(eh.flushInterval, eh.progressTick)
+	eh.progressTimer = time.AfterFunc(eh.progressInterval, eh.progressTick)
 
 	return &eh
 }
@@ -553,14 +555,16 @@ type eventHandler struct {
 
 	eventWriter *eventWriter
 
-	matchesBuf    *streamhttp.JSONArrayBuf
-	filters       *streaming.SearchFilters
-	flushInterval time.Duration
-	flushTimer    *time.Timer
+	matchesBuf *streamhttp.JSONArrayBuf
+	filters    *streaming.SearchFilters
+	progress   progressAggregator
 
-	progress         progressAggregator
+	flushInterval    time.Duration
 	progressInterval time.Duration
-	progressTimer    *time.Timer
+
+	// These timers will be non-nil unless Done() was called
+	flushTimer    *time.Timer
+	progressTimer *time.Timer
 
 	displayRemaining int
 	first            bool
@@ -606,6 +610,7 @@ func (s *eventHandler) Send(event streaming.SearchEvent) {
 	}
 }
 
+// Done cleans up any background tasks and flushes any buffered data to the stream
 func (s *eventHandler) Done() {
 	s.cancel()
 
@@ -628,11 +633,11 @@ func (s *eventHandler) progressTick() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.eventWriter.Progress(s.progress.Current())
-
-	// a nil progressTimer indicates that Done() was called, so don't
-	// schedule a next progress event
+	// a nil progressTimer indicates that Done() was called
 	if s.progressTimer != nil {
+		s.eventWriter.Progress(s.progress.Current())
+
+		// schedule the next progress event
 		s.progressTimer = time.AfterFunc(s.progressInterval, s.progressTick)
 	}
 }
@@ -641,15 +646,15 @@ func (s *eventHandler) flushTick() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.eventWriter.Filters(s.filters.Compute())
-	s.matchesBuf.Flush()
-	if s.progress.Dirty {
-		s.eventWriter.Progress(s.progress.Current())
-	}
-
-	// a nil progressTimer indicates that Done() was called, so don't
-	// schedule a next flush.
+	// a nil flushTimer indicates that Done() was called
 	if s.flushTimer != nil {
+		s.eventWriter.Filters(s.filters.Compute())
+		s.matchesBuf.Flush()
+		if s.progress.Dirty {
+			s.eventWriter.Progress(s.progress.Current())
+		}
+
+		// schedule the next flush
 		s.flushTimer = time.AfterFunc(s.flushInterval, s.flushTick)
 	}
 }
