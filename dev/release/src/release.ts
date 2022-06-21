@@ -254,6 +254,37 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                             },
                         ],
                     },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-helm',
+                        base: 'main',
+                        head: `changelog-${release.version}`,
+                        title: prMessage,
+                        commitMessage: prMessage,
+                        body: prMessage + '\n\n ## Test plan\n\nn/a',
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${release.format()}'`)
+                                const changelogPath = path.join(directory, 'charts', 'sourcegraph', changelogFile)
+                                let changelogContents = readFileSync(changelogPath).toString()
+
+                                // Convert 'unreleased' to a release
+                                const releaseHeader = `## ${release.format()}`
+                                const releaseUpdate = releaseHeader + `\n\n- Sourcegraph ${release.format()} is now available\n`
+                                const unreleasedHeader = '## Unreleased\n'
+                                changelogContents = changelogContents.replace(unreleasedHeader, releaseUpdate)
+
+                                // Add a blank changelog template for the next release
+                                changelogContents = changelogContents.replace(
+                                    changelog.divider,
+                                    changelog.simpleReleaseTemplate
+                                )
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ],
+                    },
                 ],
                 dryRun: config.dryRun.changesets,
             })
