@@ -503,8 +503,8 @@ func newEventHandler(
 	db database.DB,
 	eventWriter *eventWriter,
 	progress progressAggregator,
-	flushAllInterval time.Duration,
-	flushProgressInterval time.Duration,
+	flushInterval time.Duration,
+	progressInterval time.Duration,
 	displayLimit int,
 	logLatency func(),
 ) *eventHandler {
@@ -524,17 +524,21 @@ func newEventHandler(
 		eventWriter:      eventWriter,
 		matchesBuf:       matchesBuf,
 		filters:          &streaming.SearchFilters{},
-		flushInterval:    flushAllInterval,
+		flushInterval:    flushInterval,
 		progress:         progress,
-		progressInterval: flushProgressInterval,
+		progressInterval: progressInterval,
 		displayRemaining: displayLimit,
 		first:            true,
 		logLatency:       logLatency,
 	}
 
-	// Schedule the first flushes
+	// Schedule the first flushes.
+	// Lock because if flushInterval is small, scheduled tick could
+	// race with setting eh.flushTimer.
+	eh.mu.Lock()
 	eh.flushTimer = time.AfterFunc(eh.flushInterval, eh.flushTick)
 	eh.progressTimer = time.AfterFunc(eh.progressInterval, eh.progressTick)
+	eh.mu.Unlock()
 
 	return eh
 }
