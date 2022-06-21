@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 
@@ -46,8 +48,9 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
 	migrator := migrator{insightStore: store.NewInsightStore(insightsDB)}
 
@@ -152,8 +155,9 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	migrator := migrator{insightStore: store.NewInsightStore(insightsDB), dashboardStore: store.NewDashboardStore(insightsDB)}
 
 	newView := func(insightId string) {

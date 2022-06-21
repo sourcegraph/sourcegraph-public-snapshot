@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -104,6 +106,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		Repo    *types.Repo
 		Monitor *edb.Monitor
 	}
+	logger := logtest.Scoped(t)
 	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
@@ -118,7 +121,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	fixtures := populateFixtures(edb.NewEnterpriseDB(db))
 	ctx := context.Background()
 

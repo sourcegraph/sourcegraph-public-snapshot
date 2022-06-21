@@ -187,6 +187,7 @@ Foreign-key constraints:
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspaces_batch_spec_id" btree (batch_spec_id)
+    "batch_spec_workspaces_id_batch_spec_id" btree (id, batch_spec_id)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE

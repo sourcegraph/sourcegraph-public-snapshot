@@ -37,7 +37,7 @@ For example, a typical initialization process looks like this:
 ```go
 import (
   "github.com/sourcegraph/log"
-
+  
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
   "github.com/sourcegraph/sourcegraph/internal/hostname"

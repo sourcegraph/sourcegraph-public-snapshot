@@ -16,7 +16,7 @@ function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.El
         <Tour
             {...props}
             id="TourWithNotebook"
-            title="Code Search Basics"
+            title="Code search basics"
             keepCompletedTasks={true}
             tasks={visitorsTasksWithNotebook}
             extraTask={visitorsTasksWithNotebookExtraTask}

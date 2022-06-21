@@ -10,6 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -98,6 +100,7 @@ func (r *schemaResolver) WebhookLogs(ctx context.Context, args *globalWebhookLog
 }
 
 type webhookLogConnectionResolver struct {
+	logger            log.Logger
 	args              *webhookLogsArgs
 	externalServiceID webhookLogsExternalServiceID
 	store             database.WebhookLogStore
@@ -117,6 +120,7 @@ func newWebhookLogConnectionResolver(
 	}
 
 	return &webhookLogConnectionResolver{
+		logger:            log.Scoped("webhookLogConnectionResolver", ""),
 		args:              args,
 		externalServiceID: externalServiceID,
 		store:             db.WebhookLogs(keyring.Default().WebhookLogKey),
@@ -130,7 +134,7 @@ func (r *webhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 	}
 
 	nodes := make([]*webhookLogResolver, len(logs))
-	db := database.NewDBWith(r.store)
+	db := database.NewDBWith(r.logger, r.store)
 	for i, log := range logs {
 		nodes[i] = &webhookLogResolver{
 			db:  db,

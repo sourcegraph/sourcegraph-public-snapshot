@@ -27,7 +27,8 @@ func main() {
 		batchCompletionMode = true
 	}
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
-		std.Out.WriteFailuref(err.Error())
+		out := std.NewOutput(os.Stdout, false)
+		out.WriteFailuref(err.Error())
 		os.Exit(1)
 	}
 }

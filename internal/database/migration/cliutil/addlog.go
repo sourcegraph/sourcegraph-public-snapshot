@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
+func AddLog(logger log.Logger, commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to modify.",
@@ -40,7 +41,7 @@ func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory)
 			return err
 		}
 
-		log15.Info("Writing new completed migration log", "schema", schemaName, "version", versionFlag, "up", upFlag)
+		logger.Info("Writing new completed migration log", log.String("schema", schemaName), log.Int("version", versionFlag), log.Bool("up", upFlag))
 		return store.WithMigrationLog(ctx, definition.Definition{ID: versionFlag}, upFlag, func() error { return nil })
 	})
 

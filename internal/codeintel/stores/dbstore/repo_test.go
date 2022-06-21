@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -17,7 +19,8 @@ import (
 )
 
 func TestRepoNames(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -45,7 +48,8 @@ func TestRepoNames(t *testing.T) {
 }
 
 func TestRepoIDsByGlobPatterns(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -116,7 +120,8 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatterns(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -182,7 +187,8 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
