@@ -6,7 +6,6 @@ package search
 import (
 	"context"
 	"fmt"
-	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -109,18 +108,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
 	// can only send up to limit results.
-	display := args.Display
+	displayLimit := args.Display
 	limit := inputs.MaxResults()
-	if display < 0 || display > limit {
-		display = limit
+	if displayLimit < 0 || displayLimit > limit {
+		displayLimit = limit
 	}
 
 	start := time.Now()
-
-	displayLimit := display
-	if display < 0 {
-		displayLimit = math.MaxInt32
-	}
 
 	progress := progressAggregator{
 		Start:        start,
