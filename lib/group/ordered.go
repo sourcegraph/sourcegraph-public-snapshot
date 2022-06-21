@@ -7,8 +7,8 @@ package group
 //
 // It is safe to call Submit() from multiple goroutines, but Submit() should
 // never be called after calling Done().
-func NewParallelOrdered[T any](maxParallel int, callback func(T)) *parallelOrdered[T] {
-	return &parallelOrdered[T]{
+func NewParallelOrdered[T any](maxParallel int, callback func(T)) *ParallelOrdered[T] {
+	return &ParallelOrdered[T]{
 		callback:    callback,
 		tasks:       make(chan task[T]),
 		results:     make(chan chan T, maxParallel),
@@ -17,7 +17,7 @@ func NewParallelOrdered[T any](maxParallel int, callback func(T)) *parallelOrder
 	}
 }
 
-type parallelOrdered[T any] struct {
+type ParallelOrdered[T any] struct {
 	// The callback that will be called with the results of a submitted task
 	callback func(T)
 
@@ -52,7 +52,7 @@ type task[T any] struct {
 // in the same order that Submit was called even though the tasks are run
 // in parallel.
 // Submit must not be called after Done().
-func (g *parallelOrdered[T]) Submit(f func() T) {
+func (g *ParallelOrdered[T]) Submit(f func() T) {
 	g.startCallbackerOnce()
 
 	resultC := make(chan T, 1)
@@ -76,7 +76,7 @@ func (g *parallelOrdered[T]) Submit(f func() T) {
 }
 
 // Done is called to clean up any goroutines started by the group.
-func (g *parallelOrdered[T]) Done() {
+func (g *ParallelOrdered[T]) Done() {
 	close(g.tasks)
 	for i := 0; i < cap(g.workerpoolC); i++ {
 		// filling workerpoolC means all the workers have exited
@@ -86,7 +86,7 @@ func (g *parallelOrdered[T]) Done() {
 	g.callbackerC <- struct{}{}
 }
 
-func (g *parallelOrdered[T]) startCallbackerOnce() {
+func (g *ParallelOrdered[T]) startCallbackerOnce() {
 	select {
 	case g.callbackerC <- struct{}{}:
 		go func() {
@@ -100,7 +100,7 @@ func (g *parallelOrdered[T]) startCallbackerOnce() {
 	}
 }
 
-func (g *parallelOrdered[T]) worker() {
+func (g *ParallelOrdered[T]) worker() {
 	for task := range g.tasks {
 		task.resultC <- task.f()
 	}
