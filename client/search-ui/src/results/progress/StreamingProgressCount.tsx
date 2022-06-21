@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
@@ -29,48 +30,58 @@ const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped 
 
 export const StreamingProgressCount: React.FunctionComponent<
     React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }>
-> = ({ progress, state, showTrace, className = '' }) => (
-    <>
-        <small
-            className={classNames(
-                'd-flex align-items-center',
-                className,
-                styles.count,
-                state === 'loading' && styles.countInProgress
-            )}
-            data-testid="streaming-progress-count"
-        >
-            {abbreviateNumber(progress.matchCount)}
-            {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
-            {(progress.durationMs / 1000).toFixed(2)}s
-            {progress.repositoriesCount !== undefined && (
-                <Tooltip
-                    content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
-                        'repository',
-                        progress.repositoriesCount,
-                        'repositories'
-                    )}`}
-                >
-                    <Icon
-                        className="ml-1"
-                        as={InformationOutlineIcon}
-                        tabIndex={0}
-                        aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+> = ({ progress, state, showTrace, className = '' }) => {
+    const isLoading = state === 'loading'
+    const contentWithoutTimeUnit =
+        `${abbreviateNumber(progress.matchCount)}` +
+        `${limitHit(progress) ? '+' : ''} ${pluralize('result', progress.matchCount)} in ` +
+        `${(progress.durationMs / 1000).toFixed(2)}`
+    const content = `${contentWithoutTimeUnit}s`
+    const readingContent = `${contentWithoutTimeUnit} seconds`
+
+    return (
+        <>
+            {isLoading && <VisuallyHidden aria-live="polite">Searching</VisuallyHidden>}
+            <small
+                className={classNames(
+                    'd-flex align-items-center',
+                    className,
+                    styles.count,
+                    isLoading && styles.countInProgress
+                )}
+                data-testid="streaming-progress-count"
+            >
+                <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
+                <span aria-hidden={true}>{content}</span>
+                {progress.repositoriesCount !== undefined && (
+                    <Tooltip
+                        content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                             'repository',
                             progress.repositoriesCount,
                             'repositories'
                         )}`}
-                    />
-                </Tooltip>
-            )}
-        </small>
-        {showTrace && progress.trace && (
-            <small className="d-flex ml-2">
-                <Link to={progress.trace}>
-                    <Icon aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
-                    View trace
-                </Link>
+                    >
+                        <Icon
+                            className="ml-1"
+                            as={InformationOutlineIcon}
+                            tabIndex={0}
+                            aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                                'repository',
+                                progress.repositoriesCount,
+                                'repositories'
+                            )}`}
+                        />
+                    </Tooltip>
+                )}
             </small>
-        )}
-    </>
-)
+            {showTrace && progress.trace && (
+                <small className="d-flex ml-2">
+                    <Link to={progress.trace}>
+                        <Icon aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
+                        View trace
+                    </Link>
+                </small>
+            )}
+        </>
+    )
+}
