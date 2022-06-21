@@ -55,6 +55,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
@@ -105,7 +106,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     )
 
-    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks, trackFilterChanges } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
@@ -162,6 +163,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         onVisualModeChange={setFilterVisualMode}
                         showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         onFiltersChange={handleFilterChange}
+                        onFilterValuesChange={trackFilterChanges}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
                         originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}

@@ -3,7 +3,7 @@ import { FunctionComponent, useRef, useState } from 'react'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import { useHistory } from 'react-router'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService';
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
@@ -57,11 +57,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete
             </Button>
-            <Button
-                variant="primary"
-                as={Link}
-                to={`/insights/edit/${insight.id}?insight=${insight.id}`}
-                onClick={handleEditClick}>
+            <Button variant="primary" as={Link} to={`/insights/edit/${insight.id}?insight=${insight.id}`} onClick={handleEditClick}>
                 Edit
             </Button>
 
