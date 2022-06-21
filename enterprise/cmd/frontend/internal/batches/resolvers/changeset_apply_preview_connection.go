@@ -196,8 +196,10 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 			stats.added++
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsUpdate(); ok {
-			if len(ops) > 0 {
+			if len(ops) > 0 && len(mapping.Changeset.BatchChanges) > 0 {
 				stats.modified++
+			} else if len(mapping.Changeset.BatchChanges) == 0 {
+				stats.added++
 			}
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsDetach(); ok {
