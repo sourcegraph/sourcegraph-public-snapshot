@@ -58,7 +58,6 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         anchor,
         initialFiltersValue,
         originalFiltersValue,
-        insight,
         onVisibilityChange,
         onFilterChange,
         onFilterSave,
