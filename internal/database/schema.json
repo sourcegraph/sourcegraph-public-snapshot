@@ -5696,7 +5696,20 @@
           "Comment": "Encodes `reposource.PackageDependency.RepoName`. A name that is \"globally unique\" for a Sourcegraph instance. Used in `repo:...` queries."
         },
         {
-          "Name": "resolution_id",
+          "Name": "resolution_commit_bytea",
+          "Index": 13,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`."
+        },
+        {
+          "Name": "resolution_lockfile",
           "Index": 11,
           "TypeName": "text",
           "IsNullable": true,
@@ -5706,7 +5719,20 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": ""
+          "Comment": "Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`."
+        },
+        {
+          "Name": "resolution_repository_id",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`."
         },
         {
           "Name": "revspec",
@@ -5739,7 +5765,7 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -5821,6 +5847,19 @@
           "Comment": ""
         },
         {
+          "Name": "lockfile",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Relative path of a lockfile in the given repository and the given commit."
+        },
+        {
           "Name": "repository_id",
           "Index": 2,
           "TypeName": "integer",
@@ -5832,19 +5871,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "resolution_id",
-          "Index": 5,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Unique identifier for the resolution of a lockfile in the given repository and the given commit. Correponds to `codeintel_lockfile_references.resolution_id`."
         }
       ],
       "Indexes": [
@@ -5859,12 +5885,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_lockfiles_repository_id_commit_bytea",
+          "Name": "codeintel_lockfiles_repository_id_commit_bytea_lockfile",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea ON codeintel_lockfiles USING btree (repository_id, commit_bytea)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

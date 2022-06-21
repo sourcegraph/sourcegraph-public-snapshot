@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -25,8 +24,7 @@ type Store interface {
 	PreciseDependencies(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
 	PreciseDependents(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
 	LockfileDependencies(ctx context.Context, opts LockfileDependenciesOpts) (deps []shared.PackageDependency, found bool, err error)
-	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error)
-	UpsertLockfileGraph(ctx context.Context, repoName, commit string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error)
+	UpsertLockfileGraph(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error)
 	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error)
 	UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error)
 	LockfileDependents(ctx context.Context, repoName, commit string) (deps []api.RepoCommit, err error)
@@ -125,20 +123,19 @@ func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenc
 	}
 	defer func() { err = tx.db.Done(err) }()
 
-	resolutionID := fmt.Sprintf("resolution-%s-%s", opts.RepoName, opts.Commit)
-
 	maxDependencyLevel := 0
 	if opts.IncludeTransitive {
 		// TODO: We should improve SQL here to falsify instead of using this limit
 		maxDependencyLevel = 9999
 	}
 
+	// TODO: We need to handle lockfile
+
 	deps, err = scanPackageDependencies(tx.db.Query(ctx, sqlf.Sprintf(
 		lockfileDependenciesQuery,
 		maxDependencyLevel,
 		opts.RepoName,
 		dbutil.CommitBytea(opts.Commit),
-		resolutionID,
 	)))
 	if err != nil {
 		return nil, false, err
@@ -162,31 +159,36 @@ func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenc
 
 const lockfileDependenciesQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependencies
-WITH RECURSIVE dependencies(id, depends_on, resolution_id, level, max_level) AS (
+WITH RECURSIVE dependencies(id, resolution_repository_id, resolution_commit_bytea, resolution_lockfile, depends_on, level, max_level) AS (
   SELECT
-    id, depends_on, resolution_id, 0 AS level, %s::int AS max_level
+    id, resolution_repository_id, resolution_commit_bytea, resolution_lockfile, depends_on, 0 AS level, %s::int AS max_level
   FROM
     codeintel_lockfile_references
   WHERE
-    (
+    id IN (
       SELECT
-        codeintel_lockfile_reference_ids
+        unnest(codeintel_lockfile_reference_ids)
       FROM
         codeintel_lockfiles
       WHERE repository_id = (SELECT id FROM repo WHERE name = %s)
       AND commit_bytea = %s
-      AND resolution_id = %s
-    ) @> ARRAY [id]
+	  -- TODO: Needs to be fixed for multiple lockfiles
+    )
 
   UNION ALL
 
   SELECT
-    lr.id, lr.depends_on, lr.resolution_id, (dependencies.level+1) AS level, dependencies.max_level
+    lr.id, lr.resolution_repository_id, lr.resolution_commit_bytea, lr.resolution_lockfile, lr.depends_on, (d.level+1) AS level, d.max_level
   FROM
     codeintel_lockfile_references lr
-  JOIN dependencies ON lr.id = ANY (dependencies.depends_on) AND lr.resolution_id = dependencies.resolution_id
+  JOIN dependencies d ON (
+	  lr.id = ANY (d.depends_on) AND
+	  lr.resolution_repository_id = d.resolution_repository_id AND
+	  lr.resolution_commit_bytea = d.resolution_commit_bytea AND
+	  lr.resolution_lockfile = d.resolution_lockfile
+  )
   WHERE
-    level < dependencies.max_level
+    level < d.max_level
 )
 SELECT
   -- We could also select dependencies.level here
@@ -208,143 +210,8 @@ FROM codeintel_lockfiles
 WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %s
 `
 
-// UpsertLockfileDependencies inserts the given package dependencies if they do not exist
-// and inserts a new lockfiles result for the given repository and commit. It is assumed
-// that the given commit is the canonical 40-character hash.
-func (s *store) UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error) {
-	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoName", repoName),
-		log.String("commit", commit),
-		log.Int("numDeps", len(deps)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
-
-	if err := tx.db.Exec(ctx, sqlf.Sprintf(temporaryLockfileReferencesTableQuery)); err != nil {
-		return err
-	}
-
-	// TODO: Fix this
-	resolutionID := fmt.Sprintf("resolution-%s-%s", repoName, commit)
-	if err := batch.InsertValues(
-		ctx,
-		tx.db.Handle(),
-		"t_codeintel_lockfile_references",
-		batch.MaxNumPostgresParameters,
-		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version", "depends_on", "resolution_id"},
-		populatePackageDependencyChannel(deps, resolutionID),
-	); err != nil {
-		return err
-	}
-
-	ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferencesQuery)))
-	if err != nil {
-		return err
-	}
-	if ids == nil {
-		ids = []int{}
-	}
-	idsArray := pq.Array(ids)
-
-	return tx.db.Exec(ctx, sqlf.Sprintf(
-		insertLockfilesQuery,
-		dbutil.CommitBytea(commit),
-		idsArray,
-		resolutionID,
-		repoName,
-		idsArray,
-	))
-}
-
-const temporaryLockfileReferencesTableQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileDependencies
-CREATE TEMPORARY TABLE t_codeintel_lockfile_references (
-	repository_name text NOT NULL,
-	revspec text NOT NULL,
-	package_scheme text NOT NULL,
-	package_name text NOT NULL,
-	package_version text NOT NULL,
-	depends_on integer[] NOT NULL,
-	resolution_id text NOT NULL
-) ON COMMIT DROP
-`
-
-const upsertLockfileReferencesQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileDependencies
-WITH ins AS (
-	INSERT INTO codeintel_lockfile_references (repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id)
-	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id FROM t_codeintel_lockfile_references
-	ON CONFLICT DO NOTHING
-	RETURNING id
-),
-duplicates AS (
-	SELECT id
-	FROM t_codeintel_lockfile_references t
-	JOIN codeintel_lockfile_references r
-	ON
-		r.repository_name = t.repository_name AND
-		r.revspec = t.revspec AND
-		r.package_scheme = t.package_scheme AND
-		r.package_name = t.package_name AND
-		r.package_version = t.package_version AND
-		r.resolution_id = t.resolution_id
-		-- We ignore depends_on since that is updated in a second query and we can't use it to compare
-)
-SELECT id FROM ins UNION
-SELECT id FROM duplicates
-ORDER BY id
-`
-
-const upsertLockfileReferences2Query = `
--- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileDependencies
-WITH ins AS (
-	INSERT INTO codeintel_lockfile_references (repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id)
-	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id
-	FROM t_codeintel_lockfile_references
-	ON CONFLICT DO NOTHING
-	RETURNING id, package_name
-),
-duplicates AS (
-	SELECT r.id, r.package_name
-	FROM t_codeintel_lockfile_references t
-	JOIN codeintel_lockfile_references r
-	ON
-		r.repository_name = t.repository_name AND
-		r.revspec = t.revspec AND
-		r.package_scheme = t.package_scheme AND
-		r.package_name = t.package_name AND
-		r.package_version = t.package_version AND
-		r.resolution_id = t.resolution_id
-		-- We ignore depends_on since that is updated in a second query and we can't use it to compare
-)
-SELECT id, package_name FROM ins UNION
-SELECT id, package_name FROM duplicates
-ORDER BY id
-`
-
-const insertLockfilesQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileDependencies
-INSERT INTO codeintel_lockfiles (
-	repository_id,
-	commit_bytea,
-	codeintel_lockfile_reference_ids,
-	resolution_id
-)
-SELECT id, %s, %s, %s
-FROM repo
-WHERE name = %s
--- Last write wins
-ON CONFLICT (repository_id, commit_bytea) DO UPDATE
-SET codeintel_lockfile_reference_ids = %s
-`
-
 // populatePackageDependencyChannel populates a channel with the given dependencies for bulk insertion.
-func populatePackageDependencyChannel(deps []shared.PackageDependency, resolutionId string) <-chan []any {
+func populatePackageDependencyChannel(deps []shared.PackageDependency, lockfile, commit string) <-chan []any {
 	ch := make(chan []any, len(deps))
 
 	go func() {
@@ -358,7 +225,8 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, resolutio
 				dep.PackageSyntax(),
 				dep.PackageVersion(),
 				pq.Array([]int{}),
-				resolutionId,
+				lockfile,
+				dbutil.CommitBytea(commit),
 			}
 		}
 	}()
@@ -367,16 +235,12 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, resolutio
 }
 
 // UpsertLockfileGraph TODO
-func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
+func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
 	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	// TODO: All of this in here is not as efficient as it could be
-
-	resolutionID := fmt.Sprintf("resolution-%s-%s", repoName, commit)
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -397,14 +261,26 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 		tx.db.Handle(),
 		"t_codeintel_lockfile_references",
 		batch.MaxNumPostgresParameters,
-		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version", "depends_on", "resolution_id"},
-		populatePackageDependencyChannel(deps, resolutionID),
+		[]string{
+			"repository_name",
+			"revspec",
+			"package_scheme",
+			"package_name",
+			"package_version",
+			"depends_on",
+			"resolution_lockfile",
+			"resolution_commit_bytea",
+			// resolution_repository_id missing because we don't insert that
+			// into the temp table and instead do a sub-select to get the repo
+			// ID.
+		},
+		populatePackageDependencyChannel(deps, lockfile, commit),
 	); err != nil {
 		return err
 	}
 
 	// Get IDs and name->ID mapping for upserted packages
-	nameIDs, ids, err := scanIdNames(tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferences2Query)))
+	nameIDs, ids, err := scanIdNames(tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferencesQuery, repoName, repoName)))
 	if err != nil {
 		return err
 	}
@@ -417,7 +293,7 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 			insertLockfilesQuery,
 			dbutil.CommitBytea(commit),
 			idsArray,
-			resolutionID,
+			lockfile,
 			repoName,
 			idsArray,
 		))
@@ -454,7 +330,9 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 			insertLockfilesEdgesQuery,
 			pq.Array(targets),
 			source,
-			resolutionID,
+			repoName,
+			dbutil.CommitBytea(commit),
+			lockfile,
 		)); err != nil {
 			return err
 		}
@@ -479,36 +357,80 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 		insertLockfilesQuery,
 		dbutil.CommitBytea(commit),
 		idsArray,
-		resolutionID,
+		lockfile,
 		repoName,
 		idsArray,
 	))
 }
 
-const insertLockfilesEdgesQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileGraph
-UPDATE codeintel_lockfile_references
-SET depends_on = %s
-WHERE
-	id = %s
-AND
-	resolution_id = %s
+const temporaryLockfileReferencesTableQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileGraph
+CREATE TEMPORARY TABLE t_codeintel_lockfile_references (
+	repository_name text NOT NULL,
+	revspec text NOT NULL,
+	package_scheme text NOT NULL,
+	package_name text NOT NULL,
+	package_version text NOT NULL,
+	depends_on integer[] NOT NULL,
+	resolution_lockfile text NOT NULL,
+	resolution_commit_bytea bytea NOT NULL
+) ON COMMIT DROP
 `
 
-const insertLockfileWithRootsQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileGraph
+const upsertLockfileReferencesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileGraph
+WITH ins AS (
+	INSERT INTO codeintel_lockfile_references (repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)
+	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_lockfile, (SELECT id FROM repo WHERE name = %s), resolution_commit_bytea
+	FROM t_codeintel_lockfile_references
+	ON CONFLICT DO NOTHING
+	RETURNING id, package_name
+),
+duplicates AS (
+	SELECT r.id, r.package_name
+	FROM t_codeintel_lockfile_references t
+	JOIN codeintel_lockfile_references r
+	ON
+		r.repository_name = t.repository_name AND
+		r.revspec = t.revspec AND
+		r.package_scheme = t.package_scheme AND
+		r.package_name = t.package_name AND
+		r.package_version = t.package_version AND
+		r.resolution_lockfile = t.resolution_lockfile AND
+		r.resolution_repository_id = (SELECT id FROM repo WHERE name = %s) AND
+		r.resolution_commit_bytea = t.resolution_commit_bytea
+		-- We ignore depends_on since that is updated in a second query and we can't use it to compare
+)
+SELECT id, package_name FROM ins UNION
+SELECT id, package_name FROM duplicates
+ORDER BY id
+`
+
+const insertLockfilesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileGraph
 INSERT INTO codeintel_lockfiles (
 	repository_id,
 	commit_bytea,
 	codeintel_lockfile_reference_ids,
-	resolution_id
+	lockfile
 )
 SELECT id, %s, %s, %s
 FROM repo
 WHERE name = %s
 -- Last write wins
-ON CONFLICT (repository_id, commit_bytea) DO UPDATE
+ON CONFLICT (repository_id, commit_bytea, lockfile) DO UPDATE
 SET codeintel_lockfile_reference_ids = %s
+`
+
+const insertLockfilesEdgesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileGraph
+UPDATE codeintel_lockfile_references
+SET depends_on = %s
+WHERE
+	id = %s
+AND resolution_repository_id = (SELECT id FROM repo WHERE name = %s)
+AND resolution_commit_bytea = %s
+AND resolution_lockfile = %s
 `
 
 // SelectRepoRevisionsToResolve selects the references lockfile packages to
@@ -622,11 +544,12 @@ func (s *store) LockfileDependents(ctx context.Context, repoName, commit string)
 	return scanRepoCommits(s.db.Query(ctx, sqlf.Sprintf(lockfileDependentsQuery, repoName, dbutil.CommitBytea(commit))))
 }
 
+// TODO: This only returns direct dependents
 const lockfileDependentsQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependents
 SELECT r.name, encode(lf.commit_bytea, 'hex') AS commit
 FROM codeintel_lockfile_references lr
-JOIN codeintel_lockfiles lf ON LF.codeintel_lockfile_reference_ids @> ARRAY [lr.id] AND lf.resolution_id = lr.resolution_id
+JOIN codeintel_lockfiles lf ON lf.codeintel_lockfile_reference_ids @> ARRAY [lr.id]
 JOIN repo r ON r.id = lf.repository_id
 JOIN repo rr ON rr.id = lr.repository_id
 WHERE rr.name = %s AND lr.commit_bytea = %s

@@ -673,22 +673,24 @@ Indexes:
 
 # Table "public.codeintel_lockfile_references"
 ```
-     Column      |           Type           | Collation | Nullable |                          Default                          
------------------+--------------------------+-----------+----------+-----------------------------------------------------------
- id              | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
- repository_name | text                     |           | not null | 
- revspec         | text                     |           | not null | 
- package_scheme  | text                     |           | not null | 
- package_name    | text                     |           | not null | 
- package_version | text                     |           | not null | 
- repository_id   | integer                  |           |          | 
- commit_bytea    | bytea                    |           |          | 
- last_check_at   | timestamp with time zone |           |          | 
- depends_on      | integer[]                |           |          | '{}'::integer[]
- resolution_id   | text                     |           |          | 
+          Column          |           Type           | Collation | Nullable |                          Default                          
+--------------------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id                       | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
+ repository_name          | text                     |           | not null | 
+ revspec                  | text                     |           | not null | 
+ package_scheme           | text                     |           | not null | 
+ package_name             | text                     |           | not null | 
+ package_version          | text                     |           | not null | 
+ repository_id            | integer                  |           |          | 
+ commit_bytea             | bytea                    |           |          | 
+ last_check_at            | timestamp with time zone |           |          | 
+ depends_on               | integer[]                |           |          | '{}'::integer[]
+ resolution_lockfile      | text                     |           |          | 
+ resolution_repository_id | integer                  |           |          | 
+ resolution_commit_bytea  | bytea                    |           |          | 
 Indexes:
     "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_id)
+    "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)
     "codeintel_lockfile_references_last_check_at" btree (last_check_at)
     "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
     "codeintel_lockfiles_references_depends_on" gin (depends_on gin__int_ops)
@@ -713,6 +715,12 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
 
 **repository_name**: Encodes `reposource.PackageDependency.RepoName`. A name that is &#34;globally unique&#34; for a Sourcegraph instance. Used in `repo:...` queries.
 
+**resolution_commit_bytea**: Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.
+
+**resolution_lockfile**: Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.
+
+**resolution_repository_id**: ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.
+
 **revspec**: Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.
 
 # Table "public.codeintel_lockfiles"
@@ -723,10 +731,10 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
  repository_id                    | integer   |           | not null | 
  commit_bytea                     | bytea     |           | not null | 
  codeintel_lockfile_reference_ids | integer[] |           | not null | 
- resolution_id                    | text      |           |          | 
+ lockfile                         | text      |           |          | 
 Indexes:
     "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfiles_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea)
+    "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
     "codeintel_lockfiles_codeintel_lockfile_reference_ids" gin (codeintel_lockfile_reference_ids gin__int_ops)
 
 ```
@@ -737,7 +745,7 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
-**resolution_id**: Unique identifier for the resolution of a lockfile in the given repository and the given commit. Correponds to `codeintel_lockfile_references.resolution_id`.
+**lockfile**: Relative path of a lockfile in the given repository and the given commit.
 
 # Table "public.configuration_policies_audit_logs"
 ```

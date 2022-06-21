@@ -526,10 +526,6 @@ type MockStore struct {
 	// UpsertDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method UpsertDependencyRepos.
 	UpsertDependencyReposFunc *StoreUpsertDependencyReposFunc
-	// UpsertLockfileDependenciesFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpsertLockfileDependencies.
-	UpsertLockfileDependenciesFunc *StoreUpsertLockfileDependenciesFunc
 	// UpsertLockfileGraphFunc is an instance of a mock function object
 	// controlling the behavior of the method UpsertLockfileGraph.
 	UpsertLockfileGraphFunc *StoreUpsertLockfileGraphFunc
@@ -584,13 +580,8 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		UpsertLockfileDependenciesFunc: &StoreUpsertLockfileDependenciesFunc{
-			defaultHook: func(context.Context, string, string, []shared.PackageDependency) (r0 error) {
-				return
-			},
-		},
 		UpsertLockfileGraphFunc: &StoreUpsertLockfileGraphFunc{
-			defaultHook: func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) (r0 error) {
+			defaultHook: func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) (r0 error) {
 				return
 			},
 		},
@@ -646,13 +637,8 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpsertDependencyRepos")
 			},
 		},
-		UpsertLockfileDependenciesFunc: &StoreUpsertLockfileDependenciesFunc{
-			defaultHook: func(context.Context, string, string, []shared.PackageDependency) error {
-				panic("unexpected invocation of MockStore.UpsertLockfileDependencies")
-			},
-		},
 		UpsertLockfileGraphFunc: &StoreUpsertLockfileGraphFunc{
-			defaultHook: func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
+			defaultHook: func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
 				panic("unexpected invocation of MockStore.UpsertLockfileGraph")
 			},
 		},
@@ -689,9 +675,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		UpsertDependencyReposFunc: &StoreUpsertDependencyReposFunc{
 			defaultHook: i.UpsertDependencyRepos,
-		},
-		UpsertLockfileDependenciesFunc: &StoreUpsertLockfileDependenciesFunc{
-			defaultHook: i.UpsertLockfileDependencies,
 		},
 		UpsertLockfileGraphFunc: &StoreUpsertLockfileGraphFunc{
 			defaultHook: i.UpsertLockfileGraph,
@@ -1693,141 +1676,27 @@ func (c StoreUpsertDependencyReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreUpsertLockfileDependenciesFunc describes the behavior when the
-// UpsertLockfileDependencies method of the parent MockStore instance is
-// invoked.
-type StoreUpsertLockfileDependenciesFunc struct {
-	defaultHook func(context.Context, string, string, []shared.PackageDependency) error
-	hooks       []func(context.Context, string, string, []shared.PackageDependency) error
-	history     []StoreUpsertLockfileDependenciesFuncCall
-	mutex       sync.Mutex
-}
-
-// UpsertLockfileDependencies delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpsertLockfileDependencies(v0 context.Context, v1 string, v2 string, v3 []shared.PackageDependency) error {
-	r0 := m.UpsertLockfileDependenciesFunc.nextHook()(v0, v1, v2, v3)
-	m.UpsertLockfileDependenciesFunc.appendCall(StoreUpsertLockfileDependenciesFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UpsertLockfileDependencies method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreUpsertLockfileDependenciesFunc) SetDefaultHook(hook func(context.Context, string, string, []shared.PackageDependency) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpsertLockfileDependencies method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreUpsertLockfileDependenciesFunc) PushHook(hook func(context.Context, string, string, []shared.PackageDependency) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreUpsertLockfileDependenciesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, []shared.PackageDependency) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUpsertLockfileDependenciesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, []shared.PackageDependency) error {
-		return r0
-	})
-}
-
-func (f *StoreUpsertLockfileDependenciesFunc) nextHook() func(context.Context, string, string, []shared.PackageDependency) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreUpsertLockfileDependenciesFunc) appendCall(r0 StoreUpsertLockfileDependenciesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreUpsertLockfileDependenciesFuncCall
-// objects describing the invocations of this function.
-func (f *StoreUpsertLockfileDependenciesFunc) History() []StoreUpsertLockfileDependenciesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreUpsertLockfileDependenciesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreUpsertLockfileDependenciesFuncCall is an object that describes an
-// invocation of method UpsertLockfileDependencies on an instance of
-// MockStore.
-type StoreUpsertLockfileDependenciesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []shared.PackageDependency
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreUpsertLockfileDependenciesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreUpsertLockfileDependenciesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // StoreUpsertLockfileGraphFunc describes the behavior when the
 // UpsertLockfileGraph method of the parent MockStore instance is invoked.
 type StoreUpsertLockfileGraphFunc struct {
-	defaultHook func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error
-	hooks       []func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error
+	defaultHook func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error
+	hooks       []func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error
 	history     []StoreUpsertLockfileGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // UpsertLockfileGraph delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) UpsertLockfileGraph(v0 context.Context, v1 string, v2 string, v3 []shared.PackageDependency, v4 shared.DependencyGraph) error {
-	r0 := m.UpsertLockfileGraphFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.UpsertLockfileGraphFunc.appendCall(StoreUpsertLockfileGraphFuncCall{v0, v1, v2, v3, v4, r0})
+func (m *MockStore) UpsertLockfileGraph(v0 context.Context, v1 string, v2 string, v3 string, v4 []shared.PackageDependency, v5 shared.DependencyGraph) error {
+	r0 := m.UpsertLockfileGraphFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.UpsertLockfileGraphFunc.appendCall(StoreUpsertLockfileGraphFuncCall{v0, v1, v2, v3, v4, v5, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UpsertLockfileGraph
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreUpsertLockfileGraphFunc) SetDefaultHook(hook func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error) {
+func (f *StoreUpsertLockfileGraphFunc) SetDefaultHook(hook func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error) {
 	f.defaultHook = hook
 }
 
@@ -1835,7 +1704,7 @@ func (f *StoreUpsertLockfileGraphFunc) SetDefaultHook(hook func(context.Context,
 // UpsertLockfileGraph method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreUpsertLockfileGraphFunc) PushHook(hook func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error) {
+func (f *StoreUpsertLockfileGraphFunc) PushHook(hook func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1844,19 +1713,19 @@ func (f *StoreUpsertLockfileGraphFunc) PushHook(hook func(context.Context, strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreUpsertLockfileGraphFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
+	f.SetDefaultHook(func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreUpsertLockfileGraphFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
+	f.PushHook(func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
 		return r0
 	})
 }
 
-func (f *StoreUpsertLockfileGraphFunc) nextHook() func(context.Context, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
+func (f *StoreUpsertLockfileGraphFunc) nextHook() func(context.Context, string, string, string, []shared.PackageDependency, shared.DependencyGraph) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1900,10 +1769,13 @@ type StoreUpsertLockfileGraphFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 []shared.PackageDependency
+	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 shared.DependencyGraph
+	Arg4 []shared.PackageDependency
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 shared.DependencyGraph
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1912,7 +1784,7 @@ type StoreUpsertLockfileGraphFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreUpsertLockfileGraphFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this

@@ -332,6 +332,7 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 			ctx,
 			string(repoCommit.Repo),
 			repoCommit.ResolvedCommit,
+			result.Lockfile,
 			serializableRepoDeps,
 			serializableGraph,
 		)
