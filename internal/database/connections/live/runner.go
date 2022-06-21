@@ -4,17 +4,19 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
-	return RunnerFromDSNsWithSchemas(dsns, appName, newStore, schemas.Schemas)
+func RunnerFromDSNs(logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
+	return RunnerFromDSNsWithSchemas(logger, dsns, appName, newStore, schemas.Schemas)
 }
 
-func RunnerFromDSNsWithSchemas(dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
+func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
 	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "frontend")
@@ -48,7 +50,7 @@ func RunnerFromDSNsWithSchemas(dsns map[string]string, appName string, newStore 
 		"codeinsights": makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB),
 	}
 
-	return runner.NewRunnerWithSchemas(storeFactoryMap, availableSchemas), nil
+	return runner.NewRunnerWithSchemas(logger, storeFactoryMap, availableSchemas), nil
 }
 
 func schemaByName(schemas []*schemas.Schema, name string) (*schemas.Schema, bool) {
@@ -61,7 +63,7 @@ func schemaByName(schemas []*schemas.Schema, name string) (*schemas.Schema, bool
 	return nil, false
 }
 
-func runnerFromDB(newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema) *runner.Runner {
+func runnerFromDB(logger log.Logger, newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema) *runner.Runner {
 	storeFactoryMap := make(map[string]runner.StoreFactory, len(schemas))
 	for _, schema := range schemas {
 		schema := schema
@@ -71,5 +73,5 @@ func runnerFromDB(newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema)
 		}
 	}
 
-	return runner.NewRunner(storeFactoryMap)
+	return runner.NewRunner(logger, storeFactoryMap)
 }

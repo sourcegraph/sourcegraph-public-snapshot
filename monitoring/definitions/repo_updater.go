@@ -511,6 +511,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
 
+			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, containerMonitoringOptions),

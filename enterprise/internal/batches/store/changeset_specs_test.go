@@ -10,6 +10,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -32,8 +34,9 @@ var cmtRewirerMappingsOpts = cmp.FilterPath(func(p cmp.Path) bool {
 }, cmp.Ignore())
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
@@ -422,6 +425,61 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
+	t.Run("DeleteUnattachedExpiredChangesetSpecs", func(t *testing.T) {
+		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
+
+		type testCase struct {
+			createdAt   time.Time
+			wantDeleted bool
+		}
+
+		printTestCase := func(tc testCase) string {
+			var tooOld bool
+			if tc.createdAt.Equal(overTTL) {
+				tooOld = true
+			}
+
+			return fmt.Sprintf("[tooOld=%t]", tooOld)
+		}
+
+		tests := []testCase{
+			// ChangesetSpec was created but never attached to a BatchSpec
+			{createdAt: underTTL, wantDeleted: false},
+			{createdAt: overTTL, wantDeleted: true},
+		}
+
+		for _, tc := range tests {
+
+			changesetSpec := &btypes.ChangesetSpec{
+				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
+				RepoID:    repo.ID,
+				CreatedAt: tc.createdAt,
+			}
+
+			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := s.DeleteUnattachedExpiredChangesetSpecs(ctx); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
+			if err != nil && err != ErrNoResults {
+				t.Fatal(err)
+			}
+
+			if tc.wantDeleted && err == nil {
+				t.Fatalf("tc=%s\n\t want changeset spec to be deleted, but was NOT", printTestCase(tc))
+			}
+
+			if !tc.wantDeleted && err == ErrNoResults {
+				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
+			}
+		}
+	})
+
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
 		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
 		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
@@ -430,7 +488,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		type testCase struct {
 			createdAt time.Time
 
-			hasBatchSpec     bool
 			batchSpecApplied bool
 
 			isCurrentSpec  bool
@@ -446,53 +503,47 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 
 			return fmt.Sprintf(
-				"[tooOld=%t, hasBatchSpec=%t, batchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
-				tooOld, tc.hasBatchSpec, tc.batchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
+				"[tooOld=%t, batchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
+				tooOld, tc.batchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
 			)
 		}
 
 		tests := []testCase{
-			// ChangesetSpec was created but never attached to a BatchSpec
-			{hasBatchSpec: false, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: false, createdAt: overTTL, wantDeleted: true},
-
 			// Attached to BatchSpec that's applied to a BatchChange
-			{hasBatchSpec: true, batchSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, batchSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
+			{batchSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
+			{batchSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
 
 			// BatchSpec is not applied to a BatchChange anymore and the
 			// ChangesetSpecs are now the PreviousSpec.
-			{hasBatchSpec: true, isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
+			{isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
+			{isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
 
 			// Has a BatchSpec, but that BatchSpec is not applied
 			// anymore, and the ChangesetSpec is neither the current, nor the
 			// previous spec.
-			{hasBatchSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: false},
-			{hasBatchSpec: true, createdAt: overBatchSpecTTL, wantDeleted: true},
+			{createdAt: underTTL, wantDeleted: false},
+			{createdAt: overTTL, wantDeleted: false},
+			{createdAt: overBatchSpecTTL, wantDeleted: true},
 		}
 
 		for _, tc := range tests {
 			batchSpec := &btypes.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
 
-			if tc.hasBatchSpec {
-				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+				t.Fatal(err)
+			}
 
-				if tc.batchSpecApplied {
-					batchChange := &btypes.BatchChange{
-						Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
-						BatchSpecID:     batchSpec.ID,
-						CreatorID:       batchSpec.UserID,
-						NamespaceUserID: batchSpec.NamespaceUserID,
-						LastApplierID:   batchSpec.UserID,
-						LastAppliedAt:   time.Now(),
-					}
-					if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-						t.Fatal(err)
-					}
+			if tc.batchSpecApplied {
+				batchChange := &btypes.BatchChange{
+					Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+					BatchSpecID:     batchSpec.ID,
+					CreatorID:       batchSpec.UserID,
+					NamespaceUserID: batchSpec.NamespaceUserID,
+					LastApplierID:   batchSpec.UserID,
+					LastAppliedAt:   time.Now(),
+				}
+				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+					t.Fatal(err)
 				}
 			}
 
@@ -801,8 +852,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 }
 
 func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -854,8 +906,9 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 }
 
 func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	// Let's set up a batch change with one of every changeset state.
 
@@ -984,8 +1037,9 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 }
 
 func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	// Let's set up a batch change with one of every changeset state.
 
@@ -1142,8 +1196,9 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 }
 
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	// OK, let's set up an interesting scenario. We're going to set up a
 	// batch change that tracks two changesets in different repositories, and

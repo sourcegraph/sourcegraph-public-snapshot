@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -64,8 +65,8 @@ type SecurityEventLogsStore interface {
 }
 
 type securityEventLogsStore struct {
-	*basestore.Store
 	logger log.Logger
+	*basestore.Store
 }
 
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore

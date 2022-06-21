@@ -11,6 +11,8 @@ import (
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -195,6 +197,7 @@ type PermsStore interface {
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
 // 'repo_permissions', 'user_pending_permissions', and 'repo_pending_permissions' tables.
 type permsStore struct {
+	logger log.Logger
 	*basestore.Store
 
 	clock func() time.Time
@@ -203,20 +206,20 @@ type permsStore struct {
 var _ PermsStore = (*permsStore)(nil)
 
 // Perms returns a new PermsStore with given parameters.
-func Perms(db database.DB, clock func() time.Time) PermsStore {
-	return perms(db, clock)
+func Perms(logger log.Logger, db database.DB, clock func() time.Time) PermsStore {
+	return perms(logger, db, clock)
 }
 
-func perms(db database.DB, clock func() time.Time) *permsStore {
-	return &permsStore{Store: basestore.NewWithHandle(db.Handle()), clock: clock}
+func perms(logger log.Logger, db database.DB, clock func() time.Time) *permsStore {
+	return &permsStore{logger: logger, Store: basestore.NewWithHandle(db.Handle()), clock: clock}
 }
 
-func PermsWith(other basestore.ShareableStore, clock func() time.Time) PermsStore {
-	return &permsStore{Store: basestore.NewWithHandle(other.Handle()), clock: clock}
+func PermsWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) PermsStore {
+	return &permsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle()), clock: clock}
 }
 
 func (s *permsStore) With(other basestore.ShareableStore) PermsStore {
-	return &permsStore{Store: s.Store.With(other), clock: s.clock}
+	return &permsStore{logger: s.logger, Store: s.Store.With(other), clock: s.clock}
 }
 
 func (s *permsStore) Transact(ctx context.Context) (PermsStore, error) {
@@ -1843,7 +1846,7 @@ func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *sc
 			}
 		}
 	case "username":
-		users, err := database.UsersWith(s).GetByUsernames(ctx, filtered...)
+		users, err := database.UsersWith(s.logger, s).GetByUsernames(ctx, filtered...)
 		if err != nil {
 			return nil, err
 		}

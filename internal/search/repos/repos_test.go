@@ -12,6 +12,8 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -304,7 +306,8 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 
 func TestResolverPaginate(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	for i := 1; i <= 5; i++ {
 		r := types.MinimalRepo{

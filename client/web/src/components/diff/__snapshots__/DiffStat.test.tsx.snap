@@ -5,33 +5,27 @@ exports[`DiffStat expandedCounts 1`] = `
   <div
     class=""
   >
-    <span
-      class="tooltip"
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
       data-state="closed"
-      data-test-content="1 addition, 2 changes, 3 deletions"
-      role="presentation"
     >
-      <div
-        aria-label="1 addition, 2 changes, 3 deletions"
-        class="diffStat"
+      <strong
+        class="mr-1 a11y-ignore text-success"
       >
-        <strong
-          class="mr-1 a11y-ignore text-success"
-        >
-          +1
-        </strong>
-        <strong
-          class="mr-1 a11y-ignore text-warning"
-        >
-          •2
-        </strong>
-        <strong
-          class="a11y-ignore text-danger"
-        >
-          −3
-        </strong>
-      </div>
-    </span>
+        +1
+      </strong>
+      <strong
+        class="mr-1 a11y-ignore text-warning"
+      >
+        •2
+      </strong>
+      <strong
+        class="a11y-ignore text-danger"
+      >
+        −3
+      </strong>
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -41,21 +35,15 @@ exports[`DiffStat standard 1`] = `
   <div
     class=""
   >
-    <span
-      class="tooltip"
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
       data-state="closed"
-      data-test-content="1 addition, 2 changes, 3 deletions"
-      role="presentation"
     >
-      <div
-        aria-label="1 addition, 2 changes, 3 deletions"
-        class="diffStat"
-      >
-        <small>
-          8
-        </small>
-      </div>
-    </span>
+      <small>
+        8
+      </small>
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -92,33 +80,27 @@ exports[`DiffStatStack 1`] = `
     <div
       class="pb-1"
     >
-      <span
-        class="tooltip"
+      <div
+        aria-label="1 addition, 2 changes, 3 deletions"
+        class="diffStat"
         data-state="closed"
-        data-test-content="1 addition, 2 changes, 3 deletions"
-        role="presentation"
       >
-        <div
-          aria-label="1 addition, 2 changes, 3 deletions"
-          class="diffStat"
+        <strong
+          class="mr-1 a11y-ignore text-success"
         >
-          <strong
-            class="mr-1 a11y-ignore text-success"
-          >
-            +1
-          </strong>
-          <strong
-            class="mr-1 a11y-ignore text-warning"
-          >
-            •2
-          </strong>
-          <strong
-            class="a11y-ignore text-danger"
-          >
-            −3
-          </strong>
-        </div>
-      </span>
+          +1
+        </strong>
+        <strong
+          class="mr-1 a11y-ignore text-warning"
+        >
+          •2
+        </strong>
+        <strong
+          class="a11y-ignore text-danger"
+        >
+          −3
+        </strong>
+      </div>
     </div>
     <div
       class="squares"
