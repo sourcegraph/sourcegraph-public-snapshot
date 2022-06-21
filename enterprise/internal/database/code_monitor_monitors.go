@@ -77,7 +77,9 @@ SET description = %s,
 	namespace_org_id = %s,
 	changed_by = %s,
 	changed_at = %s
-WHERE id = %s
+WHERE
+	id = %s
+	AND namespace_user_id = %s
 RETURNING %s; -- monitorColumns
 `
 
@@ -93,6 +95,7 @@ func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, id int64, args Mon
 		a.UID,
 		s.Now(),
 		id,
+		a.UID,
 		sqlf.Join(monitorColumns, ", "),
 	)
 
