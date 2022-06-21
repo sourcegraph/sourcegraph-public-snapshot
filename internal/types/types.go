@@ -1337,14 +1337,14 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyUsageStatisticsByInsight               []*InsightUsageStatistics
 	WeeklyInsightsPageViews                      *int32
 	WeeklyStandaloneInsightPageViews             *int32
-	WeeklyStandaloneDashboardClicks  	  		 *int32
-    WeeklyStandaloneEditClicks 			         *int32
+	WeeklyStandaloneDashboardClicks              *int32
+	WeeklyStandaloneEditClicks                   *int32
 	WeeklyInsightsGetStartedPageViews            *int32
 	WeeklyInsightsUniquePageViews                *int32
 	WeeklyInsightsGetStartedUniquePageViews      *int32
 	WeeklyStandaloneInsightUniquePageViews       *int32
-    WeeklyStandaloneInsightUniqueDashboardClicks *int32
-    WeeklyStandaloneInsightUniqueEditClicks      *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks *int32
+	WeeklyStandaloneInsightUniqueEditClicks      *int32
 	WeeklyInsightConfigureClick                  *int32
 	WeeklyInsightAddMoreClick                    *int32
 	WeekStart                                    time.Time
@@ -1367,14 +1367,14 @@ type CodeInsightsCriticalTelemetry struct {
 
 // Usage statistics for a type of code insight
 type InsightUsageStatistics struct {
-	InsightType      	  *string
-	Additions        	  *int32
-	Edits            	  *int32
-	Removals         	  *int32
-	Hovers           	  *int32
-	UICustomizations 	  *int32
-	DataPointClicks  	  *int32
-	FiltersChange  	  	  *int32
+	InsightType      *string
+	Additions        *int32
+	Edits            *int32
+	Removals         *int32
+	Hovers           *int32
+	UICustomizations *int32
+	DataPointClicks  *int32
+	FiltersChange    *int32
 }
 
 type PingName string
