@@ -9,6 +9,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
 
+import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
@@ -61,48 +62,50 @@ const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<Executi
     expandedStage,
 }) => {
     const stages = useMemo(
-        () => [
-            {
-                icon: <Icon as={TimerSandIcon} aria-label="Success" />,
-                text: 'Queued',
-                date: node.queuedAt,
-                className: 'bg-success',
-            },
-            {
-                icon: <Icon as={CheckIcon} aria-label="Success" />,
-                text: 'Began processing',
-                date: node.startedAt,
-                className: 'bg-success',
-            },
+        () =>
+            [
+                {
+                    icon: <Icon as={TimerSandIcon} aria-label="Success" />,
+                    text: 'Queued',
+                    date: node.queuedAt,
+                    className: 'bg-success',
+                },
+                {
+                    icon: <Icon as={CheckIcon} aria-label="Success" />,
+                    text: 'Began processing',
+                    date: node.startedAt,
+                    className: 'bg-success',
+                },
 
-            setupStage(node, expandedStage === 'setup', now),
-            batchPreviewStage(node, expandedStage === 'srcPreview', now),
-            teardownStage(node, expandedStage === 'teardown', now),
+                setupStage(node, expandedStage === 'setup', now),
+                batchPreviewStage(node, expandedStage === 'srcPreview', now),
+                teardownStage(node, expandedStage === 'teardown', now),
 
-            node.state === BatchSpecWorkspaceState.COMPLETED
-                ? {
-                      icon: <Icon as={CheckIcon} aria-label="Success" />,
-                      text: 'Finished',
-                      date: node.finishedAt,
-                      className: 'bg-success',
-                  }
-                : node.state === BatchSpecWorkspaceState.CANCELED
-                ? {
-                      icon: <Icon as={AlertCircleIcon} aria-label="Success" />,
-                      text: 'Canceled',
-                      date: node.finishedAt,
-                      className: 'bg-secondary',
-                  }
-                : {
-                      icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
-                      text: 'Failed',
-                      date: node.finishedAt,
-                      className: 'bg-danger',
-                  },
-        ],
-        [expandStage, node, now]
+                node.state === BatchSpecWorkspaceState.COMPLETED
+                    ? {
+                          icon: <Icon as={CheckIcon} aria-label="Success" />,
+                          text: 'Finished',
+                          date: node.finishedAt,
+                          className: 'bg-success',
+                      }
+                    : node.state === BatchSpecWorkspaceState.CANCELED
+                    ? {
+                          icon: <Icon as={AlertCircleIcon} aria-label="Success" />,
+                          text: 'Canceled',
+                          date: node.finishedAt,
+                          className: 'bg-secondary',
+                      }
+                    : {
+                          icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                          text: 'Failed',
+                          date: node.finishedAt,
+                          className: 'bg-danger',
+                      },
+            ]
+                .filter(isDefined)
+                .filter<TimelineStage>((stage): stage is TimelineStage => stage.date !== null),
+        [expandedStage, node, now]
     )
-    return <Timeline stages={stages} now={now} className={className} />
     return <Timeline stages={stages} now={now} className={className} />
 }
 
