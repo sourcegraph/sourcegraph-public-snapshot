@@ -521,7 +521,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
-                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${
+                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR ${
                                 notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
                             }`,
                         ]),
@@ -555,8 +555,9 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         repo: 'deploy-sourcegraph-helm',
                         base: `release/${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
-                        commitMessage: defaultPRMessage + '\n\nTest Plan: n/a',
+                        commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
+                        body: defaultPRMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
