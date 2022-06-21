@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,6 +17,7 @@ import (
 
 func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
+	logger := logtest.Scoped(t)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
 		if rev == "branch" {
 			return api.CommitID(strings.Repeat("b", 40)), nil
@@ -48,7 +51,7 @@ func TestEditorRev(t *testing.T) {
 		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
 	}
 	for _, c := range cases {
-		got := editorRev(ctx, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
+		got := editorRev(ctx, logger, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
 		if got != c.expEditorRev {
 			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
 		}

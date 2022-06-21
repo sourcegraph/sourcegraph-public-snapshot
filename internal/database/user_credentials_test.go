@@ -13,6 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -158,7 +160,8 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
@@ -246,7 +249,8 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 func TestUserCredentials_Delete(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -291,7 +295,8 @@ func TestUserCredentials_Delete(t *testing.T) {
 
 func TestUserCredentials_GetByID(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -338,7 +343,8 @@ func TestUserCredentials_GetByID(t *testing.T) {
 
 func TestUserCredentials_GetByScope(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -385,7 +391,8 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 
 func TestUserCredentials_List(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -523,7 +530,8 @@ func TestUserCredentials_List(t *testing.T) {
 
 func TestUserCredentials_Invalid(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {

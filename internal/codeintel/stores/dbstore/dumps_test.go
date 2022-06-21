@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,7 +18,8 @@ import (
 )
 
 func TestGetDumpsByIDs(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// Dumps do not exist initially
@@ -86,7 +89,8 @@ func TestGetDumpsByIDs(t *testing.T) {
 }
 
 func TestFindClosestDumps(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -151,7 +155,8 @@ func TestFindClosestDumps(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -210,7 +215,8 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -262,7 +268,8 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 }
 
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -311,7 +318,8 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -390,7 +398,8 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsIndexerName(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -478,7 +487,8 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 }
 
 func TestFindClosestDumpsIntersectingPath(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -521,7 +531,8 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 }
 
 func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -687,8 +698,9 @@ func testPresence(needle int, haystack []int) bool {
 }
 
 func TestDeleteOverlappingDumps(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{
@@ -712,8 +724,9 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{
@@ -749,8 +762,9 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{

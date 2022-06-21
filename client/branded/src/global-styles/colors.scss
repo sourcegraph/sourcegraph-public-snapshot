@@ -240,3 +240,12 @@ $theme-colors: (
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
     --text-muted-transparent: #{rgba($gray-06, 0.3)};
 }
+
+// Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+// https://github.com/sourcegraph/sourcegraph/issues/36251
+.theme-light .theme-contrast-compliant-syntax-highlighting {
+    --line-number-color: #536da1;
+}
+.theme-dark .theme-contrast-compliant-syntax-highlighting {
+    --line-number-color: #bdc8df;
+}

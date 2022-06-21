@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -15,10 +17,12 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	url1 := "https://icanhazcheezburger.com/slack_webhook"
 	url2 := "https://icanthazcheezburger.com/slack_webhook"
 
+	logger := logtest.Scoped(t)
+
 	t.Run("CreateThenGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -35,7 +39,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("CreateUpdateGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -56,7 +60,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("ErrorOnUpdateNonexistent", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 
@@ -67,7 +71,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("CreateDeleteGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -91,7 +95,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("CountCreateCount", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -111,7 +115,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("ListCreateList", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)

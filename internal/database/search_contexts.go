@@ -9,6 +9,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -19,8 +21,8 @@ import (
 
 var ErrSearchContextNotFound = errors.New("search context not found")
 
-func SearchContextsWith(other basestore.ShareableStore) SearchContextsStore {
-	return &searchContextsStore{basestore.NewWithHandle(other.Handle())}
+func SearchContextsWith(logger log.Logger, other basestore.ShareableStore) SearchContextsStore {
+	return &searchContextsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 type SearchContextsStore interface {
@@ -42,6 +44,7 @@ type SearchContextsStore interface {
 
 type searchContextsStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 func (s *searchContextsStore) Transact(ctx context.Context) (SearchContextsStore, error) {
@@ -65,12 +68,12 @@ const searchContextsPermissionsConditionFmtStr = `(
     OR (sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
 )`
 
-func searchContextsPermissionsCondition(ctx context.Context, store basestore.ShareableStore) (*sqlf.Query, error) {
+func searchContextsPermissionsCondition(ctx context.Context, logger log.Logger, store basestore.ShareableStore) (*sqlf.Query, error) {
 	a := actor.FromContext(ctx)
 	authenticatedUserID := int32(0)
 	bypassPermissionsCheck := a.Internal
 	if !bypassPermissionsCheck && a.IsAuthenticated() {
-		currentUser, err := UsersWith(store).GetByCurrentAuthUser(ctx)
+		currentUser, err := UsersWith(logger, store).GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +225,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Qu
 }
 
 func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s)
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +245,7 @@ func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 
 func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
 	conds := getSearchContextsQueryConditions(opts)
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s)
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
 	if err != nil {
 		return -1, err
 	}
@@ -273,7 +276,7 @@ func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 	}
 	conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
 
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s)
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +497,7 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}

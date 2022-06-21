@@ -193,7 +193,7 @@ func getRepo(db database.DB, id int) *types.Repo {
 
 func TestGetRepos(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewDB(logger, t)
 
 	createRepo(db, "my cool repo", 123)
 	got := getRepo(db, 123)

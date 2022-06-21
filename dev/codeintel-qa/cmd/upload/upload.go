@@ -82,7 +82,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 	return uploads, nil
 }
 
-// upload invokes `src lsif upload` on the host and returns the graphql identifier of
+// upload invokes `src code-intel upload` on the host and returns the graphql identifier of
 // the uploaded resource.
 func upload(ctx context.Context, repoName, commit, file string) (string, error) {
 	argMap := map[string]string{

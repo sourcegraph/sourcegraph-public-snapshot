@@ -30,7 +30,7 @@ jobs:
           curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
           chmod +x /usr/local/bin/src
       - name: Upload index
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
 ```
@@ -80,7 +80,7 @@ jobs:
       - name: Generate index
         run: scip-typescript index
       - name: Upload index
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -no-progress
+        run: src code-intel upload -github-token=${{ secrets.GITHUB_TOKEN }} -no-progress
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
 ```
@@ -120,9 +120,9 @@ The steps here are similar to those in the GitHub Actions example from before.
 4. Upload the data to a Sourcegraph instance.
    ```
    # for private instances
-   SRC_ENDPOINT=<your sourcegraph endpoint> src lsif upload
+   SRC_ENDPOINT=<your sourcegraph endpoint> src code-intel upload
    # for public instances
-   src lsif upload -github-token=<your github token>
+   src code-intel upload -github-token=<your github token>
    ```
    The upload command will provide a URL you can visit to see the upload's status. 
    Once the upload finishes processing, you can visit the repo and enjoy precise code navigation!

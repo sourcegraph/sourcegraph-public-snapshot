@@ -45,20 +45,22 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
-        <Tooltip content={copied ? 'Copied!' : copyFullQueryTooltip}>
-            <Button
-                className={classNames('btn-icon', props.className)}
-                variant="icon"
-                size="sm"
-                aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
-                aria-live="polite"
-                onClick={nextClick}
-            >
-                <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
-            </Button>
+        <>
+            <Tooltip content={copied ? 'Copied!' : copyFullQueryTooltip}>
+                <Button
+                    className={classNames('btn-icon', props.className)}
+                    variant="icon"
+                    size="sm"
+                    aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
+                    aria-live="polite"
+                    onClick={nextClick}
+                >
+                    <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
+                </Button>
+            </Tooltip>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />
             ))}
-        </Tooltip>
+        </>
     )
 }

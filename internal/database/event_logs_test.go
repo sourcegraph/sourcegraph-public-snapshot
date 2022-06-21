@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -78,8 +80,9 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -123,8 +126,9 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	usersStore := db.Users()
@@ -191,8 +195,9 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -237,8 +242,9 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -294,8 +300,9 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -410,8 +417,9 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
@@ -473,8 +481,9 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	now := time.Now()
 
@@ -615,8 +624,9 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{
@@ -683,8 +693,9 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
@@ -762,8 +773,9 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -813,8 +825,9 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{
@@ -889,8 +902,9 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -948,8 +962,9 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
@@ -1114,8 +1129,9 @@ func TestEventLogs_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1174,8 +1190,9 @@ func TestEventLogs_LatestPing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
@@ -1265,8 +1282,9 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	if _, err := db.Handle().ExecContext(ctx, `

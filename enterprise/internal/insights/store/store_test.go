@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -22,12 +23,12 @@ func TestSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
-	postgres := database.NewDB(dbtest.NewDB(t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -131,10 +132,11 @@ func TestCountData(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
-	postgres := database.NewDB(dbtest.NewDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -228,10 +230,11 @@ func TestRecordSeriesPoints(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
-	postgres := database.NewDB(dbtest.NewDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -331,10 +334,11 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
-	postgres := database.NewDB(dbtest.NewDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -396,10 +400,11 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
-	postgres := database.NewDB(dbtest.NewDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -461,10 +466,11 @@ func TestDeleteSnapshots(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
-	postgres := database.NewDB(dbtest.NewDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -542,14 +548,15 @@ func TestDelete(t *testing.T) {
 
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)
 
-	postgres := database.NewDB(dbtest.NewDB(t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
 

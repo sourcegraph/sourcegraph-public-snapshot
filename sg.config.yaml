@@ -43,22 +43,22 @@ env:
   SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
     [
+      { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver", "Host": "127.0.0.1:6068" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
+      { "Name": "oss-repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
-      { "Name": "enterprise-repo-updater", "Host": "127.0.0.1:6074" },
-      { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
+      { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
+      { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
-      { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
       { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
       { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
-      { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
-      { "Name": "zoekt-indexserver-1", "Host": "127.0.0.1:6073" },
-      { "Name": "zoekt-webserver-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
-      { "Name": "zoekt-webserver-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
+      { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
+      { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
+      { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
+      { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
   OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
   # Settings/config
@@ -112,13 +112,13 @@ env:
   ENABLE_STREAMING_REPOS_SYNCER: true
 
 commands:
-  frontend:
-    cmd: .bin/frontend
+  oss-frontend:
+    cmd: .bin/oss-frontend
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+      go build -gcflags="$GCFLAGS" -o .bin/oss-frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
@@ -130,7 +130,7 @@ commands:
       - internal
       - cmd/frontend
 
-  enterprise-frontend:
+  frontend:
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -187,19 +187,19 @@ commands:
       - internal
       - cmd/github-proxy
 
-  worker:
-    cmd: .bin/worker
+  oss-worker:
+    cmd: .bin/oss-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+      go build -gcflags="$GCFLAGS" -o .bin/oss-worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
       - cmd/worker
 
-  enterprise-worker:
+  worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/worker
@@ -215,20 +215,20 @@ commands:
       - cmd/worker
       - enterprise/cmd/worker
 
-  repo-updater:
-    cmd: .bin/repo-updater
+  oss-repo-updater:
+    cmd: .bin/oss-repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
-    checkBinary: .bin/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/oss-repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+    checkBinary: .bin/oss-repo-updater
     watch:
       - lib
       - internal
       - cmd/repo-updater
 
-  enterprise-repo-updater:
+  repo-updater:
     cmd: .bin/enterprise-repo-updater
     install: |
       if [ -n "$DELVE" ]; then
@@ -246,15 +246,15 @@ commands:
       - enterprise/internal
       - enterprise/cmd/repo-updater
 
-  symbols:
-    cmd: .bin/symbols
+  oss-symbols:
+    cmd: .bin/oss-symbols
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
 
       ./cmd/symbols/build-ctags.sh &&
-      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/oss-symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -264,7 +264,7 @@ commands:
       - internal
       - cmd/symbols
 
-  enterprise-symbols:
+  symbols:
     cmd: .bin/enterprise-symbols
     install: |
       if [ -n "$DELVE" ]; then
@@ -306,11 +306,11 @@ commands:
     env:
       CADDY_VERSION: 2.4.5
 
-  web:
+  oss-web:
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
 
-  enterprise-web:
+  web:
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
@@ -374,7 +374,7 @@ commands:
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
 
-  zoekt-indexserver-0:
+  zoekt-index-0:
     <<: *zoekt_indexserver_template
     env:
       <<: *zoektenv
@@ -382,7 +382,7 @@ commands:
       ZOEKT_HOSTNAME_PORT: 3070
       ZOEKT_LISTEN_PORT: 6072
 
-  zoekt-indexserver-1:
+  zoekt-index-1:
     <<: *zoekt_indexserver_template
     env:
       <<: *zoektenv
@@ -390,7 +390,7 @@ commands:
       ZOEKT_HOSTNAME_PORT: 3071
       ZOEKT_LISTEN_PORT: 6073
 
-  zoekt-webserver-template: &zoekt_webserver_template
+  zoekt-web-template: &zoekt_webserver_template
     install: |
       mkdir -p .bin
       env GOBIN="${PWD}/.bin" go install github.com/google/zoekt/cmd/zoekt-webserver
@@ -399,15 +399,15 @@ commands:
       JAEGER_DISABLED: false
       GOGC: 50
 
-  zoekt-webserver-0:
+  zoekt-web-0:
     <<: *zoekt_webserver_template
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen "127.0.0.1:3070"
 
-  zoekt-webserver-1:
+  zoekt-web-1:
     <<: *zoekt_webserver_template
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
-  precise-code-intel-worker:
+  codeintel-worker:
     cmd: .bin/precise-code-intel-worker
     install: |
       if [ -n "$DELVE" ]; then
@@ -673,21 +673,21 @@ commandsets:
       - postgres
       - git
     commands:
-      - frontend
-      - worker
-      - repo-updater
+      - oss-frontend
+      - oss-worker
+      - oss-repo-updater
+      - oss-symbols
       - gitserver
       - searcher
-      - symbols
       - web
       - caddy
       - docsite
       - syntax-highlighter
       - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
 
   enterprise: &enterprise_set
     requiresDevPrivate: true
@@ -697,21 +697,21 @@ commandsets:
       - postgres
       - git
     commands:
-      - enterprise-frontend
-      - enterprise-worker
-      - enterprise-repo-updater
-      - enterprise-web
+      - frontend
+      - worker
+      - repo-updater
+      - web
       - gitserver
       - searcher
-      - enterprise-symbols
+      - symbols
       - caddy
       - docsite
       - syntax-highlighter
       - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -733,23 +733,23 @@ commandsets:
       - postgres
       - git
     commands:
-      - enterprise-frontend
-      - enterprise-worker
-      - enterprise-repo-updater
-      - enterprise-web
+      - frontend
+      - worker
+      - repo-updater
+      - web
       - gitserver
       - searcher
-      - enterprise-symbols
+      - symbols
       - caddy
       - docsite
       - syntax-highlighter
       - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
       - minio
-      - precise-code-intel-worker
+      - codeintel-worker
       - codeintel-executor
       - jaeger
       - grafana
@@ -766,10 +766,10 @@ commandsets:
       - postgres
       - git
     commands:
-      - enterprise-frontend
-      - enterprise-worker
-      - enterprise-repo-updater
-      - enterprise-web
+      - frontend
+      - worker
+      - repo-updater
+      - web
       - gitserver
       - searcher
       - symbols
@@ -777,10 +777,10 @@ commandsets:
       - docsite
       - syntax-highlighter
       - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -793,17 +793,17 @@ commandsets:
       - postgres
       - git
     commands:
-      - enterprise-frontend
-      - enterprise-worker
-      - enterprise-repo-updater
+      - frontend
+      - worker
+      - repo-updater
       - gitserver
       - searcher
       - symbols
       - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
 
   batches:
     requiresDevPrivate: true
@@ -813,21 +813,21 @@ commandsets:
       - postgres
       - git
     commands:
-      - enterprise-frontend
-      - enterprise-worker
-      - enterprise-repo-updater
-      - enterprise-web
+      - frontend
+      - worker
+      - repo-updater
+      - web
       - gitserver
       - searcher
-      - enterprise-symbols
+      - symbols
       - caddy
       - docsite
       - syntax-highlighter
       - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
       - batches-executor
 
   iam:
@@ -838,9 +838,9 @@ commandsets:
       - postgres
       - git
     commands:
-      - enterprise-frontend
-      - enterprise-repo-updater
-      - enterprise-web
+      - frontend
+      - repo-updater
+      - web
       - gitserver
       - caddy
       - github-proxy
@@ -866,8 +866,8 @@ commandsets:
       # For generated alerts docs
       - docsite
       # For the alerting integration with frontend
-      - enterprise-frontend
-      - enterprise-web
+      - frontend
+      - web
       - caddy
 
   web-standalone:

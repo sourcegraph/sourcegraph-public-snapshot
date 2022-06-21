@@ -56,7 +56,7 @@ func (q *ProposedQuery) QueryString() string {
 		switch q.PatternType {
 		case query.SearchTypeRegex:
 			return q.Query + " patternType:regexp"
-		case query.SearchTypeLiteralDefault:
+		case query.SearchTypeLiteral:
 			return q.Query + " patternType:literal"
 		case query.SearchTypeStructural:
 			return q.Query + " patternType:structural"

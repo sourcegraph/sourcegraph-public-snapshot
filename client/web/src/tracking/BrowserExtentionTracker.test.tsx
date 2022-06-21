@@ -3,6 +3,7 @@ import React from 'react'
 import { act, cleanup, render } from '@testing-library/react'
 import { renderHook, cleanup as hookCleanup } from '@testing-library/react-hooks'
 import { MemoryRouter } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { BrowserExtensionTracker, useIsBrowserExtensionActiveUser } from './BrowserExtensionTracker'
 
@@ -25,26 +26,19 @@ describe('BrowserExtensionTracker', () => {
     })
 
     const cases: [string, string | null][] = [
-        [
-            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph?utm_source=chrome-extension&utm_campaign=view-on-sourcegraph',
-            DATE_NOW,
-        ],
-        [
-            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph?utm_source=firefox-extension&utm_campaign=view-on-sourcegraph',
-            DATE_NOW,
-        ],
-        [
-            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph?utm_source=safari-extension&utm_campaign=view-on-sourcegraph',
-            DATE_NOW,
-        ],
-        ['https://sourcegraph.com/?something=different', null],
+        ['/github.com/sourcegraph/sourcegraph?utm_source=chrome-extension&utm_campaign=view-on-sourcegraph', DATE_NOW],
+        ['/github.com/sourcegraph/sourcegraph?utm_source=firefox-extension&utm_campaign=view-on-sourcegraph', DATE_NOW],
+        ['/github.com/sourcegraph/sourcegraph?utm_source=safari-extension&utm_campaign=view-on-sourcegraph', DATE_NOW],
+        ['/?something=different', null],
     ]
     test.each(cases)('Detects query parameters for %p', (url, expectedResult) => {
         expect(localStorage.getItem(BROWSER_EXTENSION_LAST_DETECTION_KEY)).toBeNull()
 
         render(
             <MemoryRouter initialEntries={[url]}>
-                <BrowserExtensionTracker />
+                <CompatRouter>
+                    <BrowserExtensionTracker />
+                </CompatRouter>
             </MemoryRouter>
         )
 
@@ -63,7 +57,9 @@ describe('BrowserExtensionTracker', () => {
         )
         render(
             <MemoryRouter>
-                <BrowserExtensionTracker />
+                <CompatRouter>
+                    <BrowserExtensionTracker />
+                </CompatRouter>
             </MemoryRouter>,
             { wrapper }
         )

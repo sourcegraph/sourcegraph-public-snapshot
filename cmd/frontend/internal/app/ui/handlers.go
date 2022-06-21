@@ -17,6 +17,8 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -126,6 +128,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
+	logger := sglog.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
@@ -161,7 +164,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 	if _, ok := mux.Vars(r)["Repo"]; ok {
 		// Common repo pages (blob, tree, etc).
 		var err error
-		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), db, mux.Vars(r))
+		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
 		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			var urlMovedError *handlerutil.URLMovedError

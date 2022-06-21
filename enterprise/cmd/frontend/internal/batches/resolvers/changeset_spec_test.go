@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -26,16 +28,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := database.UsersWith(cstore).Create(ctx, database.NewUser{
+	user, err := database.UsersWith(logger, cstore).Create(ctx, database.NewUser{
 		Username:        "mary",
 		Email:           ct.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
@@ -45,7 +48,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := database.ReposWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
