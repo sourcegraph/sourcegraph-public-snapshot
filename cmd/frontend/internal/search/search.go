@@ -610,6 +610,8 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 // Done cleans up any background tasks and flushes any buffered data to the stream
 func (h *eventHandler) Done() {
+	// cancel outside of the mutex so any requests
+	// that are holding the mutex stop immediately
 	h.cancel()
 
 	h.mu.Lock()
