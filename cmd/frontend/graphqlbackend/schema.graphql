@@ -1855,6 +1855,7 @@ enum SearchVersion {
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural

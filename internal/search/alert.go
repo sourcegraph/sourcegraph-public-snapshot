@@ -54,6 +54,8 @@ type ProposedQuery struct {
 func (q *ProposedQuery) QueryString() string {
 	if q.Description != "Remove quotes" {
 		switch q.PatternType {
+		case query.SearchTypeStandard:
+			return q.Query + " patternType:standard"
 		case query.SearchTypeRegex:
 			return q.Query + " patternType:regexp"
 		case query.SearchTypeLiteral:

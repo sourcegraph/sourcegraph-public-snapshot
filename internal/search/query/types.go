@@ -33,10 +33,13 @@ const (
 	SearchTypeLiteral
 	SearchTypeStructural
 	SearchTypeLucky
+	SearchTypeStandard
 )
 
 func (s SearchType) String() string {
 	switch s {
+	case SearchTypeStandard:
+		return "standard"
 	case SearchTypeRegex:
 		return "regex"
 	case SearchTypeLiteral:
