@@ -384,6 +384,8 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		}
 	}
 
+	// Newly queued queries should be scoped to correct repos however leaving filtering
+	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
 	filteredRecordings, err := filterRecordingsBySeriesRepos(ctx, r.repoStore, series, recordings)
 	if err != nil {
 		return errors.Wrap(err, "filterRecordingsBySeriesRepos")
