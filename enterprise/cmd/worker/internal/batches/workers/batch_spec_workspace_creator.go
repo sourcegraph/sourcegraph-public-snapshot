@@ -30,7 +30,7 @@ type batchSpecWorkspaceCreator struct {
 	logger log.Logger
 }
 
-// HandlerFunc returns a workeruitl.HandlerFunc that can be passed to a
+// HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
@@ -52,6 +52,10 @@ type workspaceCacheKey struct {
 	skippedSteps  map[int32]struct{}
 }
 
+// process runs one workspace creation run for the given job utilizing the given
+// workspace resolver to find the workspaces. It creates a database transaction
+// to store all the entities in one transaction after the resolution process,
+// to prevent long running transactions.
 func (r *batchSpecWorkspaceCreator) process(
 	ctx context.Context,
 	newResolver service.WorkspaceResolverBuilder,

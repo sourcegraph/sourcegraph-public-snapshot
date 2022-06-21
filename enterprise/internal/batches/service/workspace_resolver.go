@@ -474,7 +474,6 @@ func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r
 		}
 		return false, err
 	}
-	// TODO: Should we really fail here? Just not ignoring it seems to be good enough.
 	if !stat.Mode().IsRegular() {
 		return false, errors.Errorf("not a blob: %q", batchIgnoreFilePath)
 	}
@@ -536,6 +535,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	}
 
 	var (
+		// mu protects both the errs variable and the results map from concurrent writes.
 		errs    error
 		mu      sync.Mutex
 		results = make(map[repoRevKey][]string)
