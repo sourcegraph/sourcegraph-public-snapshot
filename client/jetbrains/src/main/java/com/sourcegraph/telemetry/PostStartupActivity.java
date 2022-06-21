@@ -1,4 +1,4 @@
-package com.sourcegraph.activities;
+package com.sourcegraph.telemetry;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginInstaller;
@@ -7,7 +7,7 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import com.sourcegraph.config.SourcegraphApplicationConfig;
+import com.sourcegraph.config.SourcegraphApplicationService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -16,7 +16,7 @@ public class PostStartupActivity implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
         Application app = ApplicationManager.getApplication();
-        SourcegraphApplicationConfig applicationConfig = app.getService(SourcegraphApplicationConfig.class);
+        SourcegraphApplicationService applicationConfig = app.getService(SourcegraphApplicationService.class);
 
         // When no anonymous user ID is set yet, we create a new one and treat this as an installation event. This
         // likely means that the user has never started IntelliJ with our extension before

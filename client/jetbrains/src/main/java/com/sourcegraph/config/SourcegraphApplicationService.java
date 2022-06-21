@@ -10,14 +10,14 @@ import org.jetbrains.annotations.Nullable;
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class SourcegraphApplicationConfig implements PersistentStateComponent<SourcegraphApplicationConfig> {
+public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
     @Nullable
     public String anonymousUserId;
 
     @NotNull
-    public static SourcegraphApplicationConfig getInstance() {
+    public static SourcegraphApplicationService getInstance() {
         return ApplicationManager.getApplication()
-            .getService(SourcegraphApplicationConfig.class);
+            .getService(SourcegraphApplicationService.class);
     }
 
     @Nullable
@@ -27,12 +27,12 @@ public class SourcegraphApplicationConfig implements PersistentStateComponent<So
 
     @Nullable
     @Override
-    public SourcegraphApplicationConfig getState() {
+    public SourcegraphApplicationService getState() {
         return this;
     }
 
     @Override
-    public void loadState(@NotNull SourcegraphApplicationConfig config) {
+    public void loadState(@NotNull SourcegraphApplicationService config) {
         this.anonymousUserId = config.anonymousUserId;
     }
 }
