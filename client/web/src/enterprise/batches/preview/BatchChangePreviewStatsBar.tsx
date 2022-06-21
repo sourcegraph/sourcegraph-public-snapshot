@@ -15,6 +15,7 @@ import {
     PreviewActionClose,
     PreviewActionImport,
     PreviewActionPublish,
+    PreviewActionReattach,
     PreviewActionReopen,
     PreviewActionUndraft,
     PreviewActionUpdate,
@@ -90,6 +91,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                 />
                 <PreviewActionImport className={actionClassNames} label={`${stats.import} Import`} />
                 <PreviewActionArchive className={actionClassNames} label={`${stats.archive} Archive`} />
+                <PreviewActionReattach className={actionClassNames} label={`${stats.reattach} Reattach`} />
             </div>
         </div>
     )
