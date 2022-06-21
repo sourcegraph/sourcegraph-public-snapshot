@@ -1013,7 +1013,7 @@
 
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
 // https://github.com/sourcegraph/sourcegraph/issues/36251
-.theme-light.feature-highlight-contrast {
+.theme-light .theme-contrast-compliant-syntax-highlighting {
     --hl-yellow: #7f6102;
     --hl-green: #226a00;
     --hl-red: #ce0804;
@@ -1029,7 +1029,7 @@
     --hl-gray-2: ##666666;
     --hl-gray-3: #606060;
 }
-.theme-dark.feature-highlight-contrast {
+.theme-dark .theme-contrast-compliant-syntax-highlighting {
     --hl-dark-green: #90c29a;
     --hl-dark-blue-1: #62b4f9;
     --hl-dark-blue-3: #7ac3fe;
