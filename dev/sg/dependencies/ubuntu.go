@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
@@ -294,55 +292,20 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 				Name:  "1password",
 				Check: checkAction(check1password()),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg").StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if err := usershell.Run(ctx, `echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" |  sudo tee /etc/apt/sources.list.d/1password.list`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if err := usershell.Run(ctx, `sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if err := usershell.Run(ctx, `curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if err := usershell.Run(ctx, `sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if err := usershell.Run(ctx, `curl -ss https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/ac2d62742012ea22/debsig.gpg`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if err := usershell.Run(ctx, `sudo apt update && sudo apt install 1password-cli`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					// phew
-
-					if cio.Input == nil {
-						return errors.New("interactive input required")
-					}
-
-					cio.Write("Enter secret key:")
-					var key string
-					if _, err := fmt.Fscan(cio.Input, &key); err != nil {
-						return err
-					}
-					cio.Write("Enter account email:")
-					var email string
-					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
-						return err
-					}
-					cio.Write("Enter account password:")
-					var password string
-					if _, err := fmt.Fscan(cio.Input, &password); err != nil {
+					// Convoluted directions from https://developer.1password.com/docs/cli/get-started/#install
+					if err := cmdFixes(
+						"curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg",
+						`echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" |  sudo tee /etc/apt/sources.list.d/1password.list`,
+						`sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/`,
+						`curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol`,
+						`sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22`,
+						`curl -ss https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/ac2d62742012ea22/debsig.gpg`,
+						`sudo apt update && sudo apt install 1password-cli`,
+					)(ctx, cio, args); err != nil {
 						return err
 					}
 
-					return usershell.Command(ctx,
-						"op account add --signin --address team-sourcegraph.1password.com --email", email).
-						Env(map[string]string{"OP_SECRET_KEY": key}).
-						Input(strings.NewReader(password)).
-						Run().
-						StreamLines(cio.Verbose)
+					return opLoginFix()(ctx, cio, args)
 				},
 			},
 		},

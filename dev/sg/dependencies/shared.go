@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -215,5 +216,36 @@ func dependencyGcloud() *dependency {
 
 			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
+	}
+}
+
+func opLoginFix() check.FixAction[CheckArgs] {
+	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		if cio.Input == nil {
+			return errors.New("interactive input required")
+		}
+
+		cio.Write("Enter secret key:")
+		var key string
+		if _, err := fmt.Fscan(cio.Input, &key); err != nil {
+			return err
+		}
+		cio.Write("Enter account email:")
+		var email string
+		if _, err := fmt.Fscan(cio.Input, &email); err != nil {
+			return err
+		}
+		cio.Write("Enter account password:")
+		var password string
+		if _, err := fmt.Fscan(cio.Input, &password); err != nil {
+			return err
+		}
+
+		return usershell.Command(ctx,
+			"op account add --signin --address team-sourcegraph.1password.com --email", email).
+			Env(map[string]string{"OP_SECRET_KEY": key}).
+			Input(strings.NewReader(password)).
+			Run().
+			StreamLines(cio.Verbose)
 	}
 }
