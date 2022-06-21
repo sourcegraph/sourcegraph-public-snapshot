@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
@@ -10,12 +10,6 @@ import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 
 import { SearchContextForm } from './SearchContextForm'
-
-const { add } = storiesOf('web/enterprise/searchContexts/SearchContextForm', module)
-    .addParameters({
-        chromatic: { viewports: [1200], disableSnapshot: false },
-    })
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
 
 const onSubmit = (): Observable<ISearchContext> =>
     of({
@@ -81,41 +75,49 @@ const authUser: AuthenticatedUser = {
 
 const deleteSearchContext = sinon.fake(() => NEVER)
 
-add(
-    'empty create',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextForm
-                    {...webProps}
-                    authenticatedUser={authUser}
-                    onSubmit={onSubmit}
-                    deleteSearchContext={deleteSearchContext}
-                    isSourcegraphDotCom={false}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/enterprise/searchContexts/SearchContextForm',
+    decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [1200], disableSnapshot: false },
+    },
+}
+
+export default config
+
+export const EmptyCreate: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextForm
+                {...webProps}
+                authenticatedUser={authUser}
+                onSubmit={onSubmit}
+                deleteSearchContext={deleteSearchContext}
+                isSourcegraphDotCom={false}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'edit existing',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextForm
-                    {...webProps}
-                    searchContext={searchContextToEdit}
-                    authenticatedUser={authUser}
-                    onSubmit={onSubmit}
-                    deleteSearchContext={deleteSearchContext}
-                    isSourcegraphDotCom={false}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+EmptyCreate.storyName = 'empty create'
+
+export const EditExisting: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextForm
+                {...webProps}
+                searchContext={searchContextToEdit}
+                authenticatedUser={authUser}
+                onSubmit={onSubmit}
+                deleteSearchContext={deleteSearchContext}
+                isSourcegraphDotCom={false}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
+
+EditExisting.storyName = 'edit existing'
