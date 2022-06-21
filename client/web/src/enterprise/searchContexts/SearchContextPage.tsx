@@ -183,13 +183,20 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                     <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
                                     <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
                                     <PageHeader.Breadcrumb>
-                                        <div className="d-flex align-items-center">
-                                            <span>{searchContextOrError.spec}</span>
+                                        <div>
+                                            <span
+                                                className={classNames(
+                                                    !searchContextOrError.public && 'mr-2',
+                                                    styles.searchContextPageTitleSpec
+                                                )}
+                                            >
+                                                {searchContextOrError.spec}
+                                            </span>
                                             {!searchContextOrError.public && (
                                                 <Badge
                                                     variant="secondary"
                                                     pill={true}
-                                                    className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
+                                                    className={styles.searchContextPagePrivateBadge}
                                                     as="div"
                                                 >
                                                     Private
