@@ -143,7 +143,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
             <PageTitle title="Commits" />
             <div className={styles.content}>
-                <H1>View Commits From This Repository</H1>
+                <H1>View commits from this repository</H1>
                 <FilteredConnection<
                     GitCommitFields,
                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>
