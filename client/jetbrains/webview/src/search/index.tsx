@@ -110,3 +110,11 @@ function applyLastSearch(lastSearch: Search | null): void {
 function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
     initialAuthenticatedUser = authenticatedUser
 }
+
+export function getAccessToken(): string | null {
+    return accessToken
+}
+
+export function getInstanceURL(): string {
+    return instanceURL
+}
