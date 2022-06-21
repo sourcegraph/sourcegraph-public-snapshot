@@ -88,7 +88,7 @@ exports[`Icon legacy mdi-react icons renders a simple inline icon correctly 1`] 
 </DocumentFragment>
 `;
 
-exports[`Icon new @mdi/react icons renders a medium icon correctly 1`] = `
+exports[`Icon new @mdi/js icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-labelledby="icon_labelledby_2"
@@ -108,7 +108,7 @@ exports[`Icon new @mdi/react icons renders a medium icon correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Icon new @mdi/react icons renders a simple inline icon correctly 1`] = `
+exports[`Icon new @mdi/js icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
