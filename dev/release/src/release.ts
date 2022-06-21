@@ -558,7 +558,6 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: defaultPRMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
