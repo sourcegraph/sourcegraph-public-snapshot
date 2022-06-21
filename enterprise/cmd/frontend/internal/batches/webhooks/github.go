@@ -26,6 +26,7 @@ var (
 		"pull_request",
 		"pull_request_review",
 		"pull_request_review_comment",
+		"push",
 		"status",
 		"check_suite",
 		"check_run",
@@ -251,6 +252,17 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 			}
 		}
 		ours = h.checkRunEvent(cr)
+
+	case *gh.PushEvent:
+		fmt.Println("case: *gh.PushEvent")
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoID := repo.GetNodeID()
+		pr := PR{ID: *repo.ID, RepoExternalID: repoID}
+		prs = append(prs, pr)
+		ours = h.pushCommitEvent(e)
 	}
 
 	return prs, ours
@@ -580,6 +592,13 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	}
 
 	return &comment
+}
+
+func (*GitHubWebhook) pushCommitEvent(e *gh.PushEvent) *github.PushCommit {
+	fmt.Println("TODO: internal/batches/webhooks/github.go")
+	return &github.PushCommit{
+		// insert some attributes here
+	}
 }
 
 func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus {

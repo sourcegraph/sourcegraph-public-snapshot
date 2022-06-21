@@ -48,6 +48,7 @@ const (
 	ChangesetEventKindGitHubConvertToDraft       ChangesetEventKind = "github:convert_to_draft"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
 	ChangesetEventKindGitHubCommit               ChangesetEventKind = "github:commit"
+	ChangesetEventKindGitHubPush                 ChangesetEventKind = "github:push"
 	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
 	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
 	ChangesetEventKindCommitStatus               ChangesetEventKind = "github:commit_status"
@@ -469,6 +470,9 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 		}
 
 		updateGitHubCommit(&e.Commit, &o.Commit)
+
+	case *github.PushCommit:
+		fmt.Println("TODO: types/changeset_event.go")
 
 	case *github.PullRequestReview:
 		o := o.Metadata.(*github.PullRequestReview)

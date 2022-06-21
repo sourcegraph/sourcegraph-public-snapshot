@@ -110,13 +110,11 @@ func (h Webhook) upsertChangesetEvent(
 		log15.Warn("Webhook event could not be matched to repo", "err", err)
 		return nil
 	}
-	fmt.Printf("Repo:%+v\n", r)
 
 	var kind btypes.ChangesetEventKind
 	if kind, err = btypes.ChangesetEventKindFor(ev); err != nil {
 		return err
 	}
-	fmt.Println("Kind:", kind)
 
 	cs, err := tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              r.ID,
