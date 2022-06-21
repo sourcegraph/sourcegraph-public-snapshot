@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -97,6 +98,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	}
 
 	matches, common, err := RunRepoSubsetTextSearch(
+		logtest.Scoped(t),
 		context.Background(),
 		patternInfo,
 		repoRevs,
@@ -126,6 +128,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	_, _, err = RunRepoSubsetTextSearch(
+		logtest.Scoped(t),
 		context.Background(),
 		patternInfo,
 		makeRepositoryRevisions("foo/no-rev@dev"),
@@ -196,6 +199,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 
 	matches, _, err := RunRepoSubsetTextSearch(
+		logtest.Scoped(t),
 		context.Background(),
 		patternInfo,
 		makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
@@ -274,6 +278,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 
 	matches, _, err := RunRepoSubsetTextSearch(
+		logtest.Scoped(t),
 		context.Background(),
 		patternInfo,
 		repos,
@@ -423,6 +428,7 @@ func TestFileMatch_Limit(t *testing.T) {
 
 // RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
 func RunRepoSubsetTextSearch(
+	log log.Logger,
 	ctx context.Context,
 	patternInfo *search.TextPatternInfo,
 	repos []*search.RepositoryRevisions,
@@ -495,7 +501,7 @@ func RunRepoSubsetTextSearch(
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
 		searcherJob := &searcher.TextSearchJob{
-			Log:             log.Scoped("", ""),
+			Log:             log,
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

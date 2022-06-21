@@ -58,13 +58,14 @@ type searchRepos struct {
 	clients job.RuntimeClients
 	repoSet repoData
 	stream  streaming.Sender
+	log     slog.Logger
 }
 
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
 		searcherJob := &searcher.TextSearchJob{
-			Log:             slog.Scoped("", ""),
+			Log:             s.log,
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
