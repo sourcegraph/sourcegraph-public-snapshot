@@ -1384,6 +1384,26 @@ extend type Mutation {
     ): BatchChange!
 
     """
+    Checks if a batch change with the specified name exists, if it doesn't, it creates a batch change
+    with an empty batch spec otherwise returns the existing batch change, this is useful for drafting
+    server-side batch changes with the src-cli tool.
+    The user creating the batch change must have permission to create it in the
+    namespace provided. Use `createBatchSpecFromRaw` and `replaceBatchSpecInput` to update
+    the input batch spec after creating.
+    """
+    upsertEmptyBatchChange(
+        """
+        The namespace (either a user or organization) that this batch change should belong to.
+        """
+        namespace: ID!
+
+        """
+        The (unique) name to identify the batch change by in its namespace.
+        """
+        name: String!
+    ): BatchChange!
+
+    """
     Creates a batch spec and triggers a job to evaluate the workspaces. Consumers need to
     poll the batch spec until the resolution is completed to get a full list of all
     workspaces. This might become streaming so the results will come in over time.

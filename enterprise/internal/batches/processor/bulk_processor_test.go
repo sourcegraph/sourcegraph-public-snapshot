@@ -2,7 +2,10 @@ package processor
 
 import (
 	"context"
+	"database/sql"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -11,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,11 +25,13 @@ import (
 func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
-	sqlDB := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(logger, t)
 	tx := dbtest.NewTx(t, sqlDB)
-	db := database.NewDB(sqlDB)
-	bstore := store.New(database.NewDB(tx), &observation.TestContext, nil)
+	db := database.NewDB(logger, sqlDB)
+	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, bstore, repo)

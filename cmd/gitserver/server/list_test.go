@@ -4,10 +4,15 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestServer_handleList(t *testing.T) {
-	s := &Server{ReposDir: "/testroot"}
+	s := &Server{
+		Logger:   logtest.Scoped(t),
+		ReposDir: "/testroot",
+	}
 	h := s.Handler()
 	_, ok := s.locker.TryAcquire("a", "test status")
 	if !ok {

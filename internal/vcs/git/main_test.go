@@ -69,7 +69,7 @@ func init() {
 
 	srv := &http.Server{
 		Handler: (&server.Server{
-			Logger:   sglog.Scoped("gitserver", "gitserver server log"),
+			Logger:   sglog.Scoped("server", "the gitserver service"),
 			ReposDir: filepath.Join(root, "repos"),
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil

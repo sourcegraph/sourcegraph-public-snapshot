@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -27,8 +28,9 @@ import (
 )
 
 func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "ba5e"
 	wantHeadRevision := "1ead"
@@ -62,8 +64,9 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 }
 
 func TestRepositoryComparison(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"

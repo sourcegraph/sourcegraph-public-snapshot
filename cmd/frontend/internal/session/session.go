@@ -342,6 +342,14 @@ func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			// If fetching session info failed because of a Redis error, return empty Context
+			// without deleting the session cookie and throw an internal server error.
+			// This prevents background requests made by off-screen tabs from signing
+			// the user out during a server update.
+			w.WriteHeader(http.StatusInternalServerError)
+			return r.Context()
+		}
 		if !strings.Contains(err.Error(), "illegal base64 data at input byte 36") {
 			// Skip log if the error message indicates the cookie value was a JWT (which almost
 			// certainly means that the cookie was a pre-2.8 SAML cookie, so this error will only

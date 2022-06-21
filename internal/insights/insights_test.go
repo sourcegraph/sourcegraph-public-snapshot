@@ -13,6 +13,8 @@ import (
 	"github.com/hexops/valast"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -20,7 +22,8 @@ import (
 func TestGetSearchInsights(t *testing.T) {
 	ctx := context.Background()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	_, err := db.ExecContext(ctx, `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +66,8 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	_, err := db.ExecContext(ctx, `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +138,8 @@ func TestGetIntegrationInsights(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	_, err := db.ExecContext(ctx, `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)

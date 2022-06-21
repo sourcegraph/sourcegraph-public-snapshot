@@ -3,6 +3,8 @@ package webhooks
 import (
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -14,9 +16,9 @@ func TestWebhooksIntegration(t *testing.T) {
 	}
 
 	t.Parallel()
-
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 
 	user := ct.CreateTestUser(t, db, false)
 

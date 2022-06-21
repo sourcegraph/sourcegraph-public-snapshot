@@ -17,12 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
+var batchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
 	"batch_spec_workspace_execution_jobs.user_id",
-	"batch_spec_workspace_execution_jobs.access_token_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -47,7 +46,6 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
 	"batch_spec_workspace_execution_jobs.user_id",
-	"batch_spec_workspace_execution_jobs.access_token_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -166,6 +164,10 @@ func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, ids [
 type GetBatchSpecWorkspaceExecutionJobOpts struct {
 	ID                   int64
 	BatchSpecWorkspaceID int64
+	// ExcludeRank when true prevents joining against the queue table.
+	// Use this when not making use of the rank field later, as it's
+	// costly.
+	ExcludeRank bool
 }
 
 // GetBatchSpecWorkspaceExecutionJob gets a BatchSpecWorkspaceExecutionJob matching the given options.
@@ -197,14 +199,19 @@ SELECT
 	%s
 FROM
 	batch_spec_workspace_execution_jobs
-LEFT JOIN (` + executionPlaceInQueueFragment + `) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id
+-- Joins go here:
+%s
 WHERE
 	%s
 LIMIT 1
 `
 
 func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecutionJobOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	columns := batchSpecWorkspaceExecutionJobColumns
+	var (
+		preds []*sqlf.Query
+		joins []*sqlf.Query
+	)
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = %s", opts.ID))
 	}
@@ -217,9 +224,16 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
+	if !opts.ExcludeRank {
+		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
+	} else {
+		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+	}
+
 	return sqlf.Sprintf(
 		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(columns.ToSqlf(), ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -234,6 +248,9 @@ type ListBatchSpecWorkspaceExecutionJobsOpts struct {
 	IDs                    []int64
 	OnlyWithFailureMessage bool
 	BatchSpecID            int64
+	// ExcludeRank if true prevents joining against the queue view. When used,
+	// the rank properties on the job will be 0 always.
+	ExcludeRank bool
 }
 
 // ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
@@ -261,7 +278,6 @@ SELECT
 	%s
 FROM
 	batch_spec_workspace_execution_jobs
-LEFT JOIN (` + executionPlaceInQueueFragment + `) as exec ON batch_spec_workspace_execution_jobs.id = exec.id
 %s       -- joins
 WHERE
 	%s   -- preds
@@ -269,8 +285,11 @@ ORDER BY batch_spec_workspace_execution_jobs.id ASC
 `
 
 func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	var joins []*sqlf.Query
+	columns := batchSpecWorkspaceExecutionJobColumns
+	var (
+		preds []*sqlf.Query
+		joins []*sqlf.Query
+	)
 
 	if opts.State != "" {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
@@ -306,9 +325,15 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
+	if !opts.ExcludeRank {
+		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) as exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
+	} else {
+		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+	}
+
 	return sqlf.Sprintf(
 		listBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(columns.ToSqlf(), ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -412,30 +437,9 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		s.now(),
 		s.now(),
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(batchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 	)
 }
-
-// SetBatchSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
-func (s *Store) SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
-	ctx, _, endObservation := s.operations.setBatchSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(jobID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	q := sqlf.Sprintf(setSpecWorkspaceExecutionJobAccessTokenFmtstr, tokenID, jobID)
-	return s.Exec(ctx, q)
-}
-
-var setSpecWorkspaceExecutionJobAccessTokenFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:SetSpecWorkspaceExecutionJobAccessToken
-UPDATE
-	batch_spec_workspace_execution_jobs
-SET
-	access_token_id = %s
-WHERE
-	id = %s
-`
 
 func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
@@ -445,7 +449,6 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		&wj.ID,
 		&wj.BatchSpecWorkspaceID,
 		&wj.UserID,
-		&dbutil.NullInt64{N: &wj.AccessTokenID},
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},

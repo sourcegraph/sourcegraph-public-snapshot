@@ -49,13 +49,13 @@ The upload step is the same for all languages. Make sure the current working dir
 #### To a private Sourcegraph instance (on prem)
 
 ```
-$ SRC_ENDPOINT=https://sourcegraph.mycompany.com src lsif upload -file=dump.lsif
+$ SRC_ENDPOINT=https://sourcegraph.mycompany.com src code-intel upload -file=dump.lsif
 ```
 
 #### To cloud based Sourcegraph.com
 
 ```
-$ src lsif upload -github-token=YourGitHubToken -file=dump.lsif
+$ src code-intel upload -github-token=YourGitHubToken -file=dump.lsif
 ```
 
 The `src-cli` upload command will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0 or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.

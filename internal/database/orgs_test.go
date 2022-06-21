@@ -9,6 +9,8 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,7 +21,8 @@ import (
 
 func TestOrgs_ValidNames(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -41,7 +44,8 @@ func TestOrgs_ValidNames(t *testing.T) {
 
 func TestOrgs_Count(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	org, err := db.Orgs().Create(ctx, "a", nil)
@@ -68,7 +72,8 @@ func TestOrgs_Count(t *testing.T) {
 
 func TestOrgs_Delete(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	displayName := "a"
@@ -104,7 +109,8 @@ func TestOrgs_Delete(t *testing.T) {
 
 func TestOrgs_HardDelete(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	displayName := "org1"
@@ -177,7 +183,8 @@ func TestOrgs_GetByID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	createOrg(ctx, db, "org1", "org1")
@@ -227,7 +234,8 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	org1 := createOrg(ctx, db, "org1", "org1")
@@ -267,7 +275,8 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 
 func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	userID := int32(42)
@@ -306,7 +315,8 @@ func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
 
 func TestOrgs_UpdateOrgsOpenBetaStats(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	userID := int32(42)

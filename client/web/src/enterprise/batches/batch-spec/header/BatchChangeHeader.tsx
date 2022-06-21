@@ -22,6 +22,6 @@ export const BatchChangeHeader: React.FC<BatchChangeHeaderProps> = ({ namespace,
         description={
             description || 'Run custom code over hundreds of repositories and manage the resulting changesets.'
         }
-        annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+        annotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
     />
 )

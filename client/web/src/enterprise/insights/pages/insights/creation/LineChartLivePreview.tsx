@@ -3,6 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo, Text } from '@sourcegraph/wildcard'
 
+import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../components'
 import {
     getSanitizedRepositories,
@@ -42,6 +43,7 @@ export const LineChartLivePreview: React.FunctionComponent<
 > = props => {
     const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
+    const seriesToggleState = useSeriesToggle()
 
     const sanitizedSeries = series.map(srs => {
         const sanitizer = srs.generatedFromCaptureGroup ? getSanitizedCaptureQuery : (query: string) => query
@@ -88,6 +90,7 @@ export const LineChartLivePreview: React.FunctionComponent<
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
+                                    seriesToggleState={seriesToggleState}
                                     {...state.data}
                                 />
                             ) : (
@@ -97,6 +100,7 @@ export const LineChartLivePreview: React.FunctionComponent<
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
+                                        seriesToggleState={seriesToggleState}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
                                         {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}

@@ -13,6 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,7 +27,6 @@ import (
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,7 +55,9 @@ func TestSetDefaultQueryCount(t *testing.T) {
 func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, &observation.TestContext, nil)
 
 	u := ct.CreateTestUser(t, db, false)
@@ -461,7 +464,7 @@ func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultB
 }
 
 func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
-	git.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
+	gitserver.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
 		hasBatchIgnore, ok := m[commit]
 		if !ok {
 			return nil, errors.Newf("unknown commit: %s", commit)
@@ -471,7 +474,7 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 		}
 		return nil, os.ErrNotExist
 	}
-	t.Cleanup(func() { git.Mocks.Stat = nil })
+	t.Cleanup(func() { gitserver.Mocks.Stat = nil })
 }
 
 func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {

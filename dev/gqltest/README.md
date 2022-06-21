@@ -63,37 +63,37 @@ ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
 It is not required to boot up a single Docker container to run these tests, which means it's also possible to run these tests against any Sourcegraph instance, for example, your local dev instance:
 
 ```sh
-go test -long -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
+go test -long -base-url "https://sourcegraph.test:3443" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
 ```
 
-You will need to run your local instance in `enterprise` mode in order for tests to pass. Also note you should not use an external service config file. To ensure your local environment is set up correctly, follow these steps:
+If you run this against an existing dev instance you will need to provide an existing site admin's credentials.
 
-1. Clear your database: `./dev/drop-entire-local-database-and-redis.sh`
-2. Delete your `~/.sourcegraph` directory
-3. Add the following to your `sg.config.overwrite.yaml`
+You will need to run your local instance in `enterprise-codeinsights` mode in order for all tests to pass. Also note you should not use an external service config file.
+
+To ensure your local environment is set up correctly, follow these steps:
+
+1. Clear your database: `sg db reset-pg -db all`
+2. Add the following to your `sg.config.overwrite.yaml`
 
 ```yaml
-commands:
-  enterprise-frontend:
+commandsets:
+  enterprise-codeinsights:
     env:
       EXTSVC_CONFIG_FILE: ''
-    watch:
-      - lib
-      - internal
-      - cmd/frontend
-      - enterprise/internal
-      - enterprise/cmd/frontend
 ```
 
-4. Start your instance by running `sg start enterprise`
-5. Create the admin account so that it matches the credentials passed to tests as above. (If you cleared your database this is done automatically when tests are first run)
+3. Start your instance by running `sg start enterprise-codeinsights`
+
+- You can also just run the instance in `enterprise` mode if you only care about a subset of the tests. Just replace `enterprise-codeinsights` in your overwrite with `enterprise-frontend`.
+
+4. Create the admin account so that it matches the credentials passed to tests as above. You can skip this if you cleared your database.
 
 Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
 
 Because we're using the standard Go test framework, you are able to just run a single or subset of these tests:
 
 ```sh
-→ go test -long -run TestSearch
+→ go test -long -run TestSearch -base-url "https://sourcegraph.test:3443"
 2020/07/17 14:20:59 Site admin authenticated: gqltest-admin
 PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	3.073s

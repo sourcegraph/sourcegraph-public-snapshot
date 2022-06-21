@@ -5,6 +5,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -20,6 +22,7 @@ import (
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalAccountsMigrator struct {
+	logger       log.Logger
 	store        *basestore.Store
 	BatchSize    int
 	AllowDecrypt bool
@@ -27,13 +30,13 @@ type ExternalAccountsMigrator struct {
 
 var _ oobmigration.Migrator = &ExternalAccountsMigrator{}
 
-func NewExternalAccountsMigrator(store *basestore.Store) *ExternalAccountsMigrator {
+func NewExternalAccountsMigrator(logger log.Logger, store *basestore.Store) *ExternalAccountsMigrator {
 	// not locking too many external accounts at a time to prevent congestion
-	return &ExternalAccountsMigrator{store: store, BatchSize: 50}
+	return &ExternalAccountsMigrator{logger: logger, store: store, BatchSize: 50}
 }
 
-func NewExternalAccountsMigratorWithDB(db database.DB) *ExternalAccountsMigrator {
-	return NewExternalAccountsMigrator(basestore.NewWithHandle(db.Handle()))
+func NewExternalAccountsMigratorWithDB(logger log.Logger, db database.DB) *ExternalAccountsMigrator {
+	return NewExternalAccountsMigrator(logger, basestore.NewWithHandle(db.Handle()))
 }
 
 // ID of the migration row in the out_of_band_migrations table.
@@ -80,7 +83,7 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := database.ExternalAccountsWith(tx)
+	store := database.ExternalAccountsWith(m.logger, tx)
 	accounts, err := store.ListBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL) ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
@@ -163,7 +166,7 @@ func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := database.ExternalAccountsWith(tx)
+	store := database.ExternalAccountsWith(m.logger, tx)
 	accounts, err := store.ListBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id != '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err

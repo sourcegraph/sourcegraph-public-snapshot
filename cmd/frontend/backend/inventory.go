@@ -48,7 +48,7 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 			return gitserver.NewClient(db).ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return git.NewFileReader(ctx, db, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
+			return gitserver.NewClient(db).NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)

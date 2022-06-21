@@ -126,14 +126,14 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
-	logger sglog.Logger
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// logger is used for all logging and logger creation
+	logger sglog.Logger
 
 	// addrs is a function which should return the addresses for gitservers. It
 	// is called each time a request is made. The function must be safe for

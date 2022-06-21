@@ -27,7 +27,8 @@ func main() {
 		batchCompletionMode = true
 	}
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
-		std.Out.WriteFailuref(err.Error())
+		out := std.NewOutput(os.Stdout, false)
+		out.WriteFailuref(err.Error())
 		os.Exit(1)
 	}
 }
@@ -153,7 +154,8 @@ var sg = &cli.App{
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
 					err = cli.NewExitError(message, 1)
 
-					analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event.Properties["error_details"] = err.Error()
 					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
 				}
 			}()
@@ -167,6 +169,9 @@ var sg = &cli.App{
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
+
+		// Add feedback subcommand to all commands and subcommands
+		addFeedbackFlags(cmd.App.Commands)
 
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
@@ -221,6 +226,7 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
+		setupCommandV2,
 
 		// Company
 		teammateCommand,
@@ -232,6 +238,7 @@ var sg = &cli.App{
 
 		// Util
 		helpCommand,
+		feedbackCommand,
 		versionCommand,
 		updateCommand,
 		installCommand,

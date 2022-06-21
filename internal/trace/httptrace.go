@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/redact"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -22,8 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type key int
@@ -138,7 +139,7 @@ var (
 // not authenticated. It must not reveal any sensitive information.
 func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
 	logger = logger.Scoped("http", "http tracing middleware")
-	return sentry.Recoverer(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	return loggingRecoverer(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// extract propagated span
@@ -193,7 +194,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		// handle request
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
-		// get root name, which is set after request is handled
+		// get route name, which is set after request is handled
 		if routeName == "graphql" {
 			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
 			if r.URL.RawQuery != "" {
@@ -290,6 +291,25 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 	}))
 }
 
+// Recoverer is a recovery handler to wrap the stdlib net/http Mux.
+// Example:
+//  mux := http.NewServeMux
+//  ...
+//	http.Handle("/", sentry.Recoverer(mux))
+func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				err := errors.Errorf("handler panic: %v", redact.Safe(r))
+				logger.Error("handler panic", log.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}()
+
+		handler.ServeHTTP(w, r)
+	})
+}
+
 func truncate(s string, n int) string {
 	if len(s) > n {
 		return fmt.Sprintf("%s...(%d more)", s[:n], len(s)-n)
@@ -328,5 +348,12 @@ func SetRequestErrorCause(ctx context.Context, err error) {
 func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
+	}
+}
+
+func WithRouteName(name string, next http.HandlerFunc) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		SetRouteName(r, name)
+		next(rw, r)
 	}
 }

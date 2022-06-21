@@ -28,6 +28,11 @@ type Options struct {
 	// (as in dev) will allow the janitors not to see each other's jobs as orphans.
 	VMPrefix string
 
+	// KeepWorkspaces prevents deletion of a workspace after a job completes. Setting
+	// this value to true will continually use more and more disk, so it should only
+	// be used as a debugging mechanism.
+	KeepWorkspaces bool
+
 	// QueueName is the name of the queue to process work from. Having this configurable
 	// allows us to have multiple worker pools with different resource requirements and
 	// horizontal scaling factors while still uniformly processing events.

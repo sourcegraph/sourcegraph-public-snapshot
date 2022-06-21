@@ -10,6 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -47,7 +49,6 @@ type CodeMonitorStore interface {
 	ListQueryTriggerJobs(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
-	DeleteObsoleteTriggerJobs(ctx context.Context) error
 	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
@@ -250,8 +251,9 @@ const (
 )
 
 func newTestStore(t *testing.T) (context.Context, database.DB, *codeMonitorStore) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }

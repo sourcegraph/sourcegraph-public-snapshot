@@ -21,6 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Alert, Icon, Link, LoadingSpinner, Code, useObservable } from '@sourcegraph/wildcard'
@@ -151,6 +152,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<
             [symbolOutput, extensionsController, input]
         )
 
+        const logEventOnCopy = useCallback(() => {
+            telemetryService.log(...codeCopiedEvent('notebook-symbols'))
+        }, [telemetryService])
+
         const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
         return (
@@ -217,6 +222,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}
+                            onCopy={logEventOnCopy}
                         />
                     </div>
                 )}

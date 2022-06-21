@@ -267,6 +267,8 @@ type BitbucketServerConnection struct {
 	Password string `json:"password,omitempty"`
 	// Plugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
+	// ProjectKeys description: An array of project key strings that defines a collection of repositories related to their associated project keys
+	ProjectKeys []string `json:"projectKeys,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
 	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
@@ -839,7 +841,9 @@ type GitLabAuthProvider struct {
 	// ClientSecret description: The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
-	Type         string `json:"type"`
+	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
+	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
+	Type                      string `json:"type"`
 	// Url description: URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.
 	Url string `json:"url,omitempty"`
 }

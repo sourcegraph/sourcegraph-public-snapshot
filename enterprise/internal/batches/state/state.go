@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/go-diff/diff"
+
+	"github.com/sourcegraph/log"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -33,21 +33,22 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	copy(events, es)
 	sort.Sort(events)
 
+	logger := log.Scoped("SetDerivedState", "")
 	c.ExternalCheckState = computeCheckState(c, events)
 
 	history, err := computeHistory(c, events)
 	if err != nil {
-		log15.Warn("Computing changeset history", "err", err)
+		logger.Warn("Computing changeset history", log.Error(err))
 		return
 	}
 
 	if state, err := computeExternalState(c, history); err != nil {
-		log15.Warn("Computing external changeset state", "err", err)
+		logger.Warn("Computing external changeset state", log.Error(err))
 	} else {
 		c.ExternalState = state
 	}
 	if state, err := computeReviewState(c, history); err != nil {
-		log15.Warn("Computing changeset review state", "err", err)
+		logger.Warn("Computing changeset review state", log.Error(err))
 	} else {
 		c.ExternalReviewState = state
 	}
@@ -68,7 +69,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// To update this, first we need gitserver's view of the repo.
 	repo, err := changesetRepoName(ctx, repoStore, c)
 	if err != nil {
-		log15.Warn("Retrieving repo name for changeset's repo", "err", err)
+		logger.Warn("Retrieving repo name for changeset's repo", log.Error(err))
 		return
 	}
 
@@ -77,10 +78,10 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// and new states for the duration of this function, although we'll update
 	// c.SyncState as soon as we can.
 	oldState := c.SyncState
-	db := database.NewDBWith(repoStore)
+	db := database.NewDBWith(logger, repoStore)
 	newState, err := computeSyncState(ctx, db, c, repo)
 	if err != nil {
-		log15.Warn("Computing sync state", "err", err)
+		logger.Warn("Computing sync state", log.Error(err))
 		return
 	}
 	c.SyncState = *newState
@@ -89,7 +90,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// changes.
 	if !oldState.Equals(newState) {
 		if stat, err := computeDiffStat(ctx, db, c, repo); err != nil {
-			log15.Warn("Computing diffstat", "err", err)
+			logger.Warn("Computing diffstat", log.Error(err))
 		} else {
 			c.SetDiffStat(stat)
 		}
