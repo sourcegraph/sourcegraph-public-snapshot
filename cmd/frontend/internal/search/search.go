@@ -517,7 +517,7 @@ func newEventHandler(
 		return eventWriter.MatchesJSON(data)
 	})
 
-	eh := eventHandler{
+	eh := &eventHandler{
 		ctx:              ctx,
 		cancel:           cancel,
 		db:               db,
@@ -536,7 +536,7 @@ func newEventHandler(
 	eh.flushTimer = time.AfterFunc(eh.flushInterval, eh.flushTick)
 	eh.progressTimer = time.AfterFunc(eh.progressInterval, eh.progressTick)
 
-	return &eh
+	return eh
 }
 
 type eventHandler struct {
@@ -566,16 +566,16 @@ type eventHandler struct {
 	logLatency func()
 }
 
-func (s *eventHandler) Send(event streaming.SearchEvent) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (h *eventHandler) Send(event streaming.SearchEvent) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
-	s.progress.Update(event)
-	s.filters.Update(event)
+	h.progress.Update(event)
+	h.filters.Update(event)
 
-	s.displayRemaining = event.Results.Limit(s.displayRemaining)
+	h.displayRemaining = event.Results.Limit(h.displayRemaining)
 
-	repoMetadata, err := getEventRepoMetadata(s.ctx, s.db, event)
+	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
 		log15.Error("failed to get repo metadata", "error", err)
 		return
@@ -592,63 +592,63 @@ func (s *eventHandler) Send(event streaming.SearchEvent) {
 		}
 
 		eventMatch := fromMatch(match, repoMetadata)
-		s.matchesBuf.Append(eventMatch)
+		h.matchesBuf.Append(eventMatch)
 	}
 
 	// Instantly send results if we have not sent any yet.
-	if s.first && len(event.Results) > 0 {
-		s.first = false
-		s.eventWriter.Filters(s.filters.Compute())
-		s.matchesBuf.Flush()
-		s.logLatency()
+	if h.first && len(event.Results) > 0 {
+		h.first = false
+		h.eventWriter.Filters(h.filters.Compute())
+		h.matchesBuf.Flush()
+		h.logLatency()
 	}
 }
 
 // Done cleans up any background tasks and flushes any buffered data to the stream
-func (s *eventHandler) Done() {
-	s.cancel()
+func (h *eventHandler) Done() {
+	h.cancel()
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	// Cancel any in-flight timers
-	s.flushTimer.Stop()
-	s.flushTimer = nil
-	s.progressTimer.Stop()
-	s.progressTimer = nil
+	h.flushTimer.Stop()
+	h.flushTimer = nil
+	h.progressTimer.Stop()
+	h.progressTimer = nil
 
 	// Flush the final state
-	s.eventWriter.Filters(s.filters.Compute())
-	s.matchesBuf.Flush()
-	s.eventWriter.Progress(s.progress.Final())
+	h.eventWriter.Filters(h.filters.Compute())
+	h.matchesBuf.Flush()
+	h.eventWriter.Progress(h.progress.Final())
 }
 
-func (s *eventHandler) progressTick() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (h *eventHandler) progressTick() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	// a nil progressTimer indicates that Done() was called
-	if s.progressTimer != nil {
-		s.eventWriter.Progress(s.progress.Current())
+	if h.progressTimer != nil {
+		h.eventWriter.Progress(h.progress.Current())
 
 		// schedule the next progress event
-		s.progressTimer = time.AfterFunc(s.progressInterval, s.progressTick)
+		h.progressTimer = time.AfterFunc(h.progressInterval, h.progressTick)
 	}
 }
 
-func (s *eventHandler) flushTick() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (h *eventHandler) flushTick() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	// a nil flushTimer indicates that Done() was called
-	if s.flushTimer != nil {
-		s.eventWriter.Filters(s.filters.Compute())
-		s.matchesBuf.Flush()
-		if s.progress.Dirty {
-			s.eventWriter.Progress(s.progress.Current())
+	if h.flushTimer != nil {
+		h.eventWriter.Filters(h.filters.Compute())
+		h.matchesBuf.Flush()
+		if h.progress.Dirty {
+			h.eventWriter.Progress(h.progress.Current())
 		}
 
 		// schedule the next flush
-		s.flushTimer = time.AfterFunc(s.flushInterval, s.flushTick)
+		h.flushTimer = time.AfterFunc(h.flushInterval, h.flushTick)
 	}
 }
