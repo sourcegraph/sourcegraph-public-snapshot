@@ -402,5 +402,5 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 		return nil, err
 	}
 
-	return graphqlbackend.NewBasicLimitWatcher(log.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
+	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
 }
