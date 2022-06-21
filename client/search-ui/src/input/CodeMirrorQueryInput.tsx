@@ -29,7 +29,7 @@ import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
+import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
@@ -104,14 +104,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         (editor: EditorView) => {
             setEditor(editor)
             editorReference.current = editor
-            onEditorCreated?.({
-                focus() {
-                    editor.focus()
-                },
-                showSuggestions() {
-                    startCompletion(editor)
-                },
-            })
+            onEditorCreated?.(editor)
         },
         [editorReference, onEditorCreated]
     )
@@ -228,31 +221,27 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             return
         }
 
-        switch (queryState.changeSource) {
-            case QueryChangeSource.userInput:
-                // Don't react to user input
-                break
-            case QueryChangeSource.searchTypes:
-            case QueryChangeSource.searchReference: {
-                // Select the specified range (most of the time this will be a
-                // placeholder filter value).
-                const selectionRange = queryState.selectionRange
-                editor.dispatch({
-                    selection: EditorSelection.range(selectionRange.start, selectionRange.end),
-                    scrollIntoView: true,
-                })
+        if (queryState.changeSource === QueryChangeSource.userInput) {
+            // Don't react to user input
+            return
+        }
+
+        editor.dispatch({
+            selection: queryState.selectionRange
+                ? // Select the specified range (most of the time this will be a
+                  // placeholder filter value).
+                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
+                : // Place the cursor at the end of the query.
+                  EditorSelection.cursor(editor.state.doc.length),
+            scrollIntoView: true,
+        })
+
+        if (queryState.hint) {
+            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
                 editor.focus()
-                if (queryState.showSuggestions) {
-                    startCompletion(editor)
-                }
-                break
             }
-            default: {
-                // Place the cursor at the end of the query.
-                editor.dispatch({
-                    selection: EditorSelection.cursor(editor.state.doc.length),
-                    scrollIntoView: true,
-                })
+            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
+                startCompletion(editor)
             }
         }
     }, [editor, queryState])
