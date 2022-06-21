@@ -384,7 +384,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	}
 
 	switch combyInput := inputType.(type) {
-	case comby.TarInput:
+	case comby.Tar:
 		cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 		if err != nil {
 			return err

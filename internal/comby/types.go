@@ -6,7 +6,7 @@ type Input interface {
 	input()
 }
 
-type TarInput struct {
+type Tar struct {
 	TarInputEventC chan TarInputEvent
 }
 
@@ -22,7 +22,7 @@ type FileContent []byte
 func (ZipPath) input()     {}
 func (DirPath) input()     {}
 func (FileContent) input() {}
-func (TarInput) input()    {}
+func (Tar) input()         {}
 
 type resultKind int
 

@@ -66,7 +66,7 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-directory", string(i))
 	case FileContent:
 		rawArgs = append(rawArgs, "-stdin")
-	case TarInput:
+	case Tar:
 		rawArgs = append(rawArgs, "-tar", "-chunk-matches", "0")
 	default:
 		log15.Error("unrecognized input type", "type", i)

@@ -722,7 +722,7 @@ func bar() {
 	t.Run("Structural search tar input to comby", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, comby.TarInput{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}
