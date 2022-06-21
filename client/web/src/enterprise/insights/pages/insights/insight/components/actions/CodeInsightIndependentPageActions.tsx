@@ -57,7 +57,12 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete
             </Button>
-            <Button variant="primary" as={Link} to={`/insights/edit/${insight.id}?insight=${insight.id}`} onClick={handleEditClick}>
+            <Button
+                variant="primary"
+                as={Link}
+                to={`/insights/edit/${insight.id}?insight=${insight.id}`}
+                onClick={handleEditClick}
+            >
                 Edit
             </Button>
 
