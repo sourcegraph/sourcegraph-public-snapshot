@@ -6,7 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -29,6 +30,7 @@ const externalServiceSyncerInterval = 1 * time.Minute
 type SyncRegistry struct {
 	ctx         context.Context
 	cancel      context.CancelFunc
+	logger      log.Logger
 	syncStore   SyncStore
 	httpFactory *httpcli.Factory
 	metrics     *syncerMetrics
@@ -46,10 +48,12 @@ var _ goroutine.BackgroundRoutine = &SyncRegistry{}
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
 func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory, observationContext *observation.Context) *SyncRegistry {
+	logger := observationContext.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
 	ctx, cancel := context.WithCancel(ctx)
 	return &SyncRegistry{
 		ctx:            ctx,
 		cancel:         cancel,
+		logger:         logger,
 		syncStore:      bstore,
 		httpFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
@@ -61,7 +65,7 @@ func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory,
 func (s *SyncRegistry) Start() {
 	// Fetch initial list of syncers.
 	if err := s.syncCodeHosts(s.ctx); err != nil {
-		log15.Error("Fetching initial list of code hosts", "err", err)
+		s.logger.Error("Fetching initial list of code hosts", log.Error(err))
 	}
 
 	goroutine.Go(func() {
@@ -101,7 +105,9 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
-		log15.Info("Code host not support by batch changes", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
+		s.logger.Info("Code host not support by batch changes",
+			log.String("type", codeHost.ExternalServiceType),
+			log.String("url", codeHost.ExternalServiceID))
 		return
 	}
 
@@ -119,6 +125,7 @@ func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	syncer := &changesetSyncer{
+		logger:         s.logger.With(log.String("syncer", syncerKey)),
 		syncStore:      s.syncStore,
 		httpFactory:    s.httpFactory,
 		codeHostURL:    syncerKey,
@@ -149,7 +156,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 		case ids := <-s.priorityNotify:
 			syncData, err := fetchSyncData(ids)
 			if err != nil {
-				log15.Error("Fetching sync data", "err", err)
+				s.logger.Error("Fetching sync data", log.Error(err))
 				continue
 			}
 
@@ -215,6 +222,7 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 // A changesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type changesetSyncer struct {
+	logger      log.Logger
 	syncStore   SyncStore
 	httpFactory *httpcli.Factory
 
@@ -287,7 +295,7 @@ func makeMetrics(observationContext *observation.Context) *syncerMetrics {
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *changesetSyncer) Run(ctx context.Context) {
-	log15.Debug("Starting changeset syncer", "codeHostURL", s.codeHostURL)
+	s.logger.Debug("Starting changeset syncer")
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
@@ -303,7 +311,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 		// Get initial schedule
 		if sched, err := s.computeSchedule(ctx); err != nil {
 			// Non fatal as we'll try again later in the main loop
-			log15.Error("Computing schedule", "err", err)
+			s.logger.Error("Computing schedule", log.Error(err))
 		} else {
 			s.queue.Upsert(sched...)
 		}
@@ -348,7 +356,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
 			s.metrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
 			if err != nil {
-				log15.Error("Computing queue", "err", err)
+				s.logger.Error("Computing queue", log.Error(err))
 				continue
 			}
 			s.metrics.scheduleSize.WithLabelValues(s.codeHostURL).Set(float64(len(schedule)))
@@ -369,7 +377,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			s.metrics.syncs.WithLabelValues(labelValues...).Inc()
 
 			if err != nil {
-				log15.Error("Syncing changeset", "err", err)
+				s.logger.Error("Syncing changeset", log.Error(err))
 				// We'll continue and remove it as it'll get retried on next schedule
 			}
 
@@ -421,7 +429,8 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 // SyncChangeset will sync a single changeset given its id.
 func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangeset", "syncer", s.codeHostURL, "id", id)
+	syncLogger := s.logger.With(log.Int64("id", id))
+	syncLogger.Debug("SyncChangeset")
 
 	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,
@@ -432,7 +441,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	})
 	if err != nil {
 		if err == store.ErrNoResults {
-			log15.Debug("SyncChangeset not found", "id", id)
+			syncLogger.Debug("SyncChangeset not found")
 			return nil
 		}
 		return err

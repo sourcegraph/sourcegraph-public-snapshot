@@ -40,7 +40,7 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         Create …
                     </MenuButton>
                 </li>
-                <MenuList position={Position.bottomStart} aria-label="Create Actions. Open menu">
+                <MenuList tabIndex={0} position={Position.bottomStart} aria-label="Create Actions. Open menu">
                     {createActions.map(createAction => (
                         <MenuLink key={createAction.label} as={Link} to={createAction.url}>
                             <Icon aria-hidden="true" className="mr-1" as={createAction.icon} />
@@ -52,6 +52,11 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                             as={Link}
                             disabled={!authenticatedUser || !canCreateMonitor}
                             data-tooltip={
+                                authenticatedUser && !canCreateMonitor
+                                    ? 'Code monitors only support type:diff or type:commit searches.'
+                                    : undefined
+                            }
+                            aria-label={
                                 authenticatedUser && !canCreateMonitor
                                     ? 'Code monitors only support type:diff or type:commit searches.'
                                     : undefined

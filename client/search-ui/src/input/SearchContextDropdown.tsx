@@ -117,7 +117,7 @@ export const SearchContextDropdown: React.FunctionComponent<
             a11y={false} /* Override default keyboard events in reactstrap */
             className={className}
         >
-            <Tooltip content={disabledTooltipText} data-testid="dropdown-tooltip">
+            <Tooltip content={disabledTooltipText}>
                 <DropdownToggle
                     className={classNames(
                         styles.button,
@@ -126,6 +126,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                         isOpen && styles.buttonOpen
                     )}
                     data-testid="dropdown-toggle"
+                    data-test-tooltip-content={disabledTooltipText}
                     color="link"
                     disabled={isContextFilterInQuery}
                 >
