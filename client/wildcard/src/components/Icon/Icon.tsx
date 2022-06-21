@@ -1,4 +1,4 @@
-import React, { AriaRole, ComponentType, ElementType, HTMLAttributes } from 'react'
+import React, { AriaRole, ComponentType, ElementType, SVGProps } from 'react'
 
 import classNames from 'classnames'
 import { MdiReactIconProps } from 'mdi-react'
@@ -9,7 +9,7 @@ import { ICON_SIZES } from './constants'
 
 import styles from './Icon.module.scss'
 
-interface BaseIconProps extends HTMLAttributes<SVGSVGElement> {
+interface BaseIconProps extends SVGProps<SVGSVGElement> {
     /**
      * Provide a custom `svgPath` to build an SVG.
      *
@@ -43,7 +43,7 @@ export const Icon = React.forwardRef(({ children, className, size, role = 'img',
 
         return (
             <svg
-                ref={reference as React.RefObject<SVGSVGElement>}
+                ref={reference}
                 className={iconStyle}
                 role={role}
                 height={height}
