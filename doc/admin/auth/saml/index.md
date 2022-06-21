@@ -100,12 +100,12 @@ Use the following filters to restrict how users can create accounts and sign in 
 
 **allowGroups**
 
-  Restricts login to members of the allowed SAML groups.
+  Restricts login to members of the allowed SAML groups. By groups we understand any SAML assertion by which we can determine if a user should be allowed to sign-in or sign-up to a sourcegraph account. This SAML assertion attribute needs to return a list of strings.
 
   When not configured or set to`true`, sign-in will be allowed.
   If the list of allowed groups is empty, sign-in is not allowed.
 
-  The `groupsAttributeName` is an optional parameter that can be used to set a different name for the SAML attribute assertion that contains a list of groups the user belongs to. It defaults to "groups" when not provided.
+  The `groupsAttributeName` is an optional parameter that can be used to set a different name for the SAML attribute assertion that contains a list of groups the user belongs to. It defaults to `"groups"` when not provided.
 
   If combined with `"allowSignup": true` or if `allowSignup` is not set, only members of the allowed groups can create their accounts in Sourcegraph via SAML authentication.
   When set with `"allowSignup": false`, an admin should first create the user account so that the user can login with SAML.
@@ -116,7 +116,7 @@ Use the following filters to restrict how users can create accounts and sign in 
       // ...
       "allowSignup": false,
       "allowGroups": ["sourcegraph"],
-      "groupAttributesName": "mySAMLgroup"
+      "groupsAttributeName": "mySAMLgroup"
     }
   ```
 
