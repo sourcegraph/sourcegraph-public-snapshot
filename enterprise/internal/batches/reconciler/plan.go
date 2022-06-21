@@ -9,10 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+//
 var operationPrecedence = map[btypes.ReconcilerOperation]int{
 	btypes.ReconcilerOperationPush:         0,
 	btypes.ReconcilerOperationDetach:       0,
 	btypes.ReconcilerOperationArchive:      0,
+	btypes.ReconcilerOperationReattach:     0,
 	btypes.ReconcilerOperationImport:       1,
 	btypes.ReconcilerOperationPublish:      1,
 	btypes.ReconcilerOperationPublishDraft: 1,
@@ -126,7 +128,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		} else if assoc.Archive && assoc.BatchChangeID == ch.OwnedByBatchChangeID && ch.Published() {
 			wantArchive = !assoc.IsArchived
 			isArchived = assoc.IsArchived
-		} else {
+		} else if !assoc.Attach {
 			isStillAttached = true
 		}
 	}
@@ -159,8 +161,14 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		// If still more than one remains attached, we still want to import the changeset.
 		if ch.Unpublished() && isStillAttached {
 			pl.AddOp(btypes.ReconcilerOperationImport)
+		} else if !isStillAttached && !wantDetach {
+			pl.AddOp(btypes.ReconcilerOperationReattach)
 		}
 		return pl, nil
+	}
+
+	if currentSpec != nil && previousSpec != nil && !isStillAttached && !wantDetach {
+		pl.AddOp(btypes.ReconcilerOperationReattach)
 	}
 
 	delta, err := compareChangesetSpecs(previousSpec, currentSpec, ch.UiPublicationState)
