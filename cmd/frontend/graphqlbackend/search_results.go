@@ -376,7 +376,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 			switch {
 			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteralDefault:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
