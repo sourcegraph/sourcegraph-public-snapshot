@@ -270,7 +270,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
                                 // Convert 'unreleased' to a release
                                 const releaseHeader = `## ${release.format()}`
-                                const releaseUpdate = releaseHeader + `\n\n- Sourcegraph ${release.format()} is now available\n`
+                                const releaseUpdate =
+                                    releaseHeader + `\n\n- Sourcegraph ${release.format()} is now available\n`
                                 const unreleasedHeader = '## Unreleased\n'
                                 changelogContents = changelogContents.replace(unreleasedHeader, releaseUpdate)
 
