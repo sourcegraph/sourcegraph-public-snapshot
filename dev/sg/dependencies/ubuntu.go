@@ -237,8 +237,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 		},
 	},
 	{
-		Name:      "Redis database",
-		DependsOn: []string{depsHomebrew},
+		Name: "Redis database",
 		Checks: []*dependency{
 			{
 				Name:  "Install Redis",
