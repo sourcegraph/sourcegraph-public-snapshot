@@ -56,13 +56,26 @@ type streamHandler struct {
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	tr, ctx := trace.New(r.Context(), "search.ServeStream", "")
-	defer tr.Finish()
-	r = r.WithContext(ctx)
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	args, err := parseURLQuery(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
+		trace.Tag{Key: "version", Value: args.Version},
+		trace.Tag{Key: "pattern_type", Value: args.PatternType},
+	)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	streamWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
-		tr.SetError(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -70,34 +83,15 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	streamWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	eventWriter := newEventWriter(streamWriter)
+
+	// Always send a final done event so clients know the stream is shutting
+	// down.
 	defer eventWriter.Done()
-
-	err = h.serveHTTP(r, tr, eventWriter)
-	if err != nil {
-		eventWriter.Error(err)
-		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter *eventWriter) (err error) {
-	ctx := r.Context()
-	start := time.Now()
-
-	args, err := parseURLQuery(r.URL.Query())
-	if err != nil {
-		return err
-	}
-	tr.TagFields(
-		otlog.String("query", args.Query),
-		otlog.String("version", args.Version),
-		otlog.String("pattern_type", args.PatternType),
-	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
 	if err != nil {
-		return err
+		eventWriter.Error(err)
+		return
 	}
 
 	inputs, err := h.searchClient.Plan(ctx, args.Version, strPtr(args.PatternType), args.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
@@ -105,10 +99,10 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		var queryErr *run.QueryError
 		if errors.As(err, &queryErr) {
 			eventWriter.Alert(search.AlertForQuery(queryErr.Query, queryErr.Err))
-			return nil
 		} else {
-			return err
+			eventWriter.Error(err)
 		}
+		return
 	}
 
 	// Display is the number of results we send down. If display is < 0 we
@@ -120,7 +114,9 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		displayLimit = limit
 	}
 
-	progress := &progressAggregator{
+	start := time.Now()
+
+	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
 		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
@@ -151,23 +147,19 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		displayLimit,
 		logLatency,
 	)
-	defer eventHandler.Done()
-
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
-	defer batchedStream.Done()
-
 	alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
+	if err != nil {
+		eventWriter.Error(err)
+	}
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, alert, err, start, inputs.OriginalQuery, progress)
-	return err
-}
+	batchedStream.Done()
+	eventHandler.Done()
 
-func logSearch(ctx context.Context, alert *search.Alert, err error, start time.Time, originalQuery string, progress *progressAggregator) {
-	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
-
-	var alertType string
+	var status, alertType string
+	status = graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
 	if alert != nil {
 		alertType = alert.PrometheusType
 	}
@@ -175,7 +167,7 @@ func logSearch(ctx context.Context, alert *search.Alert, err error, start time.T
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: originalQuery,
+			OriginalQuery: inputs.OriginalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
 			Status:        status,
@@ -510,7 +502,7 @@ func newEventHandler(
 	ctx context.Context,
 	db database.DB,
 	eventWriter *eventWriter,
-	progress *progressAggregator,
+	progress progressAggregator,
 	flushInterval time.Duration,
 	progressInterval time.Duration,
 	displayLimit int,
@@ -563,7 +555,7 @@ type eventHandler struct {
 
 	matchesBuf *streamhttp.JSONArrayBuf
 	filters    *streaming.SearchFilters
-	progress   *progressAggregator
+	progress   progressAggregator
 
 	flushInterval    time.Duration
 	progressInterval time.Duration
