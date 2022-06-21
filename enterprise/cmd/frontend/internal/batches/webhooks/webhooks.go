@@ -172,7 +172,6 @@ func (h Webhook) upsertChangesetEvent(
 	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
 	})
-
 	state.SetDerivedState(ctx, tx.Repos(), cs, events)
 	if err := tx.UpdateChangesetCodeHostState(ctx, cs); err != nil {
 		return err

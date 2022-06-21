@@ -16,6 +16,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	gh "github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -84,7 +85,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("githubRepo:", githubRepo)
 		err = repoStore.Create(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
@@ -99,7 +99,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		fmt.Printf("spec:%+v\n", spec)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
@@ -115,7 +114,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			LastAppliedAt:   clock(),
 			BatchSpecID:     spec.ID,
 		}
-		fmt.Printf("batchChange:%+v\n", batchChange)
 
 		err = s.CreateBatchChange(ctx, batchChange)
 		if err != nil {
@@ -152,9 +150,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
-		// this file accesses enterprise/internal/batches/github.go
-		// which in turn accesses internal/extsvc/github/common.go
-		// which in turn accesses internal/extsvc/github/v4.go
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -248,23 +243,23 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			})
 		}
 
-		// t.Run("unexpected payload", func(t *testing.T) {
-		// 	// GitHub pull request events are processed based on the action
-		// 	// embedded within them, but that action is just a string that could
-		// 	// be anything. We need to ensure that this is hardened against
-		// 	// unexpected input.
-		// 	n := 10156
-		// 	action := "this is a bad action"
+		t.Run("unexpected payload", func(t *testing.T) {
+			// GitHub pull request events are processed based on the action
+			// embedded within them, but that action is just a string that could
+			// be anything. We need to ensure that this is hardened against
+			// unexpected input.
+			n := 10156
+			action := "this is a bad action"
 
-		// 	if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
-		// 		Number: &n,
-		// 		Repo: &gh.Repository{
-		// 			NodeID: &githubRepo.ExternalRepo.ID,
-		// 		},
-		// 		Action: &action,
-		// 	}); err != nil {
-		// 		t.Errorf("unexpected non-nil error: %v", err)
-		// 	}
-		// })
+			if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
+				Number: &n,
+				Repo: &gh.Repository{
+					NodeID: &githubRepo.ExternalRepo.ID,
+				},
+				Action: &action,
+			}); err != nil {
+				t.Errorf("unexpected non-nil error: %v", err)
+			}
+		})
 	}
 }
