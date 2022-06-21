@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	pargroup "github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -516,8 +517,6 @@ func newEventHandler(
 	displayLimit int,
 	logLatency func(),
 ) *eventHandler {
-	ctx, cancel := context.WithCancel(ctx)
-
 	// Store marshalled matches and flush periodically or when we go over
 	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
 	// still write more than that.
@@ -525,9 +524,8 @@ func newEventHandler(
 		return eventWriter.MatchesJSON(data)
 	})
 
-	eh := &eventHandler{
+	h := &eventHandler{
 		ctx:              ctx,
-		cancel:           cancel,
 		db:               db,
 		eventWriter:      eventWriter,
 		matchesBuf:       matchesBuf,
@@ -540,24 +538,32 @@ func newEventHandler(
 		logLatency:       logLatency,
 	}
 
+	h.parGroup = pargroup.NewParallelOrdered(8, h.sendMatches)
+
 	// Schedule the first flushes.
 	// Lock because if flushInterval is small, scheduled tick could
 	// race with setting eh.flushTimer.
-	eh.mu.Lock()
-	eh.flushTimer = time.AfterFunc(eh.flushInterval, eh.flushTick)
-	eh.progressTimer = time.AfterFunc(eh.progressInterval, eh.progressTick)
-	eh.mu.Unlock()
+	h.mu.Lock()
+	h.flushTimer = time.AfterFunc(h.flushInterval, h.flushTick)
+	h.progressTimer = time.AfterFunc(h.progressInterval, h.progressTick)
+	h.mu.Unlock()
 
-	return eh
+	return h
 }
 
 type eventHandler struct {
+	ctx context.Context
+	db  database.DB
+
+	flushInterval    time.Duration
+	progressInterval time.Duration
+
+	parGroup *pargroup.ParallelOrdered[[]streamhttp.EventMatch]
+
+	logLatency func()
+
+	// mu protects everything below this line
 	mu sync.Mutex
-
-	ctx    context.Context
-	cancel context.CancelFunc
-
-	db database.DB
 
 	eventWriter *eventWriter
 
@@ -565,62 +571,54 @@ type eventHandler struct {
 	filters    *streaming.SearchFilters
 	progress   *progressAggregator
 
-	flushInterval    time.Duration
-	progressInterval time.Duration
-
 	// These timers will be non-nil unless Done() was called
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
 	displayRemaining int
 	first            bool
-
-	logLatency func()
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	h.progress.Update(event)
 	h.filters.Update(event)
-
 	h.displayRemaining = event.Results.Limit(h.displayRemaining)
 
-	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
-	if err != nil {
-		log15.Error("failed to get repo metadata", "error", err)
-		return
-	}
+	// Unlock before submitting the task because the callback for the
+	// pargroup needs to hold a lock, and Submit can block on callback
+	// completion, so this can cause a deadlock.
+	h.mu.Unlock()
 
-	for _, match := range event.Results {
-		repo := match.RepoName()
-
-		// Don't send matches which we cannot map to a repo the actor has access to. This
-		// check is expected to always pass. Missing metadata is a sign that we have
-		// searched repos that user shouldn't have access to.
-		if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
-			continue
+	h.parGroup.Submit(func() []streamhttp.EventMatch {
+		repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
+		if err != nil {
+			log15.Error("failed to get repo metadata", "error", err)
+			return nil
 		}
 
-		eventMatch := fromMatch(match, repoMetadata)
-		h.matchesBuf.Append(eventMatch)
-	}
+		ems := make([]streamhttp.EventMatch, 0, len(event.Results))
+		for _, match := range event.Results {
+			repo := match.RepoName()
 
-	// Instantly send results if we have not sent any yet.
-	if h.first && len(event.Results) > 0 {
-		h.first = false
-		h.eventWriter.Filters(h.filters.Compute())
-		h.matchesBuf.Flush()
-		h.logLatency()
-	}
+			// Don't send matches which we cannot map to a repo the actor has access to. This
+			// check is expected to always pass. Missing metadata is a sign that we have
+			// searched repos that user shouldn't have access to.
+			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
+				continue
+			}
+
+			ems = append(ems, fromMatch(match, repoMetadata))
+		}
+		return ems
+	})
 }
 
 // Done cleans up any background tasks and flushes any buffered data to the stream
 func (h *eventHandler) Done() {
-	// cancel outside of the mutex so any requests
-	// that are holding the mutex stop immediately
-	h.cancel()
+	// Wait for any in-flight jobs to complete.
+	h.parGroup.Done()
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -635,6 +633,23 @@ func (h *eventHandler) Done() {
 	h.eventWriter.Filters(h.filters.Compute())
 	h.matchesBuf.Flush()
 	h.eventWriter.Progress(h.progress.Final())
+}
+
+func (h *eventHandler) sendMatches(matches []streamhttp.EventMatch) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for _, m := range matches {
+		h.matchesBuf.Append(m)
+	}
+
+	// Instantly send results if we have not sent any yet.
+	if h.first && len(matches) > 0 {
+		h.first = false
+		h.eventWriter.Filters(h.filters.Compute())
+		h.matchesBuf.Flush()
+		h.logLatency()
+	}
 }
 
 func (h *eventHandler) progressTick() {
