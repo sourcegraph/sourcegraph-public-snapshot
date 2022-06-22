@@ -49,7 +49,7 @@ interface UseFormProps<FormValues extends object> {
 
     /**
      * Change handler will be called every time when some field withing the form
-     * has been changed with last fields value or if .
+     * has been changed.
      */
     onChange?: ChangeHandler<FormValues>
 
