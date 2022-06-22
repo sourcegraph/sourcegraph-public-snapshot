@@ -531,7 +531,6 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 //
 // 1. Expanding each `repo:dependencies(regex@revA:revB:...)` filter regex to a list of repositories that exist in the DB.
 // 2. For each of those (repo, rev) tuple, asking the code intelligence dependency API for their (transitive) dependencies.
-//    // TODO: ~~~Calling this API also has the effect of triggering a sync of all discovered dependency repos.~~
 // 3. Return those dependencies to the caller to be included in repository resolution.
 func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[api.RepoName][]search.RevisionSpecifier, _ map[api.RepoName][]search.RevisionSpecifier, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
@@ -545,19 +544,13 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	includeTransitive := false
-	repoRevPatterns := make([]string, 0, len(op.Dependencies))
-	for _, depParam := range op.Dependencies {
-		repoRevPatterns = append(repoRevPatterns, depParam.Dependency)
-		if depParam.Transitive != nil && *depParam.Transitive == query.Yes {
-			includeTransitive = true
-		}
-	}
-	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), repoRevPatterns, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
+	// TODO: We'll make this value depend on user input, but for now we include all dependencies.
+	includeTransitive := true
 	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
 	if err != nil {
 		return nil, nil, nil, err
