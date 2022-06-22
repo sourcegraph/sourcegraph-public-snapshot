@@ -10,8 +10,8 @@ import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
 import { isMacPlatform } from '@sourcegraph/common'
-import { QueryState } from '@sourcegraph/search'
-import { IEditor, MonacoQueryInputProps } from '@sourcegraph/search-ui'
+import { EditorHint, QueryState } from '@sourcegraph/search'
+import { MonacoQueryInputProps } from '@sourcegraph/search-ui'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
@@ -113,25 +113,6 @@ const TOUR_STEPS = ['filter-repository', 'filter-lang', 'add-query-term'] as Tou
 
 /**
  * Returns `true` if, while on the filter-(repository|lang) step,
- * the search query is a (repo|lang) filter with no value.
- */
-const shouldTriggerSuggestions = (currentTourStep: TourStepID | undefined, queryTokens: Token[]): boolean => {
-    if (queryTokens.length !== 1) {
-        return false
-    }
-    const filterToken = queryTokens[0]
-    if (filterToken.type !== 'filter' || filterToken.value !== undefined) {
-        return false
-    }
-    return currentTourStep === 'filter-repository'
-        ? filterToken.field.value === 'repo'
-        : currentTourStep === 'filter-lang'
-        ? filterToken.field.value === 'lang'
-        : false
-}
-
-/**
- * Returns `true` if, while on the filter-(repository|lang) step,
  * the search query is a valid (repo|lang) filter followed by whitespace.
  * -
  */
@@ -203,11 +184,11 @@ const useTourWithSteps = ({
                 text: generateStep1(
                     tour,
                     () => {
-                        setQueryState({ query: 'lang:' })
+                        setQueryState({ query: 'lang:', hint: EditorHint.ShowSuggestions })
                         tour.show('filter-lang')
                     },
                     () => {
-                        setQueryState({ query: 'repo:' })
+                        setQueryState({ query: 'repo:', hint: EditorHint.ShowSuggestions })
                         tour.show('filter-repository')
                     }
                 ),
@@ -411,9 +392,6 @@ export const useSearchOnboardingTour = ({
         }
     }, [tour, shouldShowTour])
 
-    // A handle allowing to trigger display of the MonacoQueryInput suggestions widget.
-    const [editor, setEditor] = useState<IEditor | null>(null)
-
     // On query or step changes, advance the Tour if appropriate.
     const currentStep = useCurrentStep(tour)
     const queryTokens = useMemo((): Token[] => {
@@ -424,14 +402,13 @@ export const useSearchOnboardingTour = ({
         if (!tour.isActive()) {
             return
         }
-        if (shouldTriggerSuggestions(currentStep, queryTokens)) {
-            editor?.showSuggestions()
-        } else if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
+
+        if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
             tour.show('add-query-term')
         } else if (shouldShowSubmitSearch(currentStep, queryTokens)) {
             tour.show('submit-search')
         }
-    }, [editor, queryTokens, tour, currentStep])
+    }, [queryTokens, tour, currentStep])
 
     // When a completion item is selected,
     // advance the repo or lang step if appropriate.
@@ -444,7 +421,6 @@ export const useSearchOnboardingTour = ({
     return {
         onCompletionItemSelected,
         onFocus,
-        onEditorCreated: setEditor,
         shouldFocusQueryInput: !shouldShowTour,
     }
 }
