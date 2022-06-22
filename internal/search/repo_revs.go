@@ -219,14 +219,14 @@ func expandedRevSpec(ctx context.Context, db database.DB, r *RepositoryRevisions
 
 	var (
 		revSpecs = map[string]struct{}{}
-		globs    []git.RefGlob
+		globs    []gitdomain.RefGlob
 	)
 	for _, rev := range r.Revs {
 		switch {
 		case rev.RefGlob != "":
-			globs = append(globs, git.RefGlob{Include: rev.RefGlob})
+			globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
 		case rev.ExcludeRefGlob != "":
-			globs = append(globs, git.RefGlob{Exclude: rev.ExcludeRefGlob})
+			globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
 		default:
 			revSpecs[rev.RevSpec] = struct{}{}
 		}
@@ -237,7 +237,7 @@ func expandedRevSpec(ctx context.Context, db database.DB, r *RepositoryRevisions
 			return nil, err
 		}
 
-		rg, err := git.CompileRefGlobs(globs)
+		rg, err := gitdomain.CompileRefGlobs(globs)
 		if err != nil {
 			return nil, err
 		}
