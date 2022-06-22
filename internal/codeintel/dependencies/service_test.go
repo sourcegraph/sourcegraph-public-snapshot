@@ -33,17 +33,6 @@ func TestDependencies(t *testing.T) {
 	syncer := NewMockSyncer()
 	service := testService(mockStore, gitService, lockfilesService, syncer)
 
-	endsWithEvenDigit := func(name string) bool {
-		if name == "" {
-			return false
-		}
-		v, err := strconv.Atoi(string(name[len(name)-1]))
-		if err != nil {
-			return false
-		}
-		return v%2 == 0
-	}
-
 	mockStore.PreciseDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error) {
 		switch repoName {
 		case "github.com/example/baz":
@@ -60,22 +49,6 @@ func TestDependencies(t *testing.T) {
 		}
 
 		return nil, nil
-	})
-
-	// UpsertDependencyRepos influences the value that syncer.Sync is called with (asserted below)
-	mockStore.UpsertDependencyReposFunc.SetDefaultHook(func(ctx context.Context, dependencyRepos []Repo) ([]Repo, error) {
-		filtered := dependencyRepos[:0]
-		for _, dependencyRepo := range dependencyRepos {
-			// repo is even + commit is odd, or
-			// repo is odd + commit is even
-			if endsWithEvenDigit(dependencyRepo.Name) != endsWithEvenDigit(dependencyRepo.Version) {
-				continue
-			}
-
-			filtered = append(filtered, dependencyRepo)
-		}
-
-		return filtered, nil
 	})
 
 	// Return canned dependencies for repo `baz`
@@ -98,19 +71,6 @@ func TestDependencies(t *testing.T) {
 		}
 		return commits, nil
 	})
-
-	// Return archive dependencies for repos `foo` and `bar`
-	// lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, *lockfiles.DependencyGraph, error) {
-	// 	if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-	// 		return nil, nil, nil
-	// 	}
-
-	// 	return []reposource.PackageDependency{
-	// 		&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
-	// 		&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
-	// 		&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
-	// 	}, nil, nil
-	// })
 
 	repoRevs := map[api.RepoName]types.RevSpecSet{
 		api.RepoName("github.com/example/foo"): {
@@ -137,30 +97,10 @@ func TestDependencies(t *testing.T) {
 		"github.com/example/baz-depB": {"deadbeef2": struct{}{}},
 		"github.com/example/baz-depC": {"deadbeef3": struct{}{}},
 
-		// From store
+		// From dependencies store
 		("npm/leftpad"):   {"1": struct{}{}},
 		("npm/rightpad"):  {"2": struct{}{}},
 		("npm/centerpad"): {"3": struct{}{}},
-
-		// From lockfiles
-		// "maven/g1/a1": {
-		// 	"v1-github.com/example/bar-deadbeef3": struct{}{},
-		// 	"v1-github.com/example/bar-deadbeef4": struct{}{},
-		// 	"v1-github.com/example/foo-deadbeef1": struct{}{},
-		// 	"v1-github.com/example/foo-deadbeef2": struct{}{},
-		// },
-		// "maven/g2/a2": {
-		// 	"v2-github.com/example/bar-deadbeef3": struct{}{},
-		// 	"v2-github.com/example/bar-deadbeef4": struct{}{},
-		// 	"v2-github.com/example/foo-deadbeef1": struct{}{},
-		// 	"v2-github.com/example/foo-deadbeef2": struct{}{},
-		// },
-		// "maven/g3/a3": {
-		// 	"v3-github.com/example/bar-deadbeef3": struct{}{},
-		// 	"v3-github.com/example/bar-deadbeef4": struct{}{},
-		// 	"v3-github.com/example/foo-deadbeef1": struct{}{},
-		// 	"v3-github.com/example/foo-deadbeef2": struct{}{},
-		// },
 	}
 	if diff := cmp.Diff(expectedDependencies, dependencies); diff != "" {
 		t.Errorf("unexpected dependencies (-want +got):\n%s", diff)
@@ -181,36 +121,8 @@ func TestDependencies(t *testing.T) {
 		t.Errorf("unexpected notFound (-want +got):\n%s", diff)
 	}
 
-	// TODO: We don't want to wrote data at query-time anymore
-	//
-	// Assert `store.UpsertLockfileDependencies` was called
-	// mockassert.CalledN(t, mockStore.UpsertLockfileGraphFunc, 4)
-	// mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
-	// mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
-	// mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
-	// mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
-
-	// // Assert `syncer.Sync` was called correctly
-	// syncHistory := syncer.SyncFunc.History()
-	// syncedRepoNames := make([]string, 0, len(syncHistory))
-	// for _, call := range syncHistory {
-	// 	syncedRepoNames = append(syncedRepoNames, string(call.Arg1))
-	// }
-	// sort.Strings(syncedRepoNames)
-
-	// expectedNames := []string{
-	// 	"maven/g1/a1",
-	// 	"maven/g2/a2",
-	// 	"maven/g3/a3",
-	// }
-	// if diff := cmp.Diff(expectedNames, syncedRepoNames); diff != "" {
-	// 	t.Errorf("unexpected names (-want +got):\n%s", diff)
-	// }
-
 	// Located in the end so as not to interfere with Upsert call counting.
 	t.Run("get-commits-error", func(t *testing.T) {
-		t.Skip("TODO: Renable!!!")
-
 		getCommitsErr := errors.New("get commits failed for at least one commit")
 
 		gitService.GetCommitsFunc.PushHook(func(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) (commits []*gitdomain.Commit, _ error) {
