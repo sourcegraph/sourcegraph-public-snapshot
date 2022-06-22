@@ -76,7 +76,7 @@ function logEvent(eventVariable: Event): void {
 
 let eventId = 1
 
-// Event Logger for VS Code Extension
+// Event Logger for the JetBrains Extension
 export class EventLogger implements TelemetryService {
     private anonymousUserId: string
     private listeners: Set<(eventName: string) => void> = new Set()
@@ -96,24 +96,24 @@ export class EventLogger implements TelemetryService {
 
     public logPageView(): void {
         throw new Error(
-            'This method is not supported on JetBrains. This extension does not have the contept of a page.'
+            'This method is not supported on JetBrains. This extension does not have the concept of a page.'
         )
     }
 
     /**
      * Log a user action or event.
-     * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     * Event names should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      *
-     * @param eventLabel: the event name.
+     * @param eventName: the event name.
      * @param eventProperties: event properties. These get logged to our database, but do not get
      * sent to our analytics systems. This may contain private info such as repository names or search queries.
      * @param publicArgument: event properties that include only public information. Do NOT
      * include any private information, such as full URLs that may contain private repo names or
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
-    public log(eventLabel: string, eventProperties?: any, publicArgument?: any, uri?: string): void {
+    public log(eventName: string, eventProperties?: any, publicArgument?: any, uri?: string): void {
         this.tracker(
-            eventLabel,
+            eventName,
             { ...eventProperties, ...this.editorInfo },
             { ...publicArgument, ...this.editorInfo },
             uri
