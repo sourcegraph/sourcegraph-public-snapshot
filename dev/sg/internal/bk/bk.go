@@ -22,6 +22,11 @@ type buildkiteSecrets struct {
 	Token string `json:"token"`
 }
 
+type Build struct {
+	buildkite.Build
+	Annotations []buildkite.Annotation
+}
+
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
 	if tok := os.Getenv("BUILDKITE_API_TOKEN"); tok != "" {
@@ -120,6 +125,20 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 		return nil, err
 	}
 	return b, nil
+}
+
+func (c *Client) GetAnnotationsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Annotation, error) {
+	annotations, _, err := c.bk.Annotations.ListByBuild(BuildkiteOrg, pipeline, number, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no build found")
+		}
+		return nil, err
+	}
+	return annotations, nil
 }
 
 // TriggerBuild request a build on Buildkite API and returns that build.

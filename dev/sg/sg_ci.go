@@ -167,6 +167,7 @@ sg ci build --help
 			if err != nil {
 				return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 			}
+
 			// Print a high level overview
 			printBuildOverview(build)
 
@@ -217,7 +218,12 @@ sg ci build --help
 			}
 
 			// build status finalized
-			failed := printBuildResults(build, ctx.Bool("wait"))
+			var annotations []buildkite.Annotation
+			annotations, err = client.GetAnnotationsByBuildNumber(ctx.Context, "sourcegraph", fmt.Sprintf("%d", *build.Number))
+			if err != nil {
+				return errors.Newf("failed to get annotations for build %d: %w", build.Number, err)
+			}
+			failed := printBuildResults(build, annotations, ctx.Bool("wait"))
 
 			if !branchFromFlag && ciBuild == "" {
 				// If we're not on a specific branch and not asking for a specific build, warn if build commit is not your commit
@@ -608,10 +614,18 @@ func printBuildOverview(build *buildkite.Build) {
 	}
 }
 
-func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
+func printBuildResults(build *buildkite.Build, annotations []buildkite.Annotation, notify bool) (failed bool) {
 	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		std.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
+	}
+
+	if len(annotations) > 0 {
+		std.Out.Writef("Annotations")
+	}
+	for _, a := range annotations {
+		std.Out.WriteNoticef("content: %s", *a.Context)
+		std.Out.Writef(*a.BodyHTML)
 	}
 
 	// Check build state
@@ -725,4 +739,8 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 			return ctx.Err()
 		}
 	}
+}
+
+func getBuildAnnotations(client *bk.Client, build *buildkite.Build) (*buildkite.Annotation, error) {
+	return nil, nil
 }
