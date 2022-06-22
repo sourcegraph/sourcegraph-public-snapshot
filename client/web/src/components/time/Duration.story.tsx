@@ -27,8 +27,6 @@ export const Fixed: Story = () => (
     </WebStory>
 )
 
-Fixed.storyName = 'fixed'
-
 export const Active: Story = () => (
     <WebStory>
         {props => (
@@ -51,5 +49,3 @@ export const Active: Story = () => (
         )}
     </WebStory>
 )
-
-Active.storyName = 'active'
