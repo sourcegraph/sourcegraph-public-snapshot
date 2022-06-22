@@ -2,6 +2,7 @@ name: sg-setup
 on:
   push:
     paths:
+      - '.github/workflows/sg-setup.yml'
       - 'dev/sg/dependencies/**.go'
       - 'dev/sg/internal/check/**.go'
 
@@ -11,7 +12,9 @@ jobs:
       matrix:
         # See https://github.com/actions/virtual-environments#available-environments for
         # available environments.
-        os: [macos-11, ubuntu-20.04]
+        os:
+        - macos-12
+        - ubuntu-20.04
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -24,17 +27,17 @@ jobs:
         with:
           go-version: 1.18
 
-      - name: Test dependencies (${{ matrix.os }})
+      - name: Test dependencies (${{ matrix.os }} standard)
         if: "! contains(matrix.os, 'ubuntu')"
         run: |
           go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
 
       # We need two separate test things to work around a known issue with terminals in
-      # GitHub Actions: https://github.com/actions/runner/issues/241#issuecomment-745902718
-      - name: Test dependencies (${{ matrix.os }})
+      # GitHub Actions: https://github.com/actions/runner/issues/241#issuecomment-842566950
+      - name: Test dependencies (${{ matrix.os }} with terminal workaround)
         if: contains(matrix.os, 'ubuntu')
-        shell: 'script -q -e -c "bash {0}"' # The workaround
+        shell: 'script -q -e -c "bash --noprofile --norc -eo pipefail {0}"' # the workaround
         run: |
           go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
