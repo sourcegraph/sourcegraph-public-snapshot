@@ -80,13 +80,7 @@ type unmarshaller func([]byte) Result
 
 func ToCombyFileMatchWithChunks(b []byte) Result {
 	var m *FileMatchWithChunks
-	err := json.Unmarshal(b, &m)
-	if err == io.EOF {
-		log15.Info("reached EOF")
-		return nil
-	}
-	if err != nil {
-		log15.Info("bytes: " + string(b))
+	if err := json.Unmarshal(b, &m); err != nil {
 		log15.Warn("ToCombyFileMatchWithChunks() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
@@ -96,7 +90,7 @@ func ToCombyFileMatchWithChunks(b []byte) Result {
 func toFileMatch(b []byte) Result {
 	var m *FileMatch
 	if err := json.Unmarshal(b, &m); err != nil {
-		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		log15.Warn("toFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
 	return m
@@ -105,7 +99,7 @@ func toFileMatch(b []byte) Result {
 func toFileReplacement(b []byte) Result {
 	var r *FileReplacement
 	if err := json.Unmarshal(b, &r); err != nil {
-		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		log15.Warn("toFileReplacement() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
 	return r
