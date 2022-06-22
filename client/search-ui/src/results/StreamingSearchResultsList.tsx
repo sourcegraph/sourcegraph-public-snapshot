@@ -186,7 +186,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
-                className={classNames('mt-2', styles.list)}
+                className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}
