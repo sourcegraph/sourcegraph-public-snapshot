@@ -4,7 +4,7 @@ DELETE FROM codeintel_lockfile_references;
 ALTER TABLE codeintel_lockfiles
   ADD COLUMN IF NOT EXISTS lockfile text;
 
-
+-- This is a backwards incompatible change. See dev/ci/go-backcompat/flakefiles/v3.41.0.json for details.
 DROP INDEX IF EXISTS codeintel_lockfiles_repository_id_commit_bytea;
 CREATE UNIQUE INDEX IF NOT EXISTS codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile);
 
@@ -25,6 +25,7 @@ COMMENT ON COLUMN codeintel_lockfile_references.resolution_commit_bytea IS 'Comm
 CREATE INDEX IF NOT EXISTS codeintel_lockfiles_references_depends_on
 ON codeintel_lockfile_references USING GIN (depends_on gin__int_ops);
 
+-- This is a backwards incompatible change. See dev/ci/go-backcompat/flakefiles/v3.41.0.json for details.
 DROP INDEX IF EXISTS codeintel_lockfile_references_repository_name_revspec_package;
 CREATE UNIQUE INDEX IF NOT EXISTS codeintel_lockfile_references_repository_name_revspec_package_resolution ON codeintel_lockfile_references USING btree (
     repository_name,
