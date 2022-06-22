@@ -87,13 +87,14 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 
 	t := true
 	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 		Cancel:         &t,
 		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		WorkerHostname: executorName,
+		ExcludeRank:    true,
 	})
 	if err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
@@ -131,7 +132,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, err
 	}
@@ -176,7 +177,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context,
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
@@ -200,7 +201,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, errors.Wrap(err, "loading batch spec workspace execution job")
 	}

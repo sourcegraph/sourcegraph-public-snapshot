@@ -9,7 +9,9 @@
     <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
+        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationService"
+                            preload="true"/>
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"
@@ -19,6 +21,7 @@
         />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
+        <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
     </extensions>
 
     <actions>

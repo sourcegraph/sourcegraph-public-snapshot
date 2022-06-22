@@ -157,7 +157,7 @@ func NewGenerator(log slog.Logger, inputs *run.SearchInputs, seed query.Basic, r
 				ProposedQuery: &search.ProposedQuery{
 					Description: rules[i].description,
 					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLiteralDefault,
+					PatternType: query.SearchTypeLiteral,
 				},
 			}
 
@@ -278,7 +278,7 @@ func unquotePatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -307,7 +307,7 @@ func unorderedPatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -349,7 +349,7 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 }
 
 func langPatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteralDefault)
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
 	if err != nil {
 		return nil
 	}
@@ -387,7 +387,7 @@ func langPatterns(b query.Basic) *query.Basic {
 	var pattern query.Node
 	if len(newPattern) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
 		if err != nil {
 			return nil
 		}
@@ -401,7 +401,7 @@ func langPatterns(b query.Basic) *query.Basic {
 }
 
 func typePatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteralDefault)
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
 	if err != nil {
 		return nil
 	}
@@ -446,7 +446,7 @@ func typePatterns(b query.Basic) *query.Basic {
 	var pattern query.Node
 	if len(newPattern) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
 		if err != nil {
 			return nil
 		}

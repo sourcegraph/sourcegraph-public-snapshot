@@ -7,6 +7,8 @@ import (
 
 	"github.com/neelance/parallel"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,7 +29,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, matches)
+	langs, err := searchResultsStatsLanguages(ctx, srs.logger, srs.sr.db, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +64,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 	return srs.results, srs.err
 }
 
-func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
+func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
 		repo     api.RepoID
@@ -136,7 +138,7 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 					run.Error(err)
 					return
 				}
-				inv, err := backend.NewRepos(db).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return

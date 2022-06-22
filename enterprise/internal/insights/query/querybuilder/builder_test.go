@@ -69,6 +69,66 @@ func TestWithDefaults(t *testing.T) {
 	}
 }
 
+func TestMultiRepoQuery(t *testing.T) {
+	tests := []struct {
+		name     string
+		repos    []string
+		want     string
+		defaults query.Parameters
+	}{
+		{
+			name:     "single repo",
+			repos:    []string{"repo1"},
+			want:     `count:99999999 testquery repo:^(repo1)$`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:  "multiple repo",
+			repos: []string{"repo1", "repo2"},
+			want:  `archived:no fork:no count:99999999 testquery repo:^(repo1|repo2)$`,
+			defaults: []query.Parameter{{
+				Field:      query.FieldArchived,
+				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldFork,
+				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}},
+		},
+		{
+			name:  "multiple repo",
+			repos: []string{"github.com/myrepos/repo1", "github.com/myrepos/repo2"},
+			want:  `archived:no fork:no count:99999999 testquery repo:^(github\.com/myrepos/repo1|github\.com/myrepos/repo2)$`,
+			defaults: []query.Parameter{{
+				Field:      query.FieldArchived,
+				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldFork,
+				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := MultiRepoQuery("testquery", test.repos, test.defaults)
+			if err != nil {
+				t.Fatal(err)
+			}
+			println(got)
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			}
+		})
+	}
+}
+
 func TestDefaults(t *testing.T) {
 	tests := []struct {
 		name  string

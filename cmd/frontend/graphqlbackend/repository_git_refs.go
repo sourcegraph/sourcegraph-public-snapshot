@@ -162,7 +162,7 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = git.GetCommit(ctx, db, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserver.NewClient(db).GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout

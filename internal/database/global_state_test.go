@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -12,7 +14,9 @@ func TestGlobalState_Get(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	config, err := db.GlobalState().Get(ctx)
 	if err != nil {

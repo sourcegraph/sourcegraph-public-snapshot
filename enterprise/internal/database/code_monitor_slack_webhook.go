@@ -31,7 +31,13 @@ SET enabled = %s,
 	url = %s,
 	changed_by = %s,
 	changed_at = %s
-WHERE id = %s
+WHERE
+	id = %s
+	AND EXISTS (
+		SELECT 1 FROM cm_monitors
+		WHERE cm_monitors.id = id
+			AND cm_monitors.namespace_user_id = %s
+	)
 RETURNING %s;
 `
 
@@ -45,6 +51,7 @@ func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int6
 		a.UID,
 		s.Now(),
 		id,
+		a.UID,
 		sqlf.Join(slackWebhookActionColumns, ","),
 	)
 

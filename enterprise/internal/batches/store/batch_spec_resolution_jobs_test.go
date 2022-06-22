@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -154,8 +156,9 @@ func TestBatchSpecResolutionJobs_BatchSpecIDUnique(t *testing.T) {
 	// because in the store tests the constraints are all deferred.
 	ctx := context.Background()
 	c := &ct.TestClock{Time: timeutil.Now()}
+	logger := logtest.Scoped(t)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	user := ct.CreateTestUser(t, db, true)

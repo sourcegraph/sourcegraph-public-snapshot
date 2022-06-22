@@ -57,7 +57,7 @@ func enterpriseInit(
 		}
 	}
 
-	permsStore := edb.Perms(db, timeutil.Now)
+	permsStore := edb.Perms(logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
