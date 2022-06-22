@@ -12,6 +12,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
+	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -63,6 +64,10 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		indexedIgnore, unindexedSearch, err := parseGitDiffNameStatus(out)
 		if err != nil {
+			logger.Debug("parseGitDiffNameStatus failed",
+				log.String("indexed", string(indexed)),
+				zap.Binary("out", out),
+				log.Error(err))
 			return nil, false, err
 		}
 
@@ -277,6 +282,10 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 // A and B respectively. It expects to be parsing the output of the command
 // git diff -z --name-status --no-renames A B.
 func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error) {
+	if len(out) == 0 {
+		return nil, nil, nil
+	}
+
 	slices := bytes.Split(bytes.TrimRight(out, "\x00"), []byte{0})
 	if len(slices)%2 != 0 {
 		return nil, nil, errors.New("uneven pairs")
