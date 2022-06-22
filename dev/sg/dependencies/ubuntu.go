@@ -184,7 +184,7 @@ var Ubuntu = []category{
 		Checks: []*dependency{
 			{
 				Name:  "Install Postgres",
-				Check: checkAction(check.Combine(check.InPath("psql"), check.InPath("pg_ctl"))),
+				Check: checkAction(check.Combine(check.InPath("psql"))),
 				Fix:   aptGetInstall("postgresql postgresql-contrib"),
 			},
 			{
@@ -241,7 +241,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 		Checks: []*dependency{
 			{
 				Name:  "Install Redis",
-				Check: checkAction(check.InPath("redic-cli")),
+				Check: checkAction(check.InPath("redis-cli")),
 				Fix:   aptGetInstall("redis-server"),
 			},
 			{
