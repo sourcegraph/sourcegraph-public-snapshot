@@ -27,17 +27,7 @@ jobs:
         with:
           go-version: 1.18
 
-      - name: Test dependencies (${{ matrix.os }} standard)
-        if: "! contains(matrix.os, 'ubuntu')"
-        run: |
-          go test -timeout=30m -v \
-            ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
-
-      # We need two separate test things to work around a known issue with terminals in
-      # GitHub Actions: https://github.com/actions/runner/issues/241#issuecomment-842566950
-      - name: Test dependencies (${{ matrix.os }} with terminal workaround)
-        if: contains(matrix.os, 'ubuntu')
-        shell: 'script -q -e -c "bash --noprofile --norc -eo pipefail {0}"' # the workaround
+      - name: Test dependencies (${{ matrix.os }})
         run: |
           go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}

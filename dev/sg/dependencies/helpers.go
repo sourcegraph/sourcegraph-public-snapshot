@@ -296,11 +296,11 @@ func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error 
 	}
 
 	cmd := "go version"
-	data, err := usershell.Run(ctx, cmd).Lines()
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data[len(data)-1]), " ")
+	parts := strings.Split(strings.TrimSpace(data), " ")
 	if len(parts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
@@ -319,11 +319,11 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "yarn --version"
-	data, err := usershell.Run(ctx, cmd).Lines()
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	trimmed := strings.TrimSpace(data[len(data)-1])
+	trimmed := strings.TrimSpace(data)
 	if len(trimmed) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
@@ -365,11 +365,11 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "cargo --version"
-	data, err := usershell.Run(ctx, cmd).Lines()
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data[len(data)-1]), " ")
+	parts := strings.Split(strings.TrimSpace(data), " ")
 	if len(parts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
