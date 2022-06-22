@@ -191,7 +191,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	go syncScheduler(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
-		rateLimiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(.05, 1)}
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 

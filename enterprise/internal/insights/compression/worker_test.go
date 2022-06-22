@@ -28,7 +28,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC) }
 
 	indexer := CommitIndexer{
-		limiter:           &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 1)},
+		limiter:           ratelimit.NewInstrumentedLimiter("TestCommitIndexer", rate.NewLimiter(10, 1)),
 		commitStore:       commitStore,
 		maxHistoricalTime: maxHistorical,
 		background:        context.Background(),
@@ -194,7 +194,7 @@ func TestCommitIndexer_windowing(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, time.June, 1, 0, 0, 0, 0, time.UTC) }
 
 	indexer := CommitIndexer{
-		limiter:           &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 1)},
+		limiter:           ratelimit.NewInstrumentedLimiter("TestCommitIndexer", rate.NewLimiter(10, 1)),
 		commitStore:       commitStore,
 		maxHistoricalTime: maxHistorical,
 		background:        context.Background(),

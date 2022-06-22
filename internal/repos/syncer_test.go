@@ -2145,7 +2145,7 @@ func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 				}
 
 				// Run the syncer, which should find the repo with non-empty last_error and delete it
-				err := syncer.SyncReposWithLastErrors(ctx, &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(200, 1)})
+				err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(200, 1)))
 				if err != nil {
 					t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
 				}
@@ -2187,7 +2187,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		// Run the syncer, which should return an error due to hitting the rate limit
-		err := syncer.SyncReposWithLastErrors(ctx, &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(1, 1)})
+		err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(1, 1)))
 		if err == nil {
 			t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
 		}

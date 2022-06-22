@@ -227,7 +227,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
 	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(getRateLimit(), 1)}
+	limiter := ratelimit.NewInstrumentedLimiter("HistoricalEnqueuer", rate.NewLimiter(getRateLimit(), 1))
 
 	return backfillAnalyzer{
 		statistics:         statistics,

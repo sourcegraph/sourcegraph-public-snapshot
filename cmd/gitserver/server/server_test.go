@@ -523,7 +523,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
-		rpsLimiter:       &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(rate.Inf, 10)},
+		rpsLimiter:       ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	}
 
 	s.StartClonePipeline(ctx)

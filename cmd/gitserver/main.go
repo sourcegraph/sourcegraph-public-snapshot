@@ -516,7 +516,7 @@ func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, 
 		logger.Warn("found zero gitserver instance, trying again after backoff", log.Duration("backoff", backoff))
 	}
 
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize)}
+	limiter := ratelimit.NewInstrumentedLimiter("RateLimitSyncer", rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize))
 	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{
 		PageSize: batchSize,
 		Limiter:  limiter,

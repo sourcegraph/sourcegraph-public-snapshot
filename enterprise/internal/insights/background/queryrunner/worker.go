@@ -56,7 +56,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	defaultRateLimit := rate.Limit(10.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(getRateLimit(), 1)}
+	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
 
 	go conf.Watch(func() {
 		val := getRateLimit()

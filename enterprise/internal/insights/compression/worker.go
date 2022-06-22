@@ -63,7 +63,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 			Help:      "Counter of the number of repositories analyzed in the commit indexer.",
 		})
 
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 1)}
+	limiter := ratelimit.NewInstrumentedLimiter("CommitIndexer", rate.NewLimiter(10, 1))
 
 	operations := newOperations(observationContext)
 

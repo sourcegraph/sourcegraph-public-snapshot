@@ -22,7 +22,7 @@ import (
 // specifies how long ago a repo must be deleted before it is purged.
 func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Duration) {
 	log := log15.Root().New("worker", "repo-purge")
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 1)}
+	limiter := ratelimit.NewInstrumentedLimiter("PurgeRepoWorker", rate.NewLimiter(10, 1))
 
 	// Temporary escape hatch if this feature proves to be dangerous
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
@@ -60,7 +60,7 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	}
 	log := log15.Root().New("request", "repo-purge")
 	go func() {
-		limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(rate.Limit(perSecond), 1)}
+		limiter := ratelimit.NewInstrumentedLimiter("PurgeOldestRepos", rate.NewLimiter(rate.Limit(perSecond), 1))
 		// Use a background routine so that we don't time out based on the http context.
 		if err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
 			Limit:   limit,

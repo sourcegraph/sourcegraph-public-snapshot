@@ -39,7 +39,7 @@ func GetService(db database.DB) *Service {
 		svc = newService(
 			luasandbox.GetService(),
 			NewDefaultGitService(nil, db),
-			&ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)},
+			ratelimit.NewInstrumentedLimiter("InferenceService", rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)),
 			maximumFilesWithContentCount,
 			maximumFileWithContentSizeBytes,
 			observationContext,

@@ -132,7 +132,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return []*gitdomain.Commit{{Committer: &gitdomain.Signature{Date: nearby}}}, nil
 	}
 
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 1)}
+	limiter := ratelimit.NewInstrumentedLimiter("TestHistoricalEnqueuer", rate.NewLimiter(10, 1))
 
 	stats := make(statistics)
 	analyzer := backfillAnalyzer{

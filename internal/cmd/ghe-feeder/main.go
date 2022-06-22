@@ -170,7 +170,7 @@ func main() {
 		_ = http.ListenAndServe(":2112", nil)
 	}()
 
-	rateLimiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)}
+	rateLimiter := ratelimit.NewInstrumentedLimiter("GHEFeeder", rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100))
 	pushSem := make(chan struct{}, *numSimultaneousPushes)
 	cloneSem := make(chan struct{}, *numSimultaneousClones)
 

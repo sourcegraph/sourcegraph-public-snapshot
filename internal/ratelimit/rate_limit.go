@@ -67,7 +67,7 @@ func (r *Registry) getOrSet(urn string, fallback *InstrumentedLimiter) *Instrume
 		if defaultRateLimit <= 0 {
 			fallbackRateLimit = rate.Inf
 		}
-		fallback = &InstrumentedLimiter{urn: urn, Limiter: rate.NewLimiter(fallbackRateLimit, defaultBurst)}
+		fallback = NewInstrumentedLimiter(urn, rate.NewLimiter(fallbackRateLimit, defaultBurst))
 	}
 	r.rateLimiters[urn] = fallback
 	return fallback
@@ -117,6 +117,14 @@ func (r *Registry) LimitInfo() map[string]LimitInfo {
 type InstrumentedLimiter struct {
 	urn string
 	*rate.Limiter
+}
+
+// NewInstrumentedLimiter creates new InstrumentedLimiter with given URN and rate.Limiter
+func NewInstrumentedLimiter(urn string, limiter *rate.Limiter) *InstrumentedLimiter {
+	return &InstrumentedLimiter{
+		urn:     urn,
+		Limiter: limiter,
+	}
 }
 
 // Wait is shorthand for WaitN(ctx, 1).

@@ -588,7 +588,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	if perSecond < 0 {
 		perSecond = 1
 	}
-	limiter := &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(rate.Limit(perSecond), perSecond)}
+	limiter := ratelimit.NewInstrumentedLimiter("SyncRepoState", rate.NewLimiter(rate.Limit(perSecond), perSecond))
 
 	// The rate limiter doesn't allow writes that are larger than the burst size
 	// which we've set to perSecond.
