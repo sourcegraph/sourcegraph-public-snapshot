@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -253,6 +251,7 @@ type seriesResolverGenerator struct {
 	next             insightSeriesResolverGenerator
 	handlesSeries    handleSeriesFunc
 	generateResolver resolverGenerator
+	log              log.Logger
 }
 
 func (j *seriesResolverGenerator) handles(series types.InsightViewSeries) bool {
@@ -273,7 +272,7 @@ func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.Ins
 	if j.next != nil {
 		return j.next.Generate(ctx, series, baseResolver, filters)
 	} else {
-		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
+		j.log.Error("no generator for insight series", log.String("seriesID", series.SeriesID))
 		return nil, errors.New("no resolvers for insights series")
 	}
 }
@@ -429,6 +428,8 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 }
 
 func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	slog := log.Scoped("expandCaptureGroupSeriesJustInTime", "Expand capture group series just in time")
+
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
@@ -440,7 +441,7 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 	if err != nil {
 		return nil, err
 	}
-	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	slog.Debug("capture group series", log.String("seriesId", definition.SeriesID), log.Strings("filteredRepos", matchedRepos))
 	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
 	if err != nil {
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
@@ -455,6 +456,7 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 }
 
 func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	slog := log.Scoped("streamingSeriesJustInTime", "Streaming series just in time")
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
@@ -466,7 +468,7 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	if err != nil {
 		return nil, err
 	}
-	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	slog.Debug("just in time series", log.String("seriesId", definition.SeriesID), log.Strings("filteredRepos", matchedRepos))
 	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
 	if err != nil {
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
