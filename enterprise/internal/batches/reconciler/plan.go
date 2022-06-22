@@ -186,8 +186,9 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		// the same as being unpublished.
 
 	case btypes.ChangesetPublicationStatePublished:
-		// Don't take any actions for merged changesets.
-		if ch.ExternalState == btypes.ChangesetExternalStateMerged {
+		// Don't take any actions for merged or read only changesets.
+		if ch.ExternalState == btypes.ChangesetExternalStateMerged ||
+			ch.ExternalState == btypes.ChangesetExternalStateReadOnly {
 			return pl, nil
 		}
 		if reopenAfterDetach(ch) {
@@ -242,7 +243,8 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 }
 
 func reopenAfterDetach(ch *btypes.Changeset) bool {
-	closed := ch.ExternalState == btypes.ChangesetExternalStateClosed
+	closed := ch.ExternalState == btypes.ChangesetExternalStateClosed ||
+		ch.ExternalState == btypes.ChangesetExternalStateReadOnly
 	if !closed {
 		return false
 	}

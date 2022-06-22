@@ -12,6 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -21,14 +22,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, logger log.Logger, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
+		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
@@ -41,6 +44,7 @@ func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer s
 
 type executor struct {
 	gitserverClient   GitserverClient
+	logger            log.Logger
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
@@ -175,7 +179,25 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	return e.pushCommit(ctx, opts)
+
+	err = e.pushCommit(ctx, opts)
+	var pce pushCommitError
+	if errors.As(err, &pce) {
+		if s, ok := css.(interface{ IsPushResponseArchived(s string) bool }); ok {
+			if s.IsPushResponseArchived(pce.CombinedOutput) {
+				remoteRepo.Archived = true
+				_, err := repos.NewStore(e.logger, e.tx.DatabaseDB()).UpdateRepo(ctx, remoteRepo)
+				if err != nil {
+					return errors.Wrapf(err, "updating archived status of repo %d", int(e.ch.RepoID))
+				}
+
+				e.ch.ExternalState = btypes.ChangesetExternalStateReadOnly
+				return nil
+			}
+		}
+	}
+
+	return err
 }
 
 // publishChangeset creates the given changeset on its code host.
@@ -326,7 +348,26 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	}
 
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
+		if errcode.IsArchived(err) {
+			// We set the ExternalState here, and then SetDerivedState will do the
+			// rest later.
+			e.ch.ExternalState = btypes.ChangesetExternalStateReadOnly
+
+			// We also need to mark the repo as archived so that the later check for
+			// whether the repo is still archived isn't confused.
+			r, err := e.tx.Repos().Get(ctx, cs.RepoID)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving repo %d to update its archived status", int(cs.RepoID))
+			}
+
+			r.Archived = true
+			r, err = repos.NewStore(e.logger, e.tx.DatabaseDB()).UpdateRepo(ctx, r)
+			if err != nil {
+				return errors.Wrapf(err, "updating archived status of repo %d", int(cs.RepoID))
+			}
+		} else {
+			return errors.Wrap(err, "updating changeset")
+		}
 	}
 
 	return nil
@@ -505,18 +546,26 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 	return css, nil
 }
 
+type pushCommitError struct {
+	*protocol.CreateCommitFromPatchError
+}
+
+func (e pushCommitError) Error() string {
+	return fmt.Sprintf(
+		"creating commit from patch for repository %q: %s\n"+
+			"```\n"+
+			"$ %s\n"+
+			"%s\n"+
+			"```",
+		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
+}
+
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
 	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
-			return errors.Errorf(
-				"creating commit from patch for repository %q: %s\n"+
-					"```\n"+
-					"$ %s\n"+
-					"%s\n"+
-					"```",
-				e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
+			return pushCommitError{e}
 		}
 		return err
 	}
