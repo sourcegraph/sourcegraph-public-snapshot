@@ -118,6 +118,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 	wantArchive := false
 	isArchived := false
 	isStillAttached := false
+	isReattach := false
 	wantDetachFromOwnerBatchChange := false
 	for _, assoc := range wantedChangeset.BatchChanges {
 		if assoc.Detach {
@@ -129,6 +130,8 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 			wantArchive = !assoc.IsArchived
 			isArchived = assoc.IsArchived
 		} else if currentChangeset != nil && len(currentChangeset.BatchChanges) == 0 {
+			isReattach = true
+		} else {
 			isStillAttached = true
 		}
 	}
@@ -161,7 +164,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 		// If still more than one remains attached, we still want to import the changeset.
 		if wantedChangeset.Unpublished() && isStillAttached {
 			pl.AddOp(btypes.ReconcilerOperationImport)
-		} else if !isStillAttached && !wantDetach {
+		} else if isReattach && !wantDetach {
 			pl.AddOp(btypes.ReconcilerOperationReattach)
 		}
 		return pl, nil
