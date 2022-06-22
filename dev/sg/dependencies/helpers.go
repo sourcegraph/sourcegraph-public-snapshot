@@ -251,12 +251,12 @@ func checkRedisConnection(context.Context) error {
 
 func checkGitVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		out, err := usershell.Run(ctx, "git version").Lines()
+		out, err := usershell.Command(ctx, "git version").StdOut().Run().String()
 		if err != nil {
 			return errors.Wrapf(err, "failed to run 'git version'")
 		}
 
-		elems := strings.Split(string(out[len(out)-1]), " ")
+		elems := strings.Split(string(out), " ")
 		if len(elems) != 3 {
 			return errors.Newf("unexpected output from git: %s", out)
 		}
