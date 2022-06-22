@@ -337,7 +337,7 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
         // Update external extensions if they changed
         useEffect(() => {
             editor?.dispatch({ effects: [externalExtensions.reconfigure(extensions)] })
-        }, [editor, extensions])
+        }, [editor, externalExtensions, extensions])
 
         return (
             <div
