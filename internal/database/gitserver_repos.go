@@ -166,7 +166,7 @@ type IteratePurgableReposOptions struct {
 	// before the given time. The zero value will not apply filtering.
 	DeletedBefore time.Time
 	// Limit optionally limits the repos iterated over. The zero value means no
-	// limits are applied. Repos are ordered by their deleted at date, the oldest first.
+	// limits are applied. Repos are ordered by their deleted at date, oldest first.
 	Limit int
 	// Limiter is an optional rate limiter that limits the rate at which we iterate
 	// through the repos.
