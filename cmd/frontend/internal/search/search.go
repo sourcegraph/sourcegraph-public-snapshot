@@ -603,13 +603,18 @@ func newEventHandler(
 }
 
 type eventHandler struct {
-	mu sync.Mutex
-
 	ctx context.Context
+	db  database.DB
 
-	db database.DB
-
+	// Config params
 	enableChunkMatches bool
+	flushInterval      time.Duration
+	progressInterval   time.Duration
+
+	logLatency func()
+
+	// Everything below this line is protected by the mutex
+	mu sync.Mutex
 
 	eventWriter *eventWriter
 
@@ -617,17 +622,12 @@ type eventHandler struct {
 	filters    *streaming.SearchFilters
 	progress   *progressAggregator
 
-	flushInterval    time.Duration
-	progressInterval time.Duration
-
 	// These timers will be non-nil unless Done() was called
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
 	displayRemaining int
 	first            bool
-
-	logLatency func()
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
