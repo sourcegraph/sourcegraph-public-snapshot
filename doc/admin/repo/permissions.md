@@ -573,6 +573,7 @@ The API also supports filtering against task `status`, which can be one of the f
 
 - `queued`
 - `canceled`
+- `errored`
 - `failed`
 - `completed`
 
