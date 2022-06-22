@@ -4,7 +4,7 @@ import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/se
 import { BlobContentResult, BlobContentVariables } from '../../graphql-operations'
 import { getMatchId } from '../results/utils'
 
-import { requestGraphQLFromJetBrains } from './requestGraphQl'
+import { requestGraphQL } from './requestGraphQl'
 
 const cachedContentRequests = new Map<string, Promise<string | null>>()
 
@@ -25,7 +25,7 @@ export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch)
 }
 
 async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
-    const response = await requestGraphQLFromJetBrains<BlobContentResult, BlobContentVariables>(blobContentQuery, {
+    const response = await requestGraphQL<BlobContentResult, BlobContentVariables>(blobContentQuery, {
         commitID: match.commit ?? '',
         filePath: match.path,
         repoName: match.repository,

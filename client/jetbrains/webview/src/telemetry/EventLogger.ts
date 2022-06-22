@@ -12,7 +12,7 @@ import {
     LogLegacySearchUserEventResult,
     LogLegacySearchUserEventVariables,
 } from '../graphql-operations'
-import { requestGraphQLFromJetBrains } from '../search/lib/requestGraphQl'
+import { requestGraphQL } from '../search/lib/requestGraphQl'
 
 // Log events in batches.
 const events = new Subject<Event>()
@@ -32,7 +32,7 @@ events
                 events
                     .filter(event => event.event === 'IDESearchSubmitted')
                     .map(event =>
-                        requestGraphQLFromJetBrains<LogLegacySearchUserEventResult, LogLegacySearchUserEventVariables>(
+                        requestGraphQL<LogLegacySearchUserEventResult, LogLegacySearchUserEventVariables>(
                             logLegacySearchUserEventMutation,
                             {
                                 userCookieID: event.deviceID ?? '',
@@ -40,7 +40,7 @@ events
                         )
                     )
 
-                return requestGraphQLFromJetBrains<LogEventsResult, LogEventsVariables>(logEventsMutation, {
+                return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
                     events,
                 })
             }

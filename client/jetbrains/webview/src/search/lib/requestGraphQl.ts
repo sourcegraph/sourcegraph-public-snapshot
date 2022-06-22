@@ -3,7 +3,7 @@ import { GraphQLResult, GRAPHQL_URI } from '@sourcegraph/http-client'
 
 import { getAccessToken, getInstanceURL } from '..'
 
-export const requestGraphQLFromJetBrains = async <R, V = object>(
+export const requestGraphQL = async <R, V = object>(
     request: string,
     variables: V
 ): Promise<GraphQLResult<R>> => {
