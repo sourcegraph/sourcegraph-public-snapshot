@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
+import { mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 
 import {
     Button,
@@ -87,7 +87,7 @@ export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopment
             variant="link"
             aria-label="Open extensions developer tools"
         >
-            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} aria-hidden={true} />
+            <span className="text-muted">Ext</span> <Icon aria-hidden={true} svgPath={mdiMenuUp} />
         </PopoverTrigger>
         <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />
