@@ -29,7 +29,8 @@ import (
 )
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
 
@@ -107,7 +108,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 	}
 
 	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+	if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 		t.Fatalf("proces failed: %s", err)
 	}
 
@@ -171,7 +172,8 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -269,7 +271,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -355,7 +357,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -410,7 +412,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -451,7 +453,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -489,7 +491,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -538,7 +540,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -568,7 +570,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -590,7 +592,8 @@ changesetTemplate:
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -618,7 +621,7 @@ importChangesets:
 	resolver := &dummyWorkspaceResolver{}
 
 	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+	if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 		t.Fatalf("proces failed: %s", err)
 	}
 
@@ -649,7 +652,8 @@ importChangesets:
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -677,7 +681,7 @@ importChangesets:
 	resolver := &dummyWorkspaceResolver{}
 
 	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+	if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
 		t.Fatalf("proces failed: %s", err)
 	}
 

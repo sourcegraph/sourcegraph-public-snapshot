@@ -45,7 +45,7 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 	if err != nil {
 		return nil, err
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "migrator routines"),

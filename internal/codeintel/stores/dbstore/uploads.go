@@ -166,7 +166,7 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.Store))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
 	if err != nil {
 		return Upload{}, false, err
 	}
@@ -227,7 +227,7 @@ func (s *Store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []Upload, er
 		return nil, nil
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.Store))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(tx.Store))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.Store))
 	if err != nil {
 		return nil, 0, err
 	}

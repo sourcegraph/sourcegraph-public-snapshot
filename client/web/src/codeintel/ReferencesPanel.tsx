@@ -92,6 +92,7 @@ interface ReferencesPanelProps
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
     React.PropsWithChildren<ReferencesPanelProps>
 > = props => (
+    // TODO: this won't be working with Router V6
     <MemoryRouter
         // Force router to remount the Panel when external location changes
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}

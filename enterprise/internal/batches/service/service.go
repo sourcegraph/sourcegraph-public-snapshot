@@ -11,6 +11,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
@@ -43,6 +45,7 @@ func New(store *store.Store) *Service {
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 	svc := &Service{
+		logger:     sglog.Scoped("NewWithClock", ""),
 		store:      store,
 		sourcer:    sources.NewSourcer(httpcli.ExternalClientFactory),
 		clock:      clock,
@@ -53,6 +56,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 }
 
 type Service struct {
+	logger     sglog.Logger
 	store      *store.Store
 	sourcer    sources.Sourcer
 	operations *operations
@@ -142,7 +146,7 @@ func newOperations(observationContext *observation.Context) *operations {
 // WithStore returns a copy of the Service with its store attribute set to the
 // given Store.
 func (s *Service) WithStore(store *store.Store) *Service {
-	return &Service{store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
+	return &Service{logger: s.logger, store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
 type CreateEmptyBatchChangeOpts struct {

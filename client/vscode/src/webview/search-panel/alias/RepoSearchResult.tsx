@@ -1,9 +1,7 @@
 import React from 'react'
 
+import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { SearchResultStyles as styles, LastSyncedIcon, ResultContainer } from '@sourcegraph/search-ui'
@@ -55,8 +53,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={SourceForkIcon}
                                     aria-label="Forked repository"
+                                    svgPath={mdiSourceFork}
                                 />
                             </div>
                             <div>
@@ -70,8 +68,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={ArchiveIcon}
                                     aria-label="Archived repository"
+                                    svgPath={mdiArchive}
                                 />
                             </div>
                             <div>
@@ -85,8 +83,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={LockIcon}
                                     aria-label="Private repository"
+                                    svgPath={mdiLock}
                                 />
                             </div>
                             <div>

@@ -25,7 +25,8 @@ import (
 
 func TestStore(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	jobID, err := db.BitbucketProjectPermissions().Enqueue(ctx, "project1", 2, []types.UserPermission{
@@ -102,9 +103,10 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	// create 3 users
 	users := db.Users()
@@ -262,9 +264,11 @@ func TestHandleRestricted(t *testing.T) {
 	}
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -361,9 +365,10 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}

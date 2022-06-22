@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -239,7 +241,8 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 	r := db.Repos()
 
@@ -278,7 +281,8 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
@@ -398,7 +402,8 @@ func TestCreatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -499,7 +504,8 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -583,7 +589,8 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})

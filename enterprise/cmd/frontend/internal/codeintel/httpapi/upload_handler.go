@@ -11,6 +11,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -18,6 +20,7 @@ import (
 )
 
 type UploadHandler struct {
+	logger      sglog.Logger
 	db          database.DB
 	dbStore     DBStore
 	uploadStore uploadstore.Store

@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"

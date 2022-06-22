@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -40,7 +42,8 @@ func TestPermissionLevels(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	key := et.TestKey{}
 
 	cstore := store.New(db, &observation.TestContext, key)
@@ -62,8 +65,8 @@ func TestPermissionLevels(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -1267,7 +1270,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: bstore}
@@ -1284,8 +1289,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(bstore)
-	esStore := database.ExternalServicesWith(bstore)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)

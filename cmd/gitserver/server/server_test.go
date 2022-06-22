@@ -530,12 +530,13 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 }
 
 func TestCloneRepo(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -639,9 +640,10 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	logger := logtest.Scoped(t)
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -730,12 +732,13 @@ func TestHandleRepoDeleteWhenDeleteInDB(t *testing.T) {
 }
 
 func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -847,12 +850,13 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 }
 
 func TestHandleRepoUpdate(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -999,6 +1003,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 }
 
 func TestHandleRepoUpdateFromShard(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -1006,7 +1011,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	remote := filepath.Join(reposDirSource, "example.com/foo/bar")
 	os.MkdirAll(remote, 0755)
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -1324,10 +1329,11 @@ func TestHostnameMatch(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) {

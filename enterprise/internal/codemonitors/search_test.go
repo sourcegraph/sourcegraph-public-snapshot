@@ -72,7 +72,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			require.NoError(t, err)
 			inputs := &run.SearchInputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteralDefault,
+				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}
@@ -108,6 +108,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		Repo    *types.Repo
 		Monitor *edb.Monitor
 	}
+	logger := logtest.Scoped(t)
 	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
@@ -122,7 +123,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	fixtures := populateFixtures(edb.NewEnterpriseDB(db))
 	ctx := context.Background()
 

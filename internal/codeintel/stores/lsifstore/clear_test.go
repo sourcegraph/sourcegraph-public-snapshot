@@ -7,6 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -15,7 +17,8 @@ import (
 )
 
 func TestClear(t *testing.T) {
-	db := stores.NewCodeIntelDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	for i := 0; i < 5; i++ {

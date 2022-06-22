@@ -306,7 +306,8 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 
 func TestResolverPaginate(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	for i := 1; i <= 5; i++ {
 		r := types.MinimalRepo{
