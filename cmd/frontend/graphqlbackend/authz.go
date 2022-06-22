@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type AuthzResolver interface {
@@ -19,6 +21,7 @@ type AuthzResolver interface {
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
+	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
 
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
@@ -69,10 +72,40 @@ type AuthorizedRepoArgs struct {
 type RepoPermsBitbucketProjectArgs struct {
 	ProjectKey      string
 	CodeHost        graphql.ID
-	UserPermissions []struct {
-		BindID     string
-		Permission string
-	}
+	UserPermissions []types.UserPermission
+	Unrestricted    *bool
+}
+
+type BitbucketProjectPermissionJobsArgs struct {
+	ProjectKeys *[]string
+	Status      *string
+	Count       *int32
+}
+
+type BitbucketProjectsPermissionJobsResolver interface {
+	TotalCount() int32
+	Nodes() ([]BitbucketProjectsPermissionJobResolver, error)
+}
+
+type BitbucketProjectsPermissionJobResolver interface {
+	InternalJobID() int32
+	State() string
+	FailureMessage() *string
+	QueuedAt() DateTime
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	ProcessAfter() *DateTime
+	NumResets() int32
+	NumFailures() int32
+	ProjectKey() string
+	ExternalServiceID() graphql.ID
+	Permissions() []UserPermissionResolver
+	Unrestricted() bool
+}
+
+type UserPermissionResolver interface {
+	BindID() string
+	Permission() string
 }
 
 type PermissionsInfoResolver interface {

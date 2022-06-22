@@ -68,7 +68,13 @@ SET query = %s,
 	changed_by = %s,
 	changed_at = %s,
 	latest_result = %s
-WHERE id = %s
+WHERE
+	id = %s
+	AND EXISTS (
+		SELECT 1 FROM cm_monitors
+		WHERE cm_monitors.id = id
+			AND cm_monitors.namespace_user_id = %s
+	)
 RETURNING %s;
 `
 
@@ -82,9 +88,12 @@ func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, que
 		now,
 		now,
 		id,
+		a.UID,
 		sqlf.Join(queryColumns, ", "),
 	)
-	return s.Exec(ctx, q)
+	row := s.QueryRow(ctx, q)
+	_, err := scanTriggerQuery(row)
+	return err
 }
 
 const triggerQueryByMonitorFmtStr = `

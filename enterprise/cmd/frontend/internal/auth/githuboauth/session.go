@@ -276,24 +276,32 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verif
 	return verifiedEmails
 }
 
-// verifyUserOrgs checks whether the authenticated user belongs to one of the GitHub orgs listed in auth.provider > allowOrgs configuration
+// verifyUserOrgs checks whether the authenticated user belongs to one of the GitHub orgs
+// listed in auth.provider > allowOrgs configuration
 func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
-
-	if err != nil {
-		log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
-		return false
-	}
-
 	allowed := make(map[string]bool, len(s.allowOrgs))
 	for _, org := range s.allowOrgs {
 		allowed[org] = true
 	}
 
-	for _, org := range userOrgs {
-		if allowed[org.Login] {
-			return true
+	hasNextPage := true
+	var userOrgs []*githubsvc.Org
+	var err error
+	page := 1
+	for hasNextPage {
+		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
+
+		if err != nil {
+			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
+			return false
 		}
+
+		for _, org := range userOrgs {
+			if allowed[org.Login] {
+				return true
+			}
+		}
+		page++
 	}
 
 	return false

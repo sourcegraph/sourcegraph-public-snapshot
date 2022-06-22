@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -14,6 +16,7 @@ import (
 )
 
 func TestExternalAccountsMigrator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -62,9 +65,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	}
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 2
 		migrator.AllowDecrypt = true
 
@@ -132,9 +135,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/Encryption", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 
 		// Create 10 accounts
@@ -189,9 +192,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Decryption", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 		migrator.AllowDecrypt = true
 
@@ -243,9 +246,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/InvalidKey", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 
 		// Create 10 accounts
@@ -266,9 +269,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 
 		// Create 10 accounts

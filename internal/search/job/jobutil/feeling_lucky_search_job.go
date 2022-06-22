@@ -2,8 +2,10 @@ package jobutil
 
 import (
 	"context"
+	"strings"
 	"sync"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
@@ -153,7 +155,7 @@ func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next
 				ProposedQuery: &search.ProposedQuery{
 					Description: rules[i].description,
 					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLiteralDefault,
+					PatternType: query.SearchTypeLiteral,
 				},
 			}
 
@@ -196,6 +198,30 @@ var rules = []rule{
 	{
 		description: "unquote patterns",
 		transform:   transform{unquotePatterns},
+	},
+	{
+		description: "apply search type and language filter for patterns",
+		transform:   transform{typePatterns, langPatterns},
+	},
+	{
+		description: "apply search type for pattern",
+		transform:   transform{typePatterns},
+	},
+	{
+		description: "apply language filter for pattern",
+		transform:   transform{langPatterns},
+	},
+	{
+		description: "apply search type and language filter for patterns with AND patterns",
+		transform:   transform{typePatterns, langPatterns, unorderedPatterns},
+	},
+	{
+		description: "apply search type with AND patterns",
+		transform:   transform{typePatterns, unorderedPatterns},
+	},
+	{
+		description: "apply language filter with AND patterns",
+		transform:   transform{langPatterns, unorderedPatterns},
 	},
 	{
 		description: "AND patterns together",
@@ -250,7 +276,7 @@ func unquotePatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -279,7 +305,7 @@ func unorderedPatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -318,6 +344,117 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 		mapped = append(mapped, node)
 	}
 	return mapped, changed
+}
+
+func langPatterns(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
+	if err != nil {
+		return nil
+	}
+
+	changed := false
+	var lang string // store the first pattern that matches a recognized language.
+	isNegated := false
+	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		langAlias, ok := enry.GetLanguageByAlias(value)
+		if !ok || changed {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+		changed = true
+		lang = langAlias
+		isNegated = negated
+		// remove this node
+		return nil
+	})
+
+	if !changed {
+		return nil
+	}
+
+	langParam := query.Parameter{
+		Field:      query.FieldLang,
+		Value:      lang,
+		Negated:    isNegated,
+		Annotation: query.Annotation{},
+	}
+
+	var pattern query.Node
+	if len(newPattern) > 0 {
+		// Process concat nodes
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
+		if err != nil {
+			return nil
+		}
+		pattern = nodes[0] // guaranteed root at first node
+	}
+
+	return &query.Basic{
+		Parameters: append(b.Parameters, langParam),
+		Pattern:    pattern,
+	}
+}
+
+func typePatterns(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
+	if err != nil {
+		return nil
+	}
+
+	changed := false
+	var typ string // store the first pattern that matches a recognized `type:`.
+	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if changed {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		switch strings.ToLower(value) {
+		case "symbol", "commit", "diff", "path":
+			typ = value
+			changed = true
+			// remove this node
+			return nil
+		}
+
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
+		return nil
+	}
+
+	typParam := query.Parameter{
+		Field:      query.FieldType,
+		Value:      typ,
+		Negated:    false,
+		Annotation: query.Annotation{},
+	}
+
+	var pattern query.Node
+	if len(newPattern) > 0 {
+		// Process concat nodes
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
+		if err != nil {
+			return nil
+		}
+		pattern = nodes[0] // guaranteed root at first node
+	}
+
+	return &query.Basic{
+		Parameters: append(b.Parameters, typParam),
+		Pattern:    pattern,
+	}
 }
 
 type generatedSearchJob struct {

@@ -87,17 +87,17 @@ The store relies on a jobs table _specific to your worker_ to exist with the fol
 | Name                | Type                     | Description |
 | ------------------- | ------------------------ | ----------- |
 | `id`                | integer                  | The job's primary key |
-| `state`             | text                     | The job's current status (one of `queued`, `processing`, `errored`, or `failed`) |
+| `state`             | text                     | The job's current status (one of `queued`, `processing`, `completed`, `errored`, or `failed`) |
 | `failure_message`   | text                     | Updated with the text of the error returned from the handle hook |
-| `queued_at`         | timestamp with time zone | Time when the job was added to the table
+| `queued_at`         | timestamp with time zone | Time when the job was added to the table |
 | `started_at`        | timestamp with time zone | Updated when the job is dequeued for processing |
 | `finished_at`       | timestamp with time zone | Updated when the handler finishes processing the job (successfully or unsuccessfully) |
 | `process_after`     | timestamp with time zone | Controls the time after which the job is visible for processing |
 | `num_resets`        | integer                  | Updated when the job is moved back from `failed` to `queued` |
-| `num_failures`      | integer                  | Updated when the job enters the `failed` state |
+| `num_failures`      | integer                  | Updated when the job enters the `errored` state |
 | `last_heartbeat_at` | timestamp with time zone | Updated periodically to ensure that the handler didn't die processing the job |
 | `execution_logs`    | json[]                   | A list of log entries from the most recent processing attempt |
-| `worker_hostname`   | text                     | Hostname of the worker that picked up the job. |
+| `worker_hostname`   | text                     | Hostname of the worker that picked up the job |
 
 The target jobs table may have additional columns as the store only selects and updates records. Again, inserting/enqueueing job records is a task that is **not** handled by the worker, thus columns with non-null constraints are safe to add here as well.
 
@@ -177,7 +177,7 @@ We assume that the repository name is be necessary to process the record, meanin
 
 Next, we define the struct instance `ExampleJob` that mirrors the interesting fields of the `example_jobs_with_repository_name` view.
 
-We will additionally define an array of SQL column expressions that correspond to each field of the struct. For these expressions to be valid, we assume they will be embeddded in a query where `j` corresponds to a row of the `example_jobs_with_repository_name` table. Note that these expressions can be arbitrarily complex (conditional, sub-select expressions, etc).
+We will additionally define an array of SQL column expressions that correspond to each field of the struct. For these expressions to be valid, we assume they will be embeddded in a query where the `example_jobs` record corresponds to a row of the `example_jobs_with_repository_name` table. Note that these expressions can be arbitrarily complex (conditional, sub-select expressions, etc).
 
 ```go
 import (
@@ -205,20 +205,20 @@ type ExampleJob struct {
 }
 
 var exampleJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("j.id"),
-	sqlf.Sprintf("j.state"),
-	sqlf.Sprintf("j.failure_message"),
-	sqlf.Sprintf("j.queued_at"),
-	sqlf.Sprintf("j.started_at"),
-	sqlf.Sprintf("j.finished_at"),
-	sqlf.Sprintf("j.process_after"),
-	sqlf.Sprintf("j.num_resets"),
-	sqlf.Sprintf("j.num_failures"),
-	sqlf.Sprintf("j.last_heartbeat_at"),
-	sqlf.Sprintf("j.execution_logs"),
-	sqlf.Sprintf("j.worker_hostname"),
-	sqlf.Sprintf("j.repository_id"),
-	sqlf.Sprintf("j.repository_name"),
+	sqlf.Sprintf("example_jobs.id"),
+	sqlf.Sprintf("example_jobs.state"),
+	sqlf.Sprintf("example_jobs.failure_message"),
+	sqlf.Sprintf("example_jobs.queued_at"),
+	sqlf.Sprintf("example_jobs.started_at"),
+	sqlf.Sprintf("example_jobs.finished_at"),
+	sqlf.Sprintf("example_jobs.process_after"),
+	sqlf.Sprintf("example_jobs.num_resets"),
+	sqlf.Sprintf("example_jobs.num_failures"),
+	sqlf.Sprintf("example_jobs.last_heartbeat_at"),
+	sqlf.Sprintf("example_jobs.execution_logs"),
+	sqlf.Sprintf("example_jobs.worker_hostname"),
+	sqlf.Sprintf("example_jobs.repository_id"),
+	sqlf.Sprintf("example_jobs.repository_name"),
 }
 ```
 
@@ -277,7 +277,7 @@ This scanning function is a [basestore](./basestore.md) idiom which allows us to
 
 ```go
 job, exists, err := scanFirstExampleJob(store.Query(
-	"SELECT %s FROM example_jobs_with_repository_name LIMIT 1",
+	"SELECT %s FROM example_jobs_with_repository_name example_jobs LIMIT 1",
 	sqlf.Join(expressions, ", "),
 ))
 ```
@@ -295,11 +295,11 @@ import (
 func makeStore(db dbutil.DB) store.Store {
 	return store.New(db, store.Options{
 		Name:              "example_job_worker_store",
-		TableName:         "example_jobs j",
-		ViewName:          "example_jobs_with_repository_name j",
+		TableName:         "example_jobs",
+		ViewName:          "example_jobs_with_repository_name example_jobs",
 		ColumnExpressions: exampleJobColumns,
 		Scan:              scanFirstExampleJob,
-		OrderByExpression: sqlf.Sprintf("j.repository_id, j.id"),
+		OrderByExpression: sqlf.Sprintf("example_jobs.repository_id, example_jobs.id"),
 		MaxNumResets:      5,
 		HeartbeatInterval: time.Second,
 		StalledMaxAge:     time.Second * 5,
@@ -307,7 +307,7 @@ func makeStore(db dbutil.DB) store.Store {
 }
 ```
 
-Notice here that we provided a table and view name with an _alias_, which we can use to unambiguously refer to columns in the expressions listed in `exampleJobColumns`.
+Notice here that we provided a table name and view name with an _alias_ back to the table name, which we can use to unambiguously refer to columns in the expressions listed in `exampleJobColumns`.
 
 #### Step 4: Write the handler
 
@@ -384,3 +384,7 @@ func makeResetter(workerStore store.Store) {
 The results of `makeWorker` and `makeResetter` can then be passed to `goroutine.MonitorBackgroundRoutines`.
 
 The worker and resetter may or or may execute in the same process. For example, we run all code intelligence background routines in the frontend, except for our LSIF conversion worker, which runs in a separate process for resource isolation and independent scaling.
+
+#### Step 7: Consider adding indexes
+
+The worker depends on a few columns to dequeue records. To keep it fast, consider adding indexes on the `state` and `process_after` columns.

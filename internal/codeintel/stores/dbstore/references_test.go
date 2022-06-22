@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -11,7 +13,8 @@ import (
 )
 
 func TestUpdatePackageReferences(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// for foreign key relation
@@ -42,7 +45,8 @@ func TestUpdatePackageReferences(t *testing.T) {
 }
 
 func TestUpdatePackageReferencesEmpty(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	if err := store.UpdatePackageReferences(context.Background(), 0, nil); err != nil {
@@ -59,7 +63,8 @@ func TestUpdatePackageReferencesEmpty(t *testing.T) {
 }
 
 func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// for foreign key relation

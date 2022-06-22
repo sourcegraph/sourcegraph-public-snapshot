@@ -77,7 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.40.0"
+	const minimumUpgradeableVersion = "3.41.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -152,7 +152,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addVsceIntegrationTests,
 			wait,
-			addVsceReleaseSteps(buildOptions))
+			addVsceReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and

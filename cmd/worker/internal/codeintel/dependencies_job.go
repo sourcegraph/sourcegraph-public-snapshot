@@ -17,7 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type dependenciesJob struct{}
+type dependenciesJob struct {
+}
 
 func NewDependenciesJob() job.Job {
 	return &dependenciesJob{}
@@ -53,7 +54,7 @@ func (j *dependenciesJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 
 	return []goroutine.BackgroundRoutine{
-		indexer.NewIndexer(database.NewDB(db), livedependencies.NewSyncer(), dbStore, policyMatcher),
-		resolver.NewResolver(database.NewDB(db), livedependencies.NewSyncer()),
+		indexer.NewIndexer(database.NewDB(logger, db), livedependencies.NewSyncer(), dbStore, policyMatcher),
+		resolver.NewResolver(database.NewDB(logger, db), livedependencies.NewSyncer()),
 	}, nil
 }

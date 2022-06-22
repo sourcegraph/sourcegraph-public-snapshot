@@ -12,7 +12,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -26,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -69,7 +67,7 @@ func init() {
 
 	srv := &http.Server{
 		Handler: (&server.Server{
-			Logger:   sglog.Scoped("gitserver", "gitserver server log"),
+			Logger:   sglog.Scoped("server", "the gitserver service"),
 			ReposDir: filepath.Join(root, "repos"),
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil
@@ -149,25 +147,6 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 		t.Fatal(resp.Error)
 	}
 	return repo
-}
-
-func CommitsEqual(a, b *gitdomain.Commit) bool {
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if a.Author.Date != b.Author.Date {
-		return false
-	}
-	a.Author.Date = b.Author.Date
-	if ac, bc := a.Committer, b.Committer; ac != nil && bc != nil {
-		if ac.Date != bc.Date {
-			return false
-		}
-		ac.Date = bc.Date
-	} else if !(ac == nil && bc == nil) {
-		return false
-	}
-	return reflect.DeepEqual(a, b)
 }
 
 func MustParseTime(layout, value string) time.Time {

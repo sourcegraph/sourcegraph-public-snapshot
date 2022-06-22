@@ -105,3 +105,24 @@ func (s *Service) UploadsVisibleToCommit(ctx context.Context, commit string) (up
 	_ = ctx
 	return nil, errors.Newf("unimplemented: uploads.UploadsVisibleToCommit")
 }
+
+func (s *Service) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.StaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.UpdateSourcedCommits(ctx, repositoryID, commit, now)
+}
+
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, indexesDeleted int, err error) {
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, now)
+}

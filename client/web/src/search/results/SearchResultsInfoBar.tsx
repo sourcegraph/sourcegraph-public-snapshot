@@ -37,6 +37,7 @@ import {
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
+    getBatchChangeCreateAction,
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
@@ -91,6 +92,9 @@ export interface SearchResultsInfoBarProps
     query?: string
     resultsFound: boolean
 
+    /** Whether running batch changes server-side is enabled */
+    batchChangesExecutionEnabled?: boolean
+
     // Expand all feature
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
@@ -113,6 +117,7 @@ interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     isNonExperimentalLinkDisabled?: boolean
     onNonExperimentalLinkClick?: () => void
     className?: string
+    ariaLabel?: string
 }
 
 const ExperimentalActionButton: React.FunctionComponent<
@@ -130,6 +135,10 @@ const ExperimentalActionButton: React.FunctionComponent<
             variant="secondary"
             outline={true}
             size="sm"
+            aria-disabled={props.isNonExperimentalLinkDisabled ? 'true' : undefined}
+            aria-label={props.ariaLabel}
+            // to make disabled ButtonLink focusable
+            tabIndex={0}
         >
             {props.button}
         </ButtonLink>
@@ -210,6 +219,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
+                getBatchChangeCreateAction(
+                    props.query as string,
+                    props.patternType,
+                    props.authenticatedUser,
+                    props.batchChangesExecutionEnabled
+                ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
                     props.query,
@@ -218,7 +233,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.enableCodeInsights
                 ),
             ].filter((button): button is CreateAction => button !== null),
-        [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query]
+        [
+            props.authenticatedUser,
+            props.enableCodeInsights,
+            props.patternType,
+            props.query,
+            props.batchChangesExecutionEnabled,
+        ]
     )
 
     // The create code monitor action is separated from the rest of the actions, because we use the
@@ -268,6 +289,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     viewEventName="SearchResultMonitorCTAShown"
                     returnTo={createCodeMonitorAction.url}
                     onToggle={onCreateCodeMonitorButtonSelect}
+                    ariaLabel={
+                        props.authenticatedUser && !canCreateMonitorFromQuery
+                            ? 'Code monitors only support type:diff or type:commit searches.'
+                            : undefined
+                    }
                 />
             </li>
         )

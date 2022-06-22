@@ -1855,6 +1855,7 @@ enum SearchVersion {
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
@@ -2780,6 +2781,10 @@ type MirrorRepositoryInfo {
     The state of this repository in the update queue.
     """
     updateQueue: UpdateQueue
+    """
+    The last error message, if any, returned when fetching or cloning the repo
+    """
+    lastError: String
 }
 
 """
@@ -2928,6 +2933,24 @@ type RepositoryTextSearchIndexedRef {
     indexed is false, this field's value is null.
     """
     indexedCommit: GitObject
+    """
+    EXPERIMENTAL: Information about the files that were not indexed.
+    """
+    skippedIndexed: SkippedIndexed
+}
+
+"""
+EXPERIMENTAL: Information about the files that were not indexed.
+"""
+type SkippedIndexed {
+    """
+    The count of files that were not indexed.
+    """
+    count: BigInt!
+    """
+    The query to retrieve the list of files that were not indexed.
+    """
+    query: String!
 }
 
 """

@@ -80,7 +80,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <MonacoEditor
-                className={classNames(styles.editor, this.props.className)}
+                className={classNames('percy-hide chromatic-ignore', styles.editor, this.props.className)}
                 language="yaml"
                 height="auto"
                 isLightTheme={this.props.isLightTheme}

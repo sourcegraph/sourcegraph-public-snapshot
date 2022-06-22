@@ -95,7 +95,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} aria-hidden={true} />
                     Go back
                 </Link>
             </small>

@@ -58,7 +58,7 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 	if err != nil {
 		return nil, err
 	}
-	uploadSvc := uploads.GetService(database.NewDB(db))
+	uploadSvc := uploads.GetService(database.NewDB(logger, db))
 
 	return []goroutine.BackgroundRoutine{
 		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, cleanup.LSIFStoreShim{Store: lsifStore}, uploadSvc, metrics),

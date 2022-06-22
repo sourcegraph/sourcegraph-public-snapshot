@@ -11,18 +11,18 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,7 +42,7 @@ type CommitIndexer struct {
 	clock             func() time.Time
 }
 
-func NewCommitIndexer(background context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
+func NewCommitIndexer(background context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
@@ -51,7 +51,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 	commitStore := NewCommitStore(insights)
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(repoStore),
+		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -81,7 +81,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	indexer := NewCommitIndexer(ctx, base, insights, clock, observationContext)
 
 	return indexer.Handler(ctx, observationContext)
@@ -206,7 +206,7 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 		before = until.Format(time.RFC3339)
 	}
 
-	return git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as

@@ -119,7 +119,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  queued_at         | timestamp with time zone |           |          | now()
- initiator_id      | integer                  |           |          | 
+ initiator_id      | integer                  |           | not null | 
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
@@ -153,9 +153,10 @@ Foreign-key constraints:
  user_id                 | integer                  |           |          | 
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
+    "batch_spec_workspace_execution_jobs_last_dequeue" btree (user_id, started_at DESC)
     "batch_spec_workspace_execution_jobs_state" btree (state)
-    "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
@@ -184,6 +185,8 @@ Foreign-key constraints:
  step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspaces_batch_spec_id" btree (batch_spec_id)
+    "batch_spec_workspaces_id_batch_spec_id" btree (id, batch_spec_id)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
@@ -305,6 +308,8 @@ Foreign-key constraints:
  fork_namespace    | citext                   |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
+    "changeset_specs_batch_spec_id" btree (batch_spec_id)
+    "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
     "changeset_specs_rand_id" btree (rand_id)
@@ -367,6 +372,7 @@ Indexes:
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_bitbucket_cloud_metadata_source_commit_idx" btree ((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text))
+    "changesets_changeset_specs" btree (current_spec_id, previous_spec_id)
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
@@ -955,6 +961,9 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  unrestricted        | boolean                  |           | not null | false
 Indexes:
     "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
+    "explicit_permissions_bitbucket_projects_jobs_project_key_extern" btree (project_key, external_service_id, state)
+    "explicit_permissions_bitbucket_projects_jobs_queued_at_idx" btree (queued_at)
+    "explicit_permissions_bitbucket_projects_jobs_state_idx" btree (state)
 Check constraints:
     "explicit_permissions_bitbucket_projects_jobs_check" CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)
 
@@ -1195,10 +1204,12 @@ Indexes:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
+    "finished_at_insights_query_runner_jobs_idx" btree (finished_at)
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_processable_priority_id" btree (priority, id) WHERE state = 'queued'::text OR state = 'errored'::text
     "insights_query_runner_jobs_state_btree" btree (state)
+    "process_after_insights_query_runner_jobs_idx" btree (process_after)
 Referenced by:
     TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 
@@ -2732,6 +2743,35 @@ Foreign-key constraints:
 
 ```
 
+# View "public.batch_spec_workspace_execution_jobs_with_rank"
+
+## View query:
+
+```sql
+ SELECT j.id,
+    j.batch_spec_workspace_id,
+    j.state,
+    j.failure_message,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.execution_logs,
+    j.worker_hostname,
+    j.last_heartbeat_at,
+    j.created_at,
+    j.updated_at,
+    j.cancel,
+    j.access_token_id,
+    j.queued_at,
+    j.user_id,
+    q.place_in_global_queue,
+    q.place_in_user_queue
+   FROM (batch_spec_workspace_execution_jobs j
+     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
+```
+
 # View "public.batch_spec_workspace_execution_queue"
 
 ## View query:
@@ -2742,52 +2782,18 @@ Foreign-key constraints:
             max(exec.started_at) AS latest_dequeue
            FROM batch_spec_workspace_execution_jobs exec
           GROUP BY exec.user_id
-        ), materialized_queue_candidates AS MATERIALIZED (
+        ), queue_candidates AS (
          SELECT exec.id,
-            exec.batch_spec_workspace_id,
-            exec.state,
-            exec.failure_message,
-            exec.started_at,
-            exec.finished_at,
-            exec.process_after,
-            exec.num_resets,
-            exec.num_failures,
-            exec.execution_logs,
-            exec.worker_hostname,
-            exec.last_heartbeat_at,
-            exec.created_at,
-            exec.updated_at,
-            exec.cancel,
-            exec.access_token_id,
-            exec.queued_at,
-            exec.user_id,
             rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
            FROM (batch_spec_workspace_execution_jobs exec
              JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
- SELECT row_number() OVER () AS place_in_global_queue,
-    materialized_queue_candidates.id,
-    materialized_queue_candidates.batch_spec_workspace_id,
-    materialized_queue_candidates.state,
-    materialized_queue_candidates.failure_message,
-    materialized_queue_candidates.started_at,
-    materialized_queue_candidates.finished_at,
-    materialized_queue_candidates.process_after,
-    materialized_queue_candidates.num_resets,
-    materialized_queue_candidates.num_failures,
-    materialized_queue_candidates.execution_logs,
-    materialized_queue_candidates.worker_hostname,
-    materialized_queue_candidates.last_heartbeat_at,
-    materialized_queue_candidates.created_at,
-    materialized_queue_candidates.updated_at,
-    materialized_queue_candidates.cancel,
-    materialized_queue_candidates.access_token_id,
-    materialized_queue_candidates.queued_at,
-    materialized_queue_candidates.user_id,
-    materialized_queue_candidates.place_in_user_queue
-   FROM materialized_queue_candidates;
+ SELECT queue_candidates.id,
+    row_number() OVER () AS place_in_global_queue,
+    queue_candidates.place_in_user_queue
+   FROM queue_candidates;
 ```
 
 # View "public.branch_changeset_specs_and_changesets"

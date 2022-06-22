@@ -43,10 +43,8 @@
 }
 
 .panels {
-    display: grid;
-    grid-auto-flow: row;
-
     &--horizontal-mode {
+        display: flex;
         flex-wrap: wrap;
         flex-direction: row;
         padding-bottom: 1rem;
@@ -59,7 +57,7 @@
     flex-grow: 1;
 
     &--horizontal-mode {
-        flex-basis: 22rem;
+        flex-basis: 20rem;
     }
 }
 
