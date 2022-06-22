@@ -21,12 +21,12 @@ func TestListDependencies(t *testing.T) {
 		gitSvc := NewMockGitService()
 		gitSvc.LsFilesFunc.SetDefaultReturn([]string{}, nil)
 
-		got, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
+		results, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if len(got) != 0 {
+		if len(results) != 0 {
 			t.Fatalf("expected no dependencies")
 		}
 	})
@@ -46,22 +46,25 @@ func TestListDependencies(t *testing.T) {
 
 		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]string{
 			"client/package-lock.json": `{"dependencies": { "@octokit/request": {"version": "5.6.2"} }}`,
-			// promise@8.0.3 is also in yarn.lock. We test that it gets de-duplicated.
-			"package-lock.json": `{"dependencies": { "promise": {"version": "8.0.3"} }}`,
-			"yarn.lock":         string(yarnLock),
+			"package-lock.json":        `{"dependencies": { "promise": {"version": "8.0.3"} }}`,
+			"yarn.lock":                string(yarnLock),
 		}))
 
-		deps, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
+		results, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have := make([]string, 0, len(deps))
-		for _, dep := range deps {
-			have = append(have, dep.PackageManagerSyntax())
+		if have, want := len(results), 3; have != want {
+			t.Fatalf("wrong number of results. want=%d, have=%d", want, have)
 		}
 
-		sort.Strings(have)
+		have := make([]serializableResult, 0, len(results))
+		for _, res := range results {
+			have = append(have, serializeResult(res))
+		}
+
+		sort.Slice(have, func(i, j int) bool { return have[i].Lockfile < have[j].Lockfile })
 
 		g := goldie.New(t, goldie.WithFixtureDir("testdata/svc"))
 		g.AssertJson(t, t.Name(), have)
@@ -75,29 +78,34 @@ func TestListDependencies(t *testing.T) {
 		}, nil)
 
 		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]string{
-			// github.com/google/uuid v1.0.0 is also in go.mod. We test that it gets de-duplicated.
 			"subpkg/go.mod": `
 require modernc.org/cc v1.0.0
 require modernc.org/golex v1.0.0
 require github.com/google/uuid v1.0.0
 `,
+			// google/uuid is in here twice, we want to make sure we de-duplicate, but only per lockfile
 			"go.mod": `
+require github.com/google/uuid v1.0.0
 require github.com/google/uuid v1.0.0
 require github.com/pborman/uuid v1.2.1
 `,
 		}))
 
-		deps, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
+		results, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have := make([]string, 0, len(deps))
-		for _, dep := range deps {
-			have = append(have, dep.PackageManagerSyntax())
+		if have, want := len(results), 2; have != want {
+			t.Fatalf("wrong number of results. want=%d, have=%d", want, have)
 		}
 
-		sort.Strings(have)
+		have := make([]serializableResult, 0, len(results))
+		for _, res := range results {
+			have = append(have, serializeResult(res))
+		}
+
+		sort.Slice(have, func(i, j int) bool { return have[i].Lockfile < have[j].Lockfile })
 
 		g := goldie.New(t, goldie.WithFixtureDir("testdata/svc"))
 		g.AssertJson(t, t.Name(), have)
@@ -108,4 +116,27 @@ func zipArchive(t testing.TB, files map[string]string) func(context.Context, api
 	return func(ctx context.Context, name api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		return unpacktest.CreateZipArchive(t, files), nil
 	}
+}
+
+type serializableResult struct {
+	Deps     []string
+	Lockfile string
+	Graph    string
+}
+
+func serializeResult(res *Result) serializableResult {
+	serializable := serializableResult{Lockfile: res.Lockfile}
+
+	if res.Graph != nil {
+		serializable.Graph = res.Graph.String()
+	} else {
+		serializable.Graph = "NO-GRAPH"
+	}
+
+	for _, dep := range res.Deps {
+		serializable.Deps = append(serializable.Deps, dep.PackageManagerSyntax())
+	}
+
+	sort.Strings(serializable.Deps)
+	return serializable
 }
