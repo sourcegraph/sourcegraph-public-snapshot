@@ -269,7 +269,7 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
 	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Read .tool-versions")
 	}
 	var version string
 	for _, t := range tools {
@@ -389,5 +389,5 @@ func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error
 	if err != nil && strings.Contains(err.Error(), "already added") {
 		return nil
 	}
-	return err
+	return errors.Wrap(err, "asdf plugin-add")
 }
