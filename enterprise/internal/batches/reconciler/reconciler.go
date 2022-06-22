@@ -75,7 +75,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 		return nil
 	}
 
-	plan, err := DeterminePlan(prev, curr, ch)
+	plan, err := DeterminePlan(prev, curr, nil, ch)
 	if err != nil {
 		return err
 	}
