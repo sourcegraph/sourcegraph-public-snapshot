@@ -3,6 +3,7 @@ package uploads
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -53,8 +54,7 @@ func (s *Service) GetBatch(ctx context.Context, ids ...int) (uploads []Upload, e
 	return nil, errors.Newf("unimplemented: uploads.GetBatch")
 }
 
-type UploadState struct {
-}
+type UploadState struct{}
 
 func (s *Service) Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error) {
 	ctx, _, endObservation := s.operations.enqueue.With(ctx, &err, observation.Args{})
@@ -90,4 +90,25 @@ func (s *Service) UploadsVisibleToCommit(ctx context.Context, commit string) (up
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
 	_ = ctx
 	return nil, errors.Newf("unimplemented: uploads.UploadsVisibleToCommit")
+}
+
+func (s *Service) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.StaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.UpdateSourcedCommits(ctx, repositoryID, commit, now)
+}
+
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, indexesDeleted int, err error) {
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, now)
 }

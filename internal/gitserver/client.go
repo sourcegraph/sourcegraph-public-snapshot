@@ -188,6 +188,13 @@ type Client interface {
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
+	// GetDefaultBranch returns the name of the default branch and the commit it's
+	// currently at from the given repository.
+	//
+	// If the repository is empty or currently being cloned, empty values and no
+	// error are returned.
+	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
@@ -268,6 +275,9 @@ type Client interface {
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+
+	// Stat returns a FileInfo describing the named file at commit.
+	Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
 	// DiffPath returns a position-ordered slice of changes (additions or deletions)
 	// of the given path between the given source and target commits.

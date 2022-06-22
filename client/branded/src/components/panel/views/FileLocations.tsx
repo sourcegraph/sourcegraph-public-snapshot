@@ -1,9 +1,9 @@
 import * as React from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
@@ -32,13 +32,13 @@ export const FileLocationsError: React.FunctionComponent<React.PropsWithChildren
 
 export const FileLocationsNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <Icon as={MapSearchIcon} aria-hidden={true} /> No locations found
+        <Icon aria-hidden={true} svgPath={mdiMapSearch} /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className="m-2">
-        <Icon as={MapSearchIcon} aria-hidden={true} /> No locations found in the current repository
+        <Icon aria-hidden={true} svgPath={mdiMapSearch} /> No locations found in the current repository
     </div>
 )
 

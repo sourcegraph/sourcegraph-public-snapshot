@@ -26,7 +26,7 @@ func NewGitService(db database.DB) dependencies.GitService {
 }
 
 func (s *gitService) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error) {
-	return git.GetCommits(ctx, s.db, repoCommits, ignoreErrors, s.checker)
+	return gitserver.NewClient(s.db).GetCommits(ctx, repoCommits, ignoreErrors, s.checker)
 }
 
 func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {
