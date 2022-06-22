@@ -45,6 +45,7 @@ interface Props {
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
+    telemetryService: EventLogger
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -61,11 +62,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onOpen,
     initialSearch,
     initialAuthenticatedUser,
+    telemetryService,
 }: Props) => {
     const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(initialAuthenticatedUser)
-
-    const telemetryService = useMemo(() => new EventLogger('anonid', { editor: 'jetbrains', version: '1.4.5' }), [])
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>

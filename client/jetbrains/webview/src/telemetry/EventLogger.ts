@@ -132,9 +132,6 @@ export class EventLogger implements TelemetryService {
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any, uri?: string): void {
-        if (!eventLabel) {
-            return
-        }
         this.tracker(
             eventLabel,
             { ...eventProperties, ...this.editorInfo },
