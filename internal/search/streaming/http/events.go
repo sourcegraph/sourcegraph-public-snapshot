@@ -77,7 +77,7 @@ type DecoratedContent struct {
 
 type ChunkMatch struct {
 	Content      string   `json:"content"`
-	ContentStart Location `json:"contentStart`
+	ContentStart Location `json:"contentStart"`
 	Ranges       []Range  `json:"ranges"`
 }
 
