@@ -234,8 +234,9 @@ func TestProvider_FetchAccount(t *testing.T) {
 func NewTestProvider(client client) *Provider {
 	baseURL, _ := url.Parse("https://gerrit.sgdev.org")
 	return &Provider{
-		urn:      "Gerrit",
-		client:   client,
-		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
+		urn:              "Gerrit",
+		client:           client,
+		codeHost:         extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
+		projectAccessMap: map[string]gerrit.ProjectAccessInfo{},
 	}
 }

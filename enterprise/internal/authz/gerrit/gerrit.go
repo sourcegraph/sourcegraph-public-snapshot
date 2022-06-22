@@ -16,9 +16,10 @@ import (
 )
 
 type Provider struct {
-	urn      string
-	client   client
-	codeHost *extsvc.CodeHost
+	urn              string
+	client           client
+	codeHost         *extsvc.CodeHost
+	projectAccessMap map[string]gerrit.ProjectAccessInfo
 }
 
 func NewProvider(conn *types.GerritConnection) (*Provider, error) {
@@ -31,9 +32,10 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 		return nil, err
 	}
 	return &Provider{
-		urn:      conn.URN,
-		client:   gClient,
-		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
+		urn:              conn.URN,
+		client:           gClient,
+		codeHost:         extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
+		projectAccessMap: map[string]gerrit.ProjectAccessInfo{},
 	}, nil
 }
 
@@ -133,7 +135,6 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		return nil, err
 	}
 
-	projectAccessMap := map[string]gerrit.ProjectAccessInfo{} // TODO: potentially store this on the Provider for use across multiple users
 	// Fetch all projects (in batches?) and determine if the user has access to each
 	for {
 		// TODO: pagination (how many projects should we list at a time?)
@@ -149,7 +150,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 			return nil, errors.Wrap(err, "getting project access")
 		}
 		// Based on the project access information determine if the user has access to these projects/repos
-		repoAccess, err := p.interpretProjectAccess(ctx, resp, groups, projectAccessMap)
+		repoAccess, err := p.interpretProjectAccess(ctx, resp, groups)
 		if err != nil {
 			return perms, err
 		}
@@ -171,13 +172,12 @@ func getProjectNamesFromMap(page *gerrit.ListProjectsResponse) []string {
 
 func (p Provider) interpretProjectAccess(ctx context.Context,
 	accessResp gerrit.GetProjectAccessResponse,
-	groups gerrit.GetAccountGroupsResponse,
-	projectAccessMap map[string]gerrit.ProjectAccessInfo) (map[string]bool, error) {
+	groups gerrit.GetAccountGroupsResponse) (map[string]bool, error) {
 
 	repoAccessMap := make(map[string]bool, len(accessResp))
 	for name, access := range accessResp {
 		// Determine if user has access to this project and add it to the repoAccessMap if they do
-		if hasAccess, err := p.userHasAccess(ctx, name, access, groups, projectAccessMap, 0); hasAccess {
+		if hasAccess, err := p.userHasAccess(ctx, name, access, groups, 0); hasAccess {
 			repoAccessMap[name] = true
 		} else if err != nil {
 			return repoAccessMap, err
@@ -192,13 +192,13 @@ func (p Provider) interpretProjectAccess(ctx context.Context,
 func (p Provider) userHasAccess(ctx context.Context, projectName string,
 	access gerrit.ProjectAccessInfo,
 	accountGroups gerrit.GetAccountGroupsResponse,
-	projectAccessMap map[string]gerrit.ProjectAccessInfo, counter int) (bool, error) {
+	counter int) (bool, error) {
 	if counter > 10 { // TODO: how do we want to safeguard around this?
 		return false, errors.New("no more than 10 levels of inherited access supported.")
 	}
 	counter++
 	// If applicable, fetch inherited access information from the api or the projectAccessMap
-	inheritedAccess, err := p.getInheritedAccess(ctx, access.InheritsFrom, projectAccessMap)
+	inheritedAccess, err := p.getInheritedAccess(ctx, access.InheritsFrom)
 	if err != nil {
 		return false, err
 	}
@@ -212,7 +212,7 @@ func (p Provider) userHasAccess(ctx context.Context, projectName string,
 	if inheritedAccess != nil {
 		if !inheritedAccess.InheritsFrom.IsEmpty() {
 			// Need to recurse here and call this function using the inherited access information
-			return p.userHasAccess(ctx, access.InheritsFrom.Name, *inheritedAccess, accountGroups, projectAccessMap, counter)
+			return p.userHasAccess(ctx, access.InheritsFrom.Name, *inheritedAccess, accountGroups, counter)
 		}
 		if checkGroupAccess(accountGroups, projectName, inheritedAccess.Groups) {
 			return true, nil
@@ -232,13 +232,13 @@ func checkGroupAccess(accountGroups gerrit.GetAccountGroupsResponse, projectName
 	return false
 }
 
-func (p Provider) getInheritedAccess(ctx context.Context, inheritsFrom gerrit.Project, projectAccessMap map[string]gerrit.ProjectAccessInfo) (*gerrit.ProjectAccessInfo, error) {
+func (p Provider) getInheritedAccess(ctx context.Context, inheritsFrom gerrit.Project) (*gerrit.ProjectAccessInfo, error) {
 	if inheritsFrom.ID == "" { // TODO: check name as well?
 		return nil, nil
 	}
 
 	// check if we've already fetched the access info for this project
-	if access, ok := projectAccessMap[inheritsFrom.ID]; ok {
+	if access, ok := p.projectAccessMap[inheritsFrom.ID]; ok {
 		return &access, nil
 	}
 
@@ -251,7 +251,7 @@ func (p Provider) getInheritedAccess(ctx context.Context, inheritsFrom gerrit.Pr
 		return nil, errors.New(fmt.Sprintf("A project can only inherit access from one other project, got %d instead", len(inheritedAccessResponse)))
 	}
 	for pname, ia := range inheritedAccessResponse {
-		projectAccessMap[pname] = ia
+		p.projectAccessMap[pname] = ia
 		// we only have one result here so return immediately
 		return &ia, nil
 	}
