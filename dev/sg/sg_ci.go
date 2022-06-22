@@ -218,12 +218,12 @@ sg ci build --help
 			}
 
 			// build status finalized
-			var annotations []buildkite.Annotation
-			annotations, err = client.GetAnnotationsByBuildNumber(ctx.Context, "sourcegraph", fmt.Sprintf("%d", *build.Number))
+			var jobAnnotations map[string]bk.AnnotationArtifact
+			jobAnnotations, err = client.JobAnnotationsByBuildNumber(ctx.Context, "sourcegraph", fmt.Sprintf("%d", *build.Number))
 			if err != nil {
 				return errors.Newf("failed to get annotations for build %d: %w", build.Number, err)
 			}
-			failed := printBuildResults(build, annotations, ctx.Bool("wait"))
+			failed := printBuildResults(build, jobAnnotations, ctx.Bool("wait"))
 
 			if !branchFromFlag && ciBuild == "" {
 				// If we're not on a specific branch and not asking for a specific build, warn if build commit is not your commit
@@ -614,18 +614,10 @@ func printBuildOverview(build *buildkite.Build) {
 	}
 }
 
-func printBuildResults(build *buildkite.Build, annotations []buildkite.Annotation, notify bool) (failed bool) {
+func printBuildResults(build *buildkite.Build, jobAnnotations map[string]bk.AnnotationArtifact, notify bool) (failed bool) {
 	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		std.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
-	}
-
-	if len(annotations) > 0 {
-		std.Out.Writef("Annotations")
-	}
-	for _, a := range annotations {
-		std.Out.WriteNoticef("content: %s", *a.Context)
-		std.Out.Writef(*a.BodyHTML)
 	}
 
 	// Check build state
@@ -694,8 +686,14 @@ func printBuildResults(build *buildkite.Build, annotations []buildkite.Annotatio
 		}
 		if elapsed > 0 {
 			block.WriteLine(output.Styledf(style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
+			if annotation, ok := jobAnnotations[*job.ID]; ok {
+				block.WriteLine(output.Styledf(style, "  %s", annotation.BodyMarkdown))
+			}
 		} else {
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
+			if annotation, ok := jobAnnotations[*job.ID]; ok {
+				block.WriteLine(output.Styledf(style, "  %s", annotation.BodyMarkdown))
+			}
 		}
 	}
 
@@ -739,8 +737,4 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 			return ctx.Err()
 		}
 	}
-}
-
-func getBuildAnnotations(client *bk.Client, build *buildkite.Build) (*buildkite.Annotation, error) {
-	return nil, nil
 }
