@@ -154,6 +154,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	tarInputEventC := make(chan comby.TarInputEvent)
 	wg := sync.WaitGroup{}
+	defer wg.Wait()
 
 	wg.Add(1)
 	go func() {
@@ -187,7 +188,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	if since(t0) >= searchOpts.MaxWallTime {
 		return errNoResultsInTimeout
 	}
-	wg.Wait()
 
 	return nil
 }
