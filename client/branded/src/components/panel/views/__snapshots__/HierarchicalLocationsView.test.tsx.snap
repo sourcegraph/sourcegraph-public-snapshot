@@ -43,7 +43,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         </div>
         <div>
           <div
-            aria-labelledby="result-container-undefined"
+            aria-labelledby="result-container-0"
             class="test-search-result resultContainer resultContainer"
             data-result-type="content"
             data-testid="result-container"
@@ -51,7 +51,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           >
             <div
               class="header"
-              id="result-container-undefined"
+              id="result-container-0"
             >
               <svg
                 aria-label="content result"
@@ -302,7 +302,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         </div>
         <div>
           <div
-            aria-labelledby="result-container-undefined"
+            aria-labelledby="result-container-0"
             class="test-search-result resultContainer resultContainer"
             data-result-type="content"
             data-testid="result-container"
@@ -310,7 +310,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             <div
               class="header"
-              id="result-container-undefined"
+              id="result-container-0"
             >
               <svg
                 aria-label="content result"
@@ -517,7 +517,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         </div>
         <div>
           <div
-            aria-labelledby="result-container-undefined"
+            aria-labelledby="result-container-0"
             class="test-search-result resultContainer resultContainer"
             data-result-type="content"
             data-testid="result-container"
@@ -525,7 +525,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           >
             <div
               class="header"
-              id="result-container-undefined"
+              id="result-container-0"
             >
               <svg
                 aria-label="content result"
