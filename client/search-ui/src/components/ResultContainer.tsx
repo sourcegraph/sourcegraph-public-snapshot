@@ -164,7 +164,13 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                 <Icon
                     className="flex-shrink-0"
                     as={icon}
-                    aria-label={resultType ? `${resultType} result` : undefined}
+                    {...(resultType
+                        ? {
+                              'aria-label': `${resultType} result`,
+                          }
+                        : {
+                              'aria-hidden': true,
+                          })}
                 />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />

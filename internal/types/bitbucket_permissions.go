@@ -28,7 +28,7 @@ type BitbucketProjectPermissionJob struct {
 	ExternalServiceID int64
 	// List of user permissions for the Bitbucket Project
 	Permissions []UserPermission
-	// Whether all of the repos of the project are unrestricted
+	// Whether all the repos of the project are unrestricted
 	Unrestricted bool
 }
 

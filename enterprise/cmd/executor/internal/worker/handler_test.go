@@ -69,7 +69,7 @@ func TestHandle(t *testing.T) {
 		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),
-		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {
+		runnerFactory: func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner {
 			if dir == "" {
 				// The handler allocates a temporary runner to invoke the git commands,
 				// which do not have a specific directory to run in. We don't need to

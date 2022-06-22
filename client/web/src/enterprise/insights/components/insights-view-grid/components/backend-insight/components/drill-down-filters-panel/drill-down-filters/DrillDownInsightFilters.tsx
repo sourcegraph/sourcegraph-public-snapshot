@@ -152,7 +152,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     if (isPreviewMode) {
         return (
             <header className={classNames(className, styles.header)}>
-                <H4 className={styles.heading}>Filter repositories</H4>
+                <H4 className={styles.heading}>Filters</H4>
 
                 <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
@@ -161,8 +161,9 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     variant="link"
                     className={classNames(styles.actionButton, styles.actionButtonWithCollapsed)}
                     onClick={() => onVisualModeChange(FilterSectionVisualMode.HorizontalSections)}
+                    aria-label="Switch to horizontal mode"
                 >
-                    <Icon as={ArrowExpandIcon} />
+                    <Icon as={ArrowExpandIcon} aria-hidden={true} />
                 </Button>
             </header>
         )
@@ -172,7 +173,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filter repositories</H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
                     disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
@@ -189,22 +190,24 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         variant="link"
                         className={styles.actionButton}
                         onClick={() => onVisualModeChange(FilterSectionVisualMode.Preview)}
+                        aria-label="Switch to preview mode"
                     >
-                        <Icon as={ArrowCollapseIcon} />
+                        <Icon as={ArrowCollapseIcon} aria-hidden={true} />
                     </Button>
                 )}
             </header>
             <hr className={styles.headerSeparator} />
 
-            <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
+            <div className={classNames({ [styles.panelsHorizontalMode]: isHorizontalMode })}>
                 {showSeriesDisplayOptions && (
                     <FilterCollapseSection
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
-                        title="Sort & Limit"
+                        title="Data series"
                         aria-label="sort and limit filter section"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
                         hasActiveFilter={hasSeriesDisplayOptionsChanged}
                         withSeparators={!isHorizontalMode}
+                        className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                     >
                         <SortFilterSeriesPanel

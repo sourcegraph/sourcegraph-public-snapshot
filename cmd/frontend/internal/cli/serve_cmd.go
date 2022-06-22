@@ -22,6 +22,8 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
+	sentrylib "github.com/getsentry/sentry-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -51,7 +53,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -107,13 +108,15 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() (*sql.DB, error) {
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
+func InitDB(logger sglog.Logger) (*sql.DB, error) {
+	obsCtx := observation.TestContext
+	obsCtx.Logger = logger
+	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &obsCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(logger, sqlDB), "frontend", version.Version()); err != nil {
 		return nil, err
 	}
 
@@ -131,18 +134,18 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySink())
+	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	sqlDB, err := InitDB()
+	sqlDB, err := InitDB(logger)
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		log15.Warn("Skipping out-of-band migrations check")
@@ -187,7 +190,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
@@ -399,5 +401,6 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewBasicLimitWatcher(ratelimitStore), nil
+
+	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
 }

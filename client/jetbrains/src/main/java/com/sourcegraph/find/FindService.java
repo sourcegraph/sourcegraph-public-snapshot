@@ -26,13 +26,13 @@ import java.awt.event.WindowEvent;
 import static java.awt.event.InputEvent.ALT_DOWN_MASK;
 import static java.awt.event.WindowEvent.WINDOW_GAINED_FOCUS;
 
-public class SourcegraphWindow implements Disposable {
+public class FindService implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    private static final Logger logger = Logger.getInstance(SourcegraphWindow.class);
+    private static final Logger logger = Logger.getInstance(FindService.class);
 
-    public SourcegraphWindow(@NotNull Project project) {
+    public FindService(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
@@ -77,6 +77,7 @@ public class SourcegraphWindow implements Disposable {
             .setCancelOnWindowDeactivation(false)
             .setCancelOnClickOutside(true)
             .setBelongsToGlobalPopupStack(true)
+            .setMinSize(new Dimension(750, 420))
             .setNormalWindowLevel(true);
 
         // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
@@ -127,10 +128,10 @@ public class SourcegraphWindow implements Disposable {
 
 
         if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
-            if (mainPanel.getPreviewPanel() != null) {
+            if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
-                        mainPanel.getPreviewPanel().openInEditorOrBrowser();
+                        mainPanel.getPreviewPanel().getPreviewContent().openInEditorOrBrowser();
                     } catch (Exception e) {
                         logger.error("Error opening file in editor", e);
                     }
@@ -205,17 +206,19 @@ public class SourcegraphWindow implements Disposable {
         AnAction materialAction = ActionManager.getInstance().getAction("MTToggleOverlaysAction");
         if (materialAction != null) {
             try {
-                materialAction.actionPerformed(
-                    new AnActionEvent(
-                        null,
-                        DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(10),
-                        ActionPlaces.UNKNOWN,
-                        new Presentation(),
-                        ActionManager.getInstance(),
-                        0)
-                );
-            } catch (Exception e) {
-                return;
+                DataContext dataContext = DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(10);
+                if (dataContext != null) {
+                    materialAction.actionPerformed(
+                        new AnActionEvent(
+                            null,
+                            dataContext,
+                            ActionPlaces.UNKNOWN,
+                            new Presentation(),
+                            ActionManager.getInstance(),
+                            0)
+                    );
+                }
+            } catch (Exception ignored) {
             }
         }
     }

@@ -26,4 +26,5 @@ describe('case-insensitive fuzzy search', () => {
         ['executor/batch.go', 'batches/executor.go', 'ignore.me'],
         ['batches/executor.go']
     )
+    checkFuzzyMatches('exact-match', 'src/hello.ts', ['src/hello.ts', 'ignore.me'], ['src/hello.ts'])
 })

@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -51,9 +53,8 @@ func (j *bitbucketProjectPermissionsJob) Description() string {
 	return "Applies explicit permissions to all repositories of a Bitbucket Project."
 }
 
-// TODO(asdine): Load environment variables from here if needed.
 func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
-	return []env.Config{}
+	return []env.Config{ConfigInst}
 }
 
 // Routines is called by the worker service to start the worker.
@@ -63,13 +64,13 @@ func (j *bitbucketProjectPermissionsJob) Routines(ctx context.Context, logger lo
 	if err != nil {
 		return nil, err
 	}
-	db := edb.NewEnterpriseDB(database.NewDB(wdb))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, wdb))
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 
 	return []goroutine.BackgroundRoutine{
-		newBitbucketProjectPermissionsWorker(db, bbProjectMetrics),
-		newBitbucketProjectPermissionsResetter(db, bbProjectMetrics),
+		newBitbucketProjectPermissionsWorker(db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsResetter(db, ConfigInst, bbProjectMetrics),
 	}, nil
 }
 
@@ -93,7 +94,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	// get the external service
 	svc, err := h.db.ExternalServices().GetByID(ctx, job.ExternalServiceID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get external service %d", job.ExternalServiceID)
+		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to get external service %d", job.ExternalServiceID))
 	}
 
 	if svc.Kind != extsvc.KindBitbucketServer {
@@ -196,7 +197,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	}
 
 	if len(mapping) == 0 {
-		return errors.Errorf("no users found for bind IDs: %v", bindIDs)
+		return errcode.MakeNonRetryable(errors.Errorf("no users found for bind IDs: %v", bindIDs))
 	}
 
 	userIDs := make(map[int32]struct{}, len(mapping))
@@ -227,8 +228,8 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 
 func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
-	if _, err := h.db.Repos().Get(ctx, repoID); err != nil {
-		return errors.Wrapf(err, "failed to query repo %d", repoID)
+	if err := h.repoExists(ctx, repoID); err != nil {
+		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
 	}
 
 	p := authz.RepoPermissions{
@@ -270,25 +271,35 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	return nil
 }
 
+func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, repoID api.RepoID) (err error) {
+	var id int
+	if err := h.db.QueryRowContext(ctx, fmt.Sprintf("SELECT id FROM repo WHERE id = %d", repoID)).Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("repo not found")
+		}
+		return err
+	}
+	return nil
+}
+
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-// TODO(asdine): Fine tune the retry strategy and make some parameters configurable.
-func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
+func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
-		NumHandlers:       3,
-		Interval:          1 * time.Second,
+		NumHandlers:       cfg.WorkerConcurrency,
+		Interval:          cfg.WorkerPollInterval,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker(context.Background(), createBitbucketProjectPermissionsStore(db), &bitbucketProjectPermissionsHandler{db: db}, options)
+	return dbworker.NewWorker(context.Background(), createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
-func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter {
-	workerStore := createBitbucketProjectPermissionsStore(db)
+func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter {
+	workerStore := createBitbucketProjectPermissionsStore(db, cfg)
 
 	options := dbworker.ResetterOptions{
 		Name:     "explicit_permissions_bitbucket_projects_jobs_worker_resetter",
@@ -304,8 +315,7 @@ func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, metrics bitbuck
 
 // createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
-// TODO(asdine): Fine tune the retry strategy and make some parameters configurable.
-func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworkerstore.Store {
+func createBitbucketProjectPermissionsStore(s basestore.ShareableStore, cfg *config) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:      "explicit_permissions_bitbucket_projects_jobs_store",
 		TableName: "explicit_permissions_bitbucket_projects_jobs",
@@ -332,7 +342,7 @@ func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworker
 			return j, ok, err
 		},
 		StalledMaxAge:     60 * time.Second,
-		RetryAfter:        10 * time.Second,
+		RetryAfter:        cfg.WorkerRetryInterval,
 		MaxNumRetries:     5,
 		OrderByExpression: sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.id"),
 	})

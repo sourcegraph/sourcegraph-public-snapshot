@@ -219,6 +219,7 @@ export interface Filter {
 interface Alert {
     title: string
     description?: string | null
+    kind?: string | null
     proposedQueries: ProposedQuery[] | null
 }
 
@@ -548,15 +549,17 @@ export function isSearchMatchOfType<T extends SearchMatch['type']>(
 
 // Call the compute endpoint with the given query
 const computeStreamUrl = '/.api/compute/stream'
-export function streamComputeQuery(query: string): Observable<string> {
-    return new Observable<string>(observer => {
+export function streamComputeQuery(query: string): Observable<string[]> {
+    const allData: string[] = []
+    return new Observable<string[]>(observer => {
         fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'Sourcegraph',
             },
             onmessage(event) {
-                observer.next(event.data)
+                allData.push(event.data)
+                observer.next(allData)
             },
         }).then(
             () => observer.complete(),

@@ -7,7 +7,6 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
@@ -16,6 +15,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon } from '@sourcegraph/wildcard'
 
+import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
 import {
     BatchChangeTab,
@@ -88,11 +88,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     refetchBatchChange,
     telemetryService,
 }) => {
-    const isExecutionEnabled =
-        (settingsCascade.final &&
-            !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
-        false
+    const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
     const executingCount = useMemo(
         () =>

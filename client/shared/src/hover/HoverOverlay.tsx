@@ -244,7 +244,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                         onKeyPress={onCopyLink}
                         type="button"
                     >
-                        <Icon className="mr-1" as={CopyLinkIcon} />
+                        <Icon className="mr-1" as={CopyLinkIcon} aria-hidden={true} />
                         <span className="inline-block">{copyLinkText}</span>
                     </button>
                 )}

@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -17,7 +19,8 @@ import (
 )
 
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
 
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 4)

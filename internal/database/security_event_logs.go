@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,13 +65,15 @@ type SecurityEventLogsStore interface {
 }
 
 type securityEventLogsStore struct {
+	logger log.Logger
 	*basestore.Store
 }
 
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
 // using the other store handle.
 func SecurityEventLogsWith(other basestore.ShareableStore) SecurityEventLogsStore {
-	return &securityEventLogsStore{Store: basestore.NewWithHandle(other.Handle())}
+	logger := log.Scoped("SecurityEvents", "Security events store")
+	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (s *securityEventLogsStore) Insert(ctx context.Context, e *SecurityEvent) error {
@@ -108,9 +109,6 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "error", err)
-		// We want to capture in sentry as it includes a stack trace which will allow us
-		// to track down the root cause.
-		sentry.CaptureError(err, map[string]string{})
+		trace.Logger(ctx, s.logger).Error(string(e.Name), log.String("event", string(j)), log.Error(err))
 	}
 }

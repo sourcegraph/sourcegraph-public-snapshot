@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -28,12 +30,13 @@ import (
 )
 
 func TestChangesetApplyPreviewResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -52,8 +55,8 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID)
 
-	esStore := database.ExternalServicesWith(cstore)
-	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
+	repoStore := database.ReposWith(logger, cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -258,14 +261,16 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
 	bstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(bstore)
-	repoStore := database.ReposWith(bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := database.ReposWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))

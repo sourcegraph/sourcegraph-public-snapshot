@@ -45,10 +45,10 @@ var (
 	opsOnce sync.Once
 )
 
-func getOperations() *operations {
+func getOperations(logger log.Logger) *operations {
 	opsOnce.Do(func() {
 		observationContext := &observation.Context{
-			Logger:     log.Scoped("database.batch", ""),
+			Logger:     logger,
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 			HoneyDataset: &honey.Dataset{

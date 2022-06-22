@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,7 +18,8 @@ import (
 const testBundleID = 1
 
 func populateTestStore(t testing.TB) *Store {
-	db := stores.NewCodeIntelDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
