@@ -88,37 +88,37 @@ exports[`Icon legacy mdi-react icons renders a simple inline icon correctly 1`] 
 </DocumentFragment>
 `;
 
-exports[`Icon new @mdi/react icons renders a medium icon correctly 1`] = `
+exports[`Icon new @mdi/js icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
-    aria-labelledby="icon_labelledby_2"
+    aria-label="Checkmark"
     class="iconInline iconInlineMd"
+    fill="currentColor"
+    height="24"
+    role="img"
     viewBox="0 0 24 24"
+    width="24"
   >
-    <title
-      id="icon_labelledby_2"
-    >
-      Checkmark
-    </title>
     <path
       d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-      style="fill: currentColor;"
     />
   </svg>
 </DocumentFragment>
 `;
 
-exports[`Icon new @mdi/react icons renders a simple inline icon correctly 1`] = `
+exports[`Icon new @mdi/js icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
     class="iconInline"
-    role="presentation"
+    fill="currentColor"
+    height="24"
+    role="img"
     viewBox="0 0 24 24"
+    width="24"
   >
     <path
       d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-      style="fill: currentColor;"
     />
   </svg>
 </DocumentFragment>
