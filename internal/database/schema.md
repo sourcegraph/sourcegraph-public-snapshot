@@ -1208,6 +1208,7 @@ Indexes:
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_processable_priority_id" btree (priority, id) WHERE state = 'queued'::text OR state = 'errored'::text
+    "insights_query_runner_jobs_series_id_state" btree (series_id, state)
     "insights_query_runner_jobs_state_btree" btree (state)
     "process_after_insights_query_runner_jobs_idx" btree (process_after)
 Referenced by:

@@ -9126,6 +9126,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "insights_query_runner_jobs_series_id_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner_jobs USING btree (series_id, state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "insights_query_runner_jobs_state_btree",
           "IsPrimaryKey": false,
           "IsUnique": false,
