@@ -188,6 +188,7 @@ func TestKeyer_Key(t *testing.T) {
 			if test.expectedError != nil {
 				assert.Equal(t, test.expectedError.Error(), err.Error())
 			} else {
+				assert.NoError(t, err)
 				assert.Equal(t, test.expectedKey, key)
 			}
 		})
