@@ -20,7 +20,7 @@ public class ConfigUtil {
 
     @Nullable
     public static String getDefaultBranchName(@NotNull Project project) {
-        String defaultBranch = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getDefaultBranchName();
+        String defaultBranch = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
         if (defaultBranch == null || defaultBranch.length() == 0) {
             return UserLevelConfig.getDefaultBranchName();
         }
@@ -29,7 +29,7 @@ public class ConfigUtil {
 
     @Nullable
     public static String getRemoteUrlReplacements(@NotNull Project project) {
-        String replacements = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getRemoteUrlReplacements();
+        String replacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
         if (replacements == null || replacements.length() == 0) {
             return UserLevelConfig.getRemoteUrlReplacements();
         }
@@ -38,7 +38,7 @@ public class ConfigUtil {
 
     @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
-        String url = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getSourcegraphUrl();
+        String url = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
         if (url == null || url.length() == 0) {
             return UserLevelConfig.getSourcegraphUrl();
         }
@@ -51,7 +51,7 @@ public class ConfigUtil {
     }
 
     public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
-        SourcegraphConfig settings = getProjectLevelConfig(project);
+        SourcegraphProjectService settings = getProjectLevelConfig(project);
         settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
         settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
         settings.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
@@ -74,7 +74,7 @@ public class ConfigUtil {
     }
 
     @NotNull
-    private static SourcegraphConfig getProjectLevelConfig(@NotNull Project project) {
-        return Objects.requireNonNull(SourcegraphConfig.getInstance(project));
+    private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
+        return Objects.requireNonNull(SourcegraphProjectService.getInstance(project));
     }
 }

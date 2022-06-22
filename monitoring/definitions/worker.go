@@ -104,6 +104,12 @@ func Worker() *monitoring.Dashboard {
 
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
+			shared.Batches.NewBatchSpecResolutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewBulkOperationDBWorkerStoreGroup(containerName),
+			shared.Batches.NewReconcilerDBWorkerStoreGroup(containerName),
+			// This is for the resetter only here, the queue is running in the frontend
+			// through executorqueue.
+			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
 
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total

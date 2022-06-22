@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -21,6 +23,7 @@ import (
 )
 
 func TestSearchResultsStatsLanguages(t *testing.T) {
+	logger := logtest.Scoped(t)
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
@@ -116,7 +119,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 				return test.getFiles, nil
 			}
 
-			langs, err := searchResultsStatsLanguages(context.Background(), database.NewMockDB(), test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), logger, database.NewMockDB(), test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

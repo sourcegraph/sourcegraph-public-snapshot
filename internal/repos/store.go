@@ -121,7 +121,7 @@ func NewStore(logger log.Logger, db database.DB) Store {
 }
 
 func (s *store) RepoStore() database.RepoStore {
-	return database.ReposWith(s)
+	return database.ReposWith(s.Logger, s)
 }
 
 func (s *store) GitserverReposStore() database.GitserverRepoStore {
@@ -129,7 +129,7 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 }
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s.Logger, s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }

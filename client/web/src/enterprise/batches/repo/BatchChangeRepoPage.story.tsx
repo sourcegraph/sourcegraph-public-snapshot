@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../components/WebStory'
@@ -11,15 +11,6 @@ import {
 } from './backend'
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 import { NODES } from './testData'
-
-const { add } = storiesOf('web/batches/repo/BatchChangeRepoPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
-    .addParameters({
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-            disableSnapshot: false,
-        },
-    })
 
 const repoDefaults: RepositoryFields = {
     description: 'An awesome repo!',
@@ -92,7 +83,22 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof _queryExternalChangesetWi
         },
     })
 
-add('List of batch changes', () => (
+const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/repo/BatchChangeRepoPage',
+    decorators: [decorator],
+    parameters: {
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
+        },
+    },
+}
+
+export default config
+
+export const ListOfBatchChanges: Story = () => (
     <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage
@@ -104,9 +110,11 @@ add('List of batch changes', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('No batch changes', () => (
+ListOfBatchChanges.storyName = 'List of batch changes'
+
+export const NoBatchChanges: Story = () => (
     <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage
@@ -117,4 +125,6 @@ add('No batch changes', () => (
             />
         )}
     </WebStory>
-))
+)
+
+NoBatchChanges.storyName = 'No batch changes'

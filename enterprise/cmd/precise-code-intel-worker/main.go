@@ -89,7 +89,7 @@ func main() {
 	}
 
 	// Connect to databases
-	db := database.NewDB(mustInitializeDB())
+	db := database.NewDB(logger, mustInitializeDB())
 	codeIntelDB := mustInitializeCodeIntelDB()
 
 	// Migrations may take a while, but after they're done we'll immediately
@@ -159,7 +159,7 @@ func mustInitializeDB() *sql.DB {
 	// START FLAILING
 
 	ctx := context.Background()
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)

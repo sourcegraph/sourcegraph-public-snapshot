@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -12,7 +14,8 @@ import (
 // to the user.
 func TestAccessTokens_Create(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -87,8 +90,9 @@ func TestAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	subject1, err := db.Users().Create(ctx, NewUser{
@@ -166,8 +170,9 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -235,8 +240,9 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	t.Run("subject", func(t *testing.T) {

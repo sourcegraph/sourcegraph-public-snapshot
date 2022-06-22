@@ -1,27 +1,31 @@
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import { Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { CheckButton } from './CheckButton'
 
-const { add } = storiesOf('web/batches/settings/CheckButton', module)
+const config = {
+    title: 'web/batches/settings/CheckButton',
+}
 
-add('Initial', () => (
+export default config
+
+export const Initial: Story = () => (
     <WebStory>
         {props => (
             <CheckButton {...props} label="Checks the state of something" onClick={action('onClick')} loading={false} />
         )}
     </WebStory>
-))
+)
 
-add('Checking', () => (
+export const Checking: Story = () => (
     <WebStory>
         {props => <CheckButton {...props} label="Checks the state of something" onClick={() => {}} loading={true} />}
     </WebStory>
-))
+)
 
-add('Success', () => (
+export const Success: Story = () => (
     <WebStory>
         {props => (
             <CheckButton
@@ -33,9 +37,9 @@ add('Success', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Failed', () => (
+export const Failed: Story = () => (
     <WebStory>
         {props => (
             <CheckButton
@@ -47,4 +51,4 @@ add('Failed', () => (
             />
         )}
     </WebStory>
-))
+)

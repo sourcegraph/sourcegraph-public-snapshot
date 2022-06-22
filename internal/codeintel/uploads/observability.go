@@ -15,6 +15,10 @@ type operations struct {
 	delete           *observation.Operation
 	commitsVisibleTo *observation.Operation
 	uploadsVisibleTo *observation.Operation
+
+	staleSourcedCommits  *observation.Operation
+	updateSourcedCommits *observation.Operation
+	deleteSourcedCommits *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,5 +45,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		delete:           op("Delete"),
 		commitsVisibleTo: op("CommitsVisibleTo"),
 		uploadsVisibleTo: op("UploadsVisibleTo"),
+
+		staleSourcedCommits:  op("StaleSourcedCommits"),
+		updateSourcedCommits: op("UpdateSourcedCommits"),
+		deleteSourcedCommits: op("DeleteSourcedCommits"),
 	}
 }

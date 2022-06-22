@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,7 +18,8 @@ import (
 )
 
 func TestGetConfigurationPolicies(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -148,7 +151,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 }
 
 func TestGetConfigurationPolicyByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -223,7 +227,8 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 }
 
 func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), 15)
@@ -236,7 +241,8 @@ func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
 }
 
 func TestCreateConfigurationPolicy(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -283,7 +289,8 @@ func TestCreateConfigurationPolicy(t *testing.T) {
 }
 
 func TestUpdateConfigurationPolicy(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -345,7 +352,8 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 }
 
 func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -454,7 +462,8 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 }
 
 func TestDeleteConfigurationPolicyByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -497,7 +506,8 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 }
 
 func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -545,7 +555,8 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 }
 
 func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 

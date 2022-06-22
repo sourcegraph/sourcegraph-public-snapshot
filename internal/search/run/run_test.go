@@ -19,17 +19,17 @@ func TestDetectSearchType(t *testing.T) {
 		want        query.SearchType
 	}{
 		{"V1, no pattern type", "V1", nil, "", query.SearchTypeRegex},
-		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteralDefault},
-		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteralDefault},
+		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteral},
+		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteral},
 		{"V1, regexp pattern type", "V1", &typeRegexp, "", query.SearchTypeRegex},
 		{"V2, regexp pattern type", "V2", &typeRegexp, "", query.SearchTypeRegex},
-		{"V1, literal pattern type", "V1", &typeLiteral, "", query.SearchTypeLiteralDefault},
+		{"V1, literal pattern type", "V1", &typeLiteral, "", query.SearchTypeLiteral},
 		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", query.SearchTypeRegex},
 		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", query.SearchTypeRegex},
 		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, query.SearchTypeRegex},
 		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, query.SearchTypeRegex},
-		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteralDefault},
-		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteralDefault},
+		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
+		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
 	}
 
 	for _, test := range testCases {

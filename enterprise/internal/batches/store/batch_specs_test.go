@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -637,11 +639,12 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 }
 
 func TestStoreGetBatchSpecStats(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	c := &bt.TestClock{Time: timeutil.Now()}
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
@@ -815,7 +818,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	ctx := context.Background()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := New(db, &observation.TestContext, nil)
 
 	// Create two repos, one of which will be visible to everyone, and one which
