@@ -73,7 +73,7 @@ public class ConfigUtil {
 
     @NotNull
     @Contract(pure = true)
-    public static String getVersion() {
+    public static String getPluginVersion() {
         IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
         return plugin != null ? plugin.getVersion() : "unknown";
     }
