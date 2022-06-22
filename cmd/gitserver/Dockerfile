@@ -37,8 +37,8 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache \
-    # We require git 2.34.1 because we use git-repack with flag
-    # --write-midx.  We require git 2.35.2 to fix this vulnerability:
+    # We require git 2.34.1 because we use git-repack with flag --write-midx.
+    # We require git 2.35.2 to fix this vulnerability:
     # https://github.blog/2022-04-12-git-security-vulnerability-announced/
     'git>=2.35.2' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     git-p4 \
