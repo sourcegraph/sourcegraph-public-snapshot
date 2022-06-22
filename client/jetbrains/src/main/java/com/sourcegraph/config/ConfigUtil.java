@@ -70,7 +70,7 @@ public class ConfigUtil {
     @NotNull
     @Contract(pure = true)
     public static String getVersion() {
-        return "v1.2.2";
+        return "1.2.2";
     }
 
     @NotNull
