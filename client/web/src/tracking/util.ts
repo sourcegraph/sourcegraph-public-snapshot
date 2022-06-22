@@ -27,8 +27,11 @@ export function redactSensitiveInfoFromAppURL(url: string): string {
         return url
     }
 
-    // Ensure we do not leak repo and file names in the URL
-    sourceURL.pathname = '/redacted'
+    // Capture urls for notebook pages
+    if (!sourceURL.pathname.startsWith('/notebooks')) {
+        // Ensure we do not leak repo and file names in the URL
+        sourceURL.pathname = '/redacted'
+    }
 
     const marketingQueryParameters = new Set([
         'utm_source',
