@@ -114,7 +114,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Intended purpose:** To track how many users actively re-filter insights through the standalone insight page's filter panel.
 
-**Functional implementation:** This ping works by firing an telemetry event on the client when a user changes insights filters (include/exclude repository regexp, search context, ...etc).
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user changes insights filters (include/exclude repository regexp, search context, etc).
 
 **Other considerations:** N/A
 
