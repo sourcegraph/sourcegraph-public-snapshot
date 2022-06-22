@@ -111,6 +111,9 @@ export interface ResultContainerProps {
      * CSS class name to be applied to the component
      */
     className?: string
+
+    as?: React.ElementType
+    index: number
 }
 
 /**
@@ -134,6 +137,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     onResultClicked,
     className,
     resultType,
+    as: Component = 'div',
+    index,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -152,15 +157,16 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         }
     }
     return (
-        <div
+        <Component
             className={classNames('test-search-result', styles.resultContainer, className)}
             data-testid="result-container"
             data-result-type={resultType}
             data-expanded={allExpanded}
             onClick={trackReferencePanelClick}
-            role="none"
+            role="article"
+            aria-labelledby={`result-container-${index}`}
         >
-            <div className={styles.header}>
+            <div className={styles.header} id={`result-container-${index}`}>
                 <Icon
                     className="flex-shrink-0"
                     as={icon}
@@ -219,6 +225,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             </div>
             {!expanded && collapsedChildren}
             {expanded && expandedChildren}
-        </div>
+        </Component>
     )
 }

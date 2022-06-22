@@ -20,6 +20,8 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     onSelect: () => void
     openInNewTab?: boolean
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 // This is a search result for types diff or commit.
@@ -29,6 +31,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -75,6 +79,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 
     return (
         <ResultContainer
+            index={index}
             icon={SourceCommitIcon}
             collapsible={false}
             defaultExpanded={true}
@@ -85,6 +90,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            as={as}
         />
     )
 }
