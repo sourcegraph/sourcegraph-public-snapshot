@@ -151,12 +151,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		displayLimit,
 		logLatency,
 	)
-	defer eventHandler.Done()
-
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
-	defer batchedStream.Done()
-
 	alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
+	// Clean up streams before writing to eventWriter again.
+	batchedStream.Done()
+	eventHandler.Done()
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
