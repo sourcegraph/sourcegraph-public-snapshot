@@ -34,7 +34,6 @@ func (r *Regexp) build() {
 	} else {
 		r.rx = regexp.MustCompile(r.str)
 	}
-	r.str = ""
 }
 
 func (r *Regexp) FindSubmatch(s []byte) [][]byte {
@@ -100,6 +99,8 @@ func (r *Regexp) ReplaceAll(src, repl []byte) []byte {
 func (r *Regexp) SubexpIndex(s string) int {
 	return r.re().SubexpIndex(s)
 }
+
+func (r *Regexp) String() string { return r.str }
 
 var inTest = len(os.Args) > 0 && strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test")
 

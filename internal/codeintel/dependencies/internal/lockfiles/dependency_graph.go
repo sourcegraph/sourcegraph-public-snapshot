@@ -63,18 +63,36 @@ func (dg *DependencyGraph) String() string {
 	var out strings.Builder
 
 	roots := dg.Roots()
+	if len(roots) == 0 {
+		// If we don't have roots (because of circular dependencies), we use
+		// every package as a root.
+		// Ideally we'd use other information (such as the data in
+		// `package.json` files) to find out what the direct dependencies are.
+		//
+		// TODO: this should probably go to `Roots()` with a boolean that says
+		// `circular bool` and that we persist to the database.
+		for pkg := range dg.dependencies {
+			roots = append(roots, pkg)
+		}
+	}
+
 	sort.Slice(roots, func(i, j int) bool { return roots[i].Less(roots[j]) })
 
 	for _, root := range roots {
-		printDependencies(&out, dg, 0, root)
+		visited := make(map[reposource.PackageVersion]struct{}, len(dg.dependencies[root]))
+		printDependencies(&out, dg, visited, 0, root)
 	}
 
 	return out.String()
 }
 
-func printDependencies(out io.Writer, graph *DependencyGraph, level int, node reposource.PackageVersion) {
+func printDependencies(out io.Writer, graph *DependencyGraph, visited map[reposource.PackageVersion]struct{}, level int, node reposource.PackageVersion) {
+	_, alreadyVisited := visited[node]
+	visited[node] = struct{}{}
+
 	deps, ok := graph.dependencies[node]
-	if !ok || len(deps) == 0 {
+	if !ok || len(deps) == 0 || alreadyVisited {
+
 		fmt.Fprintf(out, "%s%s\n", strings.Repeat("\t", level), node.RepoName())
 		return
 	}
@@ -85,6 +103,6 @@ func printDependencies(out io.Writer, graph *DependencyGraph, level int, node re
 	sort.Slice(sortedDeps, func(i, j int) bool { return sortedDeps[i].Less(sortedDeps[j]) })
 
 	for _, dep := range sortedDeps {
-		printDependencies(out, graph, level+1, dep)
+		printDependencies(out, graph, visited, level+1, dep)
 	}
 }

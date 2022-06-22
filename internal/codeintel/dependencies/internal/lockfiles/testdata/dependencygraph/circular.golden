@@ -1,0 +1,8 @@
+test/a:
+	test/b:
+		test/d
+	test/c:
+		test/e:
+			test/f:
+				test/c
+	test/g
