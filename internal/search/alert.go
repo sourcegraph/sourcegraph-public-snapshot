@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -229,5 +230,19 @@ func AlertForInvalidRevision(revision string) *Alert {
 	return &Alert{
 		Title:       "Invalid revision syntax",
 		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+	}
+}
+
+func AlertForUnindexedLockfile(repoName api.RepoName, revisions []string) *Alert {
+	var description strings.Builder
+	fmt.Fprintf(&description, "No lockfile indexed in **%s** at these revisions yet:\n", repoName)
+	for _, r := range revisions {
+		fmt.Fprintf(&description, "- `%s`", r)
+	}
+
+	return &Alert{
+		PrometheusType: "unindexed_dependency_search",
+		Title:          "Lockfile not indexed",
+		Description:    description.String(),
 	}
 }
