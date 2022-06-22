@@ -25,6 +25,8 @@ import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
 import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
+import styles from './RecentSearchesPanel.module.scss'
+
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
@@ -138,20 +140,23 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
 
     const contentDisplay = (
         <>
-            <table>
+            <table className={classNames('mt-2', styles.resultsTable)}>
                 <thead>
-                    <tr>
-                        <th className="pt-2 pb-1">
+                    <tr className={styles.resultsTableRow}>
+                        <th>
                             <small>Search</small>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     {repoFilterValues?.map((repoFilterValue, index) => (
-                        // The repo is not guaranteed to be unique on its own, so we use index as well.
-                        // eslint-disable-next-line react/no-array-index-key
-                        <tr key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
-                            <td className="pb-2">
+                        <tr
+                            // The repo is not guaranteed to be unique on its own, so we use index as well.
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={`${repoFilterValue}-${index}`}
+                            className={classNames('text-monospace text-break', styles.resultsTableRow)}
+                        >
+                            <td>
                                 <small>
                                     <Link
                                         to={`/search?q=repo:${repoFilterValue}`}
@@ -207,21 +212,21 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     }, [gitRepository])
 
     const gitHistoryDisplay = (
-        <div className="mt-2">
-            {gitSet.size > 0 && (
-                <ul className="list-group">
-                    {Array.from(gitSet).map(repo => (
-                        <li key={`${repo}`} className="text-monospace text-break mb-2">
+        <table className={classNames('mt-2', styles.resultsTable)}>
+            <tbody>
+                {Array.from(gitSet).map(repo => (
+                    <tr key={`${repo}`} className="text-monospace text-break mb-2">
+                        <td>
                             <small>
                                 <Link to={`/search?q=repo:${repo}`} onClick={logRepoClicked}>
                                     <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
                                 </Link>
                             </small>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     )
 
     // Wait for both the search event logs and the git history to be loaded

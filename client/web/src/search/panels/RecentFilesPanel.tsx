@@ -117,14 +117,16 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     const contentDisplay = (
         <>
             <table className={classNames('mt-2', styles.resultsTable)}>
-                <thead className={styles.resultsTableRow}>
-                    <th className="pb-1">
-                        <small>File</small>
-                    </th>
+                <thead>
+                    <tr className={styles.resultsTableRow}>
+                        <th>
+                            <small>File</small>
+                        </th>
+                    </tr>
                 </thead>
                 <tbody>
                     {processedResults?.map((recentFile, index) => (
-                        <tr key={index} className={classNames('text-monospace mb-2 d-block', styles.resultsTableRow)}>
+                        <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
                             <td>
                                 <small>
                                     <Link

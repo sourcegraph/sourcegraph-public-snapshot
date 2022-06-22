@@ -17,12 +17,14 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
     <div
       class="h-100 content"
     >
-      <table>
+      <table
+        class="mt-2 resultsTable"
+      >
         <thead>
-          <tr>
-            <th
-              class="pt-2 pb-1"
-            >
+          <tr
+            class="resultsTableRow"
+          >
+            <th>
               <small>
                 Search
               </small>
@@ -31,11 +33,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
         </thead>
         <tbody>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -61,11 +61,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             </td>
           </tr>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -114,12 +112,14 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
     <div
       class="h-100 content"
     >
-      <table>
+      <table
+        class="mt-2 resultsTable"
+      >
         <thead>
-          <tr>
-            <th
-              class="pt-2 pb-1"
-            >
+          <tr
+            class="resultsTableRow"
+          >
+            <th>
               <small>
                 Search
               </small>
@@ -128,11 +128,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
         </thead>
         <tbody>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -158,11 +156,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </td>
           </tr>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -188,11 +184,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </td>
           </tr>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -251,12 +245,14 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
     <div
       class="h-100 content"
     >
-      <table>
+      <table
+        class="mt-2 resultsTable"
+      >
         <thead>
-          <tr>
-            <th
-              class="pt-2 pb-1"
-            >
+          <tr
+            class="resultsTableRow"
+          >
+            <th>
               <small>
                 Search
               </small>
@@ -265,11 +261,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
         </thead>
         <tbody>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -295,11 +289,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </td>
           </tr>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -325,11 +317,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </td>
           </tr>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -394,12 +384,14 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
     <div
       class="h-100 content"
     >
-      <table>
+      <table
+        class="mt-2 resultsTable"
+      >
         <thead>
-          <tr>
-            <th
-              class="pt-2 pb-1"
-            >
+          <tr
+            class="resultsTableRow"
+          >
+            <th>
               <small>
                 Search
               </small>
@@ -408,11 +400,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
         </thead>
         <tbody>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"
@@ -438,11 +428,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             </td>
           </tr>
           <tr
-            class="text-monospace text-break mb-2"
+            class="text-monospace text-break resultsTableRow"
           >
-            <td
-              class="pb-2"
-            >
+            <td>
               <small>
                 <a
                   class="anchorLink"

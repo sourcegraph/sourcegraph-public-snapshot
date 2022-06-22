@@ -199,12 +199,10 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                     ))}
                 </tbody>
             </table>
-            <>
-                {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent searches</VisuallyHidden>}
-                {searchEventLogs?.pageInfo.hasNextPage && (
-                    <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
-                )}
-            </>
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent searches</VisuallyHidden>}
+            {searchEventLogs?.pageInfo.hasNextPage && (
+                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
+            )}
         </>
     )
 
