@@ -149,6 +149,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		h.flushTickerInternal,
 		h.pingTickerInterval,
 		displayLimit,
+		args.ChunkMatches,
 		logLatency,
 	)
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
@@ -195,10 +196,11 @@ func logSearch(ctx context.Context, alert *search.Alert, err error, start time.T
 }
 
 type args struct {
-	Query       string
-	Version     string
-	PatternType string
-	Display     int
+	Query        string
+	Version      string
+	PatternType  string
+	Display      int
+	ChunkMatches bool
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -232,6 +234,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
 		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
+	chunkMatches := get("cm", "f")
+	if a.ChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
+		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: w", chunkMatches, err)
 	}
 
 	decorationLimit := get("dl", "0")
@@ -559,6 +566,7 @@ func newEventHandler(
 	flushInterval time.Duration,
 	progressInterval time.Duration,
 	displayLimit int,
+	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
 	ctx, cancel := context.WithCancel(ctx)
@@ -571,18 +579,19 @@ func newEventHandler(
 	})
 
 	eh := &eventHandler{
-		ctx:              ctx,
-		cancel:           cancel,
-		db:               db,
-		eventWriter:      eventWriter,
-		matchesBuf:       matchesBuf,
-		filters:          &streaming.SearchFilters{},
-		flushInterval:    flushInterval,
-		progress:         progress,
-		progressInterval: progressInterval,
-		displayRemaining: displayLimit,
-		first:            true,
-		logLatency:       logLatency,
+		ctx:                ctx,
+		cancel:             cancel,
+		db:                 db,
+		eventWriter:        eventWriter,
+		matchesBuf:         matchesBuf,
+		filters:            &streaming.SearchFilters{},
+		flushInterval:      flushInterval,
+		progress:           progress,
+		progressInterval:   progressInterval,
+		displayRemaining:   displayLimit,
+		enableChunkMatches: enableChunkMatches,
+		first:              true,
+		logLatency:         logLatency,
 	}
 
 	// Schedule the first flushes.
@@ -603,6 +612,8 @@ type eventHandler struct {
 	cancel context.CancelFunc
 
 	db database.DB
+
+	enableChunkMatches bool
 
 	eventWriter *eventWriter
 
@@ -648,7 +659,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 			continue
 		}
 
-		eventMatch := fromMatch(match, repoMetadata, false)
+		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
 		h.matchesBuf.Append(eventMatch)
 	}
 

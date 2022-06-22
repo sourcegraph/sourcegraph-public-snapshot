@@ -27,8 +27,8 @@ type EventContentMatch struct {
 	Branches        []string         `json:"branches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
-	LineMatches     []EventLineMatch `json:"lineMatches"`
-	ChunkMatches    []ChunkMatch     `json:"chunkMatches"`
+	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
