@@ -148,8 +148,7 @@ func TestDependencies(t *testing.T) {
 			},
 		}
 
-		// TODO: Ignoring notFound here for now
-		dependencies, _, err := service.Dependencies(ctx, repoRevs, false)
+		dependencies, notFound, err := service.Dependencies(ctx, repoRevs, false)
 		if err != nil {
 			t.Fatalf("unexpected error querying dependencies: %s", err)
 		}
@@ -159,6 +158,11 @@ func TestDependencies(t *testing.T) {
 		}
 		if diff := cmp.Diff(expectedDepencies, dependencies); diff != "" {
 			t.Errorf("unexpected dependencies (-want +got):\n%s", diff)
+		}
+
+		expectedNotFound := map[api.RepoName]types.RevSpecSet{}
+		if diff := cmp.Diff(expectedNotFound, notFound); diff != "" {
+			t.Errorf("unexpected notFound (-want +got):\n%s", diff)
 		}
 	})
 }

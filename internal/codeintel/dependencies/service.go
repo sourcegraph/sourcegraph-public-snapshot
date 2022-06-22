@@ -121,10 +121,14 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 				dependencyRevs[repoName][commit] = struct{}{}
 			}
 
-			// TODO: See todo above, we need to clean this up properly
-			if notFoundRevs, ok := notFound[repoName]; ok {
+			// If we found a precise result, we remove repoRev from notFound.
+			if notFoundRevs, ok := notFound[repoCommit.Repo]; ok {
 				for commit := range commits {
 					delete(notFoundRevs, commit)
+				}
+
+				if len(notFoundRevs) == 0 {
+					delete(notFound, repoCommit.Repo)
 				}
 			}
 		}
