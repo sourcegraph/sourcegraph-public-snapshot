@@ -31,7 +31,7 @@ func TestRepoShieldFmt(t *testing.T) {
 }
 
 func TestRepoShield(t *testing.T) {
-	c := newTest()
+	c := newTest(t)
 
 	wantResp := map[string]any{
 		"value": " 200 projects",

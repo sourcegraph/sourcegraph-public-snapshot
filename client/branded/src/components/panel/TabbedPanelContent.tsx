@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
@@ -333,7 +333,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                             data-tooltip="Close panel"
                             data-placement="left"
                         >
-                            <Icon as={CloseIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
                 }

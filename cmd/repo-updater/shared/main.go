@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	sentrylib "github.com/getsentry/sentry-go"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -190,7 +191,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	go syncScheduler(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
-		rateLimiter := rate.NewLimiter(.05, 1)
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 

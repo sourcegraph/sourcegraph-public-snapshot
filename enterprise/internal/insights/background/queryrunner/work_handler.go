@@ -8,9 +8,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -37,7 +37,7 @@ type workHandler struct {
 	insightsStore   *store.Store
 	repoStore       discovery.RepoStore
 	metadadataStore *store.InsightStore
-	limiter         *rate.Limiter
+	limiter         *ratelimit.InstrumentedLimiter
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,7 +48,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
+	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
 		return &gitdomain.Commit{ID: commitID}, nil
 	}

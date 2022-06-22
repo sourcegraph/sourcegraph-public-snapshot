@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -197,6 +199,16 @@ func ScanNullInt64(s dbutil.Scanner) (int64, error) {
 	return value.Int64, nil
 }
 
+// ScanInt32Array scans a single int32 array from the given scanner.
+func ScanInt32Array(s dbutil.Scanner) ([]int32, error) {
+	var value pq.Int32Array
+	if err := s.Scan(&value); err != nil {
+		return nil, err
+	}
+
+	return []int32(value), nil
+}
+
 var (
 	ScanInt             = ScanAny[int]
 	ScanStrings         = NewSliceScanner(ScanAny[string])
@@ -215,4 +227,5 @@ var (
 	ScanFirstBool       = NewFirstScanner(ScanAny[bool])
 	ScanTimes           = NewSliceScanner(ScanAny[time.Time])
 	ScanFirstTime       = NewFirstScanner(ScanAny[time.Time])
+	ScanFirstInt32Array = NewFirstScanner(ScanInt32Array)
 )

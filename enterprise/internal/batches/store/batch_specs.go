@@ -600,7 +600,7 @@ GROUP BY batch_specs.id, res_job.state
 `
 
 var deleteExpiredBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
+-- source: enterprise/internal/batches/store/batch_specs.go:DeleteExpiredBatchSpecs
 DELETE FROM
   batch_specs
 WHERE

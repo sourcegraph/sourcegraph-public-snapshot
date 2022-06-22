@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -17,9 +17,9 @@ func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
 		err = tx.Done(err)
 	}()
 
-	batch, err := tx.StaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
+	batch, err := j.uploadSvc.StaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
 	if err != nil {
-		return errors.Wrap(err, "dbstore.StaleSourcedCommits")
+		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
 	}
 
 	for _, sourcedCommits := range batch {
@@ -36,7 +36,7 @@ func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
 // 	log.Error("Failed to delete codeintel records with an unknown commit", "error", err)
 // }
 
-func (j *janitor) handleSourcedCommits(ctx context.Context, tx DBStore, sourcedCommits dbstore.SourcedCommits) error {
+func (j *janitor) handleSourcedCommits(ctx context.Context, tx DBStore, sourcedCommits shared.SourcedCommits) error {
 	for _, commit := range sourcedCommits.Commits {
 		if err := j.handleCommit(ctx, tx, sourcedCommits.RepositoryID, sourcedCommits.RepositoryName, commit); err != nil {
 			return err
@@ -68,9 +68,9 @@ func (j *janitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int
 	}
 
 	if shouldDelete {
-		_, uploadsDeleted, indexesDeleted, err := tx.DeleteSourcedCommits(ctx, repositoryID, commit, ConfigInst.CommitResolverMaximumCommitLag, j.clock.Now())
+		_, uploadsDeleted, indexesDeleted, err := j.uploadSvc.DeleteSourcedCommits(ctx, repositoryID, commit, ConfigInst.CommitResolverMaximumCommitLag, j.clock.Now())
 		if err != nil {
-			return errors.Wrap(err, "dbstore.DeleteSourcedCommits")
+			return errors.Wrap(err, "uploadSvc.DeleteSourcedCommits")
 		}
 
 		if uploadsDeleted > 0 {
@@ -85,8 +85,8 @@ func (j *janitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int
 		return nil
 	}
 
-	if _, _, err := tx.UpdateSourcedCommits(ctx, repositoryID, commit, j.clock.Now()); err != nil {
-		return errors.Wrap(err, "dbstore.UpdateSourcedCommits")
+	if _, _, err := j.uploadSvc.UpdateSourcedCommits(ctx, repositoryID, commit, j.clock.Now()); err != nil {
+		return errors.Wrap(err, "uploadSvc.UpdateSourcedCommits")
 	}
 
 	return nil

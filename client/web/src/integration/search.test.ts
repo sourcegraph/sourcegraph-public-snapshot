@@ -22,7 +22,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, EditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -100,11 +100,6 @@ describe('Search', () => {
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
-
-    const waitAndFocusInput = async () => {
-        await driver.page.waitForSelector('.monaco-editor .view-lines')
-        await driver.page.click('.monaco-editor .view-lines')
-    }
 
     describe('Search filters', () => {
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
@@ -255,51 +250,80 @@ describe('Search', () => {
     })
 
     describe('Case sensitivity toggle', () => {
-        test('Clicking toggle turns on case sensitivity', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-case-sensitivity-toggle')
-            await waitAndFocusInput()
-            await driver.page.type('.test-query-input', 'test')
-            await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
-        })
+        withSearchQueryInput((editorName, editorSelector) => {
+            describe(editorName, () => {
+                let editor: EditorAPI
 
-        test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-case-sensitivity-toggle')
-            await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                beforeEach(() => {
+                    editor = createEditorAPI(driver, editorName, editorSelector)
+
+                    testContext.overrideGraphQL({
+                        ...commonSearchGraphQLResults,
+                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    })
+                })
+
+                test('Clicking toggle turns on case sensitivity', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('.test-case-sensitivity-toggle')
+                    await editor.focus()
+                    await driver.page.keyboard.type('test')
+                    await driver.page.click('.test-case-sensitivity-toggle')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
+                })
+
+                test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('.test-case-sensitivity-toggle')
+                    await driver.page.click('.test-case-sensitivity-toggle')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                })
+            })
         })
     })
 
     describe('Structural search toggle', () => {
-        test('Clicking toggle turns on structural search', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-structural-search-toggle')
-            await waitAndFocusInput()
-            await driver.page.type('.test-query-input', 'test')
-            await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
-        })
+        withSearchQueryInput((editorName, editorSelector) => {
+            describe(editorName, () => {
+                let editor: EditorAPI
 
-        test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await waitAndFocusInput()
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-structural-search-toggle')
-            await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
-        })
+                beforeEach(() => {
+                    editor = createEditorAPI(driver, editorName, editorSelector)
 
-        test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-structural-search-toggle')
-            await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    testContext.overrideGraphQL({
+                        ...commonSearchGraphQLResults,
+                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    })
+                })
+
+                test('Clicking toggle turns on structural search', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('.test-structural-search-toggle')
+                    await editor.focus()
+                    await driver.page.keyboard.type('test')
+                    await driver.page.click('.test-structural-search-toggle')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
+                })
+
+                test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+                    await editor.focus()
+                    await driver.page.waitForSelector('.test-structural-search-toggle')
+                    await driver.page.click('.test-structural-search-toggle')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
+                })
+
+                test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('.test-structural-search-toggle')
+                    await driver.page.click('.test-structural-search-toggle')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                })
+            })
         })
     })
 
@@ -550,6 +574,41 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="saved-search-form"]')
             await percySnapshotWithVariants(driver.page, 'Saved search - Form')
             await accessibilityAudit(driver.page)
+        })
+    })
+
+    describe('Search sidebar', () => {
+        withSearchQueryInput((editorName, editorSelector) => {
+            describe(editorName, () => {
+                let editor: EditorAPI
+
+                beforeEach(() => {
+                    editor = createEditorAPI(driver, editorName, editorSelector)
+
+                    testContext.overrideGraphQL({
+                        ...commonSearchGraphQLResults,
+                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    })
+                })
+
+                test('updates the query input and triggers suggestions', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
+                    await driver.page.waitForSelector('[data-testid="search-type-suggest"]')
+                    await driver.page.click('[data-testid="search-type-suggest"]')
+                    await editor.waitForSuggestion()
+                    expect(await editor.getValue()).toEqual('test repo:')
+                })
+            })
+        })
+
+        test('updates the query input and submits the query', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
+            await driver.page.waitForSelector('[data-testid="search-type-submit"]')
+            await Promise.all([
+                driver.page.waitForNavigation(),
+                driver.page.click('[data-testid="search-type-submit"]'),
+            ])
+            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=literal')
         })
     })
 })
