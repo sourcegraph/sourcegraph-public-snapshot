@@ -161,29 +161,21 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 type AnnotationArtifact struct {
 	buildkite.Artifact
 	BodyMarkdown string
-}
-
-func (c *Client) JobAnnotationsByBuildNumber(ctx context.Context, pipeline string, number string) (map[string]AnnotationArtifact, error) {
-	annotations, err := c.ListAnnotationArtifacts(ctx, pipeline, number)
-	if err != nil {
-		return nil, err
-	}
-
-	jobAnnotations := make(map[string]AnnotationArtifact, 0)
-	for _, a := range annotations {
-		jobAnnotations[*a.JobID] = a
-	}
-
-	return jobAnnotations, nil
+	Annotation   buildkite.Annotation
 }
 
 func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, number string) ([]AnnotationArtifact, error) {
+	annotations, err := c.ListAnnotationsByBuildNumber(ctx, pipeline, number)
+	if err != nil {
+		return nil, err
+	}
 	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []AnnotationArtifact = make([]AnnotationArtifact, 0)
+	idx := 0
 	for _, a := range artifacts {
 		if strings.Contains(*a.Dirname, "annotations") {
 			var buf bytes.Buffer
@@ -195,7 +187,9 @@ func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, n
 			result = append(result, AnnotationArtifact{
 				a,
 				buf.String(),
+				annotations[idx],
 			})
+			idx++
 		}
 	}
 

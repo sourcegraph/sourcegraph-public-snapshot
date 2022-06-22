@@ -218,12 +218,15 @@ sg ci build --help
 			}
 
 			// build status finalized
-			var jobAnnotations map[string]bk.AnnotationArtifact
-			jobAnnotations, err = client.JobAnnotationsByBuildNumber(ctx.Context, "sourcegraph", fmt.Sprintf("%d", *build.Number))
+			var annotations []bk.AnnotationArtifact
+			var buildNumber string = fmt.Sprintf("%d", *build.Number)
+
+			annotations, err = client.ListAnnotationArtifacts(ctx.Context, "sourcegraph", buildNumber)
 			if err != nil {
 				return errors.Newf("failed to get annotations for build %d: %w", build.Number, err)
 			}
-			failed := printBuildResults(build, jobAnnotations, ctx.Bool("wait"))
+			failed := printBuildResults(build, ctx.Bool("wait"))
+			printAnnotations(annotations)
 
 			if !branchFromFlag && ciBuild == "" {
 				// If we're not on a specific branch and not asking for a specific build, warn if build commit is not your commit
@@ -614,7 +617,16 @@ func printBuildOverview(build *buildkite.Build) {
 	}
 }
 
-func printBuildResults(build *buildkite.Build, jobAnnotations map[string]bk.AnnotationArtifact, notify bool) (failed bool) {
+func printAnnotations(annotations []bk.AnnotationArtifact) {
+	std.Out.Writef("Annotations")
+	for _, a := range annotations {
+		std.Out.Writef("%s", *a.Filename)
+		std.Out.Writef("Context: %s", *a.Annotation.Context)
+		std.Out.Writef("%s", a.BodyMarkdown)
+	}
+}
+
+func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		std.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
@@ -686,14 +698,8 @@ func printBuildResults(build *buildkite.Build, jobAnnotations map[string]bk.Anno
 		}
 		if elapsed > 0 {
 			block.WriteLine(output.Styledf(style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
-			if annotation, ok := jobAnnotations[*job.ID]; ok {
-				block.WriteLine(output.Styledf(style, "  %s", annotation.BodyMarkdown))
-			}
 		} else {
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
-			if annotation, ok := jobAnnotations[*job.ID]; ok {
-				block.WriteLine(output.Styledf(style, "  %s", annotation.BodyMarkdown))
-			}
 		}
 	}
 
