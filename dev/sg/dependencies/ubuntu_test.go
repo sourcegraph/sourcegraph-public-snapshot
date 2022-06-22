@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -23,10 +22,6 @@ func TestUbuntuFix(t *testing.T) {
 	// Initialize context with user shell information
 	ctx, err := usershell.Context(context.Background())
 	require.NoError(t, err)
-
-	// Debug
-	cmd := usershell.Cmd(ctx, "echo 'test'")
-	spew.Dump(cmd)
 
 	// Set up runner with no input and simple output
 	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Ubuntu)

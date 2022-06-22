@@ -25,8 +25,16 @@ jobs:
           go-version: 1.18
 
       - name: Test dependencies (${{ matrix.os }})
-        # Yes it really can be very slow. This is more an optional check than anything
-        # else so it should be okay
+        if: "! contains(matrix.os, 'ubuntu')"
+        run: |
+          go test -timeout=30m -v \
+            ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
+
+      # We need two separate test things to work around a known issue with terminals in
+      # GitHub Actions: https://github.com/actions/runner/issues/241#issuecomment-745902718
+      - name: Test dependencies (${{ matrix.os }})
+        if: contains(matrix.os, 'ubuntu')
+        shell: 'script -q -e -c "bash {0}"' # The workaround
         run: |
           go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
