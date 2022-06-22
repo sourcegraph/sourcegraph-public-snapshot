@@ -22,13 +22,22 @@ import (
 )
 
 func main() {
-	// Do not add initialization here, do all setup in sg.Before.
+	// Do not add initialization here, do all setup in sg.Before - this is a necessary
+	// workaround because we don't have control over the bash completion flag, which is
+	// part of urfave/cli internals.
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
 		batchCompletionMode = true
 	}
+
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
-		out := std.NewOutput(os.Stdout, false)
-		out.WriteFailuref(err.Error())
+		// We want to prefer an already-initialized std.Out no matter what happens,
+		// because that can be configured (e.g. with '--disable-output-detection'). Only
+		// if something went horribly wrong and std.Out is not yet initialized should we
+		// attempt an initialization here.
+		if std.Out == nil {
+			std.Out = std.NewOutput(os.Stdout, false)
+		}
+		std.Out.WriteFailuref(err.Error())
 		os.Exit(1)
 	}
 }
