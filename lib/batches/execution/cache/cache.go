@@ -153,8 +153,12 @@ type MountMetadata struct {
 	Modified time.Time
 }
 
-func getMountsMetadata(steps []batches.Step) ([]mountMetadata, error) {
-	var mountsMetadata []mountMetadata
+// FileMetadataRetriever retrieves mount metadata from a filesystem.
+type FileMetadataRetriever struct {
+}
+
+func (f FileMetadataRetriever) Get(steps []batches.Step) ([]MountMetadata, error) {
+	var mountsMetadata []MountMetadata
 	for _, step := range steps {
 		// Build up the metadata for each mount for each step
 		for _, mount := range step.Mount {
