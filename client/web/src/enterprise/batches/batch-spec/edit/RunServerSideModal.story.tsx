@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-export const _RunServerSideModal: Story = () => (
+export const RunServerSideModalStory: Story = () => (
     <WebStory>
         {props => (
             <RunServerSideModal
@@ -26,4 +26,4 @@ export const _RunServerSideModal: Story = () => (
     </WebStory>
 )
 
-_RunServerSideModal.storyName = 'RunServerSideModal'
+RunServerSideModalStory.storyName = 'RunServerSideModal'

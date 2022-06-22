@@ -86,7 +86,7 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
-export const EditingForTheFirstTime: Story = () => (
+export const EditFirstTime: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={FIRST_TIME_MOCKS}>
@@ -103,7 +103,7 @@ export const EditingForTheFirstTime: Story = () => (
     </WebStory>
 )
 
-EditingForTheFirstTime.storyName = 'editing for the first time'
+EditFirstTime.storyName = 'editing for the first time'
 
 const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
     {
@@ -133,7 +133,7 @@ const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
     ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 ])
 
-export const EditingTheLatestBatchSpec: Story = () => (
+export const EditLatestBatchSpec: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MULTIPLE_SPEC_MOCKS}>
@@ -150,7 +150,7 @@ export const EditingTheLatestBatchSpec: Story = () => (
     </WebStory>
 )
 
-EditingTheLatestBatchSpec.storyName = 'editing the latest batch spec'
+EditLatestBatchSpec.storyName = 'editing the latest batch spec'
 
 export const BatchChangeNotFound: Story = () => (
     <WebStory>

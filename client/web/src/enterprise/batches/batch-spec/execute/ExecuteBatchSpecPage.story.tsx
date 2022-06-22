@@ -146,8 +146,6 @@ export const Executing: Story = () => (
     </WebStory>
 )
 
-Executing.storyName = 'executing'
-
 // A true processing workspace wouldn't have a finishedAt set, but we need to have one so
 // that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
 // the snapshot, since the timer in the workspace details section is live in that case.
@@ -166,7 +164,7 @@ const PROCESSING_WORKSPACE_WITH_END_TIMES = {
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
 
-export const ExecutingWithAWorkspaceSelected: Story = () => (
+export const ExecuteWithAWorkspaceSelected: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -208,7 +206,7 @@ export const ExecutingWithAWorkspaceSelected: Story = () => (
     </WebStory>
 )
 
-ExecutingWithAWorkspaceSelected.storyName = 'executing, with a workspace selected'
+ExecuteWithAWorkspaceSelected.storyName = 'executing, with a workspace selected'
 
 const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC, { state: BatchSpecWorkspaceState.COMPLETED })
 
@@ -227,8 +225,6 @@ export const Completed: Story = () => (
         )}
     </WebStory>
 )
-
-Completed.storyName = 'completed'
 
 const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC, {
     state: BatchSpecWorkspaceState.COMPLETED,
@@ -254,7 +250,7 @@ CompletedWithErrors.storyName = 'completed with errors'
 
 const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
 
-export const ForALocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
@@ -270,4 +266,4 @@ export const ForALocallyExecutedSpec: Story = () => (
     </WebStory>
 )
 
-ForALocallyExecutedSpec.storyName = 'for a locally-executed spec'
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

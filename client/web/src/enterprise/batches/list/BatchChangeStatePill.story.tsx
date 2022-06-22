@@ -44,7 +44,7 @@ const STATE_COMBINATIONS: BatchChangeStatePillProps[] = Object.values(BatchChang
     ])
 )
 
-export const _BatchChangeStatePill: Story = () => (
+export const BatchChangeStatePillStory: Story = () => (
     <WebStory>
         {props => (
             <div className="d-flex flex-column align-items-start">
@@ -70,4 +70,4 @@ export const _BatchChangeStatePill: Story = () => (
     </WebStory>
 )
 
-_BatchChangeStatePill.storyName = 'BatchChangeStatePill'
+BatchChangeStatePillStory.storyName = 'BatchChangeStatePill'

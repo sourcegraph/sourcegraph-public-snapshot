@@ -36,8 +36,6 @@ export const Basic: Story = () => (
     </WebStory>
 )
 
-Basic.storyName = 'basic'
-
 export const Cached: Story = () => (
     <WebStory>
         {props => (
@@ -59,8 +57,6 @@ export const Cached: Story = () => (
     </WebStory>
 )
 
-Cached.storyName = 'cached'
-
 export const Stale: Story = () => (
     <WebStory>
         {props => (
@@ -81,8 +77,6 @@ export const Stale: Story = () => (
         )}
     </WebStory>
 )
-
-Stale.storyName = 'stale'
 
 export const ReadOnly: Story = () => (
     <WebStory>

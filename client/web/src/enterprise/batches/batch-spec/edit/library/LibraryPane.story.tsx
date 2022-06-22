@@ -19,8 +19,6 @@ export const Editable: Story = () => (
     </WebStory>
 )
 
-Editable.storyName = 'editable'
-
 export const ReadOnly: Story = () => (
     <WebStory>{props => <LibraryPane {...props} name="my-batch-change" isReadOnly={true} />}</WebStory>
 )

@@ -22,7 +22,7 @@ export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-export const _PreviewList: Story = () => {
+export const PreviewListStory: Story = () => {
     const publicationStateSet = boolean('publication state set by spec file', false)
 
     const nodes: ChangesetApplyPreviewFields[] = [
@@ -66,10 +66,10 @@ export const _PreviewList: Story = () => {
     )
 }
 
-_PreviewList.parameters = {
+PreviewListStory.parameters = {
     chromatic: {
         viewports: [320, 576, 978, 1440],
     },
 }
 
-_PreviewList.storyName = 'PreviewList'
+PreviewListStory.storyName = 'PreviewList'

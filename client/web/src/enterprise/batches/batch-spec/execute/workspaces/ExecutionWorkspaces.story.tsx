@@ -91,9 +91,7 @@ export const List: Story = () => (
     </WebStory>
 )
 
-List.storyName = 'list'
-
-export const WithWorkspaceSelected: Story = () => (
+export const WorkspaceSelected: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS}>
@@ -109,9 +107,9 @@ export const WithWorkspaceSelected: Story = () => (
     </WebStory>
 )
 
-WithWorkspaceSelected.storyName = 'with workspace selected'
+WorkspaceSelected.storyName = 'with workspace selected'
 
-export const ForALocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS}>
@@ -132,4 +130,4 @@ export const ForALocallyExecutedSpec: Story = () => (
     </WebStory>
 )
 
-ForALocallyExecutedSpec.storyName = 'for a locally-executed spec'
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

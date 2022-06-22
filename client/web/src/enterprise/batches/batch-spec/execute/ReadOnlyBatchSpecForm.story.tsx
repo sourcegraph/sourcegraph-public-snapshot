@@ -22,7 +22,7 @@ const config: Meta = {
 
 export default config
 
-export const WhileExecuting: Story = () => (
+export const Executing: Story = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -41,9 +41,9 @@ export const WhileExecuting: Story = () => (
     </WebStory>
 )
 
-WhileExecuting.storyName = 'while executing'
+Executing.storyName = 'while executing'
 
-export const AfterExecutionFinishes: Story = () => (
+export const ExecutionFinished: Story = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -68,9 +68,9 @@ export const AfterExecutionFinishes: Story = () => (
     </WebStory>
 )
 
-AfterExecutionFinishes.storyName = 'after execution finishes'
+ExecutionFinished.storyName = 'after execution finishes'
 
-export const ForALocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -83,4 +83,4 @@ export const ForALocallyExecutedSpec: Story = () => (
     </WebStory>
 )
 
-ForALocallyExecutedSpec.storyName = 'for a locally-executed spec'
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

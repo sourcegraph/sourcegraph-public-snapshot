@@ -17,7 +17,7 @@ const config: Meta = {
 
 export default config
 
-export const _CancelExecutionModal: Story = () => (
+export const CancelExecutionModalStory: Story = () => (
     <WebStory>
         {props => (
             <CancelExecutionModal
@@ -32,4 +32,4 @@ export const _CancelExecutionModal: Story = () => (
     </WebStory>
 )
 
-_CancelExecutionModal.storyName = 'CancelExecutionModal'
+CancelExecutionModalStory.storyName = 'CancelExecutionModal'

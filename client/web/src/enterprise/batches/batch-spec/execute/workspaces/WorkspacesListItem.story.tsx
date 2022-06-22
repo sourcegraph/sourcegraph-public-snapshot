@@ -29,7 +29,7 @@ const WORKSPACE_STATES: [key: string, state: BatchSpecWorkspaceState, isCached: 
     ['completed-cached', BatchSpecWorkspaceState.COMPLETED, true],
 ]
 
-export const _WorkspacesListItem: Story = () => {
+export const WorkspacesListItemStory: Story = () => {
     const [selectedIndex, setSelectedIndex] = useState<number>()
 
     return (
@@ -51,4 +51,4 @@ export const _WorkspacesListItem: Story = () => {
     )
 }
 
-_WorkspacesListItem.storyName = 'WorkspacesListItem'
+WorkspacesListItemStory.storyName = 'WorkspacesListItem'

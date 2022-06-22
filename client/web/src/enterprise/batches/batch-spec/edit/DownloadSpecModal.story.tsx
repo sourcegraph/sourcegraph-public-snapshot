@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-export const _DownloadSpecModal: Story = () => (
+export const DownloadSpecModalStory: Story = () => (
     <WebStory>
         {props => (
             <DownloadSpecModal
@@ -31,4 +31,4 @@ export const _DownloadSpecModal: Story = () => (
     </WebStory>
 )
 
-_DownloadSpecModal.storyName = 'DownloadSpecModal'
+DownloadSpecModalStory.storyName = 'DownloadSpecModal'

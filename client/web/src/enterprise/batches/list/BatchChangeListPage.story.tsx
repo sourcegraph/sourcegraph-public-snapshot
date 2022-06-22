@@ -83,7 +83,7 @@ export const ListOfBatchChanges: Story = () => {
 
 ListOfBatchChanges.storyName = 'List of batch changes'
 
-export const ListOfBatchChangesForASpecificNamespace: Story = () => (
+export const ListOfBatchChangesSpecificNamespace: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS_FOR_NAMESPACE}>
@@ -99,7 +99,7 @@ export const ListOfBatchChangesForASpecificNamespace: Story = () => (
     </WebStory>
 )
 
-ListOfBatchChangesForASpecificNamespace.storyName = 'List of batch changes, for a specific namespace'
+ListOfBatchChangesSpecificNamespace.storyName = 'List of batch changes, for a specific namespace'
 
 export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
     <WebStory>

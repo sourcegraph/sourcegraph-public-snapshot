@@ -18,13 +18,13 @@ export default config
 
 const CREATE_TABS: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
-export const CreatingANewBatchChange: Story = () => (
+export const CreateNewBatchChange: Story = () => (
     <WebStory>{props => <TabBar {...props} activeTabKey="configuration" tabsConfig={CREATE_TABS} />}</WebStory>
 )
 
-CreatingANewBatchChange.storyName = 'creating a new batch change'
+CreateNewBatchChange.storyName = 'creating a new batch change'
 
-export const EditingUnexecutedBatchSpec: Story = () => {
+export const EditUnexecutedBatchSpec: Story = () => {
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
 
     const tabsConfig: TabsConfig[] = [
@@ -49,7 +49,7 @@ export const EditingUnexecutedBatchSpec: Story = () => {
     return <WebStory>{props => <TabBar {...props} tabsConfig={tabsConfig} activeTabKey={activeTabKey} />}</WebStory>
 }
 
-EditingUnexecutedBatchSpec.storyName = 'editing unexecuted batch spec'
+EditUnexecutedBatchSpec.storyName = 'editing unexecuted batch spec'
 
 const EXECUTING_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
@@ -57,7 +57,7 @@ const EXECUTING_TABS: TabsConfig[] = [
     { key: 'execution', isEnabled: true, handler: { type: 'link' } },
 ]
 
-export const ExecutingABatchSpec: Story = () => (
+export const ExecuteBatchSpec: Story = () => (
     <WebStory>
         {props => (
             <TabBar
@@ -69,7 +69,7 @@ export const ExecutingABatchSpec: Story = () => (
     </WebStory>
 )
 
-ExecutingABatchSpec.storyName = 'executing a batch spec'
+ExecuteBatchSpec.storyName = 'executing a batch spec'
 
 const PREVIEWING_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
@@ -78,7 +78,7 @@ const PREVIEWING_TABS: TabsConfig[] = [
     { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
-export const PreviewingAnExecutionResult: Story = () => (
+export const PreviewExecutionResult: Story = () => (
     <WebStory>
         {props => (
             <TabBar
@@ -90,7 +90,7 @@ export const PreviewingAnExecutionResult: Story = () => (
     </WebStory>
 )
 
-PreviewingAnExecutionResult.storyName = 'previewing an execution result'
+PreviewExecutionResult.storyName = 'previewing an execution result'
 
 const LOCAL_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
@@ -99,7 +99,7 @@ const LOCAL_TABS: TabsConfig[] = [
     { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
-export const ForALocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <TabBar
@@ -111,4 +111,4 @@ export const ForALocallyExecutedSpec: Story = () => (
     </WebStory>
 )
 
-ForALocallyExecutedSpec.storyName = 'for a locally-executed spec'
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

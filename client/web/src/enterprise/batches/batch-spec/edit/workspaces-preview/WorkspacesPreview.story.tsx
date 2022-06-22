@@ -53,8 +53,6 @@ export const Unstarted: Story = () => (
     </WebStory>
 )
 
-Unstarted.storyName = 'unstarted'
-
 export const UnstartedWithCachedConnectionResult: Story = () => (
     <WebStory>
         {props => (
@@ -330,8 +328,6 @@ export const Succeeded: Story = () => (
         )}
     </WebStory>
 )
-
-Succeeded.storyName = 'succeeded'
 
 export const ReadOnly: Story = () => (
     <WebStory>

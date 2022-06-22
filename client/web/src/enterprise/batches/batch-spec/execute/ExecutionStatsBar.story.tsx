@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const _ExecutionStatsBar: Story = () => (
+export const ExecutionStatsBarStory: Story = () => (
     <WebStory>
         {props => (
             <ExecutionStatsBar
@@ -29,4 +29,4 @@ export const _ExecutionStatsBar: Story = () => (
     </WebStory>
 )
 
-_ExecutionStatsBar.storyName = 'ExecutionStatsBar'
+ExecutionStatsBarStory.storyName = 'ExecutionStatsBar'

@@ -15,7 +15,7 @@ const config: Meta = {
 
 export default config
 
-export const _ReadOnlyBatchSpecAlert: Story = () => (
+export const ReadOnlyBatchSpecAlertStory: Story = () => (
     <WebStory>
         {props => (
             <ReadOnlyBatchSpecAlert
@@ -31,4 +31,4 @@ export const _ReadOnlyBatchSpecAlert: Story = () => (
     </WebStory>
 )
 
-_ReadOnlyBatchSpecAlert.storyName = 'ReadOnlyBatchSpecAlert'
+ReadOnlyBatchSpecAlertStory.storyName = 'ReadOnlyBatchSpecAlert'

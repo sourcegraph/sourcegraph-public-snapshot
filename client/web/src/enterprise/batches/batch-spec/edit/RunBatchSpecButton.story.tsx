@@ -33,8 +33,6 @@ export const Disabled: Story = () => {
     )
 }
 
-Disabled.storyName = 'disabled'
-
 export const Enabled: Story = () => {
     const [options, setOptions] = useState<ExecutionOptions>({ runWithoutCache: false })
     return (
@@ -50,5 +48,3 @@ export const Enabled: Story = () => {
         </WebStory>
     )
 }
-
-Enabled.storyName = 'enabled'

@@ -13,13 +13,13 @@ const config: Meta = {
 
 export default config
 
-export const CreatingANewBatchChange: Story = () => (
+export const CreateNewBatchChange: Story = () => (
     <WebStory>{props => <BatchChangeHeader {...props} title={{ text: 'Create batch change' }} />}</WebStory>
 )
 
-CreatingANewBatchChange.storyName = 'creating a new batch change'
+CreateNewBatchChange.storyName = 'creating a new batch change'
 
-export const BatchChangeAlreadyExists: Story = () => (
+export const BatchChangeExists: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeHeader
@@ -32,4 +32,4 @@ export const BatchChangeAlreadyExists: Story = () => (
     </WebStory>
 )
 
-BatchChangeAlreadyExists.storyName = 'batch change already exists'
+BatchChangeExists.storyName = 'batch change already exists'

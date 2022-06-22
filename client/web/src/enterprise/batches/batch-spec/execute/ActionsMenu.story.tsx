@@ -30,8 +30,6 @@ export const Executing: Story = () => (
     </WebStory>
 )
 
-Executing.storyName = 'executing'
-
 export const Failed: Story = () => (
     <WebStory>
         {props => (
@@ -42,8 +40,6 @@ export const Failed: Story = () => (
     </WebStory>
 )
 
-Failed.storyName = 'failed'
-
 export const Completed: Story = () => (
     <WebStory>
         {props => (
@@ -53,8 +49,6 @@ export const Completed: Story = () => (
         )}
     </WebStory>
 )
-
-Completed.storyName = 'completed'
 
 export const CompletedWithErrors: Story = () => (
     <WebStory>
