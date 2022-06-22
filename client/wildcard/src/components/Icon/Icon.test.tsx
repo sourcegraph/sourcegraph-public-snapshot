@@ -31,7 +31,7 @@ describe('Icon', () => {
         })
     })
 
-    describe('new @mdi/react icons', () => {
+    describe('new @mdi/js icons', () => {
         it('renders a simple inline icon correctly', () => {
             const { asFragment } = render(<Icon svgPath={mdiClose} aria-hidden={true} />)
             expect(asFragment()).toMatchSnapshot()

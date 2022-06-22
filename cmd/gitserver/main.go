@@ -116,7 +116,7 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to initialize database stores", zap.Error(err))
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
 	depsSvc := livedependencies.GetService(db, nil)

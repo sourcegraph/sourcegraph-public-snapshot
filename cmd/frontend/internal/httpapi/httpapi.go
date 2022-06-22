@@ -14,6 +14,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -123,6 +125,7 @@ func NewHandler(
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
 func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+	logger := sglog.Scoped("InternalHandler", "")
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -140,7 +143,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:            db,
-		ListIndexable: backend.NewRepos(db).ListIndexable,
+		ListIndexable: backend.NewRepos(logger, db).ListIndexable,
 		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)

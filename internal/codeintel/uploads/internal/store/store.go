@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -16,6 +17,9 @@ import (
 // Store provides the interface for uploads storage.
 type Store interface {
 	List(ctx context.Context, opts ListOpts) (uploads []shared.Upload, err error)
+	StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, indexesDeleted int, err error)
 }
 
 // store manages the database operations for uploads.
@@ -70,3 +74,13 @@ const listQuery = `
 SELECT id FROM TODO
 LIMIT %s
 `
+
+// intsToQueries converts a slice of ints into a slice of queries.
+func intsToQueries(values []int) []*sqlf.Query {
+	var queries []*sqlf.Query
+	for _, value := range values {
+		queries = append(queries, sqlf.Sprintf("%d", value))
+	}
+
+	return queries
+}

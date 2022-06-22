@@ -9,14 +9,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const specExpireInteral = 2 * time.Minute
+const specExpireInteral = 60 * time.Minute
 
 func NewSpecExpirer(ctx context.Context, bstore *store.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		specExpireInteral,
 		goroutine.NewHandlerWithErrorMessage("expire batch changes specs", func(ctx context.Context) error {
-			// Delete all unattached, expired ChangesetSpecs...
+			// Delete all unattached changeset specs...
+			if err := bstore.DeleteUnattachedExpiredChangesetSpecs(ctx); err != nil {
+				return errors.Wrap(err, "DeleteExpiredChangesetSpecs")
+			}
+			// ... and all expired changeset specs...
 			if err := bstore.DeleteExpiredChangesetSpecs(ctx); err != nil {
 				return errors.Wrap(err, "DeleteExpiredChangesetSpecs")
 			}

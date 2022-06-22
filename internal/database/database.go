@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -55,16 +57,17 @@ var _ DB = (*db)(nil)
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
-func NewDB(inner *sql.DB) DB {
-	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+func NewDB(logger log.Logger, inner *sql.DB) DB {
+	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
 }
 
-func NewDBWith(other basestore.ShareableStore) DB {
-	return &db{basestore.NewWithHandle(other.Handle())}
+func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
+	return &db{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 type db struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
@@ -85,7 +88,7 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &db{tx}, nil
+	return &db{logger: d.logger, Store: tx}, nil
 }
 
 func (d *db) Done(err error) error {
@@ -117,7 +120,7 @@ func (d *db) SecurityEventLogs() SecurityEventLogsStore {
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
-	return ExternalServicesWith(d.Store)
+	return ExternalServicesWith(d.logger, d.Store)
 }
 
 func (d *db) FeatureFlags() FeatureFlagStore {
@@ -161,7 +164,7 @@ func (d *db) Phabricator() PhabricatorStore {
 }
 
 func (d *db) Repos() RepoStore {
-	return ReposWith(d.Store)
+	return ReposWith(d.logger, d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
@@ -169,7 +172,7 @@ func (d *db) SavedSearches() SavedSearchStore {
 }
 
 func (d *db) SearchContexts() SearchContextsStore {
-	return SearchContextsWith(d.Store)
+	return SearchContextsWith(d.logger, d.Store)
 }
 
 func (d *db) Settings() SettingsStore {
@@ -193,7 +196,7 @@ func (d *db) UserEmails() UserEmailsStore {
 }
 
 func (d *db) UserExternalAccounts() UserExternalAccountsStore {
-	return ExternalAccountsWith(d.Store)
+	return ExternalAccountsWith(d.logger, d.Store)
 }
 
 func (d *db) UserPublicRepos() UserPublicRepoStore {
@@ -201,7 +204,7 @@ func (d *db) UserPublicRepos() UserPublicRepoStore {
 }
 
 func (d *db) Users() UserStore {
-	return UsersWith(d.Store)
+	return UsersWith(d.logger, d.Store)
 }
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {

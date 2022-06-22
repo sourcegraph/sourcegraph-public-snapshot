@@ -43,7 +43,12 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
 
     let thumbnailElement = thumbnail ? (
         <button type="button" className={classNames('pb-2', styles.thumbnailButton)} onClick={() => toggleDialog(true)}>
-            <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
+            <img
+                src={`${assetsRoot}/${thumbnail.src}`}
+                alt={thumbnail.alt}
+                className={styles.thumbnailImage}
+                aria-hidden={true}
+            />
             <div className={styles.playIconWrapper}>
                 <PlayIcon />
             </div>

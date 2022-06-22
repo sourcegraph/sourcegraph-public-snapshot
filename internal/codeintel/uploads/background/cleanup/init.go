@@ -8,18 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewJanitor(dbStore DBStore, lsifStore LSIFStore, metrics *metrics) goroutine.BackgroundRoutine {
+func NewJanitor(dbStore DBStore, lsifStore LSIFStore, uploadSvc UploadService, metrics *metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, newJanitor(
 		dbStore,
 		lsifStore,
+		uploadSvc,
 		metrics,
 	))
 }
 
-func newJanitor(dbStore DBStore, lsifStore LSIFStore, metrics *metrics) *janitor {
+func newJanitor(dbStore DBStore, lsifStore LSIFStore, uploadSvc UploadService, metrics *metrics) *janitor {
 	return &janitor{
 		dbStore:   dbStore,
 		lsifStore: lsifStore,
+		uploadSvc: uploadSvc,
 		metrics:   metrics,
 		clock:     glock.NewRealClock(),
 	}

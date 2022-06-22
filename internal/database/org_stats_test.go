@@ -4,11 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestOrgStats_Upsert(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	org, err := db.Orgs().Create(ctx, "org1", nil)

@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -72,7 +74,8 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -94,7 +97,8 @@ func TestUsers_ValidUsernames(t *testing.T) {
 }
 
 func TestUsers_Create_SiteAdmin(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	if _, err := db.GlobalState().Get(ctx); err != nil {
@@ -182,7 +186,8 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -232,7 +237,8 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -290,7 +296,8 @@ func TestUsers_Update(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -369,7 +376,8 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -404,7 +412,8 @@ func TestUsers_GetByUsername(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -450,7 +459,8 @@ func TestUsers_GetByUsernames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -494,7 +504,8 @@ func TestUsers_Delete(t *testing.T) {
 				t.Skip()
 			}
 			t.Parallel()
-			db := NewDB(dbtest.NewDB(t))
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -653,7 +664,8 @@ func TestUsers_HasTag(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	var id int32
@@ -691,7 +703,8 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -734,7 +747,8 @@ func TestUsers_SetTag(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create user.
