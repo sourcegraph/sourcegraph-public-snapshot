@@ -11,6 +11,7 @@ import {
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SearchContextProps,
+    EditorHint,
 } from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -70,7 +71,6 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
-    onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
@@ -160,7 +160,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     onBlur,
     onChange,
     onSubmit = noop,
-    onSuggestionsInitialized,
     onCompletionItemSelected,
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     autoFocus,
@@ -224,15 +223,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     })
 
     useQueryDiagnostics(editor, { patternType, interpretComments })
-
-    // Register suggestions handle
-    useEffect(() => {
-        if (editor) {
-            onSuggestionsInitialized?.({
-                trigger: () => editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {}),
-            })
-        }
-    }, [editor, onSuggestionsInitialized])
 
     // Register onCompletionSelected handler
     useEffect(() => {
@@ -309,37 +299,40 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
             return
         }
 
-        switch (queryState.changeSource) {
-            case QueryChangeSource.userInput:
-                // Don't react to user input
-                break
-            case QueryChangeSource.searchTypes:
-            case QueryChangeSource.searchReference: {
-                const textModel = editor.getModel()
-                if (textModel) {
-                    const selectionRange = toMonacoSelection(toMonacoRange(queryState.selectionRange, textModel))
-                    editor.setSelection(selectionRange)
-                    if (queryState.showSuggestions) {
-                        editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
-                    }
-                    // For some reason this has to come *after* triggering the
-                    // suggestion, otherwise the suggestion box will be shown
-                    // and the filter is not scrolled into view.
-                    editor.revealRange(toMonacoRange(queryState.revealRange, textModel))
-                }
+        if (queryState.changeSource === QueryChangeSource.userInput) {
+            // Don't react to user input
+            return
+        }
+
+        const textModel = editor.getModel()
+
+        if (textModel && queryState.selectionRange) {
+            editor.setSelection(toMonacoSelection(toMonacoRange(queryState.selectionRange, textModel)))
+        } else if (!queryState.selectionRange) {
+            // Place the cursor at the end of the query.
+            const position = {
+                // +2 as Monaco is 1-indexed.
+                column: editor.getValue().length + 2,
+                lineNumber: 1,
+            }
+            editor.setPosition(position)
+            editor.revealPosition(position)
+        }
+
+        if (queryState.hint) {
+            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
                 editor.focus()
-                break
             }
-            default: {
-                // Place the cursor at the end of the query.
-                const position = {
-                    // +2 as Monaco is 1-indexed.
-                    column: editor.getValue().length + 2,
-                    lineNumber: 1,
-                }
-                editor.setPosition(position)
-                editor.revealPosition(position)
+            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
+                editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
             }
+        }
+
+        if (textModel && queryState.revealRange) {
+            // For some reason this has to come *after* triggering the
+            // suggestion, otherwise the suggestion box will be shown
+            // but the filter won't be scrolled into view.
+            editor.revealRange(toMonacoRange(queryState.revealRange, textModel))
         }
     }, [editor, queryState])
 

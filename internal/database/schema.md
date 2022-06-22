@@ -157,7 +157,6 @@ Indexes:
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
     "batch_spec_workspace_execution_jobs_last_dequeue" btree (user_id, started_at DESC)
     "batch_spec_workspace_execution_jobs_state" btree (state)
-    "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
@@ -187,6 +186,7 @@ Foreign-key constraints:
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspaces_batch_spec_id" btree (batch_spec_id)
+    "batch_spec_workspaces_id_batch_spec_id" btree (id, batch_spec_id)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
@@ -1208,6 +1208,7 @@ Indexes:
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_processable_priority_id" btree (priority, id) WHERE state = 'queued'::text OR state = 'errored'::text
+    "insights_query_runner_jobs_series_id_state" btree (series_id, state)
     "insights_query_runner_jobs_state_btree" btree (state)
     "process_after_insights_query_runner_jobs_idx" btree (process_after)
 Referenced by:

@@ -58,7 +58,7 @@ public abstract class FileAction extends DumbAwareAction {
             + "&branch=" + URLEncoder.encode(repoInfo.branchName, StandardCharsets.UTF_8)
             + "&file=" + URLEncoder.encode(repoInfo.relativePath, StandardCharsets.UTF_8)
             + "&editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=" + URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)
+            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)
             + (start != null ? ("&start_row=" + URLEncoder.encode(Integer.toString(start.line), StandardCharsets.UTF_8)
             + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), StandardCharsets.UTF_8)) : "")
             + (end != null ? ("&end_row=" + URLEncoder.encode(Integer.toString(end.line), StandardCharsets.UTF_8)

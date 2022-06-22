@@ -187,8 +187,7 @@ func NewCloneQueue(jobs *list.List) *cloneQueue {
 
 // Server is a gitserver server.
 type Server struct {
-	// Logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
 
 	// ReposDir is the path to the base directory for gitserver storage.

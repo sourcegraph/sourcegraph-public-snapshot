@@ -38,7 +38,7 @@ func InitBackgroundJobs(
 	ctx = actor.WithInternalActor(ctx)
 
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("background", "batches background jobs"),
+		Logger:     log.Scoped("batches.background", "batches background jobs"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

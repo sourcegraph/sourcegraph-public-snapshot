@@ -11,6 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -44,12 +46,12 @@ func (e ErrRepoSeeOther) Error() string {
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(db database.DB) *repos {
+func NewRepos(logger log.Logger, db database.DB) *repos {
 	repoStore := db.Repos()
 	return &repos{
 		db:    db,
 		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(repoStore),
+		cache: dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 

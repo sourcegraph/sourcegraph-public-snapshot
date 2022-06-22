@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -21,6 +22,8 @@ import (
 
 func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	cs := make([]*btypes.BatchChange, 0, 5)
+
+	logger := logtest.Scoped(t)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
@@ -122,8 +125,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(s)
-			esStore := database.ExternalServicesWith(s)
+			repoStore := database.ReposWith(logger, s)
+			esStore := database.ExternalServicesWith(logger, s)
 
 			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -278,8 +281,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("By RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(s)
-			esStore := database.ExternalServicesWith(s)
+			repoStore := database.ReposWith(logger, s)
+			esStore := database.ExternalServicesWith(logger, s)
 
 			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -693,8 +696,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	t.Run("GetBatchChangeDiffStat", func(t *testing.T) {
 		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
+		repoStore := database.ReposWith(logger, s)
+		esStore := database.ExternalServicesWith(logger, s)
 		repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo.Private = true
 		if err := repoStore.Create(ctx, repo); err != nil {
@@ -751,8 +754,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	t.Run("GetRepoDiffStat", func(t *testing.T) {
 		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
+		repoStore := database.ReposWith(logger, s)
+		esStore := database.ExternalServicesWith(logger, s)
 		repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -879,6 +882,8 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 	orgID := ct.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
+	logger := logtest.Scoped(t)
+
 	t.Run("User delete", func(t *testing.T) {
 		// Set up two batch changes and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
@@ -924,7 +929,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		// Now we soft-delete the user.
-		if err := database.UsersWith(s).Delete(ctx, user.ID); err != nil {
+		if err := database.UsersWith(logger, s).Delete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -973,7 +978,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		testBatchChangeIsGone()
 
 		// Now we hard-delete the user.
-		if err := database.UsersWith(s).HardDelete(ctx, user.ID); err != nil {
+		if err := database.UsersWith(logger, s).HardDelete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -17,9 +18,6 @@ type DBStore interface {
 
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
-	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]dbstore.SourcedCommits, error)
-	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, int, error)
-	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
 	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
@@ -31,6 +29,12 @@ type LSIFStore interface {
 	Transact(ctx context.Context) (LSIFStore, error)
 	Done(err error) error
 	Clear(ctx context.Context, bundleIDs ...int) error
+}
+
+type UploadService interface {
+	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]shared.SourcedCommits, error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, int, error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 }
 
 type DBStoreShim struct{ *dbstore.Store }

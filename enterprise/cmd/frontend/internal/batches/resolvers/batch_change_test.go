@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -22,12 +24,13 @@ import (
 )
 
 func TestBatchChangeResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	orgName := "test-batch-change-resolver-org"
@@ -105,7 +108,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(cstore).Delete(ctx, userID)
+	err = database.UsersWith(logger, cstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +127,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(cstore).HardDelete(ctx, userID)
+	err = database.UsersWith(logger, cstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,8 +146,10 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))

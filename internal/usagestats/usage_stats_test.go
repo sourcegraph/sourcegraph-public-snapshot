@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -689,7 +691,8 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 }
 
 func setupForTest(t *testing.T) database.DB {
-	return database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	return database.NewDB(logger, dbtest.NewDB(logger, t))
 }
 
 func mockTimeNow(t time.Time) {

@@ -1850,6 +1850,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -1863,7 +1864,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 		}
 
 		// create fake user
-		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+		user, err := database.UsersWith(logger, store).Create(ctx, database.NewUser{
 			Email:                 "Email",
 			Username:              "Username",
 			DisplayName:           "DisplayName",
@@ -1966,6 +1967,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 
 func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -1979,7 +1981,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 		}
 
 		// create fake user
-		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+		user, err := database.UsersWith(logger, store).Create(ctx, database.NewUser{
 			Email:                 "Email",
 			Username:              "Username",
 			DisplayName:           "DisplayName",
@@ -2058,7 +2060,6 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 
 		repoIdx := 0
 
-		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{

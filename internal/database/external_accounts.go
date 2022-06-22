@@ -10,6 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -95,24 +97,26 @@ type userExternalAccountsStore struct {
 	*basestore.Store
 
 	key encryption.Key
+
+	logger log.Logger
 }
 
 // ExternalAccountsWith instantiates and returns a new UserExternalAccountsStore using the other store handle.
-func ExternalAccountsWith(other basestore.ShareableStore) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: basestore.NewWithHandle(other.Handle())}
+func ExternalAccountsWith(logger log.Logger, other basestore.ShareableStore) UserExternalAccountsStore {
+	return &userExternalAccountsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (s *userExternalAccountsStore) With(other basestore.ShareableStore) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: s.Store.With(other), key: s.key}
+	return &userExternalAccountsStore{logger: s.logger, Store: s.Store.With(other), key: s.key}
 }
 
 func (s *userExternalAccountsStore) WithEncryptionKey(key encryption.Key) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: s.Store, key: key}
+	return &userExternalAccountsStore{logger: s.logger, Store: s.Store, key: key}
 }
 
 func (s *userExternalAccountsStore) Transact(ctx context.Context) (UserExternalAccountsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &userExternalAccountsStore{Store: txBase, key: s.key}, err
+	return &userExternalAccountsStore{logger: s.logger, Store: txBase, key: s.key}, err
 }
 
 func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
@@ -264,14 +268,14 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(tx).CreateInTransaction(ctx, newUser)
+	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser)
 	if err != nil {
 		return 0, err
 	}
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
-		logAccountCreatedEvent(ctx, NewDBWith(s), createdUser, spec.ServiceType)
+		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
 	return createdUser.ID, err
 }

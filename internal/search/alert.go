@@ -16,6 +16,7 @@ type Alert struct {
 	Title           string
 	Description     string
 	ProposedQueries []*ProposedQuery
+	Kind            string // An identifier indicating the kind of alert
 	// The higher the priority the more important is the alert.
 	Priority int
 }
@@ -54,9 +55,11 @@ type ProposedQuery struct {
 func (q *ProposedQuery) QueryString() string {
 	if q.Description != "Remove quotes" {
 		switch q.PatternType {
+		case query.SearchTypeStandard:
+			return q.Query + " patternType:standard"
 		case query.SearchTypeRegex:
 			return q.Query + " patternType:regexp"
-		case query.SearchTypeLiteralDefault:
+		case query.SearchTypeLiteral:
 			return q.Query + " patternType:literal"
 		case query.SearchTypeStructural:
 			return q.Query + " patternType:structural"

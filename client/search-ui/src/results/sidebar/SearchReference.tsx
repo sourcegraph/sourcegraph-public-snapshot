@@ -8,11 +8,11 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import {
-    QueryChangeSource,
     SearchQueryState,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
     QueryExample,
+    EditorHint,
 } from '@sourcegraph/search'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -537,11 +537,12 @@ const SearchReference = React.memo(
                         }
                     )
                     return {
-                        changeSource: QueryChangeSource.searchReference,
                         query: updatedQuery.query,
                         selectionRange: updatedQuery.placeholderRange,
                         revealRange: updatedQuery.filterRange,
-                        showSuggestions: shouldShowSuggestions(searchReference),
+                        hint:
+                            (shouldShowSuggestions(searchReference) ? EditorHint.ShowSuggestions : 0) |
+                            EditorHint.Focus,
                     }
                 })
             },
@@ -603,7 +604,7 @@ const SearchReference = React.memo(
                 <Text className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-label="Open in a new tab" as={ExternalLinkIcon} />
                         </Link>
                     </small>
                 </Text>
