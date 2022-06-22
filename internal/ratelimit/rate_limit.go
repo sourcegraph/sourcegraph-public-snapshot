@@ -150,6 +150,16 @@ func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
 	return err
 }
 
+// SetBurst is calling SetBurstAt(time.Now(), newBurst) method of the wrapped *rate.Limiter.
+func (i *InstrumentedLimiter) SetBurst(newBurst int) {
+	i.Limiter.SetBurstAt(time.Now(), newBurst)
+}
+
+// SetLimit is calling SetLimitAt(time.Now(), newLimit) method of the wrapped *rate.Limiter.
+func (i *InstrumentedLimiter) SetLimit(newLimit rate.Limit) {
+	i.Limiter.SetLimitAt(time.Now(), newLimit)
+}
+
 var metricWaitDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_internal_rate_limit_wait_duration",
 	Help:    "Time spent waiting for our internal rate limiter",
