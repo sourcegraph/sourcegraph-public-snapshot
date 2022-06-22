@@ -977,11 +977,11 @@ func (s *Store) SelectRepositoriesForLockfileIndexScan(ctx context.Context, tabl
 }
 
 func (s *Store) selectRepositoriesForLockfileIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
-	// ctx, _, endObservation := s.operations.selectRepositoriesForLockfileIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
-	// 	log.Bool("allowGlobalPolicies", allowGlobalPolicies),
-	// 	log.Int("limit", limit),
-	// }})
-	// defer endObservation(1, observation.Args{})
+	ctx, _, endObservation := s.operations.selectRepositoriesForLockfileIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	limitExpression := sqlf.Sprintf("")
 	if repositoryMatchLimit != nil {

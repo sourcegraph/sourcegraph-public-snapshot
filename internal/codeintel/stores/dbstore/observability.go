@@ -73,6 +73,7 @@ type operations struct {
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
 	selectRepositoriesForIndexScan              *observation.Operation
 	selectRepositoriesForRetentionScan          *observation.Operation
+	selectRepositoriesForLockfileIndexScan      *observation.Operation
 	softDeleteExpiredUploads                    *observation.Operation
 	updateCommitedAt                            *observation.Operation
 	updateConfigurationPolicy                   *observation.Operation
