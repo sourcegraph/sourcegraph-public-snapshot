@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const draft: Story = () => (
+export const Draft: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -39,9 +39,7 @@ export const draft: Story = () => (
     </WebStory>
 )
 
-draft.storyName = 'draft'
-
-export const open: Story = () => (
+export const Open: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -65,8 +63,6 @@ export const open: Story = () => (
         )}
     </WebStory>
 )
-
-open.storyName = 'open'
 
 export const OpenAndComplete: Story = () => (
     <WebStory>
@@ -95,7 +91,7 @@ export const OpenAndComplete: Story = () => (
 
 OpenAndComplete.storyName = 'open and complete'
 
-export const closed: Story = () => (
+export const Closed: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -119,5 +115,3 @@ export const closed: Story = () => (
         )}
     </WebStory>
 )
-
-closed.storyName = 'closed'

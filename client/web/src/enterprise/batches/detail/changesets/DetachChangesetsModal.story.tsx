@@ -37,5 +37,3 @@ export const Confirmation: Story = () => (
         )}
     </WebStory>
 )
-
-Confirmation.storyName = 'Confirmation'

@@ -19,5 +19,3 @@ const config: Meta = {
 export default config
 
 export const Overview: Story = () => <WebStory>{() => <DotcomGettingStartedPage />}</WebStory>
-
-Overview.storyName = 'Overview'

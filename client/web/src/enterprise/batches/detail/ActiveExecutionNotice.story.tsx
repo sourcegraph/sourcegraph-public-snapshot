@@ -19,7 +19,7 @@ export default config
 const PROCESSING_BATCH_SPEC = { state: BatchSpecState.PROCESSING }
 const COMPLETE_BATCH_SPEC = { state: BatchSpecState.COMPLETED }
 
-export const _ActiveExecutionNotice: Story = () => {
+export const ActiveExecutionNoticeStory: Story = () => {
     const numberActive = number('number of specs executing', 1, { min: 0 })
     const numberComplete = number('number of specs complete', 1, { min: 0 })
 
@@ -34,4 +34,4 @@ export const _ActiveExecutionNotice: Story = () => {
     return <WebStory>{() => <ActiveExecutionNotice batchSpecs={specs} batchChangeURL="lol.fake" />}</WebStory>
 }
 
-_ActiveExecutionNotice.storyName = 'ActiveExecutionNotice'
+ActiveExecutionNoticeStory.storyName = 'ActiveExecutionNotice'

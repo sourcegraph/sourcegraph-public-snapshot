@@ -54,7 +54,7 @@ export const NewBatchChange: Story = () => (
 
 NewBatchChange.storyName = 'New batch change'
 
-export const ReadOnlyForExistingBatchChange: Story = () => (
+export const ExistingBatchChange: Story = () => (
     <WebStory>
         {props => (
             <ConfigurationForm
@@ -75,4 +75,4 @@ export const ReadOnlyForExistingBatchChange: Story = () => (
     </WebStory>
 )
 
-ReadOnlyForExistingBatchChange.storyName = 'Read-only for existing batch change'
+ExistingBatchChange.storyName = 'Read-only for existing batch change'

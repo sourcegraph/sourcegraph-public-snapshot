@@ -194,8 +194,6 @@ export const Unpublished: Story = () => {
     )
 }
 
-Unpublished.storyName = 'Unpublished'
-
 export const Importing: Story = () => {
     const now = new Date()
     return (
@@ -257,8 +255,6 @@ export const Importing: Story = () => {
         </WebStory>
     )
 }
-
-Importing.storyName = 'Importing'
 
 export const ImportingFailed: Story = () => {
     const now = new Date()

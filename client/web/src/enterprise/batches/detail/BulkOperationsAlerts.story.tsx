@@ -28,8 +28,6 @@ export const Processing: Story = () => {
     return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
 }
 
-Processing.storyName = 'Processing'
-
 export const Failed: Story = () => {
     const bulkOperations = useMemo(
         () => ({
@@ -42,8 +40,6 @@ export const Failed: Story = () => {
     return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
 }
 
-Failed.storyName = 'Failed'
-
 export const Completed: Story = () => {
     const bulkOperations = useMemo(
         () => ({
@@ -55,5 +51,3 @@ export const Completed: Story = () => {
     )
     return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
 }
-
-Completed.storyName = 'Completed'

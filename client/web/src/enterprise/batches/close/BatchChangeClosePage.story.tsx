@@ -280,8 +280,6 @@ export const Overview: Story = () => {
     )
 }
 
-Overview.storyName = 'Overview'
-
 export const NoOpenChangesets: Story = () => {
     const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
