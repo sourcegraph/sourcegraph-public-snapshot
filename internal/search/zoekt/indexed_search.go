@@ -408,32 +408,35 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 			continue
 		}
 
+		ranges := make(result.Ranges, 0, len(l.LineFragments))
 		for _, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 
-			hms = append(hms, result.ChunkMatch{
-				Content: string(l.Line),
-				// zoekt line numbers are 1-based rather than 0-based so subtract 1
-				ContentStart: result.Location{
-					Offset: l.LineStart,
+			ranges = append(ranges, result.Range{
+				Start: result.Location{
+					Offset: int(m.Offset),
 					Line:   l.LineNumber - 1,
-					Column: 0,
+					Column: offset,
 				},
-				Ranges: result.Ranges{{
-					Start: result.Location{
-						Offset: int(m.Offset),
-						Line:   l.LineNumber - 1,
-						Column: offset,
-					},
-					End: result.Location{
-						Offset: int(m.Offset) + m.MatchLength,
-						Line:   l.LineNumber - 1,
-						Column: offset + length,
-					},
-				}},
+				End: result.Location{
+					Offset: int(m.Offset) + m.MatchLength,
+					Line:   l.LineNumber - 1,
+					Column: offset + length,
+				},
 			})
 		}
+
+		hms = append(hms, result.ChunkMatch{
+			Content: string(l.Line),
+			// zoekt line numbers are 1-based rather than 0-based so subtract 1
+			ContentStart: result.Location{
+				Offset: l.LineStart,
+				Line:   l.LineNumber - 1,
+				Column: 0,
+			},
+			Ranges: ranges,
+		})
 	}
 
 	return hms
