@@ -57,7 +57,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
 
         uri = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
             + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=" + URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)
+            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)
             + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
             + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
             + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);

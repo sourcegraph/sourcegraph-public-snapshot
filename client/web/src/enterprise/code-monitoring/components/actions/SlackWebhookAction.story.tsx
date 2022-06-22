@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -8,10 +8,6 @@ import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
-
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/SlackWebhookAction', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -29,7 +25,13 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-add('SlackWebhookAction', () => (
+const config = {
+    title: 'web/enterprise/code-monitoring/actions/SlackWebhookAction',
+}
+
+export default config
+
+export const _SlackWebhookAction: Story = () => (
     <WebStory>
         {() => (
             <>
@@ -63,4 +65,12 @@ add('SlackWebhookAction', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+_SlackWebhookAction.storyName = 'SlackWebhookAction'
+
+_SlackWebhookAction.parameters = {
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}

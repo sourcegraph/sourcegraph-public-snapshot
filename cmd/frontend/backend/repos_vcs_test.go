@@ -192,7 +192,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoGetCommit bool
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
+	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
 	}

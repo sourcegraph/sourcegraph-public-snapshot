@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,7 +46,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters := gitserverParallelRecentCommitters(ctx, db, pickedRepos, git.Commits)
+	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, gitserver.NewClient(db).Commits)
 
 	authUserEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
@@ -72,9 +72,9 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExistsByUsername, userExistsByEmail), nil
 }
 
-type GitCommitsFunc func(context.Context, database.DB, api.RepoName, git.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+type GitCommitsFunc func(context.Context, api.RepoName, gitserver.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
 
-func gitserverParallelRecentCommitters(ctx context.Context, db database.DB, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
+func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
@@ -85,7 +85,7 @@ func gitserverParallelRecentCommitters(ctx context.Context, db database.DB, repo
 		goroutine.Go(func() {
 			defer wg.Done()
 
-			recentCommits, err := gitCommits(ctx, db, repo.Name, git.CommitsOptions{
+			recentCommits, err := gitCommits(ctx, repo.Name, gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true, // Don't try to fetch missing commits.
 				NameOnly:         true, // Don't fetch detailed info like commit diffs.

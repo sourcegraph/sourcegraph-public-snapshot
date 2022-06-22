@@ -116,6 +116,10 @@ func (r *configurationPolicyResolver) IndexIntermediateCommits() bool {
 	return r.configurationPolicy.IndexIntermediateCommits
 }
 
+func (r *configurationPolicyResolver) LockfileIndexingEnabled() bool {
+	return r.configurationPolicy.LockfileIndexingEnabled
+}
+
 func toHours(duration *time.Duration) *int32 {
 	if duration == nil {
 		return nil

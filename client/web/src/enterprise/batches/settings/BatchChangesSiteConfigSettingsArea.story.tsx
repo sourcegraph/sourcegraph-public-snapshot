@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -13,10 +13,6 @@ import {
 
 import { GLOBAL_CODE_HOSTS } from './backend'
 import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
-
-const { add } = storiesOf('web/batches/settings/BatchChangesSiteConfigSettingsArea', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
 
 const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<GlobalBatchChangesCodeHostsResult>[] => [
     {
@@ -39,48 +35,57 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
     },
 ]
 
-add('Overview', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider
-                mocks={createMock(
-                    {
-                        credential: null,
-                        externalServiceKind: ExternalServiceKind.GITHUB,
-                        externalServiceURL: 'https://github.com/',
-                        requiresSSH: false,
-                        requiresUsername: false,
-                    },
-                    {
-                        credential: null,
-                        externalServiceKind: ExternalServiceKind.GITLAB,
-                        externalServiceURL: 'https://gitlab.com/',
-                        requiresSSH: false,
-                        requiresUsername: false,
-                    },
-                    {
-                        credential: null,
-                        externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
-                        externalServiceURL: 'https://bitbucket.sgdev.org/',
-                        requiresSSH: true,
-                        requiresUsername: false,
-                    },
-                    {
-                        credential: null,
-                        externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
-                        externalServiceURL: 'https://bitbucket.org/',
-                        requiresSSH: false,
-                        requiresUsername: true,
-                    }
-                )}
-            >
-                <BatchChangesSiteConfigSettingsArea {...props} />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('Config added', () => (
+const config: Meta = {
+    title: 'web/batches/settings/BatchChangesSiteConfigSettingsArea',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Overview: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                mocks={createMock(
+                    {
+                        credential: null,
+                        externalServiceKind: ExternalServiceKind.GITHUB,
+                        externalServiceURL: 'https://github.com/',
+                        requiresSSH: false,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: null,
+                        externalServiceKind: ExternalServiceKind.GITLAB,
+                        externalServiceURL: 'https://gitlab.com/',
+                        requiresSSH: false,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: null,
+                        externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                        externalServiceURL: 'https://bitbucket.sgdev.org/',
+                        requiresSSH: true,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: null,
+                        externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                        externalServiceURL: 'https://bitbucket.org/',
+                        requiresSSH: false,
+                        requiresUsername: true,
+                    }
+                )}
+            >
+                <BatchChangesSiteConfigSettingsArea {...props} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+export const ConfigAdded: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -139,4 +144,6 @@ add('Config added', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ConfigAdded.storyName = 'Config added'
