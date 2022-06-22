@@ -261,3 +261,19 @@ export const MultipleMarkupContentsWithBadgesAndAlerts: Story = () => (
 )
 
 MultipleMarkupContentsWithBadgesAndAlerts.storyName = 'Multiple MarkupContents with badges and alerts'
+
+export const WithCloseButton: Story = () => (
+    <WebHoverOverlay
+        {...commonProps()}
+        hoverOrError={{
+            contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
+            aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
+            alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT, FIXTURE_WARNING_MARKDOWN_ALERT],
+        }}
+        actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
+        pinOptions={{ showCloseButton: true }}
+    />
+)
+
+WithCloseButton.storyName = 'With close button'
