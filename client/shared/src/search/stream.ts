@@ -219,6 +219,7 @@ export interface Filter {
 interface Alert {
     title: string
     description?: string | null
+    kind?: string | null
     proposedQueries: ProposedQuery[] | null
 }
 

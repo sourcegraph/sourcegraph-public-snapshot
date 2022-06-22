@@ -16,6 +16,7 @@ type Alert struct {
 	Title           string
 	Description     string
 	ProposedQueries []*ProposedQuery
+	Kind            string // An identifier indicating the kind of alert
 	// The higher the priority the more important is the alert.
 	Priority int
 }

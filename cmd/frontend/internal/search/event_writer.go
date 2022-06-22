@@ -62,6 +62,7 @@ func (e *eventWriter) Alert(alert *search.Alert) error {
 	return e.inner.Event("alert", streamhttp.EventAlert{
 		Title:           alert.Title,
 		Description:     alert.Description,
+		Kind:            alert.Kind,
 		ProposedQueries: pqs,
 	})
 }
