@@ -173,6 +173,9 @@ type Client interface {
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 
+	// ArchiveReader streams back the file contents of an archived git repo.
+	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
+
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 	// to abort processing further results.
