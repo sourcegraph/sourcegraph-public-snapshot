@@ -53,6 +53,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                     className={classNames('btn-icon', props.className)}
                     variant="icon"
                     size="sm"
+                    aria-label={copyFullQueryTooltip}
                     onClick={nextClick}
                 >
                     <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
