@@ -5,7 +5,7 @@ import { H3 } from '@sourcegraph/wildcard'
 
 import { TooltipList, TooltipListBlankItem, TooltipListItem } from '../../../../core'
 import { Point } from '../../types'
-import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue } from '../../utils'
+import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 
