@@ -577,7 +577,7 @@ The API also supports filtering against task `status`, which can be one of the f
 - `failed`
 - `completed`
 
-Additionally, the API supports users to control the number of tasks returned in the output by using the argument `count` upto an upper limit of 500.
+Additionally, the API supports users to control the number of tasks returned in the output by using the argument `count` upto an upper limit of 500 with a default value of 100.
 
 Here's an example with all the query arguments in the API call:
 
