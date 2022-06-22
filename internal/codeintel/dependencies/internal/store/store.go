@@ -99,7 +99,15 @@ type LockfileDependenciesOpts struct {
 	RepoName string
 	Commit   string
 
+	// IncludeTransitive determines whether transitive dependencies are included in the result.
+	// NOTE: if a lockfile doesn't allow us to distinguish between
+	// transitive/direct all of the dependencies are persisted as direct
+	// dependencies.
 	IncludeTransitive bool
+
+	// Lockfile, if specified, causes only dependencies from that lockfile to
+	// be included.
+	Lockfile string
 }
 
 // LockfileDependencies returns package dependencies from a previous lockfiles result for
@@ -123,20 +131,7 @@ func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenc
 	}
 	defer func() { err = tx.db.Done(err) }()
 
-	maxDependencyLevel := 0
-	if opts.IncludeTransitive {
-		// TODO: We should improve SQL here to falsify instead of using this limit
-		maxDependencyLevel = 9999
-	}
-
-	// TODO: We need to handle lockfile
-
-	deps, err = scanPackageDependencies(tx.db.Query(ctx, sqlf.Sprintf(
-		lockfileDependenciesQuery,
-		maxDependencyLevel,
-		opts.RepoName,
-		dbutil.CommitBytea(opts.Commit),
-	)))
+	deps, err = scanPackageDependencies(tx.db.Query(ctx, lockfileDependenciesQuery(opts)))
 	if err != nil {
 		return nil, false, err
 	}
@@ -157,7 +152,31 @@ func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenc
 	return deps, true, nil
 }
 
-const lockfileDependenciesQuery = `
+func lockfileDependenciesQuery(opts LockfileDependenciesOpts) *sqlf.Query {
+	maxDependencyLevel := 0
+	if opts.IncludeTransitive {
+		// TODO: We should improve SQL here to falsify instead of using this limit
+		maxDependencyLevel = 9999
+	}
+
+	// predicates to find the row in codeintel_lockfiles from which we get the dependencies
+	lockfilesPreds := []*sqlf.Query{
+		sqlf.Sprintf("repository_id = (SELECT id FROM repo WHERE name = %s)", opts.RepoName),
+		sqlf.Sprintf("commit_bytea = %s", dbutil.CommitBytea(opts.Commit)),
+	}
+
+	if opts.Lockfile != "" {
+		lockfilesPreds = append(lockfilesPreds, sqlf.Sprintf("lockfile = %s", opts.Lockfile))
+	}
+
+	return sqlf.Sprintf(
+		lockfileDependenciesQueryFmtStr,
+		maxDependencyLevel,
+		sqlf.Join(lockfilesPreds, "\n AND "),
+	)
+}
+
+const lockfileDependenciesQueryFmtStr = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependencies
 WITH RECURSIVE dependencies(id, resolution_repository_id, resolution_commit_bytea, resolution_lockfile, depends_on, level, max_level) AS (
   SELECT
@@ -170,9 +189,8 @@ WITH RECURSIVE dependencies(id, resolution_repository_id, resolution_commit_byte
         unnest(codeintel_lockfile_reference_ids)
       FROM
         codeintel_lockfiles
-      WHERE repository_id = (SELECT id FROM repo WHERE name = %s)
-      AND commit_bytea = %s
-	  -- TODO: Needs to be fixed for multiple lockfiles
+      WHERE
+	    %s -- lockfilePreds
     )
 
   UNION ALL
@@ -200,7 +218,8 @@ SELECT
 FROM
   dependencies, codeintel_lockfile_references lr
 WHERE
-  dependencies.id = lr.id;
+  dependencies.id = lr.id
+ORDER BY lr.package_name
 `
 
 const lockfileDependenciesExistsQuery = `
