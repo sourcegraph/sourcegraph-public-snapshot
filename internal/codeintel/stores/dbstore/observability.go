@@ -21,7 +21,6 @@ type operations struct {
 	deleteOverlappingDumps                      *observation.Operation
 	deleteUploadByID                            *observation.Operation
 	deleteUploadsStuckUploading                 *observation.Operation
-	deleteUploadsWithoutRepository              *observation.Operation
 	dequeue                                     *observation.Operation
 	dequeueIndex                                *observation.Operation
 	dirtyRepositories                           *observation.Operation
@@ -125,7 +124,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		deleteOverlappingDumps:               op("DeleteOverlappingDumps"),
 		deleteUploadByID:                     op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
-		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
 		dequeue:                              op("Dequeue"),
 		dequeueIndex:                         op("DequeueIndex"),
 		dirtyRepositories:                    op("DirtyRepositories"),
