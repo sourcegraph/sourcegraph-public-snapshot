@@ -28,6 +28,7 @@ type EventContentMatch struct {
 	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -72,6 +73,12 @@ type Location struct {
 type DecoratedContent struct {
 	Plaintext string `json:"plaintext,omitempty"`
 	HTML      string `json:"html,omitempty"`
+}
+
+type ChunkMatch struct {
+	Content      string   `json:"content"`
+	ContentStart Location `json:"contentStart`
+	Ranges       []Range  `json:"ranges"`
 }
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.

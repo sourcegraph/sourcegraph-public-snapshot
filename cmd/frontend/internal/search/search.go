@@ -275,10 +275,10 @@ func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.E
 	return eventMatch
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
-		return fromFileMatch(v, repoCache)
+		return fromFileMatch(v, repoCache, enableChunkMatches)
 	case *result.RepoMatch:
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
@@ -288,11 +288,11 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
 	} else if fm.ChunkMatches.MatchCount() > 0 {
-		return fromContentMatch(fm, repoCache)
+		return fromContentMatch(fm, repoCache, enableChunkMatches)
 	}
 	return fromPathMatch(fm, repoCache)
 }
@@ -318,15 +318,60 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	return pathEvent
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
-	lineMatches := fm.ChunkMatches.AsLineMatches()
-	eventLineMatches := make([]streamhttp.EventLineMatch, 0, len(lineMatches))
-	for _, lm := range lineMatches {
-		eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
-			Line:             lm.Preview,
-			LineNumber:       lm.LineNumber,
-			OffsetAndLengths: lm.OffsetAndLengths,
+func fromChunkMatches(cms result.ChunkMatches) []streamhttp.ChunkMatch {
+	res := make([]streamhttp.ChunkMatch, 0, len(cms))
+	for _, cm := range cms {
+		res = append(res, fromChunkMatch(cm))
+	}
+	return res
+}
+
+func fromChunkMatch(cm result.ChunkMatch) streamhttp.ChunkMatch {
+	return streamhttp.ChunkMatch{
+		Content:      cm.Content,
+		ContentStart: fromLocation(cm.ContentStart),
+		Ranges:       fromRanges(cm.Ranges),
+	}
+}
+
+func fromLocation(l result.Location) streamhttp.Location {
+	return streamhttp.Location{
+		Offset: l.Offset,
+		Line:   l.Line,
+		Column: l.Column,
+	}
+}
+
+func fromRanges(rs result.Ranges) []streamhttp.Range {
+	res := make([]streamhttp.Range, 0, len(rs))
+	for _, r := range rs {
+		res = append(res, streamhttp.Range{
+			Start: fromLocation(r.Start),
+			End:   fromLocation(r.End),
 		})
+	}
+	return res
+}
+
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
+
+	var (
+		eventLineMatches  []streamhttp.EventLineMatch
+		eventChunkMatches []streamhttp.ChunkMatch
+	)
+
+	if enableChunkMatches {
+		eventChunkMatches = fromChunkMatches(fm.ChunkMatches)
+	} else {
+		lineMatches := fm.ChunkMatches.AsLineMatches()
+		eventLineMatches = make([]streamhttp.EventLineMatch, 0, len(lineMatches))
+		for _, lm := range lineMatches {
+			eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
+				Line:             lm.Preview,
+				LineNumber:       lm.LineNumber,
+				OffsetAndLengths: lm.OffsetAndLengths,
+			})
+		}
 	}
 
 	contentEvent := &streamhttp.EventContentMatch{
@@ -336,6 +381,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
 		LineMatches:  eventLineMatches,
+		ChunkMatches: eventChunkMatches,
 	}
 
 	if fm.InputRev != nil {
@@ -602,7 +648,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 			continue
 		}
 
-		eventMatch := fromMatch(match, repoMetadata)
+		eventMatch := fromMatch(match, repoMetadata, false)
 		h.matchesBuf.Append(eventMatch)
 	}
 
