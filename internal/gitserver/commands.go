@@ -2396,6 +2396,31 @@ func (c *ClientImplementor) CommitDate(ctx context.Context, repo api.RepoName, c
 	return parts[0], duration, true, nil
 }
 
+const (
+	// ArchiveFormatZip indicates a zip archive is desired.
+	ArchiveFormatZip = "zip"
+
+	// ArchiveFormatTar indicates a tar archive is desired.
+	ArchiveFormatTar = "tar"
+)
+
+// ArchiveReader streams back the file contents of an archived git repo.
+func (c *ClientImplementor) ArchiveReader(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	options ArchiveOptions,
+) (io.ReadCloser, error) {
+	if authz.SubRepoEnabled(checker) {
+		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
+			return nil, errors.Wrap(err, "sub-repo permissions check:")
+		} else if enabled {
+			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
+		}
+	}
+	return c.Archive(ctx, repo, options)
+}
+
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
 	if authz.SubRepoEnabled(checker) {
 		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
