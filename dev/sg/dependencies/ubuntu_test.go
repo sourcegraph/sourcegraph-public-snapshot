@@ -23,8 +23,8 @@ func TestUbuntuFix(t *testing.T) {
 	ctx, err := usershell.Context(context.Background())
 	require.NoError(t, err)
 
-	// Set up runner - we must provide stdin here
-	runner := check.NewRunner(os.Stdin, std.NewSimpleOutput(os.Stdout, true), Ubuntu)
+	// Set up runner with no input and simple output
+	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Ubuntu)
 
 	// automatically fix everything!
 	t.Run("Fix", func(t *testing.T) {

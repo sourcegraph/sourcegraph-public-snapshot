@@ -251,12 +251,12 @@ func checkRedisConnection(context.Context) error {
 
 func checkGitVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		out, err := usershell.CombinedExec(ctx, "git version")
+		out, err := usershell.Run(ctx, "git version").Lines()
 		if err != nil {
 			return errors.Wrapf(err, "failed to run 'git version'")
 		}
 
-		elems := strings.Split(string(out), " ")
+		elems := strings.Split(string(out[len(out)-1]), " ")
 		if len(elems) != 3 {
 			return errors.Newf("unexpected output from git: %s", out)
 		}
@@ -296,11 +296,11 @@ func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error 
 	}
 
 	cmd := "go version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Run(ctx, cmd).Lines()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
+	parts := strings.Split(strings.TrimSpace(data[len(data)-1]), " ")
 	if len(parts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
@@ -319,11 +319,11 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "yarn --version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Run(ctx, cmd).Lines()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	trimmed := strings.TrimSpace(data)
+	trimmed := strings.TrimSpace(data[len(data)-1])
 	if len(trimmed) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
@@ -342,11 +342,11 @@ func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "node --version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Run(ctx, cmd).Lines()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	trimmed := strings.TrimSpace(data)
+	trimmed := strings.TrimSpace(data[len(data)-1])
 	if len(trimmed) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
@@ -365,11 +365,11 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "cargo --version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Run(ctx, cmd).Lines()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
+	parts := strings.Split(strings.TrimSpace(data[len(data)-1]), " ")
 	if len(parts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
