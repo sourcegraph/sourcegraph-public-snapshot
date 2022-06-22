@@ -50,8 +50,6 @@ export const Collapsed: Story = () => (
     </WebStory>
 )
 
-Collapsed.storyName = 'collapsed'
-
 export const ExpandedRequest: Story = () => (
     <WebStory>{() => <WebhookLogNode node={webhookLogNode()} initiallyExpanded={true} />}</WebStory>
 )

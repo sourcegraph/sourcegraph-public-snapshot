@@ -23,10 +23,6 @@ export const Success: Story = () => (
     <WebStory>{() => <StatusCode code={number('code', 204, { min: 100, max: 399 })} />}</WebStory>
 )
 
-Success.storyName = 'success'
-
 export const Failure: Story = () => (
     <WebStory>{() => <StatusCode code={number('code', 418, { min: 400, max: 599 })} />}</WebStory>
 )
-
-Failure.storyName = 'failure'

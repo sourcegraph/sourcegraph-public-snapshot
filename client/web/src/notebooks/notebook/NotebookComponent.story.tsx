@@ -67,8 +67,6 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-Default.storyName = 'default'
-
 export const DefaultReadOnly: Story = () => (
     <WebStory>
         {props => (

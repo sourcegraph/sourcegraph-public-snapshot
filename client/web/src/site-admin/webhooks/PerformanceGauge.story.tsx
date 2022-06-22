@@ -21,11 +21,7 @@ export default config
 
 export const Loading: Story = () => <WebStory>{() => <PerformanceGauge label="dog" />}</WebStory>
 
-Loading.storyName = 'loading'
-
 export const Zero: Story = () => <WebStory>{() => <PerformanceGauge count={0} label="dog" />}</WebStory>
-
-Zero.storyName = 'zero'
 
 export const ZeroWithExplicitPlural: Story = () => (
     <WebStory>{() => <PerformanceGauge count={0} label="wolf" plural="wolves" />}</WebStory>
@@ -35,11 +31,7 @@ ZeroWithExplicitPlural.storyName = 'zero with explicit plural'
 
 export const One: Story = () => <WebStory>{() => <PerformanceGauge count={1} label="dog" />}</WebStory>
 
-One.storyName = 'one'
-
 export const Many: Story = () => <WebStory>{() => <PerformanceGauge count={42} label="dog" />}</WebStory>
-
-Many.storyName = 'many'
 
 export const ManyWithExplicitPlural: Story = () => (
     <WebStory>{() => <PerformanceGauge count={42} label="wolf" plural="wolves" />}</WebStory>

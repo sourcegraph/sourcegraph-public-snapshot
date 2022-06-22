@@ -13,10 +13,10 @@ const config: Meta = {
 
 export default config
 
-export const _ExtensionBanner: Story = () => <WebStory>{() => <ExtensionBanner />}</WebStory>
+export const ExtensionBannerStory: Story = () => <WebStory>{() => <ExtensionBanner />}</WebStory>
 
-_ExtensionBanner.storyName = 'ExtensionBanner'
-_ExtensionBanner.parameters = {
+ExtensionBannerStory.storyName = 'ExtensionBanner'
+ExtensionBannerStory.parameters = {
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=420%3A10',

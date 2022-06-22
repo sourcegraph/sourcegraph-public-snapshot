@@ -21,7 +21,7 @@ export default config
 
 const onSearchAgain = sinon.spy()
 
-export const _StreamingProgress: Story = () => (
+export const StreamingProgressStory: Story = () => (
     <BrandedStory>
         {() => (
             <>
@@ -261,4 +261,4 @@ export const _StreamingProgress: Story = () => (
     </BrandedStory>
 )
 
-_StreamingProgress.storyName = 'StreamingProgress'
+StreamingProgressStory.storyName = 'StreamingProgress'

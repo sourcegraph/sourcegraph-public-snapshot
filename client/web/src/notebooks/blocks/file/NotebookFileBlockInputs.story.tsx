@@ -35,5 +35,3 @@ const defaultProps = {
 export const Default: Story = () => (
     <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>
 )
-
-Default.storyName = 'default'

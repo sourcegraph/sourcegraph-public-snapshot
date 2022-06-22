@@ -55,7 +55,7 @@ const defaultProps: SearchBoxProps = {
     editorComponent: 'monaco',
 }
 
-export const _SearchBox: Story = () => (
+export const SearchBoxStory: Story = () => (
     <BrandedStory>
         {props => (
             <>
@@ -131,4 +131,4 @@ export const _SearchBox: Story = () => (
     </BrandedStory>
 )
 
-_SearchBox.storyName = 'SearchBox'
+SearchBoxStory.storyName = 'SearchBox'

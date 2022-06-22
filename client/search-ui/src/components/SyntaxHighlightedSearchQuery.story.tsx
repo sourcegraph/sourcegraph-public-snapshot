@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const _SyntaxHighlightedSearchQuery: Story = () => (
+export const SyntaxHighlightedSearchQueryStory: Story = () => (
     <BrandedStory>
         {() => (
             <Text>
@@ -28,4 +28,4 @@ export const _SyntaxHighlightedSearchQuery: Story = () => (
     </BrandedStory>
 )
 
-_SyntaxHighlightedSearchQuery.storyName = 'SyntaxHighlightedSearchQuery'
+SyntaxHighlightedSearchQueryStory.storyName = 'SyntaxHighlightedSearchQuery'

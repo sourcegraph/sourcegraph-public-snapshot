@@ -90,13 +90,9 @@ const emptySearchContexts = {
 
 export const Default: Story = () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>
 
-Default.storyName = 'default'
-
 export const Empty: Story = () => (
     <BrandedStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</BrandedStory>
 )
-
-Empty.storyName = 'empty'
 
 export const WithManageLink: Story = () => (
     <BrandedStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</BrandedStory>

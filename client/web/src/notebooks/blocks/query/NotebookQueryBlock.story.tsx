@@ -72,8 +72,6 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-Default.storyName = 'default'
-
 export const Selected: Story = () => (
     <WebStory>
         {props => (
@@ -99,8 +97,6 @@ export const Selected: Story = () => (
         )}
     </WebStory>
 )
-
-Selected.storyName = 'selected'
 
 export const ReadOnlySelected: Story = () => (
     <WebStory>

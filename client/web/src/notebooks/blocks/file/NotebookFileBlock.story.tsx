@@ -55,8 +55,6 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-Default.storyName = 'default'
-
 export const EditMode: Story = () => (
     <WebStory>
         {props => (

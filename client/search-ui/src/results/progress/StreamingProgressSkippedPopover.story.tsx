@@ -72,9 +72,7 @@ export const Popover: Story = () => {
     )
 }
 
-Popover.storyName = 'popover'
-
-export const OnlyInfoAllShouldBeClosed: Story = () => {
+export const ShouldCloseAllInfo: Story = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -110,9 +108,9 @@ export const OnlyInfoAllShouldBeClosed: Story = () => {
     )
 }
 
-OnlyInfoAllShouldBeClosed.storyName = 'only info, all should be closed'
+ShouldCloseAllInfo.storyName = 'only info, all should be closed'
 
-export const OnlyOneInfoShouldBeOpen: Story = () => {
+export const ShouldOpenOneInfo: Story = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -138,4 +136,4 @@ export const OnlyOneInfoShouldBeOpen: Story = () => {
     )
 }
 
-OnlyOneInfoShouldBeOpen.storyName = 'only one info, should be open'
+ShouldOpenOneInfo.storyName = 'only one info, should be open'

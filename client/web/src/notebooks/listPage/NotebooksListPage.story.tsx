@@ -76,5 +76,3 @@ export const Default: Story = () => (
         )}
     </WebStory>
 )
-
-Default.storyName = 'default'

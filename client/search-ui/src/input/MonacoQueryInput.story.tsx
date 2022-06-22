@@ -34,8 +34,8 @@ const defaultProps: MonacoQueryInputProps = {
     onHandleFuzzyFinder: () => {},
 }
 
-export const _MonacoQueryInput: Story = () => (
+export const MonacoQueryInputStory: Story = () => (
     <BrandedStory>{props => <MonacoQueryInput {...defaultProps} isLightTheme={props.isLightTheme} />}</BrandedStory>
 )
 
-_MonacoQueryInput.storyName = 'MonacoQueryInput'
+MonacoQueryInputStory.storyName = 'MonacoQueryInput'

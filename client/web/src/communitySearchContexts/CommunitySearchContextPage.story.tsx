@@ -158,7 +158,7 @@ export const Temporal: Story = () => (
     </WebStory>
 )
 
-export const _CNCF: Story = () => (
+export const CNCFStory: Story = () => (
     <WebStory>
         {webProps => (
             <CommunitySearchContextPage
@@ -171,4 +171,4 @@ export const _CNCF: Story = () => (
     </WebStory>
 )
 
-_CNCF.storyName = 'CNCF'
+CNCFStory.storyName = 'CNCF'
