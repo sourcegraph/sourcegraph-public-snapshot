@@ -3608,6 +3608,8 @@ CREATE INDEX insights_query_runner_jobs_priority_idx ON insights_query_runner_jo
 
 CREATE INDEX insights_query_runner_jobs_processable_priority_id ON insights_query_runner_jobs USING btree (priority, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
 
+CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner_jobs USING btree (series_id, state);
+
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
