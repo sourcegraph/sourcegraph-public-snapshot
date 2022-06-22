@@ -215,7 +215,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         <table className={classNames('mt-2', styles.resultsTable)}>
             <tbody>
                 {Array.from(gitSet).map(repo => (
-                    <tr key={`${repo}`} className="text-monospace text-break mb-2">
+                    <tr key={`${repo}`} className={classNames('text-monospace text-break', styles.resultsTableRow)}>
                         <td>
                             <small>
                                 <Link to={`/search?q=repo:${repo}`} onClick={logRepoClicked}>
