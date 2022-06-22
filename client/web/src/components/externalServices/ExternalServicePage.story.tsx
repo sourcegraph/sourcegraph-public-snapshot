@@ -50,7 +50,7 @@ const fetchExternalService: typeof _fetchExternalService = () => of(externalServ
 const fetchExternalServiceWithInvalidConfigURL: typeof _fetchExternalService = () =>
     of({ ...externalService, config: '{"url": "invalid-url"}' })
 
-export const ViewExternalServiceConfig: Story = () => (
+export const ViewConfig: Story = () => (
     <WebStory>
         {webProps => (
             <ExternalServicePage
@@ -65,9 +65,9 @@ export const ViewExternalServiceConfig: Story = () => (
     </WebStory>
 )
 
-ViewExternalServiceConfig.storyName = 'View external service config'
+ViewConfig.storyName = 'View external service config'
 
-export const ExternalServiceConfigWithInvalidUrl: Story = () => (
+export const ConfigWithInvalidUrl: Story = () => (
     <WebStory>
         {webProps => (
             <ExternalServicePage
@@ -82,4 +82,4 @@ export const ExternalServiceConfigWithInvalidUrl: Story = () => (
     </WebStory>
 )
 
-ExternalServiceConfigWithInvalidUrl.storyName = 'External service config with invalid url'
+ConfigWithInvalidUrl.storyName = 'External service config with invalid url'

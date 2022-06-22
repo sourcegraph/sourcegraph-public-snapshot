@@ -42,7 +42,7 @@ const props = {
     fetchMore: noop as any,
 }
 
-export const _RepositoriesPanel: Story = () => (
+export const RepositoriesPanelStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -62,4 +62,4 @@ export const _RepositoriesPanel: Story = () => (
     </WebStory>
 )
 
-_RepositoriesPanel.storyName = 'RepositoriesPanel'
+RepositoriesPanelStory.storyName = 'RepositoriesPanel'

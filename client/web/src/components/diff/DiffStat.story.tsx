@@ -34,16 +34,16 @@ export const ExpandedCounts: Story = () => {
 
 ExpandedCounts.storyName = 'Expanded counts'
 
-export const _DiffStatSquares: Story = () => {
+export const DiffStatSquaresStory: Story = () => {
     const stats = getSharedKnobs()
     return <WebStory>{() => <DiffStatSquares {...stats} />}</WebStory>
 }
 
-_DiffStatSquares.storyName = 'DiffStatSquares'
+DiffStatSquaresStory.storyName = 'DiffStatSquares'
 
-export const _DiffStatStack: Story = () => {
+export const DiffStatStackStory: Story = () => {
     const stats = getSharedKnobs()
     return <WebStory>{() => <DiffStatStack {...stats} />}</WebStory>
 }
 
-_DiffStatStack.storyName = 'DiffStatStack'
+DiffStatStackStory.storyName = 'DiffStatStack'

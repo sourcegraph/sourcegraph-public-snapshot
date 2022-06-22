@@ -11,5 +11,3 @@ const config: Meta = {
 export default config
 
 export const Standard: Story = () => <WebStory>{() => <TosConsentModal afterTosAccepted={() => {}} />}</WebStory>
-
-Standard.storyName = 'standard'

@@ -28,7 +28,7 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-export const _CollaboratorsPanel: Story = () => (
+export const CollaboratorsPanelStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -44,4 +44,4 @@ export const _CollaboratorsPanel: Story = () => (
         )}
     </WebStory>
 )
-_CollaboratorsPanel.storyName = 'CollaboratorsPanel'
+CollaboratorsPanelStory.storyName = 'CollaboratorsPanel'

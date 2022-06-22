@@ -28,7 +28,7 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-export const _CommunitySearchContextsPanel: Story = () => (
+export const CommunitySearchContextPanelStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -38,4 +38,4 @@ export const _CommunitySearchContextsPanel: Story = () => (
     </WebStory>
 )
 
-_CommunitySearchContextsPanel.storyName = 'CommunitySearchContextsPanel'
+CommunitySearchContextPanelStory.storyName = 'CommunitySearchContextsPanel'

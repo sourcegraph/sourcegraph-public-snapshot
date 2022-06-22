@@ -47,5 +47,3 @@ export const WithLabel: Story = () => (
         )}
     </WebStory>
 )
-
-WithLabel.storyName = 'With label'

@@ -29,7 +29,7 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-export const _SavedSearchesPanel: Story = () => (
+export const SavedSearchesPanelStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -46,4 +46,4 @@ export const _SavedSearchesPanel: Story = () => (
     </WebStory>
 )
 
-_SavedSearchesPanel.storyName = 'SavedSearchesPanel'
+SavedSearchesPanelStory.storyName = 'SavedSearchesPanel'

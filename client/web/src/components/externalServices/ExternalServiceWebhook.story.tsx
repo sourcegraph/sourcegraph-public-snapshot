@@ -26,15 +26,11 @@ export const GitHub: Story = () => (
     />
 )
 
-GitHub.storyName = 'GitHub'
-
 export const GitLab: Story = () => (
     <ExternalServiceWebhook
         externalService={{ webhookURL: 'http://test.test/webhook', kind: ExternalServiceKind.GITLAB }}
     />
 )
-
-GitLab.storyName = 'GitLab'
 
 GitLab.parameters = {
     chromatic: {

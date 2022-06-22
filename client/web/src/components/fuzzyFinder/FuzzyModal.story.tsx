@@ -49,6 +49,6 @@ const config: Meta = {
 
 export default config
 
-export const _Ready: Story = () => <FuzzyModal {...defaultProps} />
+export const ReadyStory: Story = () => <FuzzyModal {...defaultProps} />
 
-_Ready.storyName = 'Ready'
+ReadyStory.storyName = 'Ready'

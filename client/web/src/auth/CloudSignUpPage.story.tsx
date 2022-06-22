@@ -47,8 +47,6 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-Default.storyName = 'default'
-
 export const EmailForm: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
@@ -63,8 +61,6 @@ export const EmailForm: Story = () => (
         )}
     </WebStory>
 )
-
-EmailForm.storyName = 'email form'
 
 export const InvalidSource: Story = () => (
     <WebStory>
@@ -81,8 +77,6 @@ export const InvalidSource: Story = () => (
     </WebStory>
 )
 
-InvalidSource.storyName = 'invalid source'
-
 export const OptimizationSignup: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
@@ -97,5 +91,3 @@ export const OptimizationSignup: Story = () => (
         )}
     </WebStory>
 )
-
-OptimizationSignup.storyName = 'Optimization signup'
