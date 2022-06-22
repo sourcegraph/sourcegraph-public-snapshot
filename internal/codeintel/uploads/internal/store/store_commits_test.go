@@ -12,6 +12,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,8 +22,9 @@ import (
 )
 
 func TestStaleSourcedCommits(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -77,8 +80,9 @@ func TestStaleSourcedCommits(t *testing.T) {
 }
 
 func TestUpdateSourcedCommits(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -143,8 +147,9 @@ func TestUpdateSourcedCommits(t *testing.T) {
 }
 
 func TestDeleteSourcedCommits(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
 
 	now := time.Unix(1587396557, 0).UTC()
