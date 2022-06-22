@@ -1026,13 +1026,14 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 			retain_intermediate_commits,
 			indexing_enabled,
 			index_commit_max_age_hours,
-			index_intermediate_commits
+			index_intermediate_commits,
+			lockfile_indexing_enabled
 		) VALUES
-			(101, 50, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true,  0, false),
-			(102, 51, 'policy 2', 'GIT_TREE', 'cd/', null, true, 0, false, true,  0, false),
-			(103, 52, 'policy 3', 'GIT_TREE', 'ef/', null, true, 0, false, true,  0, false),
-			(104, 53, 'policy 4', 'GIT_TREE', 'gh/', null, true, 0, false, true,  0, false),
-			(105, 54, 'policy 5', 'GIT_TREE', 'gh/', null, true, 0, false, false, 0, false)
+			(101, 50, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true,  0, false, false),
+			(102, 51, 'policy 2', 'GIT_TREE', 'cd/', null, true, 0, false, true,  0, false, false),
+			(103, 52, 'policy 3', 'GIT_TREE', 'ef/', null, true, 0, false, true,  0, false, false),
+			(104, 53, 'policy 4', 'GIT_TREE', 'gh/', null, true, 0, false, true,  0, false, false),
+			(105, 54, 'policy 5', 'GIT_TREE', 'gh/', null, true, 0, false, false, 0, false, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -1113,9 +1114,10 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 			retain_intermediate_commits,
 			indexing_enabled,
 			index_commit_max_age_hours,
-			index_intermediate_commits
+			index_intermediate_commits,
+			lockfile_indexing_enabled
 		) VALUES
-			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false)
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -1184,9 +1186,10 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 			retain_intermediate_commits,
 			indexing_enabled,
 			index_commit_max_age_hours,
-			index_intermediate_commits
+			index_intermediate_commits,
+			lockfile_indexing_enabled
 		) VALUES
-			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false)
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)

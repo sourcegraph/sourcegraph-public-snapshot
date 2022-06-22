@@ -281,6 +281,14 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return a, nil
 	}
 
+	var unindexedLockfile *searchrepos.MissingLockfileIndexing
+	if errors.As(err, &unindexedLockfile) {
+		repo := unindexedLockfile.RepoName()
+		revs := unindexedLockfile.RevNames()
+
+		return search.AlertForUnindexedLockfile(repo, revs), nil
+	}
+
 	if errors.As(err, &lErr) {
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",

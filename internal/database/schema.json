@@ -5592,6 +5592,19 @@
           "Comment": "The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance."
         },
         {
+          "Name": "depends_on",
+          "Index": 10,
+          "TypeName": "integer[]",
+          "IsNullable": true,
+          "Default": "'{}'::integer[]",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`."
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -5683,6 +5696,45 @@
           "Comment": "Encodes `reposource.PackageDependency.RepoName`. A name that is \"globally unique\" for a Sourcegraph instance. Used in `repo:...` queries."
         },
         {
+          "Name": "resolution_commit_bytea",
+          "Index": 13,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`."
+        },
+        {
+          "Name": "resolution_lockfile",
+          "Index": 11,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`."
+        },
+        {
+          "Name": "resolution_repository_id",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`."
+        },
+        {
           "Name": "revspec",
           "Index": 3,
           "TypeName": "text",
@@ -5708,12 +5760,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_lockfile_references_repository_name_revspec_package",
+          "Name": "codeintel_lockfile_references_repository_name_revspec_package_r",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -5734,6 +5786,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_lockfiles_references_depends_on",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -5785,6 +5847,19 @@
           "Comment": ""
         },
         {
+          "Name": "lockfile",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Relative path of a lockfile in the given repository and the given commit."
+        },
+        {
           "Name": "repository_id",
           "Index": 2,
           "TypeName": "integer",
@@ -5810,12 +5885,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_lockfiles_repository_id_commit_bytea",
+          "Name": "codeintel_lockfiles_repository_id_commit_bytea_lockfile",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea ON codeintel_lockfiles USING btree (repository_id, commit_bytea)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -9502,6 +9577,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "lockfile_indexing_enabled",
+          "Index": 15,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Whether to index the lockfiles in the repositories matched by this policy"
         },
         {
           "Name": "name",
