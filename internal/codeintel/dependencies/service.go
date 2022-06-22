@@ -3,7 +3,6 @@ package dependencies
 import (
 	"context"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -103,12 +102,6 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		notFound[repo][rev] = struct{}{}
 	}
 
-	// TODO: Disable lazily adding dependencies
-	// // Lazily sync all the repos that were newly added
-	// if err := s.upsertAndSyncDependencies(ctx, deps); err != nil {
-	// 	return nil, err
-	// }
-
 	if !enablePreciseQueries {
 		return dependencyRevs, notFound, nil
 	}
@@ -190,39 +183,6 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 	return resolvedCommits, unresolvedCommits, nil
 }
 
-// lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
-// func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
-// 	// Do not destroy the caller's slice. The filtering/fallback mechanism used here is strictly an
-// 	// implementation detail and its semantics should not leak out of this function. We make a copy
-// 	// of the incoming slice here so we can manipulate a shallow copy.
-// 	repoCommitsCopy := make([]repoCommitResolvedCommit, len(repoCommits))
-// 	copy(repoCommitsCopy, repoCommits)
-// 	repoCommits = repoCommitsCopy
-
-// 	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
-// 	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
-// 	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
-// 	type resolverFunc func(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]shared.PackageDependency, int, error)
-
-// 	resolvers := []resolverFunc{
-// 		s.resolveLockfileDependenciesFromStore,
-// 		// TODO: Disable finding dependencies lazily from archive
-// 		// s.resolveLockfileDependenciesFromArchive,
-// 	}
-
-// 	for _, resolver := range resolvers {
-// 		resolvedDeps, n, err := resolver(ctx, repoCommits)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		deps = append(deps, resolvedDeps...)
-// 		repoCommits = repoCommits[:n]
-// 	}
-
-// 	return deps, nil
-// }
-
 // resolveLockfileDependenciesFromStore returns a flattened list of package dependencies for each
 // of the given repo-commit pairs from the database. The given `repoCommits` slice is altered in-place.
 // The returned `numUnqueried` value is the number of elements at the prefix of the slice that had no data.
@@ -252,54 +212,6 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 	}
 
 	return deps, notFound, nil
-}
-
-// resolveLockfileDependenciesFromArchive is a resolverFunc. It returns a flattened list of package dependencies
-// for each of the given repo-commit pairs from an archive of relevant files from the git repository. The returned
-// `numUnqueried` value is always zero as we make a request for every input, thus no fallback resolver will
-// ever be triggered.
-func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
-	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromArchive.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	ctx, cancel := context.WithCancel(ctx)
-	g, ctx := errgroup.WithContext(ctx)
-	defer cancel()
-
-	// Protects appending to deps
-	var mu sync.Mutex
-
-	for _, repoCommit := range repoCommits {
-		// Capture outside of goroutine below
-		repoCommit := repoCommit
-
-		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
-		// of concurrent _routines_, whether they are actively processing lockfiles or not.
-		if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-			return nil, 0, errors.Wrap(err, "lockfiles semaphore")
-		}
-
-		g.Go(func() error {
-			defer s.lockfilesSemaphore.Release(1)
-
-			repoDeps, err := s.listAndPersistLockfileDependencies(ctx, repoCommit)
-			if err != nil {
-				return err
-			}
-
-			mu.Lock()
-			deps = append(deps, repoDeps...)
-			mu.Unlock()
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, 0, err
-	}
-
-	return deps, 0, nil
 }
 
 // listAndPersistLockfileDependencies gathers dependencies from the lockfiles service for the

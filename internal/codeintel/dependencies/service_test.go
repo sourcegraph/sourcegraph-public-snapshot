@@ -432,14 +432,15 @@ func TestIndexLockfiles(t *testing.T) {
 
 	// Assert `store.UpsertLockfileDependencies` was called
 	mockassert.CalledN(t, mockStore.UpsertLockfileGraphFunc, 7)
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip, mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", "pom.xml", mockassert.Skip))
 	// deadbeef2 has 2 results
-	mockassert.CalledNWith(t, mockStore.UpsertLockfileGraphFunc, 2, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip, mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip, nil))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip, nil))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", "pom.xml", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", "pom2.xml", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", "pom.xml", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", "pom.xml", mockassert.Skip))
 	// We make sure that "0 dependencies" is also recorded as a result
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}, nil))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}, nil))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", "NOT-FOUND", []shared.PackageDependency{}, nil))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", "NOT-FOUND", []shared.PackageDependency{}, nil))
 
 	// Assert `syncer.Sync` was called correctly
 	syncHistory := syncer.SyncFunc.History()
