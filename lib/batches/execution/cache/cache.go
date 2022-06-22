@@ -42,6 +42,15 @@ type ExecutionKey struct {
 	Steps              []batches.Step
 
 	BatchChangeAttributes *template.BatchChangeAttributes
+
+	// Ignore from serialization.
+	MetadataRetriever MetadataRetriever `json:"-"`
+}
+
+// MetadataRetriever retrieves mount metadata.
+type MetadataRetriever interface {
+	// Get returns the mount metadata from the provided steps.
+	Get([]batches.Step) ([]MountMetadata, error)
 }
 
 // Key converts the key into a string form that can be used to uniquely identify
@@ -51,8 +60,19 @@ func (key *ExecutionKey) Key() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	metadata, err := key.mountsMetadata()
+	if err != nil {
+		return "", err
+	}
 
-	return marshalAndHash(key, envs)
+	return marshalAndHash(key, envs, metadata)
+}
+
+func (key ExecutionKey) mountsMetadata() ([]MountMetadata, error) {
+	if key.MetadataRetriever != nil {
+		return key.MetadataRetriever.Get(key.Steps)
+	}
+	return nil, nil
 }
 
 func (key ExecutionKey) Slug() string {
@@ -79,8 +99,12 @@ func (key *ExecutionKeyWithGlobalEnv) Key() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	metadata, err := key.mountsMetadata()
+	if err != nil {
+		return "", err
+	}
 
-	return marshalAndHash(key.ExecutionKey, envs)
+	return marshalAndHash(key.ExecutionKey, envs, metadata)
 }
 
 func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[string]string, error) {
@@ -103,17 +127,12 @@ func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[st
 	return envs, nil
 }
 
-func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error) {
-	metadata, err := getMountsMetadata(key.Steps)
-	if err != nil {
-		return "", err
-	}
-
+func marshalAndHash(key *ExecutionKey, envs []map[string]string, metadata []MountMetadata) (string, error) {
 	raw, err := json.Marshal(struct {
 		*ExecutionKey
 		Environments []map[string]string
 		// Omit if empty to be backwards compatible
-		MountsMetadata []mountMetadata `json:"MountsMetadata,omitempty"`
+		MountsMetadata []MountMetadata `json:"MountsMetadata,omitempty"`
 	}{
 		ExecutionKey:   key,
 		Environments:   envs,
@@ -127,8 +146,8 @@ func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error)
 	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
 }
 
-// mountMetadata is the metadata of a file that is mounted by a Step.
-type mountMetadata struct {
+// MountMetadata is the metadata of a file that is mounted by a Step.
+type MountMetadata struct {
 	Path     string
 	Size     int64
 	Modified time.Time
@@ -150,14 +169,14 @@ func getMountsMetadata(steps []batches.Step) ([]mountMetadata, error) {
 	return mountsMetadata, nil
 }
 
-func getMountMetadata(path string) ([]mountMetadata, error) {
+func getMountMetadata(path string) ([]MountMetadata, error) {
 	info, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, errors.Newf("path %s does not exist", path)
 	} else if err != nil {
 		return nil, err
 	}
-	var metadata []mountMetadata
+	var metadata []MountMetadata
 	if info.IsDir() {
 		dirMetadata, err := getDirectoryMountMetadata(path)
 		if err != nil {
@@ -165,17 +184,17 @@ func getMountMetadata(path string) ([]mountMetadata, error) {
 		}
 		metadata = append(metadata, dirMetadata...)
 	} else {
-		metadata = append(metadata, mountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime().UTC()})
+		metadata = append(metadata, MountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime().UTC()})
 	}
 	return metadata, nil
 }
 
-func getDirectoryMountMetadata(path string) ([]mountMetadata, error) {
+func getDirectoryMountMetadata(path string) ([]MountMetadata, error) {
 	dir, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
-	var metadata []mountMetadata
+	var metadata []MountMetadata
 	for _, dirEntry := range dir {
 		newPath := filepath.Join(path, dirEntry.Name())
 		// Go back to the very start. Need to get the FileInfo again for the new path and figure out if it is a
@@ -235,8 +254,12 @@ func marshalAndHashStepsCacheKey(key StepsCacheKey, globalEnv []string) (string,
 	if err != nil {
 		return "", err
 	}
+	metadata, err := key.mountsMetadata()
+	if err != nil {
+		return "", err
+	}
 
-	hash, err := marshalAndHash(clone, envs)
+	hash, err := marshalAndHash(clone, envs, metadata)
 	if err != nil {
 		return "", err
 	}
