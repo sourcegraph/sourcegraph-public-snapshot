@@ -1,14 +1,19 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { Description } from './Description'
 
-const { add } = storiesOf('web/batches/Description', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('Overview', () => (
+const config: Meta = {
+    title: 'web/batches/Description',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Overview: Story = () => (
     <WebStory>
         {props => (
             <Description
@@ -17,4 +22,4 @@ add('Overview', () => (
             />
         )}
     </WebStory>
-))
+)

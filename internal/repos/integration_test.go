@@ -24,6 +24,7 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	t.Parallel()
 
 	for _, tc := range []struct {
@@ -53,7 +54,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			store := repos.NewStore(logtest.Scoped(t), database.NewDB(dbtest.NewDB(t)))
+			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 			store.SetMetrics(repos.NewStoreMetrics())
 			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})

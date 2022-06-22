@@ -7,9 +7,9 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
-import { isDefined } from '@sourcegraph/common'
 import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
 
+import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
@@ -64,9 +64,14 @@ const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<Executi
     const stages = useMemo(
         () =>
             [
-                { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },
                 {
-                    icon: <CheckIcon />,
+                    icon: <Icon as={TimerSandIcon} aria-label="Success" />,
+                    text: 'Queued',
+                    date: node.queuedAt,
+                    className: 'bg-success',
+                },
+                {
+                    icon: <Icon as={CheckIcon} aria-label="Success" />,
                     text: 'Began processing',
                     date: node.startedAt,
                     className: 'bg-success',
@@ -77,10 +82,25 @@ const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<Executi
                 teardownStage(node, expandedStage === 'teardown', now),
 
                 node.state === BatchSpecWorkspaceState.COMPLETED
-                    ? { icon: <CheckIcon />, text: 'Finished', date: node.finishedAt, className: 'bg-success' }
+                    ? {
+                          icon: <Icon as={CheckIcon} aria-label="Success" />,
+                          text: 'Finished',
+                          date: node.finishedAt,
+                          className: 'bg-success',
+                      }
                     : node.state === BatchSpecWorkspaceState.CANCELED
-                    ? { icon: <AlertCircleIcon />, text: 'Canceled', date: node.finishedAt, className: 'bg-secondary' }
-                    : { icon: <AlertCircleIcon />, text: 'Failed', date: node.finishedAt, className: 'bg-danger' },
+                    ? {
+                          icon: <Icon as={AlertCircleIcon} aria-label="Success" />,
+                          text: 'Canceled',
+                          date: node.finishedAt,
+                          className: 'bg-secondary',
+                      }
+                    : {
+                          icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                          text: 'Failed',
+                          date: node.finishedAt,
+                          className: 'bg-danger',
+                      },
             ]
                 .filter(isDefined)
                 .filter<TimelineStage>((stage): stage is TimelineStage => stage.date !== null),
@@ -156,7 +176,13 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     const success = Array.isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
-        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
+        icon: !finished ? (
+            <Icon as={ProgressClockIcon} aria-label="success" />
+        ) : success ? (
+            <Icon as={CheckIcon} aria-label="Success" />
+        ) : (
+            <Icon as={AlertCircleIcon} aria-label="Failed" />
+        ),
         date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
         expandedByDefault: expandedByDefault || !(success || !finished),

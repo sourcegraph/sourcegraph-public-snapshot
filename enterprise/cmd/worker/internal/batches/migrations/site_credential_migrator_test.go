@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,7 +21,8 @@ import (
 
 func TestSiteCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 

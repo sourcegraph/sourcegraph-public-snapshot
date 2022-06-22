@@ -14,9 +14,8 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { siteGQLID, siteID } from './jscontext'
-import { percySnapshotWithVariants } from './utils'
+import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -42,54 +41,16 @@ describe('Search contexts', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
-        driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
-
-    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
-        ViewerSettings: () => ({
-            viewerSettings: {
-                __typename: 'SettingsCascade',
-                subjects: [
-                    {
-                        __typename: 'DefaultSettings',
-                        settingsURL: null,
-                        viewerCanAdminister: false,
-                        latestSettings: {
-                            id: 0,
-                            contents: JSON.stringify({
-                                experimentalFeatures: {
-                                    showSearchContext: true,
-                                    showSearchContextManagement: true,
-                                },
-                            }),
-                        },
-                    },
-                    {
-                        __typename: 'Site',
-                        id: siteGQLID,
-                        siteID,
-                        latestSettings: {
-                            id: 470,
-                            contents: JSON.stringify({
-                                experimentalFeatures: {
-                                    showSearchContext: true,
-                                    showSearchContextManagement: true,
-                                },
-                            }),
-                        },
-                        settingsURL: '/site-admin/global-settings',
-                        viewerCanAdminister: true,
-                        allowSiteSettingsEdits: true,
-                    },
-                ],
-                final: JSON.stringify({}),
-            },
-        }),
-    }
-
     const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
         ...commonSearchGraphQLResults,
-        ...viewerSettingsWithSearchContexts,
+        ...createViewerSettingsGraphQLOverride({
+            user: {
+                experimentalFeatures: {
+                    showSearchContext: true,
+                    showSearchContextManagement: true,
+                },
+            },
+        }),
         UserRepositories: () => ({
             node: {
                 __typename: 'User',
@@ -147,15 +108,32 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
-        await driver.page.goto(
-            driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
-            { waitUntil: 'networkidle0' }
-        )
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        await driver.page.waitForSelector('#monaco-query-input')
-        expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
-        expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+    withSearchQueryInput((editorName, editorSelector) => {
+        test(`Unavailable search context should remain in the query and disable the search context dropdown (${editorName})`, async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                ...createViewerSettingsGraphQLOverride({
+                    user: {
+                        experimentalFeatures: {
+                            showSearchContext: true,
+                            showSearchContextManagement: true,
+                            ...enableEditor(editorName).experimentalFeatures,
+                        },
+                    },
+                }),
+            })
+
+            const editor = createEditorAPI(driver, editorName, editorSelector)
+
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
+                { waitUntil: 'networkidle0' }
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            await editor.waitForIt()
+            expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
     })
 
     test('Reset unavailable search context from localStorage if query is not present', async () => {

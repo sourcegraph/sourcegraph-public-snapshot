@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -37,8 +39,9 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -195,8 +198,9 @@ func TestService(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
