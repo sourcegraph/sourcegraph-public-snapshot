@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -73,8 +73,8 @@ type RepositoryRevisions struct {
 	resolveErr error
 
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
-	// tests. If nil, git.ListRefs is used.
-	ListRefs func(ctx context.Context, db database.DB, repo api.RepoName) ([]gitdomain.Ref, error) `json:"-"`
+	// tests. If nil, gitserver.ListRefs is used.
+	ListRefs func(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error) `json:"-"`
 }
 
 func (r *RepositoryRevisions) Copy() *RepositoryRevisions {
@@ -214,7 +214,8 @@ func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context, db database.
 func expandedRevSpec(ctx context.Context, db database.DB, r *RepositoryRevisions) ([]string, error) {
 	listRefs := r.ListRefs
 	if listRefs == nil {
-		listRefs = git.ListRefs
+		client := gitserver.NewClient(db)
+		listRefs = client.ListRefs
 	}
 
 	var (
@@ -232,7 +233,7 @@ func expandedRevSpec(ctx context.Context, db database.DB, r *RepositoryRevisions
 		}
 	}
 	if len(globs) > 0 {
-		allRefs, err := listRefs(ctx, db, r.GitserverRepo())
+		allRefs, err := listRefs(ctx, r.GitserverRepo())
 		if err != nil {
 			return nil, err
 		}
