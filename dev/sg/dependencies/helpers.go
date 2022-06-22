@@ -256,7 +256,7 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 			return errors.Wrapf(err, "failed to run 'git version'")
 		}
 
-		elems := strings.Split(string(out), " ")
+		elems := strings.Split(out, " ")
 		if len(elems) != 3 {
 			return errors.Newf("unexpected output from git: %s", out)
 		}
