@@ -134,7 +134,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if dir1Info.Size() != 0 {
 			t.Errorf("%s: got dir1 size %d, want 0", label, dir1Info.Size())
 		}
-		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(ObjectInfo).OID().String(); got != want {
+		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
 		client := gitserver.NewClient(db)
@@ -156,7 +156,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got dir1 entry size == %d, want %d", label, file1Info.Size(), want)
 		}
-		if got, want := "a20cc2fb45631b1dd262371a058b1bf31702abaa", file1Info.Sys().(ObjectInfo).OID().String(); got != want {
+		if got, want := "a20cc2fb45631b1dd262371a058b1bf31702abaa", file1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 entry OID %q, want %q", label, got, want)
 		}
 
@@ -384,8 +384,8 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			if submod.Mode().IsDir() {
 				t.Errorf("%s: IsDir", label)
 			}
-			if mode := submod.Mode(); mode&ModeSubmodule == 0 {
-				t.Errorf("%s: submod.Mode(): got %o, want & ModeSubmodule (%o) != 0", label, mode, ModeSubmodule)
+			if mode := submod.Mode(); mode&gitdomain.ModeSubmodule == 0 {
+				t.Errorf("%s: submod.Mode(): got %o, want & ModeSubmodule (%o) != 0", label, mode, gitdomain.ModeSubmodule)
 			}
 			si, ok := submod.Sys().(gitdomain.Submodule)
 			if !ok {

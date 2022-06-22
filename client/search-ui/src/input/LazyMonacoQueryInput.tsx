@@ -15,7 +15,6 @@ import styles from './LazyMonacoQueryInput.module.scss'
  */
 export interface IEditor {
     focus(): void
-    showSuggestions(): void
 }
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')

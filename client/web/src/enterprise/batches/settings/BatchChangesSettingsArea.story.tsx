@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -13,10 +13,6 @@ import {
 
 import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
-
-const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
 
 const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChangesCodeHostsResult => ({
     node: {
@@ -36,7 +32,16 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
 
-add('Overview', () => (
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/BatchChangesSettingsArea',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Overview: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -89,9 +94,9 @@ add('Overview', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('Config added', () => (
+export const ConfigAdded: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -144,4 +149,6 @@ add('Config added', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ConfigAdded.storyName = 'Config added'

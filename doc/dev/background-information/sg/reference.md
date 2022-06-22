@@ -67,6 +67,7 @@ Flags:
 * `--crit, -c="<value>"`: Services to set at info crit level.
 * `--debug, -d="<value>"`: Services to set at debug log level.
 * `--error, -e="<value>"`: Services to set at info error level.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--info, -i="<value>"`: Services to set at info log level.
 * `--warn, -w="<value>"`: Services to set at warn log level.
 
@@ -131,6 +132,10 @@ $ sg run -help
 $ sg run gitserver frontend repo-updater
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ## sg ci
 
 Interact with Sourcegraph's Buildkite continuous integration pipelines.
@@ -171,10 +176,18 @@ $ sg ci build --force --commit my-commit main-dry-run
 $ sg ci build --help
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg ci preview
 
 Preview the pipeline that would be run against the currently checked out branch.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ci status
 
@@ -183,6 +196,7 @@ Get the status of the CI run associated with the currently checked out branch.
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
 
@@ -216,6 +230,7 @@ Arguments: `[runtype]`
 Flags:
 
 * `--commit, -c="<value>"`: `commit` from the current branch to build (defaults to current commit)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ci logs
 
@@ -233,6 +248,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 Flags:
 
 * `--build="<value>"`: Override branch detection with a specific build `number`
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
 * `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
 * `--overwrite-state="<value>"`: `state` to overwrite the job state metadata
@@ -245,11 +261,19 @@ Render reference documentation for build pipeline types.
 An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.
 
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg ci open
 
 Open Sourcegraph's Buildkite page in browser.
 
 Arguments: `[pipeline]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg test
 
@@ -284,6 +308,10 @@ $ sg test -help
 $ sg test backend-integration -run TestSearch
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ## sg lint
 
 Run all or specified linters on the codebase.
@@ -310,6 +338,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to annotations directory
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
 ### sg lint urls
@@ -317,35 +346,63 @@ Flags:
 Check for broken urls in the codebase.
 
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg lint go
 
 Check go code for linting errors, forbidden imports, generated files, etc.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg lint docs
 
 Documentation checks.
 
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg lint dockerfiles
 
 Check Dockerfiles for Sourcegraph best practices.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg lint client
 
 Check client code for linting errors, forbidden imports, etc.
 
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg lint svg
 
 Check svg assets.
 
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg lint shell
 
 Check shell code for linting errors, formatting, etc.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg generate
 
@@ -359,12 +416,17 @@ $ sg --verbose generate ... # Enable verbose output
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--quiet, -q`: Suppress all output but errors from generate tasks
 
 ### sg generate go
 
 Run go generate [packages...] on the codebase.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg db
 
@@ -387,6 +449,10 @@ $ sg db reset-redis
 $ sg db add-user -name=foo
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg db reset-pg
 
 Drops, recreates and migrates the specified Sourcegraph database.
@@ -397,6 +463,7 @@ If -db is not set, then the "frontend" database is used (what's set as PGDATABAS
 Flags:
 
 * `--db="<value>"`: The target database instance. (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg db reset-redis
 
@@ -405,6 +472,10 @@ Drops, recreates and migrates the specified Sourcegraph Redis database.
 ```sh
 $ sg db reset-redis
 ```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg db add-user
 
@@ -415,6 +486,7 @@ Run 'sg db add-user -name bob' to create an admin user whose email is bob@source
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--password="<value>"`: Password for user (default: sourcegraphsourcegraph)
 * `--username="<value>"`: Username for user (default: sourcegraph)
 
@@ -436,6 +508,10 @@ $ sg migration add --db codeintel 'add missing index'
 $ sg migration squash
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg migration add
 
 Add a new migration file.
@@ -451,6 +527,7 @@ Arguments: `<name>`
 Flags:
 
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration revert
 
@@ -463,6 +540,10 @@ Available schemas:
 * codeinsights
 
 Arguments: `<commit>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration up
 
@@ -481,6 +562,7 @@ $ sg migration up [-db=<schema>]
 Flags:
 
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--unprivileged-only`: Do not apply privileged migrations.
 
@@ -501,6 +583,7 @@ $ sg migration upto -db=<schema> -target=<target>,<target>,...
 Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Do not apply privileged migrations.
@@ -522,6 +605,7 @@ $ sg migration undo -db=<schema>
 Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 
 ### sg migration downto
@@ -541,6 +625,7 @@ $ sg migration downto -db=<schema> -target=<target>,<target>,...
 Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Do not apply privileged migrations.
@@ -559,6 +644,7 @@ Available schemas:
 Flags:
 
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration describe
 
@@ -574,6 +660,7 @@ Available schemas:
 Flags:
 
 * `--db="<value>"`: The target `schema` to describe.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--force`: Force write the file if it already exists.
 * `--format="<value>"`: The target output format.
 * `--no-color`: If writing to stdout, disable output colorization.
@@ -593,6 +680,7 @@ Available schemas:
 Flags:
 
 * `--db="<value>"`: The target `schema` to compare.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the sourcegraph repository.
 
 ### sg migration add-log
@@ -612,6 +700,7 @@ $ sg migration add-log -db=<schema> -version=<version> [-up=true|false]
 Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
 
@@ -626,6 +715,10 @@ Available schemas:
 * codeinsights
 
 Arguments: `<commit>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration squash
 
@@ -642,6 +735,7 @@ Arguments: `<current-release>`
 Flags:
 
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
@@ -659,6 +753,7 @@ Available schemas:
 Flags:
 
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
@@ -677,6 +772,7 @@ Available schemas:
 Flags:
 
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
 
 ## sg doctor
@@ -684,6 +780,10 @@ Flags:
 Run checks to test whether system is in correct state to run Sourcegraph.
 
 Arguments: `[...checks]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg secret
 
@@ -698,11 +798,19 @@ $ sg secret list
 $ sg secret reset buildkite
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg secret reset
 
 Remove a specific secret from secrets file.
 
 Arguments: `<...key>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg secret list
 
@@ -711,12 +819,17 @@ List all stored secrets.
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--view, -v`: Display configured secrets when listing
 
 ## sg setup
 
 Set up your local dev environment!.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg teammate
 
@@ -735,17 +848,29 @@ $ sg teammate time thorsten ball
 $ sg teammate handbook asdine
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg teammate time
 
 Get the current time of a Sourcegraph teammate.
 
 Arguments: `<nickname>`
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg teammate handbook
 
 Open the handbook page of a Sourcegraph teammate.
 
 Arguments: `<nickname>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg rfc
 
@@ -761,6 +886,10 @@ $ sg rfc search "search terms"
 # Open a specific RFC
 $ sg rfc open 420
 ```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg live
 
@@ -785,12 +914,20 @@ $ sg live https://demo.sourcegraph.com
 $ sg live -help
 ```
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ## sg ops
 
 Commands used by operations teams to perform common tasks.
 
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ops update-images
 
@@ -805,6 +942,7 @@ Flags:
 
 * `--cr-password="<value>"`: `password` or access token for the container registry
 * `--cr-username="<value>"`: `username` for the container registry
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--kind="<value>"`: the `kind` of deployment (one of 'k8s', 'helm') (default: k8s)
 * `--pin-tag="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)
 
@@ -812,6 +950,10 @@ Flags:
 
 Manage analytics collected by sg.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg analytics submit
 
@@ -821,10 +963,18 @@ Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.
 
 Arguments: `[github username]`
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ### sg analytics reset
 
 Delete all analytics stored locally.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg analytics view
 
@@ -833,6 +983,7 @@ View all analytics stored locally.
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--raw`: view raw data
 
 ## sg help
@@ -842,14 +993,28 @@ Get help and docs about sg.
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--full, -f`: generate full markdown sg reference
 * `--help, -h`: show help
 * `--output="<value>"`: write reference to `file`
+
+## sg feedback
+
+opens up a Github discussion page to provide feedback about sg.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg version
 
 View details for this installation of sg.
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg version changelog
 
@@ -858,6 +1023,7 @@ See what's changed in or since this version of sg.
 
 Flags:
 
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--limit="<value>"`: Number of changelog entries to show. (default: 5)
 * `--next`: Show changelog for changes you would get if you upgrade.
 
@@ -870,6 +1036,10 @@ Update local sg installation with the latest changes. To see what's new, run:
     sg version changelog -next
 
 
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ## sg logo
 
 Print the sg logo.
@@ -877,3 +1047,7 @@ Print the sg logo.
 By default, prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.
 
 Arguments: `[classic]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 func TestQueryTriggerForJob(t *testing.T) {
@@ -54,6 +56,27 @@ func TestSetQueryTriggerNextRun(t *testing.T) {
 		ChangedAt:    s.Now().UTC(),
 	}
 	require.Equal(t, want, got)
+}
+
+func TestUpdateTrigger(t *testing.T) {
+	ctx, db, s := newTestStore(t)
+	uid1 := insertTestUser(ctx, t, db, "u1", false)
+	ctx1 := actor.WithActor(ctx, actor.FromUser(uid1))
+	uid2 := insertTestUser(ctx, t, db, "u2", false)
+	ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
+	fixtures := s.insertTestMonitor(ctx1, t)
+
+	// User1 can update it
+	err := s.UpdateQueryTrigger(ctx1, fixtures.query.ID, "query1")
+	require.NoError(t, err)
+
+	// User2 cannot update it
+	err = s.UpdateQueryTrigger(ctx2, fixtures.query.ID, "query2")
+	require.Error(t, err)
+
+	qt, err := s.GetQueryTriggerForMonitor(ctx1, fixtures.query.ID)
+	require.NoError(t, err)
+	require.Equal(t, qt.QueryString, "query1")
 }
 
 func TestResetTriggerQueryTimestamps(t *testing.T) {
