@@ -72,7 +72,8 @@ func Test_setRepos(t *testing.T) {
         "Features": {
           "ContentBasedLangFilters": false,
           "HybridSearch": false
-        }
+        },
+        "Log": {}
       }
     }
   ]

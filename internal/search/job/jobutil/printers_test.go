@@ -257,7 +257,8 @@ func TestPrettyJSON(t *testing.T) {
                   "Features": {
                     "ContentBasedLangFilters": false,
                     "HybridSearch": false
-                  }
+                  },
+                  "Log": {}
                 }
               }
             },
@@ -291,7 +292,8 @@ func TestPrettyJSON(t *testing.T) {
                   "ContentBasedLangFilters": false,
                   "HybridSearch": false
                 },
-                "Mode": 0
+                "Mode": 0,
+                "Log": {}
               }
             }
           ]

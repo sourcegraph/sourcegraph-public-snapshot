@@ -446,6 +446,7 @@ func NewFlatJob(log slog.Logger, searchInputs *run.SearchInputs, f query.Flat) (
 						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
 						FilePatternsReposMustExclude: patternInfo.FilePatternsReposMustExclude,
 						Mode:                         mode,
+						Log:                          log,
 					})
 				}
 			}
