@@ -74,8 +74,6 @@ function logEvent(eventVariable: Event): void {
     events.next(eventVariable)
 }
 
-// We keep a global event ID counter so that EventLoger can be creacretad without causing us to
-// reuse event identifiers
 let eventId = 1
 
 // Event Logger for VS Code Extension
@@ -91,33 +89,15 @@ export class EventLogger implements TelemetryService {
 
     /**
      * @deprecated use logPageView instead
-     *
-     * Log a pageview event (by sending it to the server).
      */
-    public logViewEvent(pageTitle: string, eventProperties?: any, publicArgument?: any, url?: string): void {
-        if (pageTitle) {
-            this.tracker(
-                `View${pageTitle}`,
-                { ...eventProperties, ...this.editorInfo },
-                { ...publicArgument, ...this.editorInfo },
-                url
-            )
-        }
+    public logViewEvent(): void {
+        throw new Error('This method is not supported on JetBrains. This extension does not use the deprecated method.')
     }
 
-    /**
-     * Log a pageview.
-     * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
-     */
-    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any, url?: string): void {
-        if (eventName) {
-            this.tracker(
-                `${eventName}Viewed`,
-                { ...eventProperties, ...this.editorInfo },
-                { ...publicArgument, ...this.editorInfo },
-                url
-            )
-        }
+    public logPageView(): void {
+        throw new Error(
+            'This method is not supported on JetBrains. This extension does not have the contept of a page.'
+        )
     }
 
     /**
@@ -154,7 +134,7 @@ export class EventLogger implements TelemetryService {
         return () => this.listeners.delete(callback)
     }
 
-    public tracker(eventName: string, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
+    private tracker(eventName: string, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
         for (const listener of this.listeners) {
             listener(eventName)
         }
