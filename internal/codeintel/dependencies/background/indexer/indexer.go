@@ -32,7 +32,6 @@ var lockfileIndexingEnabled = conf.CodeIntelLockfileIndexingEnabled
 
 func (i *indexer) Handle(ctx context.Context) error {
 	if !lockfileIndexingEnabled() {
-		// fmt.Println("not handle")
 		return nil
 	}
 
