@@ -75,6 +75,22 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 4.  Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL.
 5.  Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
 
+### Adding it to your workspace's recommended extensions
+
+1. Create a `.vscode` folder (if not already present) in the root of your repository
+2. Inside that folder, create a new file named `extensions.json` (if it doesn't already exist) with the following structure.
+```
+{
+	"recommendations": ["sourcegraph.sourcegraph"]
+}
+```
+3. If the file does exist, append `"sourcegraph.sourcegraph"` to the `"recommendations"` array. 
+4. Push the changes to your repository for your other colleagues to share.
+
+Alternatively you can use the `Extensions: Configure Recommended Extensions (Workspace Folder)` command from within VS Code.
+
+
+
 ## Keyboard Shortcuts:
 
 | Description                                  | Mac                                          | Linux / Windows                               |
