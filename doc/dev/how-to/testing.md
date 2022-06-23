@@ -138,8 +138,8 @@ Our test driver accepts various environment variables that can be used to contro
 | `DEVTOOLS`                         | Whether to run all tests with the browser devtools open.                      |
 | `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran.                   |
 | `USE_STANDALONE_WEB_SERVER`        | Rely on `sg start web-standalone` to load index.html and client assets.       |
-| `WINDOW_WIDTH`                     | Browser window width.                                                  |
-| `WINDOW_HEIGHT`                    | Browser window height.                                                 |
+| `WINDOW_WIDTH`                     | Browser window width.                                                         |
+| `WINDOW_HEIGHT`                    | Browser window height.                                                        |
 
 #### Filtering tests
 
