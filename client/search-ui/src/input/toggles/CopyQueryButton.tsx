@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
@@ -46,13 +47,13 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
+            {copied && <VisuallyHidden aria-live="polite">Copied!</VisuallyHidden>}
             <Tooltip content={copied ? 'Copied!' : copyFullQueryTooltip}>
                 <Button
                     className={classNames('btn-icon', props.className)}
                     variant="icon"
                     size="sm"
-                    aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
-                    aria-live="polite"
+                    aria-label={copyFullQueryTooltip}
                     onClick={nextClick}
                 >
                     <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
