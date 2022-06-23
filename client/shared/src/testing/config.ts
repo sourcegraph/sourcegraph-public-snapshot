@@ -32,6 +32,8 @@ export interface Config {
     useStandaloneWebServer: boolean
     bitbucketCloudUserBobAppPassword: string
     gitHubDotComToken: string
+    windowWidth: number
+    windowHeight: number
 }
 
 interface Field<T = string> {
@@ -217,6 +219,18 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description: 'Rely on `sg start web-standalone` to load index.html and client assets.',
         defaultValue: false,
+    },
+    windowWidth: {
+        envVar: 'WINDOW_WIDTH',
+        parser: parseInt,
+        description: 'Browser window width.',
+        defaultValue: 1280,
+    },
+    windowHeight: {
+        envVar: 'WINDOW_HEIGHT',
+        parser: parseInt,
+        description: 'Browser window height.',
+        defaultValue: 1024,
     },
 }
 

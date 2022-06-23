@@ -131,13 +131,15 @@ Our test driver accepts various environment variables that can be used to contro
 
 | Environment variable               | Purpose                                                                       |
 | ---------------------------------- | ----------------------------------------------------------------------------- |
-| `BROWSER`                          | Whether to run `firefox` or `chrome` (default)                                |
+| `BROWSER`                          | Whether to run `firefox` or `chrome` (default).                               |
 | `LOG_BROWSER_CONSOLE`              | Log the browser console output to the terminal (default `true`).              |
 | `SLOWMO`                           | Slow down each interaction by a delay (ms).                                   |
 | `HEADLESS`                         | Run the tests without a visible browser window.                               |
-| `DEVTOOLS`                         | Whether to run all tests with the browser devtools open                       |
-| `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran                    |
+| `DEVTOOLS`                         | Whether to run all tests with the browser devtools open.                      |
+| `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran.                   |
 | `USE_STANDALONE_WEB_SERVER`        | Rely on `sg start web-standalone` to load index.html and client assets.       |
+| `WINDOW_WIDTH`                     | Browser window width.                                                  |
+| `WINDOW_HEIGHT`                    | Browser window height.                                                 |
 
 #### Filtering tests
 
