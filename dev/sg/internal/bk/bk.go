@@ -174,7 +174,7 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 
 	var result JobAnnotations = make(JobAnnotations, 0)
 	for _, a := range artifacts {
-		if strings.Contains(*a.Dirname, "annotations") {
+		if strings.Contains(*a.Filename, ".term") {
 			var buf bytes.Buffer
 			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
 			if err != nil {

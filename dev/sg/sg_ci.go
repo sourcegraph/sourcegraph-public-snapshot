@@ -694,7 +694,7 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
 		}
 		if annotation, exist := annotations[*job.ID]; exist {
-			block.WriteLine(output.Styledf(style, "%s", annotation.AnnotationMarkdown))
+			block.Write(annotation.Markdown)
 		}
 	}
 
