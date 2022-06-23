@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,10 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type syncer struct {
@@ -42,35 +46,25 @@ type CrateInfo struct {
 }
 
 func (s *syncer) Handle(ctx context.Context) error {
-	// TODO: Skip if not in our sourcegraph cloud instance
-	// TODO: Don't always auto-index these repos
 
-	fmt.Println("=============================== New Execution")
+	exists, externalService, err := singleRustExternalService(ctx, s.extSvcStore)
+	if !exists || err != nil {
+		return err
+	}
 
-	kind := extsvc.KindRustPackages
-	externalServices, err := s.extSvcStore.List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{kind},
-	})
-
-	fmt.Println("EXTERNAL:", externalServices, err)
+	config, err := rustPackagesConfig(externalService)
 	if err != nil {
 		return err
 	}
 
-	//  Skip if RUSTPACKAGES not enabled
-	if len(externalServices) == 0 {
-		return nil
-	}
-
-	repo := "github.com/rust-lang/crates.io-index"
+	repo := config.IndexRepositoryName
 	reader, err := git.ArchiveReader(ctx, s.db, nil, api.RepoName(repo), gitserver.ArchiveOptions{
 		Treeish:   "HEAD",
 		Format:    "tar",
 		Pathspecs: []gitserver.Pathspec{},
 	})
 	if err != nil {
-		fmt.Println("Archive Reader Err:", err)
-		return err
+		return errors.Wrapf(err, "failed to git archive repo %s", repo)
 	}
 	defer reader.Close()
 
@@ -79,16 +73,18 @@ func (s *syncer) Handle(ctx context.Context) error {
 		return err
 	}
 
-	count := 0
-	pkgs := []precise.Package{}
 	for {
 		header, err := tr.Next()
 		if err != nil {
 			if err != io.EOF {
 				return err
 			}
-
 			break
+		}
+
+		// Skip directory entries
+		if strings.HasSuffix(header.Name, "/") {
+			continue
 		}
 
 		// `.github/` contains non-crates information
@@ -103,82 +99,123 @@ func (s *syncer) Handle(ctx context.Context) error {
 			continue
 		}
 
-		if !strings.Contains(header.Name, "tokio") {
-			continue
-		}
-
 		var buf bytes.Buffer
 		if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
 			return err
 		}
 
-		contents := buf.String()
-		for _, line := range strings.Split(contents, "\n") {
-			if line == "" {
-				continue
-			}
-
-			var info CrateInfo
-			err = json.Unmarshal([]byte(line), &info)
-			if err != nil {
-				return err
-			}
-
-			pkg := precise.Package{
-				Scheme:  dependencies.RustPackagesScheme,
-				Name:    info.Name,
-				Version: info.Version,
-			}
-
-			isNew, err := s.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
-			if err != nil {
-				return err
-			}
-
-			fmt.Println("IS NEW:", isNew)
-			pkgs = append(pkgs, pkg)
+		pkgs, err := parseCrateInformation(buf.String())
+		if err != nil {
+			return err
 		}
-
-		if count > 5 {
-			break
+		for _, pkg := range pkgs {
+			_, err := s.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to insert Rust crate %v", pkg)
+			}
 		}
-
-		count = count + 1
 	}
 
 	nextSync := time.Now()
-	for _, externalService := range externalServices {
-		externalService.NextSyncAt = nextSync
-		if err := s.extSvcStore.Upsert(ctx, externalService); err != nil {
-			return err
-		}
+	externalService.NextSyncAt = nextSync
+	if err := s.extSvcStore.Upsert(ctx, externalService); err != nil {
+		return err
 	}
-
-	for _, pkg := range pkgs {
-		fmt.Println("PKG:", pkg)
-
-		if err := s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
-			return nil
-		}
-	}
-
-	fmt.Println("====> All Done")
 	return nil
 }
 
 func NewCratesSyncer(db database.DB, indexEnqueuer *autoindexing.Service) goroutine.BackgroundRoutine {
+
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.NewRegistry(),
 	}
 	extSvcStore := database.NewDB(db).ExternalServices()
 
-	hour := time.Hour
-	duration := hour * 12
-	return goroutine.NewPeriodicGoroutine(context.Background(), duration, &syncer{
+	interval := time.Hour * 12
+	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
+	if externalService != nil {
+		config, err := rustPackagesConfig(externalService)
+		if err == nil {
+			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
+			if err == nil {
+				interval = customInterval
+			}
+		}
+	}
+
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &syncer{
 		db:            db,
 		dbStore:       dbstore.NewWithDB(db, observationContext),
 		extSvcStore:   extSvcStore,
 		indexEnqueuer: indexEnqueuer,
 	})
+}
+
+// rustPackagesConfig returns the configuration for the provided RUSTPACKAGES code host.
+func rustPackagesConfig(externalService *dbtypes.ExternalService) (*schema.RustPackagesConnection, error) {
+	config := &schema.RustPackagesConnection{}
+	normalized, err := jsonc.Parse(externalService.Config)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse JSON config for Rust external service %s", externalService.Config)
+	}
+
+	if err = jsoniter.Unmarshal(normalized, config); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal Rust external service config %s", externalService.Config)
+	}
+	return config, nil
+}
+
+// singleRustExternalService returns the single external service type with kind RUSTPACKAGES.
+// The external service and the error are both nil when there are no RUSTPACKAGES code hosts.
+// The `exists` return value is false whenever externalService is nil, and it exists only as a
+// reminder that `nil, nil` is a valid return value (no external service, no error).
+func singleRustExternalService(ctx context.Context, store database.ExternalServiceStore) (exists bool, externalService *dbtypes.ExternalService, err error) {
+	kind := extsvc.KindRustPackages
+
+	externalServices, err := store.List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{kind},
+	})
+
+	if err != nil {
+		return false, nil, errors.Wrapf(err, "failed to list Rust external service types")
+	}
+
+	//  Skip if RUSTPACKAGES not enabled
+	if len(externalServices) == 0 {
+		return false, nil, nil
+	}
+
+	//  We only support having a single RUSTPACKAGES external service type, for now
+	if len(externalServices) > 1 {
+		return false, nil, errors.Errorf("multiple external services with kind %s", kind)
+	}
+
+	return true, externalServices[0], nil
+}
+
+// parseCrateInformation parses the newline-delimited JSON file for a crate,
+// assuming the pattern that's used in the github.com/rust-lang/crates.io-index
+func parseCrateInformation(contents string) ([]precise.Package, error) {
+	var result []precise.Package
+	for _, line := range strings.Split(contents, "\n") {
+		if line == "" {
+			continue
+		}
+
+		var info CrateInfo
+		err := json.Unmarshal([]byte(line), &info)
+		if err != nil {
+			return nil, err
+		}
+
+		pkg := precise.Package{
+			Scheme:  dependencies.RustPackagesScheme,
+			Name:    info.Name,
+			Version: info.Version,
+		}
+		result = append(result, pkg)
+
+	}
+	return result, nil
 }

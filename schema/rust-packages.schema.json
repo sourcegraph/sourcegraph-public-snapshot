@@ -7,6 +7,20 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "indexRepositoryName": {
+      "description": "Name of the repository containing the crates.io indexindex",
+      "title": "RustIndexRepositoryName",
+      "type": "string",
+      "examples": ["github.com/crates.io/index"],
+      "default": "github.com/crates.io/index"
+    },
+    "indexRepositorySyncInterval": {
+      "description": "How frequently to sync with the index repository. String formatted as a Go time.Duration.",
+      "title": "RustIndexRepositorySyncInterval",
+      "type": "string",
+      "examples": ["12h"],
+      "default": "12h"
+    },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to the configured Rust repository APIs.",
       "title": "RustRateLimit",
