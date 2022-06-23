@@ -42,7 +42,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
             <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
                 path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
-                actions={<CodeInsightIndependentPageActions insight={insight} />}
+                actions={<CodeInsightIndependentPageActions insight={insight} telemetryService={telemetryService} />}
             />
 
             <StandaloneInsightDashboardPills
