@@ -57,8 +57,7 @@ RUN apk add --no-cache --verbose \
     # between Sourcegraph releases.
     postgresql=~12 \
     postgresql-contrib=~12 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
-
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
 
 RUN apk add --no-cache --verbose \
     'bash>=5.0.17' \
