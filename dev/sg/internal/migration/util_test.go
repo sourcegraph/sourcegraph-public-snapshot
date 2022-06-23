@@ -8,10 +8,23 @@ import (
 )
 
 func TestMakeMigrationFilenamesFromDir(t *testing.T) {
+	var (
+		baseDir        = "foobar"
+		migrationIndex = 1
+	)
+
 	cases := []struct {
 		want          autogold.Value
 		migrationName string
 	}{
+		{
+			autogold.Want("og-migrations", MigrationFiles{
+				UpFile:       "foobar/1/up.sql",
+				DownFile:     "foobar/1/down.sql",
+				MetadataFile: "foobar/1/metadata.yaml",
+			}),
+			"",
+		},
 		{
 			autogold.Want("simple-filenames", MigrationFiles{
 				UpFile:       "foobar/1_do_the_thing/up.sql",
@@ -31,7 +44,7 @@ func TestMakeMigrationFilenamesFromDir(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.want.Name(), func(t *testing.T) {
-			got, err := makeMigrationFilenamesFromDir("foobar", 1, c.migrationName)
+			got, err := makeMigrationFilenamesFromDir(baseDir, migrationIndex, c.migrationName)
 			require.NoError(t, err)
 			c.want.Equal(t, got)
 		})

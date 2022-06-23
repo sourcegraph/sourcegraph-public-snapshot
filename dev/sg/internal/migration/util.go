@@ -45,10 +45,18 @@ func makeMigrationFilenamesFromDir(baseDir string, migrationIndex int, name stri
 	sanitizedName := nonAlphaNumericOrUnderscore.ReplaceAllString(
 		strings.ReplaceAll(strings.ToLower(name), " ", "_"), "",
 	)
+	var dirName string
+	if sanitizedName == "" {
+		// No name associated with this migration, we just use the index
+		dirName = fmt.Sprintf("%d", migrationIndex)
+	} else {
+		// Include both index and simplified name
+		dirName = fmt.Sprintf("%d_%s", migrationIndex, sanitizedName)
+	}
 	return MigrationFiles{
-		UpFile:       filepath.Join(baseDir, fmt.Sprintf("%d_%s/up.sql", migrationIndex, sanitizedName)),
-		DownFile:     filepath.Join(baseDir, fmt.Sprintf("%d_%s/down.sql", migrationIndex, sanitizedName)),
-		MetadataFile: filepath.Join(baseDir, fmt.Sprintf("%d_%s/metadata.yaml", migrationIndex, sanitizedName)),
+		UpFile:       filepath.Join(baseDir, fmt.Sprintf("%s/up.sql", dirName)),
+		DownFile:     filepath.Join(baseDir, fmt.Sprintf("%s/down.sql", dirName)),
+		MetadataFile: filepath.Join(baseDir, fmt.Sprintf("%s/metadata.yaml", dirName)),
 	}, nil
 }
 
