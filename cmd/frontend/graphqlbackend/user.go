@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -58,8 +60,9 @@ func (r *schemaResolver) User(
 
 // UserResolver implements the GraphQL User type.
 type UserResolver struct {
-	db   database.DB
-	user *types.User
+	logger log.Logger
+	db     database.DB
+	user   *types.User
 }
 
 // NewUserResolver returns a new UserResolver with given user object.

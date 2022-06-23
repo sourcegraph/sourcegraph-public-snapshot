@@ -63,6 +63,12 @@ function handleRequest(
             break
         }
 
+        case 'previewLoading': {
+            codeDetailsNode.innerHTML = 'Loading...'
+            onSuccessCallback('null')
+            break
+        }
+
         case 'preview': {
             previewContent = request.arguments
 

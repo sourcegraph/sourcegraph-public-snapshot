@@ -11,6 +11,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
@@ -43,6 +45,7 @@ func New(store *store.Store) *Service {
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 	svc := &Service{
+		logger:     sglog.Scoped("NewWithClock", ""),
 		store:      store,
 		sourcer:    sources.NewSourcer(httpcli.ExternalClientFactory),
 		clock:      clock,
@@ -53,6 +56,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 }
 
 type Service struct {
+	logger     sglog.Logger
 	store      *store.Store
 	sourcer    sources.Sourcer
 	operations *operations
@@ -142,7 +146,7 @@ func newOperations(observationContext *observation.Context) *operations {
 // WithStore returns a copy of the Service with its store attribute set to the
 // given Store.
 func (s *Service) WithStore(store *store.Store) *Service {
-	return &Service{store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
+	return &Service{logger: s.logger, store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
 type CreateEmptyBatchChangeOpts struct {
@@ -217,6 +221,77 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		CreatorID:       actor.UID,
 	}
 	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
+		return nil, err
+	}
+
+	return batchChange, nil
+}
+
+type UpsertEmptyBatchChangeOpts struct {
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	Name string
+}
+
+// UpsertEmptyBatchChange creates a new batch change with an empty batch spec if a batch change with that name doesn't exist,
+// otherwise it updates the existing batch change with an empty batch spec.
+// It enforces namespace permissions of the caller and validates that the combination of name +
+// namespace is unique.
+func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBatchChangeOpts) (*btypes.BatchChange, error) {
+	// Check whether the current user has access to either one of the namespaces.
+	err := s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+
+	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
+
+	batchChange := &btypes.BatchChange{
+		Name:            opts.Name,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
+		CreatorID:       actor.UID,
+	}
+
+	err = tx.UpsertBatchChange(ctx, batchChange)
+
+	if err != nil {
 		return nil, err
 	}
 

@@ -1,21 +1,27 @@
-import { storiesOf } from '@storybook/react'
+import { Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { BranchMerge } from './Branch'
 
-const { add } = storiesOf('web/batches/Branch', module)
+const config = {
+    title: 'web/batches/Branch',
+}
 
-add('Forked', () => (
+export default config
+
+export const Forked: Story = () => (
     <WebStory>
         {() => <BranchMerge baseRef="main" forkTarget={{ pushUser: false, namespace: 'org' }} headRef="branch" />}
     </WebStory>
-))
+)
 
-add('Will be forked into the user', () => (
+export const WillBeForkedIntoTheUser: Story = () => (
     <WebStory>
         {() => <BranchMerge baseRef="main" forkTarget={{ pushUser: true, namespace: 'org' }} headRef="branch" />}
     </WebStory>
-))
+)
 
-add('Unforked', () => <WebStory>{() => <BranchMerge baseRef="main" headRef="branch" />}</WebStory>)
+WillBeForkedIntoTheUser.storyName = 'Will be forked into the user'
+
+export const Unforked: Story = () => <WebStory>{() => <BranchMerge baseRef="main" headRef="branch" />}</WebStory>

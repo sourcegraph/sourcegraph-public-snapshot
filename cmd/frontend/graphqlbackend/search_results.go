@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -542,6 +544,7 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 }
 
 type searchResultsStats struct {
+	logger                  log.Logger
 	JApproximateResultCount string
 	JSparkline              []int32
 

@@ -29,7 +29,8 @@ import (
 )
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
 
@@ -171,7 +172,8 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -590,7 +592,8 @@ changesetTemplate:
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -649,7 +652,8 @@ importChangesets:
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 

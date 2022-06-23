@@ -45,6 +45,7 @@ interface Props extends Repo {
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    onCopy?: () => void
 }
 
 export interface HighlightRange {
@@ -110,6 +111,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     viewerUpdates,
     hoverifier,
     className,
+    onCopy,
 }) => {
     const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const [isVisible, setIsVisible] = useState(false)
@@ -189,6 +191,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
             <Code
                 data-testid="code-excerpt"
+                onCopy={onCopy}
                 className={classNames(
                     styles.codeExcerpt,
                     className,

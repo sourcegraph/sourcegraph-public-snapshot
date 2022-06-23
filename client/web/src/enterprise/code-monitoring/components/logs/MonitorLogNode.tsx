@@ -9,6 +9,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
+import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
 
@@ -51,65 +52,70 @@ export const MonitorLogNode: React.FunctionComponent<
     )
 
     return (
-        <>
-            <span className={styles.separator} />
-            <Button
-                onClick={toggleExpanded}
-                className="btn-icon text-left pl-0 border-0 d-flex align-items-center"
-                aria-label="Expand code monitor"
-            >
-                {expanded ? (
-                    <ChevronDownIcon className="mr-2 flex-shrink-0" />
-                ) : (
-                    <ChevronRightIcon className="mr-2 flex-shrink-0" />
-                )}
-                {hasError ? (
-                    <Icon
-                        as={AlertCircleIcon}
-                        className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
-                        aria-label="One or more runs of this code monitor have an error"
-                        data-tooltip="One or more runs of this code monitor have an error"
-                        data-placement="top"
-                    />
-                ) : (
-                    <Icon
-                        as={CheckBoldIcon}
-                        className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
-                        aria-label="Monitor running as normal"
-                        data-tooltip="Monitor running as normal"
-                        data-placement="top"
-                    />
-                )}
-                {monitor.description}
-                {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}
-                <Link
-                    to={`/code-monitoring/${monitor.id}`}
-                    className="ml-2 font-weight-normal"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={clickCatcher}
+        <li className={styles.container}>
+            <div className="d-flex align-items-center">
+                <Button
+                    onClick={toggleExpanded}
+                    className="btn-icon text-left pl-0 border-0 d-flex align-items-center flex-1"
+                    aria-label="Expand code monitor"
                 >
-                    Monitor details <Icon aria-hidden={true} as={OpenInNewIcon} />
-                </Link>
-            </Button>
-            <span className="text-nowrap mr-2">
-                {lastRun ? <Timestamp date={lastRun} now={now} noAbout={true} /> : <>Never</>}
-            </span>
+                    {expanded ? (
+                        <ChevronDownIcon className="mr-2 flex-shrink-0" />
+                    ) : (
+                        <ChevronRightIcon className="mr-2 flex-shrink-0" />
+                    )}
+                    {hasError ? (
+                        <Icon
+                            as={AlertCircleIcon}
+                            className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
+                            aria-label="One or more runs of this code monitor have an error"
+                            data-tooltip="One or more runs of this code monitor have an error"
+                            data-placement="top"
+                        />
+                    ) : (
+                        <Icon
+                            as={CheckBoldIcon}
+                            className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
+                            aria-label="Monitor running as normal"
+                            data-tooltip="Monitor running as normal"
+                            data-placement="top"
+                        />
+                    )}
+                    {monitor.description}
+                    {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}
+                    <Link
+                        to={`/code-monitoring/${monitor.id}`}
+                        className="ml-2 font-weight-normal"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={clickCatcher}
+                    >
+                        Monitor details <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                    </Link>
+                </Button>
+                <span className="text-nowrap mr-2">
+                    {lastRun ? <Timestamp date={lastRun} now={now} noAbout={true} /> : <>Never</>}
+                </span>
+            </div>
 
             {expanded && (
                 <div className={styles.expandedRow}>
-                    {monitor.trigger.events.nodes.map(triggerEvent => (
-                        <TriggerEvent
-                            key={triggerEvent.id}
-                            triggerEvent={triggerEvent}
-                            startOpen={startOpen}
-                            now={now}
-                        />
-                    ))}
-
-                    {monitor.trigger.events.nodes.length === 0 && <div>This code monitor has not been run yet.</div>}
+                    {monitor.trigger.events.nodes.length === 0 ? (
+                        <div>This code monitor has not been run yet.</div>
+                    ) : (
+                        <ConnectionList as="ol">
+                            {monitor.trigger.events.nodes.map(triggerEvent => (
+                                <TriggerEvent
+                                    key={triggerEvent.id}
+                                    triggerEvent={triggerEvent}
+                                    startOpen={startOpen}
+                                    now={now}
+                                />
+                            ))}
+                        </ConnectionList>
+                    )}
                 </div>
             )}
-        </>
+        </li>
     )
 }

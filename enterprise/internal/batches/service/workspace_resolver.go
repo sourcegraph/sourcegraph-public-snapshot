@@ -11,6 +11,8 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -67,10 +69,11 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
+	return &workspaceResolver{logger: log.Scoped("workspaceResolver", ""), store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {
+	logger              log.Logger
 	store               *store.Store
 	frontendInternalURL string
 }
@@ -90,7 +93,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 	}
 
 	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.store), repos)
+	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.logger, wr.store), repos)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +273,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 
 	return repoToRepoRevisionWithDefaultBranch(
 		ctx,
-		database.NewDBWith(wr.store),
+		database.NewDBWith(wr.logger, wr.store),
 		repo,
 		// Directly resolved repos don't have any file matches.
 		[]string{},
@@ -289,7 +292,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := gitserver.NewClient(database.NewDBWith(wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+	commit, err := gitserver.NewClient(database.NewDBWith(wr.logger, wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -367,7 +370,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		}
 		// Sort file matches so cache results always match.
 		sort.Strings(fileMatches)
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.store), repo, fileMatches)
+		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.logger, wr.store), repo, fileMatches)
 		if err != nil {
 			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
 			if errcode.IsNotFound(err) {

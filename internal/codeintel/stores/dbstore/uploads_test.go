@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +24,8 @@ import (
 )
 
 func TestGetUploadByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -84,7 +87,8 @@ func TestGetUploadByID(t *testing.T) {
 }
 
 func TestGetUploadByIDDeleted(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// Upload does not exist initially
@@ -125,7 +129,8 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 }
 
 func TestGetQueuedUploadRank(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -174,7 +179,8 @@ func TestGetQueuedUploadRank(t *testing.T) {
 }
 
 func TestGetUploadsByIDs(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -227,7 +233,8 @@ func TestGetUploadsByIDs(t *testing.T) {
 }
 
 func TestDeleteUploadsStuckUploading(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -274,7 +281,8 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 }
 
 func TestGetUploads(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -461,7 +469,8 @@ func TestGetUploads(t *testing.T) {
 }
 
 func TestInsertUploadUploading(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -510,7 +519,8 @@ func TestInsertUploadUploading(t *testing.T) {
 }
 
 func TestInsertUploadQueued(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -562,7 +572,8 @@ func TestInsertUploadQueued(t *testing.T) {
 }
 
 func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -618,7 +629,8 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 }
 
 func TestMarkQueued(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -644,7 +656,8 @@ func TestMarkQueued(t *testing.T) {
 }
 
 func TestMarkFailed(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -672,7 +685,8 @@ func TestMarkFailed(t *testing.T) {
 }
 
 func TestAddUploadPart(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -695,7 +709,8 @@ func TestAddUploadPart(t *testing.T) {
 }
 
 func TestDeleteUploadByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -732,7 +747,8 @@ func TestDeleteUploadByID(t *testing.T) {
 }
 
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -769,7 +785,8 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 }
 
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -780,7 +797,8 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	var uploads []Upload
@@ -850,7 +868,8 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 }
 
 func TestHardDeleteUploadByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -892,7 +911,8 @@ func TestHardDeleteUploadByID(t *testing.T) {
 }
 
 func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -934,7 +954,8 @@ func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
 }
 
 func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -982,7 +1003,8 @@ func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScan(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -1068,7 +1090,8 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -1138,7 +1161,8 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -1215,7 +1239,8 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 }
 
 func TestSelectRepositoriesForRetentionScan(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1283,7 +1308,8 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 }
 
 func TestUpdateUploadRetention(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1311,7 +1337,8 @@ func TestUpdateUploadRetention(t *testing.T) {
 }
 
 func TestUpdateReferenceCounts(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1428,8 +1455,9 @@ func TestUpdateReferenceCounts(t *testing.T) {
 }
 
 func TestSoftDeleteExpiredUploads(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1510,7 +1538,8 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 }
 
 func TestGetOldestCommitDate(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -1568,7 +1597,8 @@ func TestGetOldestCommitDate(t *testing.T) {
 }
 
 func TestUpdateCommitedAt(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -1608,7 +1638,8 @@ func TestUpdateCommitedAt(t *testing.T) {
 }
 
 func TestLastUploadRetentionScanForRepository(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -1639,7 +1670,8 @@ func TestLastUploadRetentionScanForRepository(t *testing.T) {
 }
 
 func TestRecentUploadsSummary(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 

@@ -130,7 +130,7 @@ export const percySnapshotWithVariants = async (
 
 type Editor = NonNullable<SettingsExperimentalFeatures['editor']>
 
-interface EditorAPI {
+export interface EditorAPI {
     name: Editor
     /**
      * Wait for editor to appear in the DOM.
@@ -139,7 +139,7 @@ interface EditorAPI {
     /**
      * Wait for suggestion with provided label appears
      */
-    waitForSuggestion: (label: string) => Promise<void>
+    waitForSuggestion: (label?: string) => Promise<void>
     /**
      * Moves focus to the editor's root node.
      */
@@ -172,7 +172,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
             },
             async focus() {
                 await api.waitForIt()
-                await driver.page.focus(rootSelector)
+                await driver.page.click(rootSelector)
             },
             getValue() {
                 return driver.page.evaluate(
@@ -187,12 +187,14 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     enterTextMethod: 'type',
                 })
             },
-            async waitForSuggestion(suggestion: string) {
+            async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
-                await driver.findElementWithText(suggestion, {
-                    selector: completionLabelSelector,
-                    wait: { timeout: 5000 },
-                })
+                if (suggestion !== undefined) {
+                    await driver.findElementWithText(suggestion, {
+                        selector: completionLabelSelector,
+                        wait: { timeout: 5000 },
+                    })
+                }
             },
             async selectSuggestion(suggestion: string) {
                 await driver.page.waitForSelector(completionSelector)
@@ -217,7 +219,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
             },
             async focus() {
                 await api.waitForIt()
-                await driver.page.focus(rootSelector)
+                await driver.page.click(rootSelector)
             },
             getValue() {
                 return driver.page.evaluate(
@@ -232,12 +234,18 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     enterTextMethod: 'type',
                 })
             },
-            async waitForSuggestion(suggestion: string) {
+            async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
-                await driver.findElementWithText(suggestion, {
-                    selector: completionLabelSelector,
-                    wait: { timeout: 5000 },
-                })
+                if (suggestion !== undefined) {
+                    await driver.findElementWithText(suggestion, {
+                        selector: completionLabelSelector,
+                        wait: { timeout: 5000 },
+                    })
+                }
+                // It seems CodeMirror needs some additional time before it
+                // recognizes events on the suggestions element (such as
+                // selecting a suggestion via the Tab key)
+                await driver.page.waitForTimeout(100)
             },
             async selectSuggestion(suggestion: string) {
                 await driver.page.waitForSelector(completionSelector)

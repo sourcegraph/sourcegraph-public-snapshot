@@ -12,6 +12,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -21,7 +23,8 @@ import (
 )
 
 func TestEnsureSchemaTable(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -46,7 +49,8 @@ func TestEnsureSchemaTable(t *testing.T) {
 }
 
 func TestVersions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 	if err := store.EnsureSchemaTable(ctx); err != nil {
@@ -123,7 +127,8 @@ func TestVersions(t *testing.T) {
 }
 
 func TestTryLock(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -168,7 +173,8 @@ func TestTryLock(t *testing.T) {
 }
 
 func TestWrappedUp(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -283,7 +289,8 @@ func TestWrappedUp(t *testing.T) {
 }
 
 func TestWrappedDown(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -410,7 +417,8 @@ func TestWrappedDown(t *testing.T) {
 }
 
 func TestIndexStatus(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 

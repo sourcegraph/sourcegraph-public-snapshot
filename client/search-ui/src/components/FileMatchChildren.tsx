@@ -23,6 +23,7 @@ import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegr
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Link, Code } from '@sourcegraph/wildcard'
 
@@ -265,6 +266,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         [props.openInNewTab, history]
     )
 
+    const logEventOnCopy = useCallback(() => {
+        telemetryService.log(...codeCopiedEvent('file-match'))
+    }, [telemetryService])
+
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
@@ -330,6 +335,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}
+                                    onCopy={logEventOnCopy}
                                 />
                             </div>
                         </div>

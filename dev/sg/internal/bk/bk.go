@@ -1,7 +1,9 @@
 package bk
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -21,6 +23,13 @@ const BuildkiteOrg = "sourcegraph"
 type buildkiteSecrets struct {
 	Token string `json:"token"`
 }
+
+type Build struct {
+	buildkite.Build
+	Annotations []buildkite.Annotation
+}
+
+type JobAnnotations map[string]AnnotationArtifact
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
@@ -120,6 +129,93 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 		return nil, err
 	}
 	return b, nil
+}
+
+func (c *Client) ListAnnotationsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Annotation, error) {
+	annotations, _, err := c.bk.Annotations.ListByBuild(BuildkiteOrg, pipeline, number, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no annotations because no build found")
+		}
+		return nil, err
+	}
+
+	return annotations, nil
+}
+
+func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Artifact, error) {
+	artifacts, _, err := c.bk.Artifacts.ListByBuild(BuildkiteOrg, pipeline, number, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no artifacts because no build found")
+		}
+		return nil, err
+	}
+
+	return artifacts, nil
+}
+
+type AnnotationArtifact struct {
+	buildkite.Artifact
+	AnnotationMarkdown string
+}
+
+func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
+	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
+	if err != nil {
+		return nil, err
+	}
+
+	var result JobAnnotations = make(JobAnnotations, 0)
+	for _, a := range artifacts {
+		if strings.Contains(*a.Dirname, "annotations") {
+			var buf bytes.Buffer
+			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
+			if err != nil {
+				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
+			}
+			fmt.Println("-------- ANNOTATION --------")
+
+			result[*a.JobID] = AnnotationArtifact{
+				Artifact:           a,
+				AnnotationMarkdown: buf.String(),
+			}
+		}
+	}
+
+	return result, nil
+
+}
+
+func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, number string) ([]AnnotationArtifact, error) {
+	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []AnnotationArtifact = make([]AnnotationArtifact, 0)
+	for _, a := range artifacts {
+		if strings.Contains(*a.Dirname, "annotations") {
+			var buf bytes.Buffer
+			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
+			if err != nil {
+				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
+			}
+
+			result = append(result, AnnotationArtifact{
+				a,
+				buf.String(),
+			})
+		}
+	}
+
+	return result, nil
 }
 
 // TriggerBuild request a build on Buildkite API and returns that build.

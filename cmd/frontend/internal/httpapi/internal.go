@@ -13,6 +13,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,9 +27,10 @@ import (
 )
 
 func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	logger := log.Scoped("serveReposGetByName", "")
 	return func(w http.ResponseWriter, r *http.Request) error {
 		repoName := api.RepoName(mux.Vars(r)["RepoName"])
-		repo, err := backend.NewRepos(db).GetByName(r.Context(), repoName)
+		repo, err := backend.NewRepos(logger, db).GetByName(r.Context(), repoName)
 		if err != nil {
 			return err
 		}
@@ -269,6 +272,7 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
+		log15.Warn("The use of .internal/git/[repoID]/exec has been deprecated")
 		req := protocol.ExecRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return errors.Wrap(err, "Decode")

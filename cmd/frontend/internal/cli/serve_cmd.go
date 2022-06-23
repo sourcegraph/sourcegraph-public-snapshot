@@ -23,6 +23,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	sentrylib "github.com/getsentry/sentry-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -107,13 +108,15 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() (*sql.DB, error) {
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
+func InitDB(logger sglog.Logger) (*sql.DB, error) {
+	obsCtx := observation.TestContext
+	obsCtx.Logger = logger
+	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &obsCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(logger, sqlDB), "frontend", version.Version()); err != nil {
 		return nil, err
 	}
 
@@ -138,11 +141,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	sqlDB, err := InitDB()
+	sqlDB, err := InitDB(logger)
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		log15.Warn("Skipping out-of-band migrations check")
