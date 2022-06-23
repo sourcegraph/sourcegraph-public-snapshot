@@ -70,7 +70,7 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
-	return execute.Execute(s.log, ctx, stream, inputs, s.JobClients())
+	return execute.Execute(ctx, s.log, stream, inputs, s.JobClients())
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
