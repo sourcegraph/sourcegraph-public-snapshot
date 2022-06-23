@@ -166,6 +166,12 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 func (f *RepoContainsPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsPredicate) Name() string  { return "contains" }
 func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
+	// If this is equivalent to repo:contains.file(), it will
+	// be handled during job construction, so do not expand here.
+	if f.Content == "" {
+		return nil, nil
+	}
+
 	nodes := make([]Node, 0, 3)
 	nodes = append(nodes, Parameter{
 		Field: FieldSelect,

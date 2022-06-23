@@ -112,6 +112,10 @@ func TestSubstitute(t *testing.T) {
 		"repo:^contains-foo$").
 		Equal(t, test("repo:contains.content(foo)"))
 
+	autogold.Want("repo contains with only file passes through",
+		"repo:contains(file:a) repo:^contains-foo$ repo:^contains-foo$").
+		Equal(t, test("repo:contains(file:a) repo:contains(content:b) repo:contains(file:a content:b)"))
+
 	autogold.Want("value that does not generate plan passes through",
 		"repo:^contains-foo$ repo:dependencies(bar)").
 		Equal(t, test("repo:contains.content(foo) repo:dependencies(bar)"))
