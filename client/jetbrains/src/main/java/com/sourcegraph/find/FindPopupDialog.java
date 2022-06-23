@@ -43,17 +43,15 @@ public class FindPopupDialog extends DialogWrapper {
 
         init();
         addNativeFindInFilesBehaviors();
-        show();
+
+        // Avoid the show method to be blocking
+        this.setModal(false);
+        // Prevent the dialog from being cancelable by any default behaviors
+        myCancelAction.setEnabled(false);
+
+        super.show();
     }
 
-
-//    // Overwrite the createPeer function that is being used in the super constructor so that we can create a new frame.
-//    // This is needed because ...
-//    @Override
-//    protected @NotNull DialogWrapperPeer createPeer(@Nullable Project project, boolean canBeParent, @NotNull IdeModalityType ideModalityType) {
-//        Frame frame = new Frame();
-//        return DialogWrapperPeerFactory.getInstance().createPeer(this, frame, canBeParent, ideModalityType);
-//    }
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
@@ -75,7 +73,7 @@ public class FindPopupDialog extends DialogWrapper {
         ApplicationManager.getApplication().getMessageBus().connect(this.getDisposable()).subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
             @Override
             public void projectClosed(@NotNull Project project) {
-                doCancelAction();
+                hide();
             }
         });
 
@@ -162,13 +160,12 @@ public class FindPopupDialog extends DialogWrapper {
     }
 
     public void hide() {
-        System.out.println("hide or no>");
         getPeer().getWindow().setVisible(false);
     }
 
     @Override
     public void show() {
-        super.show();
+        getPeer().getWindow().setVisible(true);
     }
 
     @Override

@@ -54,13 +54,10 @@ public class FindService implements Disposable {
 
     @NotNull
     private void createOrShowPopup() {
-        if (popup != null && !popup.isDisposed()) {
+        if (popup != null) {
             popup.show();
         }
-        if (popup == null || popup.isDisposed()) {
-            if (popup != null && popup.isDisposed()) {
-                System.out.println("???????");
-            }
+        if (popup == null) {
             popup = new FindPopupDialog(project, mainPanel);
 
             // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
@@ -104,6 +101,7 @@ public class FindService implements Disposable {
     }
 
     private boolean handleKeyPress(boolean isWebView, int keyCode, int modifiers) {
+        System.out.println("handleKeyPress");
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
             ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
