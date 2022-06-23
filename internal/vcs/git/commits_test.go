@@ -16,11 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-var (
-	fileWithAccess    = "file-with-access"
-	fileWithoutAccess = "file-without-access"
-)
-
 func TestGetCommits(t *testing.T) {
 	t.Parallel()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
