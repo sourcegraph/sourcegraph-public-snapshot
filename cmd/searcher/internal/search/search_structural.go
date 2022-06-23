@@ -419,7 +419,8 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	case comby.ZipPath:
 		return runCombyWithCollection(ctx, args, combyInput, sender)
 	}
-	return nil
+
+	return errors.New("comby input must be either -tar or -zip for structural search")
 }
 
 // runCombyWithStreaming runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
@@ -481,16 +482,16 @@ func runCombyWithStreaming(ctx context.Context, args comby.Args, tarInput comby.
 // runCombyWithCollection runs comby with the flag `-zip`. It collects all matches that comby finds in the zip file, then
 // attempts to convert each of those to a protocol.FileMatch, sending it to the result stream if successful.
 func runCombyWithCollection(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
+	combyMatches, err := comby.Matches(ctx, args)
+	if err != nil {
+		return err
+	}
+
 	zipReader, err := zip.OpenReader(string(zipPath))
 	if err != nil {
 		return err
 	}
 	defer zipReader.Close()
-
-	combyMatches, err := comby.Matches(ctx, args)
-	if err != nil {
-		return err
-	}
 
 	for _, combyMatch := range combyMatches {
 		fm, err := toFileMatch(&zipReader.Reader, combyMatch)
