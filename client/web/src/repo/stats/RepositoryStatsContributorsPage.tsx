@@ -29,9 +29,9 @@ import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 import styles from './RepositoryStatsContributorsPage.module.scss'
 
 interface QuerySpec {
-    revisionRange: string | null
-    after: string | null
-    path: string | null
+    revisionRange?: string
+    after?: string
+    path?: string
 }
 
 interface RepositoryContributorNodeProps extends QuerySpec {
@@ -167,7 +167,7 @@ const queryRepositoryContributors = memoizeObservable(
         `${args.repo}:${String(args.first)}:${String(args.revisionRange)}:${String(args.after)}:${String(args.path)}`
 )
 
-const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
+const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
 interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
     globbing: boolean
@@ -204,14 +204,26 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 }) => {
     const query = new URLSearchParams(location.search)
     const spec: QuerySpec = {
-        revisionRange: query.get('revisionRange'),
-        after: query.get('after'),
-        path: query.get('path'),
+        revisionRange: query.get('revisionRange') ?? undefined,
+        after: query.get('after') ?? undefined,
+        path: query.get('path') ?? undefined,
     }
+
+    const createQueryWrapper = () => (args: { first?: number }): Observable<GQL.IRepositoryContributorConnection> =>
+        queryRepositoryContributors({
+            ...args,
+            repo: repo.id,
+            revisionRange: spec.revisionRange,
+            after: spec.after,
+            path: spec.path,
+        })
 
     const [revisionRange, setRevisionRange] = useState(spec.revisionRange)
     const [after, setAfter] = useState(spec.after)
     const [path, setPath] = useState(spec.path)
+    const [wrappedQueryRepositoryContributors, setWrappedQueryRepositoryContributors] = useState<
+        (args: { first?: number }) => Observable<GQL.IRepositoryContributorConnection>
+    >(createQueryWrapper)
     const specChanges = useRef<Subject<void>>(new Subject<void>())
 
     // Log page view when initially rendered
@@ -224,6 +236,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         setRevisionRange(spec.revisionRange)
         setAfter(spec.after)
         setPath(spec.path)
+        setWrappedQueryRepositoryContributors(createQueryWrapper)
         specChanges.current.next()
         // We only want to run this effect when `location.search` is updated.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,22 +274,8 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         setPath(spec.path)
     }
 
-    // Wrap the gql query with additional variables
-    const wrappedQueryRepositoryContributors = (args: {
-        first?: number
-    }): Observable<GQL.IRepositoryContributorConnection> => {
-        const { revisionRange, after, path } = spec
-        return queryRepositoryContributors({
-            ...args,
-            repo: repo.id,
-            revisionRange: revisionRange || undefined,
-            after: after || undefined,
-            path: path || undefined,
-        })
-    }
-
     // Push new query param to history, state change will follow via `useEffect` on `location.search`
-    const updateAfter = (after: string | null): void => {
+    const updateAfter = (after: string | undefined): void => {
         history.push({ search: getUrlQuery({ ...spec, after }) })
     }
 
@@ -337,7 +336,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                                         </Button>
                                         <Button
                                             className={classNames(!spec.after && 'active')}
-                                            onClick={() => updateAfter(null)}
+                                            onClick={() => updateAfter(undefined)}
                                             variant="secondary"
                                         >
                                             All time
