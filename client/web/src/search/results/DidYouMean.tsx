@@ -193,7 +193,7 @@ export const ServerQueryAssist: React.FunctionComponent<React.PropsWithChildren<
                         className="ml-1"
                         as={InformationOutlineIcon}
                         tabIndex={0}
-                        aria-label="Showing results for alternative queries"
+                        aria-label="More information"
                     />
                 </Tooltip>
             </H3>
