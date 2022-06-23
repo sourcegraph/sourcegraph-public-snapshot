@@ -496,6 +496,27 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
         return outputLines
     }, [step.exitCode, step.outputLines])
 
+    const renderOutputVariable = (outputVariable: {
+        __typename?: 'BatchSpecWorkspaceOutputVariable'
+        name: string
+        value: unknown
+    }): JSX.Element => {
+        if (typeof outputVariable.value === 'string') {
+            return <li key={outputVariable.name}>{outputVariable.name}: outputVariable.value</li>
+        }
+
+        return (
+            <li key={outputVariable.name}>
+                {outputVariable.name}:
+                <ul>
+                    {Object.keys(outputVariable.value).map(value => {
+                        ;<li key={value}>{value}</li>
+                    })}
+                </ul>
+            </li>
+        )
+    }
+
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
             <CollapseHeader
@@ -562,11 +583,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                             <Text className="text-muted mb-0">No output variables specified</Text>
                                         )}
                                         <ul className="mb-0">
-                                            {step.outputVariables?.map(variable => (
-                                                <li key={variable.name}>
-                                                    {variable.name}: {variable.value}
-                                                </li>
-                                            ))}
+                                            {step.outputVariables?.map(variable => renderOutputVariable(variable))}
                                         </ul>
                                     </TabPanel>
                                     <TabPanel className="pt-2" key="diff">
