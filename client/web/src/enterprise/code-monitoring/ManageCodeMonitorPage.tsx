@@ -107,7 +107,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     )
 
     return (
-        <div className="container col-8">
+        <div className="container col-sm-8">
             <PageTitle title="Manage code monitor" />
             <PageHeader
                 path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Manage code monitor' }]}
