@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -35,6 +34,7 @@ type syncer struct {
 	dbStore       *dbstore.Store
 	extSvcStore   database.ExternalServiceStore
 	indexEnqueuer *autoindexing.Service
+	gitclient     *gitserver.ClientImplementor
 	// gitserverClient *gitserver.Client
 }
 
@@ -58,7 +58,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 	}
 
 	repo := config.IndexRepositoryName
-	reader, err := git.ArchiveReader(ctx, s.db, nil, api.RepoName(repo), gitserver.ArchiveOptions{
+	reader, err := s.gitclient.ArchiveReader(ctx, nil, api.RepoName(repo), gitserver.ArchiveOptions{
 		Treeish:   "HEAD",
 		Format:    "tar",
 		Pathspecs: []gitserver.Pathspec{},
@@ -130,7 +130,7 @@ func NewCratesSyncer(db database.DB, indexEnqueuer *autoindexing.Service) gorout
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.NewRegistry(),
 	}
-	extSvcStore := database.NewDB(db).ExternalServices()
+	extSvcStore := db.ExternalServices()
 
 	interval := time.Hour * 12
 	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
