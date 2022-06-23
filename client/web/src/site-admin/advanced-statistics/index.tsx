@@ -1,360 +1,208 @@
-import * as React from 'react'
-import { useCallback, useMemo, useState, useEffect } from 'react'
+/* eslint-disable react/forbid-dom-props */
+import { useMemo, useState } from 'react'
 
-import { endOfDay, endOfMonth, endOfWeek } from 'date-fns'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
+import { sub } from 'date-fns'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import {
-    Button,
-    Icon,
-    H2,
-    H3,
-    Card,
-    useObservableWithStatus,
-    Tooltip,
-    Tabs,
-    TabList,
-    Tab,
-    TabPanels,
-    TabPanel,
-} from '@sourcegraph/wildcard'
+import { H2, Card, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Input, H3, Text } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, LineChart, ParentSize, Series } from '../../charts'
-import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
+import { LineChart, ParentSize, Series } from '../../charts'
 import { PageTitle } from '../../components/PageTitle'
-import { RadioButtons } from '../../components/RadioButtons'
-import { Timestamp } from '../../components/time/Timestamp'
-import { eventLogger } from '../../tracking/eventLogger'
-import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from '../backend'
 
-import styles from '../SiteAdminUsageStatisticsPage.module.scss'
+import styles from './index.module.scss'
 
-interface ChartData {
-    label: string
-    getXValue: (datum: StandardDatum) => Date
-    getYValue: (datum: StandardDatum) => number | null
+interface CalculatorProps {
+    color: string
+    name: string
+    count: number
+    savedPerCount: number
+    description?: string
 }
 
-type ChartOptions = Record<'daus' | 'waus' | 'maus', ChartData>
-
-const chartGeneratorOptions: ChartOptions = {
-    daus: {
-        label: 'Daily unique users',
-        getXValue: (datum: StandardDatum): Date => endOfDay(new Date(datum.x)),
-        getYValue: (datum: StandardDatum): number | null => datum.value,
-    },
-    waus: {
-        label: 'Weekly unique users',
-        getXValue: (datum: StandardDatum): Date => endOfWeek(new Date(datum.x)),
-        getYValue: (datum: StandardDatum): number | null => datum.value,
-    },
-    maus: {
-        label: 'Monthly unique users',
-        getXValue: (datum: StandardDatum): Date => endOfMonth(new Date(datum.x)),
-        getYValue: (datum: StandardDatum): number | null => datum.value,
-    },
-}
-
-const CHART_ID_KEY = 'latest-usage-statistics-chart-id'
-
-interface UsageChartPageProps {
-    isLightTheme: boolean
-    stats: GQL.ISiteUsageStatistics
-    chartID: keyof ChartOptions
-    header?: JSX.Element
-    showLegend?: boolean
-}
-interface StandardDatum {
-    value: number | null
-    x: string
-}
-
-const UsageChart: React.FunctionComponent<UsageChartPageProps> = props => {
-    const series = useMemo(
-        (): Series<StandardDatum>[] =>
-            [
-                {
-                    name: 'Deleted or anonymous',
-                    data: props.stats[props.chartID].map(({ startTime: x, anonymousUserCount: value }) => ({
-                        x,
-                        value,
-                    })),
-                    color: 'var(--blue)',
-                },
-                {
-                    name: 'Registered',
-                    data: props.stats[props.chartID].map(({ startTime: x, registeredUserCount: value }) => ({
-                        x,
-                        value,
-                    })),
-                    color: 'var(--green)',
-                },
-            ].map(({ name, data, color }) => ({
-                id: name,
-                name,
-                color,
-                getXValue: chartGeneratorOptions[props.chartID].getXValue,
-                getYValue: chartGeneratorOptions[props.chartID].getYValue,
-                data,
-            })),
-        [props.chartID, props.stats]
-    )
+const Calculator: React.FunctionComponent<CalculatorProps> = ({ color, count, description, savedPerCount, name }) => {
+    const [minutesPerCount, setMinutesPerCount] = useState(savedPerCount)
+    const hoursSaved = useMemo(() => (count * minutesPerCount) / 60, [count, minutesPerCount])
     return (
-        <div>
-            <Card className="p-2">
-                <div className="d-flex justify-content-between align-items-center">
-                    {props.header || <H3>{chartGeneratorOptions[props.chartID].label}</H3>}
-                    <small>
-                        <i>GMT/UTC time</i>
-                    </small>
-                </div>
-                <ParentSize>
-                    {({ width }) => (
-                        <LineChart
-                            width={width}
-                            height={400}
-                            series={series}
-                            stacked={true}
-                            isSeriesSelected={() => true}
-                            isSeriesHovered={() => true}
-                        />
-                    )}
-                </ParentSize>
-                <LegendList className="d-flex justify-content-center my-3">
-                    {series.map(line => (
-                        <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
-                    ))}
-                </LegendList>
-            </Card>
-        </div>
-    )
-}
-
-interface UserUsageStatisticsHeaderFooterProps {
-    nodes: GQL.IUser[]
-}
-
-const UserUsageStatisticsHeader = React.memo(function UserUsageStatisticsHeader() {
-    return (
-        <thead>
-            <tr>
-                <th className={styles.headerColumn}>User</th>
-                <th className={styles.headerColumn}>Page views</th>
-                <th className={styles.headerColumn}>Search queries</th>
-                <th className={styles.headerColumn}>Code&#160;intelligence actions</th>
-                <th className={styles.dateColumn}>Last active</th>
-                <th className={styles.dateColumn}>Last active in code host or code review</th>
-            </tr>
-        </thead>
-    )
-})
-
-const UserUsageStatisticsFooter = React.memo(function UserUsageStatisticsFooter(
-    props: UserUsageStatisticsHeaderFooterProps
-) {
-    return (
-        <tfoot>
-            <tr>
-                <th>Total</th>
-                <td>
-                    {props.nodes.reduce(
-                        (count, node) => count + (node.usageStatistics ? node.usageStatistics.pageViews : 0),
-                        0
-                    )}
-                </td>
-                <td>
-                    {props.nodes.reduce(
-                        (count, node) => count + (node.usageStatistics ? node.usageStatistics.searchQueries : 0),
-                        0
-                    )}
-                </td>
-                <td>
-                    {props.nodes.reduce(
-                        (count, node) =>
-                            count + (node.usageStatistics ? node.usageStatistics.codeIntelligenceActions : 0),
-                        0
-                    )}
-                </td>
-                <td className={styles.dateColumn} />
-                <td className={styles.dateColumn} />
-            </tr>
-        </tfoot>
-    )
-})
-
-interface UserUsageStatisticsNodeProps {
-    /**
-     * The user to display in this list item.
-     */
-    node: GQL.IUser
-}
-
-const UserUsageStatisticsNode = React.memo(function UserUsageStatisticsNode(props: UserUsageStatisticsNodeProps) {
-    return (
-        <tr>
-            <td>{props.node.username}</td>
-            <td>{props.node.usageStatistics ? props.node.usageStatistics.pageViews : 'n/a'}</td>
-            <td>{props.node.usageStatistics ? props.node.usageStatistics.searchQueries : 'n/a'}</td>
-            <td>{props.node.usageStatistics ? props.node.usageStatistics.codeIntelligenceActions : 'n/a'}</td>
-            <td className={styles.dateColumn}>
-                {props.node.usageStatistics?.lastActiveTime ? (
-                    <Timestamp date={props.node.usageStatistics.lastActiveTime} />
-                ) : (
-                    'never'
-                )}
-            </td>
-            <td className={styles.dateColumn}>
-                {props.node.usageStatistics?.lastActiveCodeHostIntegrationTime ? (
-                    <Timestamp date={props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
-                ) : (
-                    'never'
-                )}
-            </td>
-        </tr>
-    )
-})
-
-export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
-    {
-        label: '',
-        type: 'select',
-        id: 'user-activity-filters',
-        values: [
-            {
-                label: 'All users',
-                value: 'all',
-                tooltip: 'Show all users',
-                args: { activePeriod: UserActivePeriod.ALL_TIME },
-            },
-            {
-                label: 'Active today',
-                value: 'today',
-                tooltip: 'Show users active since this morning at 00:00 UTC',
-                args: { activePeriod: UserActivePeriod.TODAY },
-            },
-            {
-                label: 'Active this week',
-                value: 'week',
-                tooltip: 'Show users active since Monday at 00:00 UTC',
-                args: { activePeriod: UserActivePeriod.THIS_WEEK },
-            },
-            {
-                label: 'Active this month',
-                value: 'month',
-                tooltip: 'Show users active since the first day of the month at 00:00 UTC',
-                args: { activePeriod: UserActivePeriod.THIS_MONTH },
-            },
-        ],
-    },
-]
-
-const TabSummary: React.FunctionComponent<AdvancedStatisticsPageProps> = props => {
-    const [chartID, setChartID] = useState<keyof ChartOptions>(
-        useMemo(() => {
-            const latest = localStorage.getItem(CHART_ID_KEY)
-            return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
-        }, [])
-    )
-    useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminUsageStatistics')
-    }, [])
-    useEffect(() => {
-        localStorage.setItem(CHART_ID_KEY, chartID)
-    }, [chartID])
-
-    const [stats, , error] = useObservableWithStatus(useMemo(() => fetchSiteUsageStatistics(), []))
-
-    const onChartIndexChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
-        switch (event.target.value as keyof ChartOptions) {
-            case 'daus':
-                eventLogger.log('DAUsChartSelected')
-                break
-            case 'waus':
-                eventLogger.log('WAUsChartSelected')
-                break
-            case 'maus':
-                eventLogger.log('MAUsChartSelected')
-                break
-        }
-        setChartID(event.target.value as keyof ChartOptions)
-    }, [])
-
-    return (
-        <div>
-            <PageTitle title="Usage statistics - Admin" />
-            <H2>Usage statistics</H2>
-            {error && <ErrorAlert className="mb-3" error={error} />}
-
-            <Tooltip content="Download usage stats archive">
-                <Button href="/site-admin/usage-statistics/archive" download="true" variant="secondary" as="a">
-                    <Icon as={FileDownloadIcon} aria-hidden={true} /> Download usage stats archive
-                </Button>
-            </Tooltip>
-
-            {stats && (
-                <>
-                    <RadioButtons
-                        nodes={Object.entries(chartGeneratorOptions).map(([key, { label }]) => ({
-                            label,
-                            id: key,
-                        }))}
-                        name="chart-options"
-                        onChange={onChartIndexChange}
-                        selected={chartID}
-                    />
-                    <UsageChart {...props} chartID={chartID} stats={stats} />
-                </>
-            )}
-            <H3 className="mt-4">All registered users</H3>
-            {!error && (
-                <FilteredConnection
-                    listComponent="table"
-                    className="table"
-                    hideSearch={false}
-                    filters={USER_ACTIVITY_FILTERS}
-                    noShowMore={false}
-                    noun="user"
-                    pluralNoun="users"
-                    queryConnection={fetchUserUsageStatistics}
-                    nodeComponent={UserUsageStatisticsNode}
-                    headComponent={UserUsageStatisticsHeader}
-                    footComponent={UserUsageStatisticsFooter}
-                    history={props.history}
-                    location={props.location}
+        <Card className="mb-3 p-2 d-flex justify-content-between flex-row" key={name}>
+            <Text className="mr-3">
+                <Text
+                    style={{
+                        color,
+                    }}
+                    className={styles.count}
+                >
+                    {count}
+                </Text>
+                {name}
+            </Text>
+            <Text className="mr-3">
+                <Input
+                    type="number"
+                    value={minutesPerCount}
+                    onChange={event => setMinutesPerCount(event.target.value)}
                 />
-            )}
-        </div>
+                minutes saved
+            </Text>
+            <Text className="mr-3">
+                <Text className={styles.count}>{hoursSaved.toFixed(1)}</Text>
+                hours saved
+            </Text>
+            <Text className="flex-1">
+                <Text className="font-weight-bold">About this statistics</Text>
+                {description}
+            </Text>
+        </Card>
     )
 }
 
-interface AdvancedStatisticsPageProps extends RouteComponentProps<{}> {
-    isLightTheme: boolean
+interface StandardDatum {
+    date: Date
+    value: number
+}
+interface ChartDataItem {
+    totalCount: number
+    name: string
+    color: string
+    series: StandardDatum[]
+    showDevTimeCalculator?: boolean
+    description?: string
+}
+interface ChartProps {
+    onDateRangeChange: (dateRange: DateRange) => void
+    dateRange: DateRange
+    data: ChartDataItem[]
 }
 
-/**
- * A page displaying usage statistics for the site.
- */
-export const AdvancedStatisticsPage: React.FunctionComponent<AdvancedStatisticsPageProps> = props => (
-    <Tabs lazy={true} behavior="memoize" size="large">
-        <TabList>
-            <Tab>Summary</Tab>
-            <Tab>Batch Changes</Tab>
-            <Tab>Insights</Tab>
-            <Tab>Notebooks</Tab>
-            <Tab>Monitors</Tab>
-        </TabList>
-        <TabPanels>
-            <TabPanel>
-                <TabSummary {...props} />
-            </TabPanel>
-            <TabPanel>TODO:</TabPanel>
-            <TabPanel>TODO:</TabPanel>
-            <TabPanel>TODO:</TabPanel>
-            <TabPanel>TODO:</TabPanel>
-        </TabPanels>
-    </Tabs>
-)
+const Chart: React.FunctionComponent<ChartProps> = ({ data, dateRange, onDateRangeChange }) => {
+    const series: Series<StandardDatum>[] = useMemo(
+        () =>
+            data.map(item => ({
+                id: item.name,
+                name: item.name,
+                data: item.series,
+                color: item.color,
+                getXValue: datum => datum.date,
+                getYValue: datum => datum.value,
+            })),
+        [data]
+    )
+    return (
+        <Card className="p-2">
+            <div className="d-flex justify-content-end">
+                <Select
+                    id="date-range"
+                    label="Date&nbsp;range"
+                    isCustomStyle={true}
+                    className="d-flex align-items-baseline"
+                    selectClassName="ml-2"
+                    onChange={value => onDateRangeChange(value.target.value as DateRange)}
+                >
+                    {Object.entries(DateRange).map(([key, value]) => (
+                        <option key={key} value={value} selected={dateRange === value}>
+                            {value}
+                        </option>
+                    ))}
+                    <option value="custom" disabled={true}>
+                        Custom (coming soon)
+                    </option>
+                </Select>
+            </div>
+            <div className="d-flex justify-content-left">
+                {data.map(item => (
+                    <div key={item.name} className="d-flex flex-column align-items-center mr-3">
+                        <span style={{ color: item.color }} className={styles.count}>
+                            {item.totalCount}
+                        </span>
+                        {item.name}
+                    </div>
+                ))}
+            </div>
+            <ParentSize>{({ width }) => <LineChart width={width} height={400} series={series} />}</ParentSize>
+            <H3 className="m-3">Time saved</H3>
+            {data.map(item => (
+                <Calculator
+                    key={item.name}
+                    color={item.color}
+                    name={item.name}
+                    savedPerCount={5}
+                    description={item.description}
+                    count={item.totalCount}
+                />
+            ))}
+        </Card>
+    )
+}
+
+enum DateRange {
+    LastThreeMonths = 'Last 3 months',
+    LastMonth = 'Last month',
+    LastWeek = 'Last week',
+}
+
+export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+    const [dateRange, setDateRange] = useState<DateRange>(DateRange.LastMonth)
+    const data = useMemo(() => {
+        const now = new Date()
+        const fromDate =
+            dateRange === DateRange.LastThreeMonths
+                ? sub(now, { months: 3 })
+                : dateRange === DateRange.LastMonth
+                ? sub(now, { months: 1 })
+                : sub(now, { weeks: 1 })
+        return getBatchChangesData(fromDate, now)
+    }, [dateRange])
+
+    return (
+        <>
+            <PageTitle title="Usage statistics - Admin" />
+            <Tabs lazy={true} behavior="memoize" size="large">
+                <TabList>
+                    {/* <Tab>Overview</Tab> */}
+                    <Tab>Batch changes</Tab>
+                    <Tab>Notebooks</Tab>
+                    <Tab>Extensions</Tab>
+                    <Tab>Code insights</Tab>
+                    <Tab>Search</Tab>
+                    <Tab>Code intel</Tab>
+                    <Tab>Users</Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <H2 className="mt-4"> Statistics / Overview</H2>
+                        <Chart data={data} dateRange={dateRange} onDateRangeChange={setDateRange} />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
+        </>
+    )
+}
+
+const getBatchChangesData = (fromDate: Date, toDate: Date): ChartProps['data'] =>
+    [
+        {
+            name: 'Changesets created',
+            color: 'var(--blue)',
+            series: generateRandomDataSeries(fromDate, toDate),
+        },
+        {
+            name: 'Changesets merged',
+            color: 'var(--cyan)',
+            showDevTimeCalculator: true,
+            description:
+                'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+            series: generateRandomDataSeries(fromDate, toDate),
+        },
+    ].map(item => ({ ...item, totalCount: item.series.map(item => item.value).reduce((a, b) => a + b, 0) }))
+
+function generateRandomDataSeries(fromDate: Date, toDate: Date): StandardDatum[] {
+    const randomData: StandardDatum[] = []
+    const days = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24))
+    for (let index = 0; index < days; index++) {
+        randomData.push({
+            date: new Date(fromDate.getTime() + index * 1000 * 60 * 60 * 24),
+            value: Math.floor(Math.random() * 90) + 10,
+        })
+    }
+
+    return randomData
+}
