@@ -76,6 +76,7 @@
         font-size: 0.65rem;
         margin-right: 0.5rem;
         color: var(--icon-muted);
+        flex-shrink: 0;
 
         &--unchecked {
             /* Make unchecked icon smaller so it doesn't look like a radio button. */
