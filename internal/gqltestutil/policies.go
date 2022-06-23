@@ -20,8 +20,8 @@ type CreatePolicyInput struct {
 	LockfileIndexingEnabled bool `json:"lockfileIndexingEnabled"`
 }
 
-// CreateSearchContext creates a new search context with the given input and repository revisions to be searched.
-// It returns the GraphQL node ID of the newly created search context.
+// CreatePolicy creates a new code intelligence policy with the given input.
+// It returns the GraphQL node ID of the newly created policy.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) CreatePolicy(input CreatePolicyInput) (string, error) {
