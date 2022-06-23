@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -462,8 +464,25 @@ type generatedSearchJob struct {
 	ProposedQuery *search.ProposedQuery
 }
 
-func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (*search.Alert, error) {
+func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
+	stream := streaming.NewResultCountingStream(parentStream)
 	alert, err := g.Child.Run(ctx, clients, stream)
+
+	resultCount := stream.Count()
+	if resultCount == 0 {
+		return nil, nil
+	}
+
+	var resultCountString string
+	if resultCount == limits.DefaultMaxSearchResultsStreaming {
+		resultCountString = fmt.Sprintf("%d+ results", resultCount)
+	} else if resultCount == 1 {
+		resultCountString = fmt.Sprintf("1 result")
+	} else {
+		resultCountString = fmt.Sprintf("%d results", resultCount)
+	}
+
+	g.ProposedQuery.Description = fmt.Sprintf("%s (%s)", g.ProposedQuery.Description, resultCountString)
 	err = errors.Append(err, &alertobserver.ErrLuckyQueries{
 		ProposedQueries: []*search.ProposedQuery{g.ProposedQuery},
 	})
