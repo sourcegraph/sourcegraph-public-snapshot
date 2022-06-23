@@ -25,7 +25,6 @@ type buildkiteSecrets struct {
 
 type Build struct {
 	buildkite.Build
-	Annotations []buildkite.Annotation
 }
 
 type JobAnnotations map[string]AnnotationArtifact
@@ -173,7 +172,7 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 
 	var result JobAnnotations = make(JobAnnotations, 0)
 	for _, a := range artifacts {
-		if strings.Contains(*a.Filename, "-term.md") {
+		if strings.Contains(*a.Dirname, "annotations") {
 			var buf bytes.Buffer
 			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
 			if err != nil {
