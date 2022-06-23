@@ -26,11 +26,14 @@ public class PostStartupActivity implements StartupActivity {
 
         PluginInstaller.addStateListener(new PluginStateListener() {
             public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
+                GraphQlLogger.logInstallEvent(project);
             }
 
             @Override
             public void uninstall(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
                 if (ideaPluginDescriptor.getPluginId().getIdString().equals("com.sourcegraph.jetbrains")) {
+                    GraphQlLogger.logUninstallEvent(project);
+
                     // Clear the anonymous user ID so that we can detect a new installation if the user re-enables the
                     // extension.
                     applicationConfig.anonymousUserId = null;
