@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public class ConfigUtil {
     @NotNull
@@ -52,6 +53,18 @@ public class ConfigUtil {
     @Nullable
     public static String getAnonymousUserId() {
         return SourcegraphApplicationService.getInstance().getAnonymousUserId();
+    }
+
+    public static void clearAnonymousUserId() {
+        SourcegraphApplicationService.getInstance().anonymousUserId = null;
+    }
+
+    public static void generateAndSetAnonymousUserId() {
+        SourcegraphApplicationService.getInstance().anonymousUserId = generateAnonymousUserId();
+    }
+
+    private static String generateAnonymousUserId() {
+        return UUID.randomUUID().toString();
     }
 
     @Nullable
