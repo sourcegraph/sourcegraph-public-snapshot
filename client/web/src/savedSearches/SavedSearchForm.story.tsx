@@ -50,7 +50,7 @@ export const NewSavedSearch: Story = () => (
 
 NewSavedSearch.storyName = 'new saved search'
 
-export const ExistingSavedSearchNotifcationsDisabled: Story = () => (
+export const NotifcationsDisabled: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -69,9 +69,9 @@ export const ExistingSavedSearchNotifcationsDisabled: Story = () => (
     </WebStory>
 )
 
-ExistingSavedSearchNotifcationsDisabled.storyName = 'existing saved search, notifications disabled'
+NotifcationsDisabled.storyName = 'existing saved search, notifications disabled'
 
-export const ExistingSavedSearchNotifcationsEnabled: Story = () => (
+export const NotifcationsEnabled: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -90,9 +90,9 @@ export const ExistingSavedSearchNotifcationsEnabled: Story = () => (
     </WebStory>
 )
 
-ExistingSavedSearchNotifcationsEnabled.storyName = 'existing saved search, notifications enabled'
+NotifcationsEnabled.storyName = 'existing saved search, notifications enabled'
 
-export const ExistingSavedSearchNotificationsEnabledWithInvalidQueryWarning: Story = () => (
+export const NotificationsEnabledWithInvalidQueryWarning: Story = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -111,5 +111,5 @@ export const ExistingSavedSearchNotificationsEnabledWithInvalidQueryWarning: Sto
     </WebStory>
 )
 
-ExistingSavedSearchNotificationsEnabledWithInvalidQueryWarning.storyName =
+NotificationsEnabledWithInvalidQueryWarning.storyName =
     'existing saved search, notifications enabled, with invalid query warning'
