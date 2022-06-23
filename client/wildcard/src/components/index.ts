@@ -56,7 +56,7 @@ export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { LinkProps } from './Link'
-export type { PopoverOpenEvent } from './Popover'
+export type { PopoverOpenEvent, Rectangle } from './Popover'
 export type { TabsProps } from './Tabs'
 export type { IconProps } from './Icon'
 export type { Point } from './Popover'
