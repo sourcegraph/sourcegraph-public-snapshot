@@ -210,7 +210,7 @@ To run integration tests for the web app:
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
-To run a specific web app integration test for the debug mode:
+To run a specific web app integration test in the debug mode:
 
 1. Run `sg start web-standalone` in the repository root to start serving the development version of the application.
 2. Run `yarn test-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`
