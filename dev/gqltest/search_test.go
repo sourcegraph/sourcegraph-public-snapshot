@@ -109,6 +109,8 @@ type searchClient interface {
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
 
+	CreatePolicy(input gqltestutil.CreatePolicyInput) (string, error)
+
 	UpdateSiteConfiguration(config *schema.SiteConfiguration) error
 	SiteConfiguration() (*schema.SiteConfiguration, error)
 
@@ -1333,96 +1335,108 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 }
 
+func enableGlobalLockfileIndexing(t *testing.T) {
+	t.Helper()
+
+	siteConfig, err := client.SiteConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldSiteConfig := new(schema.SiteConfiguration)
+	*oldSiteConfig = *siteConfig
+	t.Cleanup(func() {
+		err = client.UpdateSiteConfiguration(oldSiteConfig)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	value := true
+	siteConfig.CodeIntelAutoIndexingAllowGlobalPolicies = &value
+	siteConfig.CodeIntelLockfileIndexingEnabled = &value
+
+	err = client.UpdateSiteConfiguration(siteConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		t.Skip("TODO: Re-enable with lockfile indexing added")
+		// Setup global lockfile indexing
+		enableGlobalLockfileIndexing(t)
 
-		// We are adding another GitHub external service here to make sure we don't
+		// We are adding other external service here to make sure we don't
 		// pollute the other integration tests running earlier.
-		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "gqltest-dependency-search",
-			Config: mustMarshalJSONString(struct {
-				URL                   string   `json:"url"`
-				Token                 string   `json:"token"`
-				Repos                 []string `json:"repos"`
-				RepositoryPathPattern string   `json:"repositoryPathPattern"`
-			}{
-				URL:   "https://ghe.sgdev.org/",
-				Token: *githubToken,
-				Repos: []string{
-					"sgtest/pipenv-hw",
-					"sgtest/poetry-hw",
-					"sgtest/empty",
-				},
-				RepositoryPathPattern: "github.com/{nameWithOwner}",
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindNpmPackages,
-			DisplayName: "gqltest-npm-search",
-			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
-				Registry: "https://registry.npmjs.org",
-				Dependencies: []string{
-					"urql@2.2.0", // We're searching the dependencies of this repo.
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindGoModules,
-			DisplayName: "gqltest-go-search",
-			Config: mustMarshalJSONString(&schema.GoModulesConnection{
-				Urls: []string{"https://proxy.golang.org"},
-				Dependencies: []string{
-					"github.com/oklog/ulid/v2@v2.0.2",
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindPythonPackages,
-			DisplayName: "gqltest-python-search",
-			Config: mustMarshalJSONString(&schema.PythonPackagesConnection{
-				Urls: []string{"https://pypi.org/simple"},
-				Dependencies: []string{
-					"rich == 12.3.0",
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindJVMPackages,
-			DisplayName: "gqltest-jvm-search",
-			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
-				Maven: &schema.Maven{
-					Dependencies: []string{
-						"com.google.guava:guava:19.0",
-						"com.google.guava:guava:21.0",
+		configs := []gqltestutil.AddExternalServiceInput{
+			{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "gqltest-dependency-search",
+				Config: mustMarshalJSONString(&schema.GitHubConnection{
+					Url:   "https://ghe.sgdev.org/",
+					Token: *githubToken,
+					Repos: []string{
+						"sgtest/pipenv-hw",
+						"sgtest/poetry-hw",
+						"sgtest/empty",
 					},
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
+					RepositoryPathPattern: "github.com/{nameWithOwner}",
+				}),
+			},
+			{
+				Kind:        extsvc.KindNpmPackages,
+				DisplayName: "gqltest-npm-search",
+				Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
+					Registry: "https://registry.npmjs.org",
+					Dependencies: []string{
+						"urql@2.2.0", // We're searching the dependencies of this repo.
+					},
+				}),
+			},
+			{
+				Kind:        extsvc.KindGoModules,
+				DisplayName: "gqltest-go-search",
+				Config: mustMarshalJSONString(&schema.GoModulesConnection{
+					Urls: []string{"https://proxy.golang.org"},
+					Dependencies: []string{
+						"github.com/oklog/ulid/v2@v2.0.2",
+					},
+				}),
+			},
+			{
+				Kind:        extsvc.KindPythonPackages,
+				DisplayName: "gqltest-python-search",
+				Config: mustMarshalJSONString(&schema.PythonPackagesConnection{
+					Urls: []string{"https://pypi.org/simple"},
+					Dependencies: []string{
+						"rich == 12.3.0",
+					},
+				}),
+			},
+			{
+				Kind:        extsvc.KindJVMPackages,
+				DisplayName: "gqltest-jvm-search",
+				Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
+					Maven: &schema.Maven{
+						Dependencies: []string{
+							"com.google.guava:guava:19.0",
+							"com.google.guava:guava:21.0",
+						},
+					},
+				}),
+			},
 		}
 
-		err = client.WaitForReposToBeCloned(
+		for _, config := range configs {
+			_, err := client.AddExternalService(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		err := client.WaitForReposToBeCloned(
 			"npm/urql",
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
@@ -1430,6 +1444,53 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"github.com/sgtest/pipenv-hw",
 			"github.com/sgtest/poetry-hw",
 			"github.com/sgtest/empty",
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create policy to index the lockfiles in these repositories
+		_, err = client.CreatePolicy(gqltestutil.CreatePolicyInput{
+			Name: "Lockfile indexing",
+			RepositoryPatterns: []string{
+				"github.com/sgtest/pipenv-hw",
+				"github.com/sgtest/poetry-hw",
+				"github.com/sgtest/empty",
+				"npm/urql",
+				"go/github.com/oklog/ulid/v2",
+				"python/rich",
+				"maven/com.google.guava/guava",
+			},
+			Type:    "GIT_COMMIT",
+			Pattern: "HEAD",
+
+			// Enable lockfile indexing
+			LockfileIndexingEnabled: true,
+		})
+		if err != nil {
+			t.Fatalf("creating lockfile indexing policy failed: %s", err)
+		}
+
+		// Wait for dependencies to be cloned, which means we've successfully indexed the repositories above
+		err = client.WaitForReposToBeCloned(
+			"npm/urql/core",
+			"npm/wonka",
+			"python/atomicwrites",
+			"python/attrs",
+			"python/colorama",
+			"python/more-itertools",
+			"python/packaging",
+			"python/pluggy",
+			"python/py",
+			"python/pyparsing",
+			"python/pytest",
+			"python/tqdm",
+			"python/wcwidth",
+			"python/certifi",
+			"python/charset-normalizer",
+			"python/idna",
+			"python/requests",
+			"python/urllib3",
 		)
 		if err != nil {
 			t.Fatal(err)
