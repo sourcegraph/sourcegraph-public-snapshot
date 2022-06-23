@@ -216,6 +216,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
                 inputClassName={classNames(styles.filterInput)}
                 inputPlaceholder="Filter search contexts..."
                 inputAriaLabel="Filter search contexts"
+                formClassName={styles.filtersForm}
             />
         </>
     )

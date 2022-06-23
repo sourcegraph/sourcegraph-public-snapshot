@@ -1,11 +1,7 @@
+import { mdiPoll, mdiAntenna, mdiMenu, mdiMenuUp, mdiMenuDown } from '@mdi/js'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import AntennaIcon from 'mdi-react/AntennaIcon'
-import BarChartIcon from 'mdi-react/BarChartIcon'
 import FileTreeOutlineIcon from 'mdi-react/FileTreeOutlineIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -160,7 +156,7 @@ export const UserNav: Story = () => (
                 trigger: isOpen => (
                     <>
                         <Icon aria-hidden={true} as="img" className={styles.avatar} src={avatarUrl} />
-                        <Icon aria-hidden={true} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                        <Icon aria-hidden={true} svgPath={isOpen ? mdiMenuUp : mdiMenuDown} />
                     </>
                 ),
             },
@@ -176,7 +172,7 @@ const singleSectionNavItems: NavMenuSectionProps[] = [
             {
                 content: (
                     <Button variant="link" className="w-100 text-left">
-                        <Icon aria-hidden={true} as={BarChartIcon} /> Insight
+                        <Icon aria-hidden={true} svgPath={mdiPoll} /> Insight
                     </Button>
                 ),
                 key: 'Insight',
@@ -184,7 +180,7 @@ const singleSectionNavItems: NavMenuSectionProps[] = [
             {
                 content: (
                     <Button variant="link" className="w-100 text-left">
-                        <Icon aria-hidden={true} as={AntennaIcon} /> Monitoring
+                        <Icon aria-hidden={true} svgPath={mdiAntenna} /> Monitoring
                     </Button>
                 ),
                 key: 'Monitoring',
@@ -201,8 +197,8 @@ export const SingleSectionNavMenuExample: Story = () => (
             triggerContent: {
                 trigger: isOpen => (
                     <>
-                        <Icon aria-hidden={true} as={MenuIcon} />
-                        <Icon aria-hidden={true} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiMenu} />
+                        <Icon aria-hidden={true} svgPath={isOpen ? mdiMenuUp : mdiMenuDown} />
                     </>
                 ),
             },

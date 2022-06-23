@@ -23,10 +23,6 @@ type MockDBStore struct {
 	// CommitsVisibleToUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method CommitsVisibleToUpload.
 	CommitsVisibleToUploadFunc *DBStoreCommitsVisibleToUploadFunc
-	// DeleteIndexesWithoutRepositoryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteIndexesWithoutRepository.
-	DeleteIndexesWithoutRepositoryFunc *DBStoreDeleteIndexesWithoutRepositoryFunc
 	// DeleteOldAuditLogsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteOldAuditLogs.
 	DeleteOldAuditLogsFunc *DBStoreDeleteOldAuditLogsFunc
@@ -34,10 +30,6 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// DeleteUploadsStuckUploading.
 	DeleteUploadsStuckUploadingFunc *DBStoreDeleteUploadsStuckUploadingFunc
-	// DeleteUploadsWithoutRepositoryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteUploadsWithoutRepository.
-	DeleteUploadsWithoutRepositoryFunc *DBStoreDeleteUploadsWithoutRepositoryFunc
 	// DirtyRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method DirtyRepositories.
 	DirtyRepositoriesFunc *DBStoreDirtyRepositoriesFunc
@@ -80,11 +72,6 @@ func NewMockDBStore() *MockDBStore {
 				return
 			},
 		},
-		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
-				return
-			},
-		},
 		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
 			defaultHook: func(context.Context, time.Duration, time.Time) (r0 int, r1 error) {
 				return
@@ -92,11 +79,6 @@ func NewMockDBStore() *MockDBStore {
 		},
 		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
 			defaultHook: func(context.Context, time.Time) (r0 int, r1 error) {
-				return
-			},
-		},
-		DeleteUploadsWithoutRepositoryFunc: &DBStoreDeleteUploadsWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
 				return
 			},
 		},
@@ -162,11 +144,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.CommitsVisibleToUpload")
 			},
 		},
-		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
-				panic("unexpected invocation of MockDBStore.DeleteIndexesWithoutRepository")
-			},
-		},
 		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
 			defaultHook: func(context.Context, time.Duration, time.Time) (int, error) {
 				panic("unexpected invocation of MockDBStore.DeleteOldAuditLogs")
@@ -175,11 +152,6 @@ func NewStrictMockDBStore() *MockDBStore {
 		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
 			defaultHook: func(context.Context, time.Time) (int, error) {
 				panic("unexpected invocation of MockDBStore.DeleteUploadsStuckUploading")
-			},
-		},
-		DeleteUploadsWithoutRepositoryFunc: &DBStoreDeleteUploadsWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
-				panic("unexpected invocation of MockDBStore.DeleteUploadsWithoutRepository")
 			},
 		},
 		DirtyRepositoriesFunc: &DBStoreDirtyRepositoriesFunc{
@@ -242,17 +214,11 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		CommitsVisibleToUploadFunc: &DBStoreCommitsVisibleToUploadFunc{
 			defaultHook: i.CommitsVisibleToUpload,
 		},
-		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: i.DeleteIndexesWithoutRepository,
-		},
 		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
 			defaultHook: i.DeleteOldAuditLogs,
 		},
 		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
 			defaultHook: i.DeleteUploadsStuckUploading,
-		},
-		DeleteUploadsWithoutRepositoryFunc: &DBStoreDeleteUploadsWithoutRepositoryFunc{
-			defaultHook: i.DeleteUploadsWithoutRepository,
 		},
 		DirtyRepositoriesFunc: &DBStoreDirtyRepositoriesFunc{
 			defaultHook: i.DirtyRepositories,
@@ -404,118 +370,6 @@ func (c DBStoreCommitsVisibleToUploadFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreCommitsVisibleToUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// DBStoreDeleteIndexesWithoutRepositoryFunc describes the behavior when the
-// DeleteIndexesWithoutRepository method of the parent MockDBStore instance
-// is invoked.
-type DBStoreDeleteIndexesWithoutRepositoryFunc struct {
-	defaultHook func(context.Context, time.Time) (map[int]int, error)
-	hooks       []func(context.Context, time.Time) (map[int]int, error)
-	history     []DBStoreDeleteIndexesWithoutRepositoryFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteIndexesWithoutRepository delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) DeleteIndexesWithoutRepository(v0 context.Context, v1 time.Time) (map[int]int, error) {
-	r0, r1 := m.DeleteIndexesWithoutRepositoryFunc.nextHook()(v0, v1)
-	m.DeleteIndexesWithoutRepositoryFunc.appendCall(DBStoreDeleteIndexesWithoutRepositoryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DeleteIndexesWithoutRepository method of the parent MockDBStore instance
-// is invoked and the hook queue is empty.
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (map[int]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteIndexesWithoutRepository method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (map[int]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) PushReturn(r0 map[int]int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (map[int]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) appendCall(r0 DBStoreDeleteIndexesWithoutRepositoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// DBStoreDeleteIndexesWithoutRepositoryFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreDeleteIndexesWithoutRepositoryFunc) History() []DBStoreDeleteIndexesWithoutRepositoryFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDeleteIndexesWithoutRepositoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDeleteIndexesWithoutRepositoryFuncCall is an object that describes
-// an invocation of method DeleteIndexesWithoutRepository on an instance of
-// MockDBStore.
-type DBStoreDeleteIndexesWithoutRepositoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[int]int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDeleteIndexesWithoutRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDeleteIndexesWithoutRepositoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreDeleteOldAuditLogsFunc describes the behavior when the
@@ -737,118 +591,6 @@ func (c DBStoreDeleteUploadsStuckUploadingFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreDeleteUploadsStuckUploadingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreDeleteUploadsWithoutRepositoryFunc describes the behavior when the
-// DeleteUploadsWithoutRepository method of the parent MockDBStore instance
-// is invoked.
-type DBStoreDeleteUploadsWithoutRepositoryFunc struct {
-	defaultHook func(context.Context, time.Time) (map[int]int, error)
-	hooks       []func(context.Context, time.Time) (map[int]int, error)
-	history     []DBStoreDeleteUploadsWithoutRepositoryFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteUploadsWithoutRepository delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) DeleteUploadsWithoutRepository(v0 context.Context, v1 time.Time) (map[int]int, error) {
-	r0, r1 := m.DeleteUploadsWithoutRepositoryFunc.nextHook()(v0, v1)
-	m.DeleteUploadsWithoutRepositoryFunc.appendCall(DBStoreDeleteUploadsWithoutRepositoryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DeleteUploadsWithoutRepository method of the parent MockDBStore instance
-// is invoked and the hook queue is empty.
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (map[int]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteUploadsWithoutRepository method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (map[int]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) PushReturn(r0 map[int]int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (map[int]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) appendCall(r0 DBStoreDeleteUploadsWithoutRepositoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// DBStoreDeleteUploadsWithoutRepositoryFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreDeleteUploadsWithoutRepositoryFunc) History() []DBStoreDeleteUploadsWithoutRepositoryFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDeleteUploadsWithoutRepositoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDeleteUploadsWithoutRepositoryFuncCall is an object that describes
-// an invocation of method DeleteUploadsWithoutRepository on an instance of
-// MockDBStore.
-type DBStoreDeleteUploadsWithoutRepositoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[int]int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDeleteUploadsWithoutRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDeleteUploadsWithoutRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

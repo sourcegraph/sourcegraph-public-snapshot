@@ -1,9 +1,13 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
 import { TosConsentModal } from './TosConsentModal'
 
-const { add } = storiesOf('web/auth/TosConsentModal', module)
+const config: Meta = {
+    title: 'web/auth/TosConsentModal',
+}
 
-add('standard', () => <WebStory>{() => <TosConsentModal afterTosAccepted={() => {}} />}</WebStory>)
+export default config
+
+export const Standard: Story = () => <WebStory>{() => <TosConsentModal afterTosAccepted={() => {}} />}</WebStory>

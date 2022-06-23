@@ -1,0 +1,22 @@
+[
+  {
+    "path": "internal/codeintel/dependencies/internal/store",
+    "prefix": "TestLockfileDependencies",
+    "reason": "A 2-column unique index has been changed to 3 columns to keep existing 'on conflict upsert' behaviour. We can't easily keep that backwards compatible since we can't keep the 2 and 3-column index and since NULL != NULL the 3-column index won't produce conflicts when only 2/3 columns are inserted."
+  },
+  {
+    "path": "internal/codeintel/dependencies/internal/store",
+    "prefix": "TestSelectRepoRevisionsToResolve",
+    "reason": "A 2-column unique index has been changed to 3 columns to keep existing 'on conflict upsert' behaviour. We can't easily keep that backwards compatible since we can't keep the 2 and 3-column index and since NULL != NULL the 3-column index won't produce conflicts when only 2/3 columns are inserted."
+  },
+  {
+    "path": "internal/codeintel/dependencies/internal/store",
+    "prefix": "TestUpdateResolvedRevisions",
+    "reason": "A 2-column unique index has been changed to 3 columns to keep existing 'on conflict upsert' behaviour. We can't easily keep that backwards compatible since we can't keep the 2 and 3-column index and since NULL != NULL the 3-column index won't produce conflicts when only 2/3 columns are inserted."
+  },
+  {
+    "path": "internal/codeintel/dependencies/internal/store",
+    "prefix": "TestLockfileDependents",
+    "reason": "A 2-column unique index has been changed to 3 columns to keep existing 'on conflict upsert' behaviour. We can't easily keep that backwards compatible since we can't keep the 2 and 3-column index and since NULL != NULL the 3-column index won't produce conflicts when only 2/3 columns are inserted."
+  }
+]

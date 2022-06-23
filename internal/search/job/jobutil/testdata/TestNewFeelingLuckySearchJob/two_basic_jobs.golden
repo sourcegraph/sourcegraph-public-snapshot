@@ -6,7 +6,7 @@
         "ProposedQuery": {
           "Description": "AND patterns together",
           "Query": "context:global type:file (parse AND func)",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     },
@@ -16,7 +16,7 @@
         "ProposedQuery": {
           "Description": "AND patterns together",
           "Query": "context:global type:commit (parse AND func)",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     }

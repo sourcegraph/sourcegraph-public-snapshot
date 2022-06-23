@@ -157,7 +157,7 @@ func NewGenerator(logger sglog.Logger, inputs *run.SearchInputs, seed query.Basi
 				ProposedQuery: &search.ProposedQuery{
 					Description: rules[i].description,
 					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLiteral,
+					PatternType: query.SearchTypeLucky,
 				},
 			}
 

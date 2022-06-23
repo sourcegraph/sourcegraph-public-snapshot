@@ -5,6 +5,7 @@ import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventS
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
+import { EventLogger } from '../telemetry/EventLogger'
 
 import { App } from './App'
 import { handleRequest } from './java-to-js-bridge'
@@ -27,6 +28,7 @@ let isGlobbingEnabled = false
 let accessToken: string | null = null
 let initialSearch: Search | null = null
 let initialAuthenticatedUser: AuthenticatedUser | null
+let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
     const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
@@ -43,6 +45,8 @@ window.initializeSourcegraph = async () => {
     if (accessToken && authenticatedUser.status === 'rejected') {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
+
+    telemetryService = new EventLogger('anonid', { editor: 'jetbrains', version: '1.4.5' })
 
     renderReactApp()
 
@@ -64,6 +68,7 @@ export function renderReactApp(): void {
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
             initialAuthenticatedUser={initialAuthenticatedUser}
+            telemetryService={telemetryService}
         />,
         node
     )
@@ -109,4 +114,12 @@ function applyLastSearch(lastSearch: Search | null): void {
 
 function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
     initialAuthenticatedUser = authenticatedUser
+}
+
+export function getAccessToken(): string | null {
+    return accessToken
+}
+
+export function getInstanceURL(): string {
+    return instanceURL
 }

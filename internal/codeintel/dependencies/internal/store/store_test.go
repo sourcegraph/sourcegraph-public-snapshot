@@ -169,7 +169,7 @@ func TestPreciseDependenciesAndDependents(t *testing.T) {
 	})
 }
 
-func TestLockfileDependencies(t *testing.T) {
+func TestUpsertLockfileGraph(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -183,54 +183,501 @@ func TestLockfileDependencies(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "3", "4")
-	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "4", "5")
-	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "5", "6")
-	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "6", "7")
-	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "7", "8")
-	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "8", "9")
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
 
-	commits := map[string][]shared.PackageDependency{
-		"cafebabe": {packageA, packageB, packageC},
-		"deadbeef": {packageA, packageB, packageD, packageE},
-		"deadc0de": {packageB, packageF},
-		"deadd00d": nil,
+	t.Run("with graph", func(t *testing.T) {
+		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
+		//    -> b -> E
+		//   /
+		// a --> c
+		//   \
+		//    -> d -> F
+		graph := shared.TestDependencyGraphLiteral(
+			[]shared.PackageDependency{packageA},
+			[][]shared.PackageDependency{
+				// A
+				{packageA, packageB},
+				{packageA, packageC},
+				{packageA, packageD},
+				// B
+				{packageB, packageE},
+				// D
+				{packageD, packageF},
+			},
+		)
+		commit := "cafebabe"
+
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		// Now check whether the direct dependency was inserted
+		names, err := queryDirectDeps(t, ctx, store, "foo", commit, "lock.file")
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+
+		wantNames := []string{packageA.PackageSyntax()}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+
+		// Check that all packages have been inserted
+		names, err = queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		wantNames = []string{}
+		for _, pkg := range deps {
+			wantNames = append(wantNames, pkg.PackageSyntax())
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+
+		// Upsert again to check idempotency
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		names, err = basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("without graph", func(t *testing.T) {
+		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
+		nilGraph := shared.SerializeDependencyGraph(nil)
+		commit := "d34df00d"
+
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, nilGraph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		// Check that all dependencies have been inserted as direct dependencies
+		names, err := queryDirectDeps(t, ctx, store, "foo", commit, "lock.file")
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+
+		wantNames := make([]string, 0, len(deps))
+		for _, d := range deps {
+			wantNames = append(wantNames, d.PackageSyntax())
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected direct dependencies (-want +got):\n%s", diff)
+		}
+
+		// Upsert again to check idempotency
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, nilGraph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		names, err = queryDirectDeps(t, ctx, store, "foo", commit, "lock.file")
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+
+	})
+
+	t.Run("multiple lockfiles", func(t *testing.T) {
+		results := []struct {
+			lockfile string
+			deps     []shared.PackageDependency
+			graph    shared.DependencyGraph
+		}{
+			{
+				lockfile: "lock1.file",
+				deps:     []shared.PackageDependency{packageA, packageB, packageC},
+				graph: shared.TestDependencyGraphLiteral(
+					[]shared.PackageDependency{packageA},
+					// a -> b -> c
+					[][]shared.PackageDependency{{packageA, packageB}, {packageB, packageC}},
+				),
+			},
+			{
+				lockfile: "lock2.file",
+				deps:     []shared.PackageDependency{packageD, packageE, packageF},
+				graph: shared.TestDependencyGraphLiteral(
+					[]shared.PackageDependency{packageD},
+					// d -> e -> f
+					[][]shared.PackageDependency{{packageD, packageE}, {packageE, packageF}},
+				),
+			},
+		}
+
+		commit := "d34dd00d"
+
+		for _, res := range results {
+			// Upsert twice to test idempotency
+			if err := store.UpsertLockfileGraph(ctx, "foo", commit, res.lockfile, res.deps, res.graph); err != nil {
+				t.Fatalf("error: %s", err)
+			}
+			if err := store.UpsertLockfileGraph(ctx, "foo", commit, res.lockfile, res.deps, res.graph); err != nil {
+				t.Fatalf("error: %s", err)
+			}
+		}
+
+		// Check that all packages have been inserted
+		names, err := queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		wantNames := []string{}
+		for _, res := range results {
+			for _, pkg := range res.deps {
+				wantNames = append(wantNames, pkg.PackageSyntax())
+			}
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+
+		// Check per lockfile now
+		for _, res := range results {
+			// Now check whether the direct dependency was inserted
+			names, err := queryDirectDeps(t, ctx, store, "foo", commit, res.lockfile)
+			if err != nil {
+				t.Fatalf("database query error: %s", err)
+			}
+
+			wantNames := []string{}
+			for _, r := range res.graph.Roots() {
+				wantNames = append(wantNames, r.PackageSyntax())
+			}
+			if diff := cmp.Diff(wantNames, names); diff != "" {
+				t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+			}
+
+			// Check that packages have been inserted with right lockfile
+			names, err = basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references WHERE resolution_lockfile = %s ORDER BY package_name`, res.lockfile)))
+			if err != nil {
+				t.Fatalf("database query error: %s", err)
+			}
+			wantNames = []string{}
+			for _, pkg := range res.deps {
+				wantNames = append(wantNames, pkg.PackageSyntax())
+			}
+			if diff := cmp.Diff(wantNames, names); diff != "" {
+				t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+			}
+		}
+	})
+}
+
+func queryDirectDeps(t *testing.T, ctx context.Context, store *store, repoName, commit, lockfile string) ([]string, error) {
+	t.Helper()
+
+	q := sqlf.Sprintf(`
+	SELECT package_name
+	FROM codeintel_lockfile_references
+	WHERE (
+		SELECT codeintel_lockfile_reference_ids
+		FROM codeintel_lockfiles lf
+		JOIN repo r ON r.id = lf.repository_id
+		WHERE
+		r.name = %s AND
+		lf.commit_bytea = %s AND
+		lf.lockfile = %s
+	) @> ARRAY[id]
+	ORDER BY package_name;
+    `,
+		repoName,
+		dbutil.CommitBytea(commit),
+		lockfile,
+	)
+
+	return basestore.ScanStrings(store.db.Query(ctx, q))
+}
+
+func queryLockfileReferences(t *testing.T, ctx context.Context, store *store, repoName, commit string) ([]string, error) {
+	t.Helper()
+
+	q := sqlf.Sprintf(`
+	SELECT package_name
+	FROM codeintel_lockfile_references
+	WHERE
+	resolution_repository_id = (SELECT id FROM repo WHERE name = %s) AND
+	resolution_commit_bytea = %s
+	ORDER BY package_name
+`,
+		"foo",
+		dbutil.CommitBytea(commit),
+	)
+
+	return basestore.ScanStrings(store.db.Query(ctx, q))
+}
+
+func TestLockfileDependencies_SingleLockfile(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
 
-	for commit, deps := range commits {
-		if err := store.UpsertLockfileDependencies(ctx, "foo", commit, deps); err != nil {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
+
+	lockfile := "lock.file"
+
+	depsAtCommit := map[string]struct {
+		list  []shared.PackageDependency
+		graph shared.DependencyGraph
+	}{
+		"cafebabe": {
+			list: []shared.PackageDependency{packageA, packageB, packageC},
+			graph:
+			// a -> b -> c
+			shared.DependencyGraphLiteral{
+				RootPkgs: []shared.PackageDependency{packageA},
+				Edges:    [][]shared.PackageDependency{{packageA, packageB}, {packageB, packageC}},
+			},
+		},
+		"deadbeef": {
+			list: []shared.PackageDependency{packageA, packageB, packageD, packageE},
+			//  / b
+			// a
+			//  \ d -> e
+			graph: shared.DependencyGraphLiteral{
+				RootPkgs: []shared.PackageDependency{packageA},
+				Edges: [][]shared.PackageDependency{
+					{packageA, packageB},
+					{packageA, packageD},
+					{packageD, packageE},
+				},
+			},
+		},
+		"deadc0de": {
+			list: []shared.PackageDependency{packageB, packageF},
+			graph: shared.DependencyGraphLiteral{
+				// both roots:
+				// b
+				// f
+				RootPkgs: []shared.PackageDependency{packageB, packageF},
+				Edges:    [][]shared.PackageDependency{},
+			},
+		},
+		// no list, no graph
+		"deadd00d": {list: nil, graph: nil},
+		// list, but no graph
+		"deadd002": {list: []shared.PackageDependency{packageA, packageB}, graph: nil},
+	}
+
+	for commit, deps := range depsAtCommit {
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, lockfile, deps.list, deps.graph); err != nil {
 			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 		}
 	}
 
 	// Update twice to show idempotency
-	for commit, expected := range commits {
-		if err := store.UpsertLockfileDependencies(ctx, "foo", commit, expected); err != nil {
+	for commit, deps := range depsAtCommit {
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, lockfile, deps.list, deps.graph); err != nil {
 			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 		}
 	}
 
-	for commit, expectedDeps := range commits {
-		deps, found, err := store.LockfileDependencies(ctx, "foo", commit)
+	t.Run("IncludeTransitive:false", func(t *testing.T) {
+		// Query direct dependencies
+		for commit, expectedDeps := range depsAtCommit {
+			directDeps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+				RepoName:          "foo",
+				Commit:            commit,
+				IncludeTransitive: false,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+			}
+			if !found {
+				t.Fatalf("expected dependencies to be cached for %s", commit)
+			}
+
+			var wantDirectDeps []shared.PackageDependency
+			if expectedDeps.graph == nil {
+				// If we don't have a graph we expect all deps to be direct deps
+				wantDirectDeps = expectedDeps.list
+			} else {
+				graph := expectedDeps.graph.(shared.DependencyGraphLiteral)
+				wantDirectDeps = graph.RootPkgs
+			}
+
+			if a, b := len(wantDirectDeps), len(directDeps); a != b {
+				t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+			}
+
+			if diff := cmp.Diff(wantDirectDeps, directDeps); diff != "" {
+				t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
+			}
+		}
+	})
+
+	t.Run("IncludeTransitive:true", func(t *testing.T) {
+		// Query direct + transitive dependencies
+		for commit, expectedDeps := range depsAtCommit {
+			allDeps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+				RepoName:          "foo",
+				Commit:            commit,
+				IncludeTransitive: true,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+			}
+			if !found {
+				t.Fatalf("expected dependencies to be cached for %s", commit)
+			}
+
+			// With IncludeTransitive
+			if a, b := len(expectedDeps.list), len(allDeps); a != b {
+				t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+			}
+			if diff := cmp.Diff(expectedDeps.list, allDeps); diff != "" {
+				t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
+			}
+		}
+	})
+
+	missingCommit := "d00dd00d"
+	_, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+		RepoName: "foo",
+		Commit:   missingCommit,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error querying lockfile dependencies: %s", err)
+	} else if found {
+		t.Fatalf("expected no dependencies to be cached for %s", missingCommit)
+	}
+}
+
+func TestLockfileDependencies_MultipleLockfiles(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
+
+	depsInLockfile := map[string]struct {
+		deps  []shared.PackageDependency
+		graph shared.DependencyGraph
+	}{
+		"lockfile.1": {
+			deps: []shared.PackageDependency{packageA, packageB, packageC},
+			graph:
+			// a -> b -> c
+			shared.DependencyGraphLiteral{
+				RootPkgs: []shared.PackageDependency{packageA},
+				Edges:    [][]shared.PackageDependency{{packageA, packageB}, {packageB, packageC}},
+			},
+		},
+		"lockfile.2": {
+			deps: []shared.PackageDependency{packageD, packageE, packageF},
+			// d -> e -> f
+			graph: shared.DependencyGraphLiteral{
+				RootPkgs: []shared.PackageDependency{packageD},
+				Edges: [][]shared.PackageDependency{
+					{packageD, packageE},
+					{packageE, packageF},
+				},
+			},
+		},
+	}
+
+	commit := "d34db33f"
+
+	for lockfile, result := range depsInLockfile {
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, lockfile, result.deps, result.graph); err != nil {
+			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+		}
+	}
+
+	// Update twice to show idempotency
+	for lockfile, result := range depsInLockfile {
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, lockfile, result.deps, result.graph); err != nil {
+			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+		}
+	}
+
+	// Query per lockfile
+	for lockfile, expectedDeps := range depsInLockfile {
+		directDeps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+			RepoName:          "foo",
+			Commit:            commit,
+			IncludeTransitive: false,
+			Lockfile:          lockfile,
+		})
 		if err != nil {
 			t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
 		}
 		if !found {
 			t.Fatalf("expected dependencies to be cached for %s", commit)
 		}
-		sort.Slice(deps, func(i, j int) bool { return deps[i].RepoName() < deps[j].RepoName() })
+		sort.Slice(directDeps, func(i, j int) bool { return directDeps[i].RepoName() < directDeps[j].RepoName() })
 
-		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
+		graph := expectedDeps.graph.(shared.DependencyGraphLiteral)
+		wantDirectDeps := graph.RootPkgs
+
+		if a, b := len(wantDirectDeps), len(directDeps); a != b {
+			t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+		}
+
+		if diff := cmp.Diff(wantDirectDeps, directDeps); diff != "" {
 			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 		}
 	}
 
-	missingCommit := "d00dd00d"
-	_, found, err := store.LockfileDependencies(ctx, "foo", missingCommit)
+	// Query without specifying lockfile
+	deps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+		RepoName:          "foo",
+		Commit:            commit,
+		IncludeTransitive: false,
+	})
 	if err != nil {
-		t.Fatalf("unexpected error querying lockfile dependencies: %s", err)
-	} else if found {
-		t.Fatalf("expected no dependencies to be cached for %s", missingCommit)
+		t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+	}
+	if !found {
+		t.Fatalf("expected dependencies to be cached for %s", commit)
+	}
+
+	wantDirectDeps := []shared.PackageDependency{packageA, packageD}
+	if a, b := len(wantDirectDeps), len(deps); a != b {
+		t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+	}
+
+	if diff := cmp.Diff(wantDirectDeps, deps); diff != "" {
+		t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 	}
 }
 
@@ -357,7 +804,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 	repoName := "repo-1"
 	packages := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE}
 
-	if err := store.UpsertLockfileDependencies(ctx, repoName, commit, packages); err != nil {
+	if err := store.UpsertLockfileGraph(ctx, repoName, commit, "lock.file", packages, nil); err != nil {
 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 	}
 
@@ -444,7 +891,7 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 		packageD = shared.TestPackageDependencyLiteral(api.RepoName("pkg-4"), "v4", "5", "6", "7")
 	)
 
-	if err := store.UpsertLockfileDependencies(ctx, "repo-1", "cafebabe", []shared.PackageDependency{packageA, packageB, packageC, packageD}); err != nil {
+	if err := store.UpsertLockfileGraph(ctx, "repo-1", "cafebabe", "lock.file", []shared.PackageDependency{packageA, packageB, packageC, packageD}, nil); err != nil {
 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 	}
 
@@ -503,13 +950,13 @@ func TestLockfileDependents(t *testing.T) {
 		packageD = shared.TestPackageDependencyLiteral(api.RepoName("pkg-4"), "v4", "5", "6", "7")
 	)
 
-	if err := store.UpsertLockfileDependencies(ctx, "repo-1", "cafebabe", []shared.PackageDependency{packageA, packageB, packageC, packageD}); err != nil {
+	if err := store.UpsertLockfileGraph(ctx, "repo-1", "cafebabe", "lock.file", []shared.PackageDependency{packageA, packageB, packageC, packageD}, nil); err != nil {
 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 	}
-	if err := store.UpsertLockfileDependencies(ctx, "repo-2", "cafebeef", []shared.PackageDependency{packageB}); err != nil {
+	if err := store.UpsertLockfileGraph(ctx, "repo-2", "cafebeef", "lock.file", []shared.PackageDependency{packageB}, nil); err != nil {
 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 	}
-	if err := store.UpsertLockfileDependencies(ctx, "repo-3", "d00dd00d", []shared.PackageDependency{packageC}); err != nil {
+	if err := store.UpsertLockfileGraph(ctx, "repo-3", "d00dd00d", "lock.file", []shared.PackageDependency{packageC}, nil); err != nil {
 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 	}
 
