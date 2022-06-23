@@ -315,7 +315,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 					if r.GenerateAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)
-						generateTermAnnotation(category.Name, check.Name, terminalSummary)
 					}
 				}
 			}
