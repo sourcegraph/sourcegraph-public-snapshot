@@ -3,7 +3,6 @@ package bk
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -163,7 +162,7 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 
 type AnnotationArtifact struct {
 	buildkite.Artifact
-	AnnotationMarkdown string
+	Markdown string
 }
 
 func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
@@ -180,11 +179,10 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 			if err != nil {
 				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
 			}
-			fmt.Println("-------- ANNOTATION --------")
 
 			result[*a.JobID] = AnnotationArtifact{
-				Artifact:           a,
-				AnnotationMarkdown: buf.String(),
+				Artifact: a,
+				Markdown: buf.String(),
 			}
 		}
 	}
