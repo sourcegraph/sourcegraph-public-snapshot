@@ -270,7 +270,7 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
 
 ## Configuring auto scaling
 
-> NOTE: Auto scaling is currently not supported when [downloading and running executor binaries yourself](#binaries)
+> NOTE: Auto scaling is currently not supported when [downloading and running executor binaries yourself](#binaries), and on managed instances since it requires deployment adjustments.
 
 Auto scaling of executor instances can help to increase concurrency of jobs, without paying for unused resources. With auto scaling, you can scale down to 0 instances when no workload exist and scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
 
@@ -369,7 +369,7 @@ Next, you can test whether the number of executors rises and shrinks as load spi
 
 ## Configuring observability
 
-> NOTE: Observability features are currently not supported when [downloading and running executor binaries yourself](#binaries)
+> NOTE: Observability features are currently not supported when [downloading and running executor binaries yourself](#binaries), and on managed instances since they require deployment adjustments.
 
 Sourcegraph [ships with dashboards](observability/metrics.md) that can display executor metrics. We highly encourage setting this up to help make informed decisions on scaling and to make debugging easier.
 
