@@ -139,8 +139,11 @@ enum DateRange {
     LastWeek = 'Last week',
 }
 
-export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
-    const [dateRange, setDateRange] = useState<DateRange>(DateRange.LastMonth)
+const StatisticItem: React.FunctionComponent<{
+    title: string
+    items: Omit<ChartDataItem, 'series' | 'totalCount'>[]
+}> = ({ title, items }) => {
+    const [dateRange, setDateRange] = useState<DateRange>(DateRange.LastWeek)
     const data = useMemo(() => {
         const now = new Date()
         const fromDate =
@@ -149,50 +152,168 @@ export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps
                 : dateRange === DateRange.LastMonth
                 ? sub(now, { months: 1 })
                 : sub(now, { weeks: 1 })
-        return getBatchChangesData(fromDate, now)
-    }, [dateRange])
-
+        return getMockData(fromDate, now, items)
+    }, [dateRange, items])
     return (
         <>
-            <PageTitle title="Usage statistics - Admin" />
-            <Tabs lazy={true} behavior="memoize" size="large">
-                <TabList>
-                    {/* <Tab>Overview</Tab> */}
-                    <Tab>Batch changes</Tab>
-                    <Tab>Notebooks</Tab>
-                    <Tab>Extensions</Tab>
-                    <Tab>Code insights</Tab>
-                    <Tab>Search</Tab>
-                    <Tab>Code intel</Tab>
-                    <Tab>Users</Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel>
-                        <H2 className="mt-4"> Statistics / Overview</H2>
-                        <Chart data={data} dateRange={dateRange} onDateRangeChange={setDateRange} />
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
+            <H2 className="mt-4"> {title}</H2>
+            <Chart data={data} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </>
     )
 }
 
-const getBatchChangesData = (fromDate: Date, toDate: Date): ChartProps['data'] =>
-    [
-        {
-            name: 'Changesets created',
-            color: 'var(--blue)',
-            series: generateRandomDataSeries(fromDate, toDate),
-        },
-        {
-            name: 'Changesets merged',
-            color: 'var(--cyan)',
-            showDevTimeCalculator: true,
-            description:
-                'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-            series: generateRandomDataSeries(fromDate, toDate),
-        },
-    ].map(item => ({ ...item, totalCount: item.series.map(item => item.value).reduce((a, b) => a + b, 0) }))
+export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => (
+    <>
+        <PageTitle title="Usage statistics - Admin" />
+        <Tabs lazy={true} behavior="memoize" size="large">
+            <TabList>
+                {/* <Tab>Overview</Tab> */}
+                <Tab>Search</Tab>
+                <Tab>Batch changes</Tab>
+                <Tab>Notebooks</Tab>
+                <Tab>Extensions</Tab>
+                <Tab>Code insights</Tab>
+                <Tab>Code intel</Tab>
+                <Tab>Users</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Search"
+                        items={[
+                            {
+                                name: 'Searches',
+                                color: 'var(--cyan)',
+                            },
+                            {
+                                name: 'File views',
+                                color: 'var(--orange)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Batch changes"
+                        items={[
+                            {
+                                name: 'Changesets created',
+                                color: 'var(--blue)',
+                            },
+                            {
+                                name: 'Changesets merged',
+                                color: 'var(--cyan)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Notebooks"
+                        items={[
+                            {
+                                name: 'Notebooks created',
+                                color: 'var(--cyan)',
+                            },
+                            {
+                                name: 'Notebooks viewed',
+                                color: 'var(--purple)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Extensions"
+                        items={[
+                            {
+                                name: 'Extension uses',
+                                color: 'var(--orange)',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Code insights"
+                        items={[
+                            {
+                                name: 'Insights created',
+                                color: 'var(--cyan)',
+                            },
+                            {
+                                name: 'Insights viewed',
+                                color: 'var(--orange)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                            {
+                                name: 'Datapoint clicked',
+                                color: 'var(--purple)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Code intel"
+                        items={[
+                            {
+                                name: 'References',
+                                color: 'var(--cyan)',
+                            },
+                            {
+                                name: 'Definitions',
+                                color: 'var(--orange)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            }
+                        ]}
+                    />
+                </TabPanel>
+
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Users"
+                        items={[
+                            {
+                                name: 'Total users',
+                                color: 'var(--purple)',
+                            }
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>Coming soon</TabPanel>
+            </TabPanels>
+        </Tabs>
+    </>
+)
+
+const getMockData = (
+    fromDate: Date,
+    toDate: Date,
+    items: Omit<ChartDataItem, 'series' | 'totalCount'>[]
+): ChartDataItem[] =>
+    items
+        .map(item => ({ ...item, series: generateRandomDataSeries(fromDate, toDate) }))
+        .map(item => ({
+            ...item,
+            totalCount: item.series.map(item => item.value).reduce((a, b) => a + b, 0),
+        })) as ChartDataItem[]
 
 function generateRandomDataSeries(fromDate: Date, toDate: Date): StandardDatum[] {
     const randomData: StandardDatum[] = []
