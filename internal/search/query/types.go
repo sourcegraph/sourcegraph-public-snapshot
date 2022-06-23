@@ -346,19 +346,31 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 		}
 
 		name, params := ParseAsPredicate(v)
-		if name != "contains.file" {
-			return
-		}
+		var pattern string
+		if name == "contains.file" {
+			var p RepoContainsFilePredicate
+			if err := p.ParseParams(params); err != nil {
+				return
+			}
+			pattern = p.Pattern
+		} else if name == "contains" {
+			var p RepoContainsPredicate
+			if err := p.ParseParams(params); err != nil {
+				return
+			}
 
-		var p RepoContainsFilePredicate
-		if err := p.ParseParams(params); err != nil {
-			return
+			// Do not handle RepoContainsPredicate if operates on content
+			if p.Content != "" {
+				return
+			}
+
+			pattern = p.File
 		}
 
 		if negated {
-			exclude = append(exclude, p.Pattern)
+			exclude = append(exclude, pattern)
 		} else {
-			include = append(include, p.Pattern)
+			include = append(include, pattern)
 		}
 	})
 
