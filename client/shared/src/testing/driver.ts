@@ -830,7 +830,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         }
     } else {
         // Chrome
-        args.push('--window-size=1280,1024')
+        args.push('--window-size=1680,1050')
         if (process.getuid() === 0) {
             // TODO don't run as root in CI
             console.warn('Running as root, disabling sandbox')

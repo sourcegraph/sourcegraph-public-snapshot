@@ -598,7 +598,7 @@ describe('Blob viewer', () => {
             )
         })
 
-        it('sends the latest document to extensions', async () => {
+        it.only('sends the latest document to extensions', async () => {
             // This test is meant to prevent regression of
             // "extensions receive wrong text documents": https://github.com/sourcegraph/sourcegraph/issues/14965
 

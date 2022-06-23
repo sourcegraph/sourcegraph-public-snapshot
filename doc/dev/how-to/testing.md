@@ -98,7 +98,7 @@ This utility method will let you print a URL that will visually render the DOM o
     })
 ```
 
-This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element.
 
 ## Browser-based tests
 
@@ -129,14 +129,15 @@ For end-to-end tests that failed in CI, a video of the session is available in t
 
 Our test driver accepts various environment variables that can be used to control Puppeteer's behavior:
 
-| Environment variable  | Purpose                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `BROWSER`             | Whether to run `firefox` or `chrome` (default)                   |
-| `LOG_BROWSER_CONSOLE` | Log the browser console output to the terminal (default `true`). |
-| `SLOWMO`              | Slow down each interaction by a delay (ms).                      |
-| `HEADLESS`            | Run the tests without a visible browser window.                  |
-| `DEVTOOLS`            | Whether to run all tests with the browser devtools open          |
-| `KEEP_BROWSER`        | If `true`, browser window will remain open after tests ran       |
+| Environment variable               | Purpose                                                                       |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `BROWSER`                          | Whether to run `firefox` or `chrome` (default)                                |
+| `LOG_BROWSER_CONSOLE`              | Log the browser console output to the terminal (default `true`).              |
+| `SLOWMO`                           | Slow down each interaction by a delay (ms).                                   |
+| `HEADLESS`                         | Run the tests without a visible browser window.                               |
+| `DEVTOOLS`                         | Whether to run all tests with the browser devtools open                       |
+| `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran                    |
+| `USE_STANDALONE_WEB_SERVER`        | Rely on `sg start web-standalone` to load index.html and client assets.       |
 
 #### Filtering tests
 
@@ -207,7 +208,12 @@ To run integration tests for the web app:
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
-See the above sections for how to debug the tests, which applies to both integration and end-to-end tests.
+To run a specific web app integration test for the debug mode:
+
+1. Run `sg start web-standalone` in the repository root to start serving the development version of the application.
+2. Run `yarn test-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`
+
+See the above sections for more details on how to debug the tests, which applies to both integration and end-to-end tests.
 
 #### Writing integration tests
 

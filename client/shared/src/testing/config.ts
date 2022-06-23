@@ -29,6 +29,7 @@ export interface Config {
     devtools: boolean
     headless: boolean
     keepBrowser: boolean
+    useStandaloneWebServer: boolean
     bitbucketCloudUserBobAppPassword: string
     gitHubDotComToken: string
 }
@@ -210,6 +211,12 @@ const configFields: ConfigFields = {
         envVar: 'BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD',
         description:
             'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
+    },
+    useStandaloneWebServer: {
+        envVar: 'USE_STANDALONE_WEB_SERVER',
+        parser: parseBool,
+        description: 'Rely on `sg start web-standalone` to load index.html and client assets.',
+        defaultValue: false,
     },
 }
 
