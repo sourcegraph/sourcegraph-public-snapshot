@@ -405,7 +405,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 			gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 				return test.mockStat, nil
 			}
-			t.Cleanup(integration_tests.ResetMocks)
+			t.Cleanup(inttests.ResetMocks)
 
 			w := httptest.NewRecorder()
 			r, err := http.NewRequest("GET", test.path, nil)

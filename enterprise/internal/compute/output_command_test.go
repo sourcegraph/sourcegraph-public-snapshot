@@ -75,7 +75,7 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		defer integration_tests.ResetMocks()
+		defer inttests.ResetMocks()
 		computeQuery, _ := Parse(q)
 		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {

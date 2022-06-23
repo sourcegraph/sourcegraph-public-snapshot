@@ -189,7 +189,7 @@ func TestReposGetInventory(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer func() {
-		integration_tests.ResetMocks()
+		inttests.ResetMocks()
 		gitserver.Mocks.ReadDir = nil
 	}()
 

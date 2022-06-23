@@ -36,7 +36,7 @@ func TestAdjustPath(t *testing.T) {
 
 func TestAdjustPosition(t *testing.T) {
 	t.Cleanup(func() {
-		integration_tests.Mocks.ExecReader = nil
+		inttests.Mocks.ExecReader = nil
 	})
 	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
@@ -70,7 +70,7 @@ func TestAdjustPosition(t *testing.T) {
 
 func TestAdjustPositionEmptyDiff(t *testing.T) {
 	t.Cleanup(func() {
-		integration_tests.Mocks.ExecReader = nil
+		inttests.Mocks.ExecReader = nil
 	})
 	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
@@ -97,7 +97,7 @@ func TestAdjustPositionEmptyDiff(t *testing.T) {
 
 func TestAdjustPositionReverse(t *testing.T) {
 	t.Cleanup(func() {
-		integration_tests.Mocks.ExecReader = nil
+		inttests.Mocks.ExecReader = nil
 	})
 	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
@@ -131,7 +131,7 @@ func TestAdjustPositionReverse(t *testing.T) {
 
 func TestAdjustRange(t *testing.T) {
 	t.Cleanup(func() {
-		integration_tests.Mocks.ExecReader = nil
+		inttests.Mocks.ExecReader = nil
 	})
 	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
@@ -171,7 +171,7 @@ func TestAdjustRange(t *testing.T) {
 
 func TestAdjustRangeEmptyDiff(t *testing.T) {
 	t.Cleanup(func() {
-		integration_tests.Mocks.ExecReader = nil
+		inttests.Mocks.ExecReader = nil
 	})
 	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
@@ -201,7 +201,7 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 
 func TestAdjustRangeReverse(t *testing.T) {
 	t.Cleanup(func() {
-		integration_tests.Mocks.ExecReader = nil
+		inttests.Mocks.ExecReader = nil
 	})
 	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}

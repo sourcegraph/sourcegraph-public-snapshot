@@ -103,7 +103,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	dbStore := NewMockDBStore()
 	dbStore.TransactFunc.SetDefaultReturn(dbStore, nil)

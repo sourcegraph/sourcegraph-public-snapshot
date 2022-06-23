@@ -40,7 +40,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	// (no rev/branch specified)
 	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
@@ -81,7 +81,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
 	if err != nil {
@@ -121,7 +121,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if err != nil {
@@ -161,7 +161,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return "", errors.New("x")
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	_, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if !errors.Is(err, want) {
@@ -196,7 +196,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	commit, err := NewRepos(logger, database.NewMockDB()).GetCommit(ctx, &types.Repo{Name: "a"}, want)
 	if err != nil {

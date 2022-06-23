@@ -117,7 +117,7 @@ func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
 	}
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		integration_tests.ResetMocks()
+		inttests.ResetMocks()
 	}()
 
 	RunTests(t, tests)

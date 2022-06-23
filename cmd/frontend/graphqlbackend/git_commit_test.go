@@ -156,7 +156,7 @@ func TestGitCommitFileNames(t *testing.T) {
 	}
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		integration_tests.ResetMocks()
+		inttests.ResetMocks()
 		gitserver.ResetMocks()
 	}()
 

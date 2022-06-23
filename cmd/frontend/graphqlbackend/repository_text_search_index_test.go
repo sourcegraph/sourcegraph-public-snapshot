@@ -34,7 +34,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
 		return []byte(defaultBranchRef), nil, 0, nil
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
 		repo: NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),

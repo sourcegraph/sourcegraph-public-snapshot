@@ -53,7 +53,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		}
 		return wantCommitID, nil
 	}
-	defer integration_tests.ResetMocks()
+	defer inttests.ResetMocks()
 
 	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		oid := gitdomain.OID{} // empty is OK for this test
