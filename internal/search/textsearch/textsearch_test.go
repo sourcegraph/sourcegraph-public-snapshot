@@ -98,8 +98,8 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	}
 
 	matches, common, err := RunRepoSubsetTextSearch(
-		logtest.Scoped(t),
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		repoRevs,
 		q,
@@ -128,8 +128,8 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	_, _, err = RunRepoSubsetTextSearch(
-		logtest.Scoped(t),
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/no-rev@dev"),
 		q,
@@ -199,8 +199,8 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 
 	matches, _, err := RunRepoSubsetTextSearch(
-		logtest.Scoped(t),
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
 		q,
@@ -278,8 +278,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 
 	matches, _, err := RunRepoSubsetTextSearch(
-		logtest.Scoped(t),
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		repos,
 		q,
@@ -428,8 +428,8 @@ func TestFileMatch_Limit(t *testing.T) {
 
 // RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
 func RunRepoSubsetTextSearch(
-	log log.Logger,
 	ctx context.Context,
+	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
 	repos []*search.RepositoryRevisions,
 	q query.Q,
@@ -501,7 +501,7 @@ func RunRepoSubsetTextSearch(
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
 		searcherJob := &searcher.TextSearchJob{
-			Log:             log,
+			Log:             logger,
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

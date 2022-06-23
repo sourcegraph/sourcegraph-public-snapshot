@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -48,7 +47,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 		args        args
 		wantMatches []result.Match
 		wantErr     string
-		log         log.Logger
 	}{
 		{
 			name: "read from user with no perms",
@@ -69,7 +67,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					},
 				},
 			},
-			log: logtest.Scoped(t),
 		},
 		{
 			name: "read for user with sub-repo perms",
@@ -90,7 +87,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					},
 				},
 			},
-			log: logtest.Scoped(t),
 		},
 		{
 			name: "drop match due to auth for user with sub-repo perms",
@@ -116,7 +112,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					},
 				},
 			},
-			log: logtest.Scoped(t),
 		},
 		{
 			name: "drop match due to auth for user with sub-repo perms and error",
@@ -143,7 +138,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				},
 			},
 			wantErr: "subRepoFilterFunc",
-			log:     logtest.Scoped(t),
 		},
 		{
 			name: "repo matches should be ignored",
@@ -162,7 +156,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					ID:   1,
 				},
 			},
-			log: logtest.Scoped(t),
 		},
 		{
 			name: "should filter commit matches",
@@ -175,14 +168,13 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				},
 			},
 			wantMatches: []result.Match{},
-			log:         logtest.Scoped(t),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			matches, err := applySubRepoFiltering(tt.log, ctx, checker, tt.args.matches)
+			matches, err := applySubRepoFiltering(ctx, logtest.Scoped(t), checker, tt.args.matches)
 			if diff := cmp.Diff(matches, tt.wantMatches, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
 				t.Fatal(diff)
 			}

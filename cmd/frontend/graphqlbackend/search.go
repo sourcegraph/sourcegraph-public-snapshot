@@ -37,8 +37,8 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 	}
 
 	inputs, err := run.NewSearchInputs(
-		args.log,
 		ctx,
+		args.log,
 		db,
 		args.Version,
 		args.PatternType,

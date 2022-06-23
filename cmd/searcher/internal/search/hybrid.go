@@ -92,7 +92,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 //
 // If we did not search the correct commit or we don't know if we did, ok is
 // false.
-func zoektSearchIgnorePaths(log log.Logger, ctx context.Context, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (ok bool, err error) {
+func zoektSearchIgnorePaths(logger log.Logger, ctx context.Context, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (ok bool, err error) {
 	qText, err := zoektCompile(&p.PatternInfo)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to compile query for zoekt")
@@ -104,7 +104,7 @@ func zoektSearchIgnorePaths(log log.Logger, ctx context.Context, client zoekt.St
 	))
 
 	k := zoektutil.ResultCountFactor(1, int32(p.Limit), false)
-	opts := zoektutil.SearchOpts(log, ctx, k, int32(p.Limit), nil)
+	opts := zoektutil.SearchOpts(logger, ctx, k, int32(p.Limit), nil)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}

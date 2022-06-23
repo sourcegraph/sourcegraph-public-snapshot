@@ -18,7 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	slog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -368,7 +368,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return nil
 }
 
-func structuralSearchWithZoekt(log slog.Logger, ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+func structuralSearchWithZoekt(ctx context.Context, logger sglog.Logger, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -390,7 +390,7 @@ func structuralSearchWithZoekt(log slog.Logger, ctx context.Context, p *protocol
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	zoektMatches, _, _, err := zoektSearch(log, ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil)
+	zoektMatches, _, _, err := zoektSearch(ctx, logger, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil)
 	if err != nil {
 		return err
 	}

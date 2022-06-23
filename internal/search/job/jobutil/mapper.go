@@ -230,7 +230,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 	}
 }
 
-func MapAtom(log log.Logger, j job.Job, f func(job.Job) job.Job) job.Job {
+func MapAtom(logger log.Logger, j job.Job, f func(job.Job) job.Job) job.Job {
 	mapper := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch typedJob := currentJob.(type) {
@@ -250,7 +250,7 @@ func MapAtom(log log.Logger, j job.Job, f func(job.Job) job.Job) job.Job {
 				return currentJob
 			}
 		},
-		Log: log,
+		Log: logger,
 	}
 	return mapper.Map(j)
 }

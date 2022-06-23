@@ -13,7 +13,6 @@ import (
 	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -331,8 +330,8 @@ func TestSearchResultsHydration(t *testing.T) {
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
 	searchInputs, err := run.NewSearchInputs(
-		log,
 		ctx,
+		log,
 		db,
 		"V2",
 		&literalPatternType,
@@ -525,7 +524,6 @@ func TestEvaluateAnd(t *testing.T) {
 		zoektMatches int
 		filesSkipped int
 		wantAlert    bool
-		log          log.Logger
 	}{
 		{
 			name:         "zoekt returns enough matches, exhausted",
@@ -533,7 +531,6 @@ func TestEvaluateAnd(t *testing.T) {
 			zoektMatches: 5,
 			filesSkipped: 0,
 			wantAlert:    false,
-			log:          logtest.Scoped(t),
 		},
 		{
 			name:         "zoekt returns enough matches, not exhausted",
@@ -541,7 +538,6 @@ func TestEvaluateAnd(t *testing.T) {
 			zoektMatches: 50,
 			filesSkipped: 1,
 			wantAlert:    false,
-			log:          logtest.Scoped(t),
 		},
 	}
 
@@ -573,8 +569,8 @@ func TestEvaluateAnd(t *testing.T) {
 
 			literalPatternType := "literal"
 			searchInputs, err := run.NewSearchInputs(
-				tt.log,
 				context.Background(),
+				logtest.Scoped(t),
 				db,
 				"V2",
 				&literalPatternType,
@@ -624,13 +620,11 @@ func TestSubRepoFiltering(t *testing.T) {
 		searchQuery string
 		wantCount   int
 		checker     func() authz.SubRepoPermissionChecker
-		log         log.Logger
 	}{
 		{
 			name:        "simple search without filtering",
 			searchQuery: "foo",
 			wantCount:   3,
-			log:         logtest.Scoped(t),
 		},
 		{
 			name:        "simple search with filtering",
@@ -650,7 +644,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				})
 				return checker
 			},
-			log: logtest.Scoped(t),
 		},
 	}
 
@@ -682,8 +675,8 @@ func TestSubRepoFiltering(t *testing.T) {
 
 			literalPatternType := "literal"
 			searchInputs, err := run.NewSearchInputs(
-				tt.log,
 				context.Background(),
+				logtest.Scoped(t),
 				db,
 				"V2",
 				&literalPatternType,

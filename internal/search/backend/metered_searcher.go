@@ -13,7 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	slog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -30,7 +30,7 @@ type meteredSearcher struct {
 	zoekt.Streamer
 
 	hostname string
-	log      slog.Logger
+	log      sglog.Logger
 }
 
 func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
@@ -102,7 +102,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
 		} else {
-			m.log.Warn("meteredSearcher: Error injecting new span context into map:", slog.Error(err))
+			m.log.Warn("meteredSearcher: Error injecting new span context into map:", sglog.Error(err))
 		}
 	}
 

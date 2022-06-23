@@ -11,7 +11,7 @@ import (
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
-	slog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -108,7 +108,7 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func Search(log slog.Logger, ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+func Search(ctx context.Context, logger sglog.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
@@ -117,12 +117,12 @@ func Search(log slog.Logger, ctx context.Context, db database.DB, query string, 
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
-	plan, err := predicate.Expand(log, ctx, clients, inputs, inputs.Plan)
+	plan, err := predicate.Expand(ctx, logger, clients, inputs, inputs.Plan)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	planJob, err := jobutil.NewPlanJob(log, inputs, plan)
+	planJob, err := jobutil.NewPlanJob(logger, inputs, plan)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
@@ -156,7 +156,7 @@ func Search(log slog.Logger, ctx context.Context, db database.DB, query string, 
 				}
 			}
 		}
-		planJob, err = addCodeMonitorHook(log, planJob, hook)
+		planJob, err = addCodeMonitorHook(logger, planJob, hook)
 		if err != nil {
 			return nil, errcode.MakeNonRetryable(err)
 		}
@@ -184,7 +184,7 @@ func Search(log slog.Logger, ctx context.Context, db database.DB, query string, 
 // Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
-func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
+func Snapshot(ctx context.Context, logger sglog.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
@@ -192,12 +192,12 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 	}
 
 	clients := searchClient.JobClients()
-	plan, err := predicate.Expand(log, ctx, clients, inputs, inputs.Plan)
+	plan, err := predicate.Expand(ctx, logger, clients, inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}
 
-	planJob, err := jobutil.NewPlanJob(log, inputs, plan)
+	planJob, err := jobutil.NewPlanJob(logger, inputs, plan)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
 
-	planJob, err = addCodeMonitorHook(log, planJob, hook)
+	planJob, err = addCodeMonitorHook(logger, planJob, hook)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 	// HACK(camdencheek): limit the concurrency of the commit search job
 	// because the db passed into this function might actually be a transaction
 	// and transactions cannot be used concurrently.
-	planJob = limitConcurrency(log, planJob)
+	planJob = limitConcurrency(logger, planJob)
 
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
@@ -222,8 +222,8 @@ func Snapshot(log slog.Logger, ctx context.Context, db database.DB, query string
 
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
 
-func limitConcurrency(log slog.Logger, in job.Job) job.Job {
-	return jobutil.MapAtom(log, in, func(atom job.Job) job.Job {
+func limitConcurrency(logger sglog.Logger, in job.Job) job.Job {
+	return jobutil.MapAtom(logger, in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.SearchJob:
 			jobCopy := *typedAtom
@@ -236,9 +236,9 @@ func limitConcurrency(log slog.Logger, in job.Job) job.Job {
 
 }
 
-func addCodeMonitorHook(log slog.Logger, in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
+func addCodeMonitorHook(logger sglog.Logger, in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0
-	return jobutil.MapAtom(log, in, func(atom job.Job) job.Job {
+	return jobutil.MapAtom(logger, in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.SearchJob:
 			commitSearchJobCount++

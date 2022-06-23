@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log"
-
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -33,7 +31,6 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		name                  string
 		searchContextSpec     string
 		wantSearchContextName string
-		log                   log.Logger
 	}{
 		{name: "resolve user search context", searchContextSpec: "@user", wantSearchContextName: "user"},
 		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
@@ -65,7 +62,7 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(tt.log, context.Background(), db, tt.searchContextSpec)
+			searchContext, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantSearchContextName, searchContext.Name)
 		})
@@ -84,7 +81,6 @@ func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
 		name                  string
 		searchContextSpec     string
 		wantSearchContextName string
-		log                   log.Logger
 	}{
 		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
 	}
@@ -106,7 +102,7 @@ func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(tt.log, context.Background(), db, tt.searchContextSpec)
+			searchContext, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantSearchContextName, searchContext.Name)
 		})
@@ -123,7 +119,6 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 		name              string
 		searchContextSpec string
 		wantErr           string
-		log               log.Logger
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
 		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
@@ -143,7 +138,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ResolveSearchContextSpec(tt.log, context.Background(), db, tt.searchContextSpec)
+			_, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.Error(t, err)
 			assert.Equal(t, tt.wantErr, err.Error())
 		})
@@ -162,7 +157,6 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 		name              string
 		searchContextSpec string
 		wantErr           string
-		log               log.Logger
 	}{
 		{name: "org not a member", searchContextSpec: "@org-not-member", wantErr: "namespace not found"},
 		{name: "org not a member with sub-context", searchContextSpec: "@org-not-member/random", wantErr: "namespace not found"},
@@ -185,7 +179,7 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ResolveSearchContextSpec(tt.log, context.Background(), db, tt.searchContextSpec)
+			_, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.Error(t, err)
 			assert.Equal(t, tt.wantErr, err.Error())
 		})

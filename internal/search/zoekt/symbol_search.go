@@ -7,7 +7,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
 
-	slog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -79,19 +79,19 @@ type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
-	log              slog.Logger
+	log              sglog.Logger
 }
 
 func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(s.log, ctx, clients.DB, s.RepoOpts)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, s.log, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(s.log, ctx, clients.Zoekt, s.ZoektArgs, stream)
+	err = DoZoektSearchGlobal(ctx, s.log, clients.Zoekt, s.ZoektArgs, stream)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.

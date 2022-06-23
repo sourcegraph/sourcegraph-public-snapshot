@@ -20,14 +20,14 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(log sglog.Logger, inputs *run.SearchInputs, child job.Job) job.Job {
+func NewAlertJob(logger sglog.Logger, inputs *run.SearchInputs, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &alertJob{
 		inputs: inputs,
 		child:  child,
-		log:    log,
+		log:    logger,
 	}
 }
 

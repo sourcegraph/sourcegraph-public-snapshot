@@ -203,7 +203,7 @@ func getIndexOptions(
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
-func siteConfigRevisionsRuleFunc(slog log.Logger, c *schema.SiteConfiguration) revsRuleFunc {
+func siteConfigRevisionsRuleFunc(logger log.Logger, c *schema.SiteConfiguration) revsRuleFunc {
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}
@@ -215,7 +215,7 @@ func siteConfigRevisionsRuleFunc(slog log.Logger, c *schema.SiteConfiguration) r
 		case rule.Name != "":
 			namePattern, err := regexp.Compile(rule.Name)
 			if err != nil {
-				slog.Error("error compiling regex from search.index.revisions", log.String("regex", rule.Name), log.Error(err))
+				logger.Error("error compiling regex from search.index.revisions", log.String("regex", rule.Name), log.Error(err))
 				continue
 			}
 

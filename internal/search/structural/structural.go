@@ -6,7 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	slog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -58,7 +58,7 @@ type searchRepos struct {
 	clients job.RuntimeClients
 	repoSet repoData
 	stream  streaming.Sender
-	log     slog.Logger
+	log     sglog.Logger
 }
 
 // getJob returns a function parameterized by ctx to search over repos.
@@ -112,7 +112,7 @@ func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args
 	return streamStructuralSearch(ctx, clients, args, repos, stream)
 }
 
-func runStructuralSearch(log slog.Logger, ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
+func runStructuralSearch(ctx context.Context, logger sglog.Logger, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
@@ -136,7 +136,7 @@ func runStructuralSearch(log slog.Logger, ctx context.Context, clients job.Runti
 		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			log.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			logger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
@@ -163,7 +163,7 @@ type SearchJob struct {
 	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
-	log      slog.Logger
+	log      sglog.Logger
 }
 
 func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -188,7 +188,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(s.log, ctx, clients, s.SearcherArgs, repoSet, stream)
+		return runStructuralSearch(ctx, s.log, clients, s.SearcherArgs, repoSet, stream)
 	})
 }
 

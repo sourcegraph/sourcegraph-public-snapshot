@@ -57,7 +57,7 @@ func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
 	return ParsedSearchContextSpec{SearchContextName: searchContextSpec}
 }
 
-func ResolveSearchContextSpec(slog log.Logger, ctx context.Context, db database.DB, searchContextSpec string) (sc *types.SearchContext, err error) {
+func ResolveSearchContextSpec(ctx context.Context, logger log.Logger, db database.DB, searchContextSpec string) (sc *types.SearchContext, err error) {
 	tr, ctx := trace.New(ctx, "ResolveSearchContextSpec", searchContextSpec)
 	defer func() {
 		tr.LazyPrintf("context: %+v", sc)
@@ -88,7 +88,7 @@ func ResolveSearchContextSpec(slog log.Logger, ctx context.Context, db database.
 					return nil, database.ErrNamespaceNotFound
 				}
 
-				slog.Error("ResolveSearchContextSpec.OrgMembers.GetByOrgIDAndUserID", log.Error(err))
+				logger.Error("ResolveSearchContextSpec.OrgMembers.GetByOrgIDAndUserID", log.Error(err))
 				// NOTE: We do want to return identical error as if the namespace not found in
 				// case of internal server error. Otherwise, we're leaking the information when
 				// error occurs.

@@ -60,21 +60,21 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func getSpanContext(ctx context.Context, slog log.Logger) (shouldTrace bool, spanContext map[string]string) {
+func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
 	if !ot.ShouldTrace(ctx) {
 		return false, nil
 	}
 
 	spanContext = make(map[string]string)
 	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
-		slog.Warn("Error injecting span context into map: %s", log.Error(err))
+		logger.Warn("Error injecting span context into map: %s", log.Error(err))
 		return true, nil
 	}
 	return true, spanContext
 }
 
-func SearchOpts(log log.Logger, ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx, log)
+func SearchOpts(ctx context.Context, logger log.Logger, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx, logger)
 	searchOpts := zoekt.SearchOptions{
 		Trace:       shouldTrace,
 		SpanContext: spanContext,

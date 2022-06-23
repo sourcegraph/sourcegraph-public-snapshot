@@ -106,7 +106,7 @@ type scLoader struct {
 }
 
 func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	return searchcontexts.ResolveSearchContextSpec(l.log, ctx, l.primary, name)
+	return searchcontexts.ResolveSearchContextSpec(ctx, l.log, l.primary, name)
 }
 
 func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {

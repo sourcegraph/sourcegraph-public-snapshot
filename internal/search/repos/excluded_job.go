@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	slog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -14,14 +14,14 @@ import (
 
 type ComputeExcludedJob struct {
 	RepoOpts search.RepoOptions
-	log      slog.Logger
+	log      sglog.Logger
 }
 
 func (c *ComputeExcludedJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
 
-	excluded, err := computeExcludedRepos(c.log, ctx, clients.DB, c.RepoOpts)
+	excluded, err := computeExcludedRepos(ctx, c.log, clients.DB, c.RepoOpts)
 	if err != nil {
 		return nil, err
 	}

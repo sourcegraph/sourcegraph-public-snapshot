@@ -44,8 +44,8 @@ func (inputs SearchInputs) DefaultLimit() int {
 }
 
 func NewSearchInputs(
-	log log.Logger,
 	ctx context.Context,
+	logger log.Logger,
 	db database.DB,
 	version string,
 	patternType *string,
@@ -73,7 +73,7 @@ func NewSearchInputs(
 	// Beta: create a step to replace each context in the query with its repository query if any.
 	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
-		sc, err := searchcontexts.ResolveSearchContextSpec(log, ctx, db, context)
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, logger, db, context)
 		if err != nil {
 			return "", err
 		}
