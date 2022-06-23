@@ -259,7 +259,11 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={classNames('p-3', styles.repositoryCommitPage)} ref={this.nextRepositoryCommitPageElement}>
+            <div
+                data-testid="repository-commit-page"
+                className={classNames('p-3', styles.repositoryCommitPage)}
+                ref={this.nextRepositoryCommitPageElement}
+            >
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
