@@ -3,7 +3,6 @@ package jobutil
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -466,21 +465,15 @@ type generatedSearchJob struct {
 }
 
 func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
-	var resultCount int
-	var mux sync.Mutex
-	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		mux.Lock()
-		resultCount += event.Results.ResultCount()
-		mux.Unlock()
-		parentStream.Send(event)
-	})
-
+	stream := streaming.NewResultCountingStream(parentStream)
 	alert, err := g.Child.Run(ctx, clients, stream)
+
+	resultCount := stream.Count()
 	if resultCount == 0 {
 		return nil, nil
 	}
 
-	resultCountString := strconv.Itoa(resultCount)
+	var resultCountString string
 	if resultCount == limits.DefaultMaxSearchResultsStreaming {
 		resultCountString = fmt.Sprintf("%d+ results", resultCount)
 	} else if resultCount == 1 {
