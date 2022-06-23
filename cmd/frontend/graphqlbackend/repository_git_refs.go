@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type refsArgs struct {
@@ -40,7 +39,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	db := r.db
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = git.ListBranches(ctx, db, r.RepoName(), git.BranchesOptions{
+		branches, err = gitserver.NewClient(db).ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to

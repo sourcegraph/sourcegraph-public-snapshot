@@ -2,20 +2,19 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
 	depsHomebrew      = "Homebrew"
 	depsBaseUtilities = "Base utilities"
+	depsDocker        = "Docker"
+	depsCloneRepo     = "Clone repositories"
 )
 
 // Mac declares Mac dependencies.
@@ -93,23 +92,6 @@ var Mac = []category{
 				Fix:         cmdFix(`brew install nss`),
 			},
 			{
-				Name:    "docker",
-				Enabled: disableInCI(), // Very wonky in CI
-				Check: checkAction(check.Combine(
-					check.WrapErrMessage(check.InPath("docker"),
-						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
-				)),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, `brew install --cask docker`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-
-					cio.Verbose("Docker installed - attempting to start docker")
-
-					return usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
-				},
-			},
-			{
 				Name:  "asdf",
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
@@ -126,6 +108,29 @@ var Mac = []category{
 				Description: "Required for yarn installation.",
 				Check:       checkAction(check.InPath("gpg")),
 				Fix:         cmdFix("brew install gpg"),
+			},
+		},
+	},
+	{
+		Name:      depsDocker,
+		Enabled:   disableInCI(), // Very wonky in CI
+		DependsOn: []string{depsHomebrew},
+		Checks: []*dependency{
+			{
+				Name: "docker",
+				Check: checkAction(check.Combine(
+					check.WrapErrMessage(check.InPath("docker"),
+						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
+				)),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := usershell.Run(ctx, `brew install --cask docker`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+
+					cio.Write("Docker installed - attempting to start docker")
+
+					return usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
+				},
 			},
 		},
 	},
@@ -298,32 +303,8 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 					if err := usershell.Run(ctx, "brew install --cask 1password/tap/1password-cli").StreamLines(cio.Verbose); err != nil {
 						return err
 					}
-					if cio.Input == nil {
-						return errors.New("interactive input required")
-					}
 
-					cio.Write("Enter secret key:")
-					var key string
-					if _, err := fmt.Fscan(cio.Input, &key); err != nil {
-						return err
-					}
-					cio.Write("Enter account email:")
-					var email string
-					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
-						return err
-					}
-					cio.Write("Enter account password:")
-					var password string
-					if _, err := fmt.Fscan(cio.Input, &password); err != nil {
-						return err
-					}
-
-					return usershell.Command(ctx,
-						"op account add --signin --address team-sourcegraph.1password.com --email", email).
-						Env(map[string]string{"OP_SECRET_KEY": key}).
-						Input(strings.NewReader(password)).
-						Run().
-						StreamLines(cio.Verbose)
+					return opLoginFix()(ctx, cio, args)
 				},
 			},
 		},

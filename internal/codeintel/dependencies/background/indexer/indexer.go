@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -33,7 +32,6 @@ var lockfileIndexingEnabled = conf.CodeIntelLockfileIndexingEnabled
 
 func (i *indexer) Handle(ctx context.Context) error {
 	if !lockfileIndexingEnabled() {
-		fmt.Println("not handle")
 		return nil
 	}
 

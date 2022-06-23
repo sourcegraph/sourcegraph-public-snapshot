@@ -146,6 +146,8 @@ sg ci build --help
 				Aliases: []string{"v"},
 				Usage:   "Open build page in browser",
 			},
+			&ciBuildFlag,
+			&ciBranchFlag,
 		},
 		Action: func(ctx *cli.Context) error {
 			client, err := bk.NewClient(ctx.Context, std.Out.Output)
@@ -382,6 +384,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 `,
 		Flags: []cli.Flag{
 			&ciBuildFlag,
+			&ciBranchFlag,
 			&cli.StringFlag{
 				Name:    "job",
 				Aliases: []string{"j"},

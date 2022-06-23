@@ -65,7 +65,7 @@ func (q *ProposedQuery) QueryString() string {
 		case query.SearchTypeStructural:
 			return q.Query + " patternType:structural"
 		case query.SearchTypeLucky:
-			return q.Query + " patternType:lucky"
+			return q.Query
 		default:
 			panic("unreachable")
 		}

@@ -176,6 +176,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),
+		selectRepositoriesForLockfileIndexScan:      op("SelectRepositoriesForLockfileIndexScan"),
 		softDeleteExpiredUploads:                    op("SoftDeleteExpiredUploads"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),
 		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),

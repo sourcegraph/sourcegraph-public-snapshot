@@ -4,7 +4,7 @@ import { TickLabelProps, TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
 import { Text, TextProps } from '@visx/text'
 
-import { formatXLabel } from '../../utils'
+import { formatXLabel } from '../../../components/line-chart/utils'
 
 export const getTickYProps: TickLabelProps<number> = (value, index, values): Partial<TextProps> => ({
     dx: '-0.25em',
