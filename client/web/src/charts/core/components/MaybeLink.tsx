@@ -3,7 +3,7 @@ import React from 'react'
 import { Link } from '@sourcegraph/wildcard'
 
 interface MaybeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-    to?: string | void
+    to?: string | void | null
 }
 
 /** Wraps the children in a link if to (link href) prop is passed. */

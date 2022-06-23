@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { gql } from '@apollo/client'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -18,6 +19,7 @@ import { HomePanelsFetchMore, RECENT_SEARCHES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
 
@@ -68,10 +70,12 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_SEARCHES_TO_LOAD)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
     const processedResults = useMemo(() => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)), [
         searchEventLogs,
     ])
+    const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
@@ -149,10 +153,12 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
         const newItemsToLoad = itemsToLoad + RECENT_SEARCHES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
+        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentSearches: newItemsToLoad,
         })
 
+        setIsLoadingMore(false)
         if (data === undefined) {
             return
         }
@@ -181,7 +187,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                         <tr key={index} className={styles.resultsTableRow}>
                             <td>
                                 <small className={styles.recentQuery}>
-                                    <Link to={recentSearch.url} onClick={logSearchClicked}>
+                                    <Link to={recentSearch.url} onClick={logSearchClicked} ref={getItemRef(index)}>
                                         <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
                                     </Link>
                                 </small>
@@ -193,7 +199,10 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                     ))}
                 </tbody>
             </table>
-            {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent searches</VisuallyHidden>}
+            {searchEventLogs?.pageInfo.hasNextPage && (
+                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
+            )}
         </>
     )
 

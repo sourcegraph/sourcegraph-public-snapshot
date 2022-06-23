@@ -155,7 +155,7 @@ func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next
 				ProposedQuery: &search.ProposedQuery{
 					Description: rules[i].description,
 					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLiteral,
+					PatternType: query.SearchTypeLucky,
 				},
 			}
 
