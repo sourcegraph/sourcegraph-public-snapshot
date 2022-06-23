@@ -1,6 +1,6 @@
 import React from 'react'
 
-import LinkIcon from 'mdi-react/LinkIcon'
+import { mdiLink } from '@mdi/js'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -21,7 +21,7 @@ export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCas
             placement="right"
         >
             <Link to={quickLink.url} className={styles.sidebarSectionListItem}>
-                <Icon aria-hidden={true} className="pr-1 flex-shrink-0" as={LinkIcon} />
+                <Icon aria-hidden={true} className="pr-1 flex-shrink-0" svgPath={mdiLink} />
                 {quickLink.name}
             </Link>
         </Tooltip>
