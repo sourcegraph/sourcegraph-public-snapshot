@@ -49,8 +49,9 @@ import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
+import { DidYouMean } from '../suggestion/DidYouMean'
+import { LuckySearch } from '../suggestion/LuckySearch'
 
-import { DidYouMean, ServerQueryAssist } from './DidYouMean'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
@@ -404,7 +405,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 
-            {results?.alert?.kind && <ServerQueryAssist alert={results?.alert} />}
+            {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
 
             <div className={styles.streamingSearchResultsContainer}>
                 <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
