@@ -349,10 +349,11 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
+			bk.Cmd("yarn build-storybook"),
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded --only-changed -d client/storybook/storybook-static/"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {

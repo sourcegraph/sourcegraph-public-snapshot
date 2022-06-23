@@ -86,6 +86,7 @@ export const PageSelector: React.FunctionComponent<React.PropsWithChildren<PageS
     return (
         <nav>
             <ul ref={ref} className={classNames(styles.list, className)}>
+                <p>Testing breaking change</p>
                 {pages.map((page, index) => {
                     const key = page.type === 'page' ? page.content : `${page.type}${index}`
                     if (page.type === 'previous' || page.type === 'next') {
