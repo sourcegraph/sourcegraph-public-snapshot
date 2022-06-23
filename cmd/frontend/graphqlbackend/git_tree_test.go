@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -117,7 +117,7 @@ func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
 	}
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		git.ResetMocks()
+		integration_tests.ResetMocks()
 	}()
 
 	RunTests(t, tests)

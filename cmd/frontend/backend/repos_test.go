@@ -20,12 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -189,7 +189,7 @@ func TestReposGetInventory(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer func() {
-		git.ResetMocks()
+		integration_tests.ResetMocks()
 		gitserver.Mocks.ReadDir = nil
 	}()
 

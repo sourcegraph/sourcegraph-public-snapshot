@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func Test_output(t *testing.T) {
@@ -75,7 +75,7 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		defer git.ResetMocks()
+		defer integration_tests.ResetMocks()
 		computeQuery, _ := Parse(q)
 		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {

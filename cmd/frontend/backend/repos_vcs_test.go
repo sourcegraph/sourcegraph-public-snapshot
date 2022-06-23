@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -40,7 +40,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer git.ResetMocks()
+	defer integration_tests.ResetMocks()
 
 	// (no rev/branch specified)
 	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
@@ -81,7 +81,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer git.ResetMocks()
+	defer integration_tests.ResetMocks()
 
 	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
 	if err != nil {
@@ -121,7 +121,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer git.ResetMocks()
+	defer integration_tests.ResetMocks()
 
 	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if err != nil {
@@ -161,7 +161,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 		calledVCSRepoResolveRevision = true
 		return "", errors.New("x")
 	}
-	defer git.ResetMocks()
+	defer integration_tests.ResetMocks()
 
 	_, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if !errors.Is(err, want) {
@@ -196,7 +196,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
 	}
-	defer git.ResetMocks()
+	defer integration_tests.ResetMocks()
 
 	commit, err := NewRepos(logger, database.NewMockDB()).GetCommit(ctx, &types.Repo{Name: "a"}, want)
 	if err != nil {

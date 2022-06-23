@@ -1,4 +1,4 @@
-package git
+package integration_tests
 
 import (
 	"bytes"

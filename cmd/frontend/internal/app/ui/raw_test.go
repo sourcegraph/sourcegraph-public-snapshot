@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -252,7 +252,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{}, os.ErrNotExist
 		}
-		defer git.ResetMocks()
+		defer integration_tests.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -285,7 +285,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 			}, nil
 		}
 
-		defer git.ResetMocks()
+		defer integration_tests.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -322,7 +322,7 @@ c.go`
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		}
 
-		defer git.ResetMocks()
+		defer integration_tests.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -359,7 +359,7 @@ c.go`
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		}
 
-		defer git.ResetMocks()
+		defer integration_tests.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()
