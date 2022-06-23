@@ -13,6 +13,7 @@ import {
     RangeSetBuilder,
     MapMode,
     ChangeSpec,
+    Compartment,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -291,6 +292,7 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
         // re-render when the ref is attached, but we need that so that
         // `useCodeMirror` is called again and the editor is actually created.
         const [container, setContainer] = useState<HTMLDivElement | null>(null)
+        const externalExtensions = useMemo(() => new Compartment(), [])
 
         const editor = useCodeMirror(
             container,
@@ -306,13 +308,15 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
-                    ...extensions,
+                    externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
                 // transaction since there is no need to re-initialize all
                 // extensions
+                // The extensions passed in via `extensions` are update via a
+                // compartment
                 // eslint-disable-next-line react-hooks/exhaustive-deps
-                [isLightTheme, extensions]
+                [isLightTheme, externalExtensions]
             )
         )
 
@@ -329,6 +333,11 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
         useEffect(() => {
             editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
         }, [editor, patternType, interpretComments])
+
+        // Update external extensions if they changed
+        useEffect(() => {
+            editor?.dispatch({ effects: [externalExtensions.reconfigure(extensions)] })
+        }, [editor, externalExtensions, extensions])
 
         return (
             <div

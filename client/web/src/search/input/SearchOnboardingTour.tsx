@@ -1,7 +1,7 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -34,6 +34,8 @@ const tourOptions: Shepherd.Tour.TourOptions = {
         },
     },
 }
+
+const EMPTY_TOKENS: Token[] = []
 
 /**
  * generateStep creates the content for the search tour card. All steps that just contain
@@ -394,29 +396,37 @@ export const useSearchOnboardingTour = ({
 
     // On query or step changes, advance the Tour if appropriate.
     const currentStep = useCurrentStep(tour)
-    const queryTokens = useMemo((): Token[] => {
+    const currentStepRef = useRef<TourStepID | undefined>()
+    const queryTokens = useRef<Token[]>([])
+
+    currentStepRef.current = currentStep
+
+    useEffect(() => {
+        if (!tour.isActive()) {
+            queryTokens.current = EMPTY_TOKENS
+        }
         const scannedQuery = scanSearchQuery(queryState.query)
-        return scannedQuery.type === 'success' ? scannedQuery.term : []
-    }, [queryState.query])
+        queryTokens.current = scannedQuery.type === 'success' ? scannedQuery.term : EMPTY_TOKENS
+    }, [tour, queryState.query])
+
     useEffect(() => {
         if (!tour.isActive()) {
             return
         }
-
-        if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
+        if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens.current)) {
             tour.show('add-query-term')
-        } else if (shouldShowSubmitSearch(currentStep, queryTokens)) {
+        } else if (shouldShowSubmitSearch(currentStep, queryTokens.current)) {
             tour.show('submit-search')
         }
-    }, [queryTokens, tour, currentStep])
+    }, [queryState.query, queryTokens, tour, currentStep])
 
     // When a completion item is selected,
     // advance the repo or lang step if appropriate.
     const onCompletionItemSelected = useCallback(() => {
-        if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
+        if (shouldAdvanceLangOrRepoStep(currentStepRef.current, queryTokens.current)) {
             tour.show('add-query-term')
         }
-    }, [queryTokens, tour, currentStep])
+    }, [tour, currentStepRef, queryTokens])
 
     return {
         onCompletionItemSelected,

@@ -106,11 +106,27 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                 */}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
                     <LazyMonacoQueryInput
-                        {...props}
-                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
+                        preventNewLine={true}
+                        autoFocus={props.autoFocus}
+                        caseSensitive={props.caseSensitive}
+                        editorComponent={props.editorComponent}
+                        fetchStreamSuggestions={props.fetchStreamSuggestions}
+                        globbing={props.globbing}
+                        interpretComments={props.interpretComments}
+                        isLightTheme={props.isLightTheme}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        keyboardShortcutForFocus={props.keyboardShortcutForFocus}
+                        onChange={props.onChange}
+                        onCompletionItemSelected={props.onCompletionItemSelected}
+                        onFocus={props.onFocus}
+                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                        onSubmit={props.onSubmit}
+                        patternType={props.patternType}
+                        queryState={props.queryState}
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                     />
                     <Toggles
                         patternType={props.patternType}
