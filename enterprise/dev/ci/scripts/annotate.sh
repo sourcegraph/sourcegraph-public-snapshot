@@ -83,6 +83,3 @@ if [ "$MARKDOWN" = true ]; then
 else
   printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
-
-echo -e "<!-- HTML TEST -->"
-echo -e "<!--${BODY}-->"
