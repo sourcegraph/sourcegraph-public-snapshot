@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
@@ -1048,85 +1047,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	}
 }
 
-func TestLoadRemoteRepo(t *testing.T) {
-	ctx := context.Background()
-	targetRepo := &types.Repo{}
-
-	t.Run("forks disabled", func(t *testing.T) {
-		t.Run("unforked changeset", func(t *testing.T) {
-			// Set up a changeset source that will panic if any methods are invoked.
-			css := NewStrictMockChangesetSource()
-
-			// This should succeed, since loadRemoteRepo() should early return with
-			// forks disabled.
-			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-				ForkNamespace: nil,
-			})
-			assert.Nil(t, err)
-			assert.Same(t, targetRepo, remoteRepo)
-		})
-
-		t.Run("forked changeset", func(t *testing.T) {
-			forkNamespace := "fork"
-			want := &types.Repo{}
-			css := NewMockForkableChangesetSource()
-			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
-
-			// This should succeed, since loadRemoteRepo() should early return with
-			// forks disabled.
-			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-				ForkNamespace: &forkNamespace,
-			})
-			assert.Nil(t, err)
-			assert.Same(t, want, remoteRepo)
-			mockassert.CalledOnce(t, css.GetNamespaceForkFunc)
-		})
-	})
-
-	t.Run("forks enabled", func(t *testing.T) {
-		forkNamespace := "<user>"
-
-		t.Run("unforkable changeset source", func(t *testing.T) {
-			css := NewMockChangesetSource()
-
-			repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-				ForkNamespace: &forkNamespace,
-			})
-			assert.Nil(t, repo)
-			assert.ErrorIs(t, err, errChangesetSourceCannotFork)
-		})
-
-		t.Run("forkable changeset source", func(t *testing.T) {
-			t.Run("success", func(t *testing.T) {
-				want := &types.Repo{}
-				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(want, nil)
-
-				have, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-					ForkNamespace: &forkNamespace,
-				})
-				assert.Nil(t, err)
-				assert.Same(t, want, have)
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
-			})
-
-			t.Run("error from the source", func(t *testing.T) {
-				want := errors.New("source error")
-				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(nil, want)
-
-				repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-					ForkNamespace: &forkNamespace,
-				})
-				assert.Nil(t, repo)
-				assert.Same(t, want, err)
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
-			})
-		})
-	})
-}
-
 func TestDecorateChangesetBody(t *testing.T) {
+	ctx := context.Background()
+
 	ns := database.NewMockNamespaceStore()
 	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
@@ -1143,41 +1066,34 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByBatchChange: 1234})
 
-	body := "body"
-	rcs := &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
-	}
+	wantLink := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"
 
-	body = "body body ${{ batch_change_link }} body body"
-	rcs = &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := "body body [_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change) body body"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
-	}
-
-	body = "${{ batch_change_link }}\n\nbody body"
-	rcs = &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
-	}
-
-	// Spacing shouldn't matter.
-	body = "${{     batch_change_link}}\n\nbody body"
-	rcs = &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	for name, tc := range map[string]struct {
+		body string
+		want string
+	}{
+		"no template": {
+			body: "body",
+			want: "body\n\n" + wantLink,
+		},
+		"embedded template": {
+			body: "body body ${{ batch_change_link }} body body",
+			want: "body body " + wantLink + " body body",
+		},
+		"leading template": {
+			body: "${{ batch_change_link }}\n\nbody body",
+			want: wantLink + "\n\nbody body",
+		},
+		"weird spacing": {
+			body: "${{     batch_change_link}}\n\nbody body",
+			want: wantLink + "\n\nbody body",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have, err := decorateChangesetBody(ctx, fs, ns, cs, tc.body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want, have)
+		})
 	}
 }
 
