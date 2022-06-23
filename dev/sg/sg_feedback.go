@@ -86,7 +86,7 @@ func gatherFeedback(ctx *cli.Context, out *std.Output, in io.Reader) (string, st
 		// if the userTitle matches anyone of these words, don't add it to the final title
 		break
 	default:
-		title = title + userTitle
+		title = title + " - " + userTitle
 	}
 
 	return title, strings.TrimSpace(string(body)), nil
