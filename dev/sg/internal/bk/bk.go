@@ -163,7 +163,7 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 
 type AnnotationArtifact struct {
 	buildkite.Artifact
-	AnnotationMarkdown string
+	Markdown string
 }
 
 func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
@@ -174,17 +174,16 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 
 	var result JobAnnotations = make(JobAnnotations, 0)
 	for _, a := range artifacts {
-		if strings.Contains(*a.Filename, ".term") {
+		if strings.Contains(*a.Filename, "-term.md") {
 			var buf bytes.Buffer
 			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
 			if err != nil {
 				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
 			}
-			fmt.Println("-------- ANNOTATION --------")
 
 			result[*a.JobID] = AnnotationArtifact{
-				Artifact:           a,
-				AnnotationMarkdown: buf.String(),
+				Artifact: a,
+				Markdown: buf.String(),
 			}
 		}
 	}

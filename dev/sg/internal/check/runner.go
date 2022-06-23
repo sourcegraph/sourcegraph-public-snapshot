@@ -301,7 +301,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					// Slightly different formatting for each destination
 					terminalSummary := fmt.Sprintf("**%s**\n\n%s", check.Name, check.cachedCheckErr)
 					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
-					rawSummary := terminalSummary
 
 					// Render additional details
 					if check.cachedCheckOutput != "" {
@@ -310,14 +309,13 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 						terminalSummary += outputMarkdown
 						annotationSummary += outputMarkdown
-						rawSummary += strings.TrimSpace(check.cachedCheckOutput)
 					}
 
 					r.Output.WriteMarkdown(terminalSummary)
 
 					if r.GenerateAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)
-						generateTermAnnotation(category.Name, check.Name, rawSummary)
+						generateTermAnnotation(category.Name, check.Name, terminalSummary)
 					}
 				}
 			}

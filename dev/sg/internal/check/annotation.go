@@ -34,6 +34,6 @@ func generateTermAnnotation(category string, check string, content string) {
 	os.MkdirAll(annotationsDir, os.ModePerm)
 
 	// write annotation
-	path := filepath.Join(annotationsDir, fmt.Sprintf("%s: %s.term", category, check))
+	path := filepath.Join(annotationsDir, fmt.Sprintf("%s: %s-term.md", category, check))
 	_ = os.WriteFile(path, []byte(content+"\n"), os.ModePerm)
 }

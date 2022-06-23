@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -736,6 +738,23 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 			return errors.Newf("polling timeout reached")
 		case <-ctx.Done():
 			return ctx.Err()
+		}
+	}
+}
+
+func markdownTest() {
+	fmt.Println("---- MARKDOWN TEST -----")
+	wd, _ := os.Getwd()
+
+	dir := filepath.Join(wd, "annotations")
+	files, _ := ioutil.ReadDir(dir)
+	for _, i := range files {
+		fmt.Println(i.Name())
+		if strings.Contains(i.Name(), "-term.md") {
+			p := filepath.Join(dir, i.Name())
+			data, _ := ioutil.ReadFile(p)
+
+			std.Out.WriteMarkdown(string(data))
 		}
 	}
 }
