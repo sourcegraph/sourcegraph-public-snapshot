@@ -20,7 +20,7 @@ export interface SearchContextNodeProps {
 export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
 }: SearchContextNodeProps) => (
-    <li className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>
+    <li className={classNames('py-3', styles.searchContextNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
                 <Link to={`/contexts/${node.spec}`}>

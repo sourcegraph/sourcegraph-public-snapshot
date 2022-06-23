@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -19,7 +18,7 @@ type GitService interface {
 }
 
 type LockfilesService interface {
-	ListDependencies(ctx context.Context, repo api.RepoName, rev string) ([]reposource.PackageDependency, error)
+	ListDependencies(ctx context.Context, repo api.RepoName, rev string) ([]*lockfiles.Result, error)
 }
 
 type Syncer interface {

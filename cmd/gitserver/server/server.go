@@ -36,6 +36,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -248,7 +249,7 @@ type Server struct {
 
 	// rpsLimiter limits the remote code host git operations done per second
 	// per gitserver instance
-	rpsLimiter *rate.Limiter
+	rpsLimiter *ratelimit.InstrumentedLimiter
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
@@ -338,7 +339,7 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	s.rpsLimiter = rate.NewLimiter(rate.Inf, 10)
+	s.rpsLimiter = ratelimit.NewInstrumentedLimiter("RpsLimiter", rate.NewLimiter(rate.Inf, 10))
 	setRPSLimiter := func() {
 		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
 			// As a special case, -1 means no limiting
@@ -587,7 +588,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	if perSecond < 0 {
 		perSecond = 1
 	}
-	limiter := rate.NewLimiter(rate.Limit(perSecond), perSecond)
+	limiter := ratelimit.NewInstrumentedLimiter("SyncRepoState", rate.NewLimiter(rate.Limit(perSecond), perSecond))
 
 	// The rate limiter doesn't allow writes that are larger than the burst size
 	// which we've set to perSecond.

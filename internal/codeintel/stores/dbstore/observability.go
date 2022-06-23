@@ -21,7 +21,6 @@ type operations struct {
 	deleteOverlappingDumps                      *observation.Operation
 	deleteUploadByID                            *observation.Operation
 	deleteUploadsStuckUploading                 *observation.Operation
-	deleteUploadsWithoutRepository              *observation.Operation
 	dequeue                                     *observation.Operation
 	dequeueIndex                                *observation.Operation
 	dirtyRepositories                           *observation.Operation
@@ -73,6 +72,7 @@ type operations struct {
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
 	selectRepositoriesForIndexScan              *observation.Operation
 	selectRepositoriesForRetentionScan          *observation.Operation
+	selectRepositoriesForLockfileIndexScan      *observation.Operation
 	softDeleteExpiredUploads                    *observation.Operation
 	updateCommitedAt                            *observation.Operation
 	updateConfigurationPolicy                   *observation.Operation
@@ -124,7 +124,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		deleteOverlappingDumps:               op("DeleteOverlappingDumps"),
 		deleteUploadByID:                     op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
-		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
 		dequeue:                              op("Dequeue"),
 		dequeueIndex:                         op("DequeueIndex"),
 		dirtyRepositories:                    op("DirtyRepositories"),
@@ -177,6 +176,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),
+		selectRepositoriesForLockfileIndexScan:      op("SelectRepositoriesForLockfileIndexScan"),
 		softDeleteExpiredUploads:                    op("SoftDeleteExpiredUploads"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),
 		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),

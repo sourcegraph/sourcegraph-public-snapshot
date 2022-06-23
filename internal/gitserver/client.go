@@ -173,6 +173,9 @@ type Client interface {
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 
+	// ArchiveReader streams back the file contents of an archived git repo.
+	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
+
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 	// to abort processing further results.
@@ -208,6 +211,12 @@ type Client interface {
 
 	// ListGitolite lists Gitolite repositories.
 	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+
+	// ListRefs returns a list of all refs in the repository.
+	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
+
+	// ListBranches returns a list of all branches in the repository.
+	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error)
 
 	// MergeBase returns the merge base commit for the specified commits.
 	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)

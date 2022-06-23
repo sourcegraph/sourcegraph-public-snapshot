@@ -2,7 +2,7 @@ import React, { FocusEventHandler, MouseEventHandler } from 'react'
 
 import { GlyphDot } from '@visx/glyph'
 
-import { MaybeLink } from '../../MaybeLink'
+import { MaybeLink } from '../../../core'
 
 interface PointGlyphProps {
     top: number

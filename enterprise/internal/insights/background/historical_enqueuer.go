@@ -15,6 +15,7 @@ import (
 	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -226,7 +227,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
 	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
-	limiter := rate.NewLimiter(getRateLimit(), 1)
+	limiter := ratelimit.NewInstrumentedLimiter("HistoricalEnqueuer", rate.NewLimiter(getRateLimit(), 1))
 
 	return backfillAnalyzer{
 		statistics:         statistics,
@@ -351,7 +352,7 @@ type backfillAnalyzer struct {
 	gitFindRecentCommit func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 	statistics          statistics
 	frameFilter         compression.DataFrameFilter
-	limiter             *rate.Limiter
+	limiter             *ratelimit.InstrumentedLimiter
 	db                  database.DB
 }
 
