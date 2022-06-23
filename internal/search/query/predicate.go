@@ -237,8 +237,8 @@ func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
 func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
 func (f *RepoContainsFilePredicate) Plan(parent Basic) (Plan, error) {
-	// Handled by repo search
-	return nil, nil
+	contains := RepoContainsPredicate{File: f.Pattern, Content: ""}
+	return contains.Plan(parent)
 }
 
 /* repo:contains.commit.after(...) */
