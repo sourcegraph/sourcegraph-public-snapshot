@@ -102,8 +102,8 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
     return (
         <ActionEditor
             title={
-                <div className="d-flex align-items-center">
-                    Send Slack message to channel <ProductStatusBadge className="ml-1" status="beta" />{' '}
+                <div>
+                    Send Slack message to channel <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
             label="Send Slack message to channel"

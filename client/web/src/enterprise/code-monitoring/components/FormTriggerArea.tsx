@@ -324,7 +324,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
                             <div
                                 className={classNames(
@@ -350,7 +350,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                             )}
                         </div>
                         {triggerCompleted && (
-                            <Button variant="link" as="div">
+                            <Button variant="link" as="div" className="p-0">
                                 Edit
                             </Button>
                         )}

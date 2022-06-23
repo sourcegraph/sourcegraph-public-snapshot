@@ -230,7 +230,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
                             <div className={classNames('font-weight-bold', !completed && styles.cardLink)}>{title}</div>
                             {completed ? (
