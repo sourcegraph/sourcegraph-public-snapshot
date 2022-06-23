@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Card, Link, Icon } from '@sourcegraph/wildcard'
 
@@ -64,7 +64,7 @@ export const CtaAlert: React.FunctionComponent<React.PropsWithChildren<CtaAlertP
             className="position-absolute cursor-pointer"
             style={{ top: '1rem', right: '1rem' }}
             onClick={props.onClose}
-            as={CloseIcon}
+            svgPath={mdiClose}
             aria-label="Close"
         />
     </Card>

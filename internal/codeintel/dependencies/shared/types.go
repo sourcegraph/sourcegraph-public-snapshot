@@ -2,6 +2,7 @@ package shared
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
@@ -67,4 +68,49 @@ func SerializePackageDependency(dep reposource.PackageDependency) PackageDepende
 		PackageSyntaxValue:     dep.PackageSyntax(),
 		PackageVersionValue:    dep.PackageVersion(),
 	}
+}
+
+type DependencyGraph interface {
+	Roots() []PackageDependency
+	AllEdges() [][]PackageDependency
+	Empty() bool
+}
+
+var _ DependencyGraph = DependencyGraphLiteral{}
+
+func TestDependencyGraphLiteral(roots []PackageDependency, edges [][]PackageDependency) DependencyGraph {
+	return DependencyGraphLiteral{Edges: edges, RootPkgs: roots}
+}
+
+type DependencyGraphLiteral struct {
+	RootPkgs []PackageDependency
+	Edges    [][]PackageDependency
+}
+
+func (dg DependencyGraphLiteral) AllEdges() [][]PackageDependency { return dg.Edges }
+func (dg DependencyGraphLiteral) Roots() []PackageDependency      { return dg.RootPkgs }
+func (dg DependencyGraphLiteral) Empty() bool                     { return len(dg.RootPkgs) == 0 }
+
+func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph {
+	if graph == nil {
+		return nil
+	}
+
+	var (
+		edges [][]PackageDependency
+		roots []PackageDependency
+	)
+
+	for _, edge := range graph.AllEdges() {
+		edges = append(edges, []PackageDependency{
+			SerializePackageDependency(edge.Source),
+			SerializePackageDependency(edge.Target),
+		})
+	}
+
+	for _, root := range graph.Roots() {
+		roots = append(roots, SerializePackageDependency(root))
+	}
+
+	return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}
 }

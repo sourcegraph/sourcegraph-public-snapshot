@@ -1,14 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiPuzzle, mdiConsole, mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
@@ -184,7 +181,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <Icon as={PuzzleIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiPuzzle} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -385,7 +382,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
     const MenuDropdownIcon = (): JSX.Element => (
-        <Icon as={isOpen ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+        <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
     )
     return (
         <Button
@@ -397,7 +394,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
             variant={variant}
             aria-label="Command list"
         >
-            <Icon as={ConsoleIcon} size="md" aria-hidden={true} />
+            <Icon size="md" aria-hidden={true} svgPath={mdiConsole} />
 
             {showCaret && <MenuDropdownIcon />}
 

@@ -1,12 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper } from '@mdi/js'
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
-import BlockHelperIcon from 'mdi-react/BlockHelperIcon'
-import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
-import LockIcon from 'mdi-react/LockIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable } from 'rxjs'
 
@@ -159,13 +155,13 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             <section className="d-flex">
                 <div className={styles.splitSectionPart}>
                     <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
-                        <Icon className="mr-2" as={EarthIcon} aria-hidden={true} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiEarth} />
                         Sourcegraph Cloud
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
                     <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
-                        <Icon className="mr-2" as={BookOpenPageVariantIcon} aria-hidden={true} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiBookOpenPageVariant} />
                         Documentation
                     </Link>
                 </div>
@@ -213,7 +209,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
     return (
         <section className={classNames('bg-2', styles.section)}>
             <H4>
-                <Icon aria-hidden={true} className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
+                <Icon aria-hidden={true} className="mr-2" svgPath={isDefaultURL ? mdiLock : mdiBlockHelper} />
                 {isDefaultURL ? 'Private repository' : 'Repository not found'}
             </H4>
             <Text className="mb-0">
@@ -263,7 +259,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
         <H4>
-            <Icon aria-hidden={true} className="mr-2" as={CheckCircleOutlineIcon} />
+            <Icon aria-hidden={true} className="mr-2" svgPath={mdiCheckCircleOutline} />
             You're on Sourcegraph Cloud
         </H4>
         <Text>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</Text>

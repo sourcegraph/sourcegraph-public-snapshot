@@ -97,8 +97,6 @@ describe('Search onboarding', () => {
                 assert.strictEqual(inputContents, 'lang:')
 
                 await driver.page.waitForSelector('.test-tour-step-2')
-                // Refocus editor after loosing focus from clicking the tour link
-                await editor.focus()
                 await driver.page.keyboard.type('typesc')
                 await editor.waitForSuggestion()
                 await driver.page.keyboard.press('Tab')
@@ -120,8 +118,6 @@ describe('Search onboarding', () => {
                 assert.strictEqual(inputContents, 'repo:')
 
                 await driver.page.waitForSelector('.test-tour-step-2')
-                // Refocus editor after loosing focus from clicking the tour link
-                await editor.focus()
                 await driver.page.keyboard.type('sourcegraph ')
                 await driver.page.waitForSelector('.test-tour-step-3')
                 await driver.page.keyboard.type('test')
@@ -138,8 +134,6 @@ describe('Search onboarding', () => {
                 const inputContents = await editor.getValue()
                 assert.strictEqual(inputContents, 'lang:')
 
-                // Refocus editor after loosing focus from clicking the tour link
-                await editor.focus()
                 await driver.page.waitForSelector('.test-tour-step-2')
                 await driver.page.keyboard.type('TypeScr')
                 await editor.waitForSuggestion()
@@ -164,8 +158,6 @@ describe('Search onboarding', () => {
                 assert.strictEqual(inputContents, 'repo:')
 
                 await driver.page.waitForSelector('.test-tour-step-2')
-                // Refocus editor after loosing focus from clicking the tour link
-                await editor.focus()
                 await driver.page.keyboard.type('sourcegraph')
                 await editor.waitForSuggestion()
                 let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
@@ -189,8 +181,6 @@ describe('Search onboarding', () => {
                 assert.strictEqual(inputContents, 'repo:')
 
                 await driver.page.waitForSelector('.test-tour-step-2')
-                // Refocus editor after loosing focus from clicking the tour link
-                await editor.focus()
                 await driver.page.keyboard.type('sourcegraph/sourcegraph')
                 await editor.waitForSuggestion()
                 let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))

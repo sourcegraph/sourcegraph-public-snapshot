@@ -9,12 +9,9 @@ import (
 )
 
 func NewJanitor(dbStore DBStore, lsifStore LSIFStore, uploadSvc UploadService, metrics *metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, newJanitor(
-		dbStore,
-		lsifStore,
-		uploadSvc,
-		metrics,
-	))
+	janitor := newJanitor(dbStore, lsifStore, uploadSvc, metrics)
+
+	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, janitor)
 }
 
 func newJanitor(dbStore DBStore, lsifStore LSIFStore, uploadSvc UploadService, metrics *metrics) *janitor {

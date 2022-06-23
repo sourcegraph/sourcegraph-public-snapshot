@@ -1,9 +1,7 @@
 import React from 'react'
 
+import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -61,7 +59,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <Icon
                                     aria-label="Forked repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={SourceForkIcon}
+                                    svgPath={mdiSourceFork}
                                 />
                             </div>
                             <div>
@@ -76,7 +74,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <Icon
                                     aria-label="Archived repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={ArchiveIcon}
+                                    svgPath={mdiArchive}
                                 />
                             </div>
                             <div>
@@ -91,7 +89,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <Icon
                                     aria-label="Private repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={LockIcon}
+                                    svgPath={mdiLock}
                                 />
                             </div>
                             <div>

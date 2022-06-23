@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Modal, Icon, H3 } from '@sourcegraph/wildcard'
 
@@ -92,7 +92,7 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >
-                                <Icon aria-hidden={true} as={CloseIcon} />
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
                             </Button>
                         </div>
                         <div className="w-100">

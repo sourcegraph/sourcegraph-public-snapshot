@@ -13,15 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present on
 // gitserver, but not enabled/present in our repos table. ttl, should be >= 0 and
-// specifices how long ago a repo must be deleted before it is purged.
+// specifies how long ago a repo must be deleted before it is purged.
 func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Duration) {
 	log := log15.Root().New("worker", "repo-purge")
-	limiter := rate.NewLimiter(10, 1)
+	limiter := ratelimit.NewInstrumentedLimiter("PurgeRepoWorker", rate.NewLimiter(10, 1))
 
 	// Temporary escape hatch if this feature proves to be dangerous
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
@@ -59,7 +60,7 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	}
 	log := log15.Root().New("request", "repo-purge")
 	go func() {
-		limiter := rate.NewLimiter(rate.Limit(perSecond), 1)
+		limiter := ratelimit.NewInstrumentedLimiter("PurgeOldestRepos", rate.NewLimiter(rate.Limit(perSecond), 1))
 		// Use a background routine so that we don't time out based on the http context.
 		if err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
 			Limit:   limit,
