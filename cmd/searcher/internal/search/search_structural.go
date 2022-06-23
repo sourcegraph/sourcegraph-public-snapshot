@@ -18,7 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -368,7 +368,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return nil
 }
 
-func structuralSearchWithZoekt(ctx context.Context, logger sglog.Logger, p *protocol.Request, sender matchSender) (err error) {
+func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
