@@ -52,8 +52,8 @@ RUN apk add --no-cache --verbose \
     # You can't just bump the major version since that requires pgupgrade
     # between Sourcegraph releases.
     && apk add --no-cache --verbose \
-    postgresql=~12 \
-    postgresql-contrib=~12 \
+    postgresql=~13 \
+    postgresql-contrib=~13 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
     && apk add --no-cache --verbose \
     'bash>=5.0.17' \
