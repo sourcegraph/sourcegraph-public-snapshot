@@ -294,6 +294,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/jetbrains -s build"),
 	)
