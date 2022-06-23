@@ -69,14 +69,6 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 	}
 }
 
-// NewFakeSourcer returns a new faked Sourcer to be used for testing Batch Changes.
-func NewFakeSourcer(err error, source ChangesetSource) Sourcer {
-	return &fakeSourcer{
-		err,
-		source,
-	}
-}
-
 // ForChangeset returns a ChangesetSource for the given changeset. The changeset.RepoID
 // is used to find the matching code host.
 func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
@@ -125,7 +117,10 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func gitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+// GitserverPushConfig creates a push configuration given a repo and an
+// authenticator. This function is only public for testing purposes, and should
+// not be used otherwise.
+func GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
