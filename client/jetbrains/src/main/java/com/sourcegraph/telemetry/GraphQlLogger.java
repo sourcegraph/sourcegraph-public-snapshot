@@ -8,6 +8,7 @@ import com.sourcegraph.config.ConfigUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -15,9 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 public class GraphQlLogger {
     private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
@@ -56,7 +57,6 @@ public class GraphQlLogger {
         variables.add("events", events);
 
         try {
-
             callGraphQLService(instanceUrl, accessToken, query, variables);
         } catch (IOException e) {
             logger.info(e);
@@ -72,24 +72,33 @@ public class GraphQlLogger {
     }
 
     @NotNull
-    private static HttpPost createRequest(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws UnsupportedEncodingException {
+    private static HttpPost createRequest(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) {
         HttpPost request = new HttpPost(getGraphQLApiURI(instanceUrl));
+
         request.setHeader("Content-Type", "application/json");
         request.setHeader("X-Sourcegraph-Should-Trace", "false");
         if (accessToken != null) {
             request.setHeader("Authorization", "token " + accessToken);
         }
+
         JsonObject body = new JsonObject();
         body.addProperty("query", query);
         body.add("variables", variables);
-        request.setEntity(new StringEntity(body.toString()));
+
+        ContentType contentType = ContentType.create("application/json", StandardCharsets.UTF_8);
+
+        StringEntity entity = new StringEntity(body.toString(), contentType);
+        entity.setContentEncoding(StandardCharsets.UTF_8.toString());
+
+        request.setEntity(entity);
+        //request.setProtocolVersion(HttpVersion.HTTP_1_1);
         return request;
     }
 
     @NotNull
     private static URI getGraphQLApiURI(String instanceUrl) {
         try {
-            return new URIBuilder(instanceUrl + "/.api/graphql").build();
+            return new URIBuilder(instanceUrl + ".api/graphql").build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
