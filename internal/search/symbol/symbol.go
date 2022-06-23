@@ -154,7 +154,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 
 				res = append(res, result.NewSymbolMatch(
 					newFile,
-					r.Start.LineNumber,
+					int(r.Start.LineNumber),
 					-1,
 					si.Sym,
 					si.Kind,

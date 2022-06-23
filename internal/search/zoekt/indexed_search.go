@@ -485,7 +485,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 
 			symbols = append(symbols, result.NewSymbolMatch(
 				newFile,
-				r.Start.LineNumber,
+				int(r.Start.LineNumber),
 				-1,
 				si.Sym,
 				si.Kind,
