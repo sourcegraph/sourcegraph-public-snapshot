@@ -3,7 +3,9 @@ package search
 import (
 	"archive/tar"
 	"context"
+	"path/filepath"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -156,10 +158,16 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
 
+	var extensionHint string
+	if len(args.IncludePatterns) > 0 {
+		// Remove anchor that's added by autocomplete
+		extensionHint = strings.TrimSuffix(filepath.Ext(args.IncludePatterns[0]), "$")
+	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, ".generic", args.Pattern, args.CombyRule, args.Languages, repo, sender)
+		err = structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
 		if err != nil {
 			log.NamedError("structural search error", err)
 		}
