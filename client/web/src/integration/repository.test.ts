@@ -82,6 +82,7 @@ describe('Repository', () => {
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
+            const commitUrl = `${repositorySourcegraphUrl}/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81?visible=1`
             const clickedFileName = 'async.go'
             const clickedCommit = ''
             const fileEntries = ['jsonrpc2.go', clickedFileName]
@@ -136,10 +137,8 @@ describe('Repository', () => {
                                                     '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                        canonicalURL:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                        url: commitUrl,
+                                        canonicalURL: commitUrl,
                                         externalURLs: [
                                             {
                                                 url:
@@ -312,9 +311,8 @@ describe('Repository', () => {
                                         '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
-                            url: '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                            canonicalURL:
-                                '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                            url: commitUrl,
+                            canonicalURL: commitUrl,
                             externalURLs: [
                                 {
                                     url:
@@ -436,7 +434,10 @@ describe('Repository', () => {
                 selector: '[data-testid="git-commit-node-oid"]',
                 action: 'click',
             })
+            await driver.page.waitForSelector('[data-testid="repository-commit-page"]')
             await driver.page.waitForSelector('[data-testid="git-commit-node-message-subject"]')
+            await driver.assertWindowLocation(commitUrl)
+
             await assertSelectorHasText(
                 '[data-testid="git-commit-node-message-subject"]',
                 'update LSIF indexing CI workflow'
