@@ -3,6 +3,7 @@ package bk
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ type Build struct {
 	buildkite.Build
 	Annotations []buildkite.Annotation
 }
+
+type JobAnnotations map[string]AnnotationArtifact
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
@@ -160,22 +163,43 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 
 type AnnotationArtifact struct {
 	buildkite.Artifact
-	BodyMarkdown string
-	Annotation   buildkite.Annotation
+	AnnotationMarkdown string
 }
 
-func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, number string) ([]AnnotationArtifact, error) {
-	annotations, err := c.ListAnnotationsByBuildNumber(ctx, pipeline, number)
+func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
+	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
 	if err != nil {
 		return nil, err
 	}
+
+	var result JobAnnotations = make(JobAnnotations, 0)
+	for _, a := range artifacts {
+		if strings.Contains(*a.Dirname, "annotations") {
+			var buf bytes.Buffer
+			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
+			if err != nil {
+				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
+			}
+			fmt.Println("-------- ANNOTATION --------")
+
+			result[*a.JobID] = AnnotationArtifact{
+				Artifact:           a,
+				AnnotationMarkdown: buf.String(),
+			}
+		}
+	}
+
+	return result, nil
+
+}
+
+func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, number string) ([]AnnotationArtifact, error) {
 	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []AnnotationArtifact = make([]AnnotationArtifact, 0)
-	idx := 0
 	for _, a := range artifacts {
 		if strings.Contains(*a.Dirname, "annotations") {
 			var buf bytes.Buffer
@@ -187,9 +211,7 @@ func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, n
 			result = append(result, AnnotationArtifact{
 				a,
 				buf.String(),
-				annotations[idx],
 			})
-			idx++
 		}
 	}
 
