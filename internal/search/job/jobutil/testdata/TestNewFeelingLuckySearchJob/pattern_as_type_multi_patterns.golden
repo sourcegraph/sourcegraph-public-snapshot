@@ -6,7 +6,7 @@
         "ProposedQuery": {
           "Description": "apply search type for pattern",
           "Query": "context:global type:commit code monitor",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     },
@@ -16,7 +16,7 @@
         "ProposedQuery": {
           "Description": "apply search type with AND patterns",
           "Query": "context:global type:commit (code AND monitor)",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     },
@@ -26,7 +26,7 @@
         "ProposedQuery": {
           "Description": "AND patterns together",
           "Query": "context:global (code AND monitor AND commit)",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     }
