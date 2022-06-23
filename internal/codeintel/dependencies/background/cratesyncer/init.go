@@ -149,6 +149,7 @@ func NewCratesSyncer(db database.DB, indexEnqueuer *autoindexing.Service) gorout
 		dbStore:       dbstore.NewWithDB(db, observationContext),
 		extSvcStore:   extSvcStore,
 		indexEnqueuer: indexEnqueuer,
+		gitclient:     gitserver.NewClient(db),
 	})
 }
 
