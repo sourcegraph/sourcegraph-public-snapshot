@@ -113,6 +113,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 data-testid="git-commit-node-message-subject"
             >
                 {node.subject}
+
             </Link>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <Button
