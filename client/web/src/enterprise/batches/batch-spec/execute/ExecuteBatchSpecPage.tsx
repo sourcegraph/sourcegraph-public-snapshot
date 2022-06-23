@@ -43,6 +43,7 @@ import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 
 import layoutStyles from '../Layout.module.scss'
+import styles from './ExecuteBatchSpecPage.module.scss'
 
 export interface AuthenticatedExecuteBatchSpecPageProps
     extends SettingsCascadeProps<Settings>,
@@ -181,7 +182,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     )}
                     {batchSpec.startedAt && (
                         <ExecutionStat>
-                            <ProgressClockIcon />
+                            <Icon aria-label="Duration" as={ProgressClockIcon} className={styles.durationIcon} />
                             <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
                         </ExecutionStat>
                     )}

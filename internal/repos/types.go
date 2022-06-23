@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -27,12 +25,12 @@ type RateLimitSyncer struct {
 	// How many services to fetch in each DB call
 	pageSize int
 	// Rate limit to apply when making DB requests, optional.
-	limiter *rate.Limiter
+	limiter *ratelimit.InstrumentedLimiter
 }
 
 type RateLimitSyncerOpts struct {
 	// The number of external services to fetch while paginating. Optional, will
-	// default to 500
+	// default to 500.
 	PageSize int
 	// We need to rate limit our rate limit syncing (!). This is because when
 	// encryption is enabled on an instance, fetching external services is not free
@@ -41,7 +39,7 @@ type RateLimitSyncerOpts struct {
 	//
 	// If a limiter is supplied we ensure that PageSize is never larger than the
 	// limiters burst size. The limiter is optional.
-	Limiter *rate.Limiter
+	Limiter *ratelimit.InstrumentedLimiter
 }
 
 // NewRateLimitSyncer returns a new syncer

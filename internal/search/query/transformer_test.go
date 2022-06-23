@@ -97,12 +97,12 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Want(
 		"substitution honors literal search pattern",
 		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
-		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteralDefault))
+		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
 
 	autogold.Want(
 		"substitution honors path",
 		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
-		Equal(t, test("path:foo", SearchTypeLiteralDefault))
+		Equal(t, test("path:foo", SearchTypeLiteral))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -457,7 +457,7 @@ func TestPipeline(t *testing.T) {
 	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			plan, err := Pipeline(Init(c.input, SearchTypeLiteralDefault))
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
 			require.NoError(t, err)
 			got := plan.ToQ().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
@@ -960,7 +960,7 @@ func TestQueryField(t *testing.T) {
 
 func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
-		query, _ := Parse(input, SearchTypeLiteralDefault)
+		query, _ := Parse(input, SearchTypeLiteral)
 		q := SubstituteCountAll(query)
 		return toString(q)
 	}

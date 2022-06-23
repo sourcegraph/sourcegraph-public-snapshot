@@ -11,14 +11,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.Branch, options BranchesOptions) {
+func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.Branch, options gitserver.BranchesOptions) {
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := ListBranches(context.Background(), database.NewMockDB(), repo, options)
+	gotBranches, err := gitserver.NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, options)
 	require.Nil(t, err)
 
 	sort.Sort(gitdomain.Branches(wantBranches))
@@ -40,7 +41,7 @@ func TestRepository_ListBranches(t *testing.T) {
 
 	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
+	testBranches(t, gitCommands, wantBranches, gitserver.BranchesOptions{})
 }
 
 func TestRepository_Branches_MergedInto(t *testing.T) {
@@ -75,7 +76,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	wantBranches := gitBranches
 	for branch, mergedInto := range wantBranches {
-		branches, err := ListBranches(context.Background(), database.NewMockDB(), repo, BranchesOptions{MergedInto: branch})
+		branches, err := gitserver.NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, gitserver.BranchesOptions{MergedInto: branch})
 		require.Nil(t, err)
 		if diff := cmp.Diff(mergedInto, branches); diff != "" {
 			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
@@ -103,7 +104,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	commitToWantBranches := gitWantBranches
 	for commit, wantBranches := range commitToWantBranches {
-		branches, err := ListBranches(context.Background(), database.NewMockDB(), repo, BranchesOptions{ContainsCommit: commit})
+		branches, err := gitserver.NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, gitserver.BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
 		sort.Sort(gitdomain.Branches(branches))
@@ -138,7 +139,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
 	}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
+	testBranches(t, gitCommands, wantBranches, gitserver.BranchesOptions{BehindAheadBranch: "master"})
 }
 
 func TestRepository_Branches_IncludeCommit(t *testing.T) {
@@ -172,5 +173,5 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 		},
 	}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{IncludeCommit: true})
+	testBranches(t, gitCommands, wantBranches, gitserver.BranchesOptions{IncludeCommit: true})
 }

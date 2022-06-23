@@ -10,7 +10,7 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
       data-testid="filtered-connection"
     >
       <form
-        class="w-100 d-inline-flex justify-content-between flex-row noncompact"
+        class="form noncompact"
       >
         <div
           class="container loader-input loaderInput input"

@@ -94,7 +94,12 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   >
                     foo/bar
                   </a>
-                   › 
+                  <span
+                    aria-hidden="true"
+                  >
+                     ›
+                  </span>
+                   
                   <a
                     class="anchorLink"
                     href="/github.com/foo/bar/-/blob/?subtree=true"
@@ -346,7 +351,12 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   >
                     foo/bar
                   </a>
-                   › 
+                  <span
+                    aria-hidden="true"
+                  >
+                     ›
+                  </span>
+                   
                   <a
                     class="anchorLink"
                     href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
@@ -554,7 +564,12 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   >
                     foo/bar
                   </a>
-                   › 
+                  <span
+                    aria-hidden="true"
+                  >
+                     ›
+                  </span>
+                   
                   <a
                     class="anchorLink"
                     href="/github.com/foo/bar/-/blob/?subtree=true"

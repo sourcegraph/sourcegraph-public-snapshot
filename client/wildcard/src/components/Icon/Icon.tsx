@@ -1,6 +1,5 @@
-import React, { AriaRole, ComponentType, ElementType } from 'react'
+import React, { AriaRole, ComponentType, ElementType, SVGProps } from 'react'
 
-import MDIIcon from '@mdi/react'
 import classNames from 'classnames'
 import { MdiReactIconProps } from 'mdi-react'
 
@@ -10,7 +9,7 @@ import { ICON_SIZES } from './constants'
 
 import styles from './Icon.module.scss'
 
-interface BaseIconProps extends Omit<React.ComponentProps<typeof MDIIcon>, 'size' | 'path' | 'color'> {
+interface BaseIconProps extends SVGProps<SVGSVGElement> {
     /**
      * Provide a custom `svgPath` to build an SVG.
      *
@@ -36,24 +35,29 @@ interface HiddenIconProps extends BaseIconProps {
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
 // eslint-disable-next-line react/display-name
-export const Icon = React.forwardRef(({ children, className, size, ...props }, reference) => {
+export const Icon = React.forwardRef(({ children, className, size, role = 'img', ...props }, reference) => {
     const iconStyle = classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)
 
     if (props.svgPath) {
-        const { svgPath, 'aria-label': ariaLabel, ...attributes } = props
+        const { svgPath, height = 24, width = 24, viewBox = '0 0 24 24', fill = 'currentColor', ...attributes } = props
 
         return (
-            <MDIIcon
-                ref={reference as React.RefObject<SVGSVGElement>}
-                path={svgPath}
+            <svg
+                ref={reference}
                 className={iconStyle}
-                title={ariaLabel}
+                role={role}
+                height={height}
+                width={width}
+                viewBox={viewBox}
+                fill={fill}
                 {...attributes}
-            />
+            >
+                <path d={svgPath} />
+            </svg>
         )
     }
 
-    const { as: IconComponent = 'svg', role = 'img', ...attributes } = props
+    const { as: IconComponent = 'svg', ...attributes } = props
 
     return (
         <IconComponent ref={reference} className={iconStyle} role={role} {...attributes}>

@@ -165,6 +165,7 @@ type EventFilter struct {
 type EventAlert struct {
 	Title           string          `json:"title"`
 	Description     string          `json:"description,omitempty"`
+	Kind            string          `json:"kind,omitempty"`
 	ProposedQueries []ProposedQuery `json:"proposedQueries"`
 }
 

@@ -253,10 +253,11 @@ type Features struct {
 }
 
 type RepoOptions struct {
-	RepoFilters              []string
-	MinusRepoFilters         []string
-	Dependencies             []string
-	Dependents               []string
+	RepoFilters      []string
+	MinusRepoFilters []string
+	Dependencies     []string
+	Dependents       []string
+
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 

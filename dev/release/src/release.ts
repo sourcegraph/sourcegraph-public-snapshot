@@ -387,7 +387,12 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 ${customMessage || ''}
 
 * [Release batch change](${batchChangeURL})
-* ${trackingIssue ? `[Tracking issue](${trackingIssue.url})` : 'No tracking issue exists for this release'}`
+* ${trackingIssue ? `[Tracking issue](${trackingIssue.url})` : 'No tracking issue exists for this release'}
+
+### Test plan
+
+CI checks in this repository should pass, and a manual review should confirm if the generated changes are correct.`
+
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
                 }
@@ -403,9 +408,6 @@ ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
 
-### Test plan
-
-CI checks in this repository should pass, and a manual review should confirm if the generated changes are correct.
 `,
                 }
             }
@@ -558,7 +560,6 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: defaultPRMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,

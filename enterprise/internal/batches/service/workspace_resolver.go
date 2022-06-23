@@ -69,12 +69,18 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{logger: log.Scoped("workspaceResolver", ""), store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
+	return &workspaceResolver{
+		store:               s,
+		logger:              log.Scoped("batches.workspaceResolver", "The batch changes execution workspace resolver"),
+		gitserverClient:     gitserver.NewClient(s.DatabaseDB()),
+		frontendInternalURL: internalapi.Client.URL + "/.internal",
+	}
 }
 
 type workspaceResolver struct {
 	logger              log.Logger
 	store               *store.Store
+	gitserverClient     gitserver.Client
 	frontendInternalURL string
 }
 
@@ -85,7 +91,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 		tr.Finish()
 	}()
 
-	// First, find all repositories that match the batch spec on definitions.
+	// First, find all repositories that match the batch spec `on` definitions.
 	// This list is filtered by permissions using database.Repos.List.
 	repos, err := wr.determineRepositories(ctx, batchSpec)
 	if err != nil {
@@ -93,12 +99,12 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 	}
 
 	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.logger, wr.store), repos)
+	ignored, err := findIgnoredRepositories(ctx, wr.gitserverClient, repos)
 	if err != nil {
 		return nil, err
 	}
 
-	// Now build the workspaces for the list of repos
+	// Now build the workspaces for the list of repos.
 	workspaces, err = findWorkspaces(ctx, batchSpec, wr, repos)
 	if err != nil {
 		return nil, err
@@ -161,7 +167,11 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	return repoRevs, errs
 }
 
-func findIgnoredRepositories(ctx context.Context, db database.DB, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
+// ignoredWorkspaceResolverConcurrency defines the maximum concurrency level at that
+// findIgnoredRepositories will hit gitserver for file info.
+const ignoredWorkspaceResolverConcurrency = 5
+
+func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Client, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
 		hasBatchIgnore bool
@@ -177,17 +187,19 @@ func findIgnoredRepositories(ctx context.Context, db database.DB, repos []*RepoR
 		wg sync.WaitGroup
 	)
 
-	for i := 0; i < 5; i++ {
+	// Spawn N workers.
+	for i := 0; i < ignoredWorkspaceResolverConcurrency; i++ {
 		wg.Add(1)
 		go func(in chan *RepoRevision, out chan result) {
 			defer wg.Done()
 			for repo := range in {
-				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, db, repo)
+				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, gitserverClient, repo)
 				out <- result{repo, hasBatchIgnore, err}
 			}
 		}(input, results)
 	}
 
+	// Queue all the repos for processing.
 	for _, repo := range repos {
 		input <- repo
 	}
@@ -273,7 +285,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 
 	return repoToRepoRevisionWithDefaultBranch(
 		ctx,
-		database.NewDBWith(wr.logger, wr.store),
+		wr.gitserverClient,
 		repo,
 		// Directly resolved repos don't have any file matches.
 		[]string{},
@@ -292,7 +304,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := gitserver.NewClient(database.NewDBWith(wr.logger, wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+	commit, err := wr.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -370,7 +382,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		}
 		// Sort file matches so cache results always match.
 		sort.Strings(fileMatches)
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.logger, wr.store), repo, fileMatches)
+		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, wr.gitserverClient, repo, fileMatches)
 		if err != nil {
 			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
 			if errcode.IsNotFound(err) {
@@ -424,14 +436,14 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return err
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, db database.DB, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
+func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	branch, commit, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repo.Name)
+	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +457,9 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, db database.DB, re
 	return repoRev, nil
 }
 
-func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_ bool, err error) {
+const batchIgnoreFilePath = ".batchignore"
+
+func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r *RepoRevision) (_ bool, err error) {
 	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
 	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
 	defer func() {
@@ -453,8 +467,7 @@ func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_
 		tr.Finish()
 	}()
 
-	const path = ".batchignore"
-	stat, err := gitserver.NewClient(db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
+	stat, err := gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, batchIgnoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
@@ -462,7 +475,7 @@ func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_
 		return false, err
 	}
 	if !stat.Mode().IsRegular() {
-		return false, errors.Errorf("not a blob: %q", path)
+		return false, errors.Errorf("not a blob: %q", batchIgnoreFilePath)
 	}
 	return true, nil
 }
@@ -479,6 +492,10 @@ func setDefaultQueryCount(query string) string {
 	return query + hardCodedCount
 }
 
+// findDirectoriesInReposConcurrency defines the maximum concurrency level at that
+// FindDirectoriesInRepos will run searches for file paths.
+const findDirectoriesInReposConcurrency = 10
+
 // FindDirectoriesInRepos returns a map of repositories and the locations of
 // files matching the given file name in the repository.
 // The locations are paths relative to the root of the directory.
@@ -486,17 +503,13 @@ func setDefaultQueryCount(query string) string {
 // A dot (".") represents the root directory.
 func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
 	findForRepoRev := func(repoRev *RepoRevision) ([]string, error) {
-		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:99999`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
+		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:all`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
 
 		results := []string{}
 		err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 			for _, match := range matches {
 				switch m := match.(type) {
 				case *streamhttp.EventPathMatch:
-					// We use path.Dir and not filepath.Dir here, because while
-					// src-cli might be executed on Windows, we need the paths to
-					// be Unix paths, since they will be used inside Docker
-					// containers.
 					dir := path.Dir(m.Path)
 
 					// "." means the path is root, but in the executor we use "" to signify root.
@@ -516,12 +529,13 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	}
 
 	// Limit concurrency.
-	sem := make(chan struct{}, 10)
-	for i := 0; i < 10; i++ {
+	sem := make(chan struct{}, findDirectoriesInReposConcurrency)
+	for i := 0; i < findDirectoriesInReposConcurrency; i++ {
 		sem <- struct{}{}
 	}
 
 	var (
+		// mu protects both the errs variable and the results map from concurrent writes.
 		errs    error
 		mu      sync.Mutex
 		results = make(map[repoRevKey][]string)
@@ -534,19 +548,19 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 			}()
 
 			result, err := findForRepoRev(repoRev)
+
+			mu.Lock()
+			defer mu.Unlock()
 			if err != nil {
 				errs = errors.Append(errs, err)
 				return
 			}
-
-			mu.Lock()
 			results[repoRev.Key()] = result
-			mu.Unlock()
 		}(repoRev)
 	}
 
 	// Wait for all to finish.
-	for i := 0; i < 10; i++ {
+	for i := 0; i < findDirectoriesInReposConcurrency; i++ {
 		<-sem
 	}
 
