@@ -246,6 +246,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                             <div className="d-flex align-items-center">
                                 <div>
                                     <Toggle
+                                        title={actionEnabled ? 'Enabled' : 'Disabled'}
                                         value={actionEnabled}
                                         onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                         className="mr-3"
