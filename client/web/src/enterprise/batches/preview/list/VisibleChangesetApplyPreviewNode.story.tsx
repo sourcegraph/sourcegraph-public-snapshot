@@ -5,12 +5,12 @@ import { of } from 'rxjs'
 import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetSpecOperation,
+    ChangesetSpecType,
     ChangesetState,
     Maybe,
-    VisibleChangesetSpecFields,
-    ChangesetSpecType,
     Scalars,
     VisibleChangesetApplyPreviewFields,
+    VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
 
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
@@ -699,6 +699,61 @@ And the more explanatory body. And the more explanatory body. And the more expla
                     published: publicationStateSet,
                 },
             }),
+        },
+    },
+    'Reattach changeset': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.REATTACH],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(4, publicationStateSet ? true : null),
+            changeset: {
+                id: '123123',
+                title: 'Lost and forgotten change',
+                state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: null,
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
+                    },
+                },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+            },
         },
     },
 })
