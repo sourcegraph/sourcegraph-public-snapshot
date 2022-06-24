@@ -3,6 +3,7 @@ package bk
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -161,7 +162,7 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 
 type AnnotationArtifact struct {
 	buildkite.Artifact
-	Markdown string
+	Content string
 }
 
 func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
@@ -172,7 +173,8 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 
 	var result JobAnnotations = make(JobAnnotations, 0)
 	for _, a := range artifacts {
-		if strings.Contains(*a.Dirname, "annotations") {
+		if strings.Contains(*a.Dirname, "annotations") && strings.HasSuffix(*a.Filename, "-annotation.md") {
+			fmt.Printf("ANNOTATION: %s\n", *a.Filename)
 			var buf bytes.Buffer
 			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
 			if err != nil {
@@ -181,7 +183,7 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 
 			result[*a.JobID] = AnnotationArtifact{
 				Artifact: a,
-				Markdown: buf.String(),
+				Content:  buf.String(),
 			}
 		}
 	}
@@ -198,7 +200,7 @@ func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, n
 
 	var result []AnnotationArtifact = make([]AnnotationArtifact, 0)
 	for _, a := range artifacts {
-		if strings.Contains(*a.Dirname, "annotations") {
+		if strings.Contains(*a.Dirname, "annotations") && strings.HasSuffix(*a.Filename, "-annotation.md") {
 			var buf bytes.Buffer
 			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
 			if err != nil {
