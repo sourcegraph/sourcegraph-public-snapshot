@@ -17,7 +17,7 @@ GCP Logs were envisioned but there was a strong push back, as its usuabilty was 
 
 ### Decision
 
-Revert to use Loki as logging aggregator and HoneyComb for tracing purposes.
+Revert to use Loki as logging aggregator and HoneyComb/Grafana for tracing purposes.
 
 ### Consequences
 
