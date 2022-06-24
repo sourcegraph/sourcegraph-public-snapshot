@@ -1,12 +1,14 @@
 import { querySelectorOrSelf } from '../../util/dom'
 import { MountGetter } from '../shared/codeHost'
 
+import styles from './codeHost.module.scss'
+
 export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const headerElement = querySelectorOrSelf(container, '.navbar-collapse')
     if (!headerElement) {
         return null
     }
-    const commandListClass = 'command-palette-button'
+    const commandListClass = `command-palette-button ${styles.commandPaletteButton}`
     const createCommandList = (): HTMLElement => {
         const mount = document.createElement('div')
         mount.className = commandListClass
