@@ -50,6 +50,10 @@ export const StreamingProgressCount: React.FunctionComponent<
                 )}
                 data-testid="streaming-progress-count"
             >
+                {/*
+                    Span wrapper needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
+                    Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+                 */}
                 <span className="position-relative">
                     <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
                 </span>
