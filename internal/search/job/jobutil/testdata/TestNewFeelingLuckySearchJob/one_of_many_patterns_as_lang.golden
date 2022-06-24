@@ -15,7 +15,7 @@
         "Child": {},
         "ProposedQuery": {
           "Description": "AND patterns together",
-          "Query": "context:global (parse AND python)",
+          "Query": "context:global (/parse/ AND /python/)",
           "PatternType": 3
         }
       }

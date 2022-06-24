@@ -3,7 +3,7 @@
     "Child": {},
     "ProposedQuery": {
       "Description": "AND patterns together",
-      "Query": "context:global (parse AND func)",
+      "Query": "context:global (/parse/ AND /func/)",
       "PatternType": 3
     }
   }
