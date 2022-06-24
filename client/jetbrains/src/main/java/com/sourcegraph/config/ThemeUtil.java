@@ -1,8 +1,6 @@
 package com.sourcegraph.config;
 
 import com.google.gson.JsonObject;
-import com.intellij.lang.java.JavaLanguage;
-import com.intellij.openapi.editor.colors.*;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 
 public class ThemeUtil {
     private static final Logger logger = LoggerFactory.getLogger(ThemeUtil.class);
@@ -34,25 +34,9 @@ public class ThemeUtil {
             }
         }
 
-        JsonObject syntaxTheme = new JsonObject();
-        try {
-            EditorColorsScheme colorScheme = EditorColorsManager.getInstance().getGlobalScheme();
-
-            EditorColorPalette palette = EditorColorPaletteFactory.getInstance().getPalette(colorScheme, JavaLanguage.INSTANCE);
-            for (Map.Entry<Color, Collection<TextAttributesKey>> entry : palette.withForegroundColors().getEntries()) {
-                Color color = entry.getKey();
-                for (TextAttributesKey key : entry.getValue()) {
-                    recursivelyAddToAllAttributeKeys(syntaxTheme, getHexString(color), key);
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-        }
-
         JsonObject theme = new JsonObject();
         theme.addProperty("isDarkTheme", isDarkTheme());
         theme.add("intelliJTheme", intelliJTheme);
-        theme.add("syntaxTheme", syntaxTheme);
         return theme;
     }
 
@@ -86,13 +70,5 @@ public class ThemeUtil {
      */
     private static int getBrightnessFromColor(@NotNull Color color) {
         return (int) Math.sqrt(color.getRed() * color.getRed() * .299 + color.getGreen() * color.getGreen() * .587 + color.getBlue() * color.getBlue() * .114);
-    }
-
-    private static void recursivelyAddToAllAttributeKeys(JsonObject object, String value, TextAttributesKey key) {
-        if (key == null) {
-            return;
-        }
-        object.addProperty(key.getExternalName(), value);
-        recursivelyAddToAllAttributeKeys(object, value, key.getFallbackAttributeKey());
     }
 }
