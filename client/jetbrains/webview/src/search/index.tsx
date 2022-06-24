@@ -26,6 +26,8 @@ let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
+let anonymousUserId: string
+let pluginVersion: string
 let initialSearch: Search | null = null
 let initialAuthenticatedUser: AuthenticatedUser | null
 let telemetryService: EventLogger
@@ -46,7 +48,7 @@ window.initializeSourcegraph = async () => {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
 
-    telemetryService = new EventLogger('anonid', { editor: 'jetbrains', version: '1.4.5' })
+    telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
 
     renderReactApp()
 
@@ -78,6 +80,8 @@ export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
+    anonymousUserId = config.anonymousUserId || 'no-user-id'
+    pluginVersion = config.pluginVersion || '0.0.0'
     polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
