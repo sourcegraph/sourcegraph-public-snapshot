@@ -6,8 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
 	"time"
 
@@ -151,65 +149,6 @@ type MountMetadata struct {
 	Path     string
 	Size     int64
 	Modified time.Time
-}
-
-// FileMetadataRetriever retrieves mount metadata from a filesystem.
-type FileMetadataRetriever struct {
-}
-
-func (f FileMetadataRetriever) Get(steps []batches.Step) ([]MountMetadata, error) {
-	var mountsMetadata []MountMetadata
-	for _, step := range steps {
-		// Build up the metadata for each mount for each step
-		for _, mount := range step.Mount {
-			metadata, err := getMountMetadata(mount.Path)
-			if err != nil {
-				return nil, err
-			}
-			// A mount could be a directory containing multiple files
-			mountsMetadata = append(mountsMetadata, metadata...)
-		}
-	}
-	return mountsMetadata, nil
-}
-
-func getMountMetadata(path string) ([]MountMetadata, error) {
-	info, err := os.Stat(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, errors.Newf("path %s does not exist", path)
-	} else if err != nil {
-		return nil, err
-	}
-	var metadata []MountMetadata
-	if info.IsDir() {
-		dirMetadata, err := getDirectoryMountMetadata(path)
-		if err != nil {
-			return nil, err
-		}
-		metadata = append(metadata, dirMetadata...)
-	} else {
-		metadata = append(metadata, MountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime().UTC()})
-	}
-	return metadata, nil
-}
-
-func getDirectoryMountMetadata(path string) ([]MountMetadata, error) {
-	dir, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-	var metadata []MountMetadata
-	for _, dirEntry := range dir {
-		newPath := filepath.Join(path, dirEntry.Name())
-		// Go back to the very start. Need to get the FileInfo again for the new path and figure out if it is a
-		// directory or a file.
-		fileMetadata, err := getMountMetadata(newPath)
-		if err != nil {
-			return nil, err
-		}
-		metadata = append(metadata, fileMetadata...)
-	}
-	return metadata, nil
 }
 
 // StepsCacheKey implements the Keyer interface for a batch spec execution in a
