@@ -170,7 +170,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 		return pl, nil
 	}
 
-	if currentSpec != nil && previousSpec != nil && !isStillAttached && !wantDetach {
+	if currentSpec != nil && previousSpec != nil && isReattach && !wantDetach {
 		pl.AddOp(btypes.ReconcilerOperationReattach)
 	}
 
