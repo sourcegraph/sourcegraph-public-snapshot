@@ -1,11 +1,8 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import React, { useEffect, useState } from 'react'
 
+import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -194,15 +191,19 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />}
+                                {collapseLabel && (
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowCollapseUp} />
+                                )}
                                 {collapseLabel}
-                                {!collapseLabel && <Icon as={ChevronDownIcon} aria-hidden={true} />}
+                                {!collapseLabel && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />}
+                                {expandLabel && (
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowExpandDown} />
+                                )}
                                 {expandLabel}
-                                {!expandLabel && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
+                                {!expandLabel && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
                             </>
                         )}
                     </Button>

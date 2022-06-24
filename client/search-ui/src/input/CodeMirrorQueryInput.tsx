@@ -127,6 +127,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
             EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
+            EditorView.domEventHandlers({
+                blur: onBlur,
+                focus: onFocus,
+            }),
             EditorView.updateListener.of((update: ViewUpdate) => {
                 if (update.docChanged) {
                     onChange({
@@ -135,14 +139,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                         query: update.state.doc.toString(),
                         changeSource: QueryChangeSource.userInput,
                     })
-                }
-                if (update.focusChanged) {
-                    if (onFocus && update.view.hasFocus) {
-                        onFocus()
-                    }
-                    if (onBlur && !update.view.hasFocus) {
-                        onBlur()
-                    }
                 }
                 // See https://codemirror.net/docs/ref/#state.Transaction^userEvent
                 if (

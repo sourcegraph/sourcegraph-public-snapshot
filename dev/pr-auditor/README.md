@@ -24,3 +24,7 @@ go run ./dev/pr-auditor/ check \
 # run using wrapper script
 ./dev/buildchecker/check-pr.sh
 ```
+
+## Deployment
+
+`pr-auditor` can be deployed to repositories using the available [batch changes](./batch-changes/README.md).

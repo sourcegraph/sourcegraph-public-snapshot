@@ -291,7 +291,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
                 {selectedTab === 'notebooks' && (
                     <div className="row mb-5">
-                        <div className="d-flex flex-column col-sm-2 mr-2">
+                        <div className="d-flex flex-column col-sm-2">
                             {filters.map(filter => (
                                 <Button
                                     key={filter.id}
@@ -303,7 +303,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 </Button>
                             ))}
                         </div>
-                        <div className="d-flex flex-column w-100 col">
+                        <div className="d-flex flex-column col-sm-10">
                             {selectedFilter && (
                                 <NotebooksList
                                     key={selectedFilter.id}

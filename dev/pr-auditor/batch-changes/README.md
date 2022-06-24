@@ -1,4 +1,6 @@
-# pr-auditor batch change
+# pr-auditor batch changes
+
+## Rollouts
 
 [`pr-auditor-rollout.yml`](./pr-auditor-rollout.yml) describes a batch change that can be used to roll out `pr-auditor` to repositories that do not have it set up yet.
 
@@ -9,4 +11,6 @@ To use it:
 3. Preview and apply the changes
 4. Selectively publish the appropriate changesets for review and merge
 
-The [`pr-auditor-patch.yml`](./pr-auditor-patch.yml) spec similarly describes a batch change that can be used to roll out `pr-auditor` workflow updates to repositories that already have it set up.
+## Updates
+
+The [`pr-auditor-patch.yml`](./pr-auditor-patch.yml) spec describes a batch change that can be used to roll out `pr-auditor` workflow updates to repositories that already have it set up by synchronizing them with the source-of-truth script in the batch change spec.
