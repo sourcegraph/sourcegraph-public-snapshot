@@ -29,7 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-- The direct DataDog trace export integration has been removed.
+- The direct DataDog trace export integration has been removed. ([#37654](https://github.com/sourcegraph/sourcegraph/pull/37654))
 
 ## 3.41.0
 
