@@ -12,7 +12,6 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
-	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -66,7 +65,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		if err != nil {
 			logger.Debug("parseGitDiffNameStatus failed",
 				log.String("indexed", string(indexed)),
-				zap.Binary("out", out),
+				log.Binary("out", out),
 				log.Error(err))
 			return nil, false, err
 		}
