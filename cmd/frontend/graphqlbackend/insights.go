@@ -53,6 +53,7 @@ type SearchInsightPreviewInput struct {
 	RepositoryScope RepositoryScopeInput
 	TimeScope       TimeScopeInput
 	Series          []SearchSeriesPreviewInput
+	NumPoints       *int32
 }
 
 type SearchSeriesPreviewInput struct {
