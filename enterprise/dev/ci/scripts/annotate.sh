@@ -60,7 +60,7 @@ if [[ -z "$CUSTOM_CONTEXT" ]]; then
 
   if [ ! -f "$FILE" ]; then
     touch $FILE
-    printf "**%s** ([logs](#%s))\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID" | tee $TEE_FILE | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+    printf "**%s** ([logs](#%s))\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
   fi
 fi
 
@@ -75,12 +75,12 @@ done
 
 
 if [ -n "$SECTION" ]; then
-  printf "**%s**\n" "$SECTION" | tee $TEE_FILE | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "**%s**\n" "$SECTION" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
 
 
 if [ "$MARKDOWN" = true ]; then
-  printf "%s\n" "$BODY" | tee $TEE_FILE | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "%s\n" "$BODY" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 else
-  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | tee $TEE_FILE | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
