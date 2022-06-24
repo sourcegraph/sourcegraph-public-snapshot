@@ -1,12 +1,7 @@
 package cache
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -43,6 +38,8 @@ func TestKeyer_Key(t *testing.T) {
 	// use an array to get the key to have a nil value
 	err = json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
 	require.NoError(t, err)
+
+	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
 
 	tests := []struct {
 		name          string
@@ -92,6 +89,42 @@ func TestKeyer_Key(t *testing.T) {
 				Steps:      []batches.Step{{Run: "foo", Env: nullStepEnv}},
 			},
 			expectedKey: "_txGuv3XrkWWVQz6hGsKhw",
+		},
+		{
+			name: "ExecutionKey mount metadata",
+			keyer: &ExecutionKey{
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo"}},
+				MetadataRetriever: testM{
+					m: []MountMetadata{{Path: "/foo/bar", Size: 100, Modified: modDate}},
+				},
+			},
+			expectedKey: "DFPxThKpLG4BAqW_wMGLTQ",
+		},
+		{
+			name: "ExecutionKey multiple mount metadata",
+			keyer: &ExecutionKey{
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo"}},
+				MetadataRetriever: testM{
+					m: []MountMetadata{
+						{Path: "/foo/bar", Size: 100, Modified: modDate},
+						{Path: "/faz/baz", Size: 100, Modified: modDate},
+					},
+				},
+			},
+			expectedKey: "FhHlnyPvsOe9__15wfuQYQ",
+		},
+		{
+			name: "ExecutionKey mount metadata error",
+			keyer: &ExecutionKey{
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo"}},
+				MetadataRetriever: testM{
+					err: errors.New("failed to get mount metadata"),
+				},
+			},
+			expectedError: errors.New("failed to get mount metadata"),
 		},
 		{
 			name: "ExecutionKeyWithGlobalEnv simple",
@@ -195,303 +228,11 @@ func TestKeyer_Key(t *testing.T) {
 	}
 }
 
-func TestKeyer_Key_Mount(t *testing.T) {
-	// Mounts are trickier because there are temp paths and modifications dates. Each run will generate new temp paths
-	// and modification dates. Also, different Operating Systems will yield different results causing an expectedKey
-	// assertion to fail.
-	// So unfortunately, asserting the cache key is not as pretty for mounts.
+type testM struct {
+	m   []MountMetadata
+	err error
+}
 
-	tempDir := t.TempDir()
-
-	// Set a specific date on the temp files
-	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
-	modDateVal, err := modDate.MarshalJSON()
-	require.NoError(t, err)
-
-	// create temp files/dirs that can be used by the tests
-	sampleScriptPath := filepath.Join(tempDir, "sample.sh")
-	_, err = os.Create(sampleScriptPath)
-	require.NoError(t, err)
-	err = os.Chtimes(sampleScriptPath, modDate, modDate)
-	require.NoError(t, err)
-
-	anotherScriptPath := filepath.Join(tempDir, "another.sh")
-	_, err = os.Create(anotherScriptPath)
-	require.NoError(t, err)
-	err = os.Chtimes(anotherScriptPath, modDate, modDate)
-	require.NoError(t, err)
-
-	var stepEnv env.Environment
-	// use an array to get the key to have a nil value
-	err = json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name  string
-		keyer Keyer
-		// Instead of an expectedKey, use raw so the data that will be manually hashed can be controlled.
-		expectedRaw   string
-		expectedError error
-	}{
-		{
-			name: "ExecutionKey single file",
-			keyer: &ExecutionKey{
-				Repository: repo,
-				Steps: []batches.Step{
-					{
-						Run: "foo",
-						Mount: []batches.Mount{{
-							Path:       sampleScriptPath,
-							Mountpoint: "/tmp/foo.sh",
-						}},
-					},
-				},
-				MetadataRetriever: FileMetadataRetriever{},
-			},
-			expectedRaw: fmt.Sprintf(
-				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/foo.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
-				sampleScriptPath,
-				sampleScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "ExecutionKey multiple files",
-			keyer: &ExecutionKey{
-				Repository: repo,
-				Steps: []batches.Step{
-					{
-						Run: "foo",
-						Mount: []batches.Mount{
-							{
-								Path:       sampleScriptPath,
-								Mountpoint: "/tmp/foo.sh",
-							},
-							{
-								Path:       anotherScriptPath,
-								Mountpoint: "/tmp/bar.sh",
-							},
-						},
-					},
-				},
-				MetadataRetriever: FileMetadataRetriever{},
-			},
-			expectedRaw: fmt.Sprintf(
-				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/foo.sh","path":"%s"},{"mountpoint":"/tmp/bar.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s},{"Path":"%s","Size":0,"Modified":%s}]}`,
-				sampleScriptPath,
-				anotherScriptPath,
-				sampleScriptPath,
-				string(modDateVal),
-				anotherScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "ExecutionKey directory",
-			keyer: &ExecutionKey{
-				Repository: repo,
-				Steps: []batches.Step{
-					{
-						Run: "foo",
-						Mount: []batches.Mount{{
-							Path:       tempDir,
-							Mountpoint: "/tmp/scripts",
-						}},
-					},
-				},
-				MetadataRetriever: FileMetadataRetriever{},
-			},
-			expectedRaw: fmt.Sprintf(
-				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/scripts","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s},{"Path":"%s","Size":0,"Modified":%s}]}`,
-				tempDir,
-				anotherScriptPath,
-				string(modDateVal),
-				sampleScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "ExecutionKey file does not exist",
-			keyer: &ExecutionKey{
-				Repository: repo,
-				Steps: []batches.Step{
-					{
-						Run: "foo",
-						Mount: []batches.Mount{{
-							Path:       filepath.Join(tempDir, "some-file-does-not-exist.sh"),
-							Mountpoint: "/tmp/file.sh",
-						}},
-					},
-				},
-				MetadataRetriever: FileMetadataRetriever{},
-			},
-			expectedError: errors.Newf("path %s does not exist", filepath.Join(tempDir, "some-file-does-not-exist.sh")),
-		},
-		{
-			name: "ExecutionKeyWithGlobalEnv single file",
-			keyer: &ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: repo,
-					Steps: []batches.Step{
-						{
-							Run: "foo",
-							Mount: []batches.Mount{{
-								Path:       sampleScriptPath,
-								Mountpoint: "/tmp/foo.sh",
-							}},
-							Env: stepEnv,
-						},
-					},
-					MetadataRetriever: FileMetadataRetriever{},
-				},
-				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
-			},
-			expectedRaw: fmt.Sprintf(
-				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":["SOME_ENV"],"mount":[{"mountpoint":"/tmp/foo.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{"SOME_ENV":"FOO"}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
-				sampleScriptPath,
-				sampleScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "ExecutionKeyWithGlobalEnv multiple files",
-			keyer: &ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: repo,
-					Steps: []batches.Step{
-						{
-							Run: "foo",
-							Mount: []batches.Mount{
-								{
-									Path:       sampleScriptPath,
-									Mountpoint: "/tmp/foo.sh",
-								},
-								{
-									Path:       anotherScriptPath,
-									Mountpoint: "/tmp/bar.sh",
-								},
-							},
-							Env: stepEnv,
-						},
-					},
-					MetadataRetriever: FileMetadataRetriever{},
-				},
-				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
-			},
-			expectedRaw: fmt.Sprintf(
-				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":["SOME_ENV"],"mount":[{"mountpoint":"/tmp/foo.sh","path":"%s"},{"mountpoint":"/tmp/bar.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{"SOME_ENV":"FOO"}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s},{"Path":"%s","Size":0,"Modified":%s}]}`,
-				sampleScriptPath,
-				anotherScriptPath,
-				sampleScriptPath,
-				string(modDateVal),
-				anotherScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "ExecutionKeyWithGlobalEnv directory",
-			keyer: &ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: repo,
-					Steps: []batches.Step{
-						{
-							Run: "foo",
-							Mount: []batches.Mount{{
-								Path:       tempDir,
-								Mountpoint: "/tmp/scripts",
-							}},
-							Env: stepEnv,
-						},
-					},
-					MetadataRetriever: FileMetadataRetriever{},
-				},
-				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
-			},
-			expectedRaw: fmt.Sprintf(
-				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":["SOME_ENV"],"mount":[{"mountpoint":"/tmp/scripts","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{"SOME_ENV":"FOO"}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s},{"Path":"%s","Size":0,"Modified":%s}]}`,
-				tempDir,
-				anotherScriptPath,
-				string(modDateVal),
-				sampleScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "StepsCacheKey single file",
-			keyer: StepsCacheKey{
-				ExecutionKey: &ExecutionKey{
-					Repository: repo,
-					Steps: []batches.Step{
-						{
-							Run: "foo",
-							Mount: []batches.Mount{
-								{
-									Path:       sampleScriptPath,
-									Mountpoint: "/tmp/sample.sh",
-								},
-							},
-						},
-					},
-					MetadataRetriever: FileMetadataRetriever{},
-				},
-				StepIndex: 0,
-			},
-			expectedRaw: fmt.Sprintf(`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/sample.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
-				sampleScriptPath,
-				sampleScriptPath,
-				string(modDateVal),
-			),
-		},
-		{
-			name: "StepsCacheKeyWithGlobalEnv single file",
-			keyer: &StepsCacheKeyWithGlobalEnv{
-				StepsCacheKey: &StepsCacheKey{
-					ExecutionKey: &ExecutionKey{
-						Repository: repo,
-						Steps: []batches.Step{
-							{
-								Run: "foo",
-								Mount: []batches.Mount{
-									{
-										Path:       sampleScriptPath,
-										Mountpoint: "/tmp/sample.sh",
-									},
-								},
-								Env: stepEnv,
-							},
-						},
-						MetadataRetriever: FileMetadataRetriever{},
-					},
-					StepIndex: 0,
-				},
-				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
-			},
-			expectedRaw: fmt.Sprintf(`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":["SOME_ENV"],"mount":[{"mountpoint":"/tmp/sample.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{"SOME_ENV":"FOO"}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
-				sampleScriptPath,
-				sampleScriptPath,
-				string(modDateVal),
-			),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			key, err := test.keyer.Key()
-			if test.expectedError != nil {
-				assert.Equal(t, test.expectedError.Error(), err.Error())
-			} else {
-				expectedHash := sha256.Sum256([]byte(test.expectedRaw))
-				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
-				// Since the expected key is being built manually, need to know if it is step keyer and update the expected
-				// key accordingly.
-				switch test.keyer.(type) {
-				case StepsCacheKey, *StepsCacheKeyWithGlobalEnv:
-					assert.Equal(t, fmt.Sprintf("%s-step-0", expectedKey), key)
-				case *ExecutionKey, *ExecutionKeyWithGlobalEnv:
-					assert.Equal(t, expectedKey, key)
-				default:
-					assert.Fail(t, "unexpected Keyer implementation")
-				}
-			}
-		})
-	}
+func (t testM) Get(steps []batches.Step) ([]MountMetadata, error) {
+	return t.m, t.err
 }
