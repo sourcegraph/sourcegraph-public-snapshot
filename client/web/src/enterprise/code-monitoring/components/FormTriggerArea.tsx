@@ -324,7 +324,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     className={classNames('test-trigger-button', cardBtnClassName)}
                     onClick={toggleQueryForm}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
                             <VisuallyHidden>Edit trigger: </VisuallyHidden>
                             <div
@@ -351,7 +351,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                             )}
                         </div>
                         {triggerCompleted && (
-                            <Button variant="link" as="div">
+                            <Button variant="link" as="div" className="p-0">
                                 Edit
                             </Button>
                         )}

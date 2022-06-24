@@ -119,7 +119,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
             <Link
                 to={node.canonicalURL}
                 className={classNames(messageSubjectClassName, styles.messageSubject)}
-                title={node.message}
                 data-testid="git-commit-node-message-subject"
             >
                 {node.subject}
