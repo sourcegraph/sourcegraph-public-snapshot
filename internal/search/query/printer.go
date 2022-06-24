@@ -168,7 +168,7 @@ func nodeToJSON(node Node) any {
 	return struct{}{}
 }
 
-func allNodesToJSON(q Q) []any {
+func nodesToJSON(q Q) []any {
 	var jsons []any
 	for _, node := range q {
 		jsons = append(jsons, nodeToJSON(node))
@@ -177,7 +177,7 @@ func allNodesToJSON(q Q) []any {
 }
 
 func ToJSON(q Q) (string, error) {
-	json, err := json.Marshal(allNodesToJSON(q))
+	json, err := json.Marshal(nodesToJSON(q))
 	if err != nil {
 		return "", err
 	}
@@ -185,7 +185,7 @@ func ToJSON(q Q) (string, error) {
 }
 
 func PrettyJSON(q Q) (string, error) {
-	json, err := json.MarshalIndent(allNodesToJSON(q), "", "  ")
+	json, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
 	if err != nil {
 		return "", err
 	}
