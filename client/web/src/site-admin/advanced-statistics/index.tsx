@@ -169,12 +169,12 @@ export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps
             <TabList>
                 {/* <Tab>Overview</Tab> */}
                 <Tab>Search</Tab>
+                <Tab>Code intel</Tab>
+                <Tab>Users</Tab>
+                <Tab>Code insights</Tab>
                 <Tab>Batch changes</Tab>
                 <Tab>Notebooks</Tab>
                 <Tab>Extensions</Tab>
-                <Tab>Code insights</Tab>
-                <Tab>Code intel</Tab>
-                <Tab>Users</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel>
@@ -188,6 +188,60 @@ export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps
                             {
                                 name: 'File views',
                                 color: 'var(--orange)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Code intel"
+                        items={[
+                            {
+                                name: 'References',
+                                color: 'var(--cyan)',
+                            },
+                            {
+                                name: 'Definitions',
+                                color: 'var(--orange)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Users"
+                        items={[
+                            {
+                                name: 'Total users',
+                                color: 'var(--purple)',
+                            },
+                        ]}
+                    />
+                </TabPanel>
+                <TabPanel>
+                    <StatisticItem
+                        title="Statistics / Code insights"
+                        items={[
+                            {
+                                name: 'Insights created',
+                                color: 'var(--cyan)',
+                            },
+                            {
+                                name: 'Insights viewed',
+                                color: 'var(--orange)',
+                                showDevTimeCalculator: true,
+                                description:
+                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
+                            },
+                            {
+                                name: 'Datapoint clicked',
+                                color: 'var(--purple)',
                                 showDevTimeCalculator: true,
                                 description:
                                     'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
@@ -239,61 +293,6 @@ export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps
                                 name: 'Extension uses',
                                 color: 'var(--orange)',
                             },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Code insights"
-                        items={[
-                            {
-                                name: 'Insights created',
-                                color: 'var(--cyan)',
-                            },
-                            {
-                                name: 'Insights viewed',
-                                color: 'var(--orange)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                            {
-                                name: 'Datapoint clicked',
-                                color: 'var(--purple)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Code intel"
-                        items={[
-                            {
-                                name: 'References',
-                                color: 'var(--cyan)',
-                            },
-                            {
-                                name: 'Definitions',
-                                color: 'var(--orange)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            }
-                        ]}
-                    />
-                </TabPanel>
-
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Users"
-                        items={[
-                            {
-                                name: 'Total users',
-                                color: 'var(--purple)',
-                            }
                         ]}
                     />
                 </TabPanel>
