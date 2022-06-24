@@ -34,7 +34,12 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 	}
 }
 
-func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
+func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval, numPoints *int32) ([]GeneratedTimeSeries, error) {
+	useNumPoints := 7
+	if numPoints != nil {
+		useNumPoints = int(*numPoints)
+	}
+
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
 		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
@@ -45,7 +50,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	frames := BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
+	frames := BuildFrames(useNumPoints, interval, c.clock().Truncate(time.Hour*24))
 	points := timeCounts{}
 	timeseries := []TimeDataPoint{}
 

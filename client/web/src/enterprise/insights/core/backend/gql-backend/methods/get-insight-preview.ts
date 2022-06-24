@@ -51,6 +51,7 @@ export const getInsightsPreview = (
                         query: previewSeries.query,
                         label: previewSeries.label,
                     })),
+                    numPoints: 3
                 },
             },
         })

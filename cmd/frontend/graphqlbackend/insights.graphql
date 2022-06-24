@@ -1109,6 +1109,11 @@ input SearchInsightPreviewInput {
     The series to generate previews for
     """
     series: [SearchSeriesPreviewInput!]!
+
+    """
+    The number of points to generate
+    """
+    numPoints: Int
 }
 
 """

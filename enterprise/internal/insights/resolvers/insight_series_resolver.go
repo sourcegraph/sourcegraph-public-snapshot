@@ -466,7 +466,7 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 		return nil, err
 	}
 	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
+	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
 	}
