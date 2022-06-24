@@ -37,7 +37,12 @@ export const AxisLeft = memo(
                     className={styles.gridLine}
                 />
 
-                <Group key={ticksValues.reduce((store, tick) => `${store}-${tick}`, '')} innerRef={reference} top={top} left={left}>
+                <Group
+                    key={ticksValues.reduce((store, tick) => `${store}-${tick}`, '')}
+                    innerRef={reference}
+                    top={top}
+                    left={left}
+                >
                     <VisxAxisLeft
                         scale={scale}
                         tickValues={ticksValues}
