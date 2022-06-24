@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -148,6 +149,12 @@ var sg = &cli.App{
 			std.Out = std.NewOutput(cmd.App.Writer, verbose)
 		}
 
+		// Initialize context
+		cmd.Context, err = usershell.Context(cmd.Context)
+		if err != nil {
+			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
+		}
+
 		// Set up analytics and hooks for each command.
 		if !disableAnalytics {
 			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
@@ -235,7 +242,6 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
-		setupCommandV2,
 
 		// Company
 		teammateCommand,
