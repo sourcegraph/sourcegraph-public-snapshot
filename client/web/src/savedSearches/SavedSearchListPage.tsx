@@ -79,7 +79,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         ref={this.props.linkRef}
                     >
                         <div className="test-saved-search-list-page-row-title">
-                            <VisuallyHidden>Click to run this saved search: </VisuallyHidden>
+                            <VisuallyHidden>Run saved search: </VisuallyHidden>
                             {this.props.savedSearch.description}
                         </div>
                     </Link>
