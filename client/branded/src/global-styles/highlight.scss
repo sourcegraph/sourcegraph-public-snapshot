@@ -1014,7 +1014,6 @@
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
 // https://github.com/sourcegraph/sourcegraph/issues/36251
 .theme-light .theme-contrast-compliant-syntax-highlighting {
-    // New values
     --hl-property: #d33682;
     --hl-string: #058356;
     --hl-function: #886700;
