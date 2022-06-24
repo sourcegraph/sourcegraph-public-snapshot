@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 
@@ -76,10 +76,6 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
         <div className="container col-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
-                path={[
-                    { icon: CodeMonitoringLogo, to: '/code-monitoring', ariaLabel: 'Code monitoring logo' },
-                    { text: 'Create code monitor' },
-                ]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
@@ -89,7 +85,16 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                         </Link>
                     </>
                 }
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb
+                        icon={CodeMonitoringLogo}
+                        to="/code-monitoring"
+                        aria-label="Code monitoring"
+                    />
+                    <PageHeader.Breadcrumb>Create code monitor</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <CodeMonitorForm
                 history={history}
                 location={location}

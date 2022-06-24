@@ -196,6 +196,8 @@ Get the status of the CI run associated with the currently checked out branch.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
+* `--build="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
@@ -247,6 +249,9 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
+* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
 * `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
 * `--overwrite-state="<value>"`: `state` to overwrite the job state metadata

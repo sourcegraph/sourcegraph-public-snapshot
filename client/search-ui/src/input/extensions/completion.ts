@@ -2,7 +2,6 @@ import { basename } from 'path'
 
 import {
     autocompletion,
-    closeCompletion,
     startCompletion,
     completionKeymap,
     CompletionResult,
@@ -12,6 +11,34 @@ import {
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
+import {
+    mdiCodeArray,
+    mdiCodeBraces,
+    mdiCodeNotEqual,
+    mdiCodeString,
+    mdiCube,
+    mdiCubeOutline,
+    mdiDrawingBox,
+    mdiFileDocument,
+    mdiFilterOutline,
+    mdiFunction,
+    mdiKey,
+    mdiLink,
+    mdiMatrix,
+    mdiNull,
+    mdiNumeric,
+    mdiPackage,
+    mdiPiBox,
+    mdiPillar,
+    mdiPound,
+    mdiShape,
+    mdiSitemap,
+    mdiSourceBranch,
+    mdiTextBox,
+    mdiTimetable,
+    mdiWeb,
+    mdiWrench,
+} from '@mdi/js'
 import { startCase } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
@@ -30,51 +57,54 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { parsedQuery } from './parsedQuery'
 
-enum Type {
-    class = 'class',
-    constant = 'constant',
-    enum = 'enum',
-    function = 'function',
-    interface = 'interface',
-    keyword = 'keyword',
-    method = 'method',
-    namespace = 'namespace',
-    property = 'property',
-    text = 'text',
-    type = 'type',
-    variable = 'variable',
-    repo = 'repo',
-    queryFilter = 'queryfilter',
+import styles from '../CodeMirrorQueryInput.module.scss'
+
+type CompletionType = SymbolKind | 'queryfilter' | 'repository'
+
+// See SymbolIcon
+const typeIconMap: Record<CompletionType, string> = {
+    FILE: mdiFileDocument,
+    MODULE: mdiCodeBraces,
+    NAMESPACE: mdiWeb,
+    PACKAGE: mdiPackage,
+    CLASS: mdiSitemap,
+    METHOD: mdiCubeOutline,
+    PROPERTY: mdiWrench,
+    FIELD: mdiTextBox,
+    CONSTRUCTOR: mdiCubeOutline,
+    ENUM: mdiNumeric,
+    INTERFACE: mdiLink,
+    FUNCTION: mdiFunction,
+    VARIABLE: mdiCube,
+    CONSTANT: mdiPiBox,
+    STRING: mdiCodeString,
+    NUMBER: mdiPound,
+    BOOLEAN: mdiMatrix,
+    ARRAY: mdiCodeArray,
+    OBJECT: mdiDrawingBox,
+    KEY: mdiKey,
+    NULL: mdiNull,
+    ENUMMEMBER: mdiNumeric,
+    STRUCT: mdiPillar,
+    EVENT: mdiTimetable,
+    OPERATOR: mdiCodeNotEqual,
+    TYPEPARAMETER: mdiCube,
+    UNKNOWN: mdiShape,
+    queryfilter: mdiFilterOutline,
+    repository: mdiSourceBranch,
 }
 
-const typeMap: Record<SymbolKind, Type | undefined> = {
-    MODULE: Type.namespace,
-    NAMESPACE: Type.namespace,
-    PACKAGE: Type.namespace,
-    CLASS: Type.class,
-    METHOD: Type.method,
-    PROPERTY: Type.property,
-    FIELD: Type.property,
-    CONSTRUCTOR: Type.class,
-    ENUM: Type.enum,
-    INTERFACE: Type.interface,
-    FUNCTION: Type.function,
-    VARIABLE: Type.variable,
-    CONSTANT: Type.constant,
-    ENUMMEMBER: Type.enum,
-    STRING: undefined,
-    NUMBER: undefined,
-    BOOLEAN: undefined,
-    ARRAY: undefined,
-    OBJECT: undefined,
-    KEY: undefined,
-    NULL: undefined,
-    STRUCT: undefined,
-    EVENT: undefined,
-    OPERATOR: undefined,
-    TYPEPARAMETER: undefined,
-    UNKNOWN: undefined,
-    FILE: undefined,
+function createIcon(pathSpec: string): Node {
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const svg = document.createElementNS(svgNS, 'svg')
+    svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
+    svg.setAttribute('aria-hidden', 'true')
+
+    const path = document.createElementNS(svgNS, 'path')
+    path.setAttribute('d', pathSpec)
+
+    svg.append(path)
+    return svg
 }
 
 interface SuggestionContext {
@@ -127,12 +157,19 @@ export function searchQueryAutocompletion(
             '.completion-type-queryfilter > .cm-completionLabel': {
                 fontWeight: 'bold',
             },
+            '.cm-tooltip-autocomplete svg': {
+                width: '1rem',
+                height: '1rem',
+                display: 'inline-block',
+                boxSizing: 'content-box',
+                textAlign: 'center',
+                paddingRight: '0.5rem',
+            },
+            '.cm-tooltip-autocomplete svg path': {
+                fillOpacity: 0.6,
+            },
         }),
         EditorView.updateListener.of(update => {
-            // Hide completion list when the editor looses focus
-            if (update.focusChanged && !update.view.hasFocus) {
-                closeCompletion(update.view)
-            }
             // If a filter was completed, show the completion list again for
             // filter values.
             if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
@@ -148,6 +185,35 @@ export function searchQueryAutocompletion(
             defaultKeymap: false,
             override,
             optionClass: completionItem => 'completion-type-' + (completionItem.type ?? ''),
+            icons: false,
+            closeOnBlur: true,
+            addToOptions: [
+                // This renders the completion icon
+                {
+                    render(completion) {
+                        return createIcon(
+                            completion.type && completion.type in typeIconMap
+                                ? typeIconMap[completion.type as CompletionType]
+                                : typeIconMap[SymbolKind.UNKNOWN]
+                        )
+                    },
+                    // Per CodeMirror documentation, 20 is the default icon
+                    // position
+                    position: 20,
+                },
+                // This renders the "Tab" indicator after the details text. It's
+                // only visible for the currently selected suggestion (handled
+                // by CSS).
+                {
+                    render() {
+                        const node = document.createElement('span')
+                        node.className = styles.tabStyle
+                        node.textContent = 'Tab'
+                        return node
+                    },
+                    position: 200,
+                },
+            ],
         }),
     ]
 }
@@ -165,10 +231,22 @@ export function createDefaultSuggestionSources(options: {
     return [
         // Static suggestions shown if the the current position is outside a
         // filter value
-        createDefaultSource((context, _tokens, token) => ({
-            from: token ? token.range.start : context.position,
-            options: FILTER_SUGGESTIONS,
-        })),
+        createDefaultSource((context, _tokens, token) => {
+            // Default to the current cursor position (e.g. if the token is a
+            // whitespace, we want the suggestion to be inserted after it)
+            let from = context.position
+
+            if (token?.type === 'pattern') {
+                // If the token is a pattern (e.g. the start of a filter name),
+                // we want the suggestion to complete that name.
+                from = token.range.start
+            }
+
+            return {
+                from,
+                options: FILTER_SUGGESTIONS,
+            }
+        }),
 
         // Show symbol suggestions outside of filters
         createDefaultSource(async (context, tokens, token) => {
@@ -189,7 +267,7 @@ export function createDefaultSuggestionSources(options: {
                             const path = result.path
                             return result.symbols.map(symbol => ({
                                 label: symbol.name,
-                                type: typeMap[symbol.kind],
+                                type: symbol.kind,
                                 apply: symbol.name + ' ',
                                 detail: `${startCase(symbol.kind.toLowerCase())} | ${basename(path)}`,
                                 info: result.repository,
@@ -256,13 +334,14 @@ export function createDefaultSuggestionSources(options: {
                         case 'path':
                             return {
                                 label: match.path,
+                                type: SymbolKind.FILE,
                                 apply: regexInsertText(match.path, options) + ' ',
                                 info: match.repository,
                             }
                         case 'repo':
                             return {
                                 label: match.repository,
-                                type: Type.repo,
+                                type: 'repository',
                                 apply:
                                     repositoryInsertText(match, { ...options, filterValue: token.value?.value }) + ' ',
                             }
@@ -324,7 +403,7 @@ function createFilterSource<R, C extends SuggestionContext>(
 const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FILTERS) as FilterType[]).map(
     ({ label, insertText, detail }) => ({
         label,
-        type: Type.queryFilter,
+        type: 'queryfilter',
         apply: insertText,
         detail,
         boost: insertText.startsWith('-') ? 1 : 2, // demote negated filters
