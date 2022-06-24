@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -67,6 +68,7 @@ func TestCompute(t *testing.T) {
 	}
 
 	err = client.WaitForReposToBeIndexed(
+		180*time.Second,
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {

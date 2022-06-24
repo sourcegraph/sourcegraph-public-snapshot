@@ -51,8 +51,7 @@ query Repositories {
 // in the list to be indexed.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
-	timeout := 180 * time.Second
+func (c *Client) WaitForReposToBeIndexed(timeout time.Duration, repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

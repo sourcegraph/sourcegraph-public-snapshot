@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -78,7 +79,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	createPerforceExternalService(t)
 	userClient, _ := createTestUserAndWaitForRepo(t)
 
-	err := client.WaitForReposToBeIndexed(repoName)
+	err := client.WaitForReposToBeIndexed(180*time.Second, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}

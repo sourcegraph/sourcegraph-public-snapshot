@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -56,7 +57,7 @@ func TestIndexReposThenSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndexed(hugeReposListWithPrefix...)
+	err = client.WaitForReposToBeIndexed(5*time.Minute, hugeReposListWithPrefix...)
 	// err = waitForReposToBeIndexed(client, hugeReposList...)
 	if err != nil {
 		t.Fatal(err)

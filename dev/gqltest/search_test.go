@@ -66,6 +66,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	err = client.WaitForReposToBeIndexed(
+		180*time.Second,
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
