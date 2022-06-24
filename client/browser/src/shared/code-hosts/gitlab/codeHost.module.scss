@@ -7,6 +7,11 @@
     z-index: 1001 !important;
 }
 
+.command-palette-button > span {
+    display: flex;
+    align-items: center;
+}
+
 .btn-icon {
     img {
         // Gitlab applies this to svgs,

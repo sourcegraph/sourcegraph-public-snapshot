@@ -140,7 +140,7 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
                 </Link>
             </Alert>
             <div className="form-group">
-                <Label htmlFor="code-monitor-slack-webhook-url">Webhook URL</Label>
+                <Label htmlFor="code-monitor-slack-webhook-url">Slack webhook URL</Label>
                 <Input
                     id="code-monitor-slack-webhook-url"
                     type="url"
