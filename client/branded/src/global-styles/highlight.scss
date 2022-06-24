@@ -1027,7 +1027,8 @@
     --hl-comment: #767676;
     --hl-modifier: #1626b8;
 
-    // Overrides. TODO: Replace these in the code instead
+    // Semantic variable -> Color variable for backwards compatibility.
+    // TODO: Use semantic variables directly in the code instead.
     --hl-pink: var(--hl-property);
     --hl-cyan: var(--hl-string);
     --hl-yellow: var(--hl-function);
@@ -1052,27 +1053,27 @@
 }
 .theme-dark .theme-contrast-compliant-syntax-highlighting {
     --hl-property: #eb519c;
-    --hl-string: #2aa198;
+    --hl-string: #fb90c4;
     --hl-function: #b58900;
     --hl-object: #859900;
     --hl-keyword: #329af0;
-    --hl-type: #78b8eb;
+    --hl-type: #329af0;
     --hl-const-num: #777dec;
     --hl-punctuation: #d66f6d;
     --hl-symbol: #bbbbbb;
     --hl-comment: #3ba04f;
     --hl-other: #d08770;
 
-    // Overrides. TODO: Replace these in the code instead
+    // Semantic variable -> Color variable for backwards compatibility.
+    // TODO: Use semantic variables directly in the code instead.
     --hl-pink: var(--hl-property);
-    --hl-cyan: var(--hl-string);
     --hl-yellow: var(--hl-function);
     --hl-dark-blue-3: var(--hl-keyword);
     --hl-dark-blue-1: var(--hl-type);
     --hl-purple: var(--hl-const-num);
     --hl-gray-3: var(--hl-symbol);
     --hl-dark-green: var(--hl-comment);
-    --hl-red: #fb90c4;
+    --hl-red: var(--hl-string);
 
     .hl-keyword.hl-other.hl-unit {
         color: var(--hl-other);
