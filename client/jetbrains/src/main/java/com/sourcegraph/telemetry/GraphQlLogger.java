@@ -94,7 +94,6 @@ public class GraphQlLogger {
         entity.setContentEncoding(StandardCharsets.UTF_8.toString());
 
         request.setEntity(entity);
-        //request.setProtocolVersion(HttpVersion.HTTP_1_1);
         return request;
     }
 
