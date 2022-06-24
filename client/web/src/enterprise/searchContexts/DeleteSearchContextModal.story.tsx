@@ -19,11 +19,14 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/enterprise/searchContexts/DeleteSearchContextModal',
     decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [1200], disableSnapshot: false },
+    },
 }
 
 export default config
 
-export const _DeleteSearchContextModal: Story = () => (
+export const DeleteSearchContextModalStory: Story = () => (
     <WebStory>
         {webProps => (
             <DeleteSearchContextModal
@@ -38,7 +41,4 @@ export const _DeleteSearchContextModal: Story = () => (
     </WebStory>
 )
 
-_DeleteSearchContextModal.storyName = 'DeleteSearchContextModal'
-_DeleteSearchContextModal.parameters = {
-    chromatic: { viewports: [1200], disableSnapshot: false },
-}
+DeleteSearchContextModalStory.storyName = 'DeleteSearchContextModal'

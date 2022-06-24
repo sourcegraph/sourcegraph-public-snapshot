@@ -780,9 +780,8 @@ Flags:
 
 ## sg doctor
 
-Run checks to test whether system is in correct state to run Sourcegraph.
+DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.
 
-Arguments: `[...checks]`
 
 Flags:
 
@@ -827,12 +826,15 @@ Flags:
 
 ## sg setup
 
-Set up your local dev environment!.
+Validate and set up your local dev environment!.
 
 
 Flags:
 
+* `--check, -c`: Run checks and report setup state
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--fix, -f`: Fix all checks
+* `--oss`: Omit Sourcegraph-teammate-specific setup
 
 ## sg teammate
 

@@ -20,7 +20,7 @@ const config: Meta = {
 
 export default config
 
-export const _BatchSpecNode: Story = () => (
+export const BatchSpecNodeStory: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -32,4 +32,4 @@ export const _BatchSpecNode: Story = () => (
     </WebStory>
 )
 
-_BatchSpecNode.storyName = 'BatchSpecNode'
+BatchSpecNodeStory.storyName = 'BatchSpecNode'

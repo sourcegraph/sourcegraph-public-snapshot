@@ -1,4 +1,4 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { AuthenticatedUser } from '../../auth'
@@ -6,7 +6,7 @@ import { WebStory } from '../../components/WebStory'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 
-const config = {
+const config: Meta = {
     title: 'web/enterprise/code-monitoring/CreateCodeMonitorPage',
     parameters: {
         chromatic: { disableSnapshot: false },
@@ -15,7 +15,7 @@ const config = {
 
 export default config
 
-export const _CreateCodeMonitorPage: Story = () => (
+export const CreateCodeMonitorPageStory: Story = () => (
     <WebStory>
         {props => (
             <CreateCodeMonitorPage
@@ -28,9 +28,8 @@ export const _CreateCodeMonitorPage: Story = () => (
     </WebStory>
 )
 
-_CreateCodeMonitorPage.storyName = 'CreateCodeMonitorPage'
-
-_CreateCodeMonitorPage.parameters = {
+CreateCodeMonitorPageStory.storyName = 'CreateCodeMonitorPage'
+CreateCodeMonitorPageStory.parameters = {
     design: {
         type: 'figma',
         url:

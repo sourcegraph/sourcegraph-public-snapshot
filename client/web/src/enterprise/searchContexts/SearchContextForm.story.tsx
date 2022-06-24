@@ -11,6 +11,18 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextForm } from './SearchContextForm'
 
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/enterprise/searchContexts/SearchContextForm',
+    decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [1200], disableSnapshot: false },
+    },
+}
+
+export default config
+
 const onSubmit = (): Observable<ISearchContext> =>
     of({
         __typename: 'SearchContext',
@@ -74,18 +86,6 @@ const authUser: AuthenticatedUser = {
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)
-
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
-const config: Meta = {
-    title: 'web/enterprise/searchContexts/SearchContextForm',
-    decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [1200], disableSnapshot: false },
-    },
-}
-
-export default config
 
 export const EmptyCreate: Story = () => (
     <WebStory>
