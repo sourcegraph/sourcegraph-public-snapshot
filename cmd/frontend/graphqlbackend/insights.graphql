@@ -197,7 +197,8 @@ extend type Query {
         id: ID
         isFrozen: Boolean
         filters: InsightViewFiltersInput
-        seriesDisplayOptions: SeriesDisplayOptionsInput
+        seriesDisplayOptions: SeriesDisplayOptionsInput,
+        searchByQuery: String
     ): InsightViewConnection!
 
     """
