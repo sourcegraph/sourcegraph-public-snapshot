@@ -780,7 +780,7 @@ Flags:
 
 ## sg doctor
 
-DEPRECATD - Run checks to test whether system is in correct state to run Sourcegraph.
+DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.
 
 
 Flags:
