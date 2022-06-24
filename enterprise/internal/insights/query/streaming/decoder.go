@@ -19,6 +19,7 @@ type StreamDecoderEvents struct {
 type SearchMatch struct {
 	RepositoryID   int32
 	RepositoryName string
+	Path           string
 	MatchCount     int
 }
 
@@ -34,12 +35,13 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 		RepoCounts: make(map[string]*SearchMatch),
 	}
 
-	addCount := func(repo string, repoId int32, count int) {
+	addCount := func(repo string, repoId int32, path string, count int) {
 		if forRepo, ok := tr.RepoCounts[repo]; !ok {
 			tr.RepoCounts[repo] = &SearchMatch{
 				RepositoryID:   repoId,
 				RepositoryName: repo,
 				MatchCount:     count,
+				Path:           path,
 			}
 			return
 		} else {
@@ -74,20 +76,20 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 						count += len(lineMatch.OffsetAndLengths)
 					}
 					tr.TotalCount += count
-					addCount(match.Repository, match.RepositoryID, count)
+					addCount(match.Repository, match.RepositoryID, match.Path, count)
 				case *streamhttp.EventPathMatch:
 					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
+					addCount(match.Repository, match.RepositoryID, match.Path, 1)
 				case *streamhttp.EventRepoMatch:
 					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
+					addCount(match.Repository, match.RepositoryID, "", 1)
 				case *streamhttp.EventCommitMatch:
 					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
+					addCount(match.Repository, match.RepositoryID, "", 1)
 				case *streamhttp.EventSymbolMatch:
 					count := len(match.Symbols)
 					tr.TotalCount += count
-					addCount(match.Repository, match.RepositoryID, count)
+					addCount(match.Repository, match.RepositoryID, match.Path, count)
 				}
 			}
 		},
@@ -111,14 +113,16 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 type ComputeMatch struct {
 	RepositoryID   int32
 	RepositoryName string
+	Path           string
 	ValueCounts    map[string]int
 }
 
-func newComputeMatch(repoName string, repoID int32) *ComputeMatch {
+func newComputeMatch(repoName string, repoID int32, path string) *ComputeMatch {
 	return &ComputeMatch{
 		ValueCounts:    make(map[string]int),
 		RepositoryID:   repoID,
 		RepositoryName: repoName,
+		Path:           path,
 	}
 }
 
@@ -138,7 +142,7 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
 			return got
 		}
-		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
+		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID, matchContext.Path)
 		ctr.RepoCounts[matchContext.Repository] = v
 		return v
 	}
