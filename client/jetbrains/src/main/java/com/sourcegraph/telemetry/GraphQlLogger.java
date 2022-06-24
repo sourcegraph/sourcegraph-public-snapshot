@@ -39,7 +39,8 @@ public class GraphQlLogger {
         }
     }
 
-    public static void logEvent(Project project, @NotNull Event event) {
+    // This could be exposed later as public, but currently, we don't use it externally.
+    private static void logEvent(Project project, @NotNull Event event) {
         String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
 
         String accessToken = ConfigUtil.getAccessToken(project);
