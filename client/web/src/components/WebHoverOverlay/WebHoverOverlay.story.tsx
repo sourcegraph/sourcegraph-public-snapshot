@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -26,9 +26,11 @@ import styles from './WebHoverOverlay.story.module.scss'
 
 registerHighlightContributions()
 
-const { add } = storiesOf('web/WebHoverOverlay', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/WebHoverOverlay',
+    parameters: {
         design: {
             type: 'figma',
             url:
@@ -38,11 +40,17 @@ const { add } = storiesOf('web/WebHoverOverlay', module)
             enableDarkMode: true,
             disableSnapshot: false,
         },
-    })
+    },
+    decorators: [decorator],
+}
 
-add('Loading', () => <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />)
+export default config
 
-add('Error', () => (
+export const Loading: Story = () => (
+    <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />
+)
+
+export const _Error: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={
@@ -52,17 +60,23 @@ add('Error', () => (
         }
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('No hover information', () => (
+_Error.storyName = 'Error'
+
+export const NoHoverInformation: Story = () => (
     <WebHoverOverlay {...commonProps()} hoverOrError={null} actionsOrError={FIXTURE_ACTIONS} />
-))
+)
 
-add('Common content without actions', () => (
+NoHoverInformation.storyName = 'No hover information'
+
+export const CommonContentWithoutActions: Story = () => (
     <WebHoverOverlay {...commonProps()} hoverOrError={{ contents: [FIXTURE_CONTENT] }} />
-))
+)
 
-add('Common content with actions', () => (
+CommonContentWithoutActions.storyName = 'Common content without actions'
+
+export const CommonContentWithActions: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -70,9 +84,11 @@ add('Common content with actions', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('Aggregated Badges', () => (
+CommonContentWithActions.storyName = 'Common content with actions'
+
+export const AggregatedBadges: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -81,9 +97,9 @@ add('Aggregated Badges', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('Long code', () => (
+export const LongCode: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -92,9 +108,11 @@ add('Long code', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('Long text only', () => (
+LongCode.storyName = 'Long code'
+
+export const LongTextOnly: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -102,9 +120,11 @@ add('Long text only', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('Long markdown with <div>', () => (
+LongTextOnly.storyName = 'Long text only'
+
+export const LongMarkdownWithDiv: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -112,9 +132,11 @@ add('Long markdown with <div>', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('Multiple MarkupContents', () => (
+LongMarkdownWithDiv.storyName = 'Long markdown with <div>'
+
+export const MultipleMarkupContents: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -123,9 +145,11 @@ add('Multiple MarkupContents', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
-))
+)
 
-add('With small-text alert', () => (
+MultipleMarkupContents.storyName = 'Multiple MarkupContents'
+
+export const WithSmallTextAlert: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -135,9 +159,11 @@ add('With small-text alert', () => (
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
     />
-))
+)
 
-add('With one-line alert', () => (
+WithSmallTextAlert.storyName = 'With small-text alert'
+
+export const WithOneLineAlert: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -154,9 +180,11 @@ add('With one-line alert', () => (
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
     />
-))
+)
 
-add('With alert with warning icon', () => (
+WithOneLineAlert.storyName = 'With one-line alert'
+
+export const WithAlertWithWarningIcon: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -174,9 +202,11 @@ add('With alert with warning icon', () => (
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
     />
-))
+)
 
-add('With dismissible alert with icon', () => (
+WithAlertWithWarningIcon.storyName = 'With alert with warning icon'
+
+export const WithDismissibleAlertWithIcon: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -196,9 +226,11 @@ add('With dismissible alert with icon', () => (
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
     />
-))
+)
 
-add('With long markdown text and dismissible alert with icon.', () => (
+WithDismissibleAlertWithIcon.storyName = 'With dismissible alert with icon'
+
+export const WithLongMarkdownTextAndDismissibleAlertWithIcon: Story = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -209,9 +241,11 @@ add('With long markdown text and dismissible alert with icon.', () => (
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
     />
-))
+)
 
-add('Multiple MarkupContents with badges and alerts', () => (
+WithLongMarkdownTextAndDismissibleAlertWithIcon.storyName = 'With long markdown text and dismissible alert with icon.'
+
+export const MultipleMarkupContentsWithBadgesAndAlerts: Story = () => (
     <div className={styles.container}>
         <WebHoverOverlay
             {...commonProps()}
@@ -224,4 +258,6 @@ add('Multiple MarkupContents with badges and alerts', () => (
             onAlertDismissed={action('onAlertDismissed')}
         />
     </div>
-))
+)
+
+MultipleMarkupContentsWithBadgesAndAlerts.storyName = 'Multiple MarkupContents with badges and alerts'

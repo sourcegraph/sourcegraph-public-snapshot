@@ -1,10 +1,8 @@
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import {
@@ -397,7 +395,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
     onExampleClick,
 }: SearchReferenceEntryProps<T>): ReactElement | null => {
     const [collapsed, setCollapsed] = useState(true)
-    const CollapseIcon = collapsed ? ChevronLeftIcon : ChevronDownIcon
+    const collapseIcon = collapsed ? mdiChevronLeft : mdiChevronDown
 
     const handleOpenChange = useCallback(collapsed => setCollapsed(!collapsed), [])
 
@@ -431,7 +429,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon aria-hidden={true} as={CollapseIcon} />
+                        <Icon aria-hidden={true} svgPath={collapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
@@ -604,7 +602,7 @@ const SearchReference = React.memo(
                 <Text className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon role="img" aria-label="Open in a new tab" as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                         </Link>
                     </small>
                 </Text>

@@ -1,3 +1,5 @@
+# Documentation for how to override sg configuration for local development:
+# https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/sg/index.md#configuration
 env:
   PGPORT: 5432
   PGHOST: localhost

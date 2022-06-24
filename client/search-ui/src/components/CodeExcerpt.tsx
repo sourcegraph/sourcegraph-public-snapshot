@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { range } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, Observable, Subscription, BehaviorSubject } from 'rxjs'
 import { catchError, filter } from 'rxjs/operators'
@@ -206,7 +206,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 )}
                 {blobLinesOrError && isErrorLike(blobLinesOrError) && (
                     <div className={styles.codeExcerptAlert}>
-                        <Icon className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiAlertCircle} />
                         {blobLinesOrError.message}
                     </div>
                 )}

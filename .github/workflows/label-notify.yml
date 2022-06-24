@@ -14,7 +14,7 @@ jobs:
              recipients: |
                   team/integrations=@muratsu @jjinnii @ryankscott
                   team/growth=@muratsu @a-bergevin
-                  team/cloud=@RafLeszczynski
+                  team/cloud=@sourcegraph/cloud
                   team/search-product=@benvenker @lguychard
                   team/search-core=@sourcegraph/search-core
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin

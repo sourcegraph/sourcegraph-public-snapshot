@@ -2,6 +2,7 @@ name: sg-setup
 on:
   push:
     paths:
+      - '.github/workflows/sg-setup.yml'
       - 'dev/sg/dependencies/**.go'
       - 'dev/sg/internal/check/**.go'
 
@@ -11,7 +12,9 @@ jobs:
       matrix:
         # See https://github.com/actions/virtual-environments#available-environments for
         # available environments.
-        os: [macos-11, ubuntu-20.04]
+        os:
+        - macos-12
+        - ubuntu-20.04
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -25,8 +28,6 @@ jobs:
           go-version: 1.18
 
       - name: Test dependencies (${{ matrix.os }})
-        # Yes it really can be very slow. This is more an optional check than anything
-        # else so it should be okay
         run: |
           go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
