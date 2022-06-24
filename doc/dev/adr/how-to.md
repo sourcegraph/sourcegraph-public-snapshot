@@ -12,9 +12,14 @@ Great! You've decided to write an ADR. This process will likely improve in the f
 ### ADR template
 
 ```
-{{date}}
+# {{index}}. {{title}}
+
+Date: {{YYYY-MM-DD}}
 
 ### Context
+
 ### Decision
+
 ### Consequences
+
 ```
