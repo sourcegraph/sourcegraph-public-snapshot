@@ -131,19 +131,19 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// TODO: Generate new HubSpot form and update `SurveyFormID`.
-	// // Submit form to HubSpot
-	// if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
-	// 	Email:                 email,
-	// 	Score:                 args.Input.Score,
-	// 	UseCases:              args.Input.UseCases,
-	// 	AdditionalInformation: args.Input.AdditionalInformation,
-	// 	IsAuthenticated:       actor.IsAuthenticated(),
-	// 	SiteID:                siteid.Get(),
-	// }); err != nil {
-	// 	// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
-	// 	log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
-	// }
+	// Submit form to HubSpot
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
+		Email:                 email,
+		Score:                 args.Input.Score,
+		UseCases:              args.Input.UseCases,
+		OtherUseCase:          args.Input.OtherUseCase,
+		AdditionalInformation: args.Input.AdditionalInformation,
+		IsAuthenticated:       actor.IsAuthenticated(),
+		SiteID:                siteid.Get(),
+	}); err != nil {
+		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
+		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
+	}
 
 	return &EmptyResponse{}, nil
 }
