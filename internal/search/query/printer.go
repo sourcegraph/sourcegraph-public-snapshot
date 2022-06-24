@@ -7,6 +7,38 @@ import (
 	"strings"
 )
 
+func escape(s string) string {
+	isSpecial := func(c rune) bool {
+		switch c {
+		case '/':
+			return true
+		default:
+			return false
+		}
+	}
+
+	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
+	// but is more efficient since it does it via bytes.
+	count := 0
+	for _, c := range s {
+		if isSpecial(c) {
+			count++
+		}
+	}
+	if count == 0 {
+		return string(s)
+	}
+
+	escaped := make([]rune, 0, len(s)+count)
+	for _, c := range s {
+		if isSpecial(c) {
+			escaped = append(escaped, '\\')
+		}
+		escaped = append(escaped, c)
+	}
+	return string(escaped)
+}
+
 func stringHumanPattern(nodes []Node) string {
 	var result []string
 	for _, node := range nodes {
@@ -15,6 +47,9 @@ func stringHumanPattern(nodes []Node) string {
 			v := n.Value
 			if n.Annotation.Labels.IsSet(Quoted) {
 				v = strconv.Quote(v)
+			}
+			if n.Annotation.Labels.IsSet(Regexp) {
+				v = fmt.Sprintf("/%s/", escape(v))
 			}
 			if n.Negated {
 				v = fmt.Sprintf("(NOT %s)", v)
