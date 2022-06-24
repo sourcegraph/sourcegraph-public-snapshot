@@ -963,7 +963,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			return
 		}
 
-		if r.args.Id != nil {
+		if r.args.Id != nil && r.args.SearchByQuery == nil {
 			var unique string
 			r.err = relay.UnmarshalSpec(*r.args.Id, &unique)
 			if r.err != nil {
