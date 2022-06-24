@@ -55,6 +55,8 @@ type InsightQueryArgs struct {
 	Limit    int
 	IsFrozen *bool
 
+	ContainingQuerySubstring string
+
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
 	WithoutAuthorization bool
@@ -81,6 +83,10 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 	if !args.WithoutAuthorization {
 		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
+	}
+
+	if len(args.ContainingQuerySubstring) > 0 {
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from insight_series join insight_view_series ivs ON insight_series.id = ivs.insight_series_id join insight_view iv ON ivs.insight_view_id = iv.id where query similar to '%%s%')", args.ContainingQuerySubstring))
 	}
 
 	cursor := insightViewPageCursor{

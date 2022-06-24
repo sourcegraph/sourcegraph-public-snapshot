@@ -938,6 +938,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		if r.args.SearchByQuery != nil && len(*r.args.SearchByQuery) != 0 {
 			// lets go see if there are any code insights with this in the query (separated by whitespace)
 			// so basically construct a regexp with the value
+			args.ContainingQuerySubstring = *r.args.SearchByQuery
 
 			// also search the compute captured values to see if there are any exact matches ignoring trailing
 			// and leading whitespace
