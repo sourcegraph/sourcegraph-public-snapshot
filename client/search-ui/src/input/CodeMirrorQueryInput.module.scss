@@ -32,6 +32,22 @@
             padding: 0;
         }
 
+        :global(.cm-placeholder) {
+            // CodeMirror uses display: inline-block by default, but that causes
+            // Chrome to render a larger cursor if the placeholder holder spans
+            // multiple lines. Firefox doesn't have this problem (but
+            // setting display: inline doesn't seem to have a negative effect
+            // either)
+            display: inline;
+            // Once again, Chrome renders the placeholder differently than
+            // Firefox. CodeMirror sets 'word-break: break-word' (which is
+            // deprecated) and 'overflow-wrap: anywhere' but they don't seem to
+            // have an effect in Chrome (at least not in this instance).
+            // Setting 'word-break: break-all' explicitly makes appearances a
+            // bit better for example queries with long tokens.
+            word-break: break-all;
+        }
+
         :global(.cm-tooltip) {
             padding: 0.25rem;
             color: var(--search-query-text-color);

@@ -6,7 +6,7 @@
         "ProposedQuery": {
           "Description": "apply language filter for pattern",
           "Query": "context:global lang:Python parse",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     },
@@ -16,7 +16,7 @@
         "ProposedQuery": {
           "Description": "AND patterns together",
           "Query": "context:global (parse AND python)",
-          "PatternType": 1
+          "PatternType": 3
         }
       }
     }

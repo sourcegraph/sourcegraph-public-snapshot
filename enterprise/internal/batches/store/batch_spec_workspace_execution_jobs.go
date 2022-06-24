@@ -274,6 +274,7 @@ func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts Li
 }
 
 var listBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListBatchSpecWorkspaceExecutionJobs
 SELECT
 	%s
 FROM

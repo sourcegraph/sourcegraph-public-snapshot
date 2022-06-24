@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -40,7 +39,7 @@ export const Simple: Story = () => {
             <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                 <CollapseHeader as={Button} outline={true} focusLocked={true} variant="secondary" className="w-50">
                     Collapsable
-                    <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
+                    <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronDown : mdiChevronLeft} className="mr-1" />
                 </CollapseHeader>
                 <CollapsePanel className="w-50">
                     <Input placeholder="testing this one" />
@@ -59,7 +58,11 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            <Icon aria-hidden={true} as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
+                                className="mr-1"
+                            />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />
@@ -80,7 +83,11 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            <Icon aria-hidden={true} as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
+                                className="mr-1"
+                            />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />

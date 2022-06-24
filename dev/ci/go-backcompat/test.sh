@@ -124,7 +124,8 @@ if [ -f "${flakefile}" ]; then
   echo ""
   echo "Disabling tests listed in flakefile ${flakefile}"
 
-  for pair in $(jq -r '.[] | "\(.path):\(.prefix)"' <"${flakefile}"); do
+  pairs=$(jq -r '.[] | "\(.path):\(.prefix)"' <"${flakefile}")
+  for pair in $pairs; do
     IFS=' ' read -ra parts <<<"${pair/:/ }"
     disable_test_path "${parts[0]}" "${parts[1]}"
   done

@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card, H4 } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
 
@@ -104,7 +105,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
         <>
             {expanded && (
                 <Card className={classNames(styles.card, 'p-3')}>
-                    <div className="font-weight-bold">{title}</div>
+                    <H4 className="mb-0 font-weight-bold">{title}</H4>
                     <span className="text-muted">{subtitle}</span>
 
                     {children}
@@ -112,7 +113,6 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                     <div className="d-flex align-items-center mb-3">
                         <div>
                             <Toggle
-                                title="Include search results in message"
                                 value={includeResults}
                                 onToggle={toggleIncludeResults}
                                 className="mr-2"
@@ -120,7 +120,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                                 data-testid={`include-results-toggle-${idName}`}
                             />
                         </div>
-                        <span id={`code-monitoring-${idName}-form-actions-include-results-toggle`}>
+                        <span id={`code-monitoring-${idName}-include-results-toggle`}>
                             Include search results in sent message
                         </span>
                     </div>
@@ -169,7 +169,6 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                     <div className="d-flex align-items-center my-4">
                         <div>
                             <Toggle
-                                title="Enabled"
                                 value={actionEnabled}
                                 onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                 className="mr-2"
@@ -226,11 +225,11 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                         disabled && styles.btnDisabled
                     )}
                     disabled={disabled}
-                    aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
+                            <VisuallyHidden>Edit action: </VisuallyHidden>
                             <div className={classNames('font-weight-bold', !completed && styles.cardLink)}>{title}</div>
                             {completed ? (
                                 <span
@@ -247,7 +246,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                             <div className="d-flex align-items-center">
                                 <div>
                                     <Toggle
-                                        title="Enabled"
+                                        title={actionEnabled ? 'Enabled' : 'Disabled'}
                                         value={actionEnabled}
                                         onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                         className="mr-3"

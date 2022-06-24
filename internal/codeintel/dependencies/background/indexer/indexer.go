@@ -40,7 +40,7 @@ func (i *indexer) Handle(ctx context.Context) error {
 		repositoryMatchLimit = &val
 	}
 
-	repositories, err := i.dbStore.SelectRepositoriesForIndexScan(
+	repositories, err := i.dbStore.SelectRepositoriesForLockfileIndexScan(
 		ctx,
 		"last_lockfile_scan",
 		"last_lockfile_scan_at",
@@ -50,7 +50,7 @@ func (i *indexer) Handle(ctx context.Context) error {
 		ConfigInst.RepositoryBatchSize,
 	)
 	if err != nil {
-		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
+		return errors.Wrap(err, "dbstore.SelectRepositoriesForLockfileIndexScan")
 	}
 	if len(repositories) == 0 {
 		return nil
@@ -85,10 +85,10 @@ func (i *indexer) handleRepository(
 
 	for {
 		policies, totalCount, err := i.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-			RepositoryID: repositoryID,
-			ForIndexing:  true,
-			Limit:        ConfigInst.RepositoryBatchSize,
-			Offset:       offset,
+			RepositoryID:        repositoryID,
+			ForLockfileIndexing: true,
+			Limit:               ConfigInst.RepositoryBatchSize,
+			Offset:              offset,
 		})
 		if err != nil {
 			return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
@@ -110,7 +110,7 @@ func (i *indexer) handleRepository(
 		}
 		repoRevs := map[api.RepoName]types.RevSpecSet{api.RepoName(repoName): revs}
 
-		if err := i.dependenciesSvc.ResolveDependencies(ctx, repoRevs); err != nil {
+		if err := i.dependenciesSvc.IndexLockfiles(ctx, repoRevs); err != nil {
 			return err
 		}
 
