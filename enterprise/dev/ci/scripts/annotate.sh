@@ -39,7 +39,7 @@ done
 # Set a default context that is unique per job/custom context and type combination.
 CONTEXT=${CUSTOM_CONTEXT:-$BUILDKITE_JOB_ID}
 CONTEXT="$CONTEXT-$TYPE"
-TEE_FILE="${BUILDKITE_LABEL}-annotation.md"
+TEE_FILE="./annotations/${BUILDKITE_LABEL}-annotation.md"
 
 # If we are not in Buildkite, exit before doing annotations
 if [[ -z "$BUILDKITE" ]]; then
