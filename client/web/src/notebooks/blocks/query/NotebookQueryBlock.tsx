@@ -180,6 +180,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 hoverifier={hoverifier}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
+                                query={executedQuery}
                             />
                         </div>
                     )}

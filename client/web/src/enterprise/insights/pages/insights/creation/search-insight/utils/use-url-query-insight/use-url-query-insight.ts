@@ -1,5 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react'
 
+import { escapeRegExp } from 'lodash';
+
 import { asError, ErrorLike, dedupeWhitespace } from '@sourcegraph/common'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
@@ -42,7 +44,7 @@ export function getInsightDataFromQuery(searchQuery: string): InsightData {
             const repoValue = token.value?.value
 
             if (repoValue) {
-                repositories.push(repoValue)
+                repositories.push(repoValue.replace(/(\\|\$|\^)/g, ''))
             }
         }
     }

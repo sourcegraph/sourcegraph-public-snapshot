@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
+import { useApolloClient } from '@apollo/client';
 import classNames from 'classnames'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
@@ -29,6 +30,11 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '@sourcegraph/web/src/enterprise/insights/core';
+import { LineChartLivePreview } from '@sourcegraph/web/src/enterprise/insights/pages/insights/creation/LineChartLivePreview'
+import {
+    getInsightDataFromQuery
+} from '@sourcegraph/web/src/enterprise/insights/pages/insights/creation/search-insight/utils/use-url-query-insight/use-url-query-insight';
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -62,6 +68,8 @@ export interface StreamingSearchResultsListProps
      * For example, `location.search` on web.
      */
     executedQuery: string
+
+    query?: string
     /**
      * Classname to be applied to the container of a search result.
      */
@@ -89,6 +97,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
+    query= ''
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -164,6 +173,16 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         ]
     )
 
+    const apolloClient = useApolloClient()
+    const codeInsightsApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
+    const { repositories, seriesQuery } = useMemo(() => getInsightDataFromQuery(query), [query])
+    const series = useMemo(() => [{
+        query: seriesQuery,
+        label: 'Search query',
+        generatedFromCaptureGroup: false,
+        stroke: 'blue'
+    }], [seriesQuery])
+
     return (
         <>
             <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
@@ -177,6 +196,22 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         renderSearchUserNeedsCodeHost(authenticatedUser)}
                 </div>
             </div>
+
+            {
+                repositories.length > 0 &&
+                    <CodeInsightsBackendContext.Provider value={codeInsightsApi}>
+                        <LineChartLivePreview
+                            disabled={false}
+                            repositories={repositories.join(',')}
+                            stepValue='2'
+                            step='weeks'
+                            isAllReposMode={false}
+                            series={series}
+                            className='mr-3'
+                        />
+                    </CodeInsightsBackendContext.Provider>
+            }
+
             <VirtualList<SearchMatch>
                 className="mt-2"
                 itemsToShow={itemsToShow}
