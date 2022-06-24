@@ -5875,9 +5875,9 @@ type AnalyticsStatItem {
 
 type AnalyticsSearchResult {
     searches: AnalyticsStatItem!
-    # fileViews: AnalyticsStatItem!
-    # fileOpens: AnalyticsStatItem!
-    # sharedSearches: AnalyticsStatItem!
+    fileViews: AnalyticsStatItem!
+    fileOpens: AnalyticsStatItem!
+    # sharedSearches: AnalyticsStatItem! TODO: how to track
 }
 
 type Analytics {
