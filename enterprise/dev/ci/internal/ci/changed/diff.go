@@ -109,7 +109,7 @@ func ParseDiff(files []string) (diff Diff) {
 		}
 		// Affects anything in docker-images directories (which implies image build
 		// scripts and/or resources are affected)
-		if strings.HasPrefix(p, "docker-images/") || strings.HasPrefix(p, "docker-images/") {
+		if strings.HasPrefix(p, "docker-images/") {
 			diff |= DockerImages
 		}
 
