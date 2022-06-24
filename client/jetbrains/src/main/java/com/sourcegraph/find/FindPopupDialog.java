@@ -9,6 +9,7 @@ import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.util.DimensionService;
+import com.intellij.openapi.util.WindowStateService;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.openapi.wm.impl.IdeGlassPaneImpl;
@@ -73,7 +74,7 @@ public class FindPopupDialog extends DialogWrapper {
         ApplicationManager.getApplication().getMessageBus().connect(this.getDisposable()).subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
             @Override
             public void projectClosed(@NotNull Project project) {
-                hide();
+                FindPopupDialog.this.doCancelAction();
             }
         });
 
@@ -160,7 +161,20 @@ public class FindPopupDialog extends DialogWrapper {
     }
 
     public void hide() {
+        saveSize();
         getPeer().getWindow().setVisible(false);
+    }
+
+    // The automatic size saving behavior for DialogWrapper does not work for us as it relies on disposing of the
+    // dialog to persist the changes. We need to manually implement this behavior instead.
+    private void saveSize() {
+        String serviceKey = this.getDimensionServiceKey();
+        WindowStateService windowStateService = WindowStateService.getInstance(project);
+
+        Point location = getLocation();
+        Dimension size = getSize();
+        windowStateService.putLocation(serviceKey, location);
+        windowStateService.putSize(serviceKey, size);
     }
 
     @Override

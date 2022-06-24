@@ -55,17 +55,20 @@ public class FindService implements Disposable {
     @NotNull
     private void createOrShowPopup() {
         if (popup != null) {
-            popup.show();
+            if (!popup.isVisible()) {
+                popup.show();
+            }
         }
         if (popup == null) {
             popup = new FindPopupDialog(project, mainPanel);
 
-            // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
-            // work around this, we add a manual listener to both the global key handler (since the editor component seems
-            // to work around the default swing event hands long) and the browser panel which seems to handle events in a
-            // separate queue.
+            // We add a manual listener to both the global key handler (since the editor component seems to work around
+            // the default swing event handler) and the browser panel which seems to handle events in a separate queue.
             registerGlobalKeyListeners();
             registerJBCefClientKeyListeners();
+
+            // We also need to detect when the main IDE frame or another popup inside the project gets focus and close
+            // the Sourcegraph window accordingly.
             registerOutsideClickListener();
         }
     }
@@ -101,12 +104,10 @@ public class FindService implements Disposable {
     }
 
     private boolean handleKeyPress(boolean isWebView, int keyCode, int modifiers) {
-        System.out.println("handleKeyPress");
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
             ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
         }
-
 
         if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
@@ -136,11 +137,6 @@ public class FindService implements Disposable {
                 if (windowEvent.getID() != WINDOW_GAINED_FOCUS) {
                     return;
                 }
-
-                // We only care for these events when the popup is shown
-//                if (!this.popup.isVisible()) {
-//                    return;
-//                }
 
                 System.out.println("-----------------------------------------------");
                 System.out.println("getComponent(): " + windowEvent.getComponent().toString());
