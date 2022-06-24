@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.DialogWrapperPeer;
+import com.intellij.openapi.ui.DialogWrapperPeerFactory;
 import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.util.DimensionService;
 import com.intellij.openapi.util.WindowStateService;
@@ -53,6 +55,19 @@ public class FindPopupDialog extends DialogWrapper {
         super.show();
     }
 
+    // Overwrite the createPeer function that is being used in the super constructor so that we can create a new frame.
+    // This is needed because the frame is otherwise shared with native overlays like Find in Files or Search Everywhere
+    // which can lead to race conditions when some other overlays are opened while the Sourcegraph window is open.
+    //
+    // A new frame prevents us from running into the issue since it will never be shared with any other view.
+    //
+    // This frame behaves slightly different to standard project frames though: Some menu options will be greyed out
+    // like e.g. the option to open Search Everywhere.
+    @Override
+    protected @NotNull DialogWrapperPeer createPeer(@Nullable Project project, boolean canBeParent, @NotNull IdeModalityType ideModalityType) {
+        Frame frame = new Frame();
+        return DialogWrapperPeerFactory.getInstance().createPeer(this, frame, canBeParent, ideModalityType);
+    }
 
     @Override
     protected @Nullable JComponent createCenterPanel() {

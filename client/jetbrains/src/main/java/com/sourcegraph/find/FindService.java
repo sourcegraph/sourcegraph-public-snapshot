@@ -34,10 +34,6 @@ public class FindService implements Disposable {
     }
 
     synchronized public void showPopup() {
-        if (popup != null && popup.isDisposed()) {
-            System.out.println("DEADDEADDEADDEADDEADDEADDEADDEAD");
-        }
-
         createOrShowPopup();
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
@@ -129,7 +125,6 @@ public class FindService implements Disposable {
         Window projectParentWindow = getParentWindow(null);
 
         Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-            System.out.println(event);
             if (event instanceof WindowEvent) {
                 WindowEvent windowEvent = (WindowEvent) event;
 
@@ -138,33 +133,19 @@ public class FindService implements Disposable {
                     return;
                 }
 
-                System.out.println("-----------------------------------------------");
-                System.out.println("getComponent(): " + windowEvent.getComponent().toString());
-//                System.out.println(windowEvent.getComponent());
-                System.out.println("projectParentWindow: " + projectParentWindow.toString());
-//                System.out.println(projectParentWindow);
-                System.out.println("getWindow(): " + this.popup.getWindow().toString());
-//                System.out.println(this.popup.getWindow());
+                if (!this.popup.isVisible()) {
+                    return;
+                }
 
                 // Detect if we're focusing the Sourcegraph popup
                 if (windowEvent.getComponent().equals(this.popup.getWindow())) {
                     System.out.println("windowEvent.getComponent().equals(this.popup.getWindow())");
                     return;
                 }
-//                if (popup instanceof AbstractPopup) {
-//                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
-//
-//                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
-//                        return;
-//                    }
-//                }
 
                 // Detect if the newly focused window is a parent of the project root window
                 Window currentProjectParentWindow = getParentWindow(windowEvent.getComponent());
-                System.out.println("currentProjectParentWindow(): " + currentProjectParentWindow.toString());
-//                System.out.println(currentProjectParentWindow);
                 if (currentProjectParentWindow.equals(projectParentWindow)) {
-                    System.out.println("currentProjectParentWindow.equals(projectParentWindow)");
                     hidePopup();
                 }
             }
