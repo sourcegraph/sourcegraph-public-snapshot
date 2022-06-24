@@ -145,15 +145,15 @@ func Test_toZoektPattern(t *testing.T) {
 
 	autogold.Want("basic string",
 		`substr:"a"`).
-		Equal(t, test(`a`, query.SearchTypeLiteralDefault, search.TextRequest))
+		Equal(t, test(`a`, query.SearchTypeLiteral, search.TextRequest))
 
 	autogold.Want("basic and-expression",
 		`(or (and substr:"a" substr:"b" (not substr:"c")) substr:"d")`).
-		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteralDefault, search.TextRequest))
+		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteral, search.TextRequest))
 
 	autogold.Want("quoted string in literal escapes quotes (regexp meta and string escaping)",
 		`substr:"\"func main() {\\n\""`).
-		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteralDefault, search.TextRequest))
+		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteral, search.TextRequest))
 
 	autogold.Want("quoted string in regexp interpreted as string (regexp meta escaped)",
 		`substr:"func main() {\n"`).
@@ -161,7 +161,7 @@ func Test_toZoektPattern(t *testing.T) {
 
 	autogold.Want("zoekt symbol nodes are atoms",
 		`(and sym:substr:"foo" (not sym:substr:"bar"))`).
-		Equal(t, test(`type:symbol (foo and not bar)`, query.SearchTypeLiteralDefault, search.SymbolRequest))
+		Equal(t, test(`type:symbol (foo and not bar)`, query.SearchTypeLiteral, search.SymbolRequest))
 }
 
 func queryEqual(a, b zoekt.Q) bool {

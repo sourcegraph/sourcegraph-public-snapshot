@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -808,4 +809,55 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 		fms = append(fms, fm)
 	}
 	return fms, nil
+}
+
+func TestZoektFileMatchToMultilineMatches(t *testing.T) {
+	cases := []struct {
+		input  *zoekt.FileMatch
+		output result.ChunkMatches
+	}{{
+		input: &zoekt.FileMatch{
+			LineMatches: []zoekt.LineMatch{{
+				Line:       []byte("testing 1 2 3"),
+				LineNumber: 1,
+				LineStart:  0,
+				LineEnd:    len("testing 1 2 3"),
+				LineFragments: []zoekt.LineFragmentMatch{{
+					LineOffset:  8,
+					Offset:      8,
+					MatchLength: 1,
+				}, {
+					LineOffset:  10,
+					Offset:      10,
+					MatchLength: 1,
+				}, {
+					LineOffset:  12,
+					Offset:      12,
+					MatchLength: 1,
+				}},
+			}},
+		},
+		// One chunk per line, not one per fragment
+		output: result.ChunkMatches{{
+			Content:      string("testing 1 2 3"),
+			ContentStart: result.Location{0, 0, 0},
+			Ranges: result.Ranges{{
+				Start: result.Location{8, 0, 8},
+				End:   result.Location{9, 0, 9},
+			}, {
+				Start: result.Location{10, 0, 10},
+				End:   result.Location{11, 0, 11},
+			}, {
+				Start: result.Location{12, 0, 12},
+				End:   result.Location{13, 0, 13},
+			}},
+		}},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := zoektFileMatchToMultilineMatches(tc.input)
+			require.Equal(t, tc.output, got)
+		})
+	}
 }

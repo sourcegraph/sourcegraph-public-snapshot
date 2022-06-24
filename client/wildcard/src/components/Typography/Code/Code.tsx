@@ -13,8 +13,11 @@ interface CodeProps extends React.HTMLAttributes<HTMLElement> {
     weight?: 'regular' | 'medium' | 'bold'
 }
 
-export const Code = React.forwardRef(
-    ({ children, as: Component = 'code', size, weight, className, ...props }, reference) => (
+export const Code = React.forwardRef(function Code(
+    { children, as: Component = 'code', size, weight, className, ...props },
+    reference
+) {
+    return (
         <Component
             className={classNames(
                 styles.code,
@@ -28,4 +31,4 @@ export const Code = React.forwardRef(
             {children}
         </Component>
     )
-) as ForwardReferenceComponent<'code', CodeProps>
+}) as ForwardReferenceComponent<'code', CodeProps>

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -53,7 +53,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 }) => {
     const LOADING = 'loading' as const
 
-    useEffect(() => eventLogger.logViewEvent('ManageCodeMonitorPage'), [])
+    useEffect(() => eventLogger.logPageView('ManageCodeMonitorPage'), [])
 
     const [codeMonitorState, setCodeMonitorState] = React.useState<CodeMonitorFields>({
         id: '',
@@ -80,8 +80,9 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     )
 
     const updateMonitorRequest = React.useCallback(
-        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
-            updateCodeMonitor(
+        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
+            eventLogger.log('ManageCodeMonitorFormSubmitted')
+            return updateCodeMonitor(
                 {
                     id: match.params.id,
                     update: {
@@ -92,15 +93,23 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
                 convertActionsForUpdate(codeMonitor.actions.nodes, authenticatedUser.id)
-            ),
+            )
+        },
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
+    )
+
+    const deleteMonitorRequest = React.useCallback(
+        (id: string): Observable<void> => {
+            eventLogger.log('ManageCodeMonitorDeleteSubmitted')
+            return deleteCodeMonitor(id)
+        },
+        [deleteCodeMonitor]
     )
 
     return (
         <div className="container col-8">
             <PageTitle title="Manage code monitor" />
             <PageHeader
-                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Manage code monitor' }]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
@@ -110,7 +119,16 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                         </Link>
                     </>
                 }
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb
+                        icon={CodeMonitoringLogo}
+                        to="/code-monitoring"
+                        aria-label="Code monitoring"
+                    />
+                    <PageHeader.Breadcrumb>Manage code monitor</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             {codeMonitorOrError === 'loading' && <LoadingSpinner />}
             {codeMonitorOrError && !isErrorLike(codeMonitorOrError) && codeMonitorOrError !== 'loading' && (
                 <>
@@ -118,7 +136,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
-                        deleteCodeMonitor={deleteCodeMonitor}
+                        deleteCodeMonitor={deleteMonitorRequest}
                         onSubmit={updateMonitorRequest}
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"

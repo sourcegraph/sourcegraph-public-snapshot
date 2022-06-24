@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -36,8 +38,9 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -594,8 +597,9 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -635,8 +639,9 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 }
 
 func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
@@ -678,8 +683,9 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
@@ -838,8 +844,9 @@ func TestLoadChangesetSource(t *testing.T) {
 }
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 

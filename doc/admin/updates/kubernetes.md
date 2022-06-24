@@ -12,7 +12,13 @@
 
 ## Unreleased
 
+## 3.40 -> 3.41
+
 - The Postgres DBs `frontend` and `codeintel-db` are now given 1 hour to begin accepting connections before Kubernetes restarts the containers. [#4136](https://github.com/sourcegraph/deploy-sourcegraph/pull/4136)
+
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
 
 ## 3.39 -> 3.40.2
 

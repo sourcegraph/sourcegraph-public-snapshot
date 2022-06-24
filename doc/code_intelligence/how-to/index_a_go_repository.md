@@ -27,7 +27,7 @@ jobs:
       - name: Upload LSIF data
         # this will upload to Sourcegraph.com, you may need to substitute a different command.
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
+        run: src code-intel upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
 ```
 
 The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
@@ -50,7 +50,7 @@ jobs:
       - run: lsif-go
         # this will upload to Sourcegraph.com, you may need to substitute a different command.
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failure
+      - run: src code-intel upload -github-token=<<parameters.github-token>> -ignore-upload-failure
 
 workflows:
   scip-typescript:
@@ -78,7 +78,7 @@ jobs:
       script:
       - |
         docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go:latest /bin/sh -c \
-          "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN -ignore-upload-failure"
+          "lsif-go; src code-intel upload -github-token=$GITHUB_TOKEN -ignore-upload-failure"
 ```
 
 The following projects have example Travis CI configurations to generate and upload LSIF indexes.
@@ -113,7 +113,7 @@ The following projects have example Travis CI configurations to generate and upl
    # for private instances
    src -endpoint=<your sourcegraph endpoint> lsif upload
    # for public instances
-   src lsif upload -github-token=<your github token>
+   src code-intel upload -github-token=<your github token>
    ```
 
 The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! 

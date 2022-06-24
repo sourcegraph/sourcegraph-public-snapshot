@@ -1,5 +1,6 @@
 import React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -7,7 +8,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Code, useIsTruncated, Tooltip } from '@sourcegraph/wildcard'
+import { Link, Code, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import { ResultContainer } from './ResultContainer'
@@ -38,24 +39,25 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <Tooltip content={(truncated && `${result.authorName}: ${result.message.split('\n', 1)[0]}`) || null}>
-                <span
-                    onMouseEnter={checkTruncation}
-                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    ref={titleReference}
-                >
-                    <>
-                        <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
-                        {' › '}
-                        <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
-                        {': '}
-                        <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
-                    </>
-                </span>
-            </Tooltip>
+            <span
+                onMouseEnter={checkTruncation}
+                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                ref={titleReference}
+                data-tooltip={(truncated && `${result.authorName}: ${result.message.split('\n', 1)[0]}`) || null}
+            >
+                <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
+                <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
+                <span aria-hidden={true}>{': '}</span>
+                <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
+            </span>
             <span className={styles.spacer} />
             <Link to={getCommitMatchUrl(result)}>
-                <Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Code>{' '}
+                <Code className={styles.commitOid}>
+                    <VisuallyHidden>Commit hash:</VisuallyHidden>
+                    {result.oid.slice(0, 7)}
+                    <VisuallyHidden>,</VisuallyHidden>
+                </Code>{' '}
+                <VisuallyHidden>Commited</VisuallyHidden>
                 <Timestamp date={result.authorDate} noAbout={true} strict={true} />
             </Link>
             {result.repoStars && <div className={styles.divider} />}

@@ -66,6 +66,8 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-directory", string(i))
 	case FileContent:
 		rawArgs = append(rawArgs, "-stdin")
+	case Tar:
+		rawArgs = append(rawArgs, "-tar", "-chunk-matches", "0")
 	default:
 		log15.Error("unrecognized input type", "type", i)
 		panic("unreachable")
@@ -76,10 +78,19 @@ func rawArgs(args Args) (rawArgs []string) {
 
 type unmarshaller func([]byte) Result
 
+func ToCombyFileMatchWithChunks(b []byte) Result {
+	var m *FileMatchWithChunks
+	if err := json.Unmarshal(b, &m); err != nil {
+		log15.Warn("ToCombyFileMatchWithChunks() comby error: skipping unmarshaling error", "err", err.Error())
+		return nil
+	}
+	return m
+}
+
 func toFileMatch(b []byte) Result {
 	var m *FileMatch
 	if err := json.Unmarshal(b, &m); err != nil {
-		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		log15.Warn("toFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
 	return m
@@ -88,7 +99,7 @@ func toFileMatch(b []byte) Result {
 func toFileReplacement(b []byte) Result {
 	var r *FileReplacement
 	if err := json.Unmarshal(b, &r); err != nil {
-		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		log15.Warn("toFileReplacement() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
 	return r

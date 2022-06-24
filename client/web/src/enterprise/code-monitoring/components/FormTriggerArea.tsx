@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
@@ -12,7 +13,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Code, H2, H3 } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H3 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -208,7 +209,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <H3 as={H2}>Trigger</H3>
+            <H3>Trigger</H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
@@ -253,7 +254,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 >
                                     Preview results{' '}
                                     <Icon
-                                        aria-hidden={true}
+                                        aria-label="Open in new window"
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
                                         as={OpenInNewIcon}
                                     />
@@ -321,11 +322,11 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     data-testid="trigger-button"
                     as={Button}
                     className={classNames('test-trigger-button', cardBtnClassName)}
-                    aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
+                            <VisuallyHidden>Edit trigger: </VisuallyHidden>
                             <div
                                 className={classNames(
                                     'font-weight-bold',

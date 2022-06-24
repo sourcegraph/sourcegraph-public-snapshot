@@ -54,7 +54,7 @@ type V3Client struct {
 	// rateLimitMonitor is the API rate limit monitor.
 	rateLimitMonitor *ratelimit.Monitor
 
-	// rateLimit is our self imposed rate limiter
+	// rateLimit is our self-imposed rate limiter
 	rateLimit *ratelimit.InstrumentedLimiter
 
 	// resource specifies which API this client is intended for.

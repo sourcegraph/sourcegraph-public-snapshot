@@ -99,7 +99,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	return &Services{
 		dbStore:     dbStore,
 		lsifStore:   lsifStore,
-		repoStore:   database.ReposWith(dbStore.Store),
+		repoStore:   database.ReposWith(logger, dbStore.Store),
 		uploadStore: uploadStore,
 
 		InternalUploadHandler: internalUploadHandler,

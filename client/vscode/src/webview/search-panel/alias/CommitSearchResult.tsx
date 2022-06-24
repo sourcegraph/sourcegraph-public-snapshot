@@ -1,5 +1,7 @@
 import React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
+
 import { SearchResultStyles as styles, ResultContainer, CommitSearchResultMatch } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -57,7 +59,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     >
                         {result.authorName}
                     </button>
-                    {': '}
+                    <span aria-hidden={true}>{': '}</span>
                     <button
                         type="button"
                         className="btn btn-text-link"
@@ -74,7 +76,12 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     className="btn btn-text-link"
                     onClick={() => openCommit(getCommitMatchUrl(result))}
                 >
-                    <Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Code>{' '}
+                    <Code className={styles.commitOid}>
+                        <VisuallyHidden>Commit hash:</VisuallyHidden>
+                        {result.oid.slice(0, 7)}
+                        <VisuallyHidden>,</VisuallyHidden>
+                    </Code>{' '}
+                    <VisuallyHidden>Commited</VisuallyHidden>
                     <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                 </button>
             )}

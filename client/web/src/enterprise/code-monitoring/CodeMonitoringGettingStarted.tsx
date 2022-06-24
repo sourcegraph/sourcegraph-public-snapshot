@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -66,6 +68,10 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
 > = ({ isLightTheme, isSignedIn }) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
+    const logExampleMonitorClicked = useCallback(() => {
+        eventLogger.log('CodeMonitoringExampleMonitorClicked')
+    }, [])
+
     return (
         <div>
             <Card className={classNames('mb-5 flex-column flex-lg-row', styles.hero)}>
@@ -110,7 +116,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                                 <CardBody className="d-flex flex-column">
                                     <H3>{monitor.title}</H3>
                                     <Text className="text-muted flex-grow-1">{monitor.description}</Text>
-                                    <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
+                                    <Link to={createCodeMonitorUrl(monitor)} onClick={logExampleMonitorClicked}>
+                                        Create copy of monitor
+                                    </Link>
                                 </CardBody>
                             </Card>
                         </div>

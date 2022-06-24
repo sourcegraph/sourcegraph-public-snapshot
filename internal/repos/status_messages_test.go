@@ -27,8 +27,11 @@ func TestStatusMessages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logtest.Scoped(t), db)
 
 	admin, err := db.Users().Create(ctx, database.NewUser{
@@ -222,7 +225,6 @@ func TestStatusMessages(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()

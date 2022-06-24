@@ -132,7 +132,7 @@ func ScanFirstBitbucketProjectPermissionsJob(rows *sql.Rows, queryErr error) (_ 
 type ListJobsOptions struct {
 	ProjectKeys []string
 	State       string
-	Count       int
+	Count       int32
 }
 
 // ListJobs returns a list of types.BitbucketProjectPermissionJob for a given set
@@ -235,7 +235,7 @@ LIMIT %d
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(where, "AND"))
 	}
 
-	limitNum := 100
+	var limitNum int32 = 100
 
 	if opt.Count > 0 && opt.Count < maxJobsCount {
 		limitNum = opt.Count

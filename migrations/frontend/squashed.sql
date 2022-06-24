@@ -608,7 +608,6 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    access_token_id bigint,
     queued_at timestamp with time zone DEFAULT now(),
     user_id integer
 );
@@ -657,7 +656,6 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
     j.created_at,
     j.updated_at,
     j.cancel,
-    j.access_token_id,
     j.queued_at,
     j.user_id,
     q.place_in_global_queue,
@@ -1152,7 +1150,11 @@ CREATE TABLE codeintel_lockfile_references (
     package_version text NOT NULL,
     repository_id integer,
     commit_bytea bytea,
-    last_check_at timestamp with time zone
+    last_check_at timestamp with time zone,
+    depends_on integer[] DEFAULT '{}'::integer[],
+    resolution_lockfile text,
+    resolution_repository_id integer,
+    resolution_commit_bytea bytea
 );
 
 COMMENT ON TABLE codeintel_lockfile_references IS 'Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.';
@@ -1173,6 +1175,14 @@ COMMENT ON COLUMN codeintel_lockfile_references.commit_bytea IS 'The resolved 40
 
 COMMENT ON COLUMN codeintel_lockfile_references.last_check_at IS 'Timestamp when background job last checked this row for repository resolution';
 
+COMMENT ON COLUMN codeintel_lockfile_references.depends_on IS 'IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.';
+
+COMMENT ON COLUMN codeintel_lockfile_references.resolution_lockfile IS 'Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.';
+
+COMMENT ON COLUMN codeintel_lockfile_references.resolution_repository_id IS 'ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.';
+
+COMMENT ON COLUMN codeintel_lockfile_references.resolution_commit_bytea IS 'Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.';
+
 CREATE SEQUENCE codeintel_lockfile_references_id_seq
     AS integer
     START WITH 1
@@ -1187,7 +1197,8 @@ CREATE TABLE codeintel_lockfiles (
     id integer NOT NULL,
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
-    codeintel_lockfile_reference_ids integer[] NOT NULL
+    codeintel_lockfile_reference_ids integer[] NOT NULL,
+    lockfile text
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1195,6 +1206,8 @@ COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair wit
 COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
 
 COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
+
+COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer
@@ -1721,7 +1734,8 @@ CREATE TABLE lsif_configuration_policies (
     index_intermediate_commits boolean NOT NULL,
     protected boolean DEFAULT false NOT NULL,
     repository_patterns text[],
-    last_resolved_at timestamp with time zone
+    last_resolved_at timestamp with time zone,
+    lockfile_indexing_enabled boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
@@ -1745,6 +1759,8 @@ COMMENT ON COLUMN lsif_configuration_policies.index_intermediate_commits IS 'If 
 COMMENT ON COLUMN lsif_configuration_policies.protected IS 'Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).';
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.';
+
+COMMENT ON COLUMN lsif_configuration_policies.lockfile_indexing_enabled IS 'Whether to index the lockfiles in the repositories matched by this policy';
 
 CREATE SEQUENCE lsif_configuration_policies_id_seq
     AS integer
@@ -3472,11 +3488,13 @@ CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batc
 
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
 
+CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC);
+
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
 
-CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id);
-
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
+
+CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id);
 
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
@@ -3520,11 +3538,13 @@ CREATE INDEX codeintel_lockfile_references_last_check_at ON codeintel_lockfile_r
 
 CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE ((repository_id IS NOT NULL) AND (commit_bytea IS NOT NULL));
 
-CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version);
+CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea);
 
 CREATE INDEX codeintel_lockfiles_codeintel_lockfile_reference_ids ON codeintel_lockfiles USING gin (codeintel_lockfile_reference_ids gin__int_ops);
 
-CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea ON codeintel_lockfiles USING btree (repository_id, commit_bytea);
+CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops);
+
+CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile);
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 
@@ -3586,6 +3606,8 @@ CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree
 
 CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btree (namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
+CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
+
 CREATE INDEX gitserver_repos_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloned'::text);
 
 CREATE INDEX gitserver_repos_cloning_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloning'::text);
@@ -3603,6 +3625,8 @@ CREATE INDEX insights_query_runner_jobs_dependencies_job_id_fk_idx ON insights_q
 CREATE INDEX insights_query_runner_jobs_priority_idx ON insights_query_runner_jobs USING btree (priority);
 
 CREATE INDEX insights_query_runner_jobs_processable_priority_id ON insights_query_runner_jobs USING btree (priority, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
+
+CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner_jobs USING btree (series_id, state);
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
@@ -3669,6 +3693,8 @@ CREATE INDEX org_invitations_org_id ON org_invitations USING btree (org_id) WHER
 CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (recipient_user_id) WHERE (deleted_at IS NULL);
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
+
+CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
 
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
 
@@ -3810,9 +3836,6 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY batch_spec_workspace_execution_jobs
-    ADD CONSTRAINT batch_spec_workspace_execution_jobs_access_token_id_fkey FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
@@ -4149,8 +4172,8 @@ INSERT INTO out_of_band_migrations VALUES (14, 'code-insights', 'db.insights_set
 
 SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
 
-INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL);
-INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL);
-INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL);
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);

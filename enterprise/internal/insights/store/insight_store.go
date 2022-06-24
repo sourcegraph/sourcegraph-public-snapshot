@@ -868,6 +868,37 @@ func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) er
 	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
 }
 
+func (s *InsightStore) GetInsightsByCaptureGroupValue(ctx context.Context, query string) (types.InsightView, error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.InsightView{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	row := tx.QueryRow(ctx, sqlf.Sprintf(getInsightsByCaptureGroupValueSql, query))
+	var id int
+	err = row.Scan(&id)
+	if err != nil {
+		return types.InsightView{}, errors.Wrap(err, "failed to update insight view")
+	}
+	return types.InsightView{
+		ID: id,
+	}, nil
+}
+
+const getInsightsByCaptureGroupValueSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetInsightsByCaptureGroupValue
+SELECT insight_view_id FROM insight_view_series
+JOIN insight_series ON insight_view_series.insight_series_id = insight_series.id
+WHERE
+	insight_series.series_id IN(
+		SELECT
+			series_id FROM series_points
+		WHERE
+			capture LIKE %s
+	);
+`
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
