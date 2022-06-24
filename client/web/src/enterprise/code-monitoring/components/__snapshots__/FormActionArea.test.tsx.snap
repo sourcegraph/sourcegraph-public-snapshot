@@ -15,11 +15,11 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
   <div
     class="card card p-3"
   >
-    <div
-      class="font-weight-bold"
+    <h4
+      class="h4 mb-0 font-weight-bold"
     >
       Send email notifications
-    </div>
+    </h4>
     <span
       class="text-muted"
     >
@@ -66,7 +66,6 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
           class="toggle mr-2 inlineCenter"
           data-testid="include-results-toggle-email"
           role="switch"
-          title="Include search results in message"
           type="button"
           value="0"
         >
@@ -79,7 +78,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         </button>
       </div>
       <span
-        id="code-monitoring-email-form-actions-include-results-toggle"
+        id="code-monitoring-email-include-results-toggle"
       >
         Include search results in sent message
       </span>
@@ -112,7 +111,6 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
           class="toggle mr-2 inlineCenter"
           data-testid="enable-action-toggle-expanded-email"
           role="switch"
-          title="Enabled"
           type="button"
           value="1"
         >

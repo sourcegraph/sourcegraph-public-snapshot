@@ -11,20 +11,14 @@ import (
 )
 
 func (j *janitor) HandleDeletedRepository(ctx context.Context) (err error) {
-	tx, err := j.dbStore.Transact(ctx)
+	uploadsCounts, err := j.uploadSvc.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	uploadsCounts, err := tx.DeleteUploadsWithoutRepository(ctx, time.Now())
-	if err != nil {
-		return errors.Wrap(err, "dbstore.DeleteUploadsWithoutRepository")
+		return errors.Wrap(err, "uploadSvc.DeleteUploadsWithoutRepository")
 	}
 
-	indexesCounts, err := tx.DeleteIndexesWithoutRepository(ctx, time.Now())
+	indexesCounts, err := j.uploadSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "dbstore.DeleteIndexesWithoutRepository")
+		return errors.Wrap(err, "uploadSvc.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(uploadsCounts, indexesCounts) {

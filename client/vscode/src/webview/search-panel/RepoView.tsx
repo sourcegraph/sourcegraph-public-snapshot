@@ -1,10 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiArrowLeft, mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { catchError } from 'rxjs/operators'
 
@@ -86,7 +84,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                 onClick={onBackToSearchResults}
                 className="test-back-to-search-view-btn btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
             >
-                <Icon aria-hidden={true} className="mr-1" as={ArrowLeftIcon} />
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                 Back to search view
             </button>
             {directoryStack.length > 0 && (
@@ -95,7 +93,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                     onClick={onPreviousDirectory}
                     className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
                 >
-                    <Icon aria-hidden={true} className="mr-1" as={ArrowLeftIcon} />
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                     Back to previous directory
                 </button>
             )}
@@ -135,7 +133,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                                         <Icon
                                             aria-label={entry.isDirectory ? 'Folder' : 'File'}
                                             className="mr-1 text-muted"
-                                            as={entry.isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
+                                            svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
                                         />
                                         {entry.name}
                                         {entry.isDirectory && '/'}

@@ -23,11 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -192,7 +192,7 @@ func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
-	if submoduleInfo, ok := r.stat.Sys().(git.Submodule); ok {
+	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
 		return &gitSubmoduleResolver{submodule: submoduleInfo}
 	}
 	return nil

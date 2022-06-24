@@ -1,5 +1,5 @@
 import { date } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { H3, Code } from '@sourcegraph/wildcard'
@@ -8,19 +8,26 @@ import { WebStory } from '../WebStory'
 
 import { Duration } from './Duration'
 
-const { add } = storiesOf('web/Duration', module).addDecorator(story => <div className="p-3 container">{story()}</div>)
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/Duration',
+    decorators: [decorator],
+}
+
+export default config
 
 const now = new Date()
 
-add('fixed', () => (
+export const Fixed: Story = () => (
     <WebStory>
         {props => (
             <Duration {...props} start={new Date(date('start', subDays(now, 1)))} end={new Date(date('end', now))} />
         )}
     </WebStory>
-))
+)
 
-add('active', () => (
+export const Active: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -41,4 +48,4 @@ add('active', () => (
             </>
         )}
     </WebStory>
-))
+)

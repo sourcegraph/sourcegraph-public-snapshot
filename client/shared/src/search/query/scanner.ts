@@ -494,6 +494,9 @@ export const scanSearchQuery = (
             // (e.g., literal _or_ regexp), so effectively scan and label patterns as literals.
             patternKind = PatternKind.Literal
             break
+        case SearchPatternType.standard:
+            patternKind = PatternKind.Literal
+            break
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)

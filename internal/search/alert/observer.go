@@ -229,6 +229,10 @@ func (o *Observer) Done() (*search.Alert, error) {
 	return o.alert, o.err
 }
 
+type alertKind string
+
+const luckySearchQueries alertKind = "lucky-search-queries"
+
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
 		return nil, nil
@@ -281,10 +285,19 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return a, nil
 	}
 
+	var unindexedLockfile *searchrepos.MissingLockfileIndexing
+	if errors.As(err, &unindexedLockfile) {
+		repo := unindexedLockfile.RepoName()
+		revs := unindexedLockfile.RevNames()
+
+		return search.AlertForUnindexedLockfile(repo, revs), nil
+	}
+
 	if errors.As(err, &lErr) {
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",
 			Title:           "Showing additional results for similar queries",
+			Kind:            string(luckySearchQueries),
 			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil
