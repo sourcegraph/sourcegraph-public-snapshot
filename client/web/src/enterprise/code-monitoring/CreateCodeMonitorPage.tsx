@@ -73,7 +73,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     )
 
     return (
-        <div className="container col-8">
+        <div className="container col-sm-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
                 description={

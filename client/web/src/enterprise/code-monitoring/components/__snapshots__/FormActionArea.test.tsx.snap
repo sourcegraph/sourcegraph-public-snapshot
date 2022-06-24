@@ -129,24 +129,25 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       </span>
     </div>
     <div
-      class="d-flex justify-content-between"
+      class="actionButtonRow"
     >
-      <div>
-        <button
-          class="btn btnSecondary mr-1 test-submit-action-email"
-          data-testid="submit-action-email"
-          type="button"
-        >
-          Continue
-        </button>
-        <button
-          class="btn btnOutlineSecondary"
-          data-testid="cancel-action-email"
-          type="button"
-        >
-          Cancel
-        </button>
-      </div>
+      <button
+        class="btn btnSecondary test-submit-action-email"
+        data-testid="submit-action-email"
+        type="button"
+      >
+        Continue
+      </button>
+      <button
+        class="btn btnOutlineSecondary"
+        data-testid="cancel-action-email"
+        type="button"
+      >
+        Cancel
+      </button>
+      <div
+        class="flex-grow-1"
+      />
       <button
         class="btn btnOutlineDanger"
         data-testid="delete-action-email"
