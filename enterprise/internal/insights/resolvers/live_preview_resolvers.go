@@ -62,7 +62,7 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 			}
 		} else {
 			executor := query.NewStreamingExecutor(r.postgresDB, clock)
-			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval)
+			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval, args.Input.NumPoints)
 			if err != nil {
 				return nil, err
 			}
