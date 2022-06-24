@@ -18,18 +18,20 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { LoadingSpinner, useObservable, Icon, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
-import { parseFileBlockInput, serializeLineRange } from '../../serialize'
+import { parseFileBlockInput } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { RepoFileSymbolLink } from '../RepoFileSymbolLink'
 import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
@@ -216,6 +218,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
                     <div className={styles.highlightedFileWrapper}>
                         <CodeExcerpt
+                            className={styles.code}
                             repoName={input.repositoryName}
                             commitID={input.revision}
                             filePath={input.filePath}
@@ -243,22 +246,18 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
 
 const NotebookFileBlockHeader: React.FunctionComponent<
     React.PropsWithChildren<FileBlockInput & { fileURL: string }>
-> = ({ repositoryName, filePath, revision, lineRange, fileURL }) => (
-    <>
-        <div className="mr-2">
+> = ({ repositoryName, filePath, revision, fileURL }) => {
+    const repoAtRevisionURL = getRepositoryUrl(repositoryName, [revision])
+    return (
+        <>
             <Icon aria-hidden={true} as={FileDocumentIcon} />
-        </div>
-        <div className="d-flex flex-column">
-            <div className="mb-1 d-flex align-items-center">
-                <Link className={styles.headerFileLink} to={fileURL}>
-                    {filePath}
-                    {lineRange && <>#{serializeLineRange(lineRange)}</>}
-                </Link>
-            </div>
-            <small className="text-muted">
-                {repositoryName}
-                {revision && <>@{revision}</>}
-            </small>
-        </div>
-    </>
-)
+            <div className={styles.separator} />
+            <RepoFileSymbolLink
+                repoName={repositoryName}
+                repoURL={repoAtRevisionURL}
+                filePath={filePath}
+                fileURL={fileURL}
+            />
+        </>
+    )
+}
