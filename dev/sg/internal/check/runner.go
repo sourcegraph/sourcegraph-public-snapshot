@@ -299,7 +299,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			for _, check := range category.Checks {
 				if check.cachedCheckErr != nil {
 					// Slightly different formatting for each destination
-					terminalSummary := fmt.Sprintf("**%s**\n\n%s", check.Name, check.cachedCheckErr)
+					terminalSummary := fmt.Sprintf("**%s**\n%s\n", check.Name, check.cachedCheckErr)
 					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
 
 					// Render additional details
@@ -307,7 +307,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```",
 							strings.TrimSpace(check.cachedCheckOutput))
 
-						terminalSummary += strings.TrimSpace(check.cachedCheckOutput)
+						terminalSummary += outputMarkdown
 						annotationSummary += outputMarkdown
 					}
 
