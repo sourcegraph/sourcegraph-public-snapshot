@@ -8,13 +8,19 @@ import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
+
 public class PostStartupActivity implements StartupActivity {
+    private static String generateAnonymousUserId() {
+        return UUID.randomUUID().toString();
+    }
+
     @Override
     public void runActivity(@NotNull Project project) {
         // When no anonymous user ID is set yet, we create a new one and treat this as an installation event.
         // This likely means that the user has never started IntelliJ with our extension before
         if (ConfigUtil.getAnonymousUserId() == null) {
-            ConfigUtil.generateAndSetAnonymousUserId();
+            ConfigUtil.setAnonymousUserId(generateAnonymousUserId());
         }
 
         PluginInstaller.addStateListener(new PluginStateListener() {
@@ -28,7 +34,7 @@ public class PostStartupActivity implements StartupActivity {
                     GraphQlLogger.logUninstallEvent(project);
 
                     // Clearing this so that we can detect a new installation if the user re-enables the extension.
-                    ConfigUtil.clearAnonymousUserId();
+                    ConfigUtil.setAnonymousUserId(null);
                 }
             }
         });
