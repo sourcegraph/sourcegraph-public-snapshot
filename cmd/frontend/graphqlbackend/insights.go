@@ -435,6 +435,7 @@ type InsightViewQueryArgs struct {
 	IsFrozen             *bool
 	Filters              *InsightViewFiltersInput
 	SeriesDisplayOptions *SeriesDisplayOptionsInput
+	SearchByQuery        *string
 }
 
 type DeleteInsightViewArgs struct {
