@@ -1,4 +1,4 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
@@ -8,7 +8,7 @@ import { mockCodeMonitor } from '../testing/util'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'
 
-const config = {
+const config: Meta = {
     title: 'web/enterprise/code-monitoring/DeleteMonitorModal',
     parameters: {
         chromatic: { disableSnapshot: false },
@@ -17,7 +17,7 @@ const config = {
 
 export default config
 
-export const _DeleteMonitorModal: Story = () => (
+export const DeleteMonitorModalStory: Story = () => (
     <WebStory>
         {props => (
             <DeleteMonitorModal
@@ -31,9 +31,8 @@ export const _DeleteMonitorModal: Story = () => (
     </WebStory>
 )
 
-_DeleteMonitorModal.storyName = 'DeleteMonitorModal'
-
-_DeleteMonitorModal.parameters = {
+DeleteMonitorModalStory.storyName = 'DeleteMonitorModal'
+DeleteMonitorModalStory.parameters = {
     design: {
         type: 'figma',
         url:
