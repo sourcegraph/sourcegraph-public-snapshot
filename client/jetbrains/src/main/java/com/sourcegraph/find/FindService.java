@@ -139,7 +139,6 @@ public class FindService implements Disposable {
 
                 // Detect if we're focusing the Sourcegraph popup
                 if (windowEvent.getComponent().equals(this.popup.getWindow())) {
-                    System.out.println("windowEvent.getComponent().equals(this.popup.getWindow())");
                     return;
                 }
 

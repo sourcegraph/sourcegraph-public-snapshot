@@ -176,25 +176,38 @@ public class FindPopupDialog extends DialogWrapper {
     }
 
     public void hide() {
-        saveSize();
+        saveDimensions();
         getPeer().getWindow().setVisible(false);
-    }
-
-    // The automatic size saving behavior for DialogWrapper does not work for us as it relies on disposing of the
-    // dialog to persist the changes. We need to manually implement this behavior instead.
-    private void saveSize() {
-        String serviceKey = this.getDimensionServiceKey();
-        WindowStateService windowStateService = WindowStateService.getInstance(project);
-
-        Point location = getLocation();
-        Dimension size = getSize();
-        windowStateService.putLocation(serviceKey, location);
-        windowStateService.putSize(serviceKey, size);
     }
 
     @Override
     public void show() {
         getPeer().getWindow().setVisible(true);
+
+        // When the dialog is forced to be visible again, it's dimensions are reset to what they were originally set
+        // when it first opened. Since we do have a snapshot of the locations saved from the time we hid it which was
+        // captured with the current state of the content, we can apply simply it.
+        applyDimensions();
+    }
+
+    // The automatic size saving behavior for DialogWrapper does not work for us as it relies on disposing of the
+    // dialog to persist the changes. We need to manually implement this behavior instead.
+    private void saveDimensions() {
+        WindowStateService windowStateService = WindowStateService.getInstance(project);
+
+        Point location = getLocation();
+        Dimension size = getSize();
+        windowStateService.putLocation(SERVICE_KEY, location);
+        windowStateService.putSize(SERVICE_KEY, size);
+    }
+
+    private void applyDimensions() {
+        WindowStateService windowStateService = WindowStateService.getInstance(project);
+
+        Point location = windowStateService.getLocation(SERVICE_KEY);
+        Dimension size = windowStateService.getSize(SERVICE_KEY);
+        setLocation(location);
+        setSize(size.width, size.height);
     }
 
     @Override
