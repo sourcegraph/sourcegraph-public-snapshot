@@ -50,6 +50,11 @@ func (s *syncer) Handle(ctx context.Context) error {
 		return err
 	}
 
+	if config.IndexRepositoryName == "" {
+		// Do nothing if the index repository is not configured.
+		return nil
+	}
+
 	// TODO: automatically fetch the latest commit before syncing https://github.com/sourcegraph/sourcegraph/issues/37690
 	reader, err := s.gitClient.ArchiveReader(
 		ctx,
@@ -71,6 +76,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		return err
 	}
 
+	didInsertNewCrates := false
 	for {
 		header, err := tr.Next()
 		if err != nil {
@@ -107,17 +113,22 @@ func (s *syncer) Handle(ctx context.Context) error {
 			return err
 		}
 		for _, pkg := range pkgs {
-			_, err := s.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
+			// TODO: batch insert packages instead of one name+version combination at a time https://github.com/sourcegraph/sourcegraph/issues/37691
+			isNew, err := s.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to insert Rust crate %v", pkg)
 			}
+			didInsertNewCrates = didInsertNewCrates || isNew
 		}
 	}
 
-	nextSync := time.Now()
-	externalService.NextSyncAt = nextSync
-	if err := s.externalServicesStore.Upsert(ctx, externalService); err != nil {
-		return err
+	if didInsertNewCrates {
+		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
+		nextSync := time.Now()
+		externalService.NextSyncAt = nextSync
+		if err := s.externalServicesStore.Upsert(ctx, externalService); err != nil {
+			return err
+		}
 	}
 	return nil
 }
