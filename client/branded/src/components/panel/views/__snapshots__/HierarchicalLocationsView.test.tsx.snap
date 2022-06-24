@@ -69,7 +69,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               />
               <svg
                 aria-label="github.com"
-                class="mdi-icon iconInline text-muted flex-shrink-0"
+                class="iconInline text-muted flex-shrink-0"
                 data-state="closed"
                 fill="currentColor"
                 height="24"
@@ -326,7 +326,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               />
               <svg
                 aria-label="github.com"
-                class="mdi-icon iconInline text-muted flex-shrink-0"
+                class="iconInline text-muted flex-shrink-0"
                 data-state="closed"
                 fill="currentColor"
                 height="24"
@@ -539,7 +539,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               />
               <svg
                 aria-label="github.com"
-                class="mdi-icon iconInline text-muted flex-shrink-0"
+                class="iconInline text-muted flex-shrink-0"
                 data-state="closed"
                 fill="currentColor"
                 height="24"

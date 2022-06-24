@@ -1,11 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
 // eslint-disable-next-line no-restricted-imports
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -73,7 +69,7 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                                 <Icon
                                     aria-label={skipped.severity === 'info' ? 'Information' : 'Alert'}
                                     className={classNames(styles.icon, 'flex-shrink-0')}
-                                    as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
+                                    svgPath={skipped.severity === 'info' ? mdiInformationOutline : mdiAlertCircle}
                                 />
 
                                 <span className="flex-grow-1 text-left">{skipped.title}</span>
@@ -82,7 +78,7 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                                     <Icon
                                         aria-hidden={true}
                                         className={classNames('flex-shrink-0', styles.chevron)}
-                                        as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
+                                        svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
                                     />
                                 )}
                             </H4>
@@ -176,7 +172,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
                         Search again
                     </Button>
                 </Form>

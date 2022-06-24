@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 )
 
 func TestUbuntuFix(t *testing.T) {
@@ -18,14 +19,22 @@ func TestUbuntuFix(t *testing.T) {
 		t.Skip("Skipping Ubuntu sg setup tests")
 	}
 
+	// Initialize context with user shell information
+	ctx, err := usershell.Context(context.Background())
+	require.NoError(t, err)
+
+	// Set up runner with no input and simple output
 	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Ubuntu)
-	ctx := context.Background()
 
 	// automatically fix everything!
-	err := runner.Fix(ctx, testArgs)
-	require.Nil(t, err)
+	t.Run("Fix", func(t *testing.T) {
+		err = runner.Fix(ctx, testArgs)
+		require.Nil(t, err)
+	})
 
 	// now check that everything was fixed
-	err = runner.Check(ctx, testArgs)
-	assert.Nil(t, err)
+	t.Run("Check", func(t *testing.T) {
+		err = runner.Check(ctx, testArgs)
+		assert.Nil(t, err)
+	})
 }
