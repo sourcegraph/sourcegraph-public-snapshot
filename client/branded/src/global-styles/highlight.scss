@@ -1027,7 +1027,7 @@
     --hl-comment: #767676;
     --hl-modifier: #1626b8;
 
-    // Semantic variable -> Color variable for backwards compatibility.
+    // Color variable = Semantic variable for backwards compatibility.
     // TODO: Use semantic variables directly in the code instead.
     --hl-pink: var(--hl-property);
     --hl-cyan: var(--hl-string);
@@ -1064,7 +1064,7 @@
     --hl-comment: #3ba04f;
     --hl-other: #d08770;
 
-    // Semantic variable -> Color variable for backwards compatibility.
+    // Color variable = Semantic variable for backwards compatibility.
     // TODO: Use semantic variables directly in the code instead.
     --hl-pink: var(--hl-property);
     --hl-yellow: var(--hl-function);
