@@ -934,6 +934,15 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			}
 			args.After = afterID
 		}
+
+		if r.args.SearchByQuery != nil && len(*r.args.SearchByQuery) != 0 {
+			// lets go see if there are any code insights with this in the query (separated by whitespace)
+			// so basically construct a regexp with the value
+
+			// also search the compute captured values to see if there are any exact matches ignoring trailing
+			// and leading whitespace
+
+		}
 		if r.args.First != nil {
 			// Ask for one more result than needed in order to determine if there is a next page.
 			args.Limit = int(*r.args.First) + 1
