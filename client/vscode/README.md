@@ -65,7 +65,7 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 2. Once you have generated a token, navigate back to the Sourcegraph extension. In the sidebar, under `Create an account`, click `Have an account?`.
 3. Copy and paste the generated token from step 4 into the input field in the sidebar.
 4. Alternatively, you can copy and paste the generated token from step 4 in this format: `“sourcegraph.accessToken": "e4234234123112312”` into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
-5. The Editor will be reloaded automatically to use the newly added token.
+5. The Editor will be re loaded automatically to use the newly added token.
 
 ### Connecting to a private Sourcegraph instance
 
@@ -79,17 +79,17 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 1. Create a `.vscode` folder (if not already present) in the root of your repository
 2. Inside that folder, create a new file named `extensions.json` (if it doesn't already exist) with the following structure.
+
 ```
 {
 	"recommendations": ["sourcegraph.sourcegraph"]
 }
 ```
-3. If the file does exist, append `"sourcegraph.sourcegraph"` to the `"recommendations"` array. 
+
+3. If the file does exist, append `"sourcegraph.sourcegraph"` to the `"recommendations"` array.
 4. Push the changes to your repository for your other colleagues to share.
 
 Alternatively you can use the `Extensions: Configure Recommended Extensions (Workspace Folder)` command from within VS Code.
-
-
 
 ## Keyboard Shortcuts:
 
