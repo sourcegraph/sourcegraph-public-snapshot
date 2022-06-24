@@ -197,6 +197,7 @@ Get the status of the CI run associated with the currently checked out branch.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
+* `--build="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
