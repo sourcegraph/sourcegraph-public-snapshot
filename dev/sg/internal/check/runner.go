@@ -307,11 +307,12 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```",
 							strings.TrimSpace(check.cachedCheckOutput))
 
-						terminalSummary += outputMarkdown
+						terminalSummary += strings.TrimSpace(check.cachedCheckOutput)
 						annotationSummary += outputMarkdown
 					}
 
 					r.Output.WriteMarkdown(terminalSummary)
+					r.Output.Write(terminalSummary)
 
 					if r.GenerateAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)

@@ -261,6 +261,7 @@ func (o *Output) WriteCode(languageName, str string) error {
 
 func (o *Output) writeMarkdown(str string, noMargin bool) error {
 	if !o.caps.Color {
+		o.Write("Writing without color!\n")
 		o.Write(str)
 		return nil
 	}
