@@ -7,7 +7,15 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, DeprecatedTooltipController, Link, Icon, Code } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    DeprecatedTooltipController,
+    Link,
+    Icon,
+    Code,
+    screenReaderAnnounce,
+} from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -96,6 +104,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         eventLogger.log('CommitSHACopiedToClipboard')
         copy(oid)
         setFlashCopiedToClipboardMessage(true)
+        screenReaderAnnounce('Copied!')
 
         setTimeout(() => {
             setFlashCopiedToClipboardMessage(false)
