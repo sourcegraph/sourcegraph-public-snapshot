@@ -63,7 +63,7 @@ export const createWebIntegrationTestContext = async ({
     directory,
     customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
-    const config = getConfig('useStandaloneWebServer')
+    const config = getConfig('disableAppAssetsMocking')
 
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
@@ -73,7 +73,7 @@ export const createWebIntegrationTestContext = async ({
     sharedTestContext.overrideGraphQL(commonWebGraphQlResults)
     let jsContext = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
 
-    if (!config.useStandaloneWebServer) {
+    if (!config.disableAppAssetsMocking) {
         // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.
         // This branching will be redundant after switching to production bundles for integration tests:
         // https://github.com/sourcegraph/sourcegraph/issues/22831

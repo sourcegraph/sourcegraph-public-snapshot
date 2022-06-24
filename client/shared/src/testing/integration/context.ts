@@ -115,7 +115,7 @@ export const createSharedIntegrationTestContext = async <
     currentTest,
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
-    const config = getConfig('keepBrowser', 'useStandaloneWebServer')
+    const config = getConfig('keepBrowser', 'disableAppAssetsMocking')
     await driver.newPage()
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (pollyMode === 'record') {
@@ -174,7 +174,7 @@ export const createSharedIntegrationTestContext = async <
             .send('')
     })
 
-    if (!config.useStandaloneWebServer) {
+    if (!config.disableAppAssetsMocking) {
         // Serve assets from disk
         server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
             const asset = request.params.path

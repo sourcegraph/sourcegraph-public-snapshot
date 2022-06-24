@@ -137,7 +137,7 @@ Our test driver accepts various environment variables that can be used to contro
 | `HEADLESS`                         | Run the tests without a visible browser window.                               |
 | `DEVTOOLS`                         | Whether to run all tests with the browser devtools open.                      |
 | `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran.                   |
-| `USE_STANDALONE_WEB_SERVER`        | Rely on `sg start web-standalone` to load index.html and client assets.       |
+| `DISABLE_APP_ASSETS_MOCKING`       | Disable `index.html` and client assets mocking.                               |
 | `WINDOW_WIDTH`                     | Browser window width.                                                         |
 | `WINDOW_HEIGHT`                    | Browser window height.                                                        |
 

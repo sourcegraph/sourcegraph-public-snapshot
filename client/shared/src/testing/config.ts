@@ -29,7 +29,7 @@ export interface Config {
     devtools: boolean
     headless: boolean
     keepBrowser: boolean
-    useStandaloneWebServer: boolean
+    disableAppAssetsMocking: boolean
     bitbucketCloudUserBobAppPassword: string
     gitHubDotComToken: string
     windowWidth: number
@@ -214,10 +214,10 @@ const configFields: ConfigFields = {
         description:
             'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
     },
-    useStandaloneWebServer: {
-        envVar: 'USE_STANDALONE_WEB_SERVER',
+    disableAppAssetsMocking: {
+        envVar: 'DISABLE_APP_ASSETS_MOCKING',
         parser: parseBool,
-        description: 'Rely on `sg start web-standalone` to load index.html and client assets.',
+        description: 'Disable index.html and client assets mocking.',
         defaultValue: false,
     },
     windowWidth: {
