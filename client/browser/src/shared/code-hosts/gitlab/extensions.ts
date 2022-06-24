@@ -8,10 +8,10 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
     if (!headerElement) {
         return null
     }
-    const commandListClass = `command-palette-button ${styles.commandPaletteButton}`
+    const commandListClass = 'command-palette-button'
     const createCommandList = (): HTMLElement => {
         const mount = document.createElement('div')
-        mount.className = commandListClass
+        mount.classList.add(commandListClass, styles.commandPaletteButton)
         headerElement.prepend(mount)
         return mount
     }
