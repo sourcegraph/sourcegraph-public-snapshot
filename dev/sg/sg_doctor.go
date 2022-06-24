@@ -8,7 +8,7 @@ import (
 
 var doctorCommand = &cli.Command{
 	Name:     "doctor",
-	Usage:    "DEPRECATD - Run checks to test whether system is in correct state to run Sourcegraph",
+	Usage:    "DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph",
 	Category: CategoryEnv,
 	Action: func(ctx *cli.Context) error {
 		return errors.New("DEPRECATED: use 'sg setup -check' instead")
