@@ -110,10 +110,8 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	dbStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	lsifStore := NewMockLSIFStore()
-
 	uploadSvc := NewMockUploadService()
 	uploadSvc.StaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-
 	janitor := newJanitor(
 		dbStore,
 		lsifStore,

@@ -13,6 +13,7 @@ import {
     RangeSetBuilder,
     MapMode,
     ChangeSpec,
+    Compartment,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -29,7 +30,7 @@ import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
+import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
@@ -104,14 +105,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         (editor: EditorView) => {
             setEditor(editor)
             editorReference.current = editor
-            onEditorCreated?.({
-                focus() {
-                    editor.focus()
-                },
-                showSuggestions() {
-                    startCompletion(editor)
-                },
-            })
+            onEditorCreated?.(editor)
         },
         [editorReference, onEditorCreated]
     )
@@ -133,6 +127,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
             EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
+            EditorView.domEventHandlers({
+                blur: onBlur,
+                focus: onFocus,
+            }),
             EditorView.updateListener.of((update: ViewUpdate) => {
                 if (update.docChanged) {
                     onChange({
@@ -141,14 +139,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                         query: update.state.doc.toString(),
                         changeSource: QueryChangeSource.userInput,
                     })
-                }
-                if (update.focusChanged) {
-                    if (onFocus && update.view.hasFocus) {
-                        onFocus()
-                    }
-                    if (onBlur && !update.view.hasFocus) {
-                        onBlur()
-                    }
                 }
                 // See https://codemirror.net/docs/ref/#state.Transaction^userEvent
                 if (
@@ -228,31 +218,27 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             return
         }
 
-        switch (queryState.changeSource) {
-            case QueryChangeSource.userInput:
-                // Don't react to user input
-                break
-            case QueryChangeSource.searchTypes:
-            case QueryChangeSource.searchReference: {
-                // Select the specified range (most of the time this will be a
-                // placeholder filter value).
-                const selectionRange = queryState.selectionRange
-                editor.dispatch({
-                    selection: EditorSelection.range(selectionRange.start, selectionRange.end),
-                    scrollIntoView: true,
-                })
+        if (queryState.changeSource === QueryChangeSource.userInput) {
+            // Don't react to user input
+            return
+        }
+
+        editor.dispatch({
+            selection: queryState.selectionRange
+                ? // Select the specified range (most of the time this will be a
+                  // placeholder filter value).
+                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
+                : // Place the cursor at the end of the query.
+                  EditorSelection.cursor(editor.state.doc.length),
+            scrollIntoView: true,
+        })
+
+        if (queryState.hint) {
+            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
                 editor.focus()
-                if (queryState.showSuggestions) {
-                    startCompletion(editor)
-                }
-                break
             }
-            default: {
-                // Place the cursor at the end of the query.
-                editor.dispatch({
-                    selection: EditorSelection.cursor(editor.state.doc.length),
-                    scrollIntoView: true,
-                })
+            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
+                startCompletion(editor)
             }
         }
     }, [editor, queryState])
@@ -302,6 +288,7 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
         // re-render when the ref is attached, but we need that so that
         // `useCodeMirror` is called again and the editor is actually created.
         const [container, setContainer] = useState<HTMLDivElement | null>(null)
+        const externalExtensions = useMemo(() => new Compartment(), [])
 
         const editor = useCodeMirror(
             container,
@@ -317,13 +304,15 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
-                    ...extensions,
+                    externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
                 // transaction since there is no need to re-initialize all
                 // extensions
+                // The extensions passed in via `extensions` are update via a
+                // compartment
                 // eslint-disable-next-line react-hooks/exhaustive-deps
-                [isLightTheme, extensions]
+                [isLightTheme, externalExtensions]
             )
         )
 
@@ -340,6 +329,11 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
         useEffect(() => {
             editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
         }, [editor, patternType, interpretComments])
+
+        // Update external extensions if they changed
+        useEffect(() => {
+            editor?.dispatch({ effects: [externalExtensions.reconfigure(extensions)] })
+        }, [editor, externalExtensions, extensions])
 
         return (
             <div

@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -35,7 +35,7 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 	}
 
 	cacheKey := func(e fs.FileInfo) string {
-		info, ok := e.Sys().(git.ObjectInfo)
+		info, ok := e.Sys().(gitdomain.ObjectInfo)
 		if !ok {
 			return "" // not cacheable
 		}

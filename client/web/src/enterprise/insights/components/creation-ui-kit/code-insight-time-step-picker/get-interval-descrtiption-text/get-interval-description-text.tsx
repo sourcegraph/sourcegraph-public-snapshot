@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 
-import { InsightStep } from '../../../../pages/insights/creation/search-insight/types'
+import { InsightStep } from '../../../../pages/insights/creation/search-insight'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Intl {

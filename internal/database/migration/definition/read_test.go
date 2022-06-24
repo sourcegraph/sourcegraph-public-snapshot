@@ -32,6 +32,7 @@ func TestReadDefinitions(t *testing.T) {
 			{ID: 10003, Name: "third or fourth (1)", UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},
 			{ID: 10004, Name: "third or fourth (2)", UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10002}},
 			{ID: 10005, Name: "fifth", UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10003, 10004}},
+			{ID: 10006, Name: "do the thing", UpQuery: sqlf.Sprintf("10006 UP"), DownQuery: sqlf.Sprintf("10006 DOWN"), Parents: []int{10005}},
 		}
 		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
 			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)

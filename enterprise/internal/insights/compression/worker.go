@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +33,7 @@ type RepoStore interface {
 
 type CommitIndexer struct {
 	db                database.DB
-	limiter           *rate.Limiter
+	limiter           *ratelimit.InstrumentedLimiter
 	allReposIterator  func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
 	getCommits        func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
 	commitStore       CommitStore
@@ -62,7 +63,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 			Help:      "Counter of the number of repositories analyzed in the commit indexer.",
 		})
 
-	limiter := rate.NewLimiter(10, 1)
+	limiter := ratelimit.NewInstrumentedLimiter("CommitIndexer", rate.NewLimiter(10, 1))
 
 	operations := newOperations(observationContext)
 
