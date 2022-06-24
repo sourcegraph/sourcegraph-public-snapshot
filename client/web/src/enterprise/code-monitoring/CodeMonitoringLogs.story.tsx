@@ -10,16 +10,6 @@ import { WebStory } from '../../components/WebStory'
 import { CodeMonitoringLogs, CODE_MONITOR_EVENTS } from './CodeMonitoringLogs'
 import { mockLogs } from './testing/util'
 
-const mockedResponse: MockedResponse[] = [
-    {
-        request: {
-            query: getDocumentNode(CODE_MONITOR_EVENTS),
-            variables: { first: 20, after: null, triggerEventsFirst: 20, triggerEventsAfter: null },
-        },
-        result: { data: mockLogs },
-    },
-]
-
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
@@ -31,6 +21,16 @@ const config: Meta = {
         },
     },
 }
+
+const mockedResponse: MockedResponse[] = [
+    {
+        request: {
+            query: getDocumentNode(CODE_MONITOR_EVENTS),
+            variables: { first: 20, after: null, triggerEventsFirst: 20, triggerEventsAfter: null },
+        },
+        result: { data: mockLogs },
+    },
+]
 
 export default config
 
@@ -44,8 +44,6 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-Default.storyName = 'default'
-
 export const Open: Story = () => (
     <WebStory>
         {() => (
@@ -55,8 +53,6 @@ export const Open: Story = () => (
         )}
     </WebStory>
 )
-
-Open.storyName = 'open'
 
 export const Empty: Story = () => {
     const emptyMockedResponse: MockedResponse[] = [
@@ -85,5 +81,3 @@ export const Empty: Story = () => {
         </WebStory>
     )
 }
-
-Empty.storyName = 'empty'

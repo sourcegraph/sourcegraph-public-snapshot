@@ -9,11 +9,6 @@ import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'
 import { ListItem } from './ListItem'
 
-const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
-    ['cached', CachedIcon],
-    ['exclude', ExcludeIcon],
-]
-
 const decorator: DecoratorFn = story => <div className="list-group w-100">{story()}</div>
 
 const config: Meta = {
@@ -22,6 +17,11 @@ const config: Meta = {
 }
 
 export default config
+
+const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
+    ['cached', CachedIcon],
+    ['exclude', ExcludeIcon],
+]
 
 export const Basic: Story = () => (
     <WebStory>
@@ -50,8 +50,6 @@ export const Basic: Story = () => (
         )}
     </WebStory>
 )
-
-Basic.storyName = 'basic'
 
 export const NonRootPath: Story = () => (
     <WebStory>

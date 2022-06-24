@@ -89,30 +89,67 @@
             color: var(--search-query-text-color);
             background-color: var(--color-bg-1);
 
-            > ul > li {
-                padding-top: 0.25rem;
-                padding-bottom: 0.25rem;
+            > ul {
+                font-family: var(--code-font-family);
 
-                &[aria-selected] {
-                    color: var(--search-query-text-color);
-                    background-color: var(--color-bg-2);
+                > li {
+                    box-sizing: content-box;
+                    padding-top: 0.25rem;
+                    padding-bottom: 0.25rem;
+                    display: flex;
+                    height: 1.25rem;
 
-                    :global(.theme-dark) & {
-                        background-color: var(--color-bg-3);
+                    svg {
+                        flex-shrink: 0;
                     }
-                }
 
-                :global(.cm-completionDetail) {
-                    padding-left: 0.25rem;
-                    color: var(--gray-06);
-                }
+                    :global(.cm-completionLabel) {
+                        flex-shrink: 0;
+                    }
 
-                :global(.cm-completionMatchedText) {
-                    // Reset
-                    text-decoration: none;
+                    :global(.cm-completionDetail) {
+                        padding-left: 0.25rem;
+                        color: var(--gray-06);
+                        flex: 1;
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
 
-                    // Our style
-                    background-color: var(--mark-bg);
+                    :global(.cm-completionMatchedText) {
+                        // Reset
+                        text-decoration: none;
+
+                        // Our style
+                        color: var(--search-filter-keyword-color);
+                        font-weight: bold;
+                    }
+
+                    .tabStyle {
+                        border: 1px solid var(--text-muted);
+                        border-radius: 0.25rem;
+                        height: 1.25rem;
+                        font-size: 0.65rem;
+                        line-height: 1;
+                        padding: 0.25rem 0.375rem;
+                        margin-left: auto;
+                        color: var(--text-muted);
+                        opacity: 0.75;
+                        display: none;
+                    }
+
+                    &[aria-selected] {
+                        color: var(--search-query-text-color);
+                        background-color: var(--color-bg-2);
+
+                        :global(.theme-dark) & {
+                            background-color: var(--color-bg-3);
+                        }
+
+                        .tabStyle {
+                            display: inline-block;
+                        }
+                    }
                 }
             }
         }
