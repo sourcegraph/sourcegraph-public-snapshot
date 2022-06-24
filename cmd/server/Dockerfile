@@ -46,7 +46,7 @@ RUN apk add --no-cache --verbose \
     # https://github.blog/2022-04-12-git-security-vulnerability-announced/
     'git>=2.35.2' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main  \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main
 
 RUN apk add --no-cache --verbose \
     # NOTE that the Postgres version we run is different
