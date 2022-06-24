@@ -5538,7 +5538,7 @@ type Site implements SettingsSubject {
         months: Int
     ): SiteUsageStatistics!
 
-    eventStatistics(from: String!, to: String!, events: [EventStatisticsEvent!]): EventStatistics!
+    analytics: Analytics!
 
     """
     Monitoring overview for this site.
@@ -5849,32 +5849,39 @@ type SiteUsageStatistics {
     maus: [SiteUsagePeriod!]!
 }
 
-enum EventStatisticsEvent {
-    CHANGESETS_CREATED
-    CHANGESETS_MERGED
-    NOTEBOOKS_CREATED
-    NOTEBOOKS_VIEWED
-    INSIGHTS_CREATED
-    # ...
+enum AnalyticsDateRange {
+    LAST_THREE_MONTHS
+    LAST_MONTH
+    LAST_WEEK
+    CUSTOM
 }
 
-type EventStatisticsNode {
+type AnalyticsStatItemNode {
     date: String!
+    count: Int!
+    uniqueUsers: Int!
+    registeredUsers: Int!
+}
+
+type AnalyticsStatItemSummary {
     totalCount: Int!
-    uniqueCount: Int!
-    registeredCount: Int!
+    totalUniqueUsers: Int!
+    totalRegisteredUsers: Int!
+}
+type AnalyticsStatItem {
+    summary: AnalyticsStatItemSummary!
+    nodes: [AnalyticsStatItemNode!]!
 }
 
-type EventStatisticsUserItem {
-    user: User
-    eventsCount: Int!
+type AnalyticsSearchResult {
+    searches: AnalyticsStatItem!
+    # fileViews: AnalyticsStatItem!
+    # fileOpens: AnalyticsStatItem!
+    # sharedSearches: AnalyticsStatItem!
 }
 
-type EventStatistics {
-    # TODO: add pagination support
-    # users: [EventStatisticsUserItem!]!
-    # TODO: add summary
-    nodes: [EventStatisticsNode!]!
+type Analytics {
+    search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
 }
 
 """
