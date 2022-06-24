@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/background/cratesyncer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/background/indexer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/background/resolver"
@@ -55,14 +54,9 @@ func (j *dependenciesJob) Routines(ctx context.Context, logger log.Logger) ([]go
 
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 
-	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
-	enqueuerDBStoreShim := &autoindexing.DBStoreShim{Store: dbStore}
-
-	indexEnqueuer := autoindexing.GetService(database.NewDB(logger, db), enqueuerDBStoreShim, gitserverClient, repoUpdaterClient)
-
 	return []goroutine.BackgroundRoutine{
 		indexer.NewIndexer(database.NewDB(logger, db), livedependencies.NewSyncer(), dbStore, policyMatcher),
 		resolver.NewResolver(database.NewDB(logger, db), livedependencies.NewSyncer()),
-		cratesyncer.NewCratesSyncer(database.NewDB(logger, db), indexEnqueuer),
+		cratesyncer.NewCratesSyncer(database.NewDB(logger, db)),
 	}, nil
 }

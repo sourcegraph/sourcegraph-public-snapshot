@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,29 +24,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type syncer struct {
-	db            database.DB
-	dbStore       *dbstore.Store
-	extSvcStore   database.ExternalServiceStore
-	indexEnqueuer *autoindexing.Service
-	gitclient     *gitserver.ClientImplementor
-	// gitserverClient *gitserver.Client
+	db                    database.DB
+	dbStore               *dbstore.Store
+	externalServicesStore database.ExternalServiceStore
+	gitClient             *gitserver.ClientImplementor
 }
 
 var _ goroutine.Handler = &syncer{}
 
-type CrateInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"vers"`
-}
-
 func (s *syncer) Handle(ctx context.Context) error {
 
-	exists, externalService, err := singleRustExternalService(ctx, s.extSvcStore)
+	exists, externalService, err := singleRustExternalService(ctx, s.externalServicesStore)
 	if !exists || err != nil {
+		// err can be nil when there is no RUSTPACKAGES code host.
 		return err
 	}
 
@@ -57,14 +50,19 @@ func (s *syncer) Handle(ctx context.Context) error {
 		return err
 	}
 
-	repo := config.IndexRepositoryName
-	reader, err := s.gitclient.ArchiveReader(ctx, nil, api.RepoName(repo), gitserver.ArchiveOptions{
-		Treeish:   "HEAD",
-		Format:    "tar",
-		Pathspecs: []gitserver.Pathspec{},
-	})
+	// TODO: automatically fetch the latest commit before syncing https://github.com/sourcegraph/sourcegraph/issues/37690
+	reader, err := s.gitClient.ArchiveReader(
+		ctx,
+		nil,
+		api.RepoName(config.IndexRepositoryName),
+		gitserver.ArchiveOptions{
+			Treeish:   "HEAD",
+			Format:    "tar",
+			Pathspecs: []gitserver.Pathspec{},
+		},
+	)
 	if err != nil {
-		return errors.Wrapf(err, "failed to git archive repo %s", repo)
+		return errors.Wrapf(err, "failed to git archive repo %s", config.IndexRepositoryName)
 	}
 	defer reader.Close()
 
@@ -118,13 +116,13 @@ func (s *syncer) Handle(ctx context.Context) error {
 
 	nextSync := time.Now()
 	externalService.NextSyncAt = nextSync
-	if err := s.extSvcStore.Upsert(ctx, externalService); err != nil {
+	if err := s.externalServicesStore.Upsert(ctx, externalService); err != nil {
 		return err
 	}
 	return nil
 }
 
-func NewCratesSyncer(db database.DB, indexEnqueuer *autoindexing.Service) goroutine.BackgroundRoutine {
+func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -132,24 +130,25 @@ func NewCratesSyncer(db database.DB, indexEnqueuer *autoindexing.Service) gorout
 	}
 	extSvcStore := db.ExternalServices()
 
+	// By default, sync crates every 12h, but the user can customize this interval
+	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
 	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
 	if externalService != nil {
 		config, err := rustPackagesConfig(externalService)
-		if err == nil {
+		if err == nil { // silently ignore config errors.
 			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
-			if err == nil {
+			if err == nil { // silently ignore duration decoding error.
 				interval = customInterval
 			}
 		}
 	}
 
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &syncer{
-		db:            db,
-		dbStore:       dbstore.NewWithDB(db, observationContext),
-		extSvcStore:   extSvcStore,
-		indexEnqueuer: indexEnqueuer,
-		gitclient:     gitserver.NewClient(db),
+		db:                    db,
+		dbStore:               dbstore.NewWithDB(db, observationContext),
+		externalServicesStore: extSvcStore,
+		gitClient:             gitserver.NewClient(db),
 	})
 }
 
@@ -204,7 +203,11 @@ func parseCrateInformation(contents string) ([]precise.Package, error) {
 			continue
 		}
 
-		var info CrateInfo
+		type crateInfo struct {
+			Name    string `json:"name"`
+			Version string `json:"vers"`
+		}
+		var info crateInfo
 		err := json.Unmarshal([]byte(line), &info)
 		if err != nil {
 			return nil, err
