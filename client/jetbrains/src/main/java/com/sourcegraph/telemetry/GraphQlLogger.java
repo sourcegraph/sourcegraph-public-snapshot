@@ -41,27 +41,29 @@ public class GraphQlLogger {
 
     // This could be exposed later as public, but currently, we don't use it externally.
     private static void logEvent(Project project, @NotNull Event event) {
-        String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
+        new Thread(() -> {
+            String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
 
-        String accessToken = ConfigUtil.getAccessToken(project);
+            String accessToken = ConfigUtil.getAccessToken(project);
 
-        String query = "" +
-            "mutation LogEvents($events: [Event!]) {" +
-            "    logEvents(events: $events) { " +
-            "        alwaysNil" +
-            "    }" +
-            "}";
+            String query = "" +
+                "mutation LogEvents($events: [Event!]) {" +
+                "    logEvents(events: $events) { " +
+                "        alwaysNil" +
+                "    }" +
+                "}";
 
-        JsonArray events = new JsonArray();
-        events.add(event.toJson());
-        JsonObject variables = new JsonObject();
-        variables.add("events", events);
+            JsonArray events = new JsonArray();
+            events.add(event.toJson());
+            JsonObject variables = new JsonObject();
+            variables.add("events", events);
 
-        try {
-            callGraphQLService(instanceUrl, accessToken, query, variables);
-        } catch (IOException e) {
-            logger.info(e);
-        }
+            try {
+                callGraphQLService(instanceUrl, accessToken, query, variables);
+            } catch (IOException e) {
+                logger.info(e);
+            }
+        }).start();
     }
 
     private static void callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
