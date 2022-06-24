@@ -935,9 +935,12 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			args.After = afterID
 		}
 
+		log15.Info("searchByQuery", "p", r.args.SearchByQuery)
+
 		if r.args.SearchByQuery != nil && len(*r.args.SearchByQuery) != 0 {
 			// lets go see if there are any code insights with this in the query (separated by whitespace)
 			// so basically construct a regexp with the value
+			log15.Info("asdf insight_view_resolvers.go")
 			args.ContainingQuerySubstring = *r.args.SearchByQuery
 
 			// also search the compute captured values to see if there are any exact matches ignoring trailing

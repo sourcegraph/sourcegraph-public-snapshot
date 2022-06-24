@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -85,10 +87,6 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
 	}
 
-	if len(args.ContainingQuerySubstring) > 0 {
-		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from insight_series join insight_view_series ivs ON insight_series.id = ivs.insight_series_id join insight_view iv ON ivs.insight_view_id = iv.id where query similar to '%%s%')", args.ContainingQuerySubstring))
-	}
-
 	cursor := insightViewPageCursor{
 		after: args.After,
 		limit: args.Limit,
@@ -125,6 +123,11 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		} else {
 			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
+	}
+
+	if len(args.ContainingQuerySubstring) > 0 {
+		log15.Info("FINDME - insight-store.go")
+		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from insight_series join insight_view_series ivs ON insight_series.id = ivs.insight_series_id join insight_view iv ON ivs.insight_view_id = iv.id where query like %s)", "%"+args.ContainingQuerySubstring+"%"))
 	}
 
 	limit := sqlf.Sprintf("")
