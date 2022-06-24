@@ -244,8 +244,8 @@ $theme-colors: (
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
 // https://github.com/sourcegraph/sourcegraph/issues/36251
 .theme-light .theme-contrast-compliant-syntax-highlighting {
-    --line-number-color: #536da1;
+    --line-number-color: var(--gray-07);
 }
 .theme-dark .theme-contrast-compliant-syntax-highlighting {
-    --line-number-color: #bdc8df;
+    --line-number-color: var(--gray-06);
 }
