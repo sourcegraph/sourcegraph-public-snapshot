@@ -250,7 +250,7 @@ describe('Search', () => {
                     expect(await editor.getValue()).toStrictEqual('foo')
                 })
 
-                test.only('Normalizes input with line breaks', async () => {
+                test('Normalizes input with line breaks', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
                     await editor.focus()
                     await driver.paste('foo\n\n\n\n\nbar')
