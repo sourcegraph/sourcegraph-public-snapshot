@@ -204,7 +204,6 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         after: queryParameters.get('after') ?? '',
         path: queryParameters.get('path') ?? '',
     }
-    console.log(spec)
 
     const [revisionRange, setRevisionRange] = useState(spec.revisionRange)
     const [after, setAfter] = useState(spec.after)
@@ -229,7 +228,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                 throw new Error(`Node ${repo.id} not found`)
             }
             if (!('contributors' in node)) {
-                throw new Error('Contributors not found')
+                throw new Error('Failed to fetch contributors for this repo')
             }
             return node.contributors
         },
@@ -296,11 +295,43 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         !equalOrEmpty(spec.after, after) ||
         !equalOrEmpty(spec.path, path)
 
+    const Contributors: React.FunctionComponent = () => (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection && connection.nodes.length > 0 && (
+                <ConnectionList className="list-group list-group-flush test-filtered-contributors-connection">
+                    {connection.nodes.map(node => (
+                        <RepositoryContributorNode
+                            key={`${node.person.displayName}:${node.count}`}
+                            node={node}
+                            repoName={repo.name}
+                            globbing={globbing}
+                            {...spec}
+                        />
+                    ))}
+                </ConnectionList>
+            )}
+            {loading && <ConnectionLoading />}
+            <SummaryContainer>
+                {connection && (
+                    <ConnectionSummary
+                        connection={connection}
+                        first={BATCH_COUNT}
+                        noun="contributor"
+                        pluralNoun="contributors"
+                        hasNextPage={hasNextPage}
+                    />
+                )}
+                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+            </SummaryContainer>
+        </ConnectionContainer>
+    )
+
     return (
-        <div>
+        <section>
             <PageTitle title="Contributors" />
             <Card className={styles.card}>
-                <CardHeader>Contributions filter</CardHeader>
+                <CardHeader as="header">Contributions filter</CardHeader>
                 <CardBody>
                     <Form onSubmit={onSubmit}>
                         <div className={classNames(styles.row, 'form-inline')}>
@@ -411,35 +442,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                     </Form>
                 </CardBody>
             </Card>
-            <ConnectionContainer>
-                {error && <ConnectionError errors={[error.message]} />}
-                {connection && connection.nodes.length > 0 && (
-                    <ConnectionList className="list-group list-group-flush test-filtered-contributors-connection">
-                        {connection.nodes.map((node, index) => (
-                            <RepositoryContributorNode
-                                key={`${node.person.displayName}${node.person.user?.username}${node.count}`}
-                                node={node}
-                                repoName={repo.name}
-                                globbing={globbing}
-                                {...spec}
-                            />
-                        ))}
-                    </ConnectionList>
-                )}
-                {loading && <ConnectionLoading />}
-                <SummaryContainer>
-                    {connection && (
-                        <ConnectionSummary
-                            connection={connection}
-                            first={BATCH_COUNT}
-                            noun="contributor"
-                            pluralNoun="contributors"
-                            hasNextPage={hasNextPage}
-                        />
-                    )}
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                </SummaryContainer>
-            </ConnectionContainer>
-        </div>
+            <Contributors />
+        </section>
     )
 }
