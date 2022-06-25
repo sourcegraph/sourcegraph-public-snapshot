@@ -16,12 +16,12 @@ public class SettingsChangeListener implements Disposable {
         connection = bus.connect();
         connection.subscribe(PluginSettingChangeActionNotifier.TOPIC, new PluginSettingChangeActionNotifier() {
             @Override
-            public void beforeAction() {
+            public void beforeAction(@Nullable String oldUrl, @Nullable String oldAccessToken, @Nullable String newUrl, @Nullable String newAccessToken) {
                 // Do nothing
             }
 
             @Override
-            public void afterAction() {
+            public void afterAction(@Nullable String oldUrl, @Nullable String oldAccessToken, @Nullable String newUrl, @Nullable String newAccessToken) {
                 javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
             }
         });

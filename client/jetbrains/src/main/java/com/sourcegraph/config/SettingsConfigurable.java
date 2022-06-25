@@ -51,16 +51,19 @@ public class SettingsConfigurable implements Configurable {
     public void apply() {
         MessageBus bus = project.getMessageBus();
         PluginSettingChangeActionNotifier publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
-        publisher.beforeAction();
-
         SourcegraphProjectService settings = SourcegraphProjectService.getInstance(project);
+        String oldUrl = settings.url;
+        String oldAccessToken = settings.accessToken;
+
+        publisher.beforeAction(oldUrl, oldAccessToken, mySettingsComponent.getSourcegraphUrl(), mySettingsComponent.getAccessToken());
+
         settings.url = mySettingsComponent.getSourcegraphUrl();
         settings.accessToken = mySettingsComponent.getAccessToken();
         settings.defaultBranch = mySettingsComponent.getDefaultBranchName();
         settings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
         settings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
 
-        publisher.afterAction();
+        publisher.afterAction(oldUrl, oldAccessToken, settings.url, settings.accessToken);
     }
 
     @Override
