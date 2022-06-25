@@ -41,11 +41,9 @@ public class GraphQlLogger {
 
     // This could be exposed later as public, but currently, we don't use it externally.
     private static void logEvent(Project project, @NotNull Event event) {
+        String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
+        String accessToken = ConfigUtil.getAccessToken(project);
         new Thread(() -> {
-            String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-
-            String accessToken = ConfigUtil.getAccessToken(project);
-
             String query = "" +
                 "mutation LogEvents($events: [Event!]) {" +
                 "    logEvents(events: $events) { " +
