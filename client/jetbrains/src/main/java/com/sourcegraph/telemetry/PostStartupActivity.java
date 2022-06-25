@@ -25,7 +25,9 @@ public class PostStartupActivity implements StartupActivity {
 
         PluginInstaller.addStateListener(new PluginStateListener() {
             public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
-                GraphQlLogger.logInstallEvent(project);
+                GraphQlLogger.logInstallEvent(project, (wasSuccessful) -> {
+                    // TODO
+                });
             }
 
             @Override
