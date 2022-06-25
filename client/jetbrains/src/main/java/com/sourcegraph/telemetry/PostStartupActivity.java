@@ -26,7 +26,9 @@ public class PostStartupActivity implements StartupActivity {
         PluginInstaller.addStateListener(new PluginStateListener() {
             public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
                 GraphQlLogger.logInstallEvent(project, (wasSuccessful) -> {
-                    // TODO
+                    if (wasSuccessful) {
+                        ConfigUtil.setInstallEventLogged(true);
+                    }
                 });
             }
 
@@ -37,6 +39,8 @@ public class PostStartupActivity implements StartupActivity {
 
                     // Clearing this so that we can detect a new installation if the user re-enables the extension.
                     ConfigUtil.setAnonymousUserId(null);
+
+                    ConfigUtil.setInstallEventLogged(false);
                 }
             }
         });
