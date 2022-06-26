@@ -1,0 +1,109 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/access/?project=sourcegraph%2Fcreate
+    method: GET
+  response:
+    body: |
+      )]}'
+      {
+        "sourcegraph/create": {
+          "revision": "56c19cd05a25b37e66f66e8facf0ffa9e606c274",
+          "inherits_from": {
+            "id": "sourcegraph",
+            "name": "sourcegraph",
+            "parent": "All-Projects",
+            "state": "ACTIVE"
+          },
+          "local": {
+            "refs/heads/master": {
+              "permissions": {
+                "read": {
+                  "rules": {
+                    "global:Registered-Users": {
+                      "action": "ALLOW",
+                      "force": false
+                    },
+                    "40bb3b32f9da57a0697285daabb777965720b96e": {
+                      "action": "ALLOW",
+                      "force": false
+                    },
+                    "global:Anonymous-Users": {
+                      "action": "ALLOW",
+                      "force": false
+                    }
+                  }
+                }
+              }
+            },
+            "refs/heads/temp": {
+              "permissions": {
+                "read": {
+                  "rules": {
+                    "40bb3b32f9da57a0697285daabb777965720b96e": {
+                      "action": "ALLOW",
+                      "force": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "is_owner": true,
+          "owner_of": [
+            "refs/heads/master",
+            "refs/heads/temp"
+          ],
+          "can_upload": true,
+          "can_add": true,
+          "can_add_tags": true,
+          "config_visible": true,
+          "groups": {
+            "global:Registered-Users": {
+              "name": "Registered Users"
+            },
+            "40bb3b32f9da57a0697285daabb777965720b96e": {
+              "url": "#/admin/groups/uuid-40bb3b32f9da57a0697285daabb777965720b96e",
+              "name": "Sourcegraph"
+            },
+            "global:Anonymous-Users": {
+              "name": "Anonymous Users"
+            }
+          },
+          "config_web_links": []
+        }
+      }
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 72126ddaeff32d0d-ORD
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Sun, 26 Jun 2022 02:14:23 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""

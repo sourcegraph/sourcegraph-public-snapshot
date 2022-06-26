@@ -1,0 +1,44 @@
+{
+  "sourcegraph/create": {
+   "inherits_from": {
+    "id": "sourcegraph",
+    "name": "sourcegraph",
+    "parent": "All-Projects",
+    "state": "ACTIVE"
+   },
+   "local": {
+    "refs/heads/master": {
+     "permissions": {
+      "read": {
+       "rules": {
+        "40bb3b32f9da57a0697285daabb777965720b96e": {
+         "action": "ALLOW",
+         "force": false
+        },
+        "global:Anonymous-Users": {
+         "action": "ALLOW",
+         "force": false
+        },
+        "global:Registered-Users": {
+         "action": "ALLOW",
+         "force": false
+        }
+       }
+      }
+     }
+    },
+    "refs/heads/temp": {
+     "permissions": {
+      "read": {
+       "rules": {
+        "40bb3b32f9da57a0697285daabb777965720b96e": {
+         "action": "ALLOW",
+         "force": false
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }

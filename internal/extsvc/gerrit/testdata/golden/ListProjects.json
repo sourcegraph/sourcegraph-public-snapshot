@@ -1,16 +1,25 @@
 {
-  "TestRepo": {
+  "idan-temp": {
    "description": "",
-   "id": "TestRepo",
+   "id": "idan-temp",
    "name": "",
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
    "labels": null
   },
-  "apps/analytics-etl": {
+  "k8s-gerrit": {
    "description": "",
-   "id": "apps%2Fanalytics-etl",
+   "id": "k8s-gerrit",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "sourcegraph": {
+   "description": "",
+   "id": "sourcegraph",
    "name": "",
    "parent": "",
    "state": "ACTIVE",

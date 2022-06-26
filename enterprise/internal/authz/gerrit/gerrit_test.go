@@ -77,7 +77,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		warnings []string
 	}{
 		{
-			name: "GetGroup fails",
+			name: "GetGroupByName fails",
 			client: mockClient{
 				mockGetGroup: func(ctx context.Context, email string) (gerrit.Group, error) {
 					return gerrit.Group{}, errors.New("fake error")

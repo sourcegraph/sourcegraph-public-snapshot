@@ -6,13 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"io"
+	"net/http"
+	"net/url"
 )
 
 // Client access a Gerrit via the REST API.
@@ -52,8 +51,6 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 	}, nil
 }
 
-type ListAccountsResponse []Account
-
 func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
 	qsAccounts.Set("q", fmt.Sprintf("email:%s", email)) // TODO: what query should we run?
@@ -66,26 +63,25 @@ func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (L
 	return c.listAccounts(ctx, qsAccounts)
 }
 
-func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
-	qsAccounts.Set("o", "details")
+func (c *Client) GetProjectAccessPermissions(ctx context.Context, project string) (GetProjectAccessResponse, error) {
 
-	urlPath := "a/accounts/"
+	qsAccess := make(url.Values)
+	qsAccess.Set("project", project)
 
-	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAccounts.Encode()}
-
-	reqAllAccounts, err := http.NewRequest("GET", uAllProjects.String(), nil)
-
+	uProjectAccess := url.URL{Path: "a/access/", RawQuery: qsAccess.Encode()}
+	reqAllProjects, err := http.NewRequest("GET", uProjectAccess.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-	respAllAccts := ListAccountsResponse{}
-	if _, err = c.do(ctx, reqAllAccounts, &respAllAccts); err != nil {
-		return respAllAccts, err
+
+	var respGetProjectAccess GetProjectAccessResponse
+	if _, err = c.do(ctx, reqAllProjects, &respGetProjectAccess); err != nil {
+		return nil, err
 	}
-	return respAllAccts, nil
+	return respGetProjectAccess, nil
 }
 
-func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) {
+func (c *Client) GetGroupByName(ctx context.Context, groupName string) (Group, error) {
 
 	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s", groupName)}
 
@@ -102,13 +98,22 @@ func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) 
 	return respGetGroup, nil
 }
 
-// ListProjectsArgs defines options to be set on ListProjects method calls.
-type ListProjectsArgs struct {
-	Cursor *Pagination
-}
+func (c *Client) ListGroupMembers(ctx context.Context, groupID string) (ListAccountsResponse, error) {
 
-// ListProjectsResponse defines a response struct returned from ListProjects method calls.
-type ListProjectsResponse map[string]*Project
+	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s/members/", groupID)}
+
+	reqAllAccounts, err := http.NewRequest("GET", urlGroup.String(), nil)
+
+	if err != nil {
+		return ListAccountsResponse{}, err
+	}
+
+	respListGroupMembers := ListAccountsResponse{}
+	if _, err = c.do(ctx, reqAllAccounts, &respListGroupMembers); err != nil {
+		return respListGroupMembers, err
+	}
+	return respListGroupMembers, nil
+}
 
 func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
 
@@ -166,6 +171,25 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 	return &respCodeProjects, nextPage, nil
 }
 
+func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
+	qsAccounts.Set("o", "details")
+
+	urlPath := "a/accounts/"
+
+	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAccounts.Encode()}
+
+	reqAllAccounts, err := http.NewRequest("GET", uAllProjects.String(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+	respAllAccts := ListAccountsResponse{}
+	if _, err = c.do(ctx, reqAllAccounts, &respAllAccts); err != nil {
+		return respAllAccts, err
+	}
+	return respAllAccts, nil
+}
+
 // nolint:unparam
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
@@ -210,6 +234,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	return resp, json.Unmarshal(bs[4:], result)
 }
 
+// ListProjectsArgs defines options to be set on ListProjects method calls.
+type ListProjectsArgs struct {
+	Cursor *Pagination
+}
+
+// ListProjectsResponse defines a response struct returned from ListProjects method calls.
+type ListProjectsResponse map[string]*Project
+
+type ListAccountsResponse []Account
+
+type GetProjectAccessResponse map[string]*ProjectAccess
+
 type Account struct {
 	ID          int32  `json:"_account_id"`
 	Name        string `json:"name"`
@@ -226,6 +262,24 @@ type Group struct {
 	CreatedOn   string `json:"created_on"`
 	Owner       string `json:"owner"`
 	OwnerID     string `json:"owner_id"`
+}
+
+type ProjectAccess struct {
+	InheritsFrom *struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Parent string `json:"parent"`
+		State  string `json:"state"`
+	} `json:"inherits_from"`
+	Local map[string]struct {
+		Permissions *map[string]struct {
+			Exclusive *bool `json:"exclusive"`
+			Rules     map[string]struct {
+				Action string `json:"action"`
+				Force  bool   `json:"force"`
+			} `json:"rules"`
+		} `json:"permissions"`
+	} `json:"local"`
 }
 
 type Project struct {

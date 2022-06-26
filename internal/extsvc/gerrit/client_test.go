@@ -35,7 +35,49 @@ func TestClient_ListProjects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
+	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", true, resp)
+}
+
+func TestClient_GetProjectAccessPermissions(t *testing.T) {
+	cli, save := NewTestClient(t, "GetProjectAccessPermissions", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.GetProjectAccessPermissions(ctx, "sourcegraph/create")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/golden/GetProjectAccessPermissions.json", *update, resp)
+}
+
+func TestClient_GetGroupByName(t *testing.T) {
+	cli, save := NewTestClient(t, "GetGroupByName", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.GetGroupByName(ctx, "Sourcegraph")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/golden/GetGroupByName.json", *update, resp)
+}
+
+func TestClient_ListGroupMembers(t *testing.T) {
+	cli, save := NewTestClient(t, "ListGroupMembers", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.ListGroupMembers(ctx, "40bb3b32f9da57a0697285daabb777965720b96e")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/golden/ListGroupMembers.json", *update, resp)
 }
 
 func TestMain(m *testing.M) {
@@ -50,7 +92,6 @@ func TestMain(m *testing.M) {
 // to testdata/vcr/.
 func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	t.Helper()
-
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
 	rec, err := httptestutil.NewRecorder(cassete, update)
 	if err != nil {
@@ -62,12 +103,17 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hc = httpcli.GerritUnauthenticateMiddleware(hc)
 
-	c := &schema.GerritConnection{
-		Url: "https://gerrit-review.googlesource.com",
+	instanceURL := os.Getenv("GERRIT_URL")
+	if instanceURL == "" {
+		instanceURL = "https://gerrit.sgdev.org"
 	}
 
+	c := &schema.GerritConnection{
+		Url:      instanceURL,
+		Username: os.Getenv("GERRIT_USERNAME"),
+		Password: os.Getenv("GERRIT_PASSWORD"),
+	}
 	cli, err := NewClient("urn", c, hc)
 	if err != nil {
 		t.Fatal(err)
