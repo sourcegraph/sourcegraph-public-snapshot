@@ -1,4 +1,4 @@
-# Using Helm
+# Sourcegraph with Kubernetes & Helm
 
 ## Requirements
 
@@ -7,6 +7,7 @@
 
 <div class="cta-group">
 <!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
+<a class="btn" href="#prerequisites">Prerequisites</a>
 <a class="btn" href="#configuration">Configuration</a>
 <a class="btn" href="#configure-sourcegraph-on-google-kubernetes-engine-gke">Google GKE</a>
 <a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">AWS EKS</a>
@@ -20,7 +21,7 @@
 
 ## Why use Helm
 
-Our Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
+Our Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section).
 
 ## Prerequisites
 Deploying Sorcegraph with Kubernetes with Helm has the following requirements:
@@ -29,8 +30,9 @@ Deploying Sorcegraph with Kubernetes with Helm has the following requirements:
 - You must have a basic understanding of [Helm charts and how to create them.](https://helm.sh/)
 - You must have a Kubernetes cluster running ***[TODO link to docs]***
 - You must be using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) 
-- You have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
-- You have XYZ cloud account with ability to launch instances and persistent volumes (SSDs recommended)
+- You must have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
+- You must have the [Helm 3 CLI](https://helm.sh/docs/intro/install/) installed
+- You have XYZ cloud account ***[TODO link to docs]*** with ability to launch instances and persistent volumes (SSDs recommended)
 .
 
 ## High-level overview of how to use Helm with Sourcegraph

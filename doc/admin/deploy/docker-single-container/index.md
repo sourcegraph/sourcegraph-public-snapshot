@@ -1,4 +1,4 @@
-# Docker Single Container Deployment
+# Sourcegraph with Single Docker Container
 
 The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting secton](#troubleshooting) for additional information.
 
