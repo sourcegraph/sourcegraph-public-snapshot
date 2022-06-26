@@ -104,12 +104,14 @@ sg adr create my ADR title
 
 				var found bool
 				if err := adr.VisitAll(filepath.Join(repoRoot, "doc", "dev", "adr"), func(r adr.ArchitectureDecisionRecord) error {
+					// Try to match the title
 					if searchRegexp.MatchString(r.Title) {
 						printADR(r)
 						found = true
 						return nil
 					}
 
+					// Otherwise, try to match the file contents
 					content, err := os.ReadFile(r.Path)
 					if err != nil {
 						return err
@@ -199,7 +201,7 @@ sg adr create my ADR title
 					return err
 				}
 
-				std.Out.WriteSuccessf("Created template at for 'ADR %d %s' at %s",
+				std.Out.WriteSuccessf("Created template for 'ADR %d %s' at %s",
 					newADR.Number, newADR.Title, newADR.Path)
 				return nil
 			},
