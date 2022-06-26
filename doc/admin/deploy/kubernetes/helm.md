@@ -1,9 +1,5 @@
 # Sourcegraph with Kubernetes & Helm
 
-## Requirements
-
-* [Helm 3 CLI](https://helm.sh/docs/intro/install/)
-* Kubernetes 1.19 or greater
 
 <div class="cta-group">
 <!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
@@ -16,15 +12,26 @@
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
-
 > WARNING: Sourcegraph currently does not support migration from an existing Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. This guide is recommended for new installations of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
 
 ## Why use Helm
 
-Our Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section).
+Helm charts make it simple to package and deploy applications on Kubernetes. Sourcegraph's Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades.
+
+To deploy Sourcegraph with Kubernetes and Helm you will typically follow these steps:
+
+1. Add the Sourcegraph Helm repository and install the chart
+2. Prepare any additional required customizations. Sourcegraph offers out of the box defaults but most environments will likely to need to implement their own customizations. For additional guidance see the [Configuration](#configuration) section below.
+3. Review the changes. We offer guidance on [three mechanisms](#reviewing-changes) that can be used to review customizations. This is an optional step, but may be useful the first time you deploy Sourcegraph.
+4. Select your deployment method and follow the guidance:
+   - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
+   - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+   - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
+   - [Other cloud providers or on-prem](#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
 
 ## Prerequisites
-Deploying Sorcegraph with Kubernetes with Helm has the following requirements:
+
+Deploying Sourcegraph with Kubernetes with Helm has the following requirements:
 
 - You must have a [Sourcegraph Enterprise license](configure.md#add-license-key) if your instance will have more than 10 users.
 - You must have a basic understanding of [Helm charts and how to create them.](https://helm.sh/)
@@ -32,27 +39,15 @@ Deploying Sorcegraph with Kubernetes with Helm has the following requirements:
 - You must be using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) 
 - You must have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
 - You must have the [Helm 3 CLI](https://helm.sh/docs/intro/install/) installed
-- You have XYZ cloud account ***[TODO link to docs]*** with ability to launch instances and persistent volumes (SSDs recommended)
-.
-
-## High-level overview of how to use Helm with Sourcegraph
-
-1. Prepare any required customizations
-   - Most environments are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
-1. Review the changes
-   - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph.
-1. Select your deployment method and follow the guidance:
-   - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
-   - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
-   - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
-   - [Other cloud providers or on-prem](#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
-
+- You have XYZ cloud account ***[TODO link to docs]*** with ability to launch instances and persistent volumes (SSDs recommended).
 
 ## Quickstart
 
-> ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good understanding of how to use Helm in the environment they want to deploy into, and who just want to quickly deploy Sourcegraph with Helm with the default configuration. If this doesn't cover what you need to know, see the links above for platform-specific guides.
+> ℹ️ This quickstart guide should be used by those already familiar with Helm, have a good understanding of how to use Helm in the environment they want to deploy into, and who want to quickly deploy Sourcegraph with Helm with the default configuration.
 
-To use the Helm chart, add the Sourcegraph helm repository (on the machine used to interact with your cluster):
+To use the Helm chart, add the Sourcegraph helm repository on the machine used to interact with your cluster:
+
+ ***[TODO do we want to provide additional guidance here?]***
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -64,10 +59,11 @@ Install the Sourcegraph chart using default values:
 helm install --version 3.41.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
+Sourcegraph should now be available via the address set. Navigating to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
-More information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config/index.md)
+ ***[TODO is it obvious to admins on what the address set is? Do we want to provide additional guidance here?]***
+
+If our default configuration settings do not fit your needs, read more about applying customizations in [Configuring Sourcegraph](../../config/index.md) below.
 
 
 ## Configuration
@@ -76,23 +72,34 @@ The Sourcegraph Helm chart is highly customizable to support a wide range of env
 
 The default configuration values can be viewed in the [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) file along with all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options).
 
-To customize configuration settings with an override file, begin by creating an empty yaml file (e.g. `override.yaml`).
+To create customized configurations
 
-(The configuration override file can be created in advance of deployment, and the configuration override settings can be populated in preparation.)
-
-It's recommended that the override file be maintained in a version control system such as GitHub, but for testing, this can be created on the machine from which the Helm deployment commands will be run.
+1. Create an empty yaml file (e.g. `override.yaml`) to store the settings. We recommend that the override file be maintained in a version control system such as GitHub, but for testing, this can be created on the machine from which the Helm deployment commands will be run.
+2. Use our example overrides as a boilerplate for your override file. A list of examples can be found in the [examples](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder in Github.
 
 > WARNING: __DO NOT__ copy the [default values file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) as a boilerplate for your override file. You risk having outdated values during future upgrades. Instead, only include the configuration that you need to change and override.
 
-Example overrides can be found in the [examples](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder. Please take a look at our examples – feel free to copy and adapt them for your own override file.
+3. Adapt any customizations from the example overrides.
+4. Review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
+5. Apply the changes by installing the chart with the custom values in your override file. Provide the override file to Helm by adding the values flag and the name of the override file in the following command:
 
-Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
 helm upgrade --install --values ./override.yaml --version 3.41.0 sourcegraph sourcegraph/sourcegraph
 ```
-When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
 
-### Specific Configuration Scenarios
+(The configuration override file can be created in advance of deployment, and the configuration override settings can be populated in preparation.)
+ ***[TODO what does this mean. Ie. customers should do this first? What is the specific step we are referring to here?]***
+
+### Common Helm Chart Configurations
+
+This section outlines a few common scenarios for creating custom configurations. For an exhaustive list of configuration options please see our [Sourcegraph Helm Chart README.md in Github.](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/README.md)
+
+- [Using external PostgreSQL databases](#using-external-postgresql-databases)
+- [Using external Redis instances](#using-external-redis-instances)
+- [Using external Object Storage](#using-external-object-storage)
+- [Using SSH to clone repositories](#using-ssh-to-clone-repositories)
+
+If your customization needs are not covered below please email <support@sourcegraph.com> for assistance.
 
 #### Using external PostgreSQL databases
 
