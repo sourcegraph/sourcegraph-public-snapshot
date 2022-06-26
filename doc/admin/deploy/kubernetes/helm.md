@@ -16,19 +16,29 @@
 </div>
 
 
-> WARNING: Sourcegraph currently does not support migration from an existing Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. The information you are looking at is currently recommended for a new install of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
+> WARNING: Sourcegraph currently does not support migration from an existing Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. This guide is recommended for new installations of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
 
 ## Why use Helm
 
-Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
+Our Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
 
+## Prerequisites
+Deploying Sorcegraph with Kubernetes with Helm has the following requirements:
+
+- You must have a [Sourcegraph Enterprise license](configure.md#add-license-key) if your instance will have more than 10 users.
+- You must have a basic understanding of [Helm charts and how to create them.](https://helm.sh/)
+- You must have a Kubernetes cluster running ***[TODO link to docs]***
+- You must be using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) 
+- You have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
+- You have XYZ cloud account with ability to launch instances and persistent volumes (SSDs recommended)
+.
 
 ## High-level overview of how to use Helm with Sourcegraph
 
 1. Prepare any required customizations
    - Most environments are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
 1. Review the changes
-   - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+   - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph.
 1. Select your deployment method and follow the guidance:
    - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
    - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
