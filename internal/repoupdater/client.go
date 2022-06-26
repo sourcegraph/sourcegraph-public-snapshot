@@ -296,15 +296,18 @@ func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
+	fmt.Println("payload:", payload)
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("body:", string(reqBody))
 
 	req, err := http.NewRequest("POST", c.URL+"/"+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("REQ:%+v\n", req)
 
 	return c.do(ctx, req)
 }

@@ -140,6 +140,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("/enqueue-repo-update endpoint hit!")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.respond(w, http.StatusBadRequest, err)

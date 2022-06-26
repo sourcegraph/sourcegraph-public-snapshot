@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"math/rand"
 	"strings"
 	"sync"
@@ -388,12 +389,14 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
 func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
+	fmt.Println("UpdateOnce called!")
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
 	}
 	schedManualFetch.Inc()
 	s.updateQueue.enqueue(repo, priorityHigh)
+	fmt.Println("ENQUEUED!")
 }
 
 // DebugDump returns the state of the update scheduler for debugging.

@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -28,14 +29,18 @@ type Registerer interface {
 // for many event types, you should do a type switch within your handler
 type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event any) error
 
+// PushWebhookHandler is a handler for a webhook PushEvent
+type PushWebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event any, r *http.Request) error
+
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
 // passed in the X-Github-Event header
 type GitHubWebhook struct {
 	ExternalServices database.ExternalServiceStore
 
-	mu       sync.RWMutex
-	handlers map[string][]WebhookHandler
+	mu           sync.RWMutex
+	handlers     map[string][]WebhookHandler
+	pushHandlers map[string][]PushWebhookHandler
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +67,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// parse event
 	eventType := gh.WebHookType(r)
+	fmt.Println("eventType:", eventType)
 	e, err := gh.ParseWebHook(eventType, body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
@@ -71,6 +77,14 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extSvc, e)
+	if err != nil {
+		log15.Error("Error handling github webhook event", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// match event handlers
+	err = h.DispatchPush(ctx, eventType, extSvc, e, r)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -94,6 +108,22 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *
 	return g.Wait()
 }
 
+// Dispatch accepts an event for a particular event type and dispatches it
+// to the appropriate stack of handlers, if any are configured.
+func (h *GitHubWebhook) DispatchPush(ctx context.Context, eventType string, extSvc *types.ExternalService, e any, r *http.Request) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	g := errgroup.Group{}
+	for _, handler := range h.pushHandlers[eventType] {
+		// capture the handler variable within this loop
+		handler := handler
+		g.Go(func() error {
+			return handler(ctx, extSvc, e, r)
+		})
+	}
+	return g.Wait()
+}
+
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
@@ -105,6 +135,17 @@ func (h *GitHubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
 	}
 	for _, eventType := range eventTypes {
 		h.handlers[eventType] = append(h.handlers[eventType], handler)
+	}
+}
+
+func (h *GitHubWebhook) RegisterPush(handler PushWebhookHandler, eventTypes ...string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.pushHandlers == nil {
+		h.pushHandlers = make(map[string][]PushWebhookHandler)
+	}
+	for _, eventType := range eventTypes {
+		h.pushHandlers[eventType] = append(h.pushHandlers[eventType], handler)
 	}
 }
 
