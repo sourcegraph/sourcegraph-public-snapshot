@@ -65,15 +65,21 @@ Sourcegraph should now be available via the address set. Navigating to the url s
 
 If our default configuration settings do not fit your needs, read more about applying customizations in [Configuring Sourcegraph](../../config/index.md) below.
 
-## Cloud providers guides
+## Installing Sourcegraph with Kubernetes
 
-This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:
+This section provides high-level guidance on deploying Sourcegraph via Kubernetes with Helm on major Cloud providers. In general, you need the following to get started:
 
 - A working Kubernetes cluster, v1.19 or higher
 - The ability to provision persistent volumes, e.g. have Block Storage [CSI storage driver](https://kubernetes-csi.github.io/docs/drivers.html) installed
 - An Ingress Controller installed, e.g. platform native ingress controller, [NGINX Ingress Controller].
 - The ability to create DNS records for Sourcegraph, e.g. `sourcegraph.company.com`
 
+You can install Sourcegraph on the supported virtualization platform of your choice. Follow these links for cloud-specific guides on preparing the environment and installing Sourcegraph:
+
+- [Deploy Sourcegraph with Kubernetes on Amazon Elastic Kubernetes Service (EKS)](/k8-helm-eks.md)
+- [Deploy Sourcegraph with Kubernetes on Google Kubernetes Engine (GKE)](/k8-helm-gke.md)
+- [Deploy Sourcegraph with Kubernetes on Azure Managed Kubernetes Service (AKS)](/k8-helm-aks.md)
+- [Deploy Sourcegraph with Kubernetes on other Cloud providers or on-prem](/k8-helm-other-cloud.md)
 
 ## Configuration
 
