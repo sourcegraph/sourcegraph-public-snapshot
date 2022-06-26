@@ -261,6 +261,16 @@ func GitHubProxyRedirectMiddleware(cli Doer) Doer {
 	})
 }
 
+// GerritUnauthenticateMiddleware rewrites requests to Gerrit code host to
+// make them unauthenticated, used for testing against a non-Authed gerrit instance
+func GerritUnauthenticateMiddleware(cli Doer) Doer {
+	return DoerFunc(func(req *http.Request) (*http.Response, error) {
+		req.URL.Path = strings.ReplaceAll(req.URL.Path, "/a/", "/")
+		req.Header.Del("Authorization")
+		return cli.Do(req)
+	})
+}
+
 //
 // Common Opts
 //
