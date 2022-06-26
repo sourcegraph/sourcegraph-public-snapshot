@@ -344,15 +344,17 @@ kubectl apply -f gitserver-ssh.Secret.yaml
 
 ### Advanced Helm Chart Configurations
 
-The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
+Sourcegraph's Helm chart is new and our defaults in our `values.yaml` and customizations available via an override file may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
 
 The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
 
-> ⚠️ While both of these approaches are available, deployment changes that are not covered by Sourcegraph documentation should be discussed with either your Customer Engineer or Support contact before proceeding, to ensure the changes proposed can be supported by Sourcegraph. This also allows Sourcegraph to consider adding the required customizations to the Helm chart.
+ ***[TODO Do we really want to recommend Kustomize with Helm? If we recommend customers reach out to CE or support do we really want this section to be externally documented?]***
+
+> ⚠️ All deployment changes that are not covered by Sourcegraph's documentation or existing functionality should be discussed with your Customer Engineer or Support. Please contact your Customer Engineer before proceeding to ensure the changes proposed can be supported by Sourcegraph.
 
 #### Integrate Kustomize with Helm chart
 
-For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
+For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. __Do not__ maintain your own fork of our chart as this may negatively impact our ability to provide support if you run into issues.
 
 You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
 
