@@ -103,9 +103,13 @@ If your customization needs are not covered below please email <support@sourcegr
 
 #### Using external PostgreSQL databases
 
+The default Sourcecgraph deployment ships three separate Postgres instances: [codeinsights-db.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/templates/codeinsights-db/codeinsights-db.StatefulSet.yaml), [codeintel-db.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/templates/codeintel-db/codeintel-db.StatefulSet.yaml), and [pgsqlStatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/templates/pgsql/pgsql.StatefulSet.yaml). All three can be disabled individually and replaced with external Postgres instances.
+
 To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations).
 
-We recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. Each database requires its own Secret and should follow the following format. The Secret name can be customized as desired:
+> An example of this approach can be found in our Helm chart [using external databases](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases) example on Github.
+
+We recommend storing the database credentials in [Secrets] created outside of the helm chart and managed in a secure manner. The Secrets should be deployed to the same namespace as the existing Sourcegraph deployment. Each database requires its own Secret and should follow the following format. The Secret name can be customized as desired:
 
 ```yaml
 apiVersion: v1
@@ -145,9 +149,7 @@ data:
   user: ""
 ```
 
-The above Secrets should be deployed to the same namespace as the existing Sourcegraph deployment.
-
-You can reference the Secrets in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-databases/override.yaml) by configuring the `existingSecret` key:
+Set the Secret name your `override.yaml` by configuring the `auth.existingSecret` key for each database. A full example can be seen in this [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-databases/override.yaml)
 
 ```yaml
 codeIntelDB:
@@ -166,8 +168,6 @@ pgsql:
     existingSecret: pgsql-credentials
 ```
 
-The [using external databases](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases) example demonstrates this approach.
-
 Although not recommended, credentials can also be configured directly in the helm chart. For example, add the following to your override.yaml to customize pgsql credentials:
 
 ```yaml
@@ -183,10 +183,13 @@ pgsql:
 
 #### Using external Redis instances
 
-To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis).
+The default Sourcecgraph deployment ships two separate Redis instances: [redis-cache.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/templates/redis/redis-cache.Deployment.yaml) and [redis-store.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/templates/redis/redis-store.Deployment.yaml).
 
+To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis). When using external Redis instances, you’ll need to specify the new endpoint for each. You can specify the endpoint directly in the values file, or by referencing an existing secret.
 
-If your external Redis instances do not require authentication, you can configure access in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override.yaml) with the `endpoint` settings:
+> An example of this approach can be found in our Helm chart [using external redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) example on Github.
+
+If your external Redis instances do not require authentication, you can configure access in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override.yaml) with the `endpoint` setting:
 
 ```yaml
 redisCache:
@@ -220,7 +223,7 @@ data:
   endpoint: ""
 ```
 
-You can reference this secret in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override-secret.yaml) by configuring the `existingSecret` key:
+You can reference this secret in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override-secret.yaml) by configuring the `connection.existingSecret` key:
 
 ```yaml
 redisCache:
@@ -234,14 +237,13 @@ redisStore:
     existingSecret: redis-store-connection
 ```
 
-The [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) example demonstrates this approach.
-
 #### Using external Object Storage
 
-To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then review the following example and adjust to your use case.
+By default Sourcegraph uses a MinIO server bundled with the instance to temporarily store precise code intelligence indexes uploaded by users. If you prefer, you can configure your instance to store this data in an S3 or GCS bucket. To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then review the following example and adjust to your use case.
 
-> See [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml) for an example override file.
->
+To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service.
+
+> An example of this approach can be found in our Helm chart [using external object storage](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml) example on Github.
 > The example assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
 
 If you provide credentials with an access key / secret key, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. An example Secret is shown here:
@@ -267,7 +269,7 @@ minio:
 # we use YAML anchors and alias to keep override file clean
 objectStorageEnv: &objectStorageEnv
   PRECISE_CODE_INTEL_UPLOAD_BACKEND:
-    value: S3 # external object stoage type, one of "S3" or "GCS"
+    value: S3 # external object storage type, either "S3" or "GCS"
   PRECISE_CODE_INTEL_UPLOAD_BUCKET:
     value: lsif-uploads # external object storage bucket name
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT:
@@ -294,8 +296,11 @@ preciseCodeIntel:
 
 #### Using SSH to clone repositories
 
-Create a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) that contains the base64 encoded contents of your SSH private key (make sure it doesn’t require a passphrase) and known_hosts file. The [Secret] will be mounted in the `gitserver` deployment to authenticate with your code host.
+If repository authentication is required to `git clone` a repository then you must provide credentials to the container.
 
+Create a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) that contains the base64 encoded contents of your SSH private key and `known_hosts` file. The SSH private key should not require a passphrase. The Secret will be mounted in the `gitserver` deployment to authenticate with your code host.
+
+**Option 1: Create Secret with Local SSH Keys**
 If you have access to the ssh keys locally, you can run the command below to create the secret:
 
 ```sh
@@ -304,11 +309,15 @@ kubectl create secret generic gitserver-ssh \
 	    --from-file known_hosts=${HOME}/.ssh/known_hosts
 ```
 
+**Option 2: Create Secret from Manifest File**
 Alternatively, you may manually create the secret from a manifest file.
 
-> WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
+> WARNING: For security purposes, do NOT commit the secret manifest into your Git repository unless you are comfortable storing sensitive information in plaintext and your repository is private.
 
 Create a file with the following and save it as `gitserver-ssh.Secret.yaml`
+
+ ***[TODO Where are they creating and storing this file? In root?]***
+
 ```sh
 apiVersion: v1
 kind: Secret
@@ -320,20 +329,20 @@ data:
   known_hosts: ""
 ```
 
-Apply the created [Secret] with the command below:
-
-```sh
-kubectl apply -f gitserver-ssh.Secret.yaml
-```
-
-You should add the following values to your override file to reference the [Secret] you created earlier.
+Add the following values to your override file to reference the Secret:
 
 ```yaml
 gitserver:
   sshSecret: gitserver-ssh
 ```
 
-### Advanced Configuration Methods
+Apply the created Secret to your Kubernetes instance with the command below:
+
+```sh
+kubectl apply -f gitserver-ssh.Secret.yaml
+```
+
+### Advanced Helm Chart Configurations
 
 The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
 
