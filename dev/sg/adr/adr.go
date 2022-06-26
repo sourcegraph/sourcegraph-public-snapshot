@@ -2,14 +2,12 @@ package adr
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -29,11 +27,7 @@ func (r ArchitectureDecisionRecord) DocsiteURL() string {
 	return fmt.Sprintf("https://docs.sourcegraph.com/dev/adr/" + cleanedName)
 }
 
-var (
-	adrFileRegexp        = regexp.MustCompile(`^(\d+)-.+\.md`)
-	markdownHeaderRegexp = regexp.MustCompile(`#\s+(\d+)\.\s+(.*)$`)
-)
-
+// List parses all ADRs and returns them in read order.
 func List(adrDir string) ([]ArchitectureDecisionRecord, error) {
 	var adrs []ArchitectureDecisionRecord
 	return adrs, VisitAll(adrDir, func(adr ArchitectureDecisionRecord) error {
@@ -41,6 +35,13 @@ func List(adrDir string) ([]ArchitectureDecisionRecord, error) {
 		return nil
 	})
 }
+
+var (
+	// Matches for ADRs with filename format ${timestamp}-${name}.md
+	adrFilenameRegexp = regexp.MustCompile(`^(\d+)-.+\.md`)
+	// Matches for Markdown headers
+	markdownHeaderRegexp = regexp.MustCompile(`#\s+(\d+)\.\s+(.*)$`)
+)
 
 // VisitAll applies visit on all ADRs.
 //
@@ -51,29 +52,38 @@ func VisitAll(adrDir string, visit func(adr ArchitectureDecisionRecord) error) e
 			return nil
 		}
 
-		if !adrFileRegexp.MatchString(entry.Name()) {
+		// Ensure this file matches the ADR format
+		filenameMatch := adrFilenameRegexp.FindAllStringSubmatch(entry.Name(), 1)
+		if filenameMatch == nil {
 			return nil
 		}
-		b, err := os.ReadFile(path)
+
+		// Parse the timestamp - we can ignore the err because we know from the regexp
+		// it's only digits.
+		ts, _ := strconv.Atoi(filenameMatch[0][1])
+		date := time.Unix(int64(ts), 0)
+
+		// Look for more details in the file contents
+		file, err := os.Open(path)
 		if err != nil {
 			return err
 		}
-
-		m := adrFileRegexp.FindAllStringSubmatch(entry.Name(), 1)
-		ts, _ := strconv.Atoi(m[0][1]) // We can ignore the err because we know from the regexp it's only digits.
-
-		s := bufio.NewScanner(bytes.NewReader(b))
-		var title string
-		var number int
+		s := bufio.NewScanner(file)
 		for s.Scan() {
-			matches := markdownHeaderRegexp.FindAllStringSubmatch(s.Text(), 1)
-			if len(matches) > 0 {
-				number, _ = strconv.Atoi(matches[0][1]) // We can ignore the err because we know from the regexp it's only digits.
-				title = matches[0][2]
+			headerMatches := markdownHeaderRegexp.FindAllStringSubmatch(s.Text(), 1)
+			// We only care about the first header match, so process it to get ADR details
+			// and exit.
+			if len(headerMatches) > 0 {
+				// We can ignore the err because we know from the regexp it's only digits.
+				number, _ := strconv.Atoi(headerMatches[0][1])
+				// Title is after the number
+				title := headerMatches[0][2]
+
+				// Pass to visit
 				if err := visit(ArchitectureDecisionRecord{
 					Title:  title,
 					Number: number,
-					Date:   time.Unix(int64(ts), 0),
+					Date:   date,
 
 					Path:     path,
 					BasePath: entry.Name(),
@@ -86,14 +96,6 @@ func VisitAll(adrDir string, visit func(adr ArchitectureDecisionRecord) error) e
 
 		return nil
 	})
-}
-
-var nonAlphaNumericOrDash = regexp.MustCompile("[^a-z0-9-]+")
-
-func sanitizeADRName(name string) string {
-	return nonAlphaNumericOrDash.ReplaceAllString(
-		strings.ReplaceAll(strings.ToLower(name), " ", "-"), "",
-	)
 }
 
 // Create generates an ADR template file.

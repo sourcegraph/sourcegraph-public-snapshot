@@ -199,7 +199,7 @@ sg adr create my ADR title
 					return err
 				}
 
-				std.Out.WriteSuccessf("Created template at for 'ADR %d %s' at %s",
+				std.Out.WriteSuccessf("Created template for 'ADR %d %s' at %s",
 					newADR.Number, newADR.Title, newADR.Path)
 				return nil
 			},
