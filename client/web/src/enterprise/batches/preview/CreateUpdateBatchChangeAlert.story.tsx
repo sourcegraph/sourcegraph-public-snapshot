@@ -1,20 +1,26 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 
-const { add } = storiesOf('web/batches/preview/CreateUpdateBatchChangeAlert', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview/CreateUpdateBatchChangeAlert',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
 
-add('Create', () => (
+export default config
+
+export const Create: Story = () => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -26,8 +32,9 @@ add('Create', () => (
             />
         )}
     </WebStory>
-))
-add('Update', () => (
+)
+
+export const Update: Story = () => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -39,8 +46,9 @@ add('Update', () => (
             />
         )}
     </WebStory>
-))
-add('Disabled', () => (
+)
+
+export const Disabled: Story = () => (
     <WebStory>
         {props => (
             <MultiSelectContextProvider initialSelected={['id1', 'id2']}>
@@ -54,4 +62,4 @@ add('Disabled', () => (
             </MultiSelectContextProvider>
         )}
     </WebStory>
-))
+)

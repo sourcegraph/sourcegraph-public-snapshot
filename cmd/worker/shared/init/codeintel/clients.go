@@ -20,8 +20,9 @@ func InitGitserverClient() (*gitserver.Client, error) {
 }
 
 var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client, error) {
+	logger := log.Scoped("client.gitserver", "gitserver client")
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("client.gitserver", "gitserver client"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -31,7 +32,7 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client,
 		return nil, err
 	}
 
-	return gitserver.New(database.NewDBWith(dbStore), dbStore, observationContext), nil
+	return gitserver.New(database.NewDBWith(logger, dbStore), dbStore, observationContext), nil
 })
 
 func InitRepoUpdaterClient() *repoupdater.Client {

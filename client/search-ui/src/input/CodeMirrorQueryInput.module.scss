@@ -32,6 +32,22 @@
             padding: 0;
         }
 
+        :global(.cm-placeholder) {
+            // CodeMirror uses display: inline-block by default, but that causes
+            // Chrome to render a larger cursor if the placeholder holder spans
+            // multiple lines. Firefox doesn't have this problem (but
+            // setting display: inline doesn't seem to have a negative effect
+            // either)
+            display: inline;
+            // Once again, Chrome renders the placeholder differently than
+            // Firefox. CodeMirror sets 'word-break: break-word' (which is
+            // deprecated) and 'overflow-wrap: anywhere' but they don't seem to
+            // have an effect in Chrome (at least not in this instance).
+            // Setting 'word-break: break-all' explicitly makes appearances a
+            // bit better for example queries with long tokens.
+            word-break: break-all;
+        }
+
         :global(.cm-tooltip) {
             padding: 0.25rem;
             color: var(--search-query-text-color);
@@ -73,30 +89,68 @@
             color: var(--search-query-text-color);
             background-color: var(--color-bg-1);
 
-            > ul > li {
-                padding-top: 0.25rem;
-                padding-bottom: 0.25rem;
+            > ul {
+                font-family: var(--code-font-family);
 
-                &[aria-selected] {
-                    color: var(--search-query-text-color);
-                    background-color: var(--color-bg-2);
+                > li {
+                    box-sizing: content-box;
+                    padding-top: 0.25rem;
+                    padding-bottom: 0.25rem;
+                    display: flex;
+                    height: 1.25rem;
 
-                    :global(.theme-dark) & {
-                        background-color: var(--color-bg-3);
+                    svg {
+                        fill: var(--search-query-text-color);
+                        flex-shrink: 0;
                     }
-                }
 
-                :global(.cm-completionDetail) {
-                    padding-left: 0.25rem;
-                    color: var(--gray-06);
-                }
+                    :global(.cm-completionLabel) {
+                        flex-shrink: 0;
+                    }
 
-                :global(.cm-completionMatchedText) {
-                    // Reset
-                    text-decoration: none;
+                    :global(.cm-completionDetail) {
+                        padding-left: 0.25rem;
+                        color: var(--gray-06);
+                        flex: 1;
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
 
-                    // Our style
-                    background-color: var(--mark-bg);
+                    :global(.cm-completionMatchedText) {
+                        // Reset
+                        text-decoration: none;
+
+                        // Our style
+                        color: var(--search-filter-keyword-color);
+                        font-weight: bold;
+                    }
+
+                    .tabStyle {
+                        border: 1px solid var(--text-muted);
+                        border-radius: 0.25rem;
+                        height: 1.25rem;
+                        font-size: 0.65rem;
+                        line-height: 1;
+                        padding: 0.25rem 0.375rem;
+                        margin-left: auto;
+                        color: var(--text-muted);
+                        opacity: 0.75;
+                        display: none;
+                    }
+
+                    &[aria-selected] {
+                        color: var(--search-query-text-color);
+                        background-color: var(--color-bg-2);
+
+                        :global(.theme-dark) & {
+                            background-color: var(--color-bg-3);
+                        }
+
+                        .tabStyle {
+                            display: inline-block;
+                        }
+                    }
                 }
             }
         }

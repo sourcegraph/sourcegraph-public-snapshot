@@ -91,6 +91,8 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
             instanceURL: 'https://sourcegraph.com',
             isGlobbingEnabled: false,
             accessToken: null,
+            anonymousUserId: 'no-user-id',
+            pluginVersion: '0.0.0',
         }
     }
 }
@@ -103,7 +105,6 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
         return {
             isDarkTheme: false,
             intelliJTheme: {},
-            syntaxTheme: {},
         }
     }
 }

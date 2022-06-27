@@ -5,12 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestInsertDependencySyncingJob(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -40,7 +43,8 @@ func TestInsertDependencySyncingJob(t *testing.T) {
 }
 
 func TestInsertDependencyIndexingJob(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")

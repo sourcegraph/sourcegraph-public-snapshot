@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -11,8 +13,8 @@ import (
 )
 
 // NewTestDB creates a new connection to the a database and applies the given migrations.
-func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, err := dbconn.ConnectInternal(dsn, "", "")
+func NewTestDB(logger log.Logger, dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
+	db, err := dbconn.ConnectInternal(logger, dsn, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +39,7 @@ func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
 	options := runner.Options{
 		Operations: operations,
 	}
-	if err := runner.NewRunner(newStoreFactoryMap(db, schemas)).Run(context.Background(), options); err != nil {
+	if err := runner.NewRunner(logger, newStoreFactoryMap(db, schemas)).Run(context.Background(), options); err != nil {
 		return nil, err
 	}
 

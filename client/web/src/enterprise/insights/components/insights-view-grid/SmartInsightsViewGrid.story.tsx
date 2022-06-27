@@ -660,16 +660,16 @@ function getTestCases(numberOfSeries: number): SeriesChartContent<SeriesDatum> {
         return LINE_CHART_TESTS_CASES_SINGLE_EXAMPLE
     }
 
-    if (numberOfSeries < 6) {
-        return LINE_CHART_TESTS_CASES_EXAMPLE
+    if (numberOfSeries >= 15) {
+        return LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
     }
 
     if (numberOfSeries >= 6) {
         return LINE_CHART_WITH_MANY_LINES
     }
 
-    if (numberOfSeries >= 15) {
-        return LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
+    if (numberOfSeries < 6) {
+        return LINE_CHART_TESTS_CASES_EXAMPLE
     }
 
     return LINE_CHART_TESTS_CASES_EXAMPLE

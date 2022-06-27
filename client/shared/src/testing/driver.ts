@@ -779,7 +779,16 @@ interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLau
 }
 
 export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
-    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+    const config = getConfig(
+        'sourcegraphBaseUrl',
+        'headless',
+        'slowMo',
+        'keepBrowser',
+        'browser',
+        'devtools',
+        'windowWidth',
+        'windowHeight'
+    )
 
     // Apply defaults
     const resolvedOptions: typeof config & typeof options = {
@@ -830,7 +839,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         }
     } else {
         // Chrome
-        args.push('--window-size=1280,1024')
+        args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
         if (process.getuid() === 0) {
             // TODO don't run as root in CI
             console.warn('Running as root, disabling sandbox')

@@ -476,7 +476,7 @@ func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) (ids []api.R
 	})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, errors.Wrap(err, "ListBatchSpecRepoIDs generating authz query conds")
 	}
@@ -600,7 +600,7 @@ GROUP BY batch_specs.id, res_job.state
 `
 
 var deleteExpiredBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
+-- source: enterprise/internal/batches/store/batch_specs.go:DeleteExpiredBatchSpecs
 DELETE FROM
   batch_specs
 WHERE
@@ -622,7 +622,7 @@ func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, chan
 	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
 		return 0, 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
 	}

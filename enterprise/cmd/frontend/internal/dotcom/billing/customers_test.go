@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	c := 0

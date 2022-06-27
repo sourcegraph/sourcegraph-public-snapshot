@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -18,7 +20,8 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -50,7 +53,8 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -92,7 +96,8 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -139,7 +144,8 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -190,7 +196,9 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -271,7 +279,8 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()

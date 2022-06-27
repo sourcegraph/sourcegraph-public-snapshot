@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
@@ -60,6 +61,8 @@ var (
 		Required:    true,
 		Destination: &outputFilepath,
 	}
+
+	logger = log.Scoped("sg migration", "")
 )
 
 var (
@@ -106,7 +109,7 @@ var (
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
 	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, expectedSchemaFactory)
-	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
+	addLogCommand   = cliutil.AddLog(logger, "sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
@@ -184,6 +187,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
 	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	logger := log.Scoped("makeRunner", "")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {
@@ -197,7 +201,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	if err != nil {
 		return nil, err
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
@@ -218,15 +222,12 @@ func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
 }
 
 func resolveSchema(name string) (*schemas.Schema, error) {
-	repositoryRoot, err := root.RepositoryRoot()
+	fs, err := db.GetFSForPath(name)()
 	if err != nil {
-		if errors.Is(err, root.ErrNotInsideSourcegraph) {
-			return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
-		}
 		return nil, err
 	}
 
-	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
+	schema, err := schemas.ResolveSchema(fs, name)
 	if err != nil {
 		return nil, errors.Newf("malformed migration definitions: %w", err)
 	}

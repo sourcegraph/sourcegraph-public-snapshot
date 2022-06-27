@@ -15,7 +15,7 @@ export function testSingleFilePage({
     url,
     sourcegraphBaseUrl,
     repoName,
-    lineSelector,
+    getLineSelector,
     goToDefinitionURL,
 }: {
     /** Called to get the driver */
@@ -30,8 +30,9 @@ export function testSingleFilePage({
     /** The repo name of sourcgraph/jsonrpc2 on the Sourcegraph instance */
     repoName: string
 
-    /** The CSS selector for a line in the code view */
-    lineSelector: string
+    /** The CSS selector for a line (with or without line number part) in the code view */
+    getLineSelector: (lineNumber: number) => string
+
     /** The expected URL for the "Go to Definition" button */
     goToDefinitionURL?: string
 }): void {
@@ -90,19 +91,19 @@ export function testSingleFilePage({
                 '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
             )
 
-            // Pause to give codeintellify time to register listeners for
-            // tokenization (only necessary in CI, not sure why).
-            await getDriver().page.waitFor(1000)
-
             // Trigger tokenization of the line.
             const lineNumber = 16
-            const line = await getDriver().page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+            const line = await getDriver().page.waitForSelector(getLineSelector(lineNumber), {
                 timeout: 10000,
             })
 
             if (!line) {
                 throw new Error(`Found no line with number ${lineNumber}`)
             }
+
+            // Hover line to give codeintellify time to register listeners for
+            // tokenization (only necessary in CI, not sure why).
+            await line.hover()
 
             const [token] = await line.$x('.//span[text()="CallOption"]')
             await token.hover()

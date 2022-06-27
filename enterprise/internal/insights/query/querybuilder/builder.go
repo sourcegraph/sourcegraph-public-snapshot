@@ -71,6 +71,15 @@ func forRepoRevision(query, repo, revision string) string {
 	return fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repo), revision)
 }
 
+//forRepos appends a single repo filter making an OR condition for all repos passed
+func forRepos(query string, repos []string) string {
+	escapedRepos := make([]string, len(repos))
+	for i, repo := range repos {
+		escapedRepos[i] = regexp.QuoteMeta(repo)
+	}
+	return fmt.Sprintf("%s repo:^(%s)$", query, (strings.Join(escapedRepos, "|")))
+}
+
 // SingleRepoQuery generates a Sourcegraph query with the provided default values given a user specified query and a repository / revision target. The repository string
 // should be provided in plain text, and will be escaped for regexp before being added to the query.
 func SingleRepoQuery(query, repo, revision string, defaultParams searchquery.Parameters) (string, error) {
@@ -91,5 +100,18 @@ func GlobalQuery(query string, defaultParams searchquery.Parameters) (string, er
 	if err != nil {
 		return "", errors.Wrap(err, "WithDefaults")
 	}
+	return modified, nil
+}
+
+// MultiRepoQuery generates a Sourcegraph query with the provided default values given a user specified query and slice of repositories.
+// Repositories should be provided in plain text, and will be escaped for regexp and OR'ed together before being added to the query.
+func MultiRepoQuery(query string, repos []string, defaultParams searchquery.Parameters) (string, error) {
+	modified := withCountAll(query)
+	modified, err := withDefaults(modified, defaultParams)
+	if err != nil {
+		return "", errors.Wrap(err, "WithDefaults")
+	}
+	modified = forRepos(modified, repos)
+
 	return modified, nil
 }

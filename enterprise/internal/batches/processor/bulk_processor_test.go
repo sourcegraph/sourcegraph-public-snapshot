@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -23,11 +25,13 @@ import (
 func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
-	sqlDB := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(logger, t)
 	tx := dbtest.NewTx(t, sqlDB)
-	db := database.NewDB(sqlDB)
-	bstore := store.New(database.NewDBWith(basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
+	db := database.NewDB(logger, sqlDB)
+	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, bstore, repo)

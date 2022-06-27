@@ -294,6 +294,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/jetbrains -s build"),
 	)
@@ -551,6 +552,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.Skip("Disabled because flaky"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
