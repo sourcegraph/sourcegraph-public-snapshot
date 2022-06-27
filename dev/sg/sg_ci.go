@@ -647,7 +647,7 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 	case "failed":
 		failed = true
 		emoji = output.EmojiFailure
-		fallthrough
+		style = output.StyleFailure
 	default:
 		style = output.StyleWarning
 	}
@@ -687,8 +687,8 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 				break
 			}
 			failedSummary = append(failedSummary, fmt.Sprintf("- %s", *job.Name))
+			style = output.StyleFailure
 			failed = true
-			fallthrough
 		default:
 			style = output.StyleWarning
 		}
@@ -705,7 +705,6 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 	}
 
 	block.Close()
-	fmt.Printf("Total annotations: %d\n", len(annotations))
 
 	if notify {
 		if failed {
