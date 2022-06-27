@@ -114,7 +114,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 
 	// Some tests that exercise concurrency need lots of connections or they block forever.
 	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
-	testDB.SetMaxOpenConns(20)
+	testDB.SetMaxOpenConns(5)
 	testDB.SetMaxIdleConns(1) // Default is 2, and within tests, it's not that important to have more than one.
 
 	t.Cleanup(func() {
