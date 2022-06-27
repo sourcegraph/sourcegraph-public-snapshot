@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
@@ -223,15 +222,12 @@ func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
 }
 
 func resolveSchema(name string) (*schemas.Schema, error) {
-	repositoryRoot, err := root.RepositoryRoot()
+	fs, err := db.GetFSForPath(name)()
 	if err != nil {
-		if errors.Is(err, root.ErrNotInsideSourcegraph) {
-			return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
-		}
 		return nil, err
 	}
 
-	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
+	schema, err := schemas.ResolveSchema(fs, name)
 	if err != nil {
 		return nil, errors.Newf("malformed migration definitions: %w", err)
 	}
