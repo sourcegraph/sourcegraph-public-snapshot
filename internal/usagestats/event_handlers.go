@@ -247,13 +247,19 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return rawURL, nil
 	}
 
-	// Only redact GitHub.com URLs. Currently, private code on Sourcegraph.com is only supported for GitHub.com.
-	if !strings.HasPrefix(parsedURL.Path, "/github.com") && !strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
+	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
+	if strings.HasPrefix(parsedURL.Path, "/github.com") {
+		parsedURL.RawPath = "/github.com/redacted"
+		parsedURL.Path = "/github.com/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
+		parsedURL.RawPath = "/gitlab.com/redacted"
+		parsedURL.Path = "/gitlab.com/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/search") {
+		parsedURL.RawPath = "/search/redacted"
+		parsedURL.Path = "/search/redacted"
+	} else {
 		return rawURL, nil
 	}
-
-	parsedURL.RawPath = "/redacted"
-	parsedURL.Path = "/redacted"
 
 	marketingQueryParameters := map[string]struct{}{
 		"utm_source":   {},

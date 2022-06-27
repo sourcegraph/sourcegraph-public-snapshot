@@ -29,12 +29,16 @@ export function redactSensitiveInfoFromAppURL(url: string): string {
         return url
     }
 
-    // Only redact GitHub.com URLs. Currently, private code on Sourcegraph.com is only supported for GitHub.com.
-    if (!sourceURL.pathname.startsWith('/github.com') && !sourceURL.pathname.startsWith('/gitlab.com')) {
+    // Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
+    if (sourceURL.pathname.startsWith('/github.com')) {
+        sourceURL.pathname = '/github.com/redacted'
+    } else if (sourceURL.pathname.startsWith('/gitlab.com')) {
+        sourceURL.pathname = '/gitlab.com/redacted'
+    } else if (sourceURL.pathname.startsWith('/search')) {
+        sourceURL.pathname = '/search/redacted'
+    } else {
         return url
     }
-    // Ensure we do not leak repo and file names in the URL
-    sourceURL.pathname = '/redacted'
 
     const marketingQueryParameters = new Set([
         'utm_source',
