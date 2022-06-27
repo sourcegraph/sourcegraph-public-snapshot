@@ -21,23 +21,14 @@ describe('Button', () => {
             </Button>
         )
         expect(container.firstChild).toMatchInlineSnapshot(`
-            <div
-              class="container"
+            <button
+              class="btn"
+              data-tooltip="I am the tooltip"
+              disabled=""
+              type="button"
             >
-              <div
-                class="disabledTooltip"
-                data-tooltip="I am the tooltip"
-                tabindex="0"
-              />
-              <button
-                class="btn"
-                data-tooltip="I am the tooltip"
-                disabled=""
-                type="button"
-              >
-                Disabled
-              </button>
-            </div>
+              Disabled
+            </button>
         `)
     })
 
