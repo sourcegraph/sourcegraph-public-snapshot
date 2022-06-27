@@ -39,7 +39,13 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 		WHERE event_logs.timestamp %s
 	`, dateRangeCond)
 
-	return &AnalyticsFetcher{s.DB, nodesQuery, summaryQuery}, nil
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Search.Searches",
+	}, nil
 }
 
 func (s *Search) FileViews() (*AnalyticsFetcher, error) {
@@ -70,7 +76,13 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 		WHERE event_logs.timestamp %s
 	`, dateRangeCond)
 
-	return &AnalyticsFetcher{s.DB, nodesQuery, summaryQuery}, nil
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Search.FileViews",
+	}, nil
 }
 
 func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
@@ -102,5 +114,11 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 		WHERE event_logs.timestamp %s
 	`, dateRangeCond)
 
-	return &AnalyticsFetcher{s.DB, nodesQuery, summaryQuery}, nil
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Search.FileOpens",
+	}, nil
 }
