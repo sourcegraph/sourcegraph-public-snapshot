@@ -41,11 +41,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Settings
-        </span>
+        Settings
       </a>
       <a
         class="dropdownItem"
@@ -57,11 +53,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Your repositories
-        </span>
+        Your repositories
       </a>
       <a
         class="dropdownItem"
@@ -73,11 +65,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Saved searches
-        </span>
+        Saved searches
       </a>
     </div>
     <div>
@@ -99,11 +87,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Sourcegraph
-        </span>
+        Sourcegraph
       </a>
       <a
         class="dropdownItem"
@@ -115,11 +99,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Gitstart
-        </span>
+        Gitstart
       </a>
     </div>
     <div>
@@ -134,11 +114,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Keyboard shortcuts
-        </span>
+        Keyboard shortcuts
       </div>
       <div
         aria-disabled="true"
@@ -149,11 +125,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Help
-        </span>
+        Help
       </div>
     </div>
     <div>
@@ -170,11 +142,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          About Sourcegraph
-        </span>
+        About Sourcegraph
       </a>
       <a
         class="dropdownItem"
@@ -186,11 +154,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         role="menuitem"
         tabindex="-1"
       >
-        <span
-          class="dropdownItemContent"
-        >
-          Browser Extension
-        </span>
+        Browser Extension
       </a>
     </div>
   </div>
