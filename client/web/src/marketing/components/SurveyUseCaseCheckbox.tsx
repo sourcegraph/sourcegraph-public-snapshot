@@ -37,6 +37,7 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
             {...props}
         >
             <span className={classNames(styles.checkbox, checked ? styles.checkmark : styles.checkboxDefault)} />
+            {/* eslint-disable-next-line react/forbid-elements */}
             <input
                 onBlur={() => setFocused(false)}
                 onFocus={() => setFocused(true)}

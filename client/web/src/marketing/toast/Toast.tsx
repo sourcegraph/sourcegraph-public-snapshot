@@ -23,7 +23,7 @@ export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>>
         <CardBody className={classNames(styles.toastBody, props.toastBodyClassName)}>
             <div className={classNames('d-flex justify-content-end', styles.closeButtonWrap)}>
                 <Button onClick={props.onDismiss} variant="icon" className="test-close-toast" aria-label="Close">
-                    <Icon as={CloseIcon} className={styles.closeButtonIcon} />
+                    <Icon as={CloseIcon} className={styles.closeButtonIcon} aria-hidden={true} />
                 </Button>
             </div>
             {props.title && (
