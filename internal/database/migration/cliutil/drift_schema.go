@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ExpectedSchemaFactory func(repoName, version string) (descriptions.SchemaDescription, bool, error)
+type ExpectedSchemaFactory func(filename, version string) (descriptions.SchemaDescription, bool, error)
 
 // GCSExpectedSchemaFactory reads schema definitions from a public GCS bucket that contains schema definitions for
 // a version of Sourcegraph that did not yet contain the squashed schema description file in-tree. These files
