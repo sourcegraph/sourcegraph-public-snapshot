@@ -34,17 +34,9 @@ public class SettingsChangeListener implements Disposable {
                 }
 
                 if (!Objects.equals(context.oldUrl, context.newUrl)) {
-                    GraphQlLogger.logInstallEvent(project, (wasSuccessful) -> {
-                        if (wasSuccessful) {
-                            ConfigUtil.setInstallEventLogged(true);
-                        }
-                    });
+                    GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
                 } else if (!Objects.equals(context.oldAccessToken, context.newAccessToken) && !ConfigUtil.isInstallEventLogged()) {
-                    GraphQlLogger.logInstallEvent(project, (wasSuccessful) -> {
-                        if (wasSuccessful) {
-                            ConfigUtil.setInstallEventLogged(true);
-                        }
-                    });
+                    GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
                 }
             }
         });
