@@ -1,0 +1,16 @@
+[
+  {
+   "_account_id": 1000002,
+   "name": "Fake Name",
+   "display_name": "",
+   "email": "fakename@sourcegraph.com",
+   "username": ""
+  },
+  {
+   "_account_id": 1000018,
+   "name": "Fake Name 2",
+   "display_name": "",
+   "email": "fakename2@sourcegraph.com",
+   "username": "fakename2"
+  }
+ ]
