@@ -90,7 +90,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // placeholder text properly. CodeMirror has built-in support for
     // placeholders.
 }) => {
-    const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
+    const value = preventNewLine ? queryState.query.replace(replacePattern, ' ') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
     // reference that doesn't change across renders (and some hooks should only
