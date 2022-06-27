@@ -7,7 +7,10 @@ import (
 	stdhttp "net/http"
 	"net/url"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,20 +27,34 @@ func NewComputeStreamRequest(baseURL string, query string) (*stdhttp.Request, er
 }
 
 type ComputeMatchContextStreamDecoder struct {
-	OnResult  func(results []compute.MatchContext)
-	OnAlert   func(*http.EventAlert)
-	OnError   func(*http.EventError)
-	OnUnknown func(event, data []byte)
+	OnProgress func(*api.Progress)
+	OnResult   func(results []compute.MatchContext)
+	OnAlert    func(*http.EventAlert)
+	OnError    func(*http.EventError)
+	OnUnknown  func(event, data []byte)
 }
 
 func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 	dec := http.NewDecoder(r)
+	log15.Info("ReadAll")
 
 	for dec.Scan() {
 		event := dec.Event()
 		data := dec.Data()
 
-		if bytes.Equal(event, []byte("results")) {
+		if bytes.Equal(event, []byte("progress")) {
+			log15.Info("decoded a progress event")
+			if rr.OnProgress == nil {
+				continue
+			}
+			var d api.Progress
+			if err := json.Unmarshal(data, &d); err != nil {
+				return errors.Errorf("failed to decode progress payload: %w", err)
+			}
+			log15.Info("compute match context", "progress event", d)
+			rr.OnProgress(&d)
+		} else if bytes.Equal(event, []byte("results")) {
+			log15.Info("decoded a results event")
 			if rr.OnResult == nil {
 				continue
 			}
@@ -47,6 +64,7 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 			}
 			rr.OnResult(d)
 		} else if bytes.Equal(event, []byte("alert")) {
+			log15.Info("decoded an alert event")
 			// This decoder can handle alerts, but at the moment the only alert that is returned by
 			// the compute stream is if a query times out after 60 seconds.
 			if rr.OnAlert == nil {
@@ -67,6 +85,7 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 			}
 			rr.OnError(&d)
 		} else if bytes.Equal(event, []byte("done")) {
+			log15.Info("decoded done event")
 			// Always the last event
 			break
 		} else {

@@ -64,8 +64,14 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		RepoNamer: repoNamer(ctx, h.db),
 	}
 
+	sendProgress := func() {
+		println("sendProgress()")
+		_ = eventWriter.Event("progress", progress.Current())
+	}
+
 	// Always send a final done event so clients know the stream is shutting
 	// down.
+	defer sendProgress()
 	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
@@ -85,12 +91,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
+		sendProgress()
 	}
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
 	first := true
 	handleEvent := func(event Event) {
+		progress.Dirty = true
+		progress.Stats.Update(&event.Stats)
+
 		for _, result := range event.Results {
 			_ = matchesBuf.Append(result)
 		}

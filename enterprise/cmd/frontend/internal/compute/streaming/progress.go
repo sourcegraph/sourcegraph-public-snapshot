@@ -11,6 +11,7 @@ import (
 
 type progressAggregator struct {
 	Stats streaming.Stats
+	Dirty bool
 
 	RepoNamer api.RepoNamer
 }
