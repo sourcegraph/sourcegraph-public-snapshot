@@ -41,7 +41,7 @@ Feedback on running batch changes server-side is very welcome, feel free to open
 
 ### Note for Apple M1 Mac users
 
-By default, docker on mac will build docker images for `linux/arm64`, which will result in errors when running server-side because executors provide `linux/amd64` hosts. If you're creating your own images to run with batch changes, this can be a problem. Use the `--platform linux/amd64` flag with `docker build` to build images compatible with the server-side host.
+By default, docker on mac will build docker images for `linux/arm64`, which will result in errors when running server-side because executors provide `linux/amd64` hosts. If you're creating your own images to run in batch changes, this can be a problem. Use the `--platform linux/amd64` flag with `docker build` to build images compatible with the server-side host.
 
 ## FAQ
 
