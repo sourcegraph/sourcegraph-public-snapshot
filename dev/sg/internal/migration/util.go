@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -29,16 +30,34 @@ type MigrationFiles struct {
 }
 
 // makeMigrationFilenames makes a pair of (absolute) paths to migration files with the given migration index.
-func makeMigrationFilenames(database db.Database, migrationIndex int) (MigrationFiles, error) {
+func makeMigrationFilenames(database db.Database, migrationIndex int, name string) (MigrationFiles, error) {
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return MigrationFiles{}, err
 	}
 
-	upPath := filepath.Join(baseDir, fmt.Sprintf("%d/up.sql", migrationIndex))
-	downPath := filepath.Join(baseDir, fmt.Sprintf("%d/down.sql", migrationIndex))
-	metadataPath := filepath.Join(baseDir, fmt.Sprintf("%d/metadata.yaml", migrationIndex))
-	return MigrationFiles{upPath, downPath, metadataPath}, nil
+	return makeMigrationFilenamesFromDir(baseDir, migrationIndex, name)
+}
+
+var nonAlphaNumericOrUnderscore = regexp.MustCompile("[^a-z0-9_]+")
+
+func makeMigrationFilenamesFromDir(baseDir string, migrationIndex int, name string) (MigrationFiles, error) {
+	sanitizedName := nonAlphaNumericOrUnderscore.ReplaceAllString(
+		strings.ReplaceAll(strings.ToLower(name), " ", "_"), "",
+	)
+	var dirName string
+	if sanitizedName == "" {
+		// No name associated with this migration, we just use the index
+		dirName = fmt.Sprintf("%d", migrationIndex)
+	} else {
+		// Include both index and simplified name
+		dirName = fmt.Sprintf("%d_%s", migrationIndex, sanitizedName)
+	}
+	return MigrationFiles{
+		UpFile:       filepath.Join(baseDir, fmt.Sprintf("%s/up.sql", dirName)),
+		DownFile:     filepath.Join(baseDir, fmt.Sprintf("%s/down.sql", dirName)),
+		MetadataFile: filepath.Join(baseDir, fmt.Sprintf("%s/metadata.yaml", dirName)),
+	}, nil
 }
 
 // migrationDirectoryForDatabase returns the directory where migration files are stored for the
