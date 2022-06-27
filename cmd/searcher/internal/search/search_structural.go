@@ -417,7 +417,48 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	case comby.Tar:
 		return runCombyWithStreaming(ctx, args, combyInput, sender)
 	case comby.ZipPath:
-		return runCombyWithCollection(ctx, args, combyInput, sender)
+		cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
+		if err != nil {
+			return err
+		}
+		stdin.Close()
+
+		zipReader, err := zip.OpenReader(string(combyInput))
+		if err != nil {
+			return err
+		}
+		defer zipReader.Close()
+
+		wg := sync.WaitGroup{}
+		defer wg.Wait()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer stdout.Close()
+
+			scanner := bufio.NewScanner(stdout)
+			// increase the scanner buffer size for potentially long lines
+			scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+
+			for scanner.Scan() {
+				b := scanner.Bytes()
+				if err := scanner.Err(); err != nil {
+					// warn on scanner errors and skip
+					log.NamedError("comby error: skipping scanner error line", err)
+					break
+				}
+
+				fm, err := toFileMatch(&zipReader.Reader, comby.ToFileMatch(b).(*comby.FileMatch))
+				if err != nil {
+					log.NamedError("error converting comby match to FileMatch, skipping", err)
+					continue
+				}
+				sender.Send(fm)
+			}
+		}()
+
+		return comby.StartAndWaitForCompletion(cmd)
 	}
 
 	return errors.New("comby input must be either -tar or -zip for structural search")
