@@ -29,11 +29,9 @@ public class SettingsChangeListener implements Disposable {
 
             @Override
             public void afterAction(@NotNull PluginSettingChangeContext context) {
-                if (javaToJSBridge == null) {
-                    return;
+                if (javaToJSBridge != null) {
+                    javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
                 }
-
-                javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
 
                 if (!Objects.equals(context.oldUrl, context.newUrl)) {
                     GraphQlLogger.logInstallEvent(project, (wasSuccessful) -> {
