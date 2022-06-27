@@ -24,7 +24,7 @@ export const MenuLink = React.forwardRef(({ className, disabled, children, ...pr
 
     return (
         <Component ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
-            <span className={styles.dropdownItemContent}>{children}</span>
+            {children}
         </Component>
     )
 }) as ForwardReferenceComponent<'a', MenuLinkProps>
