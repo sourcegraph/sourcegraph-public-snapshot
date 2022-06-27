@@ -383,20 +383,17 @@ func frontendTests(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
-		if strings.HasSuffix(testSuffix, "internal/database") {
-			pipeline.AddStep(
-				fmt.Sprintf(":go: Test (%s)", description),
-				bk.Env("GOMAXPROCS", "10"),
-				bk.Parallelism(100),
-				bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-					Annotations: &bk.AnnotationOpts{},
-					TestReports: &bk.TestReportOpts{
-						TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
-					},
-				}),
-				bk.Cmd("./dev/ci/codecov.sh -c -F go"),
-			)
-		}
+		pipeline.AddStep(
+			fmt.Sprintf(":go: Test (%s)", description),
+			bk.Env("GOMAXPROCS", "10"),
+			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+				TestReports: &bk.TestReportOpts{
+					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
+				},
+			}),
+			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
+		)
 	})
 }
 
