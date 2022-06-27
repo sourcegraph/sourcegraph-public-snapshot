@@ -5,27 +5,26 @@ package observation
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
-// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level.
-// This is useful in dev environments, or in environments where OpenTracing/OpenTelemetry
-// logs/events are supported (i.e. not Datadog).
-var enableTraceLog = os.Getenv("SRC_TRACE_LOG") != "false"
+// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level,
+// which is useful in environments like Datadog that don't support OpenTrace/OpenTelemetry
+// trace log events.
+var enableTraceLog = os.Getenv("SRC_TRACE_LOG") == "true"
 
 // Context carries context about where to send logs, trace spans, and register
 // metrics. It should be created once on service startup, and passed around to
@@ -35,11 +34,10 @@ type Context struct {
 	Tracer       *trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
-	Sentry       *sentry.Hub
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Registerer: metrics.TestRegisterer}
+var TestContext = Context{Logger: log.Scoped("TestContext", ""), Registerer: metrics.TestRegisterer}
 
 type ErrorFilterBehaviour uint8
 
@@ -49,7 +47,6 @@ const (
 	EmitForLogs
 	EmitForTraces
 	EmitForHoney
-	EmitForSentry
 
 	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces
 )
@@ -327,7 +324,6 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
 			traceErr   = op.applyErrorFilter(err, EmitForTraces)
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
-			sentryErr  = op.applyErrorFilter(err, EmitForSentry)
 		)
 
 		// already has all the other log fields
@@ -338,7 +334,6 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
-		op.emitSentryError(sentryErr, logFields)
 	}
 }
 
@@ -379,26 +374,6 @@ func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event
 	}
 
 	event.Send()
-}
-
-// emitSentryError will send errors to Sentry.
-func (op *Operation) emitSentryError(err *error, logFields []otlog.Field) {
-	if err == nil || *err == nil {
-		return
-	}
-
-	if op.context.Sentry == nil {
-		return
-	}
-
-	logs := make(map[string]string)
-	for _, field := range logFields {
-		logs[field.Key()] = fmt.Sprintf("%v", field.Value())
-	}
-
-	logs["operation"] = op.name
-
-	op.context.Sentry.CaptureError(*err, logs)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics

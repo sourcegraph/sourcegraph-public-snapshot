@@ -65,13 +65,29 @@ func TestConvertMatches(t *testing.T) {
 					End:   Location{1, 1, 3},
 				}},
 			},
-			output: []*LineMatch{
-				{
-					Preview:          "line1",
-					LineNumber:       1,
-					OffsetAndLengths: [][2]int32{{1, 2}},
-				},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{1, 2}},
+			}},
+		}, {
+			input: ChunkMatch{
+				Content:      "line1\nline2",
+				ContentStart: Location{Line: 1},
+				Ranges: Ranges{{
+					Start: Location{0, 1, 0},
+					End:   Location{6, 2, 0},
+				}},
 			},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:          "line2",
+				LineNumber:       2,
+				OffsetAndLengths: [][2]int32{},
+			}},
 		}}
 
 		for _, tc := range cases {
@@ -270,6 +286,94 @@ func TestChunkMatches_MatchedContent(t *testing.T) {
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
 			require.Equal(t, tc.output, tc.input.MatchedContent())
+		})
+	}
+}
+
+func TestFileMatch_Limit(t *testing.T) {
+	tests := []struct {
+		numHunkRanges       int
+		numSymbolMatches    int
+		limit               int
+		expNumHunkRanges    int
+		expNumSymbolMatches int
+		expRemainingLimit   int
+		wantLimitHit        bool
+	}{
+		{
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             1,
+			expNumHunkRanges:  1,
+			expRemainingLimit: 0,
+			wantLimitHit:      true,
+		},
+		{
+			numHunkRanges:       0,
+			numSymbolMatches:    3,
+			limit:               1,
+			expNumSymbolMatches: 1,
+			expRemainingLimit:   0,
+			wantLimitHit:        true,
+		},
+		{
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             5,
+			expNumHunkRanges:  3,
+			expRemainingLimit: 2,
+			wantLimitHit:      false,
+		},
+		{
+			numHunkRanges:       0,
+			numSymbolMatches:    3,
+			limit:               5,
+			expNumSymbolMatches: 3,
+			expRemainingLimit:   2,
+			wantLimitHit:        false,
+		},
+		{
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             3,
+			expNumHunkRanges:  3,
+			expRemainingLimit: 0,
+			wantLimitHit:      false,
+		},
+		{
+			numHunkRanges:       0,
+			numSymbolMatches:    3,
+			limit:               3,
+			expNumSymbolMatches: 3,
+			expRemainingLimit:   0,
+			wantLimitHit:        false,
+		},
+		{
+			// An empty FileMatch should still count against the limit
+			numHunkRanges:       0,
+			numSymbolMatches:    0,
+			limit:               1,
+			expNumSymbolMatches: 0,
+			expNumHunkRanges:    0,
+			wantLimitHit:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			fileMatch := &FileMatch{
+				File:         File{},
+				ChunkMatches: ChunkMatches{{Ranges: make(Ranges, tt.numHunkRanges)}},
+				Symbols:      make([]*SymbolMatch, tt.numSymbolMatches),
+				LimitHit:     false,
+			}
+
+			got := fileMatch.Limit(tt.limit)
+
+			require.Equal(t, tt.expNumHunkRanges, fileMatch.ChunkMatches.MatchCount())
+			require.Equal(t, tt.expNumSymbolMatches, len(fileMatch.Symbols))
+			require.Equal(t, tt.expRemainingLimit, got)
+			require.Equal(t, tt.wantLimitHit, fileMatch.LimitHit)
 		})
 	}
 }

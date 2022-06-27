@@ -10,7 +10,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -24,8 +23,8 @@ type SurveyResponseStore struct {
 }
 
 // SurveyResponses instantiates and returns a new SurveyResponseStore with prepared statements.
-func SurveyResponses(db dbutil.DB) *SurveyResponseStore {
-	return &SurveyResponseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func SurveyResponses(db DB) *SurveyResponseStore {
+	return &SurveyResponseStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 // NewSurveyResponseStoreWithDB instantiates and returns a new SurveyResponseStore using the other store handle.
@@ -44,7 +43,7 @@ func (s *SurveyResponseStore) Transact(ctx context.Context) (*SurveyResponseStor
 
 // Create creates a survey response.
 func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, useCases *[]string, otherUseCase *string, better *string) (id int64, err error) {
-	err = s.Handle().DB().QueryRowContext(ctx,
+	err = s.Handle().QueryRowContext(ctx,
 		"INSERT INTO survey_responses(user_id, email, score, use_cases, other_use_case, better) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
 		userID, email, score, pq.Array(useCases), otherUseCase, better,
 	).Scan(&id)
@@ -52,7 +51,7 @@ func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *
 }
 
 func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.SurveyResponse, error) {
-	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, use_cases, other_use_case, created_at FROM survey_responses "+query, args...)
+	rows, err := s.Handle().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, use_cases, other_use_case, created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err
 	}

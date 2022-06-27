@@ -82,7 +82,7 @@ interface IssueTemplateArguments {
     /**
      * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
      */
-    oneWorkingDayBeforeRelease: Date
+    threeWorkingDaysBeforeRelease: Date
     /**
      * Available as `$RELEASE_DATE`
      */
@@ -103,28 +103,28 @@ const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/patch_release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const upgradeManagedInstanceIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
     }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/security_assessment.md',
+        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
@@ -138,7 +138,7 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    { version, oneWorkingDayBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
+    { version, threeWorkingDaysBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -149,7 +149,7 @@ async function execTemplate(
         .replace(/\$PATCH/g, version.patch.toString())
         .replace(
             /\$ONE_WORKING_DAY_BEFORE_RELEASE/g,
-            dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${name} release`)
+            dateMarkdown(threeWorkingDaysBeforeRelease, `One working day before ${name} release`)
         )
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
         .replace(
@@ -174,14 +174,14 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
-    oneWorkingDayBeforeRelease,
+    threeWorkingDaysBeforeRelease,
     oneWorkingDayAfterRelease,
     dryRun,
 }: {
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
-    oneWorkingDayBeforeRelease: Date
+    threeWorkingDaysBeforeRelease: Date
     oneWorkingDayAfterRelease: Date
     dryRun: boolean
 }): Promise<MaybeIssue[]> {
@@ -217,7 +217,7 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
-            oneWorkingDayBeforeRelease,
+            threeWorkingDaysBeforeRelease,
             oneWorkingDayAfterRelease,
         })
         const issue = await ensureIssue(
@@ -353,7 +353,7 @@ export async function commentOnIssue(client: Octokit, issue: Issue, body: string
         owner: issue.owner,
         repo: issue.repo,
     })
-    return comment.data.url
+    return comment.data.html_url
 }
 
 async function closeIssue(client: Octokit, issue: Issue): Promise<void> {

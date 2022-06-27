@@ -101,7 +101,7 @@ local dev environment.
 1. Run `lsif-clang compile_commands.json` from the root directory. This should emit a `dump.lsif`
    file.
 
-1. Run `src lsif upload` from the root directory. You may first have to [authenticate to your
+1. Run `src code-intel upload` from the root directory. You may first have to [authenticate to your
    Sourcegraph instance](https://github.com/sourcegraph/src-cli#log-into-your-sourcegraph-instance).
 
 If you run into issues along the way, a useful reference is [one of the
@@ -140,7 +140,7 @@ if things don't work on the first try:
    should generate a `dump.lsif` file in the same directory. This `dump.lsif` should contain JSON
    describing all the symbols and references in the codebase (it should be rather large).
 1. Once the `dump.lsif` file is generated correctly, set the environment variables
-   `SRC_ACCESS_TOKEN` and `SRC_ENDPOINT` to the appropriate values in your shell. Then run `src lsif
+   `SRC_ACCESS_TOKEN` and `SRC_ENDPOINT` to the appropriate values in your shell. Then run `src code-intel
    upload` from the directory containing the `lsif.dump` file. This should successfully upload the
    LSIF dump to Sourcegraph.
 1. After you've successfully done all of the above in the container's interactive shell, incorporate

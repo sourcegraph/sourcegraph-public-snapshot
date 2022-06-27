@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
@@ -14,9 +14,14 @@ import { H1, H2 } from '@sourcegraph/wildcard'
 import { LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
-const { add } = storiesOf('search-ui/input/SearchBox', module).addParameters({
-    chromatic: { viewports: [575, 700], disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'search-ui/input/SearchBox',
+    parameters: {
+        chromatic: { viewports: [575, 700], disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -50,7 +55,7 @@ const defaultProps: SearchBoxProps = {
     editorComponent: 'monaco',
 }
 
-add('SearchBox', () => (
+export const SearchBoxStory: Story = () => (
     <BrandedStory>
         {props => (
             <>
@@ -124,4 +129,6 @@ add('SearchBox', () => (
             </>
         )}
     </BrandedStory>
-))
+)
+
+SearchBoxStory.storyName = 'SearchBox'

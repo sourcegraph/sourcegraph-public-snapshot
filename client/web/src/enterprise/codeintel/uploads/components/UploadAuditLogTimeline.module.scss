@@ -1,0 +1,13 @@
+.table-container {
+    overflow-x: scroll;
+}
+
+$db-column-col: 17.5%;
+
+.db-column-col {
+    width: $db-column-col;
+}
+
+.data-column-col {
+    width: calc((100% - #{$db-column-col}) / 2);
+}

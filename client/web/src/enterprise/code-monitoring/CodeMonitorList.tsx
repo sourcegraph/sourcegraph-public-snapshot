@@ -9,7 +9,6 @@ import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
-import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -85,7 +84,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                     </Button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
-                    <CodeMonitorInfo />
                     <H3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                     </H3>

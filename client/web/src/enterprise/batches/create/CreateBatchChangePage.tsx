@@ -17,6 +17,7 @@ import { ConfigurationForm } from './ConfigurationForm'
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
 import { useInsightTemplates } from './useInsightTemplates'
+import { useSearchTemplate } from './useSearchTemplate'
 
 import layoutStyles from '../batch-spec/Layout.module.scss'
 
@@ -62,7 +63,8 @@ const TABS_CONFIG: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 const NewBatchChangePageContent: React.FunctionComponent<
     React.PropsWithChildren<Omit<CreateBatchChangePageProps, 'headingElement'>>
 > = ({ settingsCascade, initialNamespaceID }) => {
-    const { renderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
+    const { renderTemplate: insightRenderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
+    const { renderTemplate: searchRenderTemplate } = useSearchTemplate()
     return (
         <div className={layoutStyles.pageContainer}>
             <PageTitle title="Create new batch change" />
@@ -72,7 +74,8 @@ const NewBatchChangePageContent: React.FunctionComponent<
             </div>
             <TabBar activeTabKey="configuration" tabsConfig={TABS_CONFIG} />
             <ConfigurationForm
-                renderTemplate={renderTemplate}
+                // the insight render template takes precendence over the search query render
+                renderTemplate={insightRenderTemplate || searchRenderTemplate}
                 insightTitle={insightTitle}
                 settingsCascade={settingsCascade}
                 initialNamespaceID={initialNamespaceID}

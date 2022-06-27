@@ -130,25 +130,23 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
             )}
             <div className="align-self-center">
                 {serviceConfig.pending ? (
-                    <Icon role="img" className="mb-0 mr-2 text-info" as={AlertCircleIcon} aria-label="Pending" />
+                    <Icon className="mb-0 mr-2 text-info" as={AlertCircleIcon} aria-label="Pending" />
                 ) : service?.warning || service?.lastSyncError ? (
                     <Icon
-                        role="img"
                         className="mb-0 mr-2 text-warning"
                         as={AlertCircleIcon}
                         aria-label="Warning or last sync error"
                     />
                 ) : service?.id ? (
-                    <Icon role="img" className="mb-0 mr-2 text-success" as={CheckCircleIcon} aria-label="Success" />
+                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} aria-label="Success" />
                 ) : (
                     <Icon
-                        role="img"
                         className={classNames('mb-0 mr-2', styles.iconDashed)}
                         as={CircleDashedIcon}
                         aria-hidden={true}
                     />
                 )}
-                <Icon role="img" className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
+                <Icon className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
             </div>
             <div className="flex-1 align-self-center">
                 <H3 className="m-0">

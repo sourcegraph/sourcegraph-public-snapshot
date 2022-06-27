@@ -32,15 +32,9 @@ steps:
   # Add test plans to PR templates
   - run: |
       read -r -d '' TEMPLATE << 'EOF'
-      ### Test plan
+      ## Test plan
 
-      <!--
-        As part of SOC2/GN-104 and SOC2/GN-105 requirements, all pull requests are REQUIRED to
-        provide a "test plan". A test plan is a loose explanation of what you have done or
-        implemented to test this, as outlined in our Testing principles and guidelines:
-        https://docs.sourcegraph.com/dev/background-information/testing_principles
-        Write your test plan here after the "Test plan" header.
-      -->
+      <!-- All pull requests REQUIRE a test plan: https://docs.sourcegraph.com/dev/background-information/testing_principles -->
 
       EOF
 
@@ -51,13 +45,14 @@ steps:
   # Create a GitHub action
   - run: |
       read -r -d '' TEMPLATE << 'EOF'
+      # See https://docs.sourcegraph.com/dev/background-information/ci#pr-auditor
       name: pr-auditor
       on:
         pull_request:
-          types: [ closed, edited, opened ]
+          types: [ closed, edited, opened, synchronize, ready_for_review ]
 
       jobs:
-        run:
+        check-pr:
           runs-on: ubuntu-latest
           steps:
             - uses: actions/checkout@v2

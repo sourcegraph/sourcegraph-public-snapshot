@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -58,6 +58,7 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 					db:          db,
 					CodeHost:    codeHost,
 					clientID:    p.ClientID,
+					allowSignup: p.AllowSignup,
 					allowGroups: p.AllowGroups,
 				}, sessionKey),
 				nil,

@@ -37,7 +37,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
                     of our product!
                 </Text>
                 <ButtonLink to={signUpForm.href} target="_blank" rel="noopener noreferrer" variant="primary">
-                    Sign up now <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
+                    Sign up now <Icon as={OpenInNewIcon} aria-hidden={true} />
                 </ButtonLink>
             </Container>
         </>

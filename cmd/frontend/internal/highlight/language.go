@@ -73,7 +73,8 @@ var engineConfig = syntaxEngineConfig{
 var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineSyntect,
 	Overrides: map[string]EngineType{
-		"c#": EngineTreeSitter,
+		"c#":      EngineTreeSitter,
+		"jsonnet": EngineTreeSitter,
 	},
 }
 
@@ -107,6 +108,8 @@ func init() {
 	go func() {
 		conf.Watch(func() {
 			// Populate effective configuration with base configuration
+			//    We have to add here to make sure that even if there is no config,
+			//    we still update to use the defaults
 			engineConfig.Default = baseEngineConfig.Default
 			for name, engine := range baseEngineConfig.Overrides {
 				engineConfig.Overrides[name] = engine
@@ -126,7 +129,16 @@ func init() {
 			}
 
 			// Set overrides from configuration
+			//
+			// We populate the confuration with base again, because we need to
+			// create a brand new map to not take any values that were
+			// previously in the table from the last configuration.
+			//
+			// After that, we set the values from the new configuration
 			engineConfig.Overrides = map[string]EngineType{}
+			for name, engine := range baseEngineConfig.Overrides {
+				engineConfig.Overrides[name] = engine
+			}
 			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
 				if overrideEngine, ok := engineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
@@ -180,9 +192,9 @@ func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, b
 // getLanguage will return the name of the language and default back to enry if
 // no language could be found.
 func getLanguage(path string, contents string) (string, bool) {
-	ft, found := getLanguageFromConfig(highlightConfig, path)
+	lang, found := getLanguageFromConfig(highlightConfig, path)
 	if found {
-		return ft, true
+		return lang, true
 	}
 
 	return enry.GetLanguage(path, []byte(contents)), false

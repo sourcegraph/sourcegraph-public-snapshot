@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -16,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -26,16 +28,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := database.UsersWith(cstore).Create(ctx, database.NewUser{
+	user, err := database.UsersWith(logger, cstore).Create(ctx, database.NewUser{
 		Username:        "mary",
 		Email:           ct.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
@@ -45,7 +48,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := database.ReposWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -64,7 +67,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,11 +90,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
-						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: spec.Spec.HeadRepository,
 						},
-						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
@@ -142,11 +145,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
-						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: spec.Spec.HeadRepository,
 						},
-						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
@@ -197,11 +200,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
-						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: spec.Spec.HeadRepository,
 						},
-						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{

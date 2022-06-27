@@ -13,11 +13,12 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/web"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestHybridSearch(t *testing.T) {
@@ -79,10 +80,14 @@ Hello world example in go`, typeFile},
 
 	pattern := protocol.PatternInfo{Pattern: "world"}
 	wantRaw := `
-added.md:1:hello world I am added
-changed.go:6:	fmt.Println("Hello world")
-unchanged.md:1:# Hello World
-unchanged.md:3:Hello world example in go
+added.md:1:1:
+hello world I am added
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
+# Hello World
+unchanged.md:3:3:
+Hello world example in go
 `
 
 	s := newStore(t, files)

@@ -9,6 +9,6 @@ export const BackToAllSubscriptionsLink: React.FunctionComponent<
     React.PropsWithChildren<{ user: Pick<GQL.IUser, 'settingsURL'> }>
 > = ({ user }) => (
     <Button to={`${user.settingsURL!}/subscriptions`} className="mb-3" variant="link" size="sm" as={Link}>
-        <Icon role="img" aria-hidden={true} as={ArrowLeftIcon} /> All subscriptions
+        <Icon aria-hidden={true} as={ArrowLeftIcon} /> All subscriptions
     </Button>
 )

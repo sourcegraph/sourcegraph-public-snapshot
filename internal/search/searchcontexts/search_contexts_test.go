@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -233,8 +235,9 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 	r := db.Repos()
 
 	user, err := u.Create(internalCtx, database.NewUser{Username: "u", Password: "p"})
@@ -272,8 +275,9 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
 	if err != nil {
@@ -392,8 +396,9 @@ func TestCreatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -493,8 +498,9 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	require.NoError(t, err)
@@ -577,8 +583,9 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {

@@ -12,6 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var (
+	clearRedisCache = ff.ClearEvaluatedFlagFromCache
+)
+
 type FeatureFlagStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) FeatureFlagStore
@@ -153,6 +157,7 @@ func (f *featureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) e
 		WHERE flag_name = %s;
 	`
 
+	clearRedisCache(name)
 	return f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
 }
 
@@ -503,18 +508,19 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 	}
 
 	res := make(map[string]bool, len(flags))
+
 	for _, ff := range flags {
 		res[ff.Name] = ff.EvaluateForUser(userID)
+	}
 
-		// Org overrides are higher priority than default
-		for _, oo := range orgOverrides {
-			res[oo.FlagName] = oo.Value
-		}
+	// Org overrides are higher priority than default
+	for _, oo := range orgOverrides {
+		res[oo.FlagName] = oo.Value
+	}
 
-		// User overrides are higher priority than org overrides
-		for _, uo := range userOverrides {
-			res[uo.FlagName] = uo.Value
-		}
+	// User overrides are higher priority than org overrides
+	for _, uo := range userOverrides {
+		res[uo.FlagName] = uo.Value
 	}
 
 	return res, nil

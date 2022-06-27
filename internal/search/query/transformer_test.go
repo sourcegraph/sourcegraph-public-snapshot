@@ -1,7 +1,6 @@
 package query
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 
@@ -11,98 +10,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func toJSON(node Node) any {
-	switch n := node.(type) {
-	case Operator:
-		var jsons []any
-		for _, o := range n.Operands {
-			jsons = append(jsons, toJSON(o))
-		}
-
-		switch n.Kind {
-		case And:
-			return struct {
-				And []any `json:"and"`
-			}{
-				And: jsons,
-			}
-		case Or:
-			return struct {
-				Or []any `json:"or"`
-			}{
-				Or: jsons,
-			}
-		case Concat:
-			return struct {
-				Concat []any `json:"concat"`
-			}{
-				Concat: jsons,
-			}
-		}
-	case Parameter:
-		return struct {
-			Field   string   `json:"field"`
-			Value   string   `json:"value"`
-			Negated bool     `json:"negated"`
-			Labels  []string `json:"labels"`
-		}{
-			Field:   n.Field,
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-		}
-	case Pattern:
-		return struct {
-			Value   string   `json:"value"`
-			Negated bool     `json:"negated"`
-			Labels  []string `json:"labels"`
-		}{
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-		}
-	}
-	// unreachable.
-	return struct{}{}
-}
-
-func nodesToJSON(nodes []Node) string {
-	var jsons []any
-	for _, node := range nodes {
-		jsons = append(jsons, toJSON(node))
-	}
-	json, err := json.Marshal(jsons)
-	if err != nil {
-		return ""
-	}
-	return string(json)
-}
-
 func TestSubstituteAliases(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)
-		return nodesToJSON(query)
+		json, _ := ToJSON(query)
+		return json
 	}
 
 	autogold.Want(
 		"basic substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"field":"file","value":"file","negated":false,"labels":["IsAlias"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
 		Equal(t, test("r:repo f:file", SearchTypeRegex))
 
 	autogold.Want(
 		"special case for content substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
 		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
 
 	autogold.Want(
 		"substitution honors literal search pattern",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
-		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteralDefault))
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
+		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
 
 	autogold.Want(
 		"substitution honors path",
-		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
-		Equal(t, test("path:foo", SearchTypeLiteralDefault))
+		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
+		Equal(t, test("path:foo", SearchTypeLiteral))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -202,7 +135,7 @@ func TestHoist(t *testing.T) {
 					leafParser: SearchTypeRegex,
 				}
 				nodes, _ := parser.parseOr()
-				return newOperator(nodes, And)
+				return NewOperator(nodes, And)
 			}
 			query := parse(c.input)
 			hoistedQuery, err := Hoist(query)
@@ -457,7 +390,7 @@ func TestPipeline(t *testing.T) {
 	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			plan, err := Pipeline(Init(c.input, SearchTypeLiteralDefault))
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
 			require.NoError(t, err)
 			got := plan.ToQ().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
@@ -960,7 +893,7 @@ func TestQueryField(t *testing.T) {
 
 func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
-		query, _ := Parse(input, SearchTypeLiteralDefault)
+		query, _ := Parse(input, SearchTypeLiteral)
 		q := SubstituteCountAll(query)
 		return toString(q)
 	}

@@ -3,24 +3,29 @@
 exports[`DiffStat expandedCounts 1`] = `
 <DocumentFragment>
   <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+    class=""
   >
-    <strong
-      class="a11y-ignore text-success mr-1"
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
+      data-state="closed"
     >
-      +1
-    </strong>
-    <strong
-      class="a11y-ignore text-warning mr-1"
-    >
-      •2
-    </strong>
-    <strong
-      class="a11y-ignore text-danger"
-    >
-      −3
-    </strong>
+      <strong
+        class="mr-1 a11y-ignore text-success"
+      >
+        +1
+      </strong>
+      <strong
+        class="mr-1 a11y-ignore text-warning"
+      >
+        •2
+      </strong>
+      <strong
+        class="a11y-ignore text-danger"
+      >
+        −3
+      </strong>
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -28,12 +33,17 @@ exports[`DiffStat expandedCounts 1`] = `
 exports[`DiffStat standard 1`] = `
 <DocumentFragment>
   <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+    class=""
   >
-    <small>
-      8
-    </small>
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
+      data-state="closed"
+    >
+      <small>
+        8
+      </small>
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -68,24 +78,29 @@ exports[`DiffStatStack 1`] = `
     class="d-flex flex-column align-items-center"
   >
     <div
-      class="diffStat pb-1"
-      data-tooltip="1 addition, 2 changes, 3 deletions"
+      class="pb-1"
     >
-      <strong
-        class="a11y-ignore text-success mr-1"
+      <div
+        aria-label="1 addition, 2 changes, 3 deletions"
+        class="diffStat"
+        data-state="closed"
       >
-        +1
-      </strong>
-      <strong
-        class="a11y-ignore text-warning mr-1"
-      >
-        •2
-      </strong>
-      <strong
-        class="a11y-ignore text-danger"
-      >
-        −3
-      </strong>
+        <strong
+          class="mr-1 a11y-ignore text-success"
+        >
+          +1
+        </strong>
+        <strong
+          class="mr-1 a11y-ignore text-warning"
+        >
+          •2
+        </strong>
+        <strong
+          class="a11y-ignore text-danger"
+        >
+          −3
+        </strong>
+      </div>
     </div>
     <div
       class="squares"

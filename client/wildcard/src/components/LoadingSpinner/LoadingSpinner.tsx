@@ -24,7 +24,7 @@ export const LoadingSpinner: React.FunctionComponent<React.PropsWithChildren<Loa
     const finalClassName = classNames(styles.loadingSpinner, className)
 
     if (inline) {
-        return <Icon className={finalClassName} as="div" {...props} />
+        return <Icon aria-label="Loading" className={finalClassName} as="div" {...props} />
     }
 
     return <div className={finalClassName} {...props} />

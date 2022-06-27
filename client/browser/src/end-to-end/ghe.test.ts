@@ -80,8 +80,7 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
         url: `${GHE_BASE_URL}/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go`,
         repoName: `${REPO_PREFIX}/sourcegraph/jsonrpc2`,
         sourcegraphBaseUrl,
-        // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
-        lineSelector: '.js-file-line-container tr',
+        getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL: new URL(
             '/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
             GHE_BASE_URL

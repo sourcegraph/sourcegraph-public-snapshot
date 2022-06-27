@@ -6,16 +6,18 @@ import (
 	"regexp/syntax"
 	"sort"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // TODO(keegancsmith) prometheus metrics
@@ -61,6 +63,10 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		indexedIgnore, unindexedSearch, err := parseGitDiffNameStatus(out)
 		if err != nil {
+			logger.Debug("parseGitDiffNameStatus failed",
+				log.String("indexed", string(indexed)),
+				log.Binary("out", out),
+				log.Error(err))
 			return nil, false, err
 		}
 
@@ -111,33 +117,50 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	if err != nil {
 		return false, err
 	}
+
 	for _, fm := range res.Files {
 		// Unexpected commit searched, signal to retry.
 		if fm.Version != string(indexed) {
 			return false, nil
 		}
 
-		var lineMatches []protocol.LineMatch
-		var matchCount int
-		for _, lm := range fm.LineMatches {
-			var offs [][2]int
-			for _, lf := range lm.LineFragments {
-				offs = append(offs, [2]int{lf.LineOffset, lf.MatchLength})
+		cms := make([]protocol.ChunkMatch, 0, len(fm.LineMatches))
+		for _, l := range fm.LineMatches {
+			if l.FileName {
+				continue
 			}
-			lineMatches = append(lineMatches, protocol.LineMatch{
-				Preview:          string(lm.Line),
-				LineNumber:       lm.LineNumber - 1,
-				OffsetAndLengths: offs,
-			})
-			matchCount += len(offs)
-			if len(offs) == 0 {
-				matchCount++
+
+			for _, m := range l.LineFragments {
+				runeOffset := utf8.RuneCount(l.Line[:m.LineOffset])
+				runeLength := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
+
+				cms = append(cms, protocol.ChunkMatch{
+					Content: string(l.Line),
+					// zoekt line numbers are 1-based rather than 0-based so subtract 1
+					ContentStart: protocol.Location{
+						Offset: int32(l.LineStart),
+						Line:   int32(l.LineNumber - 1),
+						Column: 0,
+					},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{
+							Offset: int32(m.Offset),
+							Line:   int32(l.LineNumber - 1),
+							Column: int32(runeOffset),
+						},
+						End: protocol.Location{
+							Offset: int32(m.Offset) + int32(m.MatchLength),
+							Line:   int32(l.LineNumber - 1),
+							Column: int32(runeOffset + runeLength),
+						},
+					}},
+				})
 			}
 		}
+
 		sender.Send(protocol.FileMatch{
-			Path:        fm.FileName,
-			LineMatches: lineMatches,
-			MatchCount:  matchCount,
+			Path:         fm.FileName,
+			ChunkMatches: cms,
 		})
 	}
 
@@ -258,6 +281,10 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 // A and B respectively. It expects to be parsing the output of the command
 // git diff -z --name-status --no-renames A B.
 func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error) {
+	if len(out) == 0 {
+		return nil, nil, nil
+	}
+
 	slices := bytes.Split(bytes.TrimRight(out, "\x00"), []byte{0})
 	if len(slices)%2 != 0 {
 		return nil, nil, errors.New("uneven pairs")

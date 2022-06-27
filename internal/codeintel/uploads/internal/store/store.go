@@ -3,13 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,6 +18,11 @@ import (
 // Store provides the interface for uploads storage.
 type Store interface {
 	List(ctx context.Context, opts ListOpts) (uploads []shared.Upload, err error)
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, indexesDeleted int, err error)
 }
 
 // store manages the database operations for uploads.
@@ -26,9 +32,9 @@ type store struct {
 }
 
 // New returns a new uploads store.
-func New(db dbutil.DB, observationContext *observation.Context) Store {
+func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
-		db:         basestore.NewWithDB(db, sql.TxOptions{}),
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),
 	}
 }
@@ -71,3 +77,139 @@ const listQuery = `
 SELECT id FROM TODO
 LIMIT %s
 `
+
+// DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
+// and the upload and index records for that repository being deleted.
+const DeletedRepositoryGracePeriod = time.Minute * 30
+
+// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+// that were removed for that repository.
+func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
+	defer unset(ctx)
+	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+	for _, numDeleted := range repositories {
+		count += numDeleted
+	}
+	trace.Log(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	return repositories, nil
+}
+
+const deleteUploadsWithoutRepositoryQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsWithoutRepository
+WITH
+candidates AS (
+	SELECT u.id
+	FROM repo r
+	JOIN lsif_uploads u ON u.repository_id = r.id
+	WHERE %s - r.deleted_at >= %s * interval '1 second'
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+),
+deleted AS (
+	-- Note: we can go straight from completed -> deleted here as we
+	-- do not need to preserve the deleted repository's current commit
+	-- graph (the API cannot resolve any queries for this repository).
+
+	UPDATE lsif_uploads u
+	SET state = 'deleted'
+	WHERE u.id IN (SELECT id FROM candidates)
+	RETURNING u.id, u.repository_id
+)
+SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+`
+
+// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
+// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
+// that were removed for that repository.
+func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
+	// a similar one on this index, but only for uploads that are completed or visible at tip.
+	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+	for _, numDeleted := range repositories {
+		count += numDeleted
+	}
+	trace.Log(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	return repositories, nil
+}
+
+const deleteIndexesWithoutRepositoryQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexesWithoutRepository
+WITH
+candidates AS (
+	SELECT u.id
+	FROM repo r
+	JOIN lsif_indexes u ON u.repository_id = r.id
+	WHERE %s - r.deleted_at >= %s * interval '1 second'
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_indexes table.
+	ORDER BY u.id FOR UPDATE
+),
+deleted AS (
+	DELETE FROM lsif_indexes u
+	WHERE id IN (SELECT id FROM candidates)
+	RETURNING u.id, u.repository_id
+)
+SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+`
+
+// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
+func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return visibilities, nil
+}

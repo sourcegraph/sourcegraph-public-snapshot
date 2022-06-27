@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -28,10 +30,11 @@ func createSearchContexts(ctx context.Context, store SearchContextsStore, search
 }
 
 func TestSearchContexts_Get(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -80,10 +83,11 @@ func TestSearchContexts_Get(t *testing.T) {
 }
 
 func TestSearchContexts_Update(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -152,10 +156,11 @@ func TestSearchContexts_Update(t *testing.T) {
 }
 
 func TestSearchContexts_List(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
@@ -199,10 +204,11 @@ func TestSearchContexts_List(t *testing.T) {
 }
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -297,10 +303,11 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 }
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -358,7 +365,8 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 }
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := db.SearchContexts()
@@ -420,10 +428,11 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 }
 
 func TestSearchContexts_Permissions(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 	sc := db.SearchContexts()
@@ -623,7 +632,8 @@ func TestSearchContexts_Permissions(t *testing.T) {
 }
 
 func TestSearchContexts_Delete(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := context.Background()
 	sc := db.SearchContexts()
@@ -673,10 +683,11 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 }
 
 func TestSearchContexts_OrderBy(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 	sc := db.SearchContexts()
@@ -785,7 +796,8 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 }
 
 func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	// Required for this DB query.
 	internalCtx := actor.WithInternalActor(context.Background())

@@ -51,7 +51,7 @@ const CommitNode: React.FunctionComponent<React.PropsWithChildren<CommitNodeProp
                     className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
-                    <Icon role="img" as={FileIcon} aria-hidden={true} />
+                    <Icon as={FileIcon} aria-hidden={true} />
                 </Link>
             }
         />

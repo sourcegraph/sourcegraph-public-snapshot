@@ -141,7 +141,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboar
 			path string
 			data []byte
 		}{
-			{path: filepath.Join(opts.DocsDir, alertSolutionsFile), data: docs.alertSolutions.Bytes()},
+			{path: filepath.Join(opts.DocsDir, alertsDocsFile), data: docs.alertDocs.Bytes()},
 			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
 		} {
 			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)

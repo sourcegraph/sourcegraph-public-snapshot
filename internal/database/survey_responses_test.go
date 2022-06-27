@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -13,7 +15,8 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	count, err := SurveyResponses(db).Count(ctx)
@@ -29,7 +32,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",

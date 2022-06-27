@@ -9,17 +9,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v41/github"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -55,7 +54,7 @@ type V3Client struct {
 	// rateLimitMonitor is the API rate limit monitor.
 	rateLimitMonitor *ratelimit.Monitor
 
-	// rateLimit is our self imposed rate limiter
+	// rateLimit is our self-imposed rate limiter
 	rateLimit *ratelimit.InstrumentedLimiter
 
 	// resource specifies which API this client is intended for.
@@ -110,10 +109,11 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
-		log: logger.With(
-			log.String("urn", urn),
-			log.String("resource", resource),
-		),
+		log: logger.Scoped("github.v3", "github v3 client").
+			With(
+				log.String("urn", urn),
+				log.String("resource", resource),
+			),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
@@ -196,26 +196,6 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
-// newRepoCache creates a new cache for GitHub repository metadata. The backing
-// store is Redis. A checksum of the authenticator and API URL are used as a
-// Redis key prefix to prevent collisions with caches for different
-// authentication and API URLs.
-func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
-	var cacheTTL time.Duration
-	if urlIsGitHubDotCom(apiURL) {
-		cacheTTL = 10 * time.Minute
-	} else {
-		// GitHub Enterprise
-		cacheTTL = 30 * time.Second
-	}
-
-	key := ""
-	if a != nil {
-		key = a.Hash()
-	}
-	return rcache.NewWithTTL("gh_repo:"+key, int(cacheTTL/time.Second))
-}
-
 // APIError is an error type returned by Client when the GitHub API responds with
 // an error.
 type APIError struct {
@@ -295,29 +275,38 @@ func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail
 	return emails, nil
 }
 
-func (c *V3Client) getAuthenticatedUserOrgs(ctx context.Context, page int) (
+var MockGetAuthenticatedUserOrgs struct {
+	FnMock    func(ctx context.Context) ([]*Org, bool, int, error)
+	PagesMock map[int][]*Org
+}
+
+// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
+// authenticated user.
+func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
 	orgs []*Org,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
+	// checking whether the function is mocked
+	if MockGetAuthenticatedUserOrgs.FnMock != nil || MockGetAuthenticatedUserOrgs.PagesMock != nil {
+		if MockGetAuthenticatedUserOrgs.FnMock != nil {
+			return MockGetAuthenticatedUserOrgs.FnMock(ctx)
+		}
+
+		orgsPage, ok := MockGetAuthenticatedUserOrgs.PagesMock[page]
+		if !ok {
+			err = errors.New("cannot find orgs page mock")
+			return
+		}
+		return orgsPage, page < len(MockGetAuthenticatedUserOrgs.PagesMock), 1, err
+	}
+
 	_, err = c.get(ctx, fmt.Sprintf("/user/orgs?per_page=100&page=%d", page), &orgs)
 	if err != nil {
 		return
 	}
 	return orgs, len(orgs) > 0, 1, err
-}
-
-var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
-
-// GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
-// authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
-	if MockGetAuthenticatedUserOrgs != nil {
-		return MockGetAuthenticatedUserOrgs(ctx)
-	}
-	orgs, _, _, err := c.getAuthenticatedUserOrgs(ctx, 1)
-	return orgs, err
 }
 
 // OrgDetailsAndMembership is a results container for the results from the API calls made
@@ -337,7 +326,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.getAuthenticatedUserOrgs(ctx, page)
+	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
 	if err != nil {
 		return
 	}

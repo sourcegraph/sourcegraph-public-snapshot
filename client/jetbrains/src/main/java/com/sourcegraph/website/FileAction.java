@@ -1,11 +1,11 @@
 package com.sourcegraph.website;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.config.ConfigUtil;
@@ -16,7 +16,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-public abstract class FileAction extends AnAction {
+public abstract class FileAction extends DumbAwareAction {
 
     abstract void handleFileUri(String uri);
 
@@ -58,7 +58,7 @@ public abstract class FileAction extends AnAction {
             + "&branch=" + URLEncoder.encode(repoInfo.branchName, StandardCharsets.UTF_8)
             + "&file=" + URLEncoder.encode(repoInfo.relativePath, StandardCharsets.UTF_8)
             + "&editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=" + URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)
+            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)
             + (start != null ? ("&start_row=" + URLEncoder.encode(Integer.toString(start.line), StandardCharsets.UTF_8)
             + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), StandardCharsets.UTF_8)) : "")
             + (end != null ? ("&end_row=" + URLEncoder.encode(Integer.toString(end.line), StandardCharsets.UTF_8)

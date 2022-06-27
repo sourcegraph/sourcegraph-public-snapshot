@@ -1,5 +1,6 @@
 import React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -44,17 +45,19 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 ref={titleReference}
                 data-tooltip={(truncated && `${result.authorName}: ${result.message.split('\n', 1)[0]}`) || null}
             >
-                <>
-                    <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
-                    {' › '}
-                    <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
-                    {': '}
-                    <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
-                </>
+                <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
+                <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
+                <span aria-hidden={true}>{': '}</span>
+                <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
             </span>
             <span className={styles.spacer} />
             <Link to={getCommitMatchUrl(result)}>
-                <Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Code>{' '}
+                <Code className={styles.commitOid}>
+                    <VisuallyHidden>Commit hash:</VisuallyHidden>
+                    {result.oid.slice(0, 7)}
+                    <VisuallyHidden>,</VisuallyHidden>
+                </Code>{' '}
+                <VisuallyHidden>Commited</VisuallyHidden>
                 <Timestamp date={result.authorDate} noAbout={true} strict={true} />
             </Link>
             {result.repoStars && <div className={styles.divider} />}

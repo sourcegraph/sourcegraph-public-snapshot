@@ -2,6 +2,7 @@ package process
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -35,12 +36,13 @@ type cmdPiper interface {
 func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
 	pipe := func(w io.Writer, r io.Reader) error {
 		scanner := bufio.NewScanner(r)
+		scanner.Split(scanLinesWithNewline)
 
 		buf := make([]byte, initialBufSize)
 		scanner.Buffer(buf, maxTokenSize)
 
 		for scanner.Scan() {
-			fmt.Fprintln(w, scanner.Text())
+			fmt.Fprint(w, scanner.Text())
 		}
 
 		return scanner.Err()
@@ -91,4 +93,25 @@ func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 	eg.Go(func() error { return fn(stderrWriter, stderrPipe) })
 
 	return eg, nil
+}
+
+// scanLinesWithNewline is a modified version of bufio.ScanLines that retains
+// the trailing newline byte(s) in the returned token.
+func scanLinesWithNewline(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, data[0 : i+1], nil
+	}
+
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+
+	// Request more data.
+	return 0, nil, nil
 }

@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -117,7 +117,7 @@ func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (b
 }
 
 func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, error) {
-	headRef := git.AbbreviateRef(c.HeadRef)
+	headRef := gitdomain.AbbreviateRef(c.HeadRef)
 	if c.RemoteRepo != c.TargetRepo {
 		owner, err := c.RemoteRepo.Metadata.(*github.Repository).Owner()
 		if err != nil {
@@ -132,7 +132,7 @@ func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, 
 		Title:        c.Title,
 		Body:         c.Body,
 		HeadRefName:  headRef,
-		BaseRefName:  git.AbbreviateRef(c.BaseRef),
+		BaseRefName:  gitdomain.AbbreviateRef(c.BaseRef),
 	}, nil
 }
 
@@ -231,7 +231,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
-		BaseRefName:   git.AbbreviateRef(c.BaseRef),
+		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
 	})
 
 	if err != nil {

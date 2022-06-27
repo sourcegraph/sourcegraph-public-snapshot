@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -18,6 +17,10 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
+	sentrylib "github.com/getsentry/sentry-go"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -43,12 +46,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const port = "3182"
@@ -58,7 +59,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -76,18 +77,20 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.HandleHelpFlag()
 
 	conf.Init()
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
+
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
-	logger := log.Scoped("repo-updater", "repo-updater service")
+	logger := log.Scoped("service", "repo-updater service")
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -109,7 +112,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	if err != nil {
 		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	// Generally we'll mark the service as ready sometime after the database has been
 	// connected; migrations may take a while and we don't want to start accepting
@@ -119,7 +122,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(logger.Scoped("store", "repo store"), db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
@@ -158,7 +161,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -188,7 +191,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	go syncScheduler(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
-		rateLimiter := rate.NewLimiter(.05, 1)
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 
@@ -250,7 +253,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -521,7 +524,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
 func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
-	baseRepoStore := database.ReposWith(store)
+	baseRepoStore := database.ReposWith(logger, store)
 
 	doSync := func() {
 		// Don't modify the scheduler if we're not performing auto updates

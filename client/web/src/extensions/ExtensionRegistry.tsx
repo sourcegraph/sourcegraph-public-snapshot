@@ -340,22 +340,21 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                                     in one place on Sourcegraph.
                                 </span>
                             </div>
-                            <Form onSubmit={preventDefault} className="form-inline">
-                                <div className="shadow flex-grow-1">
-                                    <Input
-                                        inputClassName="w-100 test-extension-registry-input"
-                                        type="search"
-                                        placeholder="Search extensions..."
-                                        name="query"
-                                        value={query}
-                                        onChange={onQueryChangeEvent}
-                                        autoFocus={true}
-                                        autoComplete="off"
-                                        autoCorrect="off"
-                                        autoCapitalize="off"
-                                        spellCheck={false}
-                                    />
-                                </div>
+                            <Form onSubmit={preventDefault}>
+                                <Input
+                                    data-testid="test-extension-registry-input"
+                                    className="w-100 shadow"
+                                    type="search"
+                                    placeholder="Search extensions..."
+                                    name="query"
+                                    value={query}
+                                    onChange={onQueryChangeEvent}
+                                    autoFocus={true}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                />
                             </Form>
                             {!authenticatedUser && (
                                 <Alert className="my-4" variant="info">

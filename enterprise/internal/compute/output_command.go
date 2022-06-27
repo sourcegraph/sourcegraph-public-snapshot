@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type Output struct {
@@ -70,7 +70,7 @@ func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath
 		if onlyPath {
 			return m.Path, true, nil
 		}
-		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
+		contentBytes, err := gitserver.NewClient(db).ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
 		}

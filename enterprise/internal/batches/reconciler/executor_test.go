@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -22,12 +24,12 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,8 +38,9 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -58,7 +61,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
-	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
+	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
 	draftGithubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateDraft)
 	closedGitHubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateClosed)
 
@@ -227,7 +230,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
-				ExternalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+				ExternalBranch:   gitdomain.EnsureRefPrefix("head-ref-on-github"),
 				ExternalState:    btypes.ChangesetExternalStateOpen,
 			},
 
@@ -274,7 +277,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateClosed,
 
 				Title:    closedGitHubPR.Title,
@@ -309,7 +312,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateClosed,
 			},
 		},
@@ -363,7 +366,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 
 				ExternalID:     draftGithubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(draftGithubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateDraft,
 
 				Title:    draftGithubPR.Title,
@@ -426,7 +429,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateClosed,
 
 				Title:    closedGitHubPR.Title,
@@ -594,8 +597,9 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -635,8 +639,9 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 }
 
 func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
@@ -678,8 +683,9 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
@@ -838,8 +844,9 @@ func TestLoadChangesetSource(t *testing.T) {
 }
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -1142,6 +1149,34 @@ func TestDecorateChangesetBody(t *testing.T) {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
+
+	body = "body body ${{ batch_change_link }} body body"
+	rcs = &sources.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := "body body [_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change) body body"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
+
+	body = "${{ batch_change_link }}\n\nbody body"
+	rcs = &sources.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
+
+	// Spacing shouldn't matter.
+	body = "${{     batch_change_link}}\n\nbody body"
+	rcs = &sources.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
 		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
 	}
 }

@@ -1,11 +1,8 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import React, { useEffect, useState } from 'react'
 
+import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -161,7 +158,17 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             role="none"
         >
             <div className={styles.header}>
-                <Icon role="img" className="flex-shrink-0" as={icon} aria-hidden={true} />
+                <Icon
+                    className="flex-shrink-0"
+                    as={icon}
+                    {...(resultType
+                        ? {
+                              'aria-label': `${resultType} result`,
+                          }
+                        : {
+                              'aria-hidden': true,
+                          })}
+                />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
@@ -185,18 +192,18 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         {expanded ? (
                             <>
                                 {collapseLabel && (
-                                    <Icon role="img" className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowCollapseUp} />
                                 )}
                                 {collapseLabel}
-                                {!collapseLabel && <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />}
+                                {!collapseLabel && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}
                             </>
                         ) : (
                             <>
                                 {expandLabel && (
-                                    <Icon role="img" className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowExpandDown} />
                                 )}
                                 {expandLabel}
-                                {!expandLabel && <Icon role="img" as={ChevronLeftIcon} aria-hidden={true} />}
+                                {!expandLabel && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
                             </>
                         )}
                     </Button>
@@ -206,8 +213,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <SearchResultStar />
-                        {formattedRepositoryStarCount}
+                        <SearchResultStar aria-label={`${repoStars} stars`} />
+                        <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                     </>
                 )}
             </div>

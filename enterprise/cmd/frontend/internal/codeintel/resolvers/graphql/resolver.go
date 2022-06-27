@@ -459,6 +459,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	})
 	if err != nil {
 		return nil, err
@@ -499,6 +500,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	}); err != nil {
 		return nil, err
 	}
@@ -626,7 +628,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 
 	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(r.locationResolver.logger, r.db).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}

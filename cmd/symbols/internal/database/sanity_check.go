@@ -1,10 +1,10 @@
 package database
 
-import "github.com/jmoiron/sqlx"
+import "database/sql"
 
 // SanityCheck makes sure that go-sqlite3 was compiled with cgo by seeing if we can actually create a table.
 func SanityCheck() error {
-	db, err := sqlx.Open("sqlite3_with_regexp", ":memory:")
+	db, err := sql.Open("sqlite3_with_regexp", ":memory:")
 	if err != nil {
 		return err
 	}

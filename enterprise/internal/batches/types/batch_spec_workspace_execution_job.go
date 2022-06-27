@@ -48,7 +48,7 @@ type BatchSpecWorkspaceExecutionJob struct {
 	ID int64
 
 	BatchSpecWorkspaceID int64
-	AccessTokenID        int64
+	UserID               int32
 
 	State           BatchSpecWorkspaceExecutionJobState
 	FailureMessage  *string
@@ -62,7 +62,8 @@ type BatchSpecWorkspaceExecutionJob struct {
 	WorkerHostname  string
 	Cancel          bool
 
-	PlaceInQueue int64
+	PlaceInUserQueue   int64
+	PlaceInGlobalQueue int64
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

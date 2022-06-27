@@ -75,6 +75,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
      * by the user.
      */
     querySubject?: Subject<string>
+
+    /** A function that generates an aria label given a node display name */
+    ariaLabelFunction?: (displayName: string) => string
 }
 
 /**
@@ -483,6 +486,8 @@ export class FilteredConnection<
         //     this.state.connectionOrError.nodes.length > 0 &&
         //     this.props.hideControlsWhenEmpty
 
+        const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
+
         return (
             <ConnectionContainer compact={this.props.compact} className={this.props.className}>
                 {
@@ -491,8 +496,8 @@ export class FilteredConnection<
                             ref={this.setFilterRef}
                             hideSearch={this.props.hideSearch}
                             inputClassName={this.props.inputClassName}
-                            inputPlaceholder={this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`}
-                            inputAriaLabel={this.props.inputAriaLabel}
+                            inputPlaceholder={inputPlaceholder}
+                            inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
                             inputValue={this.state.query}
                             onInputChange={this.onChange}
                             autoFocus={this.props.autoFocus}
@@ -505,6 +510,7 @@ export class FilteredConnection<
                     )
                 }
                 {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
+
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
                     <ConnectionNodes
                         connection={this.state.connectionOrError}
@@ -530,8 +536,10 @@ export class FilteredConnection<
                         emptyElement={this.props.emptyElement}
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                         withCenteredSummary={this.props.withCenteredSummary}
+                        ariaLabelFunction={this.props.ariaLabelFunction}
                     />
                 )}
+
                 {this.state.loading && (
                     <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
                 )}

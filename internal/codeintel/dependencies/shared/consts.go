@@ -5,4 +5,5 @@ const (
 	JVMPackagesScheme    = "semanticdb"
 	NpmPackagesScheme    = "npm"
 	PythonPackagesScheme = "python"
+	RustPackagesScheme   = "rust-analyzer"
 )

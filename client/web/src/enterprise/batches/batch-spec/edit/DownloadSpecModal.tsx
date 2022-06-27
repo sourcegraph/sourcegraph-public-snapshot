@@ -10,12 +10,17 @@ import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'
 
+// TODO: Several lines have been commented out to disable the "Don't show this again"
+// functionality for "Download spec for src-cli" modal.
+// See https://github.com/sourcegraph/sourcegraph/issues/37360.
+// Uncomment all of these lines to restore it.
+
 export interface DownloadSpecModalProps {
     name: string
     originalInput: string
     isLightTheme: boolean
     setIsDownloadSpecModalOpen: (condition: boolean) => void
-    setDownloadSpecModalDismissed: (condition: boolean) => void
+    // setDownloadSpecModalDismissed: (condition: boolean) => void
 }
 
 export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<DownloadSpecModalProps>> = ({
@@ -23,7 +28,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
     originalInput,
     isLightTheme,
     setIsDownloadSpecModalOpen,
-    setDownloadSpecModalDismissed,
+    // setDownloadSpecModalDismissed,
 }) => (
     <Modal
         onDismiss={() => {
@@ -48,7 +53,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
         <div className={styles.container}>
             <div className={styles.left}>
                 <Text>
-                    Use the <Link to="https://docs.sourcegraph.com/cli">Sourcegraph CLI (src) </Link>
+                    Use the <Link to="/help/cli">Sourcegraph CLI (src)</Link>
                     to run this batch change locally.
                 </Text>
 
@@ -76,10 +81,10 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
             </div>
         </div>
         <div className="d-flex justify-content-between">
-            <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
+            {/* <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
                 Don't show this again
-            </Button>
-            <div>
+            </Button> */}
+            <div className="ml-auto">
                 <Button
                     className="mr-2"
                     outline={true}

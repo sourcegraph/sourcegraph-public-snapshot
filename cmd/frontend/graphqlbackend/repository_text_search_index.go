@@ -2,11 +2,14 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"regexp/syntax"
 	"sync"
 	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/google/zoekt/stream"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -26,15 +29,11 @@ func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolve
 
 type repositoryTextSearchIndexResolver struct {
 	repo   *RepositoryResolver
-	client repoLister
+	client zoekt.Streamer
 
 	once  sync.Once
 	entry *zoekt.RepoListEntry
 	err   error
-}
-
-type repoLister interface {
-	List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
@@ -157,14 +156,20 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 			}
 			ref := refByName(name)
 			ref.indexedCommit = GitObjectID(branch.Version)
+			ref.skippedIndexed = &skippedIndexedResolver{
+				repo:   r.repo,
+				branch: branch.Name,
+				client: r.client,
+			}
 		}
 	}
 	return refs, nil
 }
 
 type repositoryTextSearchIndexedRef struct {
-	ref           *GitRefResolver
-	indexedCommit GitObjectID
+	ref            *GitRefResolver
+	indexedCommit  GitObjectID
+	skippedIndexed *skippedIndexedResolver
 }
 
 func (r *repositoryTextSearchIndexedRef) Ref() *GitRefResolver { return r.ref }
@@ -187,4 +192,52 @@ func (r *repositoryTextSearchIndexedRef) IndexedCommit() *gitObject {
 		return nil
 	}
 	return &gitObject{repo: r.ref.repo, oid: r.indexedCommit, typ: GitObjectTypeCommit}
+}
+
+func (r *repositoryTextSearchIndexedRef) SkippedIndexed() *skippedIndexedResolver {
+	return r.skippedIndexed
+}
+
+type skippedIndexedResolver struct {
+	repo   *RepositoryResolver
+	branch string
+
+	client zoekt.Streamer
+}
+
+func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
+	// During indexing, Zoekt may decide to skip a document for various reasons. If
+	// a document is skipped, Zoekt replaces the content of the skipped document
+	// with "NOT-INDEXED: <reason>"
+	expr, err := syntax.Parse("^NOT-INDEXED: ", syntax.Perl)
+	if err != nil {
+		return BigInt{}, err
+	}
+
+	q := &zoektquery.And{[]zoektquery.Q{
+		&zoektquery.Regexp{Regexp: expr, Content: true, CaseSensitive: true},
+		zoektquery.NewSingleBranchesRepos(r.branch, uint32(r.repo.IDInt32())),
+	}}
+
+	var stats zoekt.Stats
+	if err := r.client.StreamSearch(
+		ctx,
+		q,
+		&zoekt.SearchOptions{},
+		stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			stats.Add(sr.Stats)
+		}),
+	); err != nil {
+		return BigInt{}, err
+	}
+
+	return BigInt{int64(stats.FileCount)}, nil
+}
+
+func (r *skippedIndexedResolver) Query() string {
+	// Adding select:file renders the results as path match instead of content
+	// match. This is important because the indexed content (NOT-INDEXED: <reason>)
+	// is different from the on-disk content served by gitserver which leads to
+	// broken highlighting and problems with rendering content of binary files.
+	return fmt.Sprintf("r:^%s$@%s type:file select:file index:only patternType:regexp ^NOT-INDEXED:", r.repo.Name(), r.branch)
 }

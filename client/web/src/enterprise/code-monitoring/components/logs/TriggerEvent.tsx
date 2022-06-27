@@ -10,6 +10,7 @@ import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
+import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     EventStatus,
@@ -59,22 +60,12 @@ export const TriggerEvent: React.FunctionComponent<
     }
 
     return (
-        <>
+        <li>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon
-                    role="img"
-                    aria-hidden={true}
-                    className="mr-2"
-                    as={expanded ? ChevronDownIcon : ChevronRightIcon}
-                />
+                <Icon aria-hidden={true} className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
 
                 {hasError ? (
-                    <Icon
-                        role="img"
-                        aria-hidden={true}
-                        className={classNames(styles.errorIcon, 'mr-2')}
-                        as={AlertCircleIcon}
-                    />
+                    <Icon aria-hidden={true} className={classNames(styles.errorIcon, 'mr-2')} as={AlertCircleIcon} />
                 ) : (
                     <span />
                 )}
@@ -90,14 +81,14 @@ export const TriggerEvent: React.FunctionComponent<
                             className="font-weight-normal ml-2"
                         >
                             {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
-                            <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                            <Icon aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                     )}
                 </span>
             </Button>
 
             {expanded && (
-                <>
+                <ConnectionList>
                     <CollapsibleDetailsWithStatus
                         status={triggerEvent.status}
                         message={getTriggerEventMessage()}
@@ -127,9 +118,9 @@ export const TriggerEvent: React.FunctionComponent<
                             )}
                         </>
                     ))}
-                </>
+                </ConnectionList>
             )}
-        </>
+        </li>
     )
 }
 
