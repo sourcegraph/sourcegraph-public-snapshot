@@ -40,7 +40,7 @@ done
 CONTEXT=${CUSTOM_CONTEXT:-$BUILDKITE_JOB_ID}
 CONTEXT="$CONTEXT-$TYPE"
 # when the markdown is created, write the output to a file as well
-TEE_FILE="./annotations/${BUILDKITE_LABEL}-annotation.md"
+TEE_FILE="./annotations/${BUILDKITE_JOB_ID}-annotation.md"
 
 # If we are not in Buildkite, exit before doing annotations
 if [[ -z "$BUILDKITE" ]]; then
