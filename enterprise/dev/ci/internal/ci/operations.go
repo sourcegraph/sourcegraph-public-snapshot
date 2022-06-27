@@ -387,9 +387,6 @@ func addGoTests(pipeline *bk.Pipeline) {
 			fmt.Sprintf(":go: Test (%s)", description),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
-				TestReports: &bk.TestReportOpts{
-					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
-				},
 			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
 		)
