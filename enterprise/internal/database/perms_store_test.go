@@ -891,7 +891,7 @@ func testPermsStore_TouchRepoPermissions(db database.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		// Touch the permissions in an hour late
+		// Touch the permissions to an hour later
 		now += 3600
 		if err := s.TouchRepoPermissions(context.Background(), 1); err != nil {
 			t.Fatal(err)
@@ -909,7 +909,60 @@ func testPermsStore_TouchRepoPermissions(db database.DB) func(*testing.T) {
 
 		// Both times should be updated to "now"
 		if rp.UpdatedAt.Unix() != now || rp.SyncedAt.Unix() != now {
-			t.Fatal("UpdatedAt or SyncedAt was not updated but supposed to")
+			t.Fatal("UpdatedAt or SyncedAt was not updated but was supposed to be")
+		}
+	}
+}
+
+func testPermsStore_TouchUserPermissions(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+
+		logger := logtest.Scoped(t)
+		now := timeutil.Now().Unix()
+		s := perms(logger, db, func() time.Time {
+			return time.Unix(atomic.LoadInt64(&now), 0)
+		})
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		// Touch is an upsert
+		if err := s.TouchUserPermissions(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Set up some permissions
+		up := &authz.UserPermissions{
+			UserID: 1,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+			IDs:    toMapset(2),
+		}
+		if err := s.SetUserPermissions(ctx, up); err != nil {
+			t.Fatal(err)
+		}
+
+		// Touch the permissions to an hour later
+		now += 3600
+		if err := s.TouchUserPermissions(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Permissions bits shouldn't be affected
+		up = &authz.UserPermissions{
+			UserID: 1,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}
+		if err := s.LoadUserPermissions(ctx, up); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "up.IDs", []int{2}, mapsetToArray(up.IDs))
+
+		// Both times should be updated to "now"
+		if up.UpdatedAt.Unix() != now || up.SyncedAt.Unix() != now {
+			t.Fatal("UpdatedAt or SyncedAt was not updated but was supposed to be")
 		}
 	}
 }
