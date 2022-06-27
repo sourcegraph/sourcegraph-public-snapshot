@@ -234,6 +234,8 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // may contain sensitive info on Sourcegraph Cloud. We replace all paths,
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
+//
+// Note that URL redaction also happens in web/src/tracking/util.ts.
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -241,6 +243,11 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	}
 
 	if parsedURL.Host != "sourcegraph.com" {
+		return rawURL, nil
+	}
+
+	// Only redact GitHub.com URLs. Currently, private code on Sourcegraph.com is only supported for GitHub.com.
+	if !strings.HasPrefix(parsedURL.Path,"/github.com") && !strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
 		return rawURL, nil
 	}
 
