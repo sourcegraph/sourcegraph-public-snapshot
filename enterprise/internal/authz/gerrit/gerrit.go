@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"net/url"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -132,7 +132,6 @@ func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, o
 		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
-
 	groupsAccessPermissions, err := p.getGroupsAccessPermissionsToProject(ctx, repo.ID, readPermission)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error fetching permissions for Gerrit project: %s", repo.ID)

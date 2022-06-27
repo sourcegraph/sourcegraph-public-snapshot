@@ -2,15 +2,15 @@ package gerrit
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -66,6 +66,53 @@ func TestProvider_FetchAccount(t *testing.T) {
 				t.Fatalf("account was nil")
 			}
 			// TODO: validate account
+		})
+	}
+}
+
+func TestProvider_FetchRepoPerms(t *testing.T) {
+	testCases := []struct {
+		name   string
+		client mockClient
+		err    string
+	}{
+		{
+			name: "GetProjectAccessPermissions fails",
+			client: mockClient{
+				mockGetProjectAccessPermissions: func(ctx context.Context, projectID string) (gerrit.GetProjectAccessResponse, error) {
+					return nil, errors.New("fake error")
+				},
+			},
+			err: "error fetching permissions for Gerrit project: project: error when calling GetProjectAccessPermissions: fake error",
+		},
+		{
+			name: "project ID doesnt exist",
+			client: mockClient{
+				mockGetProjectAccessPermissions: func(ctx context.Context, projectID string) (gerrit.GetProjectAccessResponse, error) {
+					return gerrit.GetProjectAccessResponse{
+						"fakeProject": nil,
+					}, nil
+				},
+			},
+			err: "error fetching permissions for Gerrit project: project: could not find project in GetProjectAccessPermissions response: want \"project\" but have map[]",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := NewTestProvider(&tc.client)
+			repo := &extsvc.Repository{}
+			repo.ID = "project"
+			repo.ServiceID = "https://gerrit.sgdev.org/"
+			repo.ServiceType = "GERRIT"
+			p.codeHost = &extsvc.CodeHost{
+				ServiceType: "GERRIT",
+				ServiceID:   "https://gerrit.sgdev.org/",
+			}
+			_, err := p.FetchRepoPerms(context.Background(), repo, authz.FetchPermsOptions{})
+			if diff := cmp.Diff(err.Error(), tc.err); diff != "" {
+				t.Fatalf("warnings did not match: %s", diff)
+			}
+
 		})
 	}
 }

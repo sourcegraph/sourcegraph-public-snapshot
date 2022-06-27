@@ -2,7 +2,6 @@ package gerrit
 
 import (
 	"context"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 )
 
@@ -51,14 +50,14 @@ func (m *mockClient) GetGroupByName(ctx context.Context, groupName string) (gerr
 }
 
 func (m *mockClient) GetProjectAccessPermissions(ctx context.Context, project string) (gerrit.GetProjectAccessResponse, error) {
-	if m.mockGetGroup != nil {
+	if m.mockGetProjectAccessPermissions != nil {
 		return m.mockGetProjectAccessPermissions(ctx, project)
 	}
 	return gerrit.GetProjectAccessResponse{}, nil
 }
 
 func (m *mockClient) ListGroupMembers(ctx context.Context, groupID string) (gerrit.ListAccountsResponse, error) {
-	if m.mockGetGroup != nil {
+	if m.mockListGroupMembers != nil {
 		return m.mockListGroupMembers(ctx, groupID)
 	}
 	return gerrit.ListAccountsResponse{}, nil
