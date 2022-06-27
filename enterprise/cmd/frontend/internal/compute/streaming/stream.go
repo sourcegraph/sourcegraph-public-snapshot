@@ -162,6 +162,8 @@ LOOP:
 			ProposedQueries: pqs,
 		})
 	}
+
+	_ = eventWriter.Event("progress", progress.Final())
 }
 
 type args struct {

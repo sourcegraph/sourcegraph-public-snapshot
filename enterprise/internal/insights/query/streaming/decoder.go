@@ -145,8 +145,21 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 
 	return client.ComputeMatchContextStreamDecoder{
 		OnProgress: func(progress *streamapi.Progress) {
-			println("progress!")
-			// ctr.Alerts = append(ctr.Alerts, "woop woop")
+			if !progress.Done {
+				return
+			}
+			// Skipped elements are built progressively for a Progress update until it is Done, so
+			// we want to register its contents only once it is done.
+			for _, skipped := range progress.Skipped {
+				// ShardTimeout is a specific skipped event that we want to retry on. Currently
+				// we only retry on Alert events so this is why we add it there. This behaviour will
+				// be uniformised eventually.
+				if skipped.Reason == streamapi.ShardTimeout {
+					ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				} else {
+					ctr.SkippedReasons = append(ctr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				}
+			}
 		},
 		OnResult: func(results []compute.MatchContext) {
 			for _, result := range results {

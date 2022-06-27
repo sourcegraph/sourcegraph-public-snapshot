@@ -27,6 +27,18 @@ func (p *progressAggregator) Current() api.Progress {
 	return api.BuildProgressEvent(p.currentStats(), p.RepoNamer)
 }
 
+// Final returns the current progress event, but with final fields set to
+// indicate it is the last progress event.
+func (p *progressAggregator) Final() api.Progress {
+	p.Dirty = false
+
+	s := p.currentStats()
+
+	event := api.BuildProgressEvent(s, p.RepoNamer)
+	event.Done = true
+	return event
+}
+
 func getRepos(stats streaming.Stats, status searchshared.RepoStatus) []sgapi.RepoID {
 	var repos []sgapi.RepoID
 	stats.Status.Filter(status, func(id sgapi.RepoID) {

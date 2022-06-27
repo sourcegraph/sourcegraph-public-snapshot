@@ -17,11 +17,7 @@ type RepoNamer func(ids []api.RepoID) (names []api.RepoName)
 func BuildProgressEvent(stats ProgressStats, namer RepoNamer) Progress {
 	stats.namer = namer
 
-	skipped := []Skipped{
-		{
-			Title: "Leo's skipped event",
-		},
-	}
+	skipped := []Skipped{}
 
 	for _, handler := range skippedHandlers {
 		if sk, ok := handler(stats); ok {
