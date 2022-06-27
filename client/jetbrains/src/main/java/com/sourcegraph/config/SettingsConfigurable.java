@@ -51,13 +51,16 @@ public class SettingsConfigurable implements Configurable {
     public void apply() {
         MessageBus bus = project.getMessageBus();
         PluginSettingChangeActionNotifier publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
+
         SourcegraphProjectService settings = SourcegraphProjectService.getInstance(project);
+
         String oldUrl = settings.url;
         String oldAccessToken = settings.accessToken;
         String newUrl = mySettingsComponent.getSourcegraphUrl();
         String newAccessToken = mySettingsComponent.getAccessToken();
+        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken);
 
-        publisher.beforeAction(oldUrl, oldAccessToken, newUrl, newAccessToken);
+        publisher.beforeAction(context);
 
         settings.url = newUrl;
         settings.accessToken = newAccessToken;
@@ -65,7 +68,7 @@ public class SettingsConfigurable implements Configurable {
         settings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
         settings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
 
-        publisher.afterAction(oldUrl, oldAccessToken, newUrl, newAccessToken);
+        publisher.afterAction(context);
     }
 
     @Override
