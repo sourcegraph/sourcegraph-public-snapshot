@@ -16,7 +16,7 @@ The following repositories have precise code intelligence enabled:
 - [scalameta/metals](https://sourcegraph.com/github.com/scalameta/metals/-/blob/metals/src/main/scala/scala/meta/metals/Main.scala?L48:36&subtree=true#tab=references)
 
 ### Kotlin
-- [Strum355/slashsourcegraph](https://sourcegraph.com/github.com/Strum355/slash-sourcegraph@master/-/blob/src/main/kotlin/slashsourcegraph/App.kt?L162:30&subtree=true#tab=references)
+- [fwcd/kotlin-language-server](https://sourcegraph.com/github.com/fwcd/kotlin-language-server@1.3.0/-/blob/server/src/main/kotlin/org/javacs/kt/CompiledFile.kt?L22:7#tab=references)
 
 
 ## Python
