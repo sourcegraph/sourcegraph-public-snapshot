@@ -44,7 +44,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     const [validationError, setValidationError] = useState<Error | null>(null)
     const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
-    const [additionalInformation, setAdditionalInformation] = useState<string>('')
+    const [better, setBetter] = useState<string>('')
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
@@ -53,7 +53,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 state: {
                     // Mutation is only submitted when score is defined
                     score: score!,
-                    feedback: additionalInformation,
+                    feedback: better,
                 },
             })
         },
@@ -84,7 +84,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                     score,
                     useCases,
                     otherUseCase,
-                    additionalInformation,
+                    better,
                 },
             },
         })
@@ -110,8 +110,8 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 onChangeUseCases={setUseCases}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={setOtherUseCase}
-                additionalInformation={additionalInformation}
-                onChangeAdditionalInformation={setAdditionalInformation}
+                better={better}
+                onChangeBetter={setBetter}
                 email={email}
                 onChangeEmail={setEmail}
             />

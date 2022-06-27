@@ -218,7 +218,7 @@ describe('SurveyToast', () => {
                     expect(renderResult.getByLabelText(labelValue)).toBeVisible()
                 })
             }
-            expect(renderResult.getByLabelText('Anything else you would like to share with us?')).toBeVisible()
+            expect(renderResult.getByLabelText('What can Sourcegraph do to provide a better product?')).toBeVisible()
         })
 
         it('Should allow user to provide arbitrary use case', () => {
@@ -229,9 +229,9 @@ describe('SurveyToast', () => {
         })
 
         it('Should show some gratitude after usecase submission', async () => {
-            const reasonInput = renderResult.getByLabelText('Anything else you would like to share with us?')
+            const reasonInput = renderResult.getByLabelText('What can Sourcegraph do to provide a better product?')
             expect(reasonInput).toBeVisible()
-            fireEvent.change(reasonInput, { target: { value: mockVariables.additionalInformation } })
+            fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 
             const respondToIncidentCheck = renderResult.getByLabelText('Respond to incidents')
             expect(respondToIncidentCheck).toBeVisible()

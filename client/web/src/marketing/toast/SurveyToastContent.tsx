@@ -21,7 +21,7 @@ const SUBMIT_SURVEY = gql`
 export interface TotalFeedbackState {
     score: number
     useCases: SurveyUseCase[]
-    additionalInformation: string
+    better: string
     otherUseCase: string
     email: string
 }
@@ -52,7 +52,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
         score: -1,
         useCases: [],
         otherUseCase: '',
-        additionalInformation: '',
+        better: '',
         email: '',
     })
 
@@ -131,10 +131,8 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     onChangeUseCases={useCases => setUserFeedback(current => ({ ...current, useCases }))}
                     otherUseCase={userFeedback.otherUseCase}
                     onChangeOtherUseCase={otherUseCase => setUserFeedback(current => ({ ...current, otherUseCase }))}
-                    additionalInformation={userFeedback.additionalInformation}
-                    onChangeAdditionalInformation={additionalInformation =>
-                        setUserFeedback(current => ({ ...current, additionalInformation }))
-                    }
+                    better={userFeedback.better}
+                    onChangeBetter={better => setUserFeedback(current => ({ ...current, better }))}
                     email={userFeedback.email}
                     onChangeEmail={email => setUserFeedback(current => ({ ...current, email }))}
                     onDismiss={handleDismiss}

@@ -11,12 +11,12 @@ import { Toast } from './Toast'
 import styles from './SurveyUseCaseToast.module.scss'
 
 export interface UseCaseFeedbackState
-    extends Pick<TotalFeedbackState, 'useCases' | 'otherUseCase' | 'additionalInformation' | 'email'> {}
+    extends Pick<TotalFeedbackState, 'useCases' | 'otherUseCase' | 'better' | 'email'> {}
 
 export interface UseCaseFeedbackModifiers {
     onChangeUseCases: (useCases: TotalFeedbackState['useCases']) => void
     onChangeOtherUseCase: (otherUseCase: TotalFeedbackState['otherUseCase']) => void
-    onChangeAdditionalInformation: (additionalInfo: TotalFeedbackState['additionalInformation']) => void
+    onChangeBetter: (additionalInfo: TotalFeedbackState['better']) => void
     onChangeEmail: (email: TotalFeedbackState['email']) => void
 }
 
@@ -35,8 +35,8 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
     onChangeUseCases,
     otherUseCase,
     onChangeOtherUseCase,
-    additionalInformation,
-    onChangeAdditionalInformation,
+    better,
+    onChangeBetter,
     email,
     onChangeEmail,
     authenticatedUser,
@@ -52,8 +52,8 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
                 onChangeUseCases={onChangeUseCases}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={onChangeOtherUseCase}
-                additionalInformation={additionalInformation}
-                onChangeAdditionalInformation={onChangeAdditionalInformation}
+                better={better}
+                onChangeBetter={onChangeBetter}
                 email={email}
                 onChangeEmail={onChangeEmail}
             />

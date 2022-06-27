@@ -68,10 +68,6 @@ func (s *surveyResponseResolver) OtherUseCase() *string {
 	return s.surveyResponse.OtherUseCase
 }
 
-func (s *surveyResponseResolver) AdditionalInformation() *string {
-	return s.surveyResponse.AdditionalInformation
-}
-
 func (s *surveyResponseResolver) CreatedAt() DateTime {
 	return DateTime{Time: s.surveyResponse.CreatedAt}
 }
@@ -87,18 +83,18 @@ type SurveySubmissionInput struct {
 	UseCases *[]string
 	// OtherUseCase is the answer to "What else are you using Sourcegraph to do?".
 	OtherUseCase *string
-	// AdditionalInformation is the answer to "Anything else you’d like to share with us?".
-	AdditionalInformation *string
+	// Better is the answer to "What can Sourcegraph do to provide a better product"
+	Better *string
 }
 
 type surveySubmissionForHubSpot struct {
-	Email                 *string   `url:"email"`
-	Score                 int32     `url:"nps_score"`
-	UseCases              *[]string `url:"nps_use_cases"`
-	OtherUseCase          *string   `url:"nps_other_use_case"`
-	AdditionalInformation *string   `url:"nps_additional_information"`
-	IsAuthenticated       bool      `url:"user_is_authenticated"`
-	SiteID                string    `url:"site_id"`
+	Email           *string   `url:"email"`
+	Score           int32     `url:"nps_score"`
+	UseCases        *[]string `url:"nps_use_cases"`
+	OtherUseCase    *string   `url:"nps_other_use_case"`
+	Better          *string   `url:"nps_improvement"`
+	IsAuthenticated bool      `url:"user_is_authenticated"`
+	SiteID          string    `url:"site_id"`
 }
 
 // SubmitSurvey records a new satisfaction (NPS) survey response by the current user.
@@ -126,20 +122,20 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.UseCases, input.OtherUseCase, input.AdditionalInformation)
+	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.UseCases, input.OtherUseCase, input.Better)
 	if err != nil {
 		return nil, err
 	}
 
 	// Submit form to HubSpot
 	if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
-		Email:                 email,
-		Score:                 args.Input.Score,
-		UseCases:              args.Input.UseCases,
-		OtherUseCase:          args.Input.OtherUseCase,
-		AdditionalInformation: args.Input.AdditionalInformation,
-		IsAuthenticated:       actor.IsAuthenticated(),
-		SiteID:                siteid.Get(),
+		Email:           email,
+		Score:           args.Input.Score,
+		UseCases:        args.Input.UseCases,
+		OtherUseCase:    args.Input.OtherUseCase,
+		Better:          args.Input.Better,
+		IsAuthenticated: actor.IsAuthenticated(),
+		SiteID:          siteid.Get(),
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)

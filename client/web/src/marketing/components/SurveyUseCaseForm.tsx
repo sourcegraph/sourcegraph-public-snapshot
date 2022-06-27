@@ -47,8 +47,8 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
     onChangeUseCases,
     otherUseCase,
     onChangeOtherUseCase,
-    additionalInformation,
-    onChangeAdditionalInformation,
+    better,
+    onChangeBetter,
     email,
     onChangeEmail,
     formLabelClassName,
@@ -113,11 +113,11 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 containerClassName="mt-3"
                 label={
                     <Text size="small" className={formLabelClassName}>
-                        Anything else you would like to share with us?
+                        What can Sourcegraph do to provide a better product?
                     </Text>
                 }
-                onChange={event => onChangeAdditionalInformation(event.target.value)}
-                value={additionalInformation}
+                onChange={event => onChangeBetter(event.target.value)}
+                value={better}
             />
             {!authenticatedUser && (
                 <Input

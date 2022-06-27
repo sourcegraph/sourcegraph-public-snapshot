@@ -10,7 +10,7 @@ export const mockVariables: SubmitSurveyVariables['input'] = {
     score: 10,
     useCases: [SurveyUseCase.RESPOND_TO_INCIDENTS],
     otherUseCase: 'Learn best practices',
-    additionalInformation: 'Been a very helpful tool',
+    better: 'Add this new feature',
     email: '',
 }
 
