@@ -224,8 +224,9 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 const { edits, selectText, cursorOffset } = run(editor.getValue())
                 const monacoEdits = toMonacoEdits(model, edits)
                 let selection: monaco.Selection | undefined
+                const afterText = jsonc.applyEdits(editor.getValue(), edits)
+
                 if (typeof selectText === 'string') {
-                    const afterText = jsonc.applyEdits(editor.getValue(), edits)
                     let offset = afterText.slice(edits[0].offset).indexOf(selectText)
                     if (offset !== -1) {
                         offset += edits[0].offset
@@ -243,18 +244,41 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     }
                 }
                 if (!selection) {
-                    // TODO: This is buggy. See
-                    // https://github.com/sourcegraph/sourcegraph/issues/2756.
-                    selection = monaco.Selection.fromPositions(
-                        {
-                            lineNumber: monacoEdits[0].range.startLineNumber,
-                            column: monacoEdits[0].range.startColumn,
-                        },
-                        {
-                            lineNumber: monacoEdits[monacoEdits.length - 1].range.endLineNumber,
-                            column: monacoEdits[monacoEdits.length - 1].range.endColumn,
-                        }
-                    )
+                    // `jsonc-parser.modify()` returns a `jsonc-parser.Edit` which
+                    // includes the line before the added property (because the edit
+                    // involves comma+line-separation and formatting)
+                    //
+                    // Assumptions:
+                    //   1. Well-formed JSON
+                    //   2. `formattingOptions.eol` in `configHelpers.ts` is set to `'\n'`
+                    //   3. There's always a preceding line, eg:
+                    //      - `{\n...` (empty settings object)
+                    //      - `  "search.contextLines": 3,\n...` (previous property is a scalar)
+                    //      - `  ],\n...` (previous property is an array)
+
+                    const insertionWithPrecedingLine = edits[0].content
+                    const insertionLineOffset = insertionWithPrecedingLine.indexOf('\n') + 1
+                    const insertion = insertionWithPrecedingLine.slice(insertionLineOffset)
+                    const reProperty = /"[^"]+"\s*:\s*/g;   // Need global flag `g` set to get `lastIndex`
+                                                            // Need semi-colon after regex flags
+                    const match = reProperty.exec(insertion)
+                    if (!match) {
+                        throw new Error("Can't find property name in added JSON.  This should never happen.");
+                    }
+                    const valueOffset = insertionLineOffset + reProperty.lastIndex
+                    const offset = edits[0].offset + valueOffset
+                    const length = edits[0].content.length - valueOffset
+                    if (typeof cursorOffset === 'number') {
+                        selection = monaco.Selection.fromPositions(
+                            getPositionAt(afterText, offset + cursorOffset),
+                            getPositionAt(afterText, offset + cursorOffset)
+                        )
+                    } else {
+                        selection = monaco.Selection.fromPositions(
+                            getPositionAt(afterText, offset),
+                            getPositionAt(afterText, offset + length)
+                        )
+                    }
                 }
                 editor.executeEdits(id, monacoEdits, [selection])
                 editor.revealPositionInCenter(selection.getStartPosition())
