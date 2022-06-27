@@ -149,6 +149,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		h.flushTickerInternal,
 		h.pingTickerInterval,
 		displayLimit,
+		args.EnableChunkMatches,
 		logLatency,
 	)
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
@@ -195,10 +196,11 @@ func logSearch(ctx context.Context, alert *search.Alert, err error, start time.T
 }
 
 type args struct {
-	Query       string
-	Version     string
-	PatternType string
-	Display     int
+	Query              string
+	Version            string
+	PatternType        string
+	Display            int
+	EnableChunkMatches bool
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -232,6 +234,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
 		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
+	chunkMatches := get("cm", "f")
+	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
+		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
 	}
 
 	decorationLimit := get("dl", "0")
@@ -275,10 +282,10 @@ func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.E
 	return eventMatch
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
-		return fromFileMatch(v, repoCache)
+		return fromFileMatch(v, repoCache, enableChunkMatches)
 	case *result.RepoMatch:
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
@@ -288,11 +295,11 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
 	} else if fm.ChunkMatches.MatchCount() > 0 {
-		return fromContentMatch(fm, repoCache)
+		return fromContentMatch(fm, repoCache, enableChunkMatches)
 	}
 	return fromPathMatch(fm, repoCache)
 }
@@ -318,15 +325,60 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	return pathEvent
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
-	lineMatches := fm.ChunkMatches.AsLineMatches()
-	eventLineMatches := make([]streamhttp.EventLineMatch, 0, len(lineMatches))
-	for _, lm := range lineMatches {
-		eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
-			Line:             lm.Preview,
-			LineNumber:       lm.LineNumber,
-			OffsetAndLengths: lm.OffsetAndLengths,
+func fromChunkMatches(cms result.ChunkMatches) []streamhttp.ChunkMatch {
+	res := make([]streamhttp.ChunkMatch, 0, len(cms))
+	for _, cm := range cms {
+		res = append(res, fromChunkMatch(cm))
+	}
+	return res
+}
+
+func fromChunkMatch(cm result.ChunkMatch) streamhttp.ChunkMatch {
+	return streamhttp.ChunkMatch{
+		Content:      cm.Content,
+		ContentStart: fromLocation(cm.ContentStart),
+		Ranges:       fromRanges(cm.Ranges),
+	}
+}
+
+func fromLocation(l result.Location) streamhttp.Location {
+	return streamhttp.Location{
+		Offset: l.Offset,
+		Line:   l.Line,
+		Column: l.Column,
+	}
+}
+
+func fromRanges(rs result.Ranges) []streamhttp.Range {
+	res := make([]streamhttp.Range, 0, len(rs))
+	for _, r := range rs {
+		res = append(res, streamhttp.Range{
+			Start: fromLocation(r.Start),
+			End:   fromLocation(r.End),
 		})
+	}
+	return res
+}
+
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
+
+	var (
+		eventLineMatches  []streamhttp.EventLineMatch
+		eventChunkMatches []streamhttp.ChunkMatch
+	)
+
+	if enableChunkMatches {
+		eventChunkMatches = fromChunkMatches(fm.ChunkMatches)
+	} else {
+		lineMatches := fm.ChunkMatches.AsLineMatches()
+		eventLineMatches = make([]streamhttp.EventLineMatch, 0, len(lineMatches))
+		for _, lm := range lineMatches {
+			eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
+				Line:             lm.Preview,
+				LineNumber:       lm.LineNumber,
+				OffsetAndLengths: lm.OffsetAndLengths,
+			})
+		}
 	}
 
 	contentEvent := &streamhttp.EventContentMatch{
@@ -336,6 +388,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
 		LineMatches:  eventLineMatches,
+		ChunkMatches: eventChunkMatches,
 	}
 
 	if fm.InputRev != nil {
@@ -513,6 +566,7 @@ func newEventHandler(
 	flushInterval time.Duration,
 	progressInterval time.Duration,
 	displayLimit int,
+	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
 	ctx, cancel := context.WithCancel(ctx)
@@ -525,18 +579,19 @@ func newEventHandler(
 	})
 
 	eh := &eventHandler{
-		ctx:              ctx,
-		cancel:           cancel,
-		db:               db,
-		eventWriter:      eventWriter,
-		matchesBuf:       matchesBuf,
-		filters:          &streaming.SearchFilters{},
-		flushInterval:    flushInterval,
-		progress:         progress,
-		progressInterval: progressInterval,
-		displayRemaining: displayLimit,
-		first:            true,
-		logLatency:       logLatency,
+		ctx:                ctx,
+		cancel:             cancel,
+		db:                 db,
+		eventWriter:        eventWriter,
+		matchesBuf:         matchesBuf,
+		filters:            &streaming.SearchFilters{},
+		flushInterval:      flushInterval,
+		progress:           progress,
+		progressInterval:   progressInterval,
+		displayRemaining:   displayLimit,
+		enableChunkMatches: enableChunkMatches,
+		first:              true,
+		logLatency:         logLatency,
 	}
 
 	// Schedule the first flushes.
@@ -557,6 +612,8 @@ type eventHandler struct {
 	cancel context.CancelFunc
 
 	db database.DB
+
+	enableChunkMatches bool
 
 	eventWriter *eventWriter
 
@@ -602,7 +659,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 			continue
 		}
 
-		eventMatch := fromMatch(match, repoMetadata)
+		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
 		h.matchesBuf.Append(eventMatch)
 	}
 
