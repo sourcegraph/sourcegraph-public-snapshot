@@ -386,7 +386,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
 			bk.Env("GOMAXPROCS", "10"), // Ensure we're not blowing up the database connection count.
-			bk.Parallelism(100),
+			bk.Parallelism(50),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
 				TestReports: &bk.TestReportOpts{
