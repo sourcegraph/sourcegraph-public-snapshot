@@ -5,12 +5,11 @@ import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import { of } from 'rxjs'
 
 import { gql } from '@sourcegraph/http-client'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useObservable } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from '../../auth'
+import { AuthenticatedUser } from '../../auth'
 import { RecentFilesFragment } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
@@ -51,6 +50,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     recentFilesFragment,
     telemetryService,
     fetchMore,
+    authenticatedUser,
 }) => {
     const [recentFiles, setRecentFiles] = useState<null | RecentFilesFragment['recentFilesLogs']>(
         recentFilesFragment?.recentFilesLogs ?? null
@@ -103,7 +103,6 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         })
 
         if (data === undefined) {
-
             return
         }
         const node = data.node
@@ -116,7 +115,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     const contentDisplay = (
         <div>
             <div className="mb-1 mt-2">
-                <small>File</small>
+                <small>Files</small>
             </div>
             {processedResults?.length && (
                 <ul className="list-group-flush list-group mb-2">
@@ -139,65 +138,68 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         </div>
     )
 
-        const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
-        const gitRecentFiles = useObservable(
-            useMemo(
-                () =>
-                    checkHomePanelsFeatureFlag && authenticatedUser
-                        ? streamComputeQuery(
-                              'type:diff author:akhalifae@conncoll.edu'
-                          )
-                        : of([]),
-                [checkHomePanelsFeatureFlag]
-            )
+    const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
+    const gitRecentFiles = useObservable(
+        useMemo(
+            () =>
+                checkHomePanelsFeatureFlag && authenticatedUser
+                    ? streamComputeQuery(
+                          `content:output((.|\n)* -> $repo > $path) author:${authenticatedUser.email} type:diff after:"1 year ago" count:all`
+                      )
+                    : of([]),
+            [authenticatedUser, checkHomePanelsFeatureFlag]
         )
+    )
 
-        const gitSet = useMemo(() => {
-            let gitRepositoryParsedString: ComputeParseResult[] = []
-            if (gitRecentFiles) {
-                gitRepositoryParsedString = gitRecentFiles.map(value => JSON.parse(value) as ComputeParseResult)
-            }
-            const gitReposList = gitRepositoryParsedString?.flat()
+    const gitSet = useMemo(() => {
+        let gitRepositoryParsedString: ComputeParseResult[] = []
+        if (gitRecentFiles) {
+            gitRepositoryParsedString = gitRecentFiles.map(value => JSON.parse(value) as ComputeParseResult)
+        }
+        const gitReposList = gitRepositoryParsedString?.flat()
 
-            const gitSet = new Set<string>()
-            if (gitReposList) {
-                for (const git of gitReposList) {
-                    if (git.value) {
-                        gitSet.add(git.value)
-                    }
+        const gitSet = new Set<string>()
+        if (gitReposList) {
+            for (const git of gitReposList) {
+                if (git.value) {
+                    gitSet.add(git.value)
                 }
             }
+        }
 
-            return gitSet
-        }, [gitRecentFiles])
-
-        console.log(gitSet)
-
-        const gitFilesDisplay = (
-            <div className="mt-2">
-                {gitSet.size > 0 && (
-                    <ul className="list-group">
-                        {Array.from(gitSet).map(file => (
-                            <li key={`${file}`} className="text-monsospace text-break mb-2">
-                                <small>
-                                    <Link to={`/search?q=repo:${file}`} onClick={logFileClicked}>
-                                        <SyntaxHighlightedSearchQuery query={`file:${file}`} />
-                                    </Link>
-                                </small>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+        return gitSet
+    }, [gitRecentFiles])
+    const gitFilesDisplay = (
+        <div>
+            <div className="mb-1 mt-2">
+                <small>Files</small>
             </div>
-        )
+            {gitSet.size > 0 && (
+                <ul className="list-group-flush list-group mb-2">
+                    {Array.from(gitSet).map(file => (
+                        <li key={`${file}`} className="text-monospace mb-2 d-block">
+                            <small>
+                                <Link
+                                    to={`/${file.split(' > ')[0]}/-/blob/${file.split(' > ')[1].trim()}`}
+                                    onClick={logFileClicked}
+                                    data-testid="recent-files-item"
+                                >
+                                    {file}
+                                </Link>
+                            </small>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    )
     return (
         <PanelContainer
             className={classNames(className, 'recent-files-panel')}
             title="Recent files"
             state={processedResults ? (processedResults.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
-            // I switched these two displays because it was returning false
-            populatedContent={gitSet.size > 0 ? contentDisplay : gitFilesDisplay}
+            populatedContent={gitSet.size > 0 ? gitFilesDisplay : contentDisplay}
             emptyContent={emptyDisplay}
         />
     )
