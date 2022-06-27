@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class PostStartupActivity implements StartupActivity {
+public class PostStartupActivity implements StartupActivity.DumbAware {
     private static String generateAnonymousUserId() {
         return UUID.randomUUID().toString();
     }
