@@ -54,16 +54,18 @@ public class SettingsConfigurable implements Configurable {
         SourcegraphProjectService settings = SourcegraphProjectService.getInstance(project);
         String oldUrl = settings.url;
         String oldAccessToken = settings.accessToken;
+        String newUrl = mySettingsComponent.getSourcegraphUrl();
+        String newAccessToken = mySettingsComponent.getAccessToken();
 
-        publisher.beforeAction(oldUrl, oldAccessToken, mySettingsComponent.getSourcegraphUrl(), mySettingsComponent.getAccessToken());
+        publisher.beforeAction(oldUrl, oldAccessToken, newUrl, newAccessToken);
 
-        settings.url = mySettingsComponent.getSourcegraphUrl();
-        settings.accessToken = mySettingsComponent.getAccessToken();
+        settings.url = newUrl;
+        settings.accessToken = newAccessToken;
         settings.defaultBranch = mySettingsComponent.getDefaultBranchName();
         settings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
         settings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
 
-        publisher.afterAction(oldUrl, oldAccessToken, settings.url, settings.accessToken);
+        publisher.afterAction(oldUrl, oldAccessToken, newUrl, newAccessToken);
     }
 
     @Override
