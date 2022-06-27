@@ -24,6 +24,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<
         actionItemClassName={classNames('list-group-item list-group-item-action p-2 border-0', styles.actionItem)}
         selectedActionItemClassName="active border-primary"
         noResultsClassName="list-group-item text-muted"
+        buttonElement="button"
     />
 )
 

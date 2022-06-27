@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createMemoryHistory } from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -64,12 +64,19 @@ const defaultProps = (
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 })
 
-const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
+const decorator: DecoratorFn = Story => {
     useExperimentalFeatures.setState({ codeMonitoring: true })
     return <Story />
-})
+}
 
-add('Anonymous viewer', () => (
+const config: Meta = {
+    title: 'web/nav/GlobalNav',
+    decorators: [decorator],
+}
+
+export default config
+
+export const AnonymousViewer: Story = () => (
     <WebStory>
         {webProps => (
             <GlobalNavbar
@@ -81,9 +88,11 @@ add('Anonymous viewer', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Auth required', () => (
+AnonymousViewer.storyName = 'Anonymous viewer'
+
+export const AuthRequired: Story = () => (
     <WebStory>
         {webProps => (
             <GlobalNavbar
@@ -95,29 +104,31 @@ add('Auth required', () => (
             />
         )}
     </WebStory>
-))
-
-add(
-    'Authenticated viewer',
-    () => (
-        <WebStory>
-            {webProps => (
-                <GlobalNavbar
-                    {...defaultProps(webProps)}
-                    authRequired={false}
-                    authenticatedUser={
-                        { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
-                    }
-                    variant="default"
-                    showSearchBox={false}
-                />
-            )}
-        </WebStory>
-    ),
-    {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=985%3A1281',
-        },
-    }
 )
+
+AuthRequired.storyName = 'Auth required'
+
+export const AuthenticatedViewer: Story = () => (
+    <WebStory>
+        {webProps => (
+            <GlobalNavbar
+                {...defaultProps(webProps)}
+                authRequired={false}
+                authenticatedUser={
+                    { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
+                }
+                variant="default"
+                showSearchBox={false}
+            />
+        )}
+    </WebStory>
+)
+
+AuthenticatedViewer.storyName = 'Authenticated viewer'
+
+AuthenticatedViewer.parameters = {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=985%3A1281',
+    },
+}

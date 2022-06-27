@@ -13,10 +13,14 @@ exports[`StreamingProgressCount should not render a trace link when not opted in
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      0 results in 0.00 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        0 results in 0.00 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -40,10 +44,14 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      0 results in 0.00 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        0 results in 0.00 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -67,10 +75,14 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      0 results in 0.00 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        0 results in 0.00 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -103,10 +115,14 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      1 result in 1.25 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        1 result in 1.25 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -139,10 +155,14 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      123 results in 1.25 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        123 results in 1.25 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -175,10 +195,14 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      1.2m results in 52.50 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        1.2m results in 52.50 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -211,10 +235,14 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      123+ results in 1.25 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        123+ results in 1.25 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"
@@ -253,10 +281,14 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
     data-testid="streaming-progress-count"
   >
     <span
-      aria-live="polite"
-      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      class="position-relative"
     >
-      0 results in 0.00 seconds
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        0 results in 0.00 seconds
+      </span>
     </span>
     <span
       aria-hidden="true"

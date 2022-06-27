@@ -1,4 +1,4 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import { fake } from 'sinon'
 
@@ -7,13 +7,13 @@ import { WebStory } from '../../components/WebStory'
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockUser } from './testing/util'
 
-const config = {
+const config: Meta = {
     title: 'web/enterprise/code-monitoring/ManageCodeMonitorPage',
 }
 
 export default config
 
-export const _ManageCodeMonitorPage: Story = () => (
+export const ManageCodeMonitorPageStory: Story = () => (
     <WebStory>
         {props => (
             <ManageCodeMonitorPage
@@ -28,9 +28,8 @@ export const _ManageCodeMonitorPage: Story = () => (
     </WebStory>
 )
 
-_ManageCodeMonitorPage.storyName = 'ManageCodeMonitorPage'
-
-_ManageCodeMonitorPage.parameters = {
+ManageCodeMonitorPageStory.storyName = 'ManageCodeMonitorPage'
+ManageCodeMonitorPageStory.parameters = {
     design: {
         type: 'figma',
         url:

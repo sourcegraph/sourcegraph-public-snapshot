@@ -9,6 +9,18 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextPage } from './SearchContextPage'
 
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/enterprise/searchContexts/SearchContextPage',
+    decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [1200], disableSnapshot: false },
+    },
+}
+
+export default config
+
 const repositories: ISearchContextRepositoryRevisions[] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
@@ -59,18 +71,6 @@ const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
         ...mockContext,
         autoDefined: true,
     })
-
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
-const config: Meta = {
-    title: 'web/enterprise/searchContexts/SearchContextPage',
-    decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [1200], disableSnapshot: false },
-    },
-}
-
-export default config
 
 export const PublicContext: Story = () => (
     <WebStory>
@@ -128,7 +128,7 @@ export const Loading: Story = () => (
 
 Loading.storyName = 'loading'
 
-export const _Error: Story = () => (
+export const ErrorStory: Story = () => (
     <WebStory>
         {webProps => (
             <SearchContextPage
@@ -140,4 +140,4 @@ export const _Error: Story = () => (
     </WebStory>
 )
 
-_Error.storyName = 'error'
+ErrorStory.storyName = 'error'

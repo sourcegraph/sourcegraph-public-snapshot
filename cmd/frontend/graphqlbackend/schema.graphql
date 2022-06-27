@@ -1422,6 +1422,11 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
+    Retrieve a feature flag
+    """
+    featureFlag(name: String!): FeatureFlag!
+
+    """
     Evaluates a feature flag for the current user
     Returns null if feature flag does not exist
     """

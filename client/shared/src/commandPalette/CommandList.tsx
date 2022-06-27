@@ -41,7 +41,7 @@ import styles from './CommandList.module.scss'
 export interface CommandListPopoverButtonClassProps {
     /** The class name for the root button element of {@link CommandListPopoverButton}. */
     buttonClassName?: string
-    buttonElement?: 'span' | 'a'
+    buttonElement?: 'span' | 'a' | 'button'
     buttonOpenClassName?: string
 
     showCaret?: boolean
@@ -376,8 +376,24 @@ export const CommandListPopoverButton: React.FunctionComponent<
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
-    const close = useCallback(() => setIsOpen(false), [])
-    const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
+    // Capture active element on open in order to restore focus on close.
+    const originallyFocusedElement = useMemo(() => {
+        if (isOpen && document.activeElement instanceof HTMLElement) {
+            return document.activeElement
+        }
+        return null
+    }, [isOpen])
+
+    const close = useCallback(() => {
+        originallyFocusedElement?.focus()
+        setIsOpen(false)
+    }, [originallyFocusedElement])
+    const toggleIsOpen = useCallback(() => {
+        if (isOpen) {
+            originallyFocusedElement?.focus()
+        }
+        setIsOpen(!isOpen)
+    }, [isOpen, originallyFocusedElement])
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 

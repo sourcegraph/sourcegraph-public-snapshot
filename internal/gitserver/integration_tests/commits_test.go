@@ -1,4 +1,4 @@
-package git
+package inttests
 
 import (
 	"context"
@@ -14,11 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-)
-
-var (
-	fileWithAccess    = "file-with-access"
-	fileWithoutAccess = "file-without-access"
 )
 
 func TestGetCommits(t *testing.T) {
