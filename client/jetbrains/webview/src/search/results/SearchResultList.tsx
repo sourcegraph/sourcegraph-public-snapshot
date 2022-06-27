@@ -118,7 +118,6 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowDown') {
-                console.log('UP')
                 const nextElement = getSiblingResultElement(currentElement, 'next')
                 if (nextElement) {
                     selectResult(nextElement.id.replace('search-result-list-item-', ''))
@@ -129,7 +128,6 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowUp') {
-                console.log('DOWN')
                 const previousElement = getSiblingResultElement(currentElement, 'previous')
                 if (previousElement) {
                     selectResult(previousElement.id.replace('search-result-list-item-', ''))
