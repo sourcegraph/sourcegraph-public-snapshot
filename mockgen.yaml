@@ -245,6 +245,7 @@ mocks:
       - DBStore
       - LSIFStore
       - UploadService
+      - AutoIndexingService
   - filename: internal/codeintel/uploads/background/commitgraph/mocks_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph
     interfaces:
