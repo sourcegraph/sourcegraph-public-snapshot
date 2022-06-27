@@ -59,7 +59,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // deleted when the insight is scrolled out of view
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled')
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings

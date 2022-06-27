@@ -72,6 +72,7 @@ type operations struct {
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
 	selectRepositoriesForIndexScan              *observation.Operation
 	selectRepositoriesForRetentionScan          *observation.Operation
+	selectRepositoriesForLockfileIndexScan      *observation.Operation
 	softDeleteExpiredUploads                    *observation.Operation
 	updateCommitedAt                            *observation.Operation
 	updateConfigurationPolicy                   *observation.Operation
@@ -175,6 +176,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),
+		selectRepositoriesForLockfileIndexScan:      op("SelectRepositoriesForLockfileIndexScan"),
 		softDeleteExpiredUploads:                    op("SoftDeleteExpiredUploads"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),
 		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),

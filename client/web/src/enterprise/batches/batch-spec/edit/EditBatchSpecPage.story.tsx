@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -24,11 +24,18 @@ import { insertNameIntoLibraryItem } from '../yaml-util'
 import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/EditBatchSpecPage', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className="p-3" style={{ height: '95vh', width: '100%' }}>
         {story()}
     </div>
-))
+)
+
+const config: Meta = {
+    title: 'web/batches/batch-spec/edit/EditBatchSpecPage',
+    decorators: [decorator],
+}
+
+export default config
 
 const FIXTURE_ORG: SettingsOrgSubject = {
     __typename: 'Org',
@@ -79,7 +86,7 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
-add('editing for the first time', () => (
+export const EditFirstTime: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={FIRST_TIME_MOCKS}>
@@ -94,7 +101,9 @@ add('editing for the first time', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+EditFirstTime.storyName = 'editing for the first time'
 
 const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
     {
@@ -124,7 +133,7 @@ const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
     ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 ])
 
-add('editing the latest batch spec', () => (
+export const EditLatestBatchSpec: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MULTIPLE_SPEC_MOCKS}>
@@ -139,9 +148,11 @@ add('editing the latest batch spec', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('batch change not found', () => (
+EditLatestBatchSpec.storyName = 'editing the latest batch spec'
+
+export const BatchChangeNotFound: Story = () => (
     <WebStory>
         {props => (
             <EditBatchSpecPage
@@ -154,7 +165,9 @@ add('batch change not found', () => (
             />
         )}
     </WebStory>
-))
+)
+
+BatchChangeNotFound.storyName = 'batch change not found'
 
 const NO_EXECUTORS_MOCKS = new WildcardMockLink([
     {
@@ -169,7 +182,7 @@ const NO_EXECUTORS_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
-add('executors not active', () => (
+export const ExecutorsNotActive: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={NO_EXECUTORS_MOCKS}>
@@ -184,4 +197,6 @@ add('executors not active', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ExecutorsNotActive.storyName = 'executors not active'

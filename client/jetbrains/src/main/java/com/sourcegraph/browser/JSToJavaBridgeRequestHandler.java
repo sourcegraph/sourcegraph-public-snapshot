@@ -34,11 +34,7 @@ public class JSToJavaBridgeRequestHandler {
         try {
             switch (action) {
                 case "getConfig":
-                    JsonObject configAsJson = new JsonObject();
-                    configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
-                    configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(this.project));
-                    configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(this.project));
-                    return createSuccessResponse(configAsJson);
+                    return createSuccessResponse(ConfigUtil.getConfigAsJson(project));
                 case "getTheme":
                     JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                     return createSuccessResponse(currentThemeAsJson);

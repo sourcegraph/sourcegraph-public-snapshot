@@ -4,11 +4,11 @@ import classNames from 'classnames'
 
 import {
     BuildSearchQueryURLParameters,
-    QueryChangeSource,
     QueryState,
     SearchContextProps,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
+    EditorHint,
 } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -32,6 +32,7 @@ export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selected
 interface SearchTypeLinkProps extends SearchTypeLinksProps {
     type: SearchType
     children: string
+    'data-testid'?: string
 }
 
 /**
@@ -44,6 +45,7 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
     selectedSearchContextSpec,
     children,
     buildSearchURLQueryFromQueryState,
+    'data-testid': dataTestID,
 }) => {
     const builtURLQuery = buildSearchURLQueryFromQueryState({
         query: updateFilter(query, FilterType.type, type as string),
@@ -54,6 +56,7 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
         <Link
             to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
             className={styles.sidebarSectionListItem}
+            data-testid={dataTestID}
         >
             {children}
         </Link>
@@ -63,6 +66,7 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
 interface SearchTypeButtonProps {
     children: string
     onClick: () => void
+    'data-testid'?: string
 }
 
 /**
@@ -72,12 +76,14 @@ interface SearchTypeButtonProps {
 const SearchTypeButton: React.FunctionComponent<React.PropsWithChildren<SearchTypeButtonProps>> = ({
     children,
     onClick,
+    'data-testid': dataTestID,
 }) => (
     <Button
         className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'flex-1')}
         value={children}
         onClick={onClick}
         variant="link"
+        data-testid={dataTestID}
     >
         {children}
     </Button>
@@ -120,11 +126,10 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
             emptyValue: true,
         })
         props.onNavbarQueryChange({
-            changeSource: QueryChangeSource.searchTypes,
             query: updatedQuery.query,
             selectionRange: updatedQuery.placeholderRange,
             revealRange: updatedQuery.filterRange,
-            showSuggestions: true,
+            hint: EditorHint.ShowSuggestions,
         })
     }
 
@@ -135,11 +140,9 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
             emptyValue: false,
         })
         props.onNavbarQueryChange({
-            changeSource: QueryChangeSource.searchTypes,
             query: updatedQuery.query,
             selectionRange: updatedQuery.placeholderRange,
             revealRange: updatedQuery.filterRange,
-            showSuggestions: false,
         })
     }
 
@@ -153,7 +156,7 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
     }
 
     return [
-        <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo">
+        <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo" data-testid="search-type-suggest">
             Search repos by org or name
         </SearchTypeButton>,
         <SearchTypeButton onClick={updateQueryWithRepoDependenciesExample} key="repo-dependencies">
@@ -165,7 +168,13 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         <SearchTypeLinkOrButton {...props} type="diff" key="diff" onClick={() => updateQueryWithType('diff')}>
             Search diffs
         </SearchTypeLinkOrButton>,
-        <SearchTypeLinkOrButton {...props} type="commit" key="commit" onClick={() => updateQueryWithType('commit')}>
+        <SearchTypeLinkOrButton
+            {...props}
+            type="commit"
+            key="commit"
+            onClick={() => updateQueryWithType('commit')}
+            data-testid="search-type-submit"
+        >
             Search commit messages
         </SearchTypeLinkOrButton>,
     ]

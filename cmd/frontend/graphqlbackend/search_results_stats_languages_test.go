@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestSearchResultsStatsLanguages(t *testing.T) {
@@ -53,7 +52,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		}
 		return wantCommitID, nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		oid := gitdomain.OID{} // empty is OK for this test

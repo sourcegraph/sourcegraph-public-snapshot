@@ -15,6 +15,15 @@ import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '
 import { CodeIntelligenceBadgeContentProps } from './CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './CodeIntelligenceBadgeMenu'
 
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/codeintel/enterprise/CodeIntelligenceBadgeMenu',
+    decorators: [decorator],
+}
+
+export default config
+
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
@@ -254,15 +263,6 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
     ...defaultProps,
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
-
-const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
-
-const config: Meta = {
-    title: 'web/codeintel/enterprise/CodeIntelligenceBadgeMenu',
-    decorators: [decorator],
-}
-
-export default config
 
 export const Unsupported: Story = () => <CodeIntelligenceBadgeMenu {...defaultProps} />
 export const Unavailable: Story = () => <CodeIntelligenceBadgeMenu {...withPayload({ searchBasedSupport })} />

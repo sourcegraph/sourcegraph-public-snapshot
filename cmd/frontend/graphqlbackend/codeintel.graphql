@@ -24,6 +24,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        lockfileIndexingEnabled: Boolean!
     ): CodeIntelligenceConfigurationPolicy!
 
     """
@@ -41,6 +42,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        lockfileIndexingEnabled: Boolean!
     ): EmptyResponse
 
     """
@@ -363,6 +365,11 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     only consider the tip of the branch.
     """
     indexIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects lockfile-indexing schedules.
+    """
+    lockfileIndexingEnabled: Boolean!
 }
 
 """

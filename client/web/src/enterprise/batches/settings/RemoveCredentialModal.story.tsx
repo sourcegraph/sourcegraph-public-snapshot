@@ -7,13 +7,6 @@ import { WebStory } from '../../../components/WebStory'
 
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 
-const credential = {
-    id: '123',
-    isSiteCredential: false,
-    sshPublicKey:
-        'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-}
-
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
@@ -28,6 +21,13 @@ const config: Meta = {
 }
 
 export default config
+
+const credential = {
+    id: '123',
+    isSiteCredential: false,
+    sshPublicKey:
+        'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+}
 
 export const NoSsh: Story = () => (
     <WebStory>

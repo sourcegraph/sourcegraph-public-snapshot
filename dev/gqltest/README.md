@@ -34,9 +34,9 @@ Alternatively you can use the 1password CLI tool:
 
 ```sh
 # dev-private token for ghe.sgdev.org
-op get item bw4nttlfqve3rc6xqzbqq7l7pm | jq -r '.. | select(.t? == "k8s.sgdev.org") | @sh "export GITHUB_TOKEN=\(.v)"'
+op item get --format=json bw4nttlfqve3rc6xqzbqq7l7pm | jq -r '.. | select(.label? == "k8s.sgdev.org") | @sh "export GITHUB_TOKEN=\(.value)"'
 # AWS and Bitbucket tokens
-op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] | @sh "export \(.t)=\(.v)"'
+op item get --format=json 5q5lnpirajegt7uifngeabrak4 | jq -r '.fields[] | select(.label | (startswith("BITBUCKET_") or startswith("AWS_"))) | @sh "export \(.label)=\(.value)"'
 ```
 
 ## How to run tests

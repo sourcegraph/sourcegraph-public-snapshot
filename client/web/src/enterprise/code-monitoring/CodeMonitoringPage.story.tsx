@@ -1,4 +1,4 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -10,6 +10,19 @@ import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-o
 
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
+
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/CodeMonitoringPage',
+    parameters: {
+        chromatic: {
+            // Delay screenshot taking, so <CodeMonitoringPage /> is ready to show content.
+            delay: 600,
+            disableSnapshot: false,
+        },
+    },
+}
+
+export default config
 
 const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
     const result: ListCodeMonitors = {
@@ -34,26 +47,12 @@ const additionalPropsLongList = { ...additionalProps, fetchUserCodeMonitors: gen
 const additionalPropsEmptyList = { ...additionalProps, fetchUserCodeMonitors: generateMockFetchMonitors(0) }
 const additionalPropsAlwaysLoading = { ...additionalProps, fetchUserCodeMonitors: () => NEVER }
 
-const config = {
-    title: 'web/enterprise/code-monitoring/CodeMonitoringPage',
-    parameters: {
-        chromatic: {
-            // Delay screenshot taking, so <CodeMonitoringPage /> is ready to show content.
-            delay: 600,
-            disableSnapshot: false,
-        },
-    },
-}
-
-export default config
-
-export const CodeMonitoringListPageLessThan10Results: Story = () => (
+export const LessThan10Results: Story = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsShortList} />}</WebStory>
 )
 
-CodeMonitoringListPageLessThan10Results.storyName = 'Code monitoring list page - less than 10 results'
-
-CodeMonitoringListPageLessThan10Results.parameters = {
+LessThan10Results.storyName = 'Code monitoring list page - less than 10 results'
+LessThan10Results.parameters = {
     design: {
         type: 'figma',
         url:
@@ -61,13 +60,12 @@ CodeMonitoringListPageLessThan10Results.parameters = {
     },
 }
 
-export const CodeMonitoringListPageMoreThan10Results: Story = () => (
+export const MoreThan10Results: Story = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsLongList} />}</WebStory>
 )
 
-CodeMonitoringListPageMoreThan10Results.storyName = 'Code monitoring list page - more than 10 results'
-
-CodeMonitoringListPageMoreThan10Results.parameters = {
+MoreThan10Results.storyName = 'Code monitoring list page - more than 10 results'
+MoreThan10Results.parameters = {
     design: {
         type: 'figma',
         url:
@@ -75,13 +73,12 @@ CodeMonitoringListPageMoreThan10Results.parameters = {
     },
 }
 
-export const CodeMonitoringListPageLoading: Story = () => (
+export const PageLoading: Story = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsAlwaysLoading} />}</WebStory>
 )
 
-CodeMonitoringListPageLoading.storyName = 'Code monitoring list page - loading'
-
-CodeMonitoringListPageLoading.parameters = {
+PageLoading.storyName = 'Code monitoring list page - loading'
+PageLoading.parameters = {
     design: {
         type: 'figma',
         url:
@@ -89,13 +86,12 @@ CodeMonitoringListPageLoading.parameters = {
     },
 }
 
-export const CodeMonitoringListPageEmptyShowGettingStarted: Story = () => (
+export const ListPageEmptyShowGettingStarted: Story = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsEmptyList} />}</WebStory>
 )
 
-CodeMonitoringListPageEmptyShowGettingStarted.storyName = 'Code monitoring list page - empty, show getting started'
-
-CodeMonitoringListPageEmptyShowGettingStarted.parameters = {
+ListPageEmptyShowGettingStarted.storyName = 'Code monitoring list page - empty, show getting started'
+ListPageEmptyShowGettingStarted.parameters = {
     design: {
         type: 'figma',
         url:
@@ -103,31 +99,30 @@ CodeMonitoringListPageEmptyShowGettingStarted.parameters = {
     },
 }
 
-export const CodeMonitoringListPageUnauthenticatedShowGettingStarted: Story = () => (
+export const ListPageUnauthenticatedShowGettingStarted: Story = () => (
     <WebStory initialEntries={['/code-monitoring']}>
         {props => <CodeMonitoringPage {...props} {...additionalProps} authenticatedUser={null} />}
     </WebStory>
 )
 
-CodeMonitoringListPageUnauthenticatedShowGettingStarted.storyName =
+ListPageUnauthenticatedShowGettingStarted.storyName =
     'Code monitoring list page - unauthenticated, show getting started'
 
-export const CodeMonitoringEmptyListPage: Story = () => (
+export const EmptyListPage: Story = () => (
     <WebStory initialEntries={['/code-monitoring/getting-started']}>
         {props => <CodeMonitoringPage {...props} {...additionalPropsEmptyList} testForceTab="list" />}
     </WebStory>
 )
 
-CodeMonitoringEmptyListPage.storyName = 'Code monitoring empty list page'
-
-CodeMonitoringEmptyListPage.parameters = {
+EmptyListPage.storyName = 'Code monitoring empty list page'
+EmptyListPage.parameters = {
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/6WMfHdPt2ovTE1P527brwc/Code-monitor-getting-started-21161?node-id=87%3A277',
     },
 }
 
-export const CodeMonitoringEmptyListPageUnauthenticated: Story = () => (
+export const EmptyListPageUnauthenticated: Story = () => (
     <WebStory initialEntries={['/code-monitoring/getting-started']}>
         {props => (
             <CodeMonitoringPage {...props} {...additionalPropsEmptyList} authenticatedUser={null} testForceTab="list" />
@@ -135,9 +130,8 @@ export const CodeMonitoringEmptyListPageUnauthenticated: Story = () => (
     </WebStory>
 )
 
-CodeMonitoringEmptyListPageUnauthenticated.storyName = 'Code monitoring empty list page - unauthenticated'
-
-CodeMonitoringEmptyListPageUnauthenticated.parameters = {
+EmptyListPageUnauthenticated.storyName = 'Code monitoring empty list page - unauthenticated'
+EmptyListPageUnauthenticated.parameters = {
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/6WMfHdPt2ovTE1P527brwc/Code-monitor-getting-started-21161?node-id=1%3A1650',

@@ -564,7 +564,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         <ul className="mb-0">
                                             {step.outputVariables?.map(variable => (
                                                 <li key={variable.name}>
-                                                    {variable.name}: {variable.value}
+                                                    {variable.name}: {JSON.stringify(variable.value)}
                                                 </li>
                                             ))}
                                         </ul>

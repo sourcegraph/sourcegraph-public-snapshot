@@ -1422,6 +1422,11 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
+    Retrieve a feature flag
+    """
+    featureFlag(name: String!): FeatureFlag!
+
+    """
     Evaluates a feature flag for the current user
     Returns null if feature flag does not exist
     """
@@ -2126,6 +2131,10 @@ type SearchAlert {
     """
     description: String
     """
+    An identifier indicating the kind of alert
+    """
+    kind: String
+    """
     "Did you mean: ____" query proposals
     """
     proposedQueries: [SearchQueryDescription!]
@@ -2651,7 +2660,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """

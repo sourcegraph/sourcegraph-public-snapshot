@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
+import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, Toggles } from '@sourcegraph/search-ui'
@@ -141,7 +140,7 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
-                    <Icon aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             )}
         </H3>
@@ -311,7 +310,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
-                                        Learn more <Icon aria-label="Open in a new tab" as={ExternalLinkIcon} />
+                                        Learn more <Icon aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                                     </Link>
                                 </small>
                             </Text>
@@ -350,7 +349,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
-                                Sourcegraph Learn <Icon as={ExternalLinkIcon} aria-label="Open in a new tab" />
+                                Sourcegraph Learn <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
                             </Link>
                             <br />
                             <Link
@@ -358,7 +357,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
-                                Sourcegraph cheat sheet <Icon as={ExternalLinkIcon} aria-label="Open in a new tab" />
+                                Sourcegraph cheat sheet <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
                             </Link>
                         </Text>
                     </Container>

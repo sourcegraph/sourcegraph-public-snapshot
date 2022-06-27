@@ -18,6 +18,7 @@ const (
 	// IsAlias flags whether the original syntax referred to an alias rather
 	// than canonical form (r: instead of repo:)
 	IsAlias
+	Standard
 )
 
 var allLabels = map[labels]string{

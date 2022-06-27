@@ -57,7 +57,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     <PageTitle title="Create context" />
                     <PageHeader
                         description={

@@ -4,10 +4,8 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import * as Monaco from 'monaco-editor'
 
-import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
-import { DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
+import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -70,14 +68,6 @@ export interface JetBrainsSearchBoxProps
     onEditorCreated?: (editor: IEditor) => void
 }
 
-const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
-    ...DEFAULT_MONACO_OPTIONS,
-
-    // Reset to default value to avoid suggestion box shrinking.
-    // Related issue: https://github.com/microsoft/monaco-editor/issues/3147
-    suggestLineHeight: undefined,
-}
-
 export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren<JetBrainsSearchBoxProps>> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback, onChange } = props
 
@@ -135,7 +125,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
-                        editorOptions={MONACO_OPTIONS}
+                        editorComponent="codemirror6"
                     />
                     <JetBrainsToggles
                         patternType={props.patternType}
