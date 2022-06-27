@@ -141,3 +141,19 @@ func rootRelative(path string) string {
 
 	return path
 }
+
+// DatabaseByName returns the database registered to the given name, but
+// overrides the FS function to return the local file contents on disk
+// rather than the file contents that were bundled with the sg binary,
+// which is stale if you're not consistently running sg via `go run`
+// in-tree a local clone.
+func DatabaseByName(name string) (db.Database, bool) {
+	database, ok := db.DatabaseByName(name)
+	if !ok {
+		return db.Database{}, false
+	}
+
+	// TODO
+	database.FS = nil
+	return database, true
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
@@ -88,28 +89,13 @@ var (
 	// at compile-time in sg.
 	outputFactory = func() *output.Output { return std.Out.Output }
 
-	// expectedSchemaFactory returns the description of the given schema at the given version via
-	// the local git clone. If the version is not resolvable as a git rev-like, then an error is
-	// returned.
-	expectedSchemaFactory = func(filename, version string) (descriptions.SchemaDescription, error) {
-		ctx := context.Background()
-		output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
-
-		var schemaDescription descriptions.SchemaDescription
-		if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
-			return schemaDescription, err
-		}
-
-		return schemaDescription, nil
-	}
-
 	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
 	upToCommand     = cliutil.UpTo("sg migration", makeRunner, outputFactory, true)
 	undoCommand     = cliutil.Undo("sg migration", makeRunner, outputFactory, true)
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, expectedSchemaFactory)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, localGitExpectedSchemaFactory)
 	addLogCommand   = cliutil.AddLog(logger, "sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
@@ -210,6 +196,47 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	return cliutil.NewShim(r), nil
 }
 
+// localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
+// (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
+// exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
+func localGitExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
+	ctx := context.Background()
+	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
+
+	if err := output.Wait(); err != nil {
+		// See if there is an error indicating a missing object, but no other problems
+		return descriptions.SchemaDescription{}, false, filterLocalGitErrors(filename, version, err)
+	}
+
+	if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
+		return descriptions.SchemaDescription{}, false, err
+	}
+
+	return schemaDescription, true, nil
+}
+
+func filterLocalGitErrors(filename, version string, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	missingMessages := []string{
+		// unknown revision
+		fmt.Sprintf("fatal: invalid object name '%s^'", version),
+
+		// path unknown to the revision (regardless of repo state)
+		fmt.Sprintf("fatal: path '%s' does not exist in '%s^'", filename, version),
+		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s^'", filename, version),
+	}
+	for _, missingMessage := range missingMessages {
+		if strings.Contains(err.Error(), missingMessage) {
+			return nil
+		}
+	}
+
+	return err
+}
+
 func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
 	for _, name := range []string{"frontend", "codeintel", "codeinsights"} {
 		schema, err := resolveSchema(name)
@@ -250,7 +277,7 @@ func addExec(ctx *cli.Context) error {
 
 	var (
 		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+		database, ok = migration.DatabaseByName(databaseName)
 	)
 	if !ok {
 		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
@@ -281,7 +308,7 @@ func squashExec(ctx *cli.Context) (err error) {
 
 	var (
 		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+		database, ok = migration.DatabaseByName(databaseName)
 	)
 	if !ok {
 		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
@@ -309,7 +336,7 @@ func visualizeExec(ctx *cli.Context) (err error) {
 
 	var (
 		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+		database, ok = migration.DatabaseByName(databaseName)
 	)
 
 	if !ok {
@@ -331,7 +358,7 @@ func squashAllExec(ctx *cli.Context) (err error) {
 
 	var (
 		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+		database, ok = migration.DatabaseByName(databaseName)
 	)
 
 	if !ok {
