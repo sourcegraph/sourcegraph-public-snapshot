@@ -81,7 +81,7 @@ export function applyConfig(config: PluginConfig): void {
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
     anonymousUserId = config.anonymousUserId || 'no-user-id'
-    pluginVersion = config.pluginVersion || '0.0.0'
+    pluginVersion = config.pluginVersion
     polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
