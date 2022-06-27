@@ -1,12 +1,12 @@
-# 4. Sunset Datadog Integration
+# 4. Sunset Datadog integration
 
 Date: 2022-06-23
 
-### Context
+## Context
 
 [RFC 575](https://docs.google.com/document/d/1xnAgloZB8sEkyhecjml2ByQl-aUCrJdWDYOBj3asA9g/edit) led to implement a Datadog POC, in an effort to decrease the proliferation of and unify the observability tooling used for operating Sourcegraph instances _within Sourcegraph_.
 
-Reasons to not got further with the POC: 
+Reasons to not got further with the POC:
 
 - We have been underutilizing the platform quite heavily
 - The DevOps team no longer exists so we would need to find a new owner for this service soon.
@@ -17,11 +17,11 @@ Reasons to not got further with the POC:
 
 GCP Logs were envisioned but there was a strong push back, as its usuabilty was judged quite bad by teammates who worked with it.
 
-### Decision
+## Decision
 
 Sunset Datatog and drop all related code.
 
-### Consequences
+## Consequences
 
 - https://github.com/sourcegraph/sourcegraph/issues/37568
 - DevX team is responsible of sunsetting it with Dax's guidance.
