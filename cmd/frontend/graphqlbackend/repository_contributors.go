@@ -12,7 +12,7 @@ import (
 
 type repositoryContributorsArgs struct {
 	RevisionRange *string
-	ShortlogAfter *string
+	AfterDate     *string
 	Path          *string
 }
 
@@ -51,8 +51,8 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 		if r.args.Path != nil {
 			opt.Path = *r.args.Path
 		}
-		if r.args.ShortlogAfter != nil {
-			opt.After = *r.args.ShortlogAfter
+		if r.args.AfterDate != nil {
+			opt.After = *r.args.AfterDate
 		}
 		r.results, r.err = client.ShortLog(ctx, r.repo.RepoName(), opt)
 	})

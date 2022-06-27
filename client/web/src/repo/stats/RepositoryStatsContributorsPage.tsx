@@ -113,16 +113,10 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
 }
 
 const CONTRIBUTORS_QUERY = gql`
-    query RepositoryContributors(
-        $repo: ID!
-        $first: Int
-        $revisionRange: String
-        $shortlogAfter: String
-        $path: String
-    ) {
+    query RepositoryContributors($repo: ID!, $first: Int, $revisionRange: String, $afterDate: String, $path: String) {
         node(id: $repo) {
             ... on Repository {
-                contributors(first: $first, revisionRange: $revisionRange, shortlogAfter: $shortlogAfter, path: $path) {
+                contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
                     ...RepositoryContributorConnectionFields
                 }
             }
@@ -219,7 +213,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
             first: BATCH_COUNT,
             repo: repo.id,
             revisionRange: spec.revisionRange,
-            shortlogAfter: spec.after,
+            afterDate: spec.after,
             path: spec.path,
         },
         getConnection: result => {
