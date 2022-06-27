@@ -12,8 +12,9 @@ import java.util.Objects;
 
 public class SettingsChangeListener implements Disposable {
     private final MessageBusConnection connection;
+    private JavaToJSBridge javaToJSBridge;
 
-    public SettingsChangeListener(@NotNull Project project, @NotNull JavaToJSBridge javaToJSBridge) {
+    public SettingsChangeListener(@NotNull Project project) {
         MessageBus bus = project.getMessageBus();
 
         connection = bus.connect();
@@ -28,6 +29,10 @@ public class SettingsChangeListener implements Disposable {
 
             @Override
             public void afterAction(@NotNull PluginSettingChangeContext context) {
+                if (javaToJSBridge == null) {
+                    return;
+                }
+
                 javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
 
                 if (!Objects.equals(context.oldUrl, context.newUrl)) {
@@ -45,6 +50,10 @@ public class SettingsChangeListener implements Disposable {
                 }
             }
         });
+    }
+
+    public void setJavaToJSBridge(JavaToJSBridge javaToJSBridge) {
+        this.javaToJSBridge = javaToJSBridge;
     }
 
     @Override
