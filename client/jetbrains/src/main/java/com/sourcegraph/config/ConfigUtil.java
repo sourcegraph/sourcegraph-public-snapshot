@@ -19,6 +19,8 @@ public class ConfigUtil {
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
         configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
+        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
+        configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         return configAsJson;
     }
 
@@ -47,6 +49,15 @@ public class ConfigUtil {
             return UserLevelConfig.getSourcegraphUrl();
         }
         return url.endsWith("/") ? url : url + "/";
+    }
+
+    @Nullable
+    public static String getAnonymousUserId() {
+        return SourcegraphApplicationService.getInstance().getAnonymousUserId();
+    }
+
+    public static void setAnonymousUserId(@Nullable String anonymousUserId) {
+        SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
     }
 
     @Nullable

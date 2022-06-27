@@ -1,6 +1,7 @@
 package search
 
 import (
+	"archive/tar"
 	"context"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -71,7 +73,7 @@ func foo(go string) {}
 
 				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
 				defer cancel()
-				err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+				err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -128,7 +130,7 @@ func foo(go.txt) {}
 		extensionHint := filepath.Ext(filename)
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, zf, all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
+		err := structuralSearch(ctx, comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
@@ -321,7 +323,7 @@ func TestIncludePatterns(t *testing.T) {
 	}
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
+	err = structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +363,7 @@ func TestRule(t *testing.T) {
 
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
+	err = structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -429,7 +431,7 @@ func bar() {
 		return func(t *testing.T) {
 			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
 			defer cancel()
-			err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+			err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 			require.NoError(t, err)
 
 			require.Equal(t, wantCount, count(sender.collected))
@@ -473,7 +475,7 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -517,7 +519,7 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -683,4 +685,66 @@ func Test_chunkRanges(t *testing.T) {
 			require.Equal(t, tc.output, got)
 		})
 	}
+}
+
+func TestTarInput(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"main.go": `
+func foo() {
+    fmt.Println("foo")
+}
+
+func bar() {
+    fmt.Println("bar")
+}
+`,
+	}
+
+	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+
+	tarInputEventC := make(chan comby.TarInputEvent, 1)
+	hdr := tar.Header{
+		Name: "main.go",
+		Mode: 0600,
+		Size: int64(len(input["main.go"])),
+	}
+	tarInputEventC <- comby.TarInputEvent{
+		Header:  hdr,
+		Content: []byte(input["main.go"]),
+	}
+	close(tarInputEventC)
+
+	t.Run("Structural search tar input to comby", func(t *testing.T) {
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+		defer cancel()
+		err := structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		if err != nil {
+			t.Fatal(err)
+		}
+		matches := sender.collected
+		expected := []protocol.FileMatch{{
+			Path: "main.go",
+			ChunkMatches: []protocol.ChunkMatch{{
+				Content:      "func foo() {\n    fmt.Println(\"foo\")\n}",
+				ContentStart: protocol.Location{Offset: 1, Line: 1},
+				Ranges: []protocol.Range{{
+					Start: protocol.Location{Offset: 12, Line: 1, Column: 11},
+					End:   protocol.Location{Offset: 38, Line: 3, Column: 1},
+				}},
+			}, {
+				Content:      "func bar() {\n    fmt.Println(\"bar\")\n}",
+				ContentStart: protocol.Location{Offset: 40, Line: 5},
+				Ranges: []protocol.Range{{
+					Start: protocol.Location{Offset: 51, Line: 5, Column: 11},
+					End:   protocol.Location{Offset: 77, Line: 7, Column: 1},
+				}},
+			}},
+		}}
+		require.Equal(t, expected, matches)
+	})
 }

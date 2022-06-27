@@ -341,11 +341,11 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
         if (!editor) {
             return
         }
-        const replacePattern = /[\n\r↵]/g
+        const replacePattern = /[\n\r↵]+/g
         const disposable = editor.onDidChangeModelContent(() => {
             const value = editor.getValue()
             onChange({
-                query: preventNewLine ? value.replace(replacePattern, '') : value,
+                query: preventNewLine ? value.replace(replacePattern, ' ') : value,
                 changeSource: QueryChangeSource.userInput,
             })
         })

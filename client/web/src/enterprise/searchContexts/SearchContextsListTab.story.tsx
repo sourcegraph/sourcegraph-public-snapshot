@@ -14,6 +14,22 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
+const decorator: DecoratorFn = story => (
+    <div className="p-3 container" style={{ position: 'static' }}>
+        {story()}
+    </div>
+)
+
+const config: Meta = {
+    title: 'web/enterprise/searchContexts/SearchContextsListTab',
+    decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [1200], disableSnapshot: false },
+    },
+}
+
+export default config
+
 const defaultProps: SearchContextsListTabProps = {
     authenticatedUser: null,
     isSourcegraphDotCom: true,
@@ -82,25 +98,7 @@ const propsWithContexts: SearchContextsListTabProps = {
         }),
 }
 
-const decorator: DecoratorFn = story => (
-    <div className="p-3 container" style={{ position: 'static' }}>
-        {story()}
-    </div>
-)
-
-const config: Meta = {
-    title: 'web/enterprise/searchContexts/SearchContextsListTab',
-    decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [1200], disableSnapshot: false },
-    },
-}
-
-export default config
-
 export const Default: Story = () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>
-
-Default.storyName = 'default'
 
 export const WithSourcegraphDotComDisabled: Story = () => (
     <WebStory>{() => <SearchContextsListTab {...propsWithContexts} isSourcegraphDotCom={false} />}</WebStory>

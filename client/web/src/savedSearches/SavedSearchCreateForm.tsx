@@ -6,6 +6,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -52,14 +53,18 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 map(() => true as const),
                                 catchError((error): [ErrorLike] => [asError(error)])
                             )
-                        )
+                        ).pipe(map(createdOrError => [createdOrError, fields.description] as const))
                     )
                 )
-                .subscribe(createdOrError => {
+                .subscribe(([createdOrError, queryDescription]) => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
                         eventLogger.log('SavedSearchCreated')
-                        this.props.history.push(`${this.props.namespace.url}/searches`)
+                        screenReaderAnnounce(`Saved ${queryDescription} search`)
+                        this.props.history.push({
+                            pathname: `${this.props.namespace.url}/searches`,
+                            state: { description: queryDescription },
+                        })
                     }
                 })
         )

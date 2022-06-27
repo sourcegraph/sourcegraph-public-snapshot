@@ -14,6 +14,15 @@ import {
 import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/BatchChangesSettingsArea',
+    decorators: [decorator],
+}
+
+export default config
+
 const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChangesCodeHostsResult => ({
     node: {
         __typename: 'User',
@@ -31,15 +40,6 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
-
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
-const config: Meta = {
-    title: 'web/batches/settings/BatchChangesSettingsArea',
-    decorators: [decorator],
-}
-
-export default config
 
 export const Overview: Story = () => (
     <WebStory>

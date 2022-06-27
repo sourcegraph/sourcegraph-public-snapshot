@@ -84,11 +84,11 @@ You can also download and run the executor binaries yourself, without using Terr
 The following dependencies need to be available on the machine on which you want to run the `executor` binary:
 
 * Docker
-* git >= v2.18
+* git >= v2.26
 * [Ignite](https://ignite.readthedocs.io/en/stable/installation/) v0.10.0
 * [CNI Plugins](https://github.com/containernetworking/plugins) v0.9.1
 
-You can also take a look at [what goes into our executor machine images, used by our Terraform modules,](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/image/build.sh) to see how we run executor binaries.
+You can also take a look at [what goes into our executor machine images, used by our Terraform modules,](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh) to see how we configure our executor VMs.
 
 Once dependencies are met, you can download and run executor binaries:
 
@@ -110,7 +110,7 @@ Below are the download links for the *insiders* release (`latest`) of executors:
 * [`linux-amd64/executor`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor)
 * [`linux-amd64/executor_SHA256SUM`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor_SHA256SUM)
 
-Download and setup `executor` binary:
+Download and setup the `executor` binary:
 
 ```bash
 curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
@@ -125,12 +125,12 @@ This creates the base image that Ignite will use when creating new [Firecracker]
 ```bash
 # Change this to use the version of src-cli that's compatible with your Sourcegraph instance.
 # See this for details: https://github.com/sourcegraph/src-cli#version-compatible-with-your-sourcegraph-instance
-export SRC_CLI_VERSION="3.34.1"
+export SRC_CLI_VERSION="3.41.0"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
 # Download Dockerfile and build Docker image
 mkdir -p /tmp/ignite-ubuntu
-curl -sfLo /tmp/ignite-ubuntu/Dockerfile https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/enterprise/cmd/executor/image/ignite-ubuntu/Dockerfile
+curl -sfLo /tmp/ignite-ubuntu/Dockerfile https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/enterprise/cmd/executor/vm-image/ignite-ubuntu/Dockerfile
 docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
 
 # Import Docker image into Ignite
@@ -196,12 +196,12 @@ The following are complete examples of provisioning _multiple_ executor types us
 
 Let's walk through setting up a single executor VM on GCP and indexing a repository.
 
-1. Install Terraform `0.13.7` (must match the version listed in [`.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/.tool-versions)):
+1. Install Terraform `>= 1.1.5` (must match the version listed in [`.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/.tool-versions)):
 
 ```
 brew install tfenv
-tfenv install 0.13.7
-tfenv use 0.13.7
+tfenv install 1.1.5
+tfenv use 1.1.5
 ```
 
 2. Install [`gcloud`](https://cloud.google.com/sdk/docs/install)
