@@ -698,7 +698,7 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 		}
 
 		if annotation, exist := annotations[*job.ID]; exist {
-			block.WriteMarkdown(annotation.Content)
+			block.WriteMarkdown(annotation.Content, output.MarkdownNoMargin, output.MarkdownIndent(2))
 		}
 	}
 
