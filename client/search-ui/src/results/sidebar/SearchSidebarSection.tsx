@@ -104,7 +104,10 @@ export const SearchSidebarSection: React.FunctionComponent<
         )
 
         return visible ? (
-            <div className={classNames(styles.sidebarSection, className)}>
+            <article
+                aria-labelledby={`search-sidebar-section-header-${sectionId}`}
+                className={classNames(styles.sidebarSection, className)}
+            >
                 <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                     <CollapseHeader
                         as={Button}
@@ -113,7 +116,7 @@ export const SearchSidebarSection: React.FunctionComponent<
                         outline={true}
                         variant="secondary"
                     >
-                        <H5 as={H2} className="flex-grow-1">
+                        <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
                             {header}
                         </H5>
                         <Icon aria-hidden={true} className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
@@ -137,7 +140,8 @@ export const SearchSidebarSection: React.FunctionComponent<
                         </div>
                     </CollapsePanel>
                 </Collapse>
-            </div>
+            </article>
         ) : null
     }
 )
+SearchSidebarSection.displayName = 'SearchSidebarSection'
