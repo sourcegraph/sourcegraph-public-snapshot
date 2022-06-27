@@ -67,7 +67,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendProgress := func() {
-		println("sendProgress()")
 		_ = eventWriter.Event("progress", progress.Current())
 	}
 
