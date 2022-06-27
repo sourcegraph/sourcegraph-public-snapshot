@@ -11,34 +11,46 @@ import (
 
 type AnalyticsFetcher struct {
 	db           database.DB
+	group        string
+	dateRange    string
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
 }
 
+type AnalyticsNodeData struct {
+	Date            time.Time
+	Count           int32
+	UniqueUsers     int32
+	RegisteredUsers int32
+}
+
 type AnalyticsNode struct {
-	date            time.Time
-	count           int32
-	uniqueUsers     int32
-	registeredUsers int32
+	Data AnalyticsNodeData
 }
 
 func (n *AnalyticsNode) Date() string {
-	return n.date.Format(time.RFC3339)
+	return n.Data.Date.Format(time.RFC3339)
 }
 
 func (n *AnalyticsNode) Count() int32 {
-	return n.count
+	return n.Data.Count
 }
 
 func (n *AnalyticsNode) UniqueUsers() int32 {
-	return n.uniqueUsers
+	return n.Data.UniqueUsers
 }
 
 func (n *AnalyticsNode) RegisteredUsers() int32 {
-	return n.registeredUsers
+	return n.Data.RegisteredUsers
 }
 
-func (f *AnalyticsFetcher) GetNodes(ctx context.Context) ([]*AnalyticsNode, error) {
+func (f *AnalyticsFetcher) GetNodes(ctx context.Context, cache bool) ([]*AnalyticsNode, error) {
+	if cache == true {
+		if nodes, err := getNodesFromCache(f); err == nil {
+			return nodes, nil
+		}
+	}
+
 	rows, err := f.db.QueryContext(ctx, f.nodesQuery.Query(sqlf.PostgresBindVar), f.nodesQuery.Args()...)
 
 	if err != nil {
@@ -57,44 +69,66 @@ func (f *AnalyticsFetcher) GetNodes(ctx context.Context) ([]*AnalyticsNode, erro
 		}
 
 		nodes = append(nodes, &AnalyticsNode{
-			date:            date,
-			count:           count,
-			uniqueUsers:     uniqueUsers,
-			registeredUsers: registeredUsers,
-		})
+			AnalyticsNodeData{
+				Date:            date,
+				Count:           count,
+				UniqueUsers:     uniqueUsers,
+				RegisteredUsers: registeredUsers,
+			}})
+	}
+
+	if _, err := setNodesToCache(f, nodes); err != nil {
+		return nil, err
 	}
 
 	return nodes, nil
 }
 
+type AnalyticsSummaryData struct {
+	TotalCount           int32
+	TotalUniqueUsers     int32
+	TotalRegisteredUsers int32
+}
+
 type AnalyticsSummary struct {
-	totalCount           int32
-	totalUniqueUsers     int32
-	totalRegisteredUsers int32
+	Data AnalyticsSummaryData
 }
 
 func (s *AnalyticsSummary) TotalCount() (int32, error) {
-	return s.totalCount, nil
+	return s.Data.TotalCount, nil
 }
 
 func (s *AnalyticsSummary) TotalUniqueUsers() (int32, error) {
-	return s.totalUniqueUsers, nil
+	return s.Data.TotalUniqueUsers, nil
 }
 
 func (s *AnalyticsSummary) TotalRegisteredUsers() (int32, error) {
-	return s.totalRegisteredUsers, nil
+	return s.Data.TotalRegisteredUsers, nil
 }
 
-func (f *AnalyticsFetcher) GetSummary(ctx context.Context) (*AnalyticsSummary, error) {
+func (f *AnalyticsFetcher) GetSummary(ctx context.Context, cache bool) (*AnalyticsSummary, error) {
+	if cache == true {
+		if summary, err := getSummaryFromCache(f); err == nil {
+			return summary, nil
+		}
+	}
+
 	var totalCount, totalUniqueUsers, totalRegisteredUsers int32
 
 	if err := f.db.QueryRowContext(ctx, f.summaryQuery.Query(sqlf.PostgresBindVar), f.summaryQuery.Args()...).Scan(&totalCount, &totalUniqueUsers, &totalRegisteredUsers); err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsSummary{
-		totalCount:           totalCount,
-		totalUniqueUsers:     totalUniqueUsers,
-		totalRegisteredUsers: totalRegisteredUsers,
-	}, nil
+	summary := &AnalyticsSummary{
+		AnalyticsSummaryData{
+			TotalCount:           totalCount,
+			TotalUniqueUsers:     totalUniqueUsers,
+			TotalRegisteredUsers: totalRegisteredUsers,
+		}}
+
+	if _, err := setSummaryToCache(f, summary); err != nil {
+		return nil, err
+	}
+
+	return summary, nil
 }

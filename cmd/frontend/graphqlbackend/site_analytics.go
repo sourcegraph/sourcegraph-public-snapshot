@@ -24,7 +24,8 @@ type siteAnalyticsStatItemResolver struct {
 }
 
 func (r *siteAnalyticsStatItemResolver) Nodes(ctx context.Context) ([]*adminanalytics.AnalyticsNode, error) {
-	nodes, err := r.fetcher.GetNodes(ctx)
+	nodes, err := r.fetcher.GetNodes(ctx, true)
+
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func (r *siteAnalyticsStatItemResolver) Nodes(ctx context.Context) ([]*adminanal
 }
 
 func (r *siteAnalyticsStatItemResolver) Summary(ctx context.Context) (*adminanalytics.AnalyticsSummary, error) {
-	summary, err := r.fetcher.GetSummary(ctx)
+	summary, err := r.fetcher.GetSummary(ctx, true)
 	if err != nil {
 		return nil, err
 	}
