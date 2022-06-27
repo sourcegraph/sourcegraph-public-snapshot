@@ -87,7 +87,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 **Other considerations:** As we add new insights pages it's important to make sure we're adding pages to this counter. 
 
 - Aggregation: By week 
-- Event Code: [InsightsPageView](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsPageView&patternType=regexp), [StandaloneInsightPageViewed](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+StandaloneInsightPageViewed&patternType=regexp),
+- Event Code: [ViewInsights](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+ViewInsights&patternType=regexp), [StandaloneInsightPageViewed](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+StandaloneInsightPageViewed&patternType=regexp),
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
