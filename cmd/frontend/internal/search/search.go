@@ -149,7 +149,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		h.flushTickerInternal,
 		h.pingTickerInterval,
 		displayLimit,
-		args.ChunkMatches,
+		args.EnableChunkMatches,
 		logLatency,
 	)
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
@@ -196,11 +196,11 @@ func logSearch(ctx context.Context, alert *search.Alert, err error, start time.T
 }
 
 type args struct {
-	Query        string
-	Version      string
-	PatternType  string
-	Display      int
-	ChunkMatches bool
+	Query              string
+	Version            string
+	PatternType        string
+	Display            int
+	EnableChunkMatches bool
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -237,8 +237,8 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	chunkMatches := get("cm", "f")
-	if a.ChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
-		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: w", chunkMatches, err)
+	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
+		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
 	}
 
 	decorationLimit := get("dl", "0")
