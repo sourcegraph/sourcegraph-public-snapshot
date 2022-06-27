@@ -18,7 +18,12 @@ type progressAggregator struct {
 
 func (p *progressAggregator) currentStats() api.ProgressStats {
 	return api.ProgressStats{
-		Timedout: getRepos(p.Stats, searchshared.RepoStatusTimedout),
+		ExcludedArchived: p.Stats.ExcludedArchived,
+		ExcludedForks:    p.Stats.ExcludedForks,
+		Timedout:         getRepos(p.Stats, searchshared.RepoStatusTimedout),
+		Missing:          getRepos(p.Stats, searchshared.RepoStatusMissing),
+		Cloning:          getRepos(p.Stats, searchshared.RepoStatusCloning),
+		LimitHit:         p.Stats.IsLimitHit,
 	}
 }
 
@@ -32,9 +37,7 @@ func (p *progressAggregator) Current() api.Progress {
 func (p *progressAggregator) Final() api.Progress {
 	p.Dirty = false
 
-	s := p.currentStats()
-
-	event := api.BuildProgressEvent(s, p.RepoNamer)
+	event := api.BuildProgressEvent(p.currentStats(), p.RepoNamer)
 	event.Done = true
 	return event
 }
