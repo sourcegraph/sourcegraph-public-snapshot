@@ -14,7 +14,7 @@ import (
 
 type ExpectedSchemaFactory func(repoName, version string) (descriptions.SchemaDescription, bool, error)
 
-// GCSExpectedSchemaFactory reads schema definitions from a GCS bucket that contains schema definitions for
+// GCSExpectedSchemaFactory reads schema definitions from a public GCS bucket that contains schema definitions for
 // a version of Sourcegraph that did not yet contain the squashed schema description file in-tree. These files
 // have been backfilled to this bucket by hand. A false-valued flag is returned if the schema does not exist
 // for this version.
