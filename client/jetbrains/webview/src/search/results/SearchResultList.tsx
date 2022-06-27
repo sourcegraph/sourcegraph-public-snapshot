@@ -82,15 +82,12 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             const target = event.target as HTMLElement
 
             // We only want to handle keydown events on the search box
-            if (
-                (target.nodeName !== 'TEXTAREA' || !target.className.includes('inputarea')) &&
-                target.nodeName !== 'BODY'
-            ) {
+            if (!target.className.includes('cm-content') && target.nodeName !== 'BODY') {
                 return
             }
 
             // Ignore events when the autocomplete dropdown is open
-            const isAutocompleteOpen = document.querySelector('.monaco-list.element-focused') !== null
+            const isAutocompleteOpen = document.querySelector('.cm-tooltip-autocomplete') !== null
             if (isAutocompleteOpen) {
                 return
             }
@@ -121,6 +118,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowDown') {
+                console.log('UP')
                 const nextElement = getSiblingResultElement(currentElement, 'next')
                 if (nextElement) {
                     selectResult(nextElement.id.replace('search-result-list-item-', ''))
@@ -131,6 +129,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowUp') {
+                console.log('DOWN')
                 const previousElement = getSiblingResultElement(currentElement, 'previous')
                 if (previousElement) {
                     selectResult(previousElement.id.replace('search-result-list-item-', ''))
