@@ -2,7 +2,6 @@ package trace
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -10,7 +9,6 @@ import (
 	"github.com/sourcegraph/log/otfields"
 	"github.com/uber/jaeger-client-go"
 	nettrace "golang.org/x/net/trace"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,14 +52,6 @@ func Context(ctx context.Context) *otfields.TraceContext {
 // Context retrieves the full trace context, if any, from the span - this includes
 // both TraceID and SpanID.
 func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
-	ddctx, ok := span.Context().(ddtrace.SpanContext)
-	if ok {
-		return &otfields.TraceContext{
-			TraceID: strconv.FormatUint(ddctx.TraceID(), 10),
-			SpanID:  strconv.FormatUint(ddctx.SpanID(), 10),
-		}
-	}
-
 	spanCtx, ok := span.Context().(jaeger.SpanContext)
 	if ok {
 		return &otfields.TraceContext{

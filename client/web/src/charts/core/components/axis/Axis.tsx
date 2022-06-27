@@ -23,6 +23,7 @@ interface AxisLeftProps {
 export const AxisLeft = memo(
     forwardRef<SVGGElement, AxisLeftProps>((props, reference) => {
         const { scale, left, top, width, height } = props
+        const ticksValues = getYScaleTicks({ scale, space: height })
 
         return (
             <>
@@ -32,14 +33,19 @@ export const AxisLeft = memo(
                     width={width}
                     height={height}
                     scale={scale}
-                    tickValues={getYScaleTicks({ scale, space: height })}
+                    tickValues={ticksValues}
                     className={styles.gridLine}
                 />
 
-                <Group innerRef={reference} top={top} left={left}>
+                <Group
+                    key={ticksValues.reduce((store, tick) => `${store}-${tick}`, '')}
+                    innerRef={reference}
+                    top={top}
+                    left={left}
+                >
                     <VisxAxisLeft
                         scale={scale}
-                        tickValues={getYScaleTicks({ scale, space: height })}
+                        tickValues={ticksValues}
                         tickFormat={formatYTick}
                         tickLabelProps={getTickYProps}
                         tickComponent={Tick}

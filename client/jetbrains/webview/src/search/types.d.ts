@@ -21,6 +21,8 @@ export interface PluginConfig {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
+    anonymousUserId: string
+    pluginVersion: string
 }
 
 export interface Search {

@@ -37,14 +37,13 @@ import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedTo
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { searchQueryAutocompletion, createDefaultSuggestionSources } from './extensions/completion'
+import { createDefaultSuggestions } from './extensions'
 import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -91,7 +90,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // placeholder text properly. CodeMirror has built-in support for
     // placeholders.
 }) => {
-    const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
+    const value = preventNewLine ? queryState.query.replace(replacePattern, ' ') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
     // reference that doesn't change across renders (and some hooks should only
@@ -112,15 +111,12 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const autocompletion = useMemo(
         () =>
-            searchQueryAutocompletion(
-                createDefaultSuggestionSources({
-                    fetchSuggestions: createCancelableFetchSuggestions(query =>
-                        fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec))
-                    ),
-                    globbing,
-                    isSourcegraphDotCom,
-                })
-            ),
+            createDefaultSuggestions({
+                fetchSuggestions: query =>
+                    fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
+                globbing,
+                isSourcegraphDotCom,
+            }),
         [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
     )
 
@@ -282,7 +278,9 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * "Core" codemirror query input component. Provides the basic behavior such as
  * theming, syntax highlighting and token info.
  */
-const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<CodeMirrorQueryInputProps>> = React.memo(
+export const CodeMirrorQueryInput: React.FunctionComponent<
+    React.PropsWithChildren<CodeMirrorQueryInputProps>
+> = React.memo(
     ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
         // This is using state instead of a ref because `useRef` doesn't cause a
         // re-render when the ref is attached, but we need that so that

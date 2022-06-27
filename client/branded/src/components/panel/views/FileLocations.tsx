@@ -162,7 +162,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         item: OrderedURI,
                         index: number,
                         additionalProps: { locationsByURI: Map<string, Location[]> }
-                    ) => this.renderFileMatch(item, additionalProps)}
+                    ) => this.renderFileMatch(item, additionalProps, index)}
                     itemProps={{ locationsByURI }}
                     itemKey={this.itemKey}
                 />
@@ -184,9 +184,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
     private renderFileMatch = (
         { uri }: OrderedURI,
-        { locationsByURI }: { locationsByURI: Map<string, Location[]> }
+        { locationsByURI }: { locationsByURI: Map<string, Location[]> },
+        index: number
     ): JSX.Element => (
         <FileSearchResult
+            index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
             expanded={true}

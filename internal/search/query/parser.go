@@ -775,8 +775,8 @@ func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
 			} else {
 				// This is an empty `//` delimited pattern:
 				// treat this heuristically as a literal //
-				// pattern instead, since the an empty regex
-				// pattern offers lower utitility.
+				// pattern instead, since an empty regex
+				// pattern offers lower utility.
 				value = "//"
 				labels = Literal
 			}
@@ -812,8 +812,8 @@ func newPattern(value string, labels labels, range_ Range) Pattern {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern(label labels) Pattern {
-	if label.IsSet(Regexp) {
-		// First try parse delimited values for regexp.
+	if label.IsSet(Regexp | Standard) {
+		// First try parse delimited /.../ values for regexp patterns.
 		if pattern, ok := p.TryParseDelimitedPattern(); ok {
 			return pattern
 		}
@@ -1068,9 +1068,14 @@ func NewOperator(nodes []Node, kind OperatorKind) []Node {
 func (p *parser) parseAnd() ([]Node, error) {
 	var left []Node
 	var err error
-	if p.leafParser == SearchTypeRegex {
+	switch p.leafParser {
+	case SearchTypeRegex:
 		left, err = p.parseLeaves(Regexp)
-	} else {
+	case SearchTypeLiteral:
+		left, err = p.parseLeaves(Literal)
+	case SearchTypeStandard:
+		left, err = p.parseLeaves(Literal | Standard)
+	default:
 		left, err = p.parseLeaves(Literal)
 	}
 	if err != nil {
@@ -1164,7 +1169,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral {
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err
@@ -1175,6 +1180,10 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 
 func ParseSearchType(in string, searchType SearchType) (Q, error) {
 	return Run(Init(in, searchType))
+}
+
+func ParseStandard(in string) (Q, error) {
+	return Run(Init(in, SearchTypeStandard))
 }
 
 func ParseLiteral(in string) (Q, error) {
