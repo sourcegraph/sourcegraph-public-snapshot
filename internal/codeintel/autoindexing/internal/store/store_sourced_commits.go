@@ -151,7 +151,7 @@ func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, comm
 	}})
 	defer endObservation(1, observation.Args{})
 
-	candidateIndexesSubquery := sqlf.Sprintf(sourcedCommitsCandidateIndexesCTE, repositoryID, commit)
+	candidateIndexesSubquery := sqlf.Sprintf(candidateIndexesCTE, repositoryID, commit)
 	updateSourcedCommitsQuery := sqlf.Sprintf(updateSourcedCommitsQuery, candidateIndexesSubquery, now)
 
 	indexesUpdated, err = scanCount(s.db.Query(ctx, updateSourcedCommitsQuery))
@@ -177,7 +177,7 @@ SELECT
 	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
 `
 
-const sourcedCommitsCandidateIndexesCTE = `
+const candidateIndexesCTE = `
 SELECT u.id
 FROM lsif_indexes u
 WHERE u.repository_id = %s AND u.commit = %s
@@ -205,7 +205,7 @@ func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
 	defer unset(ctx)
 
-	candidateIndexesSubquery := sqlf.Sprintf(sourcedCommitsCandidateIndexesCTE, repositoryID, commit)
+	candidateIndexesSubquery := sqlf.Sprintf(candidateIndexesCTE, repositoryID, commit)
 	deleteSourcedCommitsQuery := sqlf.Sprintf(deleteSourcedCommitsQuery, candidateIndexesSubquery)
 
 	indexesDeleted, err = scanCount(s.db.Query(ctx, deleteSourcedCommitsQuery))
