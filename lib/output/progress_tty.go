@@ -260,6 +260,11 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 		}
 	}
 
+	// Defend against negative values
+	if fillWidth < 0 {
+		fillWidth = 0
+	}
+
 	fmt.Fprintf(p.o.w, "  ")
 	fmt.Fprint(p.o.w, strings.Repeat("█", fillWidth))
 
