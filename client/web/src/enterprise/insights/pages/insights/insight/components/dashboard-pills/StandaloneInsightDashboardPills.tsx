@@ -3,19 +3,24 @@ import { FunctionComponent, HTMLAttributes } from 'react'
 import classNames from 'classnames'
 import ViewDashboardIcon from 'mdi-react/ViewDashboardIcon'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ALL_INSIGHTS_DASHBOARD, InsightDashboardReference } from '../../../../../core'
 
 import styles from './StandaloneInsightDashboardPills.module.scss'
 
-interface StandaloneInsightDashboardPillsProps extends HTMLAttributes<HTMLDivElement> {
+interface StandaloneInsightDashboardPillsProps extends HTMLAttributes<HTMLDivElement>, TelemetryProps {
     dashboards: InsightDashboardReference[]
     insightId: string
 }
 
 export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsightDashboardPillsProps> = props => {
-    const { dashboards, insightId, className, ...attributes } = props
+    const { dashboards, insightId, className, telemetryService, ...attributes } = props
+
+    const handleDashboardClick = (): void => {
+        telemetryService.log('StandaloneInsightDashboardClick')
+    }
 
     return (
         <div {...attributes} className={classNames(className, styles.list)}>
@@ -34,6 +39,7 @@ export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsigh
                     target="_blank"
                     rel="noopener"
                     className={styles.pill}
+                    onClick={handleDashboardClick}
                 >
                     <Icon as={ViewDashboardIcon} aria-hidden={true} />
                     {dashboard.title}
