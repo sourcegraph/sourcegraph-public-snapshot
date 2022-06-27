@@ -98,6 +98,7 @@ func NewBasicJob(logger log.Logger, inputs *run.SearchInputs, b query.Basic) (jo
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					log:              logger,
 				})
 			}
 		}
@@ -122,6 +123,7 @@ func NewBasicJob(logger log.Logger, inputs *run.SearchInputs, b query.Basic) (jo
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					log:              logger,
 				})
 			}
 		}
@@ -307,6 +309,7 @@ func NewFlatJob(logger log.Logger, searchInputs *run.SearchInputs, f query.Flat)
 					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
+					log:              logger,
 				})
 			}
 		}
@@ -325,6 +328,7 @@ func NewFlatJob(logger log.Logger, searchInputs *run.SearchInputs, f query.Flat)
 					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
+					log:              logger,
 				})
 			}
 		}
