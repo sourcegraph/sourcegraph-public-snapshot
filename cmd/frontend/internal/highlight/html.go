@@ -168,6 +168,11 @@ func lsifToHTML(
 
 				row += 1
 				for row < endRow {
+					// We've reached the end of the lines, so we can return now
+					if row >= rowCount {
+						return
+					}
+
 					line = splitLines[row]
 
 					addRow(row)
@@ -176,7 +181,7 @@ func lsifToHTML(
 					row += 1
 				}
 
-				// Do not allow access past end of rows
+				// We've reached the end of the lines, so we can return now
 				if row >= rowCount {
 					return
 				}
