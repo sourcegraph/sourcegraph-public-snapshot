@@ -972,6 +972,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return errors.Wrap(err, "set repository permissions")
 	}
+	regularCount := len(p.UserIDs)
 
 	// If there is no provider, there would be no pending permissions that need to be generated.
 	if provider != nil {
@@ -984,9 +985,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			return errors.Wrap(err, "set repository pending permissions")
 		}
 	}
+	pendingCount := len(p.UserIDs)
 
 	logger.Debug("synced",
-		log.Int("count", len(p.UserIDs)),
+		log.Int("regularCount", regularCount),
+		log.Int("pendingCount", pendingCount),
 		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
 	)
 	return nil
