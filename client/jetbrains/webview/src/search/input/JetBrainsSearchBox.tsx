@@ -136,6 +136,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
                         editorOptions={MONACO_OPTIONS}
+                        editorComponent="codemirror6"
                     />
                     <JetBrainsToggles
                         patternType={props.patternType}
