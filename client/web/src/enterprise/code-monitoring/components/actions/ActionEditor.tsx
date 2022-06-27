@@ -180,35 +180,36 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                             {actionEnabled ? 'Enabled' : 'Disabled'}
                         </span>
                     </div>
-                    <div className="d-flex justify-content-between">
-                        <div>
-                            <Button
-                                data-testid={`submit-action-${idName}`}
-                                className={`mr-1 test-submit-action-${idName}`}
-                                onClick={submitHandler}
-                                disabled={!canSubmit}
-                                variant="secondary"
-                            >
-                                Continue
-                            </Button>
-                            <Button
-                                onClick={cancelHandler}
-                                outline={true}
-                                variant="secondary"
-                                data-testid={`cancel-action-${idName}`}
-                            >
-                                Cancel
-                            </Button>
-                        </div>
+                    <div className={styles.actionButtonRow}>
+                        <Button
+                            data-testid={`submit-action-${idName}`}
+                            className={`test-submit-action-${idName}`}
+                            onClick={submitHandler}
+                            disabled={!canSubmit}
+                            variant="secondary"
+                        >
+                            Continue
+                        </Button>
+                        <Button
+                            onClick={cancelHandler}
+                            outline={true}
+                            variant="secondary"
+                            data-testid={`cancel-action-${idName}`}
+                        >
+                            Cancel
+                        </Button>
                         {canDelete && (
-                            <Button
-                                onClick={deleteHandler}
-                                outline={true}
-                                variant="danger"
-                                data-testid={`delete-action-${idName}`}
-                            >
-                                Delete
-                            </Button>
+                            <>
+                                <div className="flex-grow-1" />
+                                <Button
+                                    onClick={deleteHandler}
+                                    outline={true}
+                                    variant="danger"
+                                    data-testid={`delete-action-${idName}`}
+                                >
+                                    Delete
+                                </Button>
+                            </>
                         )}
                     </div>
                 </Card>
@@ -227,7 +228,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                     disabled={disabled}
                     onClick={toggleExpanded}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
                             <VisuallyHidden>Edit action: </VisuallyHidden>
                             <div className={classNames('font-weight-bold', !completed && styles.cardLink)}>{title}</div>

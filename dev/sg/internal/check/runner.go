@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -50,11 +49,6 @@ func (r *Runner[Args]) Check(
 	ctx context.Context,
 	args Args,
 ) error {
-	ctx, err := usershell.Context(ctx)
-	if err != nil {
-		return err
-	}
-
 	results := r.runAllCategoryChecks(ctx, args)
 	if len(results.failed) > 0 {
 		if len(results.skipped) > 0 {
@@ -71,11 +65,6 @@ func (r *Runner[Args]) Fix(
 	ctx context.Context,
 	args Args,
 ) error {
-	ctx, err := usershell.Context(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Get state
 	results := r.runAllCategoryChecks(ctx, args)
 	if len(results.failed) == 0 {
@@ -112,11 +101,6 @@ func (r *Runner[Args]) Interactive(
 	ctx context.Context,
 	args Args,
 ) error {
-	ctx, err := usershell.Context(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Keep interactive runner up until all issues are fixed or the user exits
 	results := &runAllCategoryChecksResult{
 		failed: []int{1}, // initialize, this gets reset immediately

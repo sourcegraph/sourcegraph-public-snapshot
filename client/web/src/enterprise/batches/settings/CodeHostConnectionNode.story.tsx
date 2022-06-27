@@ -13,6 +13,15 @@ import {
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
 
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/CodeHostConnectionNode',
+    decorators: [decorator],
+}
+
+export default config
+
 const checkCredResult = (): CheckBatchChangesCredentialResult => ({
     checkBatchChangesCredential: {
         alwaysNil: null,
@@ -25,15 +34,6 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
-
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
-const config: Meta = {
-    title: 'web/batches/settings/CodeHostConnectionNode',
-    decorators: [decorator],
-}
-
-export default config
 
 export const Overview: Story = () => (
     <WebStory>

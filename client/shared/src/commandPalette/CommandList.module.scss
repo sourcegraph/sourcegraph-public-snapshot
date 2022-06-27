@@ -22,6 +22,12 @@
     }
 }
 
+@media (max-width: 24rem) {
+    .command-list {
+        width: 100vw;
+    }
+}
+
 .popover-button {
     cursor: pointer;
 }

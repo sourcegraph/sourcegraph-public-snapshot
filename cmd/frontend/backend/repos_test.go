@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -189,7 +188,7 @@ func TestReposGetInventory(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer func() {
-		git.ResetMocks()
+		gitserver.ResetMocks()
 		gitserver.Mocks.ReadDir = nil
 	}()
 
