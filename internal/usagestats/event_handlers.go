@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -247,7 +248,7 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	}
 
 	// Only redact GitHub.com URLs. Currently, private code on Sourcegraph.com is only supported for GitHub.com.
-	if !strings.HasPrefix(parsedURL.Path,"/github.com") && !strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
+	if !strings.HasPrefix(parsedURL.Path, "/github.com") && !strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
 		return rawURL, nil
 	}
 
