@@ -383,26 +383,20 @@ func frontendTests(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
-		isSkip := func() bk.StepOpt {
-			if strings.HasSuffix(testSuffix, "internal/database") {
-				return bk.Skip("temp")
-			}
-			return nil
+		if strings.HasSuffix(testSuffix, "internal/database") {
+			pipeline.AddStep(
+				fmt.Sprintf(":go: Test (%s)", description),
+				bk.Env("GOMAXPROCS", "10"), // Ensure we're not blowing up the database connection count.
+				bk.Parallelism(100),
+				bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{},
+					TestReports: &bk.TestReportOpts{
+						TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
+					},
+				}),
+				bk.Cmd("./dev/ci/codecov.sh -c -F go"),
+			)
 		}
-
-		pipeline.AddStep(
-			fmt.Sprintf(":go: Test (%s)", description),
-			bk.Env("GOMAXPROCS", "10"), // Ensure we're not blowing up the database connection count.
-			isSkip(),
-			bk.Parallelism(100),
-			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-				TestReports: &bk.TestReportOpts{
-					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
-				},
-			}),
-			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
-		)
 	})
 }
 
