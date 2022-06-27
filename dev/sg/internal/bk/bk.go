@@ -27,6 +27,14 @@ type Build struct {
 	buildkite.Build
 }
 
+// AnnotationArtifact contains the annotation artifact that was uploaded as part of a job step. The content of the artifact
+// is stored in Content and is expected to be markdown.
+type AnnotationArtifact struct {
+	buildkite.Artifact
+	Content string
+}
+
+// JobAnnotations maps Job IDs to a annotation artifacts
 type JobAnnotations map[string]AnnotationArtifact
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
@@ -144,6 +152,7 @@ func (c *Client) ListAnnotationsByBuildNumber(ctx context.Context, pipeline stri
 	return annotations, nil
 }
 
+// ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build
 func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Artifact, error) {
 	artifacts, _, err := c.bk.Artifacts.ListByBuild(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
@@ -159,12 +168,10 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 	return artifacts, nil
 }
 
-type AnnotationArtifact struct {
-	buildkite.Artifact
-	Content string
-}
-
-func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
+// GetJobAnnotationByBuildNumber retrieves all annotations that are present on a build and maps them to the job ID that the
+// annotation is for. Each annotation is retrieved by looking at all the artifacts on a build. If a Job has a annoation, then
+// an artifact will be uploaded by the job. The annotation artifact's name will have the following format "annoations/{BUILDKITE_JOB_ID}-annotation.md"
+func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
 	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
 	if err != nil {
 		return nil, err
@@ -188,31 +195,6 @@ func (c *Client) GetJobAnnotationByBuildNumber(ctx context.Context, pipeline str
 
 	return result, nil
 
-}
-
-func (c *Client) ListAnnotationArtifacts(ctx context.Context, pipeline string, number string) ([]AnnotationArtifact, error) {
-	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
-	if err != nil {
-		return nil, err
-	}
-
-	var result []AnnotationArtifact = make([]AnnotationArtifact, 0)
-	for _, a := range artifacts {
-		if strings.Contains(*a.Dirname, "annotations") && strings.HasSuffix(*a.Filename, "-annotation.md") {
-			var buf bytes.Buffer
-			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
-			if err != nil {
-				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
-			}
-
-			result = append(result, AnnotationArtifact{
-				a,
-				buf.String(),
-			})
-		}
-	}
-
-	return result, nil
 }
 
 // TriggerBuild request a build on Buildkite API and returns that build.

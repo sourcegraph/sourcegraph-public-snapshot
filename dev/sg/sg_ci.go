@@ -226,7 +226,7 @@ sg ci build --help
 			var annotations bk.JobAnnotations
 			var buildNumber string = fmt.Sprintf("%d", *build.Number)
 
-			annotations, err = client.GetJobAnnotationByBuildNumber(ctx.Context, "sourcegraph", buildNumber)
+			annotations, err = client.GetJobAnnotationsByBuildNumber(ctx.Context, "sourcegraph", buildNumber)
 			if err != nil {
 				return errors.Newf("failed to get annotations for build %d: %w", build.Number, err)
 			}
@@ -742,23 +742,6 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 			return errors.Newf("polling timeout reached")
 		case <-ctx.Done():
 			return ctx.Err()
-		}
-	}
-}
-
-func markdownTest() {
-	fmt.Println("---- MARKDOWN TEST -----")
-	wd, _ := os.Getwd()
-
-	dir := filepath.Join(wd, "annotations")
-	files, _ := ioutil.ReadDir(dir)
-	for _, i := range files {
-		fmt.Println(i.Name())
-		if strings.Contains(i.Name(), "-term.md") {
-			p := filepath.Join(dir, i.Name())
-			data, _ := ioutil.ReadFile(p)
-
-			std.Out.WriteMarkdown(string(data))
 		}
 	}
 }
