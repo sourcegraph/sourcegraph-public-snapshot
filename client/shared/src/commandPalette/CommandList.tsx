@@ -215,6 +215,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                             autoComplete="off"
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
+                            onClick={this.onInputClick}
                         />
                     </form>
                 </header>
@@ -286,6 +287,11 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 break
             }
         }
+    }
+
+    // prevent input click from closing the popover
+    private onInputClick: React.MouseEventHandler<HTMLInputElement> = event => {
+        event.stopPropagation()
     }
 
     private onSubmit: React.FormEventHandler = event => event.preventDefault()
