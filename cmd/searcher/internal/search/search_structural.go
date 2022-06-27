@@ -333,6 +333,9 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zf *zipFile, 
 	if err != nil {
 		return err
 	}
+	if len(fileMatches) == 0 {
+		return nil
+	}
 
 	matchedPaths := make([]string, 0, len(fileMatches))
 	for _, fm := range fileMatches {
