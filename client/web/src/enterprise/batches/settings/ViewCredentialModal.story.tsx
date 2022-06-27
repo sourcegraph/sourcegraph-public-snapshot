@@ -6,13 +6,6 @@ import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../grap
 
 import { ViewCredentialModal } from './ViewCredentialModal'
 
-const credential: BatchChangesCredentialFields = {
-    id: '123',
-    isSiteCredential: false,
-    sshPublicKey:
-        'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-}
-
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
@@ -21,6 +14,13 @@ const config: Meta = {
 }
 
 export default config
+
+const credential: BatchChangesCredentialFields = {
+    id: '123',
+    isSiteCredential: false,
+    sshPublicKey:
+        'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+}
 
 export const View: Story = () => (
     <WebStory>

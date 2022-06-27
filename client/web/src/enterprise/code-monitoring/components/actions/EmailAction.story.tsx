@@ -1,4 +1,4 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -8,6 +8,15 @@ import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { EmailAction } from './EmailAction'
+
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/EmailAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -25,13 +34,7 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-const config = {
-    title: 'web/enterprise/code-monitoring/actions/EmailAction',
-}
-
-export default config
-
-export const _EmailAction: Story = () => (
+export const EmailActionStory: Story = () => (
     <WebStory>
         {() => (
             <>
@@ -60,10 +63,4 @@ export const _EmailAction: Story = () => (
     </WebStory>
 )
 
-_EmailAction.storyName = 'EmailAction'
-
-_EmailAction.parameters = {
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
-}
+EmailActionStory.storyName = 'EmailAction'

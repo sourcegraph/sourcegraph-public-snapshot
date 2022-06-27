@@ -20,6 +20,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { PageTitle } from '../components/PageTitle'
 import { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
@@ -95,6 +96,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                 description="Get notifications when there are new results for specific search queries."
                 className="mb-3"
             >
+                <PageTitle title={props.title} />
                 <PageHeader.Heading as="h3" styleAs="h2">
                     <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
@@ -156,7 +158,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                                     notifications.
                                 </div>
                                 <Button to={codeMonitoringUrl} variant="primary" as={Link}>
-                                    Go to code monitoring →
+                                    Go to code monitoring <span aria-hidden={true}>→</span>
                                 </Button>
                             </Alert>
                         </div>
@@ -206,7 +208,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         <ProductStatusBadge status="new" className="mr-3" />
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
-                            <Link to="/code-monitoring">code monitoring →</Link>
+                            <Link to="/code-monitoring">
+                                code monitoring <span aria-hidden={true}>→</span>
+                            </Link>
                         </span>
                     </Container>
                 )}

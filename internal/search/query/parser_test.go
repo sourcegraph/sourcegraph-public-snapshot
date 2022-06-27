@@ -748,3 +748,18 @@ func Test_newOperator(t *testing.T) {
 		})
 	}
 }
+
+func TestParseStandard(t *testing.T) {
+	test := func(input string) string {
+		result, err := Parse(input, SearchTypeStandard)
+		if err != nil {
+			return err.Error()
+		}
+		json, _ := PrettyJSON(result)
+		return json
+	}
+
+	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("anjou /saumur/")))
+	})
+}

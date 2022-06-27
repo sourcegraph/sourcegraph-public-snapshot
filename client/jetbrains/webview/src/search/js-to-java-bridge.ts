@@ -103,7 +103,6 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
         return {
             isDarkTheme: false,
             intelliJTheme: {},
-            syntaxTheme: {},
         }
     }
 }

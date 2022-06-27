@@ -1522,6 +1522,10 @@ type Responders struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
+	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Empty by default, which means no syncing happens. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
+	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
+	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
+	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
 	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
 }

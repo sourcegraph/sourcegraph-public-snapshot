@@ -50,6 +50,15 @@ public class ConfigUtil {
     }
 
     @Nullable
+    public static String getAnonymousUserId() {
+        return SourcegraphApplicationService.getInstance().getAnonymousUserId();
+    }
+
+    public static void setAnonymousUserId(@Nullable String anonymousUserId) {
+        SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
+    }
+
+    @Nullable
     public static Search getLastSearch(@NotNull Project project) {
         return getProjectLevelConfig(project).getLastSearch();
     }

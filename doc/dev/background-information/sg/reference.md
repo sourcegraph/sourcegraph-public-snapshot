@@ -196,6 +196,8 @@ Get the status of the CI run associated with the currently checked out branch.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
+* `--build="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
@@ -247,6 +249,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--build="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
@@ -777,9 +780,8 @@ Flags:
 
 ## sg doctor
 
-Run checks to test whether system is in correct state to run Sourcegraph.
+DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.
 
-Arguments: `[...checks]`
 
 Flags:
 
@@ -824,12 +826,15 @@ Flags:
 
 ## sg setup
 
-Set up your local dev environment!.
+Validate and set up your local dev environment!.
 
 
 Flags:
 
+* `--check, -c`: Run checks and report setup state
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--fix, -f`: Fix all checks
+* `--oss`: Omit Sourcegraph-teammate-specific setup
 
 ## sg teammate
 

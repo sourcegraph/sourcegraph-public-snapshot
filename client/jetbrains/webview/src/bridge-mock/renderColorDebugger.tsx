@@ -24,10 +24,6 @@ const ColorDebugger = (): JSX.Element => (
             <H2>IntelliJ Theme</H2>
             <ColorPalette dark={dark.intelliJTheme} light={light.intelliJTheme} />
         </div>
-        <div>
-            <H2>Syntax Theme</H2>
-            <ColorPalette dark={dark.syntaxTheme} light={light.syntaxTheme} />
-        </div>
     </div>
 )
 

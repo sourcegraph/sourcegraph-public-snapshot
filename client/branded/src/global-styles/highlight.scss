@@ -1014,27 +1014,68 @@
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
 // https://github.com/sourcegraph/sourcegraph/issues/36251
 .theme-light .theme-contrast-compliant-syntax-highlighting {
-    --hl-yellow: #7f6102;
-    --hl-green: #226a00;
-    --hl-red: #ce0804;
-    --hl-orange: #af4001;
-    --hl-blue: #006bb7;
-    --hl-cyan: #545454;
-    --hl-eggshell: #c8c7c5;
-    --hl-purple: #555bc2;
-    --hl-pink: #c32974;
-    --hl-gray-0: #666666;
-    --hl-gray-1: #666666;
-    --hl-gray-2: ##666666;
-    --hl-gray-3: #606060;
+    --hl-property: #d33682;
+    --hl-string: #058356;
+    --hl-function: #886700;
+    --hl-object: #677700;
+    --hl-keyword: #c44e06;
+    --hl-type: #2178b6;
+    --hl-const-num: #5f66e0;
+    --hl-punctuation: #767676;
+    --hl-symbol: #6d6c6c;
+    --hl-comment: #767676;
+    --hl-modifier: #1626b8;
+
+    // Color variable = Semantic variable for backwards compatibility.
+    // TODO: Use semantic variables directly in the code instead.
+    --hl-pink: var(--hl-property);
+    --hl-cyan: var(--hl-string);
+    --hl-yellow: var(--hl-function);
+    --hl-green: var(--hl-object);
+    --hl-orange: var(--hl-keyword);
+    --hl-blue: var(--hl-type);
+    --hl-purple: var(--hl-purple);
+    --hl-gray-0: var(--hl-comment);
+    --hl-gray-1: var(--hl-comment);
+    --hl-gray-2: var(--hl-comment);
+    --hl-gray-3: var(--hl-symbol);
+
+    // surrounding quotes
+    .hl-punctuation.hl-definition.hl-string {
+        color: var(--hl-punctuation);
+    }
+
+    // const, public, inline
+    .hl-storage.hl-modifier {
+        color: var(--hl-modifier);
+    }
 }
 .theme-dark .theme-contrast-compliant-syntax-highlighting {
-    --hl-dark-green: #90c29a;
-    --hl-dark-blue-1: #62b4f9;
-    --hl-dark-blue-3: #7ac3fe;
+    --hl-property: #eb519c;
+    --hl-string: #fb90c4;
+    --hl-function: #b58900;
+    --hl-object: #859900;
+    --hl-keyword: #329af0;
+    --hl-type: #329af0;
+    --hl-const-num: #777dec;
+    --hl-punctuation: #d66f6d;
+    --hl-symbol: #bbbbbb;
+    --hl-comment: #3ba04f;
+    --hl-other: #d08770;
+
+    // Color variable = Semantic variable for backwards compatibility.
+    // TODO: Use semantic variables directly in the code instead.
+    --hl-pink: var(--hl-property);
+    --hl-yellow: var(--hl-function);
+    --hl-dark-blue-3: var(--hl-keyword);
+    --hl-dark-blue-1: var(--hl-type);
+    --hl-purple: var(--hl-const-num);
+    --hl-gray-3: var(--hl-symbol);
+    --hl-dark-green: var(--hl-comment);
+    --hl-red: var(--hl-string);
 
     .hl-keyword.hl-other.hl-unit {
-        color: #dba291;
+        color: var(--hl-other);
     }
 
     .hl-punctuation.hl-section.hl-embedded,
