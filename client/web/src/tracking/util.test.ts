@@ -51,11 +51,9 @@ describe('tracking/util', () => {
         })
 
         it('does not redact pathnames from all non-sensitive app URLs', () => {
-            expect(
-                redactSensitiveInfoFromAppURL(
-                    'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA=='
-                )
-            ).toEqual('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA==')
+            expect(redactSensitiveInfoFromAppURL('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA==')).toEqual(
+                'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA=='
+            )
         })
     })
 
