@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var goGenerateLinter = &linter{
@@ -30,8 +31,9 @@ var goGenerateLinter = &linter{
 
 		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code -- . :!go.sum")).String()
 		if err != nil && strings.TrimSpace(diffOutput) != "" {
-			out.WriteWarningf("Uncommitted changes found after running go generate:")
-			out.Write(diffOutput)
+			block := out.Block(output.Line(output.EmojiWarningSign, output.StyleYellow, "Uncommitted changes found after running go generate:"))
+			block.Write(strings.TrimSpace(diffOutput))
+			block.Close()
 			// Reset repo state
 			root.Run(run.Bash(ctx, "git add . && git reset HEAD --hard")).Wait()
 		}
