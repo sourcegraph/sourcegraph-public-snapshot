@@ -13,7 +13,9 @@ describe('tracking/util', () => {
                 redactSensitiveInfoFromAppURL(
                     'https://sourcegraph.com/search?q=test+query&utm_source=test&utm_campaign=test&utm_cid=test'
                 )
-            ).toEqual('https://sourcegraph.com/search/redacted?q=redacted&utm_source=test&utm_campaign=test&utm_cid=test')
+            ).toEqual(
+                'https://sourcegraph.com/search/redacted?q=redacted&utm_source=test&utm_campaign=test&utm_cid=test'
+            )
         })
 
         it('removes all query params from URLs but maintains marketing query params', () => {
