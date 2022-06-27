@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
     @Nullable
     public String anonymousUserId;
-    public boolean installEventLogged;
+    public boolean isInstallEventLogged;
 
     @NotNull
     public static SourcegraphApplicationService getInstance() {
@@ -27,7 +27,7 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     }
 
     public boolean isInstallEventLogged() {
-        return installEventLogged;
+        return isInstallEventLogged;
     }
 
     @Nullable

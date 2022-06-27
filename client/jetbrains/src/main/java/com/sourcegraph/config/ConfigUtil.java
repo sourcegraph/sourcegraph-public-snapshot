@@ -65,7 +65,7 @@ public class ConfigUtil {
     }
 
     public static void setInstallEventLogged(boolean value) {
-        SourcegraphApplicationService.getInstance().installEventLogged = value;
+        SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
     }
 
     @Nullable
