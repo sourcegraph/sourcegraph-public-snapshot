@@ -54,10 +54,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db := dbtest.NewDB(logger, t)
-			db.SetMaxOpenConns(20)
-
-			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, db))
+			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 			store.SetMetrics(repos.NewStoreMetrics())
 			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})
