@@ -569,8 +569,6 @@ func newEventHandler(
 	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
-	ctx, cancel := context.WithCancel(ctx)
-
 	// Store marshalled matches and flush periodically or when we go over
 	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
 	// still write more than that.
@@ -580,7 +578,6 @@ func newEventHandler(
 
 	eh := &eventHandler{
 		ctx:                ctx,
-		cancel:             cancel,
 		db:                 db,
 		eventWriter:        eventWriter,
 		matchesBuf:         matchesBuf,
@@ -606,14 +603,18 @@ func newEventHandler(
 }
 
 type eventHandler struct {
-	mu sync.Mutex
+	ctx context.Context
+	db  database.DB
 
-	ctx    context.Context
-	cancel context.CancelFunc
-
-	db database.DB
-
+	// Config params
 	enableChunkMatches bool
+	flushInterval      time.Duration
+	progressInterval   time.Duration
+
+	logLatency func()
+
+	// Everything below this line is protected by the mutex
+	mu sync.Mutex
 
 	eventWriter *eventWriter
 
@@ -621,17 +622,12 @@ type eventHandler struct {
 	filters    *streaming.SearchFilters
 	progress   *progressAggregator
 
-	flushInterval    time.Duration
-	progressInterval time.Duration
-
 	// These timers will be non-nil unless Done() was called
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
 	displayRemaining int
 	first            bool
-
-	logLatency func()
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
@@ -674,10 +670,6 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 // Done cleans up any background tasks and flushes any buffered data to the stream
 func (h *eventHandler) Done() {
-	// cancel outside of the mutex so any requests
-	// that are holding the mutex stop immediately
-	h.cancel()
-
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
