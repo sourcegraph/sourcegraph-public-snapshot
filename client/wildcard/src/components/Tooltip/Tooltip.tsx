@@ -14,8 +14,6 @@ interface TooltipProps {
     defaultOpen?: boolean
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
-    /** Class name to apply to the wrapping span */
-    className?: string
 }
 
 /** Arrow width in pixels */
