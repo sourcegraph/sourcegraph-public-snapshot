@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/sourcegraph/log"
@@ -114,6 +115,11 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	l.exitStatus = exitStatus
+
+	// We want to treat actions on files that don't exist as an os.ErrNotExist
+	if err != nil && strings.Contains(stderrBuf.String(), "does not exist in") {
+		err = os.ErrNotExist
+	}
 
 	return stdoutBuf.Bytes(), bytes.TrimSpace(stderrBuf.Bytes()), err
 }
