@@ -62,7 +62,6 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		}
 	})
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		// equivalent of progress.Update() in search
 		if !event.Stats.Zero() {
 			g.Submit(func() groupEvent {
 				return groupEvent{nil, event.Stats, nil}

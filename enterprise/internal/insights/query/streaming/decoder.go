@@ -145,6 +145,7 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 
 	return client.ComputeMatchContextStreamDecoder{
 		OnProgress: func(progress *streamapi.Progress) {
+			println("progress!")
 			// ctr.Alerts = append(ctr.Alerts, "woop woop")
 		},
 		OnResult: func(results []compute.MatchContext) {

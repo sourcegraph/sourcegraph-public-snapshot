@@ -30,12 +30,14 @@ func NewComputeStreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		flushTickerInternal: 100 * time.Millisecond,
+		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
 	db                  database.DB
 	flushTickerInternal time.Duration
+	pingTickerInterval  time.Duration
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +73,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer sendProgress()
 	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
@@ -91,10 +92,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
-		sendProgress()
+
+		if progress.Dirty {
+			sendProgress()
+		}
 	}
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
+
+	pingTicker := time.NewTicker(h.pingTickerInterval)
+	defer pingTicker.Stop()
 
 	first := true
 	handleEvent := func(event Event) {
@@ -110,7 +117,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			first = false
 			matchesFlush()
 		}
-
 	}
 
 LOOP:
@@ -123,6 +129,8 @@ LOOP:
 			handleEvent(event)
 		case <-flushTicker.C:
 			matchesFlush()
+		case <-pingTicker.C:
+			sendProgress()
 		}
 	}
 
