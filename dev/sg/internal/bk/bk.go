@@ -137,21 +137,6 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 	return b, nil
 }
 
-func (c *Client) ListAnnotationsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Annotation, error) {
-	annotations, _, err := c.bk.Annotations.ListByBuild(BuildkiteOrg, pipeline, number, nil)
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil, errors.New("no annotations because no build found")
-		}
-		return nil, err
-	}
-
-	return annotations, nil
-}
-
 // ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build
 func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Artifact, error) {
 	artifacts, _, err := c.bk.Artifacts.ListByBuild(BuildkiteOrg, pipeline, number, nil)
@@ -194,7 +179,6 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 	}
 
 	return result, nil
-
 }
 
 // TriggerBuild request a build on Buildkite API and returns that build.
