@@ -7,6 +7,10 @@
     z-index: 1001 !important;
 }
 
+:global(.show) > .command-list-popover {
+    display: block;
+}
+
 .command-palette-button > span {
     display: flex;
     align-items: center;
