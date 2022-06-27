@@ -19,10 +19,10 @@ Great! You've decided to write an ADR. To get started:
 
 Date: {{YYYY-MM-DD}}
 
-### Context
+## Context
 
-### Decision
+## Decision
 
-### Consequences
+## Consequences
 
 ```
