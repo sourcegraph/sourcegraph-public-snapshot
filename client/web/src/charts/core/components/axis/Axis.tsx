@@ -33,7 +33,7 @@ export const AxisLeft = memo(
                     width={width}
                     height={height}
                     scale={scale}
-                    tickValues={getYScaleTicks({ scale, space: height })}
+                    tickValues={ticksValues}
                     className={styles.gridLine}
                 />
 
