@@ -222,6 +222,7 @@ sg ci build --help
 			}
 
 			// build status finalized
+			// lets get annotations (if any) for the build
 			var annotations bk.JobAnnotations
 			var buildNumber string = fmt.Sprintf("%d", *build.Number)
 
@@ -697,12 +698,14 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 		} else {
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
 		}
+
 		if annotation, exist := annotations[*job.ID]; exist {
 			block.WriteMarkdown(annotation.Content)
 		}
 	}
 
 	block.Close()
+	fmt.Printf("Total annotations: %d\n", len(annotations))
 
 	if notify {
 		if failed {
