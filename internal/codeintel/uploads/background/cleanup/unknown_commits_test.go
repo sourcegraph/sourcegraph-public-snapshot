@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -103,7 +102,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	}
-	defer inttests.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	dbStore := NewMockDBStore()
 	dbStore.TransactFunc.SetDefaultReturn(dbStore, nil)

@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -156,7 +155,6 @@ func TestGitCommitFileNames(t *testing.T) {
 	}
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		inttests.ResetMocks()
 		gitserver.ResetMocks()
 	}()
 

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -405,7 +404,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 			gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 				return test.mockStat, nil
 			}
-			t.Cleanup(inttests.ResetMocks)
+			t.Cleanup(gitserver.ResetMocks)
 
 			w := httptest.NewRecorder()
 			r, err := http.NewRequest("GET", test.path, nil)
