@@ -40,7 +40,6 @@ function go_test() {
   local test_exit_code
   # shellcheck disable=SC2086
   go test \
-    -p 10 \
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
