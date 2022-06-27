@@ -383,10 +383,18 @@ func frontendTests(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
+		isSkip := func() bk.StepOpt {
+			if strings.HasSuffix(testSuffix, "internal/database") {
+				return bk.Skip("temp")
+			}
+			return nil
+		}
+
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
 			bk.Env("GOMAXPROCS", "10"), // Ensure we're not blowing up the database connection count.
-			bk.Parallelism(50),
+			isSkip(),
+			bk.Parallelism(100),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
 				TestReports: &bk.TestReportOpts{
