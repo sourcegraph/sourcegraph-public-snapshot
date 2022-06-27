@@ -24,6 +24,11 @@ You can read more about Sourcegraph on our [website](https://about.sourcegraph.c
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
 2. Search for `Sourcegraph` -> `Install` and `Reload`.
 
+### From Gitpod VS Code Workspaces:
+
+1. Open the `Extensions view` by clicking on the Extensions icon in the [Activity Bar](https://code.visualstudio.com/api/ux-guidelines/overview#activity-bar) on the side of your Gitpod VS Code workspace
+2. Search for [Sourcegraph](https://open-vsx.org/extension/sourcegraph/sourcegraph) -> `Install` and `Reload`.
+
 ## Using the Sourcegraph extension
 
 To get started and open the Sourcegraph extension, simply click the Sourcegraph (Wildcard) icon in the VS Code Activity Bar.
