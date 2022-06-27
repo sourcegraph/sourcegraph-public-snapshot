@@ -2842,8 +2842,7 @@ CREATE TABLE survey_responses (
     better text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     use_cases text[],
-    other_use_case text,
-    additional_information text
+    other_use_case text
 );
 
 CREATE SEQUENCE survey_responses_id_seq

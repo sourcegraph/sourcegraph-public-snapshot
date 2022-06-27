@@ -15955,19 +15955,6 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "additional_information",
-          "Index": 10,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "better",
           "Index": 6,
           "TypeName": "text",
