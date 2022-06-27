@@ -27,19 +27,19 @@ type userShell struct {
 
 // ShellPath returns the path to the shell used by the current unix user.
 func ShellPath(ctx context.Context) string {
-	v := ctx.Value(key{}).(userShell)
+	v, _ := ctx.Value(key{}).(userShell)
 	return v.shellPath
 }
 
 // ShellPath returns the path to the shell configuration (bashrc...) used by the current unix user.
 func ShellConfigPath(ctx context.Context) string {
-	v := ctx.Value(key{}).(userShell)
+	v, _ := ctx.Value(key{}).(userShell)
 	return v.shellConfigPath
 }
 
 // Shell returns the current shell type used by the current unix user.
 func ShellType(ctx context.Context) Shell {
-	v := ctx.Value(key{}).(userShell)
+	v, _ := ctx.Value(key{}).(userShell)
 	return v.shell
 }
 
