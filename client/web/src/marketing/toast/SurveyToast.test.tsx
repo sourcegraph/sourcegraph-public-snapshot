@@ -112,7 +112,7 @@ describe('SurveyToast', () => {
                 const continueButton = renderResult.getByRole('button', { name: 'Continue' })
                 expect(continueButton).toBeVisible()
                 fireEvent.click(continueButton)
-                expect(renderResult.getByText('You are using sourcegraph to...')).toBeVisible()
+                expect(renderResult.getByText('You are using Sourcegraph to...')).toBeVisible()
             })
         })
 
@@ -207,7 +207,7 @@ describe('SurveyToast', () => {
 
             const continueButton = renderResult.getByRole('button', { name: 'Continue' })
             fireEvent.click(continueButton)
-            expect(renderResult.getByText('You are using sourcegraph to...')).toBeVisible()
+            expect(renderResult.getByText('You are using Sourcegraph to...')).toBeVisible()
         }
 
         beforeEach(() => moveToUseCaseForm())
