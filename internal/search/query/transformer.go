@@ -581,6 +581,53 @@ func fuzzyRegexp(patterns []Pattern) []Node {
 	}
 }
 
+// standard reduces a sequence of Patterns such that:
+//
+// - adjacent literal patterns are concattenated with space. I.e., contiguous
+// literal patterns are joined on space to create one literal pattern.
+//
+// - any patterns adjacent to regular expression patterns are AND-ed.
+//
+// Here are concrete examples of input strings and equivalent transformation.
+// I'm using the `content` field for literal patterns to explicitly delineate
+// how those are processed.
+//
+// `/foo/ /bar/ baz` -> (/foo/ AND /bar/ AND content:"baz")
+// `/foo/ bar baz` -> (/foo/ AND content:"bar baz")
+// `/foo/ bar /baz/` -> (/foo/ AND content:"bar" AND /baz/)
+func standard(patterns []Pattern) []Node {
+	if len(patterns) == 1 {
+		return []Node{patterns[0]}
+	}
+
+	var literals []Pattern
+	var result []Node
+	for _, p := range patterns {
+		if p.Annotation.Labels.IsSet(Regexp) {
+			// Push any sequence of literal patterns accumulated.
+			// Then push this regexp pattern.
+			if len(literals) > 0 {
+				// Use existing `space` concatenator on literal
+				// patterns. Correct and safe cast under
+				// invariant len(literals) > 0.
+				result = append(result, space(literals)[0].(Pattern))
+			}
+
+			result = append(result, p)
+			literals = []Pattern{}
+			continue
+		}
+		// Not Regexp => assume literal pattern and accumulate.
+		literals = append(literals, p)
+	}
+
+	if len(literals) > 0 {
+		result = append(result, space(literals)[0].(Pattern))
+	}
+
+	return result
+}
+
 // fuzzyRegexp interpolates patterns with spaces and concatenates them.
 // Invariant: len(patterns) > 0.
 func space(patterns []Pattern) []Node {
