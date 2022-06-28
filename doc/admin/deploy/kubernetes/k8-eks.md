@@ -20,13 +20,15 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 ## Hardware and Service Requirements
 
+Before beginning the deployment we recommend reviewing the required hardware and service resource requirements.
+
 Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the override file in the steps below.
 
 ## Steps {#eks-steps}
 
-### Create Override File & Add Configurations
+### Create Override File & Add Deployment Configurations
 
-Create an override file and add any configuration override settings you need. See the [configuration](#configuration) documentation for more information on override files and the options for configurations.
+Create an override file and add any configuration override settings you need. See the [configuration](./helm/#configuration) documentation for more information on override files and the options for custom configurations.
 
 We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html), to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html). For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
 
@@ -63,7 +65,7 @@ Install the Sourcegraph Helm chart by running the following command:
 helm upgrade --install --values ./override.yaml --version 3.41.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-It will take some time for the load balancer to be fully ready. Use the following command to check on the status and obtain the load balancer address once available:
+It will take some time for the load balancer to be fully ready. Use the following command to check on the status and obtain the load balancer IP address once available:
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
@@ -84,9 +86,9 @@ frontend:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```
 
-### Validate the deployment
+### Validate the Deployment
 
-Sourcegraph should now be available via the address set. 
+Sourcegraph should now be available via the address set.
 
 Navigate to the URL in your browser to ensure you now have access to the Sourcegraph UI to create the initial administrator account.
 
