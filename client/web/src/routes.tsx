@@ -231,7 +231,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
+        render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
     {
         path: PageRoutes.Extensions,

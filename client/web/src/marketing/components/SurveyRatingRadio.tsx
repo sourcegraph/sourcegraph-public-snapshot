@@ -2,24 +2,22 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import { range } from 'lodash'
-import { useHistory } from 'react-router'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import radioStyles from './SurveyRatingRadio.module.scss'
 
 interface SurveyRatingRadio {
     ariaLabelledby?: string
     score?: number
-    onChange?: (score: number) => void
+    onChange: (score: number) => void
     openSurveyInNewTab?: boolean
 }
 
 export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<SurveyRatingRadio>> = props => {
-    const history = useHistory()
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(props.score || null)
 
     const handleFocus = (index: number): void => {
         setFocusedIndex(index)
@@ -31,7 +29,6 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
 
     const handleChange = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { score }, { score })
-        history.push(`/survey/${score}`)
 
         if (props.onChange) {
             props.onChange(score)
@@ -52,12 +49,10 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
                 return (
                     <Button
                         key={score}
-                        className={classNames(radioStyles.ratingBtn, {
-                            active: pressed,
-                            focus: focused,
-                        })}
-                        variant="primary"
+                        variant={pressed ? 'primary' : 'secondary'}
+                        className={classNames(radioStyles.ratingBtn, { focus: focused })}
                         as="label"
+                        outline={score !== focusedIndex && !pressed}
                     >
                         {/* eslint-disable-next-line react/forbid-elements */}
                         <input
@@ -68,7 +63,6 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
                             onFocus={() => handleFocus(score)}
                             className={radioStyles.ratingRadio}
                         />
-
                         {score}
                     </Button>
                 )

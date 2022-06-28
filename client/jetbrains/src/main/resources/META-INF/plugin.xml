@@ -10,8 +10,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
-        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationService"
-                            preload="true"/>
+        <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationService"/>
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"

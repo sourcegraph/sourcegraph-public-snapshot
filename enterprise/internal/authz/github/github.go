@@ -255,7 +255,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			}
 			if !hasUser {
 				group.Users = append(group.Users, accountID)
-				p.groupsCache.setGroup(group)
+				if err := p.groupsCache.setGroup(group); err != nil {
+					log15.Warn("setting group", "error", err)
+				}
 			}
 		}
 
@@ -304,7 +306,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 
 		// Persist repos affiliated with group to cache
-		p.groupsCache.setGroup(group)
+		if err := p.groupsCache.setGroup(group); err != nil {
+			log15.Warn("setting group", "error", err)
+		}
 	}
 
 	return perms, nil

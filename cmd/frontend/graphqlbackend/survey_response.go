@@ -56,6 +56,18 @@ func (s *surveyResponseResolver) Better() *string {
 	return s.surveyResponse.Better
 }
 
+func (s *surveyResponseResolver) UseCases() *[]string {
+	if len(s.surveyResponse.UseCases) == 0 {
+		return nil
+	}
+
+	return &s.surveyResponse.UseCases
+}
+
+func (s *surveyResponseResolver) OtherUseCase() *string {
+	return s.surveyResponse.OtherUseCase
+}
+
 func (s *surveyResponseResolver) CreatedAt() DateTime {
 	return DateTime{Time: s.surveyResponse.CreatedAt}
 }
@@ -67,19 +79,22 @@ type SurveySubmissionInput struct {
 	Email *string
 	// Score is the user's likelihood of recommending Sourcegraph to a friend, from 0-10.
 	Score int32
-	// Reason is the answer to "What is the most important reason for the score you gave".
-	Reason *string
+	// UseCases is the answer to "You are using Sourcegraph to...".
+	UseCases *[]string
+	// OtherUseCase is the answer to "What else are you using Sourcegraph to do?".
+	OtherUseCase *string
 	// Better is the answer to "What can Sourcegraph do to provide a better product"
 	Better *string
 }
 
 type surveySubmissionForHubSpot struct {
-	Email           *string `url:"email"`
-	Score           int32   `url:"nps_score"`
-	Reason          *string `url:"nps_reason"`
-	Better          *string `url:"nps_improvement"`
-	IsAuthenticated bool    `url:"user_is_authenticated"`
-	SiteID          string  `url:"site_id"`
+	Email           *string   `url:"email"`
+	Score           int32     `url:"nps_score"`
+	UseCases        *[]string `url:"nps_use_cases"`
+	OtherUseCase    *string   `url:"nps_other_use_case"`
+	Better          *string   `url:"nps_improvement"`
+	IsAuthenticated bool      `url:"user_is_authenticated"`
+	SiteID          string    `url:"site_id"`
 }
 
 // SubmitSurvey records a new satisfaction (NPS) survey response by the current user.
@@ -89,6 +104,10 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	input := args.Input
 	var uid *int32
 	email := input.Email
+
+	if args.Input.Score < 0 || args.Input.Score > 10 {
+		return nil, errors.New("Score must be a value between 0 and 10")
+	}
 
 	// If user is authenticated, use their uid and overwrite the optional email field.
 	actor := actor.FromContext(ctx)
@@ -103,7 +122,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
+	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.UseCases, input.OtherUseCase, input.Better)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +131,8 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
 		Email:           email,
 		Score:           args.Input.Score,
-		Reason:          args.Input.Reason,
+		UseCases:        args.Input.UseCases,
+		OtherUseCase:    args.Input.OtherUseCase,
 		Better:          args.Input.Better,
 		IsAuthenticated: actor.IsAuthenticated(),
 		SiteID:          siteid.Get(),
