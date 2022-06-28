@@ -8,27 +8,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type schedulerOperations struct {
-	HandleIndexScheduler *observation.Operation
-}
-
 type dependencyReposOperations struct {
 	InsertCloneableDependencyRepo *observation.Operation
 }
 
 var (
-	schedulerOps       *schedulerOperations
-	dependencyReposOps *dependencyReposOperations
 	once               sync.Once
+	dependencyReposOps *dependencyReposOperations
 )
 
-func newOperations(observationContext *observation.Context) *schedulerOperations {
+func newOperations(observationContext *observation.Context) *dependencyReposOperations {
 	once.Do(func() {
 		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
-			"codeintel_index_scheduler",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			"codeintel_dependency_repos",
+			metrics.WithLabels("op", "scheme", "new"),
 		)
 
 		op := func(prefix, name string) *observation.Operation {
@@ -53,5 +47,5 @@ func newOperations(observationContext *observation.Context) *schedulerOperations
 			InsertCloneableDependencyRepo: op("dependencyrepos", "InsertCloneableDependencyRepo"),
 		}
 	})
-	return schedulerOps
+	return dependencyReposOps
 }

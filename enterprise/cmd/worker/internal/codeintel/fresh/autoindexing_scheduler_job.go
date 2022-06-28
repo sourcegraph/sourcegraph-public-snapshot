@@ -3,6 +3,8 @@ package codeintel
 import (
 	"context"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -14,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type autoindexingScheduler struct{}
@@ -33,6 +37,12 @@ func (j *autoindexingScheduler) Config() []env.Config {
 }
 
 func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+	observationContext := &observation.Context{
+		Logger:     logger.Scoped("routines", "codeintel autoindexing scheduling routines"),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -54,6 +64,6 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 
 	return []goroutine.BackgroundRoutine{
-		scheduler.NewScheduler(autoindexingService, dbStore, policyMatcher),
+		scheduler.NewScheduler(autoindexingService, dbStore, policyMatcher, observationContext),
 	}, nil
 }
