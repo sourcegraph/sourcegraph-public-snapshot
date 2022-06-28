@@ -21,7 +21,6 @@ type operations struct {
 	deleteSourcedCommits *observation.Operation
 
 	deleteUploadsWithoutRepository *observation.Operation
-	deleteIndexesWithoutRepository *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -54,6 +53,5 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteSourcedCommits: op("DeleteSourcedCommits"),
 
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
-		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 	}
 }
