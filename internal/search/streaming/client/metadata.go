@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// RepoNamer returns a best-effort function which translates repository IDs
-// into names.
+// RepoNamer returns a best-effort function which translates repository IDs into names.
 func RepoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
+	logger := log.Scoped("RepoNamer", "translate repository IDs into names")
 	cache := map[api.RepoID]api.RepoName{}
 
 	return func(ids []api.RepoID) []api.RepoName {
@@ -34,8 +34,8 @@ func RepoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
 				cache[repo.ID] = repo.Name
 			})
 			if err != nil {
-				// repoNamer is best-effort, so we just log the error.
-				log15.Warn("streaming search RepoNamer failed to list names", "error", err)
+				// RepoNamer is best-effort, so we just log the error.
+				logger.Warn("streaming search RepoNamer failed to list names", log.Error(err))
 			}
 		}
 
