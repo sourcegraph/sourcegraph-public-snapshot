@@ -514,12 +514,15 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 				break
 			}
 
-			fm, err := toFileMatch(&zipReader.Reader, comby.ToFileMatch(b).(*comby.FileMatch))
-			if err != nil {
-				log.NamedError("error converting comby match to FileMatch, skipping", err)
-				continue
+			cfm := comby.ToFileMatch(b)
+			if cfm != nil {
+				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+				if err != nil {
+					log.NamedError("error converting comby match to FileMatch, skipping", err)
+					continue
+				}
+				sender.Send(fm)
 			}
-			sender.Send(fm)
 		}
 	}()
 
