@@ -290,6 +290,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					block := r.Output.Block(output.Linef(output.EmojiFailure, style, check.Name))
 					block.Writef("%s\n", check.cachedCheckErr)
 					block.Writef("%s\n", check.cachedCheckOutput)
+					block.Close()
 
 					// Build the markdown for the annotation summary
 					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)

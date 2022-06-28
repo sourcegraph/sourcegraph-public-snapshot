@@ -108,6 +108,9 @@ export interface ResultContainerProps {
      * CSS class name to be applied to the component
      */
     className?: string
+
+    as?: React.ElementType
+    index: number
 }
 
 /**
@@ -131,6 +134,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     onResultClicked,
     className,
     resultType,
+    as: Component = 'div',
+    index,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -149,77 +154,83 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         }
     }
     return (
-        <div
+        <Component
             className={classNames('test-search-result', styles.resultContainer, className)}
             data-testid="result-container"
             data-result-type={resultType}
             data-expanded={allExpanded}
             onClick={trackReferencePanelClick}
-            role="none"
         >
-            <div className={styles.header}>
-                <Icon
-                    className="flex-shrink-0"
-                    as={icon}
-                    {...(resultType
-                        ? {
-                              'aria-label': `${resultType} result`,
-                          }
-                        : {
-                              'aria-hidden': true,
-                          })}
-                />
-                <div className={classNames('mx-1', styles.headerDivider)} />
-                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
-                <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
-                    {title}
-                    {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
-                </div>
-                {matchCountLabel && (
-                    <>
-                        <small>{matchCountLabel}</small>
-                        {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
-                    </>
-                )}
-                {collapsible && (
-                    <Button
-                        data-testid="toggle-matches-container"
-                        className={classNames('py-0', styles.toggleMatchesContainer)}
-                        onClick={toggle}
-                        variant="link"
-                        size="sm"
+            <article aria-labelledby={`result-container-${index}`}>
+                <div className={styles.header} id={`result-container-${index}`}>
+                    <Icon
+                        className="flex-shrink-0"
+                        as={icon}
+                        {...(resultType
+                            ? {
+                                  'aria-label': `${resultType} result`,
+                              }
+                            : {
+                                  'aria-hidden': true,
+                              })}
+                    />
+                    <div className={classNames('mx-1', styles.headerDivider)} />
+                    <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                    <div
+                        className={classNames(styles.headerTitle, titleClassName)}
+                        data-testid="result-container-header"
                     >
-                        {expanded ? (
-                            <>
-                                {collapseLabel && (
-                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowCollapseUp} />
-                                )}
-                                {collapseLabel}
-                                {!collapseLabel && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}
-                            </>
-                        ) : (
-                            <>
-                                {expandLabel && (
-                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowExpandDown} />
-                                )}
-                                {expandLabel}
-                                {!expandLabel && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
-                            </>
+                        {title}
+                        {description && (
+                            <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>
                         )}
-                    </Button>
-                )}
-                {matchCountLabel && formattedRepositoryStarCount && (
-                    <div className={classNames('mx-2', styles.headerDivider)} />
-                )}
-                {formattedRepositoryStarCount && (
-                    <>
-                        <SearchResultStar aria-label={`${repoStars} stars`} />
-                        <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
-                    </>
-                )}
-            </div>
-            {!expanded && collapsedChildren}
-            {expanded && expandedChildren}
-        </div>
+                    </div>
+                    {matchCountLabel && (
+                        <>
+                            <small>{matchCountLabel}</small>
+                            {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
+                        </>
+                    )}
+                    {collapsible && (
+                        <Button
+                            data-testid="toggle-matches-container"
+                            className={classNames('py-0', styles.toggleMatchesContainer)}
+                            onClick={toggle}
+                            variant="link"
+                            size="sm"
+                        >
+                            {expanded ? (
+                                <>
+                                    {collapseLabel && (
+                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowCollapseUp} />
+                                    )}
+                                    {collapseLabel}
+                                    {!collapseLabel && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}
+                                </>
+                            ) : (
+                                <>
+                                    {expandLabel && (
+                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowExpandDown} />
+                                    )}
+                                    {expandLabel}
+                                    {!expandLabel && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    {matchCountLabel && formattedRepositoryStarCount && (
+                        <div className={classNames('mx-2', styles.headerDivider)} />
+                    )}
+                    {formattedRepositoryStarCount && (
+                        <>
+                            <SearchResultStar aria-label={`${repoStars} stars`} />
+                            <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
+                        </>
+                    )}
+                </div>
+                {!expanded && collapsedChildren}
+                {expanded && expandedChildren}
+            </article>
+        </Component>
     )
 }

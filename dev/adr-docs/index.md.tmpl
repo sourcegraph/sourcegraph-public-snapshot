@@ -8,6 +8,6 @@ Are you considering adding an ADR? Check out the [How-to page](how-to.md)!
 
 To preserve order, individual documents are prefixed by the **current epoch Unix timestamp**.
 {{""}}
-{{- range .Adrs }}
-{{ .Number }}. _{{ .Date }}_ [{{ .Title }}]({{ .Path }})
+{{- range .ADRs }}
+{{ .Number }}. _{{ .Date.Format "2006-01-02" }}_ [{{ .Title }}]({{ .BasePath }})
 {{- end }}

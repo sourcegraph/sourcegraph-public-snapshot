@@ -101,6 +101,10 @@
 
                     svg {
                         flex-shrink: 0;
+
+                        path {
+                            fill: var(--search-query-text-color);
+                        }
                     }
 
                     :global(.cm-completionLabel) {

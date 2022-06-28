@@ -94,7 +94,18 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 					}
 					return errors.New("could not find dev-private repository either in current directory or one above")
 				},
-				Fix: cmdFix(`git clone git@github.com:sourcegraph/dev-private.git`),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					rootDir, err := root.RepositoryRoot()
+					if err != nil {
+						return errors.Wrap(err, "sourcegraph/sourcegraph should be cloned first")
+					}
+
+					return run.Cmd(ctx, `git clone git@github.com:sourcegraph/dev-private.git`).
+						// Clone to parent
+						Dir(filepath.Join(rootDir, "..")).
+						Run().
+						StreamLines(cio.Verbose)
+				},
 			},
 		},
 	}

@@ -349,7 +349,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     }
 
     return (
-        <div className={classNames(props.className, styles.searchResultsInfoBar)} data-testid="results-info-bar">
+        <aside
+            role="region"
+            aria-label="Search results information"
+            className={classNames(props.className, styles.searchResultsInfoBar)}
+            data-testid="results-info-bar"
+        >
             <div className={styles.row}>
                 <Button
                     className={classNames('d-flex d-lg-none', showFilters && 'active')}
@@ -460,6 +465,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     )}
                 </ul>
             </div>
-        </div>
+        </aside>
     )
 }

@@ -19,6 +19,8 @@ public class ConfigUtil {
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
         configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
+        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
+        configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         return configAsJson;
     }
 

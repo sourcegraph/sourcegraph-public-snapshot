@@ -4,13 +4,13 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, TextArea, Label, Text, Input } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
-
-import { SurveyRatingRadio } from './SurveyRatingRadio'
+import { AuthenticatedUser } from '../../auth'
+import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
+import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
 
 import styles from './SurveyPage.module.scss'
 
@@ -40,10 +40,11 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     score,
 }) => {
     const history = useHistory<SurveyFormLocationState>()
-    const [reason, setReason] = useState('')
-    const [betterProduct, setBetterProduct] = useState('')
     const [email, setEmail] = useState('')
     const [validationError, setValidationError] = useState<Error | null>(null)
+    const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
+    const [otherUseCase, setOtherUseCase] = useState<string>('')
+    const [better, setBetter] = useState<string>('')
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
@@ -52,16 +53,18 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 state: {
                     // Mutation is only submitted when score is defined
                     score: score!,
-                    feedback: reason,
+                    feedback: better,
                 },
             })
         },
     })
 
-    const handleScoreChange = (): void => {
+    const handleScoreChange = (newScore: number): void => {
         if (validationError) {
             setValidationError(null)
         }
+
+        history.push(`/survey/${newScore}`)
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -77,10 +80,11 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
         await submitSurvey({
             variables: {
                 input: {
-                    score,
                     email,
-                    reason,
-                    better: betterProduct,
+                    score,
+                    useCases,
+                    otherUseCase,
+                    better,
                 },
             },
         })
@@ -97,39 +101,20 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 How likely is it that you would recommend Sourcegraph to a friend?
             </Label>
             <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={handleScoreChange} score={score} />
-            {!authenticatedUser && (
-                <div className="form-group">
-                    <Input
-                        placeholder="Email"
-                        onChange={event => setEmail(event.target.value)}
-                        value={email}
-                        disabled={response.loading}
-                    />
-                </div>
-            )}
-            <div className="form-group">
-                <TextArea
-                    id="survey-form-score-reason"
-                    onChange={event => setReason(event.target.value)}
-                    value={reason}
-                    disabled={response.loading}
-                    autoFocus={true}
-                    label={
-                        <span className={styles.label}>
-                            What is the most important reason for the score you gave Sourcegraph?
-                        </span>
-                    }
-                />
-            </div>
-            <div className="form-group">
-                <TextArea
-                    id="survey-form-better-product"
-                    onChange={event => setBetterProduct(event.target.value)}
-                    value={betterProduct}
-                    disabled={response.loading}
-                    label={<span className={styles.label}>What could Sourcegraph do to provide a better product?</span>}
-                />
-            </div>
+            <SurveyUseCaseForm
+                className="my-2"
+                authenticatedUser={authenticatedUser}
+                formLabelClassName={styles.label}
+                title="You are using sourcegraph to..."
+                useCases={useCases}
+                onChangeUseCases={setUseCases}
+                otherUseCase={otherUseCase}
+                onChangeOtherUseCase={setOtherUseCase}
+                better={better}
+                onChangeBetter={setBetter}
+                email={email}
+                onChangeEmail={setEmail}
+            />
             <div className="form-group">
                 <Button display="block" variant="primary" type="submit" disabled={response.loading}>
                     Submit
