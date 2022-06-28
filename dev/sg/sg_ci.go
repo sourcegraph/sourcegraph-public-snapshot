@@ -146,7 +146,6 @@ sg ci build --help
 				Aliases: []string{"v"},
 				Usage:   "Open build page in browser",
 			},
-			&ciBuildFlag,
 			&ciBranchFlag,
 		},
 		Action: func(ctx *cli.Context) error {
