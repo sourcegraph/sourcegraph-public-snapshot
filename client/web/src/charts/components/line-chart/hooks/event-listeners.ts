@@ -1,4 +1,4 @@
-import { MouseEvent, MouseEventHandler, PointerEventHandler } from 'react'
+import { FocusEventHandler, MouseEvent, MouseEventHandler, PointerEventHandler } from 'react'
 
 import { localPoint } from '@visx/event'
 import { Point } from '@visx/point'
@@ -6,12 +6,14 @@ import { Point } from '@visx/point'
 interface UseChartEventHandlersProps {
     onPointerMove: (point: Point) => void
     onPointerLeave: () => void
+    onFocusOut: FocusEventHandler<SVGSVGElement>
     onClick: MouseEventHandler<SVGSVGElement>
 }
 
 interface ChartHandlers {
     onPointerMove: PointerEventHandler<SVGSVGElement>
     onPointerLeave: PointerEventHandler<SVGSVGElement>
+    onBlurCapture: FocusEventHandler<SVGSVGElement>
     onClick: MouseEventHandler<SVGSVGElement>
 }
 
@@ -19,7 +21,7 @@ interface ChartHandlers {
  * Provides special svg|chart-specific handlers for mouse/touch events.
  */
 export function useChartEventHandlers(props: UseChartEventHandlersProps): ChartHandlers {
-    const { onPointerMove, onPointerLeave, onClick } = props
+    const { onPointerMove, onPointerLeave, onFocusOut, onClick } = props
 
     const handleMouseMove: MouseEventHandler<SVGGElement> = event => {
         const point = localPoint(event.currentTarget, event)
@@ -47,9 +49,19 @@ export function useChartEventHandlers(props: UseChartEventHandlersProps): ChartH
         onPointerLeave()
     }
 
+    const handleBlurCapture: FocusEventHandler<SVGSVGElement> = event => {
+        const relatedTarget = event.relatedTarget as Element
+        const currentTarget = event.currentTarget as Element
+
+        if (!currentTarget.contains(relatedTarget)) {
+            onFocusOut(event)
+        }
+    }
+
     return {
         onPointerMove: handleMouseMove,
         onPointerLeave: handleMouseOut,
+        onBlurCapture: handleBlurCapture,
         onClick,
     }
 }

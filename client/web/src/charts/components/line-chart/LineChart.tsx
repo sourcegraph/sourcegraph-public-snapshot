@@ -163,6 +163,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             }
         },
         onPointerLeave: () => setActivePoint(undefined),
+        onFocusOut: () => setActivePoint(undefined),
         onClick: event => {
             if (activePoint?.linkUrl) {
                 onDatumClick(event)
@@ -171,6 +172,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         },
     })
 
+    const activeSeriesId = activePoint?.seriesId ?? ''
     const sortedSeries = useMemo(
         () =>
             [...activeSeries]
@@ -178,8 +180,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 // this is to make sure the hovered series is always rendered on top
                 // since SVGs do not support z-index, we have to render the hovered
                 // series last
-                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || '')),
-        [activeSeries, activePoint]
+                .sort(series => sortByDataKey(series.id, activeSeriesId)),
+        [activeSeries, activeSeriesId]
     )
 
     return (
@@ -212,6 +214,19 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {sortedSeries.map(line => (
+                    <LinePath
+                        key={line.id}
+                        data={line.data as SeriesDatum<D>[]}
+                        defined={isDatumWithValidNumber}
+                        x={data => xScale(data.x)}
+                        y={data => yScale(getDatumValue(data))}
+                        stroke={line.color}
+                        strokeLinecap="round"
+                        strokeWidth={2}
+                    />
+                ))}
+
+                {activeSeries.map(line => (
                     <Group
                         key={line.id}
                         style={getLineGroupStyle?.({
@@ -220,30 +235,32 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                             isActive: activePoint?.seriesId === line.id,
                         })}
                     >
-                        <LinePath
-                            data={line.data as SeriesDatum<D>[]}
-                            defined={isDatumWithValidNumber}
-                            x={data => xScale(data.x)}
-                            y={data => yScale(getDatumValue(data))}
-                            stroke={line.color}
-                            strokeLinecap="round"
-                            strokeWidth={2}
-                        />
                         {points[line.id].map(point => (
                             <PointGlyph
                                 key={point.id}
                                 left={point.x}
                                 top={point.y}
-                                active={activePoint?.id === point.id}
+                                active={false}
                                 color={point.color}
                                 linkURL={point.linkUrl}
                                 onClick={onDatumClick}
                                 onFocus={event => setActivePoint({ ...point, element: event.target })}
-                                onBlur={() => setActivePoint(undefined)}
                             />
                         ))}
                     </Group>
                 ))}
+
+                {activePoint && (
+                    <PointGlyph
+                        left={activePoint.x}
+                        top={activePoint.y}
+                        active={true}
+                        color={activePoint.color}
+                        linkURL={activePoint.linkUrl}
+                        onClick={onDatumClick}
+                        tabIndex={-1}
+                    />
+                )}
             </Group>
 
             {activePoint && (
