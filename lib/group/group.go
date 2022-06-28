@@ -1,3 +1,6 @@
+// Package group provides utilities for working with groups of goroutines.
+// The types exported by the package make it easy to handle common patterns
+// like limiting parallelism, collecting errors, and inheriting contexts.
 package group
 
 import (
@@ -7,14 +10,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// New creates a new goroutine group. It can be used directly,
+// or it can be used a starting point to construct more specific
+// group types (for more information, see the With* methods).
+func New() Group {
+	return &group{
+		limiter: &unlimitedLimiter{},
+	}
+}
+
+// Group is the most basic group type. It starts goroutines
+// with Go(), and waits for them to finish with Wait().
 type Group interface {
+	// Go starts a background goroutine. It will not return
+	// until the goroutine has started.
 	Go(func())
 
+	// Wait waits for all goroutines started with Go to complete.
+	Wait()
+
+	// Configuration methods. See interface definitions for details.
 	Contextable[ContextGroup]
 	Errorable[ErrorGroup]
 	Limitable[Group]
 }
 
+// ErrorGroup is a group that handles functions that might return errors.
+// Any non-nil errors will be collected and returned by the Wait() method.
 type ErrorGroup interface {
 	Go(func() error)
 	Wait() error
@@ -52,33 +74,6 @@ type Errorable[T any] interface {
 	WithErrors() T
 }
 
-type Limiter interface {
-	Acquire(context.Context) (context.Context, context.CancelFunc, error)
-}
-
-type unlimitedLimiter struct{}
-
-func (l *unlimitedLimiter) Acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	return ctx, func() {}, nil
-}
-
-type basicLimiter chan struct{}
-
-func (l basicLimiter) Acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	select {
-	case l <- struct{}{}:
-		return ctx, func() { <-l }, nil
-	case <-ctx.Done():
-		return ctx, func() {}, ctx.Err()
-	}
-}
-
-func New() Group {
-	return &group{
-		limiter: &unlimitedLimiter{},
-	}
-}
-
 type group struct {
 	wg      sync.WaitGroup
 	limiter Limiter
@@ -112,7 +107,7 @@ func (g *group) Wait() {
 }
 
 func (g *group) WithLimit(limit int) Group {
-	g.limiter = make(basicLimiter, limit)
+	g.limiter = newBasicLimiter(limit)
 	return g
 }
 
@@ -142,7 +137,7 @@ func (g *contextGroup) Go(f func(context.Context)) {
 }
 
 func (g *contextGroup) WithLimit(limit int) ContextGroup {
-	g.group.limiter = make(basicLimiter, limit)
+	g.group.limiter = newBasicLimiter(limit)
 	return g
 }
 
@@ -185,7 +180,7 @@ func (g *errorGroup) Wait() (err error) {
 }
 
 func (g *errorGroup) WithLimit(limit int) ErrorGroup {
-	g.group.limiter = make(basicLimiter, limit)
+	g.group.limiter = newBasicLimiter(limit)
 	return g
 }
 
@@ -216,9 +211,15 @@ func (g *contextErrorGroup) Go(f func(context.Context) error) {
 		err := f(g.ctx)
 		if err != nil {
 			g.mu.Lock()
-			g.errs = errors.Append(g.errs, err)
 			if g.cancel != nil {
+				// The presence of cancel indicates that that we only want the
+				// first error (the error caused the cancel).
+				if g.errs != nil {
+					g.errs = err
+				}
 				g.cancel()
+			} else {
+				g.errs = errors.Append(g.errs, err)
 			}
 			g.mu.Unlock()
 		}
