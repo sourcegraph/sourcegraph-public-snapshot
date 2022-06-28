@@ -8,18 +8,24 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
+var (
+	LastThreeMonths = "LAST_THREE_MONTHS"
+	LastMonth       = "LAST_MONTH"
+	LastWeek        = "LAST_WEEK"
+)
+
 func makeDateParameters(dateRange string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
 	now := time.Now()
 	var from time.Time
 	var groupBy string
 
-	if dateRange == "LAST_THREE_MONTHS" {
+	if dateRange == LastThreeMonths {
 		from = now.AddDate(0, -3, 0)
 		groupBy = "week"
-	} else if dateRange == "LAST_MONTH" {
+	} else if dateRange == LastMonth {
 		from = now.AddDate(0, -1, 0)
 		groupBy = "day"
-	} else if dateRange == "LAST_WEEK" {
+	} else if dateRange == LastWeek {
 		from = now.AddDate(0, 0, -7)
 		groupBy = "day"
 	} else {

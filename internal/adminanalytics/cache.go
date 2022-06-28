@@ -1,12 +1,16 @@
 package adminanalytics
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -85,4 +89,51 @@ func setSummaryToCache(f *AnalyticsFetcher, summary *AnalyticsSummary) (bool, er
 	}
 
 	return setDataToCache(getCacheKey(f, "summary"), string(data))
+}
+
+var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
+
+func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
+	for _, dateRange := range dateRanges {
+		searchStore := Search{DateRange: dateRange, DB: db}
+
+		fetcherBuilders := []func() (*AnalyticsFetcher, error){searchStore.Searches, searchStore.FileViews, searchStore.FileOpens}
+		for _, buildFetcher := range fetcherBuilders {
+			fetcher, err := buildFetcher()
+			if err != nil {
+				return err
+			}
+
+			if _, err := fetcher.GetNodes(ctx, false); err != nil {
+				return err
+			}
+
+			if _, err := fetcher.GetSummary(ctx, false); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+var started bool
+
+func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
+	if started {
+		panic("already started")
+	}
+
+	started = true
+
+	const delay = 24 * time.Hour
+	for {
+		if err := refreshAnalyticsCache(ctx, db); err != nil {
+			log15.Error("Error refreshing admin analytics cache", "err", err)
+		}
+
+		// Randomize sleep to prevent thundering herds.
+		randomDelay := time.Duration(rand.Intn(600)) * time.Second
+		time.Sleep(delay + randomDelay)
+	}
 }

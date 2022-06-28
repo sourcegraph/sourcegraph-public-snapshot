@@ -44,7 +44,7 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Search.Searches",
+		group:        "Search:Searches",
 	}, nil
 }
 
@@ -81,7 +81,7 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Search.FileViews",
+		group:        "Search:FileViews",
 	}, nil
 }
 
@@ -119,6 +119,6 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Search.FileOpens",
+		group:        "Search:FileOpens",
 	}, nil
 }
