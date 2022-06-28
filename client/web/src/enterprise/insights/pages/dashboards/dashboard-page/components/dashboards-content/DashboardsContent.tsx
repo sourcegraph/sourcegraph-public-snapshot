@@ -5,7 +5,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, SkipLink } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
@@ -95,6 +95,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
+                <SkipLink id="insights-dashboard" name="insights" />
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
