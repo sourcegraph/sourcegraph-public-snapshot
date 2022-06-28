@@ -13,6 +13,8 @@ import (
 	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -345,6 +347,7 @@ func BenchmarkSearchResults(b *testing.B) {
 				UserSettings: &schema.Settings{},
 			},
 			zoekt: z,
+			log:   logtest.Scoped(b),
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {

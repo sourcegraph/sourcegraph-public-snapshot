@@ -60,6 +60,7 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 		SearchInputs: inputs,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
+		log:          log.Scoped("searchResolver", ""),
 	}, nil
 }
 
