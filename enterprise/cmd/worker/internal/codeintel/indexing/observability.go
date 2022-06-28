@@ -33,12 +33,6 @@ func newOperations(observationContext *observation.Context) *dependencyReposOper
 			})
 		}
 
-		m = metrics.NewREDMetrics(
-			observationContext.Registerer,
-			"codeintel_dependency_repos",
-			metrics.WithLabels("op", "scheme", "new"),
-		)
-
 		dependencyReposOps = &dependencyReposOperations{
 			InsertCloneableDependencyRepo: op("dependencyrepos", "InsertCloneableDependencyRepo"),
 		}
