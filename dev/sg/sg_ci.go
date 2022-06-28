@@ -169,6 +169,7 @@ sg ci build --help
 			if err != nil {
 				return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 			}
+
 			// Print a high level overview
 			printBuildOverview(build)
 
@@ -219,7 +220,15 @@ sg ci build --help
 			}
 
 			// build status finalized
-			failed := printBuildResults(build, ctx.Bool("wait"))
+			// lets get annotations (if any) for the build
+			var annotations bk.JobAnnotations
+			var buildNumber string = fmt.Sprintf("%d", *build.Number)
+
+			annotations, err = client.GetJobAnnotationsByBuildNumber(ctx.Context, "sourcegraph", buildNumber)
+			if err != nil {
+				return errors.Newf("failed to get annotations for build %d: %w", build.Number, err)
+			}
+			failed := printBuildResults(build, annotations, ctx.Bool("wait"))
 
 			if !branchFromFlag && ciBuild == "" {
 				// If we're not on a specific branch and not asking for a specific build, warn if build commit is not your commit
@@ -611,7 +620,7 @@ func printBuildOverview(build *buildkite.Build) {
 	}
 }
 
-func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
+func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, notify bool) (failed bool) {
 	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		std.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
@@ -636,7 +645,7 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 	case "failed":
 		failed = true
 		emoji = output.EmojiFailure
-		fallthrough
+		style = output.StyleFailure
 	default:
 		style = output.StyleWarning
 	}
@@ -676,8 +685,8 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 				break
 			}
 			failedSummary = append(failedSummary, fmt.Sprintf("- %s", *job.Name))
+			style = output.StyleFailure
 			failed = true
-			fallthrough
 		default:
 			style = output.StyleWarning
 		}
@@ -685,6 +694,10 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 			block.WriteLine(output.Styledf(style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
 		} else {
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
+		}
+
+		if annotation, exist := annotations[*job.ID]; exist {
+			block.WriteMarkdown(annotation.Content, output.MarkdownNoMargin, output.MarkdownIndent(2))
 		}
 	}
 
