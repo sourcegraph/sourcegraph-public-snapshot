@@ -3,8 +3,8 @@
 ## Prerequisites {#others-prerequisites}
 
 1. You need to have a Kubernetes cluster (>=1.19) with the following components installed:
-   - [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
-   - [x] Block Storage CSI driver
+   - Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
+   - Block Storage CSI driver
 1. Your account should have sufficient access privileges, equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
 1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
