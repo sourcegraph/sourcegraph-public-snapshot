@@ -22,7 +22,7 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT users.id) AS registered_users
 		FROM users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
+			JOIN event_logs ON users.id = event_logs.user_id
 			AND event_logs.name IN ('SearchResultsQueried')
 		WHERE event_logs.timestamp %s
 		GROUP BY date
@@ -34,7 +34,7 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT users.id) AS registered_users
 		FROM users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
+			JOIN event_logs ON users.id = event_logs.user_id
 			AND event_logs.name IN ('SearchResultsQueried')
 		WHERE event_logs.timestamp %s
 	`, dateRangeCond)
@@ -59,7 +59,7 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT users.id) AS registered_users
 		FROM users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
+			JOIN event_logs ON users.id = event_logs.user_id
 			AND event_logs.name IN ('ViewBlob')
 		WHERE event_logs.timestamp %s
 		GROUP BY date
@@ -71,7 +71,7 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT users.id) AS registered_users
 		FROM users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
+			JOIN event_logs ON users.id = event_logs.user_id
 			AND event_logs.name IN ('ViewBlob')
 		WHERE event_logs.timestamp %s
 	`, dateRangeCond)
@@ -97,7 +97,7 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT users.id) AS registered_users
 		FROM users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
+			JOIN event_logs ON users.id = event_logs.user_id
 			AND event_logs.name IN ('GoToCodeHostClicked', 'vscode.open.file')
 		WHERE event_logs.timestamp %s
 		GROUP BY date
@@ -109,7 +109,7 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT users.id) AS registered_users
 		FROM users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
+			JOIN event_logs ON users.id = event_logs.user_id
 			AND event_logs.name IN ('GoToCodeHostClicked', 'vscode.open.file')
 		WHERE event_logs.timestamp %s
 	`, dateRangeCond)

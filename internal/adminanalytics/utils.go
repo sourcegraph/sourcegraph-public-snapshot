@@ -26,5 +26,5 @@ func makeDateParameters(dateRange string, dateColumnName string) (*sqlf.Query, *
 		return nil, nil, errors.New("Invalid date range")
 	}
 
-	return sqlf.Sprintf(fmt.Sprintf(`date_trunc('%s', %s::date)`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
+	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', %s::date)`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
 }

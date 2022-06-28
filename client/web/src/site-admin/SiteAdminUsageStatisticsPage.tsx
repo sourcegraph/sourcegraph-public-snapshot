@@ -315,7 +315,7 @@ export class SiteAdminUsageStatisticsPageContent extends React.Component<
 }
 
 export const SiteAdminUsageStatisticsPage = withFeatureFlag(
-    'advanced-usage-stats',
+    'admin-analytics-enabled',
     AdvancedStatisticsPage,
     SiteAdminUsageStatisticsPageContent
 )

@@ -1,56 +1,86 @@
 /* eslint-disable react/forbid-dom-props */
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 
-import { sub } from 'date-fns'
+import { mdiChartLineVariant } from '@mdi/js'
+import classNames from 'classnames'
+import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
 import { RouteComponentProps } from 'react-router'
 
-import { H2, Card, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Input, H3, Text } from '@sourcegraph/wildcard'
+import {
+    H2,
+    Card,
+    Tabs,
+    TabList,
+    Tab,
+    TabPanels,
+    TabPanel,
+    Select,
+    Input,
+    H3,
+    Text,
+    Icon,
+    ButtonGroup,
+    Button,
+    LoadingSpinner,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { LineChart, ParentSize, Series } from '../../charts'
 import { PageTitle } from '../../components/PageTitle'
+import { AnalyticsDateRange } from '../../graphql-operations'
+
+import * as api from './api'
+import { formatNumber } from './format-number'
+import { useFetch } from './use-fetch'
 
 import styles from './index.module.scss'
 
 interface CalculatorProps {
     color: string
-    name: string
-    count: number
-    savedPerCount: number
+    label: string
+    value: number
+    minPerItem: number
     description?: string
 }
 
-const Calculator: React.FunctionComponent<CalculatorProps> = ({ color, count, description, savedPerCount, name }) => {
-    const [minutesPerCount, setMinutesPerCount] = useState(savedPerCount)
-    const hoursSaved = useMemo(() => (count * minutesPerCount) / 60, [count, minutesPerCount])
+const TimeSavedCalculator: React.FunctionComponent<CalculatorProps> = ({
+    color,
+    value,
+    description,
+    minPerItem: minsPerCount,
+    label,
+}) => {
+    const [minutesPerCount, setMinutesPerCount] = useState(minsPerCount)
+    const hoursSaved = useMemo(() => (value * minutesPerCount) / 60, [value, minutesPerCount])
     return (
-        <Card className="mb-3 p-2 d-flex justify-content-between flex-row" key={name}>
-            <Text className="mr-3">
-                <Text
-                    style={{
-                        color,
-                    }}
-                    className={styles.count}
-                >
-                    {count}
+        <Card className="mb-3 p-4 d-flex justify-content-between flex-row" key={label}>
+            <div className={styles.calculatorInnerLeft}>
+                <Text as="span" style={{ color }} className={classNames(styles.count, 'text-center')}>
+                    {formatNumber(value)}
                 </Text>
-                {name}
-            </Text>
-            <Text className="mr-3">
                 <Input
                     type="number"
                     value={minutesPerCount}
-                    onChange={event => setMinutesPerCount(event.target.value)}
+                    className={styles.calculatorInput}
+                    onChange={event => setMinutesPerCount(Number(event.target.value))}
                 />
-                minutes saved
-            </Text>
-            <Text className="mr-3">
-                <Text className={styles.count}>{hoursSaved.toFixed(1)}</Text>
-                hours saved
-            </Text>
-            <Text className="flex-1">
-                <Text className="font-weight-bold">About this statistics</Text>
-                {description}
-            </Text>
+                <Text as="span" className={styles.count}>
+                    {formatNumber(hoursSaved)}
+                </Text>
+                <Text as="span">{label}</Text>
+                <Text as="span">
+                    minutes saved
+                    <br />
+                    per action
+                </Text>
+                <Text as="span">hours saved</Text>
+            </div>
+            <div className="m-0 flex-1 d-flex flex-column justify-content-between">
+                <Text as="span" className="font-weight-bold">
+                    About this statistics
+                </Text>
+                <Text as="span">{description}</Text>
+            </div>
         </Card>
     )
 }
@@ -59,270 +89,298 @@ interface StandardDatum {
     date: Date
     value: number
 }
-interface ChartDataItem {
-    totalCount: number
+
+interface ChatLegendItemProps {
+    color: string
+    description: string
+    value: number
+}
+
+const ChartLegendItem: React.FunctionComponent<ChatLegendItemProps> = ({ value, color, description }) => (
+    <div className="d-flex flex-column align-items-center mr-3">
+        <span style={{ color }} className={styles.count}>
+            {formatNumber(value)}
+        </span>
+        {description}
+    </div>
+)
+
+interface ChartLegendListProps {
+    className?: string
+    items: (ChatLegendItemProps & { position?: 'left' | 'right' })[]
+}
+
+const ChartLegendList: React.FunctionComponent<ChartLegendListProps> = ({ items, className }) => (
+    <div className={classNames('d-flex justify-content-between', className)}>
+        <div className="d-flex justify-content-left">
+            {items
+                .filter(item => item.position !== 'right')
+                .map(item => (
+                    <ChartLegendItem key={item.description} {...item} />
+                ))}
+        </div>
+        <div className="d-flex justify-content-right">
+            {items
+                .filter(item => item.position === 'right')
+                .map(item => (
+                    <ChartLegendItem key={item.description} {...item} />
+                ))}
+        </div>
+    </div>
+)
+
+interface DateRangeSelectorProps {
+    onDateRangeChange: (dateRange: AnalyticsDateRange) => void
+    dateRange: AnalyticsDateRange
+}
+
+const DateRangeSelector: React.FunctionComponent<DateRangeSelectorProps> = ({ dateRange, onDateRangeChange }) => (
+    <Select
+        id="date-range"
+        label="Date&nbsp;range"
+        isCustomStyle={true}
+        className="d-flex align-items-baseline"
+        selectClassName="ml-2"
+        onChange={value => onDateRangeChange(value.target.value as AnalyticsDateRange)}
+    >
+        {[
+            { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
+            { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
+            { value: AnalyticsDateRange.LAST_THREE_MONTHS, label: 'Last 3 months' },
+            { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
+        ].map(({ value, label, disabled }) => (
+            <option key={value} value={value} selected={dateRange === value} disabled={disabled}>
+                {label}
+            </option>
+        ))}
+    </Select>
+)
+interface ChartStatItem {
     name: string
     color: string
-    series: StandardDatum[]
-    showDevTimeCalculator?: boolean
-    description?: string
-}
-interface ChartProps {
-    onDateRangeChange: (dateRange: DateRange) => void
-    dateRange: DateRange
-    data: ChartDataItem[]
+    totalCount: number
+    series?: StandardDatum[]
+    legendPosition?: 'left' | 'right'
 }
 
-const Chart: React.FunctionComponent<ChartProps> = ({ data, dateRange, onDateRangeChange }) => {
+interface ChartProps {
+    onDateRangeChange: (dateRange: AnalyticsDateRange) => void
+    dateRange: AnalyticsDateRange
+    stats: ChartStatItem[]
+    labelY?: string
+    labelX?: string
+    className?: string
+}
+
+const Chart: React.FunctionComponent<ChartProps> = ({
+    stats,
+    dateRange,
+    onDateRangeChange,
+    labelY,
+    labelX,
+    className,
+}) => {
     const series: Series<StandardDatum>[] = useMemo(
         () =>
-            data.map(item => ({
-                id: item.name,
-                name: item.name,
-                data: item.series,
+            stats
+                .filter(item => item.series)
+                .map(item => {
+                    // Generates 0 value series for dates that don't exist in the original data
+                    const [to, daysOffset] =
+                        dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
+                            ? [startOfWeek(new Date(), { weekStartsOn: 1 }), 7]
+                            : [startOfDay(new Date()), 1]
+                    const from =
+                        dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
+                            ? sub(to, { months: 3 })
+                            : dateRange === AnalyticsDateRange.LAST_MONTH
+                            ? sub(to, { months: 1 })
+                            : sub(to, { weeks: 1 })
+                    const datums: StandardDatum[] = []
+                    let date = to
+                    while (date >= from) {
+                        const datum = item.series?.find(datum => getDayOfYear(datum.date) === getDayOfYear(date))
+                        datums.push(datum ? { ...datum, date } : { date, value: 0 })
+                        date = addDays(date, -daysOffset)
+                    }
+
+                    return {
+                        id: item.name,
+                        name: item.name,
+                        data: datums,
+                        color: item.color,
+                        getXValue: datum => datum.date,
+                        getYValue: datum => datum.value,
+                    }
+                }),
+        [stats, dateRange]
+    )
+    const legendList = useMemo(
+        () =>
+            stats.map(item => ({
+                value: item.totalCount,
                 color: item.color,
-                getXValue: datum => datum.date,
-                getYValue: datum => datum.value,
+                description: item.name,
+                position: item.legendPosition,
             })),
-        [data]
+        [stats]
     )
     return (
-        <Card className="p-2">
+        <div className={className}>
             <div className="d-flex justify-content-end">
-                <Select
-                    id="date-range"
-                    label="Date&nbsp;range"
-                    isCustomStyle={true}
-                    className="d-flex align-items-baseline"
-                    selectClassName="ml-2"
-                    onChange={value => onDateRangeChange(value.target.value as DateRange)}
-                >
-                    {Object.entries(DateRange).map(([key, value]) => (
-                        <option key={key} value={value} selected={dateRange === value}>
-                            {value}
-                        </option>
-                    ))}
-                    <option value="custom" disabled={true}>
-                        Custom (coming soon)
-                    </option>
-                </Select>
+                <DateRangeSelector dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
             </div>
-            <div className="d-flex justify-content-left">
-                {data.map(item => (
-                    <div key={item.name} className="d-flex flex-column align-items-center mr-3">
-                        <span style={{ color: item.color }} className={styles.count}>
-                            {item.totalCount}
-                        </span>
-                        {item.name}
-                    </div>
-                ))}
+            <ChartLegendList className="mb-3" items={legendList} />
+            <div className="d-flex mr-1">
+                {labelY && <span className={styles.chartYLabel}>{labelY}</span>}
+                <ParentSize>{({ width }) => <LineChart width={width} height={400} series={series} />}</ParentSize>
             </div>
-            <ParentSize>{({ width }) => <LineChart width={width} height={400} series={series} />}</ParentSize>
-            <H3 className="m-3">Time saved</H3>
-            {data.map(item => (
-                <Calculator
-                    key={item.name}
-                    color={item.color}
-                    name={item.name}
-                    savedPerCount={5}
-                    description={item.description}
-                    count={item.totalCount}
-                />
-            ))}
-        </Card>
+            {labelX && <div className={styles.chartXLabel}>{labelX}</div>}
+        </div>
     )
 }
 
-enum DateRange {
-    LastThreeMonths = 'Last 3 months',
-    LastMonth = 'Last month',
-    LastWeek = 'Last week',
-}
+const StatisticSearch: React.FunctionComponent = () => {
+    const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const fetchSearches = useCallback(() => api.fetchSearchStatistics(dateRange).toPromise(), [dateRange])
+    const [data, isLoading, error] = useFetch(fetchSearches)
+    const [stats, timeSavedStats] = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { searches, fileViews, fileOpens } = data
+        const stats = [
+            {
+                ...searches.summary,
+                totalCount: searches.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                name: eventAggregation === 'count' ? 'Searches' : 'Users searched',
+                color: 'var(--cyan)',
+                series: searches.nodes.map(node => ({
+                    date: new Date(node.date),
+                    value: node[eventAggregation],
+                })),
+            },
+            {
+                ...fileViews.summary,
+                totalCount: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                name: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
+                color: 'var(--orange)',
+                series: fileViews.nodes.map(node => ({
+                    date: new Date(node.date),
+                    value: node[eventAggregation],
+                })),
+            },
+            {
+                ...fileOpens.summary,
+                totalCount: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                name: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
+                color: 'var(--body-color)',
+                series: fileOpens.nodes.map(node => ({
+                    date: new Date(node.date),
+                    value: node[eventAggregation],
+                })),
+            },
+        ]
+        const timeSavedStats = [
+            {
+                label: 'Searches &\nfile views',
+                color: 'var(--purple)',
+                minPerItem: 5,
+                description:
+                    'Each search or file view represents a developer solving a code use problem, getting information an active incident, or other use case. ',
+                value: searches.summary.totalCount + fileViews.summary.totalCount + fileOpens.summary.totalCount,
+            },
+        ]
+        return [stats, timeSavedStats]
+    }, [data, eventAggregation])
 
-const StatisticItem: React.FunctionComponent<{
-    title: string
-    items: Omit<ChartDataItem, 'series' | 'totalCount'>[]
-}> = ({ title, items }) => {
-    const [dateRange, setDateRange] = useState<DateRange>(DateRange.LastWeek)
-    const data = useMemo(() => {
-        const now = new Date()
-        const fromDate =
-            dateRange === DateRange.LastThreeMonths
-                ? sub(now, { months: 3 })
-                : dateRange === DateRange.LastMonth
-                ? sub(now, { months: 1 })
-                : sub(now, { weeks: 1 })
-        return getMockData(fromDate, now, items)
-    }, [dateRange, items])
+    if (error) {
+        return <div>Something went wrong! :( Please, try again later. </div>
+    }
+
+    if (isLoading) {
+        return <LoadingSpinner />
+    }
+
     return (
         <>
-            <H2 className="mt-4"> {title}</H2>
-            <Chart data={data} dateRange={dateRange} onDateRangeChange={setDateRange} />
+            <H2 className="my-4 d-flex align-items-center">
+                <Icon
+                    className="mr-1"
+                    color="var(--link-color)"
+                    svgPath={mdiChartLineVariant}
+                    size="sm"
+                    aria-label="Search Statistics"
+                />
+                Statistics / Search
+            </H2>
+
+            <Card className="p-2 position-relative">
+                {stats && (
+                    <Chart
+                        className="ml-4"
+                        stats={stats}
+                        dateRange={dateRange}
+                        onDateRangeChange={setDateRange}
+                        labelX="Time"
+                    />
+                )}
+                <div className="d-flex justify-content-end">
+                    <ButtonGroup className="mb-3">
+                        <Tooltip content="total # of actions triggered" placement="top">
+                            <Button
+                                onClick={() => setEventAggregation('count')}
+                                outline={eventAggregation !== 'count'}
+                                variant="primary"
+                                display="block"
+                                size="sm"
+                            >
+                                Totals
+                            </Button>
+                        </Tooltip>
+
+                        <Tooltip content="unique # of users triggered" placement="top">
+                            <Button
+                                onClick={() => setEventAggregation('uniqueUsers')}
+                                outline={eventAggregation !== 'uniqueUsers'}
+                                variant="primary"
+                                display="block"
+                                size="sm"
+                            >
+                                Uniques
+                            </Button>
+                        </Tooltip>
+                    </ButtonGroup>
+                </div>
+                <H3 className="my-3">Time saved</H3>
+                {timeSavedStats?.map(timeSavedStatItem => (
+                    <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
+                ))}
+            </Card>
         </>
     )
 }
 
 export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => (
     <>
-        <PageTitle title="Usage statistics - Admin" />
+        <PageTitle title="Admin analytics" />
         <Tabs lazy={true} behavior="memoize" size="large">
             <TabList>
-                {/* <Tab>Overview</Tab> */}
                 <Tab>Search</Tab>
-                <Tab>Code intel</Tab>
-                <Tab>Users</Tab>
-                <Tab>Code insights</Tab>
-                <Tab>Batch changes</Tab>
-                <Tab>Notebooks</Tab>
-                <Tab>Extensions</Tab>
+                <Tab disabled={true}>Code intel</Tab>
+                <Tab disabled={true}>Users</Tab>
+                <Tab disabled={true}>Code insights</Tab>
+                <Tab disabled={true}>Batch changes</Tab>
+                <Tab disabled={true}>Notebooks</Tab>
+                <Tab disabled={true}>Extensions</Tab>
+                <Tab disabled={true}>Overview</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Search"
-                        items={[
-                            {
-                                name: 'Searches',
-                                color: 'var(--cyan)',
-                            },
-                            {
-                                name: 'File views',
-                                color: 'var(--orange)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                        ]}
-                    />
+                    <StatisticSearch />
                 </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Code intel"
-                        items={[
-                            {
-                                name: 'References',
-                                color: 'var(--cyan)',
-                            },
-                            {
-                                name: 'Definitions',
-                                color: 'var(--orange)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Users"
-                        items={[
-                            {
-                                name: 'Total users',
-                                color: 'var(--purple)',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Code insights"
-                        items={[
-                            {
-                                name: 'Insights created',
-                                color: 'var(--cyan)',
-                            },
-                            {
-                                name: 'Insights viewed',
-                                color: 'var(--orange)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                            {
-                                name: 'Datapoint clicked',
-                                color: 'var(--purple)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Batch changes"
-                        items={[
-                            {
-                                name: 'Changesets created',
-                                color: 'var(--blue)',
-                            },
-                            {
-                                name: 'Changesets merged',
-                                color: 'var(--cyan)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Notebooks"
-                        items={[
-                            {
-                                name: 'Notebooks created',
-                                color: 'var(--cyan)',
-                            },
-                            {
-                                name: 'Notebooks viewed',
-                                color: 'var(--purple)',
-                                showDevTimeCalculator: true,
-                                description:
-                                    'Notebooks save developers time by reducing the time required to find, read, and understand code. Enter the minutes saved per view to ballpark developer hours saved. ',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <StatisticItem
-                        title="Statistics / Extensions"
-                        items={[
-                            {
-                                name: 'Extension uses',
-                                color: 'var(--orange)',
-                            },
-                        ]}
-                    />
-                </TabPanel>
-                <TabPanel>Coming soon</TabPanel>
             </TabPanels>
         </Tabs>
     </>
 )
-
-const getMockData = (
-    fromDate: Date,
-    toDate: Date,
-    items: Omit<ChartDataItem, 'series' | 'totalCount'>[]
-): ChartDataItem[] =>
-    items
-        .map(item => ({ ...item, series: generateRandomDataSeries(fromDate, toDate) }))
-        .map(item => ({
-            ...item,
-            totalCount: item.series.map(item => item.value).reduce((a, b) => a + b, 0),
-        })) as ChartDataItem[]
-
-function generateRandomDataSeries(fromDate: Date, toDate: Date): StandardDatum[] {
-    const randomData: StandardDatum[] = []
-    const days = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24))
-    for (let index = 0; index < days; index++) {
-        randomData.push({
-            date: new Date(fromDate.getTime() + index * 1000 * 60 * 60 * 24),
-            value: Math.floor(Math.random() * 90) + 10,
-        })
-    }
-
-    return randomData
-}
