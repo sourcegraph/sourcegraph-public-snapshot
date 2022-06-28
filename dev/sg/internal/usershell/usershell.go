@@ -82,7 +82,7 @@ func GuessUserShell() (shellPath string, shellrc string, shell Shell, error erro
 func Context(ctx context.Context) (context.Context, error) {
 	shell, shellConfigPath, shellType, err := GuessUserShell()
 	if err != nil {
-		return nil, err
+		return ctx, err
 	}
 	userCtx := userShell{
 		shell:           shellType,

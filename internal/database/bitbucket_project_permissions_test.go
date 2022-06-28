@@ -8,6 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,7 +21,9 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	check := func(jobID int, projectKey string, permissions []types.UserPermission, unrestricted bool) {
@@ -104,7 +108,8 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	_, err := db.ExecContext(ctx, `--sql
@@ -220,7 +225,8 @@ func TestListJobs(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	_, err := db.ExecContext(ctx, `--sql

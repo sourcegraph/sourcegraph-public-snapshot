@@ -5,13 +5,18 @@ import (
 
 	"github.com/derision-test/glock"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type janitor struct {
+	logger    log.Logger
 	dbStore   DBStore
 	lsifStore LSIFStore
+	uploadSvc UploadService
+	indexSvc  AutoIndexingService
 	metrics   *metrics
 	clock     glock.Clock
 }

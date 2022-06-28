@@ -43,6 +43,17 @@
             display: flex;
             flex-direction: column-reverse;
         }
+
+        &:first-child:last-child td:global(.line) {
+            // place the line number set with ::before pseudo-element between top and bottom spacers
+            &::before {
+                order: 1;
+            }
+
+            :global(.top-spacer) {
+                order: 2;
+            }
+        }
     }
 
     td:global(.line),

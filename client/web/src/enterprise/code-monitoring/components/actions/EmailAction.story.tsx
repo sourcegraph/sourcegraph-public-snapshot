@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -9,9 +9,14 @@ import { ActionProps } from '../FormActionArea'
 
 import { EmailAction } from './EmailAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/EmailAction', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/EmailAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -29,7 +34,7 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-add('EmailAction', () => (
+export const EmailActionStory: Story = () => (
     <WebStory>
         {() => (
             <>
@@ -56,4 +61,6 @@ add('EmailAction', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+EmailActionStory.storyName = 'EmailAction'

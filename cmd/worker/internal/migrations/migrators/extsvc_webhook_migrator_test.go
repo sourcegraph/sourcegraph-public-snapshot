@@ -8,6 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -17,6 +19,7 @@ import (
 )
 
 func TestExternalServiceWebhookMigrator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -160,7 +163,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 
 	t.Run("Progress", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		createExternalServices(t, ctx, db)
 
 		m := NewExternalServiceWebhookMigratorWithDB(db)
@@ -179,7 +182,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	})
 
 	t.Run("Up", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		initSvcs := createExternalServices(t, ctx, db)
 		es := db.ExternalServices()
 

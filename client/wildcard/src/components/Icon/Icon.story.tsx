@@ -48,7 +48,7 @@ export const Simple: Story = () => (
         <Icon as={CloseIcon} size="md" aria-label="Close" />
 
         <H3>
-            New <Code>@mdi/react</Code> Icon
+            New <Code>@mdi/js</Code> Icon
         </H3>
         <Icon svgPath={mdiClose} size="md" aria-label="Close" />
     </>

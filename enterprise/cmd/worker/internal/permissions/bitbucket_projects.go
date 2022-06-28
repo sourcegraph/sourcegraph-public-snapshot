@@ -64,7 +64,7 @@ func (j *bitbucketProjectPermissionsJob) Routines(ctx context.Context, logger lo
 	if err != nil {
 		return nil, err
 	}
-	db := edb.NewEnterpriseDB(database.NewDB(wdb))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, wdb))
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 

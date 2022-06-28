@@ -12,6 +12,8 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,14 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev string, beExplicit bool) string {
+func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName api.RepoName, rev string, beExplicit bool) string {
 	if beExplicit {
 		return "@" + rev
 	}
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(db)
+	repos := backend.NewRepos(logger, db)
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
@@ -55,7 +57,8 @@ func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev s
 
 // editorRequest represents the parameters to a Sourcegraph "open file", "search", etc. editor request.
 type editorRequest struct {
-	db database.DB
+	logger log.Logger
+	db     database.DB
 
 	// Fields that are required in all requests.
 	editor  string // editor name, e.g. "Atom", "Sublime", etc.
@@ -190,7 +193,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 		inputRev, beExplicit = of.branch, false
 	}
 
-	rev := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
+	rev := editorRev(ctx, r.logger, r.db, repoName, inputRev, beExplicit)
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()

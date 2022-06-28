@@ -59,10 +59,10 @@ interface DrillDownInsightFilters {
 
     className?: string
 
-    showSeriesDisplayOptions: boolean
-
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
+
+    onFilterValuesChange?: (values: DrillDownFiltersFormValues) => void
 
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues, displayOptions: SeriesDisplayOptionsInput) => SubmissionResult
@@ -83,13 +83,13 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalValues,
         className,
         visualMode,
-        showSeriesDisplayOptions,
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
         originalSeriesDisplayOptions,
         onSeriesDisplayOptionsChange,
         onVisualModeChange = noop,
+        onFilterValuesChange = noop,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
@@ -98,6 +98,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
         onChange: onFiltersChange,
+        onPureValueChange: onFilterValuesChange,
         onSubmit: values => onFilterSave(values, seriesDisplayOptions),
     })
 
@@ -199,25 +200,22 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             <hr className={styles.headerSeparator} />
 
             <div className={classNames({ [styles.panelsHorizontalMode]: isHorizontalMode })}>
-                {showSeriesDisplayOptions && (
-                    <FilterCollapseSection
-                        open={isHorizontalMode || activeSection === FilterSection.SortFilter}
-                        title="Data series"
-                        aria-label="sort and limit filter section"
-                        preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
-                        withSeparators={!isHorizontalMode}
-                        className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
-                        onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
-                    >
-                        <SortFilterSeriesPanel
-                            limit={seriesDisplayOptions.limit}
-                            selectedOption={seriesDisplayOptions.sortOptions}
-                            onChange={handleSeriesDisplayOptionsChange}
-                        />
-                    </FilterCollapseSection>
-                )}
-
+                <FilterCollapseSection
+                    open={isHorizontalMode || activeSection === FilterSection.SortFilter}
+                    title="Data series"
+                    aria-label="sort and limit filter section"
+                    preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
+                    hasActiveFilter={hasSeriesDisplayOptionsChanged}
+                    withSeparators={!isHorizontalMode}
+                    className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
+                    onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
+                >
+                    <SortFilterSeriesPanel
+                        limit={seriesDisplayOptions.limit}
+                        selectedOption={seriesDisplayOptions.sortOptions}
+                        onChange={handleSeriesDisplayOptionsChange}
+                    />
+                </FilterCollapseSection>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"

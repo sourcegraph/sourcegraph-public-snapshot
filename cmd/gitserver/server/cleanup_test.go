@@ -36,8 +36,8 @@ const (
 func (s *Server) testSetup(t *testing.T) {
 	t.Helper()
 	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	db := dbtest.NewDB(s.Logger, t)
+	s.DB = database.NewDB(s.Logger, db)
 	s.Hostname = "gitserver-0"
 }
 
@@ -669,6 +669,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
+	logger := logtest.Scoped(t)
 	root := t.TempDir()
 
 	mkFiles(t, root,
@@ -682,7 +683,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 
@@ -710,7 +711,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:   logtest.Scoped(t),
+		Logger:   logger,
 		ReposDir: root,
 		DB:       db,
 		ctx:      ctx,
@@ -1314,6 +1315,7 @@ func TestPruneIfNeeded(t *testing.T) {
 }
 
 func TestCleanup_setRepoSizes(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1338,8 +1340,8 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	db := dbtest.NewDB(logger, t)
+	s.DB = database.NewDB(logger, db)
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`

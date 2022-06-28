@@ -608,7 +608,7 @@ func TestMatchUnaryKeyword(t *testing.T) {
 
 func TestParseAndOrLiteral(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeLiteralDefault)
+		result, err := Parse(input, SearchTypeLiteral)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %s", err.Error())
 		}
@@ -747,4 +747,19 @@ func Test_newOperator(t *testing.T) {
 			tc.want.Equal(t, Q(got).String())
 		})
 	}
+}
+
+func TestParseStandard(t *testing.T) {
+	test := func(input string) string {
+		result, err := Parse(input, SearchTypeStandard)
+		if err != nil {
+			return err.Error()
+		}
+		json, _ := PrettyJSON(result)
+		return json
+	}
+
+	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("anjou /saumur/")))
+	})
 }
