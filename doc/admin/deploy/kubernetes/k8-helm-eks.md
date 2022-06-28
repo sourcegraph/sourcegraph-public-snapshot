@@ -1,24 +1,34 @@
 # Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
+To install Sourcegraph on AWS Elastic Kubernetes Service, you must deploy onto a supported machine type and use a persistent standard disk or a persistent SSD.
+
 ## Prerequisites {#eks-prerequisites}
 
-1. You need to have a EKS cluster (>=1.19) with the following addons enabled:
-   - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
-   - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
-> You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
-1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+- You need to have an EKS cluster (>=1.19) with the following addons enabled:
+  - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
+  - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
+  
+> [Learn more](https://kubernetes.github.io/ingress-nginx/) about deploying your own Ingress Controller instead of the ALB Ingress Controller.
+
+- You need to have an account with sufficient access equivalent to the `cluster-admin` ClusterRole.
+- You need to be able to connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running. You should see several `ready` nodes listed when you run: `kubectl get nodes`.
+- You need to have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository. This should be ran on the machine used to interact with your cluster:
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
+## Hardware and Service Requirements
+
+Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the override file in the steps below.
+
 ## Steps {#eks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+### Create Override File & Add Configurations
 
-We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver]. For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
+Create an override file and add any configuration override settings you need. See the [configuration](#configuration) documentation for more information on override files and the options for configurations.
+
+We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html), to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html). For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
 
 Uncomment the `provisioner` that your Amazon EKS cluster implements.
 
@@ -42,23 +52,28 @@ storageClass:
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
 ```
-> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 
-**2** – Install the chart
+> ℹ️ You can review the changes using one of the [three mechanisms](./helm#reviewing-changes) to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph.
+
+### Install the Sourcegraph Helm chart
+
+Install the Sourcegraph Helm chart by running the following command:
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 3.41.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
+It will take some time for the load balancer to be fully ready. Use the following command to check on the status and obtain the load balancer address once available:
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
 ```
 
-**3** – Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+### Create a DNS Record
 
-It is recommended to enable TLS and configure a certificate properly on your load balancer. You may consider using an [AWS-managed certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) and add the following annotations to Ingress.
+Once you have obtained the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+
+It is recommended to enable TLS and configure a certificate on your load balancer. We recommend using an [AWS-managed certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) and add the following annotations to Ingress:
 
 ```yaml
 frontend:
@@ -69,14 +84,15 @@ frontend:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```
 
-**4** – Validate the deployment
-Sourcegraph should now be available via the address set.
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
+### Validate the deployment
 
-**5** – Further configuration
+Sourcegraph should now be available via the address set. 
 
-Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config/index.md)
+Navigate to the URL in your browser to ensure you now have access to the Sourcegraph UI to create the initial administrator account.
+
+### Sourcegraph Configuration
+
+At this stage the deployment is considered to be complete. You are now ready to configure your Sourcegraph instance (site configuration, code host configuration, search configuration etc). Please see our [Configuring Sourcegraph](../../config/index.md) documentation for guidance.
 
 ## References {#eks-references}
 
