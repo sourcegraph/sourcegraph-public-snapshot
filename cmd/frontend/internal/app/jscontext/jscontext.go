@@ -56,12 +56,13 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN     *string `json:"sentryDSN"`
-	SiteID        string  `json:"siteID"`
-	SiteGQLID     string  `json:"siteGQLID"`
-	Debug         bool    `json:"debug"`
-	NeedsSiteInit bool    `json:"needsSiteInit"`
-	EmailEnabled  bool    `json:"emailEnabled"`
+	SentryDSN                 *string `json:"sentryDSN"`
+	OpentelemetryCollectorURL *string `json:"opentelemetryCollectorURL"`
+	SiteID                    string  `json:"siteID"`
+	SiteGQLID                 string  `json:"siteGQLID"`
+	Debug                     bool    `json:"debug"`
+	NeedsSiteInit             bool    `json:"needsSiteInit"`
+	EmailEnabled              bool    `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -170,6 +171,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:                    version.Version(),
 		IsAuthenticatedUser:        actor.IsAuthenticated(),
 		SentryDSN:                  sentryDSN,
+		OpentelemetryCollectorURL:  opentelemetryCollectorURL,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
 		Debug:                      env.InsecureDev,
 		SiteID:                     siteID,

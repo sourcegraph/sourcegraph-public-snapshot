@@ -1254,6 +1254,11 @@ type ObservabilityAlerts struct {
 	Owners []string `json:"owners,omitempty"`
 }
 
+// ObservabilityOpentelemetry description: Configuration for OpenTelemetry
+type ObservabilityOpentelemetry struct {
+	CollectorURL string `json:"collectorURL"`
+}
+
 // ObservabilityTracing description: Controls the settings for distributed tracing.
 type ObservabilityTracing struct {
 	// Debug description: Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.
@@ -1953,6 +1958,8 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
+	// ObservabilityOpentelemetry description: Configuration for OpenTelemetry
+	ObservabilityOpentelemetry *ObservabilityOpentelemetry `json:"observability.opentelemetry,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.

@@ -39,6 +39,7 @@ Available comamndsets in `sg.config.yaml`:
 * iam
 * monitoring
 * monitoring-alerts
+* olafurpg
 * oss
 * oss-web-standalone
 * oss-web-standalone-prod

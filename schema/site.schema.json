@@ -1103,6 +1103,17 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "observability.openTelemetry": {
+      "description": "Configuration for OpenTelemetry",
+      "type": "object",
+      "required": ["collectorURL"],
+      "properties": {
+        "collectorURL": {
+          "type": "string",
+          "examples": ["https://COLLECTOR_ENDPOINT:443/v1/traces"]
+        }
+      }
+    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
