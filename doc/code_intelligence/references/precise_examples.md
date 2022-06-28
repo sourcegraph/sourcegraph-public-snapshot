@@ -11,6 +11,7 @@ The following repositories have precise code intelligence enabled:
 ## JVM
 ### Java
 - [netflix/hystrix](https://sourcegraph.com/github.com/Netflix/Hystrix@3cb21589895e9f8f87cfcdbc9d96d9f63d48b848/-/blob/hystrix-core/src/main/java/com/netflix/hystrix/HystrixRequestCache.java?L77:40#tab=references)
+- [jkd@v11](https://sourcegraph.com/jdk@v11/-/blob/java.base/java/util/Iterator.java?L130:18#tab=references)
 
 ### Scala
 - [scalameta/metals](https://sourcegraph.com/github.com/scalameta/metals@5bd656f19733903fc0c2ecee844548dad182f5a7/-/blob/metals/src/main/scala/scala/meta/metals/Main.scala?L46:20#tab=references)
