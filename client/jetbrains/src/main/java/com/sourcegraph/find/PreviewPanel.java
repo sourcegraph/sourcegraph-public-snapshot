@@ -2,10 +2,20 @@ package com.sourcegraph.find;
 
 import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
+import com.intellij.openapi.editor.impl.ContextMenuPopupHandler;
+import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanelWithEmptyText;
+import com.sourcegraph.Icons;
+import com.sourcegraph.website.Copy;
+import com.sourcegraph.website.FileAction;
+import com.sourcegraph.website.OpenFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,6 +86,10 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         settings.setAnimatedScrolling(false);
         settings.setAutoCodeFoldingEnabled(false);
 
+
+        EditorImpl impl = (EditorImpl) editor;
+        impl.installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
+
         editorComponent = editor.getComponent();
         add(editorComponent, BorderLayout.CENTER);
         validate();
@@ -119,4 +133,34 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             EditorFactory.getInstance().releaseEditor(editor);
         }
     }
+
+    private ActionGroup createActionGroup() {
+        DefaultActionGroup group = new DefaultActionGroup();
+        group.add(new SimpleEditorAction("Open on Sourcegraph", new OpenFile(), editor));
+        group.add(new SimpleEditorAction("Copy Sourcegraph File Link", new Copy(), editor));
+        return group;
+    }
+
+    class SimpleEditorAction extends AnAction {
+        FileAction action;
+        Editor editor;
+
+        SimpleEditorAction(String text, FileAction action, Editor editor) {
+            super(text, text, Icons.Logo);
+            this.action = action;
+            this.editor = editor;
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            SelectionModel sel = editor.getSelectionModel();
+            VisualPosition selectionStartPosition = sel.getSelectionStartPosition();
+            VisualPosition selectionEndPosition = sel.getSelectionEndPosition();
+            LogicalPosition start = selectionStartPosition != null ? editor.visualToLogicalPosition(selectionStartPosition) : null;
+            LogicalPosition end = selectionEndPosition != null ? editor.visualToLogicalPosition(selectionEndPosition) : null;
+
+            action.actionPerformedFromPreviewContent(project, getPreviewContent(), start, end);
+        }
+    }
+
 }

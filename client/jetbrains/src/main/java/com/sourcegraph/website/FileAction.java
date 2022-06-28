@@ -9,6 +9,7 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
 
@@ -63,6 +64,42 @@ public abstract class FileAction extends DumbAwareAction {
             + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), StandardCharsets.UTF_8)) : "")
             + (end != null ? ("&end_row=" + URLEncoder.encode(Integer.toString(end.line), StandardCharsets.UTF_8)
             + "&end_col=" + URLEncoder.encode(Integer.toString(end.column), StandardCharsets.UTF_8)) : "")
+            + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
+            + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8);
+
+        handleFileUri(uri);
+    }
+
+    public void actionPerformedFromPreviewContent(Project project, PreviewContent previewContent, LogicalPosition start, LogicalPosition end) {
+        String productName = ApplicationInfo.getInstance().getVersionName();
+        String productVersion = ApplicationInfo.getInstance().getFullVersion();
+
+        if (previewContent.getRepoUrl().isEmpty()) {
+            return;
+        }
+
+        if (previewContent.getCommit() == null || previewContent.getCommit().isEmpty()) {
+            return;
+        }
+
+        if (previewContent.getPath() == null || previewContent.getPath().isEmpty()) {
+            return;
+        }
+
+        // Converting the information from the PreviewContent into a Sourcegraph blob URL
+        String uri = ConfigUtil.getSourcegraphUrl(project)
+            + previewContent.getRepoUrl()
+            + "@"
+            + previewContent.getCommit()
+            + "/-/blob/"
+            + previewContent.getPath()
+            + "?"
+            + (start != null ? ("L" + URLEncoder.encode(Integer.toString(start.line + 1), StandardCharsets.UTF_8)
+            + ":" + URLEncoder.encode(Integer.toString(start.column + 1), StandardCharsets.UTF_8)) : "")
+            + (end != null ? ("-" + URLEncoder.encode(Integer.toString(end.line + 1), StandardCharsets.UTF_8)
+            + ":" + URLEncoder.encode(Integer.toString(end.column + 1), StandardCharsets.UTF_8)) : "")
+            + "&editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
+            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)
             + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
             + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8);
 
