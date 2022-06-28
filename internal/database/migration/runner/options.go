@@ -1,6 +1,11 @@
 package runner
 
 import (
+	"strconv"
+	"strings"
+
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -56,10 +61,10 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) MigrationOperation {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
 
-	logger.Info(
+	schemaContext.logger.Info(
 		"Desugaring `upgrade` to `targeted up` operation",
-		"schema", operation.SchemaName,
-		"leafVersions", leafVersions,
+		log.String("schema", operation.SchemaName),
+		log.Ints("leafVersions", leafVersions),
 	)
 
 	return MigrationOperation{
@@ -105,10 +110,10 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		}
 	}
 
-	logger.Info(
+	schemaContext.logger.Info(
 		"Desugaring `revert` to `targeted down` operation",
-		"schema", operation.SchemaName,
-		"appliedLeafVersions", leafVersions,
+		log.String("schema", operation.SchemaName),
+		log.Ints("appliedLeafVersions", leafVersions),
 	)
 
 	switch len(leafVersions) {
@@ -129,7 +134,13 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 
 	case 0:
 		return MigrationOperation{}, errors.Newf("nothing to revert")
+
 	default:
-		return MigrationOperation{}, errors.Newf("ambiguous revert")
+		strLeafVersions := make([]string, 0, len(leafVersions))
+		for _, version := range leafVersions {
+			strLeafVersions = append(strLeafVersions, strconv.Itoa(version))
+		}
+
+		return MigrationOperation{}, errors.Newf("ambiguous revert - candidates include %s", strings.Join(strLeafVersions, ", "))
 	}
 }

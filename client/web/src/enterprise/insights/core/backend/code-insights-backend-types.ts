@@ -8,8 +8,7 @@ import {
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
-    SearchBackendBasedInsight,
-    SearchRuntimeBasedInsight,
+    SearchBasedInsight,
 } from '../types'
 import { InsightContentType } from '../types/insight/common'
 
@@ -69,15 +68,7 @@ export interface FindInsightByNameInput {
     name: string
 }
 
-export type MinimalSearchRuntimeBasedInsightData = Omit<
-    SearchRuntimeBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
-export type MinimalSearchBackendBasedInsightData = Omit<
-    SearchBackendBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
-export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
+export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
@@ -106,6 +97,19 @@ export interface CaptureInsightSettings {
     repositories: string[]
     query: string
     step: Duration
+}
+
+export interface InsightPreviewSettings {
+    repositories: string[]
+    step: Duration
+    series: SeriesPreviewSettings[]
+}
+
+export interface SeriesPreviewSettings {
+    query: string
+    generatedFromCaptureGroup: boolean
+    label: string
+    stroke: string
 }
 
 export interface AccessibleInsightInfo {

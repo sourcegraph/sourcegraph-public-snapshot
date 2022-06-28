@@ -27,7 +27,10 @@ const LOADING = 'loading' as const
  * SiteAdminCustomerBillingLink shows a link to the customer on the billing system associated with a user, if any.
  * It also supports setting or unsetting the association with the billing system.
  */
-export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ customer, onDidUpdate }) => {
+export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    customer,
+    onDidUpdate,
+}) => {
     /** The result of updating this customer: undefined for done or not started, loading, or an error. */
     const [nextUpdate, update] = useEventObservable(
         useCallback(
@@ -66,11 +69,16 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
             <div className="d-flex align-items-center">
                 {customer.urlForSiteAdminBilling && (
                     <Link to={customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View customer account <Icon className="ml-1" as={ExternalLinkIcon} />
+                        View customer account <Icon aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
+                    <Icon
+                        aria-label={update.message}
+                        className="text-danger mr-2"
+                        data-tooltip={update.message}
+                        as={AlertCircleIcon}
+                    />
                 )}
                 <Button
                     onClick={customerHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

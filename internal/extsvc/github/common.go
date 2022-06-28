@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -16,9 +15,10 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-github/github"
-	"github.com/inconshreveable/log15"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -457,7 +457,7 @@ type TimelineItemConnection struct {
 // TimelineItem is a union type of all supported pull request timeline items.
 type TimelineItem struct {
 	Type string
-	Item interface{}
+	Item any
 }
 
 // UnmarshalJSON knows how to unmarshal a TimelineItem as produced
@@ -568,7 +568,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		} `json:"createPullRequest"`
 	}
 
-	compatibleInput := map[string]interface{}{
+	compatibleInput := map[string]any{
 		"repositoryId": in.RepositoryID,
 		"baseRefName":  in.BaseRefName,
 		"headRefName":  in.HeadRefName,
@@ -582,14 +582,13 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your batch spec.")
 	}
 
-	input := map[string]interface{}{"input": compatibleInput}
+	input := map[string]any{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+		if isPullRequestAlreadyExistsError(err) {
 			return nil, ErrPullRequestAlreadyExists
 		}
-		return nil, errs
+		return nil, err
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -645,11 +644,10 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 		} `json:"updatePullRequest"`
 	}
 
-	input := map[string]interface{}{"input": in}
+	input := map[string]any{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+		if isPullRequestAlreadyExistsError(err) {
 			return nil, ErrPullRequestAlreadyExists
 		}
 		return nil, err
@@ -696,7 +694,7 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 		} `json:"markPullRequestReadyForReview"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -745,7 +743,7 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 		} `json:"closePullRequest"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -794,7 +792,7 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 		} `json:"reopenPullRequest"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -847,7 +845,7 @@ query($owner: String!, $name: String!, $number: Int!) {
 		}
 	}
 
-	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	err = c.requestGraphQL(ctx, q, map[string]any{"owner": owner, "name": repo, "number": pr.Number}, &result)
 	if err != nil {
 		var errs graphqlErrors
 		if errors.As(err, &errs) {
@@ -954,7 +952,7 @@ func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest
 		} `json:"addComment"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		SubjectID string `json:"subjectId"`
 		Body      string `json:"body"`
 	}{SubjectID: pr.ID, Body: body}}
@@ -993,7 +991,7 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash
 	if squash {
 		mergeMethod = "SQUASH"
 	}
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		PullRequestID string `json:"pullRequestId"`
 		MergeMethod   string `json:"mergeMethod,omitempty"`
 	}{
@@ -1471,17 +1469,21 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
-	githubProxyURL   = func() *url.URL {
-		url, err := url.Parse(env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)"))
-		if err != nil {
-			log.Fatal("Error parsing GITHUB_BASE_URL:", err)
-		}
-		return url
-	}()
 
 	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
+
+	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
+	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
 )
+
+func getGithubProxyURL() *url.URL {
+	url, err := url.Parse(githubProxyRawURL)
+	if err != nil {
+		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
+	}
+	return url
+}
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
 func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
@@ -1508,7 +1510,7 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1538,7 +1540,9 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 	}
 	defer resp.Body.Close()
 
-	log15.Debug("doRequest", "status", resp.Status, "x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining"))
+	logger.Debug("doRequest",
+		log.String("status", resp.Status),
+		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.
@@ -1575,14 +1579,14 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		return githubProxyURL
+		return getGithubProxyURL()
 	}
 	return apiURL
 }
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == getGithubProxyURL().String()
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}
@@ -1733,9 +1737,6 @@ type Repository struct {
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
 }
-
-// GetRepositoryMock is set by tests to mock (*Client).GetRepository.
-var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
 
 type restRepositoryPermissions struct {
 	Admin bool `json:"admin"`
@@ -1961,4 +1962,12 @@ func normalizeURL(rawURL string) string {
 		parsed.Path += "/"
 	}
 	return parsed.String()
+}
+
+func isPullRequestAlreadyExistsError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
 }

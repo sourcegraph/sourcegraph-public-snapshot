@@ -24,7 +24,7 @@ const supportedServiceTypes = new Set<string>([
     ExternalServiceKind.BITBUCKETSERVER,
 ])
 
-export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAlertProps> = ({
+export const NativeIntegrationAlert: React.FunctionComponent<React.PropsWithChildren<NativeIntegrationAlertProps>> = ({
     className,
     page,
     onAlertDismissed,

@@ -136,19 +136,7 @@ func SyncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, err := client.SyncExternalService(ctx, api.ExternalService{
-		ID:              svc.ID,
-		Kind:            svc.Kind,
-		DisplayName:     svc.DisplayName,
-		Config:          svc.Config,
-		CreatedAt:       svc.CreatedAt,
-		UpdatedAt:       svc.UpdatedAt,
-		DeletedAt:       svc.DeletedAt,
-		LastSyncAt:      svc.LastSyncAt,
-		NextSyncAt:      svc.NextSyncAt,
-		NamespaceUserID: svc.NamespaceUserID,
-		NamespaceOrgID:  svc.NamespaceOrgID,
-	})
+	_, err := client.SyncExternalService(ctx, svc.ToAPIService())
 
 	// If context error is anything but a deadline exceeded error, we do not want to propagate
 	// it. But we definitely want to log the error as a warning.

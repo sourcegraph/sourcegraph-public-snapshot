@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func setJSONOrError(field **json.RawMessage, value interface{}) {
+func setJSONOrError(field **json.RawMessage, value any) {
 	if value == nil {
 		*field = nil
 		return
@@ -23,29 +23,29 @@ func setJSONOrError(field **json.RawMessage, value interface{}) {
 
 // SetAccountData sets the Data field to the (JSON-encoded) value. If an error occurs during
 // JSON encoding, a JSON object describing the error is written to the field, instead.
-func (d *AccountData) SetAccountData(v interface{}) {
+func (d *AccountData) SetAccountData(v any) {
 	setJSONOrError(&d.Data, v)
 }
 
 // SetAuthData sets the AuthData field to the (JSON-encoded) value. If an error occurs during JSON
 // encoding, a JSON object describing the error is written to the field, instead.
-func (d *AccountData) SetAuthData(v interface{}) {
+func (d *AccountData) SetAuthData(v any) {
 	setJSONOrError(&d.AuthData, v)
 }
 
 // GetAccountData reads the Data field into the value. The value should be a pointer type to
 // the type that was passed to SetAccountData.
-func (d *AccountData) GetAccountData(v interface{}) error {
+func (d *AccountData) GetAccountData(v any) error {
 	return getJSONOrError(d.Data, v)
 }
 
 // GetAuthData reads the AuthData field into the value. The value should be a pointer type to the
 // type that was passed to SetAuthData.
-func (d *AccountData) GetAuthData(v interface{}) error {
+func (d *AccountData) GetAuthData(v any) error {
 	return getJSONOrError(d.AuthData, v)
 }
 
-func getJSONOrError(field *json.RawMessage, v interface{}) error {
+func getJSONOrError(field *json.RawMessage, v any) error {
 	if field == nil {
 		return errors.New("field was nil")
 	}

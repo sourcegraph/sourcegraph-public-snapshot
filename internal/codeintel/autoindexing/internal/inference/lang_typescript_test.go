@@ -6,9 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func TestRecognizersTypescript(t *testing.T) {
-	testRecognizers(t,
-		recognizerTestCase{
+func TestTypeScriptGenerator(t *testing.T) {
+	testGenerators(t,
+		generatorTestCase{
 			description: "javascript project with no tsconfig",
 			repositoryContents: map[string]string{
 				"package.json": "",
@@ -18,19 +18,19 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"npm install --ignore-scripts"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index", "--infer-tsconfig"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index", "--infer-tsconfig"},
+					Outfile:     "index.scip",
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "javascript project with no tsconfig",
 			repositoryContents: map[string]string{
 				"package.json": "",
@@ -41,19 +41,19 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"yarn --ignore-engines --ignore-scripts"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index", "--infer-tsconfig"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index", "--infer-tsconfig"},
+					Outfile:     "index.scip",
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "simple tsconfig",
 			repositoryContents: map[string]string{
 				"tsconfig.json": "",
@@ -63,13 +63,13 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "tsconfig in subdirectories",
 			repositoryContents: map[string]string{
 				"a/tsconfig.json": "",
@@ -81,29 +81,29 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "a",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 				{
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "b",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 				{
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "c",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "typescript installation steps",
 			repositoryContents: map[string]string{
 				"tsconfig.json":              "",
@@ -120,76 +120,76 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"npm install"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 				{
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"npm install"},
 						},
 						{
 							Root:     "foo/bar",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"yarn --ignore-engines"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/bar/baz",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 				{
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"npm install"},
 						},
 						{
 							Root:     "foo/bar",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"yarn --ignore-engines"},
 						},
 						{
 							Root:     "foo/bar/bonk",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"npm install"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/bar/bonk",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 				{
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"npm install"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/baz",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "typescript with lerna configuration",
 			repositoryContents: map[string]string{
 				"package.json":  "",
@@ -201,19 +201,19 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"yarn --ignore-engines"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "typescript with node version",
 			repositoryContents: map[string]string{
 				"package.json":  `{"engines": {"node": "42"}}`,
@@ -225,15 +225,15 @@ func TestRecognizersTypescript(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/lsif-typescript:autoindex",
+							Image:    "sourcegraph/scip-typescript:autoindex",
 							Commands: []string{"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto", "npm install"},
 						},
 					},
 					LocalSteps:  []string{"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"},
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-typescript:autoindex",
-					IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
-					Outfile:     "",
+					Indexer:     "sourcegraph/scip-typescript:autoindex",
+					IndexerArgs: []string{"scip-typescript", "index"},
+					Outfile:     "index.scip",
 				},
 			},
 		},

@@ -146,7 +146,7 @@ export interface ChangesetSelectRowProps {
  * Renders the top bar of the ChangesetList with the action buttons and the X selected
  * label. Provides select ALL functionality.
  */
-export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps> = ({
+export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren<ChangesetSelectRowProps>> = ({
     batchChangeID,
     onSubmit,
     queryArguments,
@@ -205,7 +205,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         <>
             <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (
@@ -233,7 +233,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     )
 }
 
-const AllSelectedLabel: React.FunctionComponent<{ count?: number }> = ({ count }) => {
+const AllSelectedLabel: React.FunctionComponent<React.PropsWithChildren<{ count?: number }>> = ({ count }) => {
     if (count === undefined) {
         return <>All changesets selected</>
     }

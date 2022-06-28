@@ -2,7 +2,7 @@
 
 [Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph Cloud is in beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. 
 
-Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
+Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/deploy/index.md).
 
 ## Explanations and how-tos
 
@@ -18,21 +18,21 @@ Sourcegraph Cloud is a Software-as-a-Service version of Sourcegraph. This means 
 
 ### Limitations
 
-- **Adding repositories**: You can add a maximum of 2,000 repositories hosted on Github.com or Gitlab.com to Sourcegraph Cloud. To add more than 2,000 repositories or to search code hosted in environments other than GitHub.com or GitLab.com, [run your own Sourcegraph instance](../../../admin/install/index.md).
-- **Searching code**: You can search across a maximum of 50 repositories at once with a `type:diff` or `type:commit` search using Sourcegraph Cloud. To search across more than 50 repositories at once, [run your own Sourcegraph instance](../../../admin/install/index.md).
+- **Adding repositories**: You can add a maximum of 2,000 repositories hosted on Github.com or Gitlab.com to Sourcegraph Cloud. To add more than 2,000 repositories or to search code hosted in environments other than GitHub.com or GitLab.com, [run your own Sourcegraph instance](../../../admin/deploy/index.md).
+- **Searching code**: You can search across a maximum of 50 repositories at once with a `type:diff` or `type:commit` search using Sourcegraph Cloud. To search across more than 50 repositories at once, [run your own Sourcegraph instance](../../../admin/deploy/index.md).
 - **Organizations and collaboration**: [Sourcegraph Cloud for Teams](../../cloud/index.md#sourcegraph-cloud-for-teams) is currently in Private Beta.
 
 ### Who is Sourcegraph Cloud for / why should I use this over Sourcegraph self-hosted?
 
 Sourcegraph Cloud is designed allow developers to connect and search personal code stored on Github.com or Gitlab.com. While our self-hosted product provides an incredible experience for enterprises, we've heard feedback that developers want a way to utilize the benefits of Sourcegraph without hosting. 
 
-[A local Sourcegraph instance](../../../admin/install/index.md) is a better fit for you if:
+[A local Sourcegraph instance](../../../admin/deploy/index.md) is a better fit for you if:
 
 - You have source code stored on-premises
 - You are interested in enterprise solutions such as [Batch Changes](https://about.sourcegraph.com/batch-changes/) to make large-scale code changes or [Code Insights](https://about.sourcegraph.com/code-insights/) to visualize code changes over time. 
 - You require more robust admin and user management tooling
 
-Learn more about [how to run your own Sourcegraph instance](../../../admin/install/index.md).
+Learn more about [how to run your own Sourcegraph instance](../../../admin/deploy/index.md).
 
 ### What are the differences between Sourcegraph Cloud and self-hosted Sourcegraph instances?
 
@@ -60,4 +60,4 @@ Organizational support on Sourcegraph Cloud is currently in private-beta. We are
 
 ### What if my code is not hosted on Github.com or Gitlab.com?
 
-Today, only Github.com or Gitlab.com are supported on Sourcegraph Cloud. To search your code hosted on other code hosts, get started with the [self-hosted version of Sourcegraph](../../../admin/install/index.md).
+Today, only Github.com or Gitlab.com are supported on Sourcegraph Cloud. To search your code hosted on other code hosts, get started with the [self-hosted version of Sourcegraph](../../../admin/deploy/index.md).

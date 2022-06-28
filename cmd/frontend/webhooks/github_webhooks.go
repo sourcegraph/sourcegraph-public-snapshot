@@ -26,7 +26,7 @@ type Registerer interface {
 // WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
 // permissible based on the event type(s) the handler was registered against. If you register a handler
 // for many event types, you should do a type switch within your handler
-type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event interface{}) error
+type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event any) error
 
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
@@ -80,7 +80,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *types.ExternalService, e interface{}) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *types.ExternalService, e any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
@@ -169,7 +169,7 @@ func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig 
 	}
 
 	for _, e := range es {
-		var c interface{}
+		var c any
 		c, err = e.Configuration()
 		if err != nil {
 			return nil, err

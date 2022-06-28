@@ -27,7 +27,7 @@ func newStoreShim(store store.Store) workerutil.Store {
 }
 
 // QueuedCount calls into the inner store.
-func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
+func (s *storeShim) QueuedCount(ctx context.Context, extraArguments any) (int, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
 		return 0, err
@@ -37,7 +37,7 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (workerutil.Record, bool, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
 		return nil, false, err
@@ -74,7 +74,7 @@ func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string
 var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
 
 // convertArguments converts the given interface value into a slice of *sqlf.Query values.
-func convertArguments(v interface{}) ([]*sqlf.Query, error) {
+func convertArguments(v any) ([]*sqlf.Query, error) {
 	if v == nil {
 		return nil, nil
 	}

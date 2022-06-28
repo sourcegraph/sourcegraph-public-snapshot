@@ -10,7 +10,7 @@ const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
  * This component uses UTM parameters to detect incoming traffic from our IDE extensions (VS Code
  * and JetBrains) and updates a temporary setting whenever these are found.
  */
-export const IdeExtensionTracker: React.FunctionComponent = () => {
+export const IdeExtensionTracker: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const location = useLocation()
 
     const [, setLastVSCodeDetection] = useTemporarySetting('integrations.vscode.lastDetectionTimestamp', 0)

@@ -18,7 +18,7 @@ func diff(before, after *Unified) (fields map[string]struct{}) {
 	return diff
 }
 
-func diffStruct(before, after interface{}, prefix string) (fields map[string]struct{}) {
+func diffStruct(before, after any, prefix string) (fields map[string]struct{}) {
 	fields = make(map[string]struct{})
 	beforeFields := getJSONFields(before, prefix)
 	afterFields := getJSONFields(after, prefix)
@@ -31,8 +31,8 @@ func diffStruct(before, after interface{}, prefix string) (fields map[string]str
 	return fields
 }
 
-func getJSONFields(vv interface{}, prefix string) (fields map[string]interface{}) {
-	fields = make(map[string]interface{})
+func getJSONFields(vv any, prefix string) (fields map[string]any) {
+	fields = make(map[string]any)
 	v := reflect.ValueOf(vv)
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)

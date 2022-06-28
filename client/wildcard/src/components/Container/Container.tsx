@@ -9,6 +9,6 @@ interface Props {
 }
 
 /** A container wrapper. Used for grouping content together. */
-export const Container: React.FunctionComponent<Props> = ({ children, className }) => (
+export const Container: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ children, className }) => (
     <div className={classNames(styles.container, className)}>{children}</div>
 )

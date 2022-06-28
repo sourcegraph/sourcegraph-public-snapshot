@@ -5,18 +5,21 @@ import (
 	"math"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
 func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &alertJob{
@@ -69,6 +72,17 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 
 func (j *alertJob) Name() string {
 	return "AlertJob"
+}
+
+func (j *alertJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", j.inputs.Query),
+		log.String("originalQuery", j.inputs.OriginalQuery),
+		trace.Stringer("patternType", j.inputs.PatternType),
+		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+		trace.Stringer("protocol", j.inputs.Protocol),
+		trace.Stringer("features", j.inputs.Features),
+	}
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

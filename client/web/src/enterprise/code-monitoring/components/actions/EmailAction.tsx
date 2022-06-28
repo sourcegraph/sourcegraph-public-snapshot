@@ -3,6 +3,8 @@ import React, { useState, useCallback } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
+import { Input } from '@sourcegraph/wildcard'
+
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
 
@@ -16,7 +18,7 @@ export const SEND_TEST_EMAIL = gql`
     }
 `
 
-export const EmailAction: React.FunctionComponent<ActionProps> = ({
+export const EmailAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,
@@ -116,11 +118,10 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
             _testStartOpen={_testStartOpen}
         >
             <div className="form-group mt-4 test-action-form-email" data-testid="action-form-email">
-                <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
-                <input
+                <Input
                     id="code-monitoring-form-actions-recipients"
-                    type="text"
-                    className="form-control mb-2"
+                    className="mb-2"
+                    label="Recipients"
                     value={`${authenticatedUser.email || ''} (you)`}
                     disabled={true}
                     autoFocus={true}

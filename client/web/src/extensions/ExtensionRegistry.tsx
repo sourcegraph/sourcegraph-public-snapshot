@@ -13,7 +13,7 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { AlertLink, useLocalStorage, useEventObservable, Alert, Link, Input } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -116,7 +116,7 @@ const extensionRegistryQuery = gql`
 export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExtension>
 
 /** A page that displays overview information about the available extensions. */
-export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
+export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
     const { history, location, settingsCascade, platformContext, authenticatedUser } = props
@@ -340,22 +340,21 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                     in one place on Sourcegraph.
                                 </span>
                             </div>
-                            <Form onSubmit={preventDefault} className="form-inline">
-                                <div className="shadow flex-grow-1">
-                                    <input
-                                        className="form-control w-100 test-extension-registry-input"
-                                        type="search"
-                                        placeholder="Search extensions..."
-                                        name="query"
-                                        value={query}
-                                        onChange={onQueryChangeEvent}
-                                        autoFocus={true}
-                                        autoComplete="off"
-                                        autoCorrect="off"
-                                        autoCapitalize="off"
-                                        spellCheck={false}
-                                    />
-                                </div>
+                            <Form onSubmit={preventDefault}>
+                                <Input
+                                    data-testid="test-extension-registry-input"
+                                    className="w-100 shadow"
+                                    type="search"
+                                    placeholder="Search extensions..."
+                                    name="query"
+                                    value={query}
+                                    onChange={onQueryChangeEvent}
+                                    autoFocus={true}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                />
                             </Form>
                             {!authenticatedUser && (
                                 <Alert className="my-4" variant="info">

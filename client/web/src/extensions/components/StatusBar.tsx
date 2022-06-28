@@ -40,7 +40,7 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
     badgeText?: string
 }
 
-export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
+export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBarProps>> = ({
     getStatusBarItems,
     className,
     statusBarItemClassName,
@@ -108,8 +108,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className={classNames('border-0', styles.scroll)}
                         onClick={onNegativeClicked}
                         variant="link"
+                        aria-label="Scroll left"
                     >
-                        <Icon as={ChevronLeftIcon} />
+                        <Icon as={ChevronLeftIcon} aria-hidden={true} />
                     </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
@@ -144,8 +145,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className={classNames('border-0', styles.scroll)}
                         onClick={onPositiveClicked}
                         variant="link"
+                        aria-label="Scroll right"
                     >
-                        <Icon as={ChevronRightIcon} />
+                        <Icon as={ChevronRightIcon} aria-hidden={true} />
                     </Button>
                 )}
             </ErrorBoundary>
@@ -154,12 +156,14 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
 }
 
 const StatusBarItem: React.FunctionComponent<
-    {
-        statusBarItem: StatusBarItemWithKey
-        className?: string
-        component?: JSX.Element
-        location: H.Location
-    } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+    React.PropsWithChildren<
+        {
+            statusBarItem: StatusBarItemWithKey
+            className?: string
+            component?: JSX.Element
+            location: H.Location
+        } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+    >
 > = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 

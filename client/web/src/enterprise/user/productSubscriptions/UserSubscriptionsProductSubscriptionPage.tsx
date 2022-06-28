@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
@@ -36,7 +36,7 @@ const LOADING = 'loading' as const
 /**
  * Displays a product subscription in the user subscriptions area.
  */
-export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<Props> = ({
+export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     match: {
         params: { subscriptionUUID },
@@ -81,7 +81,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <h2>Subscription {productSubscription.name}</h2>
+                    <H2>Subscription {productSubscription.name}</H2>
                     {(productSubscription.invoiceItem || productSubscription.activeLicense?.info) && (
                         <UserProductSubscriptionStatus
                             subscriptionName={productSubscription.name}

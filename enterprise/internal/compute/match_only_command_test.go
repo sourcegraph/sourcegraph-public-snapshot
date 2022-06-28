@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-type serializer func(*MatchContext) interface{}
+type serializer func(*MatchContext) any
 
-func match(r *MatchContext) interface{} {
+func match(r *MatchContext) any {
 	return r
 }
 
-func environment(r *MatchContext) interface{} {
+func environment(r *MatchContext) any {
 	env := make(map[string]string)
 	for _, m := range r.Matches {
 		for k, v := range m.Environment {
@@ -34,12 +34,14 @@ func Test_matchOnly(t *testing.T) {
 			ID:   5,
 			Name: "codehost.com/myorg/myrepo",
 		}},
-		LineMatches: []*result.LineMatch{
-			{
-				Preview:    "abcdefgh",
-				LineNumber: 1,
-			},
-		},
+		ChunkMatches: result.ChunkMatches{{
+			Content:      "abcdefgh",
+			ContentStart: result.Location{Line: 1},
+			Ranges: result.Ranges{{
+				Start: result.Location{Line: 1},
+				End:   result.Location{Line: 1},
+			}},
+		}},
 	}
 
 	test := func(input string, serialize serializer) string {

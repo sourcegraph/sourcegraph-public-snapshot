@@ -13,13 +13,18 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var auditFormatFlag string
+var auditPRGitHubToken string
 
 var auditCommand = &cli.Command{
 	Name:      "audit",
@@ -27,7 +32,6 @@ var auditCommand = &cli.Command{
 	ArgsUsage: "[target]",
 	Hidden:    true,
 	Category:  CategoryCompany,
-	Action:    suggestSubcommandsAction,
 	Subcommands: []*cli.Command{{
 		Name:  "pr",
 		Usage: "Display audit trail for pull requests",
@@ -39,19 +43,30 @@ var auditCommand = &cli.Command{
 				DefaultText: "[markdown|terminal]",
 				Destination: &auditFormatFlag,
 			},
+			&cli.StringFlag{
+				Name:        "github.token",
+				Usage:       "GitHub token to use when making API requests, defaults to $GITHUB_TOKEN.",
+				Destination: &auditPRGitHubToken,
+				Value:       os.Getenv("GITHUB_TOKEN"),
+			},
 		},
-		Action: execAdapter(func(ctx context.Context, args []string) error {
-			ghc := github.NewClient(nil)
+		Action: func(ctx *cli.Context) error {
+			ghc := github.NewClient(oauth2.NewClient(ctx.Context, oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: auditPRGitHubToken},
+			)))
 
-			issues, err := fetchIssues(ctx, ghc)
+			logger := log.Scoped("auditPR", "sg audit pr")
+			logger.Debug("fetching issues")
+			issues, err := fetchIssues(ctx.Context, logger, ghc)
 			if err != nil {
 				return err
 			}
-			slack, err := sgslack.NewClient(ctx)
+			slack, err := sgslack.NewClient(ctx.Context)
 			if err != nil {
 				return err
 			}
-			prAuditIssues, err := presentIssues(ctx, ghc, slack, issues)
+			logger.Debug("formatting results")
+			prAuditIssues, err := presentIssues(ctx.Context, ghc, slack, issues)
 			if err != nil {
 				return err
 			}
@@ -63,7 +78,7 @@ var auditCommand = &cli.Command{
 				if err != nil {
 					return err
 				}
-				writePrettyMarkdown(sb.String())
+				std.Out.WriteMarkdown(sb.String())
 			case "markdown":
 				err = formatMarkdown(prAuditIssues, os.Stdout)
 				if err != nil {
@@ -74,14 +89,22 @@ var auditCommand = &cli.Command{
 			}
 
 			return nil
-		}),
+		},
 	}},
 }
 
-func fetchIssues(ctx context.Context, ghc *github.Client) ([]*github.Issue, error) {
+func fetchIssues(ctx context.Context, logger log.Logger, ghc *github.Client) ([]*github.Issue, error) {
 	var issues []*github.Issue
+	nextPage := 1
 	for {
-		is, r, err := ghc.Issues.ListByRepo(ctx, "sourcegraph", "sec-pr-audit-trail", &github.IssueListByRepoOptions{State: "open", Direction: "asc"})
+		logger.Debug("Listing issues", log.Int("nextPage", nextPage))
+		is, r, err := ghc.Issues.ListByRepo(ctx, "sourcegraph", "sec-pr-audit-trail", &github.IssueListByRepoOptions{
+			State:     "open",
+			Direction: "asc",
+			ListOptions: github.ListOptions{
+				Page: nextPage,
+			},
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -89,6 +112,7 @@ func fetchIssues(ctx context.Context, ghc *github.Client) ([]*github.Issue, erro
 		if r.NextPage == 0 {
 			break
 		}
+		nextPage = r.NextPage
 	}
 	return issues, nil
 }
@@ -115,7 +139,7 @@ func presentIssues(ctx context.Context, ghc *github.Client, slack *slack.Client,
 
 		author, err := resolver.ResolveByGitHubHandle(ctx, assignee.GetLogin())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to format issue %s", issue.GetHTMLURL())
 		}
 
 		res = append(res, prAuditIssue{

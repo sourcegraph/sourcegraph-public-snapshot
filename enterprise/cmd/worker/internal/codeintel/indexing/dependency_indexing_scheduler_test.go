@@ -8,9 +8,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -56,12 +58,13 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		repoUpdater:   mockRepoUpdater,
 	}
 
+	logger := logtest.Scoped(t)
 	job := dbstore.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -149,7 +152,8 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	logger := logtest.Scoped(t)
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -208,7 +212,8 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	logger := logtest.Scoped(t)
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -231,7 +236,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockScanner := NewMockPackageReferenceScanner()
 	mockGitServer := NewMockGitserverClient()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "lsif-tsc"}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
@@ -248,7 +253,8 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 		ExternalServiceSync: time.Time{},
 		UploadID:            42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	logger := logtest.Scoped(t)
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

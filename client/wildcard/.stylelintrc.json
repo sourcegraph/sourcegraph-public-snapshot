@@ -4,7 +4,7 @@
     {
       "files": ["src/global-styles/**/*.scss"],
       "rules": {
-        "filenames/match-regex": null
+        "@sourcegraph/filenames-match-regex": null
       }
     }
   ]

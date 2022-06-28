@@ -5,7 +5,7 @@ import { debounce } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Button, Checkbox, Container, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Container, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
@@ -27,7 +27,9 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser'> 
     authenticatedUser: AuthenticatedUser
 }
 
-export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
+export const UserSettingsPrivacyPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+}) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     const [setUserSearchable, { loading, error }] = useMutation<SetUserSearchableResult, SetUserSearchableVariables>(
@@ -62,7 +64,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
 
     return (
         <div>
-            <PageTitle title="Profile" />
+            <PageTitle title="Privacy" />
             <PageHeader path={[{ text: 'Privacy' }]} headingElement="h2" className={styles.heading} />
             <Container>
                 <Checkbox
@@ -86,12 +88,12 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
                     </Button>
                 </div>
                 <div className="d-flex justify-content-start mb-3">
-                    <p>
+                    <Text>
                         Learn more about{' '}
                         <Link to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#how-secure-is-sourcegraph-cloud-can-sourcegraph-see-my-code">
                             how your data and privacy is protected on Sourcegraph Cloud.
                         </Link>
-                    </p>
+                    </Text>
                 </div>
                 {error && <ErrorAlert className="mt-2" error={error} />}
             </Container>

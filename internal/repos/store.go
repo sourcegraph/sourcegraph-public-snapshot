@@ -7,84 +7,158 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type Store interface {
+	// RepoStore returns a database.RepoStore using the same database handle.
+	RepoStore() database.RepoStore
+	// GitserverReposStore returns a database.GitserverReposStore using the same
+	// database handle.
+	GitserverReposStore() database.GitserverRepoStore
+	// ExternalServiceStore returns a database.ExternalServiceStore using the same
+	// database handle.
+	ExternalServiceStore() database.ExternalServiceStore
+
+	// SetMetrics updates metrics for the store in place.
+	SetMetrics(m StoreMetrics)
+	// SetTracer updates tracer for the store in place.
+	SetTracer(t trace.Tracer)
+
+	basestore.ShareableStore
+	With(other basestore.ShareableStore) Store
+	// Transact begins a new transaction and make a new Store over it.
+	Transact(ctx context.Context) (Store, error)
+	Done(err error) error
+
+	// CountNamespacedRepos counts the total number of repos that have been added by
+	// user or organization owned external services. If userID is specified, only
+	// repos owned by that user are counted. If orgID is specified, only repos owned
+	// by that organization are counted.
+	CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error)
+	// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo
+	// not in the given ids that is owned by the given external service. We run one
+	// query per repo rather than one batch query in order to reduce the chances of
+	// this whole operation blocking on locks other queries acquire when referencing
+	// external_service_repos or repo. Since the syncer runs periodically, it's
+	// better to fail to delete some repos and try to delete them again in the next
+	// run, than to have one failure prevent all deletes from happening.
+	DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error)
+	// DeleteExternalServiceRepo deletes a repo's association to an external service
+	// and the repo itself if there are no more associations to that repo by any
+	// other external service.
+	DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error)
+	// ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
+	// given repository. These users have proven that they have read access to the
+	// repository given records are present in the "external_service_repos" table.
+	ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error)
+	// ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
+	// associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
+	// user has already proven that they have read access to the repositories since
+	// records are present in the "external_service_repos" table.
+	ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error)
+	// CreateExternalServiceRepo inserts a single repo and its association to an
+	// external service, respectively in the repo and "external_service_repos" table.
+	// The associated external service must already exist.
+	CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
+	// UpdateExternalServiceRepo updates a single repo and its association to an
+	// external service, respectively in the repo and external_service_repos table.
+	// The associated external service must already exist.
+	UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
+	// EnqueueSingleSyncJob enqueues a single sync job for the given external service
+	// if it is not already queued or processing. Additionally, it also skips
+	// queueing up a sync job for cloud_default external services. This is done to
+	// avoid the sync job for the cloud_default triggering a deletion of repos
+	// because:
+	//  1. cloud_default does not define any repos in its config
+	//  2. repos under the cloud_default are lazily synced the first time a user accesses them
+	//
+	// This is a limitation of our current repo syncing architecture. The
+	// cloud_default flag is only set on sourcegraph.com and manages public GitHub
+	// and GitLab repositories that have been lazily synced.
+	EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error)
+	// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
+	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
+	// ListSyncJobs returns all sync jobs.
+	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
+}
+
 // A Store exposes methods to read and write repos and external services.
-type Store struct {
+type store struct {
 	*basestore.Store
 
-	// Logger used by the store. Defaults to log15.Root().
-	Log logging.ErrorLogger
+	// Logger used by the store. Does not have a default - it must be provided.
+	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
 	Tracer trace.Tracer
-	// RepoStore is a database.RepoStore using the same database handle.
-	RepoStore database.RepoStore
-	// GitserverReposStore is a database.GitserverReposStore using the same database handle.
-	GitserverReposStore database.GitserverRepoStore
-	// ExternalServiceStore is a database.ExternalServiceStore using the same database handle.
-	ExternalServiceStore database.ExternalServiceStore
 
 	txtrace *trace.Trace
 	txctx   context.Context
 }
 
-type ReposMocks struct {
-	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
-	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
-}
-
-var Mocks ReposMocks
-
-// NewStore instantiates and returns a new DBStore with prepared statements.
-func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
-	s := basestore.NewWithDB(db, txOpts)
-	return &Store{
-		Store:                s,
-		RepoStore:            database.ReposWith(s),
-		GitserverReposStore:  database.NewGitserverReposWith(s),
-		ExternalServiceStore: database.ExternalServicesWith(s),
-		Log:                  log15.Root(),
-		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
+// NewStore instantiates and returns a new Store with given database handle.
+func NewStore(logger log.Logger, db database.DB) Store {
+	s := basestore.NewWithHandle(db.Handle())
+	return &store{
+		Store:  s,
+		Logger: logger,
+		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{
-		Store:                s.Store.With(other),
-		RepoStore:            s.RepoStore.With(other),
-		GitserverReposStore:  s.GitserverReposStore.With(other),
-		ExternalServiceStore: s.ExternalServiceStore.With(other),
-		Log:                  s.Log,
-		Metrics:              s.Metrics,
-		Tracer:               s.Tracer,
+func (s *store) RepoStore() database.RepoStore {
+	return database.ReposWith(s.Logger, s)
+}
+
+func (s *store) GitserverReposStore() database.GitserverRepoStore {
+	return database.GitserverReposWith(s)
+}
+
+func (s *store) ExternalServiceStore() database.ExternalServiceStore {
+	return database.ExternalServicesWith(s.Logger, s)
+}
+
+func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
+func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
+
+func (s *store) With(other basestore.ShareableStore) Store {
+	return &store{
+		Store:   s.Store.With(other),
+		Logger:  s.Logger,
+		Metrics: s.Metrics,
+		Tracer:  s.Tracer,
 	}
 }
 
-// Transact returns a TxStore whose methods operate within the context of a transaction.
-func (s *Store) Transact(ctx context.Context) (stx *Store, err error) {
+func (s *store) Transact(ctx context.Context) (Store, error) {
+	return s.transact(ctx)
+}
+
+func (s *store) transact(ctx context.Context) (stx *store, err error) {
 	tr, ctx := s.trace(ctx, "Store.Transact")
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.Transact.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.transact", &err)
+
 		if err != nil {
+			logger.Error("store.transact", log.Error(err))
+
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
 			tr.Finish()
@@ -95,22 +169,21 @@ func (s *Store) Transact(ctx context.Context) (stx *Store, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "starting transaction")
 	}
-	return &Store{
-		Store:                txBase,
-		RepoStore:            s.RepoStore.With(txBase),
-		ExternalServiceStore: s.ExternalServiceStore.With(txBase),
-		Log:                  s.Log,
-		Metrics:              s.Metrics,
-		Tracer:               s.Tracer,
-		txtrace:              tr,
-		txctx:                ctx,
+	return &store{
+		Store:   txBase,
+		Logger:  s.Logger,
+		Metrics: s.Metrics,
+		Tracer:  s.Tracer,
+		txtrace: tr,
+		txctx:   ctx,
 	}, nil
 }
 
 // Done calls into the inner Store Done method.
-func (s *Store) Done(err error) error {
+func (s *store) Done(err error) error {
 	tr := s.txtrace
 	tr.LogFields(otlog.String("event", "Store.Done"))
+	logger := trace.Logger(s.txctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -120,7 +193,8 @@ func (s *Store) Done(err error) error {
 			done = true
 			tr.SetError(err)
 			s.Metrics.Done.Observe(secs, 1, &err)
-			logging.Log(s.Log, "store.done", &err)
+
+			logger.Error("store.done", log.Error(err))
 		}
 
 		if !done {
@@ -133,7 +207,7 @@ func (s *Store) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
+func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
 	txctx := s.txctx
 	if txctx == nil {
 		txctx = ctx
@@ -143,18 +217,22 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 	return tr, ctx
 }
 
-// CountNamespacedRepos counts the total number of repos that have been added
-// by user or organization owned external services.
-// If userID is specified, only repos owned by that user are counted.
-// If orgID is specified, only repos owned by that organization are counted.
-func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
+func (s *store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
 	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int("userID", int(userID)),
+		log.Int("orgID", int(orgID)),
+	)
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
 		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-namespaced-repos", &err, "count", count, "user-id", userID, "org-id", orgID)
+
+		if err != nil {
+			logger.Error("store.count-namespaced-repos", log.Uint64("count", count), log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -178,23 +256,22 @@ SELECT COUNT(DISTINCT(repo_id))
 FROM external_service_repos
 WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
 
-// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
-// by the given external service. We run one query per repo rather than one batch query in order to reduce the chances
-// of this whole operation blocking on locks other queries acquire when referencing external_service_repos or repo.
-// Since the syncer runs periodically, it's better to fail to delete some repos and try to delete them again in the
-// next run, than to have one failure prevent all deletes from happening.
-func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
+func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")
 	tr.LogFields(
 		otlog.Int("len(ids)", len(ids)),
 		otlog.Int64("external_service_id", svc.ID),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("len(ids)", len(ids)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.DeleteExternalServiceReposNotIn.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.delete-external-service-repos-not-in", &err, "external-service-id", svc.ID, "len(ids)", len(ids))
+
+		if err != nil {
+			logger.Error("store.delete-external-service-repos-not-in", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -230,27 +307,29 @@ FROM external_service_repos
 WHERE external_service_id = %s AND repo_id != ALL(%s)
 `
 
-// DeleteExternalServiceRepo deletes a repo's association to an external service and the repo itself if there are no
-// more associations to that repo by any other external service.
-func (s *Store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
+func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceRepo")
 	tr.LogFields(
 		otlog.Int32("id", int32(id)),
 		otlog.Int64("external_service_id", svc.ID),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("repoID", int(id)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.DeleteExternalServiceRepo.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.delete-external-service-repo", &err, "external-service-id", svc.ID, "repo-id", id)
+
+		if err != nil {
+			logger.Error("store.delete-external-service-repo", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
 	if !s.InTransaction() {
-		s, err = s.Transact(ctx)
+		s, err = s.transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
@@ -289,25 +368,21 @@ SELECT user_id FROM external_service_repos
 WHERE repo_id = %s AND user_id IS NOT NULL
 `
 
-// ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
-// given repository. These users have proven that they have read access to the
-// repository given records are present in the "external_service_repos" table.
-func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	if Mocks.ListExternalServiceUserIDsByRepoID != nil {
-		return Mocks.ListExternalServiceUserIDsByRepoID(ctx, repoID)
-	}
-
+func (s *store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
 	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
 	tr.LogFields(
 		otlog.Int32("repo_id", int32(repoID)),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int("repoID", int(repoID)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.ListExternalServiceUserIDsByRepoID.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.list-external-service-user-ids-by-repo-id", &err,
-			"repo-id", repoID,
-		)
+
+		if err != nil {
+			logger.Error("store.list-external-service-user-ids-by-repo-id", log.Error(err))
+		}
+
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -325,26 +400,21 @@ WHERE
 AND repo.private
 `
 
-// ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
-// associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
-// user has already proven that they have read access to the repositories since
-// records are present in the "external_service_repos" table.
-func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	if Mocks.ListExternalServiceRepoIDsByUserID != nil {
-		return Mocks.ListExternalServiceRepoIDsByUserID(ctx, userID)
-	}
-
+func (s *store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
 	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
 	tr.LogFields(
 		otlog.Int32("user_id", userID),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int("userID", int(userID)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.ListExternalServiceRepoIDsByUserID.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.list-external-service-repo-ids-by-user-id", &err,
-			"user-id", userID,
-		)
+
+		if err != nil {
+			logger.Error("store.list-external-service-private-repo-id-by-user-id", log.Error(err))
+		}
+
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -362,25 +432,31 @@ func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, u
 	return repoIDs, nil
 }
 
-// CreateExternalServiceRepo inserts a single repo and its association to an external service, respectively in the repo and
-// "external_service_repos" table. The associated external service must already exist.
-func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
+func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
 	tr.LogFields(
 		otlog.String("name", string(r.Name)),
 		otlog.Int64("external_service_id", svc.ID),
 		otlog.String("external_repo_spec", r.ExternalRepo.String()),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int("externalServiceID", int(svc.ID)),
+		log.String("Name", string(r.Name)),
+		log.Object("ExternalRepo",
+			log.String("ID", r.ExternalRepo.ID),
+			log.String("ServiceID", r.ExternalRepo.ServiceID),
+			log.String("ServiceType", r.ExternalRepo.ServiceType),
+		),
+	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.create-external-service-repo", &err,
-			"external-service-id", svc.ID,
-			"name", r.Name,
-			"external-repo-spec", r.ExternalRepo.String(),
-		)
+
+		if err != nil {
+			logger.Error("store.create-external-service-repo", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -411,7 +487,7 @@ func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	}
 
 	if !s.InTransaction() {
-		s, err = s.Transact(ctx)
+		s, err = s.transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "CreateExternalServiceRepo")
 		}
@@ -470,25 +546,30 @@ WHERE
 	external_service_repos.org_id    != excluded.org_id
 `
 
-// UpdateExternalServiceRepo updates a single repo and its association to an external service, respectively in the repo and
-// external_service_repos table. The associated external service must already exist.
-func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
+func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")
 	tr.LogFields(
 		otlog.String("name", string(r.Name)),
 		otlog.Int64("external_service_id", svc.ID),
 		otlog.String("external_repo_spec", r.ExternalRepo.String()),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int("externalServiceID", int(svc.ID)),
+		log.String("Name", string(r.Name)),
+		log.Object("ExternalRepo",
+			log.String("ID", r.ExternalRepo.ID),
+			log.String("ServiceID", r.ExternalRepo.ServiceID),
+			log.String("ServiceType", r.ExternalRepo.ServiceType),
+		),
+	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.UpdateExternalServiceRepo.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.update-external-service-repo", &err,
-			"external-service-id", svc.ID,
-			"name", r.Name,
-			"external-repo-spec", r.ExternalRepo.String(),
-		)
+		if err != nil {
+			logger.Error("store.update-external-service-repo", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -524,7 +605,7 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	}
 
 	if !s.InTransaction() {
-		s, err = s.Transact(ctx)
+		s, err = s.transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
@@ -564,17 +645,7 @@ WHERE id = %s
 RETURNING updated_at
 `
 
-// EnqueueSingleSyncJob enqueues a single sync job for the given external service if it is not
-// already queued or processing. Additionally, it also skips queueing up a sync job for
-// cloud_default external services. This is done to avoid the sync job for the cloud_default
-// triggering a deletion of repos because:
-// 1. cloud_default does not define any repos in its config
-// 2. repos under the cloud_default are lazily synced the first time a user accesses them
-//
-// This is a limitation of our current repo syncing architecture. The cloud_default flag is only set
-// on sourcegraph.com and manages public GitHub and GitLab repositories that have been lazily
-// synced.
-func (s *Store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
+func (s *store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
@@ -592,8 +663,7 @@ WHERE NOT EXISTS (
 	return s.Exec(ctx, q)
 }
 
-// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
-func (s *Store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
+func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
@@ -633,8 +703,7 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT id from due EXCEPT SELECT id from busy
 `
 
-// ListSyncJobs returns all sync jobs.
-func (s *Store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
+func (s *store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 	q := sqlf.Sprintf(`
 		SELECT
 			id,
@@ -664,7 +733,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	for rows.Next() {
 		// required field for the sync worker, but
 		// the value is thrown out here
-		var executionLogs *[]interface{}
+		var executionLogs *[]any
 
 		var job SyncJob
 		if err := rows.Scan(
@@ -692,7 +761,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	return jobs, nil
 }
 
-func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+func metadataColumn(metadata any) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
 		msg = json.RawMessage("{}")

@@ -22,7 +22,7 @@ export interface ExternalServiceNodeProps {
     afterDeleteRoute: string
 }
 
-export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = ({
+export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
     node,
     onDidUpdate,
     history,
@@ -53,7 +53,7 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                 <div>
                     {node.namespace && (
                         <>
-                            <Icon as={AccountIcon} />
+                            <Icon as={AccountIcon} aria-hidden={true} />
                             <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
                         </>
                     )}
@@ -68,17 +68,18 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} /> Edit
+                        <Icon as={SettingsIcon} aria-hidden={true} /> Edit
                     </Button>{' '}
                     <Button
                         className="test-delete-external-service-button"
                         onClick={onDelete}
                         disabled={isDeleting === true}
                         data-tooltip="Delete external service"
+                        aria-label="Delete external service"
                         variant="danger"
                         size="sm"
                     >
-                        <Icon as={DeleteIcon} />
+                        <Icon as={DeleteIcon} aria-hidden={true} />
                     </Button>
                 </div>
             </div>

@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Modal, Button } from '@sourcegraph/wildcard'
+import { Modal, Button, Checkbox, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -31,7 +31,7 @@ function getSelectedShareOptionDescription(shareOption: ShareOption, isSourcegra
     return `Only members of the ${shareOption.namespaceName} organization can edit the notebook`
 }
 
-export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps> = ({
+export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren<ShareNotebookModalProps>> = ({
     isOpen,
     isSourcegraphDotCom,
     selectedShareOption,
@@ -61,7 +61,7 @@ export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps
 
     return (
         <Modal isOpen={isOpen} position="top-third" onDismiss={toggleModal} aria-labelledby={shareLabelId}>
-            <h3 id={shareLabelId}>Share Notebook</h3>
+            <H3 id={shareLabelId}>Share Notebook</H3>
             <div className={classNames('mb-2', styles.body)}>
                 <NotebookShareOptionsDropdown
                     isSourcegraphDotCom={isSourcegraphDotCom}
@@ -74,25 +74,20 @@ export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps
                     <small>{description}</small>
                 </div>
                 {selectedShareOption.namespaceType === 'Org' && (
-                    <div className="form-check mt-2">
-                        <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="org-namespace-visibility"
-                            checked={selectedShareOption.isPublic}
-                            onChange={event =>
-                                setSelectedShareOption({
-                                    ...selectedShareOption,
-                                    isPublic: event.target.checked,
-                                })
-                            }
-                        />
-                        <label className="form-check-label" htmlFor="org-namespace-visibility">
-                            Everyone{' '}
-                            {isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'}{' '}
-                            can view the notebook
-                        </label>
-                    </div>
+                    <Checkbox
+                        id="org-namespace-visibility"
+                        checked={selectedShareOption.isPublic}
+                        wrapperClassName="mt-2"
+                        onChange={event =>
+                            setSelectedShareOption({
+                                ...selectedShareOption,
+                                isPublic: event.target.checked,
+                            })
+                        }
+                        label={`Everyone ${
+                            isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'
+                        } can view the notebook`}
+                    />
                 )}
             </div>
             <div className="text-right">

@@ -57,7 +57,7 @@ func (pq *changesetPriorityQueue) Swap(i, j int) {
 }
 
 // Push is here to implement the Heap interface, please use Upsert
-func (pq *changesetPriorityQueue) Push(x interface{}) {
+func (pq *changesetPriorityQueue) Push(x any) {
 	n := len(pq.items)
 	item := x.(scheduledSync)
 	pq.index[item.changesetID] = n
@@ -65,7 +65,7 @@ func (pq *changesetPriorityQueue) Push(x interface{}) {
 }
 
 // Pop is not to be used directly, use heap.Pop(pq)
-func (pq *changesetPriorityQueue) Pop() interface{} {
+func (pq *changesetPriorityQueue) Pop() any {
 	item := pq.items[len(pq.items)-1]
 	delete(pq.index, item.changesetID)
 	pq.items = pq.items[:len(pq.items)-1]

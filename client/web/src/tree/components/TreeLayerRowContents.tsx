@@ -10,7 +10,7 @@ type TreeLayerRowContentsProps = HTMLAttributes<HTMLDivElement> & {
     isNew?: boolean
 }
 
-export const TreeLayerRowContents: React.FunctionComponent<TreeLayerRowContentsProps> = ({
+export const TreeLayerRowContents: React.FunctionComponent<React.PropsWithChildren<TreeLayerRowContentsProps>> = ({
     className,
     children,
     isNew,
@@ -25,12 +25,9 @@ type TreeLayerRowContentsLinkProps = LinkProps & {
     isNew?: boolean
 }
 
-export const TreeLayerRowContentsLink: React.FunctionComponent<TreeLayerRowContentsLinkProps> = ({
-    className,
-    children,
-    isNew,
-    ...rest
-}) => (
+export const TreeLayerRowContentsLink: React.FunctionComponent<
+    React.PropsWithChildren<TreeLayerRowContentsLinkProps>
+> = ({ className, children, isNew, ...rest }) => (
     <Link className={classNames(styles.treeRowContents, className, isNew && styles.isNew)} {...rest}>
         {children}
     </Link>

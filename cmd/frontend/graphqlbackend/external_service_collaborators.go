@@ -63,7 +63,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if len(possibleRepos) == 0 {
 		// External service is describing "sync all repos" instead of a specific set. Query a few of
 		// those that we'll look for collaborators in.
-		repos, err := backend.NewRepos(r.db).List(ctx, database.ReposListOptions{
+		repos, err := backend.NewRepos(r.logger, r.db).List(ctx, database.ReposListOptions{
 			// SECURITY: This must be the authenticated user's external service ID.
 			ExternalServiceIDs: []int64{r.externalService.ID},
 			OrderBy: database.RepoListOrderBy{{
@@ -91,7 +91,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	// parallel) and so that is the true limiting factor here.
 	//
 	// We search within random repositories because many follow a pattern, such as say adding a ton
-	// of `company/lsif-java`, `company/lsif-python`, `company/lsif-typescript` etc repos with likely
+	// of `company/scip-java`, `company/scip-python`, `company/scip-typescript` etc repos with likely
 	// the same collaborators, whereas random sampling may give us dissimilar repositories.
 	const maxReposToScan = 25
 	pickedRepos := pickReposToScanForCollaborators(possibleRepos, maxReposToScan)
@@ -102,7 +102,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		return nil, err
 	}
 
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	authUserEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
 	})
 	if err != nil {

@@ -62,7 +62,7 @@ interface BatchChangeTabsProps {
     initialTab?: string
 }
 
-const BatchChangeTabsInternal: React.FunctionComponent<BatchChangeTabsProps> = ({
+const BatchChangeTabsInternal: React.FunctionComponent<React.PropsWithChildren<BatchChangeTabsProps>> = ({
     children,
     history,
     location,
@@ -131,7 +131,7 @@ const BatchChangeTabsInternal: React.FunctionComponent<BatchChangeTabsProps> = (
 }
 
 /** Wrapper of Wildcards's `Tabs` with built-in logic for reading and writing to the URL tab parameter */
-export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = props => {
+export const BatchChangeTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangeTabsProps>> = props => {
     const [state, dispatch] = useReducer(tabsReducer, {})
     return (
         <TabsStateContext.Provider value={state}>
@@ -142,7 +142,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = pr
     )
 }
 
-export const BatchChangeTabList: React.FunctionComponent = ({ children }) => (
+export const BatchChangeTabList: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <div className="overflow-auto mb-2">
         <TabList
             className={classNames(styles.batchChangeTabList, 'nav d-inline-flex d-sm-flex flex-nowrap text-nowrap')}
@@ -162,7 +162,12 @@ interface BatchChangeTabProps {
     customPath?: string
 }
 
-export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ children, index, name, customPath }) => {
+export const BatchChangeTab: React.FunctionComponent<React.PropsWithChildren<BatchChangeTabProps>> = ({
+    children,
+    index,
+    name,
+    customPath,
+}) => {
     const dispatch = useTabsDispatch()
 
     useEffect(() => {

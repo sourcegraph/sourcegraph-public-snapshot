@@ -87,7 +87,7 @@ func TestOrganization(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "org not found: name acme",
-						Path:    []interface{}{"organization"},
+						Path:    []any{"organization"},
 					},
 				},
 			},
@@ -265,7 +265,7 @@ func TestCreateOrganization(t *testing.T) {
 				}
 			}
 			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"name": "acme",
 			},
 		})
@@ -302,7 +302,7 @@ func TestCreateOrganization(t *testing.T) {
 				}
 			}
 			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"name":    "acme",
 				"statsID": id.String(),
 			},
@@ -326,10 +326,10 @@ func TestCreateOrganization(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "no current user",
-					Path:    []interface{}{string("createOrganization")},
+					Path:    []any{string("createOrganization")},
 				},
 			},
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"name": "test",
 			},
 		})
@@ -352,10 +352,10 @@ func TestCreateOrganization(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: `rejected suspicious name "test"`,
-					Path:    []interface{}{string("createOrganization")},
+					Path:    []any{string("createOrganization")},
 				},
 			},
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"name": "test",
 			},
 		})
@@ -422,7 +422,7 @@ func TestAddOrganizationMember(t *testing.T) {
 					"alwaysNil": null
 				}
 			}`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"username":     userName,
 			},
@@ -445,10 +445,10 @@ func TestAddOrganizationMember(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
-					Path:    []interface{}{string("addUserToOrganization")},
+					Path:    []any{string("addUserToOrganization")},
 				},
 			},
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"username":     userName,
 			},
@@ -485,7 +485,7 @@ func TestAddOrganizationMember(t *testing.T) {
 					"alwaysNil": null
 				}
 			}`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"username":     userName,
 			},

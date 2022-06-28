@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-type EngineType int64
+type EngineType int
 
 const (
 	EngineInvalid EngineType = iota
@@ -20,18 +20,12 @@ const (
 	EngineSyntect
 )
 
-var engineToDisplay map[EngineType]string = map[EngineType]string{
-	EngineInvalid:    "invalid",
-	EngineSyntect:    "syntect",
-	EngineTreeSitter: "tree-sitter",
+type SyntaxEngineQuery struct {
+	Engine           EngineType
+	Language         string
+	LanguageOverride bool
 }
 
-type languagePattern struct {
-	pattern  *regexp.Regexp
-	language string
-}
-
-// TODO: Later get an exhaustive list for this, or add to documentation.
 type syntaxHighlightConfig struct {
 	// Order does not matter. Evaluated before Patterns
 	Extensions map[string]string
@@ -41,29 +35,51 @@ type syntaxHighlightConfig struct {
 	Patterns []languagePattern
 }
 
-type syntaxEngineConfig struct {
-	Default   EngineType
-	Overrides map[string]EngineType
+type languagePattern struct {
+	pattern  *regexp.Regexp
+	language string
 }
 
-type SyntaxEngineQuery struct {
-	Engine           EngineType
-	Language         string
-	LanguageOverride bool
-}
-
+// highlightConfig is the effective configuration for highlighting
+// after applying base and site configuration. Use this to determine
+// what extensions and/or patterns map to what languages.
 var highlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{},
 	Patterns:   []languagePattern{},
 }
 
+type syntaxEngineConfig struct {
+	Default   EngineType
+	Overrides map[string]EngineType
+}
+
+// engineConfig is the effective configuration at any given time
+// after applying base configuration and site configuration. Use
+// this to determine what engine should be used for highlighting.
 var engineConfig = syntaxEngineConfig{
 	// This sets the default syntax engine for the sourcegraph server.
-	Default:   EngineSyntect,
+	Default: EngineSyntect,
+
+	// Individual languages (e.g. "c#") can set an override engine to
+	// apply highlighting
 	Overrides: map[string]EngineType{},
 }
 
+// baseEngineConfig is the configuration that we set up by default,
+// and will enable any languages that we feel confident with tree-sitter.
+//
+// Eventually, we will switch from having `Default` be EngineSyntect and move
+// to having it be EngineTreeSitter.
+var baseEngineConfig = syntaxEngineConfig{
+	Default: EngineSyntect,
+	Overrides: map[string]EngineType{
+		"c#":      EngineTreeSitter,
+		"jsonnet": EngineTreeSitter,
+	},
+}
+
 func init() {
+	// Validation only: Do NOT set any values in the configuration in this function.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		highlights := c.SiteConfig().SyntaxHighlighting
 		if highlights == nil {
@@ -91,6 +107,14 @@ func init() {
 
 	go func() {
 		conf.Watch(func() {
+			// Populate effective configuration with base configuration
+			//    We have to add here to make sure that even if there is no config,
+			//    we still update to use the defaults
+			engineConfig.Default = baseEngineConfig.Default
+			for name, engine := range baseEngineConfig.Overrides {
+				engineConfig.Overrides[name] = engine
+			}
+
 			config := conf.Get()
 			if config == nil {
 				return
@@ -104,7 +128,17 @@ func init() {
 				engineConfig.Default = defaultEngine
 			}
 
+			// Set overrides from configuration
+			//
+			// We populate the confuration with base again, because we need to
+			// create a brand new map to not take any values that were
+			// previously in the table from the last configuration.
+			//
+			// After that, we set the values from the new configuration
 			engineConfig.Overrides = map[string]EngineType{}
+			for name, engine := range baseEngineConfig.Overrides {
+				engineConfig.Overrides[name] = engine
+			}
 			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
 				if overrideEngine, ok := engineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
@@ -120,6 +154,12 @@ func init() {
 			}
 		})
 	}()
+}
+
+var engineToDisplay map[EngineType]string = map[EngineType]string{
+	EngineInvalid:    "invalid",
+	EngineSyntect:    "syntect",
+	EngineTreeSitter: "tree-sitter",
 }
 
 func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
@@ -152,9 +192,9 @@ func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, b
 // getLanguage will return the name of the language and default back to enry if
 // no language could be found.
 func getLanguage(path string, contents string) (string, bool) {
-	ft, found := getLanguageFromConfig(highlightConfig, path)
+	lang, found := getLanguageFromConfig(highlightConfig, path)
 	if found {
-		return ft, true
+		return lang, true
 	}
 
 	return enry.GetLanguage(path, []byte(contents)), false

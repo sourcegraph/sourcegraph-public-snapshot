@@ -194,8 +194,24 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 		return nil, false, nil
 	}
 
+	var typeValue string
+	query.VisitField(q.ToParseTree(), query.FieldType, func(value string, _ bool, _ query.Annotation) {
+		typeValue = value
+	})
+
+	var selector string
+	query.VisitField(q.ToParseTree(), query.FieldSelect, func(value string, _ bool, _ query.Annotation) {
+		selector = value
+	})
+
 	// The default separator is newline and cannot be changed currently.
-	return &Output{SearchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
+	return &Output{
+		SearchPattern: matchPattern,
+		OutputPattern: right,
+		Separator:     "\n",
+		TypeValue:     typeValue,
+		Selector:      selector,
+	}, true, nil
 }
 
 func parseMatchOnly(q *query.Basic) (Command, bool, error) {
@@ -254,7 +270,7 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 		return nil, err
 	}
 
-	parameters := query.MapPattern(plan.ToParseTree(), func(_ string, _ bool, _ query.Annotation) query.Node {
+	parameters := query.MapPattern(plan.ToQ(), func(_ string, _ bool, _ query.Annotation) query.Node {
 		// remove the pattern node.
 		return nil
 	})

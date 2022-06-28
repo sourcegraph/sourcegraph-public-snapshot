@@ -126,6 +126,13 @@ func IsAccountSuspended(err error) bool {
 	return errors.As(err, &e) && e.AccountSuspended()
 }
 
+// IsUnavailableForLegalReasons will check if err or one of its causes was due to
+// legal reasons.
+func IsUnavailableForLegalReasons(err error) bool {
+	var e interface{ UnavailableForLegalReasons() bool }
+	return errors.As(err, &e) && e.UnavailableForLegalReasons()
+}
+
 // IsBadRequest will check if err or one of its causes is a bad request.
 func IsBadRequest(err error) bool {
 	var e interface{ BadRequest() bool }

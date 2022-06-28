@@ -3,9 +3,16 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Masterminds/semver"
+
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
@@ -17,7 +24,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -37,13 +43,22 @@ var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
 var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
 var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
+var _ graphqlbackend.InsightViewSeriesDisplayOptionsResolver = &insightViewSeriesDisplayOptionsResolver{}
+var _ graphqlbackend.InsightViewSeriesSortOptionsResolver = &insightViewSeriesSortOptionsResolver{}
 
 type insightViewResolver struct {
-	view                *types.Insight
-	overrideFilters     *types.InsightViewFilters
-	dataSeriesGenerator insightSeriesResolverGenerator
+	view                  *types.Insight
+	overrideFilters       *types.InsightViewFilters
+	overrideSeriesOptions *types.SeriesDisplayOptions
+	dataSeriesGenerator   insightSeriesResolverGenerator
 
 	baseInsightResolver
+
+	// Cache results because they are used by multiple fields
+	seriesOnce      sync.Once
+	seriesErr       error
+	totalSeries     int
+	seriesResolvers []graphqlbackend.InsightSeriesResolver
 }
 
 const insightKind = "insight_view"
@@ -77,6 +92,47 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
 	}
 	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
+}
+
+type insightViewSeriesDisplayOptionsResolver struct {
+	seriesDisplayOptions *types.SeriesDisplayOptions
+}
+
+func (i *insightViewSeriesDisplayOptionsResolver) Limit(ctx context.Context) (*int32, error) {
+	return i.seriesDisplayOptions.Limit, nil
+}
+
+func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesSortOptionsResolver, error) {
+	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
+}
+
+type insightViewSeriesSortOptionsResolver struct {
+	seriesSortOptions *types.SeriesSortOptions
+}
+
+func (i *insightViewSeriesSortOptionsResolver) Mode(ctx context.Context) (*string, error) {
+	if i.seriesSortOptions != nil {
+		return (*string)(&i.seriesSortOptions.Mode), nil
+	}
+	return nil, nil
+}
+
+func (i *insightViewSeriesSortOptionsResolver) Direction(ctx context.Context) (*string, error) {
+	if i.seriesSortOptions != nil {
+		return (*string)(&i.seriesSortOptions.Direction), nil
+	}
+	return nil, nil
+}
+
+func (i *insightViewResolver) DefaultSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
+	return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: &i.view.SeriesOptions}, nil
+}
+
+func (i *insightViewResolver) AppliedSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
+	if i.overrideSeriesOptions != nil {
+		return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: i.overrideSeriesOptions}, nil
+	}
+	return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: &i.view.SeriesOptions}, nil
 }
 
 // registerDataSeriesGenerators if the generators that create resolvers for DataSeries haven't been generated then loadthem
@@ -123,37 +179,69 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	if i.view.IsFrozen {
-		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
-		// easy mis-use of unlicensed features.
-		return nil, nil
-	}
-	// Ensure that the data series generators have been registered
-	i.registerDataSeriesGenerators()
-	if i.dataSeriesGenerator == nil {
-		return nil, errors.New("no dataseries resolver generator registered")
-	}
+	return i.computeDataSeries(ctx)
+}
 
-	var filters *types.InsightViewFilters
-	if i.overrideFilters != nil {
-		filters = i.overrideFilters
-	} else {
-		filters = &i.view.Filters
-	}
-
-	for _, current := range i.view.Series {
-		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
-		if err != nil {
-			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
+func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
+	i.seriesOnce.Do(func() {
+		var resolvers []graphqlbackend.InsightSeriesResolver
+		if i.view.IsFrozen {
+			// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
+			// easy mis-use of unlicensed features.
+			return
 		}
-		resolvers = append(resolvers, seriesResolvers...)
+		// Ensure that the data series generators have been registered
+		i.registerDataSeriesGenerators()
+		if i.dataSeriesGenerator == nil {
+			i.seriesErr = errors.New("no dataseries resolver generator registered")
+			return
+		}
+
+		var filters *types.InsightViewFilters
+		if i.overrideFilters != nil {
+			filters = i.overrideFilters
+		} else {
+			filters = &i.view.Filters
+		}
+
+		var seriesOptions types.SeriesDisplayOptions
+		if i.overrideSeriesOptions != nil {
+			seriesOptions = *i.overrideSeriesOptions
+		} else {
+			seriesOptions = i.view.SeriesOptions
+		}
+
+		for _, current := range i.view.Series {
+			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+			if err != nil {
+				i.seriesErr = errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
+				return
+			}
+			resolvers = append(resolvers, seriesResolvers...)
+		}
+		i.totalSeries = len(resolvers)
+
+		sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
+		if err != nil {
+			i.seriesErr = errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
+			return
+		}
+		i.seriesResolvers = sortedAndLimitedResovlers
+	})
+
+	return i.seriesResolvers, i.seriesErr
+}
+
+func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
+	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
+		orgStore:         i.postgresDB.Orgs(),
+		args:             args,
+		withViewUniqueID: &i.view.UniqueID,
 	}
-	return resolvers, nil
 }
 
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
-	matches := make(map[string]interface{})
+	matches := make(map[string]any)
 
 	// we need to "unwrap" the search contexts and extract the regexps that compose
 	// the Sourcegraph query filters. Then we will union these sets of included /
@@ -265,6 +353,11 @@ func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int3
 
 func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
+}
+
+func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
+	_, err := i.computeDataSeries(ctx)
+	return int32(i.totalSeries), err
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {
@@ -407,16 +500,20 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
+	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		err = createAndAttachSeries(ctx, insightTx, view, series)
+		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
+		}
+		if len(c.Repositories) > 0 {
+			scoped = append(scoped, *c)
 		}
 	}
 
 	if len(dashboardIds) > 0 {
 		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
@@ -463,13 +560,23 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
-	filters := filtersFromInput(&args.Input.ViewControls.Filters)
+	var seriesSortMode *types.SeriesSortMode
+	var seriesSortDirection *types.SeriesSortDirection
+	if args.Input.ViewControls.SeriesDisplayOptions.SortOptions != nil {
+		mode := types.SeriesSortMode(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Mode)
+		seriesSortMode = &mode
+		direction := types.SeriesSortDirection(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Direction)
+		seriesSortDirection = &direction
+	}
 
 	view, err := tx.UpdateView(ctx, types.InsightView{
-		UniqueID:         insightViewId,
-		Title:            emptyIfNil(args.Input.PresentationOptions.Title),
-		Filters:          filters,
-		PresentationType: types.Line,
+		UniqueID:            insightViewId,
+		Title:               emptyIfNil(args.Input.PresentationOptions.Title),
+		Filters:             filtersFromInput(&args.Input.ViewControls.Filters),
+		PresentationType:    types.Line,
+		SeriesSortMode:      seriesSortMode,
+		SeriesSortDirection: seriesSortDirection,
+		SeriesLimit:         args.Input.ViewControls.SeriesDisplayOptions.Limit,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
@@ -486,7 +593,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			err = createAndAttachSeries(ctx, tx, view, series)
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
@@ -509,7 +616,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				if err != nil {
 					return nil, errors.Wrap(err, "RemoveViewSeries")
 				}
-				err = createAndAttachSeries(ctx, tx, view, series)
+				_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
 				if err != nil {
 					return nil, errors.Wrap(err, "createAndAttachSeries")
 				}
@@ -572,7 +679,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		CreatedAt:          time.Now(),
 		Repositories:       repos,
 		SampleIntervalUnit: string(types.Month),
-		JustInTime:         service.IsJustInTime(repos),
+		JustInTime:         len(repos) > 0,
 		// one might ask themselves why is the generation method a language stats method if this mutation is search insight? The answer is that search is ultimately the
 		// driver behind language stats, but global language stats behave differently than standard search. Long term the vision is that
 		// search will power this, and we can iterate over repos just like any other search insight. But for now, this is just something weird that we will have to live with.
@@ -591,7 +698,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 
 	if len(dashboardIds) > 0 {
 		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
@@ -707,7 +814,7 @@ func emptyIfNil(in *string) string {
 
 // A dummy type to represent the GraphQL union InsightTimeScope
 type insightTimeScopeUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToInsightIntervalTimeScope is used by the GraphQL library to resolve type fragments for unions
@@ -718,7 +825,7 @@ func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbac
 
 // A dummy type to represent the GraphQL union InsightPresentation
 type insightPresentationUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
@@ -735,7 +842,7 @@ func (r *insightPresentationUnionResolver) ToPieChartInsightViewPresentation() (
 
 // A dummy type to represent the GraphQL union InsightDataSeriesDefinition
 type insightDataSeriesDefinitionUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolve type fragments for unions
@@ -783,6 +890,19 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 				SearchContexts:   scs,
 			}
 		}
+		if d.args.SeriesDisplayOptions != nil {
+			var sortOptions *types.SeriesSortOptions
+			if d.args.SeriesDisplayOptions != nil && d.args.SeriesDisplayOptions.SortOptions != nil {
+				sortOptions = &types.SeriesSortOptions{
+					Mode:      types.SeriesSortMode(d.args.SeriesDisplayOptions.SortOptions.Mode),
+					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
+				}
+			}
+			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
+				SortOptions: sortOptions,
+				Limit:       d.args.SeriesDisplayOptions.Limit,
+			}
+		}
 		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, nil
@@ -802,7 +922,7 @@ func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*gra
 
 func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, string, error) {
 	r.once.Do(func() {
-		orgStore := database.Orgs(r.postgresDB)
+		orgStore := r.postgresDB.Orgs()
 
 		args := store.InsightQueryArgs{}
 		if r.args.After != nil {
@@ -880,7 +1000,7 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 	return nil
 }
 
-func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
@@ -889,8 +1009,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	// Don't try to match on just-in-time series, since they are not recorded
-	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
+	// Don't try to match on non-global series, since they are always replaced
+	if len(series.RepositoryScope.Repositories) == 0 {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
@@ -898,9 +1018,12 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			GenerateFromCaptureGroups: dynamic,
 		})
 		if err != nil {
-			return errors.Wrap(err, "FindMatchingSeries")
+			return nil, errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
+
+	flags := featureflag.FromContext(ctx)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
 
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
@@ -912,11 +1035,22 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
-			JustInTime:                 service.IsJustInTime(repos),
-			GenerationMethod:           searchGenerationMethod(series),
+			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
+			// JustInTime:       false,
+			GenerationMethod: searchGenerationMethod(series),
 		})
 		if err != nil {
-			return errors.Wrap(err, "CreateSeries")
+			return nil, errors.Wrap(err, "CreateSeries")
+		}
+		if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
+			err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{seriesToAdd})
+			if err != nil {
+				return nil, errors.Wrap(err, "ScopedBackfill")
+			}
+			_, err = tx.StampBackfill(ctx, seriesToAdd) // note that this isn't transactional with the backfill above until the queue is migrated to the insights DB
+			if err != nil {
+				return nil, errors.Wrap(err, "StampBackfill")
+			}
 		}
 	} else {
 		seriesToAdd = matchingSeries
@@ -930,9 +1064,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		Stroke: emptyIfNil(series.Options.LineColor),
 	})
 	if err != nil {
-		return errors.Wrap(err, "AttachSeriesToView")
+		return nil, errors.Wrap(err, "AttachSeriesToView")
 	}
-	return nil
+
+	return &seriesToAdd, nil
 }
 
 func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
@@ -974,6 +1109,21 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 	err = permissionsValidator.validateUserAccessForView(ctx, viewId)
 	if err != nil {
 		return nil, err
+	}
+
+	insights, err := r.insightStore.GetMapped(ctx, store.InsightQueryArgs{WithoutAuthorization: true, UniqueID: viewId})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetMapped")
+	}
+	if len(insights) != 1 {
+		return nil, errors.New("Insight not found.")
+	}
+
+	for _, series := range insights[0].Series {
+		err = r.insightStore.RemoveSeriesFromView(ctx, series.SeriesID, insights[0].ViewID)
+		if err != nil {
+			return nil, errors.Wrap(err, "RemoveSeriesFromView")
+		}
 	}
 
 	err = r.insightStore.DeleteViewByUniqueID(ctx, viewId)
@@ -1026,4 +1176,109 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 		}
 	}
 	return filters
+}
+
+func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayOptions, resolvers []graphqlbackend.InsightSeriesResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
+	var sortMode types.SeriesSortMode = types.ResultCount
+	var sortDirection types.SeriesSortDirection = types.Desc
+	var limit int32 = 20
+
+	if seriesOptions.SortOptions != nil {
+		sortMode = seriesOptions.SortOptions.Mode
+		sortDirection = seriesOptions.SortOptions.Direction
+	}
+	if seriesOptions.Limit != nil {
+		limit = *seriesOptions.Limit
+	}
+
+	// All the points are already loaded from their source at this point db or by executing queries
+	// Make a map for faster lookup and to deal with possible errors once
+	resolverPoints := make(map[string][]graphqlbackend.InsightsDataPointResolver, len(resolvers))
+	for _, resolver := range resolvers {
+		points, err := resolver.Points(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		resolverPoints[resolver.SeriesId()] = points
+	}
+
+	getMostRecentValue := func(points []graphqlbackend.InsightsDataPointResolver) float64 {
+		if len(points) == 0 {
+			return 0
+		}
+		return points[len(points)-1].Value()
+	}
+
+	ascLexSort := func(s1 string, s2 string) (hasSemVar bool, result bool) {
+		version1, err1 := semver.NewVersion(s1)
+		version2, err2 := semver.NewVersion(s2)
+		if err1 == nil && err2 == nil {
+			return true, version1.Compare(version2) < 0
+		}
+		if err1 != nil && err2 == nil {
+			return true, false
+		}
+		if err1 == nil && err2 != nil {
+			return true, true
+		}
+		return false, false
+	}
+
+	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
+	sort.SliceStable(resolvers, func(i, j int) bool {
+		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
+		if hasSemVar == true {
+			return result
+		}
+		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
+	})
+
+	switch sortMode {
+	case types.ResultCount:
+
+		if sortDirection == types.Asc {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				return getMostRecentValue(resolverPoints[resolvers[i].SeriesId()]) < getMostRecentValue(resolverPoints[resolvers[j].SeriesId()])
+			})
+		} else {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				return getMostRecentValue(resolverPoints[resolvers[i].SeriesId()]) > getMostRecentValue(resolverPoints[resolvers[j].SeriesId()])
+			})
+		}
+	case types.Lexicographical:
+		if sortDirection == types.Asc {
+			// Already pre-sorted by default
+		} else {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
+				if hasSemVar == true {
+					return !result
+				}
+				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0
+			})
+		}
+	case types.DateAdded:
+		if sortDirection == types.Asc {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				iPoints := resolverPoints[resolvers[i].SeriesId()]
+				jPoints := resolverPoints[resolvers[j].SeriesId()]
+				return iPoints[0].DateTime().Time.Before(jPoints[0].DateTime().Time)
+			})
+		} else {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				iPoints := resolverPoints[resolvers[i].SeriesId()]
+				jPoints := resolverPoints[resolvers[j].SeriesId()]
+				return iPoints[0].DateTime().Time.After(jPoints[0].DateTime().Time)
+			})
+		}
+	}
+
+	return resolvers[:minInt(int32(len(resolvers)), limit)], nil
+}
+
+func minInt(a, b int32) int32 {
+	if a < b {
+		return a
+	}
+	return b
 }

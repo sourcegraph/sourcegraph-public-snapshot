@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card, H4 } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
 
@@ -42,7 +43,7 @@ export interface ActionEditorProps {
     _testStartOpen?: boolean
 }
 
-export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
+export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<ActionEditorProps>> = ({
     title,
     label,
     subtitle,
@@ -104,7 +105,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
         <>
             {expanded && (
                 <Card className={classNames(styles.card, 'p-3')}>
-                    <div className="font-weight-bold">{title}</div>
+                    <H4 className="mb-0 font-weight-bold">{title}</H4>
                     <span className="text-muted">{subtitle}</span>
 
                     {children}
@@ -112,7 +113,6 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     <div className="d-flex align-items-center mb-3">
                         <div>
                             <Toggle
-                                title="Include search results in message"
                                 value={includeResults}
                                 onToggle={toggleIncludeResults}
                                 className="mr-2"
@@ -120,7 +120,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                                 data-testid={`include-results-toggle-${idName}`}
                             />
                         </div>
-                        <span id={`code-monitoring-${idName}-form-actions-include-results-toggle`}>
+                        <span id={`code-monitoring-${idName}-include-results-toggle`}>
                             Include search results in sent message
                         </span>
                     </div>
@@ -148,11 +148,16 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                                 {testAgainButtonText}
                             </Button>
                         )}
+
                         {testButtonDisabledReason && (
-                            <div className={classNames('mt-2', styles.testActionError)}>{testButtonDisabledReason}</div>
+                            <div aria-live="polite" className={classNames('mt-2', styles.testActionError)}>
+                                {testButtonDisabledReason}
+                            </div>
                         )}
+
                         {isErrorLike(testState) && (
                             <div
+                                aria-live="polite"
                                 className={classNames('mt-2', styles.testActionError)}
                                 data-testid={`test-${idName}-error`}
                             >
@@ -164,7 +169,6 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     <div className="d-flex align-items-center my-4">
                         <div>
                             <Toggle
-                                title="Enabled"
                                 value={actionEnabled}
                                 onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                 className="mr-2"
@@ -176,35 +180,36 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                             {actionEnabled ? 'Enabled' : 'Disabled'}
                         </span>
                     </div>
-                    <div className="d-flex justify-content-between">
-                        <div>
-                            <Button
-                                data-testid={`submit-action-${idName}`}
-                                className={`mr-1 test-submit-action-${idName}`}
-                                onClick={submitHandler}
-                                disabled={!canSubmit}
-                                variant="secondary"
-                            >
-                                Continue
-                            </Button>
-                            <Button
-                                onClick={cancelHandler}
-                                outline={true}
-                                variant="secondary"
-                                data-testid={`cancel-action-${idName}`}
-                            >
-                                Cancel
-                            </Button>
-                        </div>
+                    <div className={styles.actionButtonRow}>
+                        <Button
+                            data-testid={`submit-action-${idName}`}
+                            className={`test-submit-action-${idName}`}
+                            onClick={submitHandler}
+                            disabled={!canSubmit}
+                            variant="secondary"
+                        >
+                            Continue
+                        </Button>
+                        <Button
+                            onClick={cancelHandler}
+                            outline={true}
+                            variant="secondary"
+                            data-testid={`cancel-action-${idName}`}
+                        >
+                            Cancel
+                        </Button>
                         {canDelete && (
-                            <Button
-                                onClick={deleteHandler}
-                                outline={true}
-                                variant="danger"
-                                data-testid={`delete-action-${idName}`}
-                            >
-                                Delete
-                            </Button>
+                            <>
+                                <div className="flex-grow-1" />
+                                <Button
+                                    onClick={deleteHandler}
+                                    outline={true}
+                                    variant="danger"
+                                    data-testid={`delete-action-${idName}`}
+                                >
+                                    Delete
+                                </Button>
+                            </>
                         )}
                     </div>
                 </Card>
@@ -221,11 +226,11 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                         disabled && styles.btnDisabled
                     )}
                     disabled={disabled}
-                    aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
+                            <VisuallyHidden>Edit action: </VisuallyHidden>
                             <div className={classNames('font-weight-bold', !completed && styles.cardLink)}>{title}</div>
                             {completed ? (
                                 <span
@@ -242,7 +247,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                             <div className="d-flex align-items-center">
                                 <div>
                                     <Toggle
-                                        title="Enabled"
+                                        title={actionEnabled ? 'Enabled' : 'Disabled'}
                                         value={actionEnabled}
                                         onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                         className="mr-3"

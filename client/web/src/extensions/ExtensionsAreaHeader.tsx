@@ -23,7 +23,9 @@ export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor
 /**
  * Header for the extensions area.
  */
-export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderProps> = props => (
+export const ExtensionsAreaHeader: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsAreaHeaderProps>
+> = props => (
     <div className="container">
         {props.isPrimaryHeader && (
             <PageHeader
@@ -39,7 +41,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
                                 variant="secondary"
                                 as={Link}
                             >
-                                {ButtonIcon && <Icon as={ButtonIcon} />} {label}
+                                {ButtonIcon && <Icon as={ButtonIcon} aria-hidden={true} />} {label}
                             </Button>
                         )
                 )}

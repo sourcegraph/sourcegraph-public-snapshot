@@ -17,10 +17,12 @@ import styles from './UserSettingsPermissionsPage.module.scss'
 /**
  * The user settings permissions page.
  */
-export const UserSettingsPermissionsPage: React.FunctionComponent<{
-    user: UserSettingsAreaUserFields
-    history: H.History
-}> = ({ user, history }) => {
+export const UserSettingsPermissionsPage: React.FunctionComponent<
+    React.PropsWithChildren<{
+        user: UserSettingsAreaUserFields
+        history: H.History
+    }>
+> = ({ user, history }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => userPermissionsInfo(user.id), [user.id]))
 

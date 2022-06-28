@@ -53,7 +53,7 @@ export const getSelectStyles = ({
  *
  * Please note that this component takes <option> elements as children. This is to easily support advanced functionality such as usage of <optgroup>.
  */
-export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
+export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps>> = React.forwardRef(
     (
         {
             children,

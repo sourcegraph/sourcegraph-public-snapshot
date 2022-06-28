@@ -13,12 +13,14 @@ import styles from './Sidebar.module.scss'
 /**
  * Item of `SideBarGroup`.
  */
-export const SidebarNavItem: React.FunctionComponent<{
-    to: string
-    className?: string
-    exact?: boolean
-    source?: string
-}> = ({ children, className, to, exact, source }) => {
+export const SidebarNavItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        to: string
+        className?: string
+        exact?: boolean
+        source?: string
+    }>
+> = ({ children, className, to, exact, source }) => {
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
     const routeMatch = useRouteMatch({ path: to, exact })
 
@@ -40,17 +42,21 @@ export const SidebarNavItem: React.FunctionComponent<{
  *
  * Header of a `SideBarGroup`
  */
-export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <H3 as={H2}>{label}</H3>
+export const SidebarGroupHeader: React.FunctionComponent<React.PropsWithChildren<{ label: string }>> = ({ label }) => (
+    <H3 as={H2}>{label}</H3>
+)
 
 /**
  * Sidebar with collapsible items
  */
-export const SidebarCollapseItems: React.FunctionComponent<{
-    children: React.ReactNode
-    icon?: React.ComponentType<{ className?: string }>
-    label?: string
-    openByDefault?: boolean
-}> = ({ children, label, icon: CollapseItemIcon, openByDefault = false }) => (
+export const SidebarCollapseItems: React.FunctionComponent<
+    React.PropsWithChildren<{
+        children: React.ReactNode
+        icon?: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
+        label?: string
+        openByDefault?: boolean
+    }>
+> = ({ children, label, icon: CollapseItemIcon, openByDefault = false }) => (
     <Collapse openByDefault={openByDefault}>
         {({ isOpen }) => (
             <>
@@ -61,9 +67,9 @@ export const SidebarCollapseItems: React.FunctionComponent<{
                     className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
                 >
                     <span>
-                        {CollapseItemIcon && <Icon className="mr-1" as={CollapseItemIcon} />} {label}
+                        {CollapseItemIcon && <Icon className="mr-1" as={CollapseItemIcon} aria-hidden={true} />} {label}
                     </span>
-                    <Icon className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
                 </CollapseHeader>
                 <CollapsePanel id={kebabCase(label)} className="border-top">
                     {children}
@@ -80,6 +86,7 @@ interface SidebarGroupProps {
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` as children.
  */
-export const SidebarGroup: React.FunctionComponent<SidebarGroupProps> = ({ children, className }) => (
-    <div className={classNames('mb-3', styles.sidebar, className)}>{children}</div>
-)
+export const SidebarGroup: React.FunctionComponent<React.PropsWithChildren<SidebarGroupProps>> = ({
+    children,
+    className,
+}) => <div className={classNames('mb-3', styles.sidebar, className)}>{children}</div>

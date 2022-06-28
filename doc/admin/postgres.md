@@ -59,15 +59,15 @@ When running an [external PostgreSQL instance](external_services/postgres.md), p
 
 ### Upgrading internal PostgreSQL instances
 
-Many of Sourcegraph's [installation methods](install/index.md) come with internal PostgreSQL instances that can be deployed as part of a Sourcegraph installation. This section outlines how to upgrade these databases.
+Many of Sourcegraph's [deployment methods](deploy/index.md) come with internal PostgreSQL instances that can be deployed as part of a Sourcegraph installation. This section outlines how to upgrade these databases.
 
 #### Sourcegraph with Docker Compose
 
-Generally, no additional steps are required to upgrade the databases shipped alongside [Sourcegraph with Docker Compose installations](install/docker-compose/index.md).
+Generally, no additional steps are required to upgrade the databases shipped alongside [Sourcegraph with Docker Compose](deploy/docker-compose/index.md).
 
 #### Sourcegraph with Kubernetes
 
-**The upgrade process is different for [Sourcegraph Kubernetes deployments](./install/kubernetes/index.md)** because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12/build.sh#L10), it uses `sourcegraph/postgres-12` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
+**The upgrade process is different for [Sourcegraph Kubernetes deployments](./deploy/kubernetes/index.md)** because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12/build.sh#L10), it uses `sourcegraph/postgres-12` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
 
 If you have changed `PGUSER`, `PGDATABASE` or `PGDATA`, then the `PG*OLD` and `PG*NEW` environment variables are
 required. Below are the defaults and documentation on what each variable is used for:
@@ -106,7 +106,7 @@ However, you should take some steps before the migration. For the `3.27` release
 
 #### Single-container Sourcegraph
 
-When running a new version of Sourcegraph, [single-container Sourcegraph with Docker instances](./install/kubernetes/index.md) will check if the PostgreSQL data needs upgrading upon initialization.
+When running a new version of Sourcegraph, [single-container Sourcegraph with Docker instances](./deploy/kubernetes/index.md) will check if the PostgreSQL data needs upgrading upon initialization.
 
 See the following steps to upgrade between major postgresql versions:
 

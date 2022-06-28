@@ -151,16 +151,17 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
-    breadcrumbs,
-    location,
-}) => (
+export const Breadcrumbs: React.FunctionComponent<
+    React.PropsWithChildren<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }>
+> = ({ breadcrumbs, location }) => (
     <nav className="d-flex container-fluid flex-nowrap flex-shrink-past-contents pl-3 pr-2" aria-label="Breadcrumbs">
         {sortBy(breadcrumbs, 'depth')
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
             .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider = breadcrumb.divider ?? <Icon className={styles.divider} as={ChevronRightIcon} />
+                const divider = breadcrumb.divider ?? (
+                    <Icon className={styles.divider} as={ChevronRightIcon} aria-hidden={true} />
+                )
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (

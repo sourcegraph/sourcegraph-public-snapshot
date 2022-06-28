@@ -26,14 +26,14 @@ func TestEvalStepCondition(t *testing.T) {
 		},
 		PreviousStep: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+			Stdout: "this is previous step's stdout",
+			Stderr: "this is previous step's stderr",
 		},
 		Steps: StepsContext{
 			Changes: testChanges,
 			Path:    "sub/directory/of/repo",
 		},
-		Outputs: map[string]interface{}{},
+		Outputs: map[string]any{},
 		// Step is not set when evalStepCondition is called
 		Repository: *testRepo1,
 	}
@@ -79,7 +79,7 @@ func TestRenderStepTemplate(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put
 	// in the StepContext.
-	var parsedYaml interface{}
+	var parsedYaml any
 	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
 		t.Fatalf("failed to parse YAML: %s", err)
 	}
@@ -91,17 +91,17 @@ func TestRenderStepTemplate(t *testing.T) {
 		},
 		PreviousStep: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+			Stdout: "this is previous step's stdout",
+			Stderr: "this is previous step's stderr",
 		},
-		Outputs: map[string]interface{}{
+		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
 		Step: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is current step's stdout"),
-			Stderr: bytes.NewBufferString("this is current step's stderr"),
+			Stdout: "this is current step's stdout",
+			Stderr: "this is current step's stderr",
 		},
 		Steps:      StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
 		Repository: *testRepo1,
@@ -235,10 +235,10 @@ func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
 		PreviousStep: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+			Stdout: "this is previous step's stdout",
+			Stderr: "this is previous step's stderr",
 		},
-		Outputs:    map[string]interface{}{},
+		Outputs:    map[string]any{},
 		Repository: *testRepo1,
 	}
 
@@ -268,7 +268,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put
 	// in the StepContext.
-	var parsedYaml interface{}
+	var parsedYaml any
 	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
 		t.Fatalf("failed to parse YAML: %s", err)
 	}
@@ -278,7 +278,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		Outputs: map[string]interface{}{
+		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
@@ -314,6 +314,7 @@ ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
 ${{ steps.path }}
+${{ batch_change_link }}
 `,
 			want: `README.md main.go
 github.com/sourcegraph/src-cli
@@ -325,7 +326,8 @@ CGO_ENABLED=0
 [added-file.txt]
 [deleted-file.txt]
 [renamed-file.txt]
-infrastructure/sub-project`,
+infrastructure/sub-project
+${{ batch_change_link }}`,
 		},
 		{
 			name:    "empty context",
@@ -338,13 +340,15 @@ ${{ steps.modified_files }}
 ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
+${{ batch_change_link }}
 `,
 			want: `<no value>
 <no value>
 []
 []
 []
-[]`,
+[]
+${{ batch_change_link }}`,
 		},
 	}
 

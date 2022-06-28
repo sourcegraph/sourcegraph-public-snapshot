@@ -105,11 +105,14 @@ func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) (graph
 		return nil, errors.New("stats not found")
 	}
 	return &batchSpecWorkspacesStatsResolver{
-		errored:    int32(stat.Failed),
-		completed:  int32(stat.Completed),
+		errored: int32(stat.Failed),
+		// We count cached workspaces as completed as well.
+		completed:  int32(stat.Completed + stat.CachedWorkspaces),
 		processing: int32(stat.Processing),
 		queued:     int32(stat.Queued),
 		// TODO: Handle more ignored cases here.
-		ignored: int32(stat.SkippedWorkspaces),
+		// Cached workspaces should not be considered ignored, although they
+		// were skipped for execution.
+		ignored: int32(stat.SkippedWorkspaces - stat.CachedWorkspaces),
 	}, nil
 }

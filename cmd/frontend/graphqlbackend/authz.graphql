@@ -13,7 +13,22 @@ extend type Mutation {
         users who may view the repository. All users not included in the list will not be
         permitted to view the repository on Sourcegraph.
         """
-        userPermissions: [UserPermission!]!
+        userPermissions: [UserPermissionInput!]!
+    ): EmptyResponse!
+    """
+    Set 'unrestricted' to true or false on a set of repositories. Repositories with
+    'unrestricted' true will be visible to all users on the Sourcegraph instance.
+    """
+    setRepositoryPermissionsUnrestricted(
+        """
+        The repository ids we want to set unrestricted permissions on.
+        """
+        repositories: [ID!]!
+        """
+        true: Any user can view the repo
+        false: Use existing repo permissions
+        """
+        unrestricted: Boolean!
     ): EmptyResponse!
     """
     Schedule a permissions sync for given repository. This queries the repository's code host for
@@ -52,6 +67,32 @@ extend type Mutation {
         """
         userPermissions: [UserSubRepoPermission!]!
     ): EmptyResponse!
+    """
+    Set the repository permissions for a given Bitbucket project. This mutation will apply the user
+    given permissions to all the repositories that are part of the Bitbucket project as identified by the
+    project key and all the users that have access to each repository.
+    """
+    setRepositoryPermissionsForBitbucketProject(
+        """
+        Bitbucket project key of which all repository permissions will be updated.
+        """
+        projectKey: String!
+        """
+        The bitbucket code host's GraphQL ID where this project is located.
+        """
+        codeHost: ID!
+        """
+        A list of user identifiers and their repository permissions, which defines the set of
+        users who may view the repository. All users not included in the list will not be
+        permitted to view the repository on Sourcegraph.
+        """
+        userPermissions: [UserPermissionInput!]!
+
+        """
+        Flag to indicate if ALL repositories under the project will allow unrestricted access to all users who have access to the code host.
+        """
+        unrestricted: Boolean
+    ): EmptyResponse!
 }
 
 extend type Query {
@@ -89,6 +130,24 @@ extend type Query {
     The returned list can be used to query authorizedUserRepositories for pending permissions.
     """
     usersWithPendingPermissions: [String!]!
+
+    """
+    Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
+    """
+    bitbucketProjectPermissionJobs(
+        """
+        Bitbucket project keys which sync jobs are queried
+        """
+        projectKeys: [String!]
+        """
+        Job status, one of the following: queued, processing, completed, errored, failed.
+        """
+        status: String
+        """
+        Number of jobs returned. Maximum number of returned jobs is 500. 100 jobs are returned by default.
+        """
+        count: Int
+    ): BitbucketProjectPermissionJobs!
 }
 
 extend type Repository {
@@ -128,9 +187,9 @@ extend type User {
 }
 
 """
-A user (identified either by username or email address) with its repository permission.
+Input type of a user (identified either by username or email address) with its repository permission.
 """
-input UserPermission {
+input UserPermissionInput {
     """
     Depending on the bindID option in the permissions.userMapping site configuration property,
     the elements of the list are either all usernames (bindID of "username") or all email
@@ -141,6 +200,22 @@ input UserPermission {
     The highest level of repository permission.
     """
     permission: RepositoryPermission = READ
+}
+
+"""
+A user (identified either by username or email address) with its repository permission.
+"""
+type UserPermission {
+    """
+    Depending on the bindID option in the permissions.userMapping site configuration property,
+    the elements of the list are either all usernames (bindID of "username") or all email
+    addresses (bindID of "email").
+    """
+    bindID: String!
+    """
+    The highest level of repository permission.
+    """
+    permission: RepositoryPermission!
 }
 
 """
@@ -188,6 +263,11 @@ type PermissionsInfo {
     change to the database row (i.e. incremental update).
     """
     updatedAt: DateTime!
+    """
+    If true for a repo, it indicates access to the repo is allowed for all users.
+    It will always be false for users.
+    """
+    unrestricted: Boolean!
 }
 
 """
@@ -199,4 +279,76 @@ input FetchPermissionsOptions {
     sync should be invalidated.
     """
     invalidateCaches: Boolean
+}
+
+"""
+Information about Bitbucket Projects permission synchronization jobs.
+"""
+type BitbucketProjectPermissionJobs {
+    """
+    Number of jobs.
+    """
+    totalCount: Int!
+    """
+    Bitbucket Projects permission sync jobs.
+    """
+    nodes: [BitbucketProjectPermissionJob!]!
+}
+
+"""
+Information about a single Projects permission synchronization job.
+"""
+type BitbucketProjectPermissionJob {
+    """
+    Internal ID of the job.
+    """
+    InternalJobID: Int!
+    """
+    State of the job (queued, processing, completed, canceled, errored, failed).
+    """
+    State: String!
+    """
+    Failure message in case of unsuccessful job execution.
+    """
+    FailureMessage: String
+    """
+    The time when the job was enqueued for processing.
+    """
+    QueuedAt: DateTime!
+    """
+    The time when the job started processing. Null, if not yet started.
+    """
+    StartedAt: DateTime
+    """
+    The time when the job finished processing. Null, if not yet finished.
+    """
+    FinishedAt: DateTime
+    """
+    Controls the time after which the job is visible for processing.
+    """
+    ProcessAfter: DateTime
+    """
+    The number of times when the job is moved back from failed to queued.
+    """
+    NumResets: Int!
+    """
+    The number of times when the job entered the errored state.
+    """
+    NumFailures: Int!
+    """
+    Bitbucket project key.
+    """
+    ProjectKey: String!
+    """
+    ID of external service which project is being synchronized.
+    """
+    ExternalServiceID: ID!
+    """
+    User permissions to be granted.
+    """
+    Permissions: [UserPermission!]!
+    """
+    Shows that current project is accessible by any user of the project.
+    """
+    Unrestricted: Boolean!
 }

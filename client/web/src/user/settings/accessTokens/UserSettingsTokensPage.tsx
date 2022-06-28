@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, Link, Icon, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -23,7 +23,7 @@ import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../.
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
         Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
         TelemetryProps {
     /**
@@ -42,11 +42,12 @@ interface Props
 /**
  * Displays access tokens whose subject is a specific user.
  */
-export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
+export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     history,
     location,
     match,
+    authenticatedUser,
     user,
     newToken,
     onDidPresentNewToken,
@@ -74,6 +75,8 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
         [user.id]
     )
 
+    const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
+
     return (
         <div className="user-settings-tokens-page">
             <PageTitle title="Access tokens" />
@@ -82,9 +85,11 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                 path={[{ text: 'Access tokens' }]}
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
-                    <Button to={`${match.url}/new`} variant="primary" as={Link}>
-                        <Icon as={AddIcon} /> Generate new token
-                    </Button>
+                    !siteAdminViewingOtherUser && (
+                        <Button to={`${match.url}/new`} variant="primary" as={Link}>
+                            <Icon role="img" as={AddIcon} aria-hidden={true} /> Generate new token
+                        </Button>
+                    )
                 }
                 className="mb-3"
             />
@@ -106,7 +111,9 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                     history={history}
                     location={location}
                     emptyElement={
-                        <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
+                        <Text alignment="center" className="text-muted w-100 mb-0">
+                            You don't have any access tokens.
+                        </Text>
                     }
                 />
             </Container>

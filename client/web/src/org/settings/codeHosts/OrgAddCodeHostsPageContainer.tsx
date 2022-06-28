@@ -6,7 +6,9 @@ import { UserAddCodeHostsPageProps, UserAddCodeHostsPage } from '../../../user/s
 export interface OrgAddCodeHostsPageContainerProps
     extends Omit<UserAddCodeHostsPageProps, 'codeHostExternalServices'> {}
 
-export const OrgAddCodeHostsPageContainer: React.FunctionComponent<OrgAddCodeHostsPageContainerProps> = props => (
+export const OrgAddCodeHostsPageContainer: React.FunctionComponent<
+    React.PropsWithChildren<OrgAddCodeHostsPageContainerProps>
+> = props => (
     <UserAddCodeHostsPage
         {...props}
         codeHostExternalServices={{

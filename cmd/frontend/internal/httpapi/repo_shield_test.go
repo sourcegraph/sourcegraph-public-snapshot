@@ -31,9 +31,9 @@ func TestRepoShieldFmt(t *testing.T) {
 }
 
 func TestRepoShield(t *testing.T) {
-	c := newTest()
+	c := newTest(t)
 
-	wantResp := map[string]interface{}{
+	wantResp := map[string]any{
 		"value": " 200 projects",
 	}
 
@@ -58,7 +58,7 @@ func TestRepoShield(t *testing.T) {
 		return 200, nil
 	}
 
-	var resp map[string]interface{}
+	var resp map[string]any
 	if err := c.GetJSON("/repos/github.com/gorilla/mux/-/shield", &resp); err != nil {
 		t.Fatal(err)
 	}

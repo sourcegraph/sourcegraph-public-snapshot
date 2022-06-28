@@ -22,7 +22,7 @@ export interface DismissibleAlertProps extends AlertProps {
  * alert will never be shown again after it is dismissed. Otherwise, it will be shown
  * whenever unmounted and remounted.
  */
-export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = ({
+export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<DismissibleAlertProps>> = ({
     partialStorageKey,
     className,
     testId,
@@ -48,7 +48,7 @@ export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = 
         <Alert data-testid={testId} className={classNames(styles.container, className)} variant={variant}>
             <div className={styles.content}>{children}</div>
             <Button aria-label="Close alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
-                <Icon as={CloseIcon} />
+                <Icon as={CloseIcon} aria-hidden={true} />
             </Button>
         </Alert>
     )

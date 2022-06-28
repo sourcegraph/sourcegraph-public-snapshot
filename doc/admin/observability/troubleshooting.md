@@ -33,7 +33,7 @@ If this is the case, this could indicate high gitserver load. To confirm, take t
       metric) and "Commands running concurrently" dashboard (tracks the `src_gitserver_exec_running`
       metric). If either of these is high (> 1s echo duration or 100s simultaneous execs), then this
       indicates gitserver is under heavy load and likely the bottleneck.
-1. Confirm your gitserver is not under-provisioned, by e.g. comparing its allocated resources with what the [resource estimator](../install/resource_estimator.md) shows.
+1. Confirm your gitserver is not under-provisioned, by e.g. comparing its allocated resources with what the [resource estimator](../deploy/resource_estimator.md) shows.
 
 Solution: set `USE_ENHANCED_LANGUAGE_DETECTION=false` in the Sourcegraph runtime
 environment.

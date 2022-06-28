@@ -1,11 +1,11 @@
 import fetch from 'jest-fetch-mock'
 import { readFile } from 'mz/fs'
 
-import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/common'
+import { disableFetchCache, enableFetchCache, fetchCache, LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
-import { getToolbarMount, gitlabCodeHost, isPrivateRepository } from './codeHost'
+import { getToolbarMount, gitlabCodeHost, isPrivateRepository, parseHash } from './codeHost'
 
 describe('gitlab/codeHost', () => {
     describe('gitlabCodeHost', () => {
@@ -186,4 +186,19 @@ describe('isPrivateRepository', () => {
             expect(fetch).toHaveBeenCalledTimes(1)
         })
     })
+})
+
+describe('parseHash', () => {
+    const entries: [string, LineOrPositionOrRange][] = [
+        ['#L1-32', { line: 1, endLine: 32 }],
+        ['#L1+32', {}],
+        ['#L1-32hello', {}],
+        ['#L14', { line: 14 }],
+    ]
+
+    for (const [hash, expectedValue] of entries) {
+        test(`given "${hash}" as argument returns ${JSON.stringify(expectedValue)}`, () => {
+            expect(parseHash(hash)).toEqual(expectedValue)
+        })
+    }
 })

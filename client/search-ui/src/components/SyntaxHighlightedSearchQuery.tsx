@@ -9,10 +9,9 @@ interface SyntaxHighlightedSearchQueryProps extends React.HTMLAttributes<HTMLSpa
 }
 
 // A read-only syntax highlighted search query
-export const SyntaxHighlightedSearchQuery: React.FunctionComponent<SyntaxHighlightedSearchQueryProps> = ({
-    query,
-    ...otherProps
-}) => {
+export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
+    React.PropsWithChildren<SyntaxHighlightedSearchQueryProps>
+> = ({ query, ...otherProps }) => {
     const tokens = useMemo(() => {
         const scannedQuery = scanSearchQuery(query)
         return scannedQuery.type === 'success'

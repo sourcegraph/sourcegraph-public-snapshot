@@ -7,6 +7,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -14,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
+func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		testSvc := &types.ExternalService{
@@ -24,14 +26,15 @@ func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
 		}
 
 		// Create external service
-		err := repoStore.ExternalServiceStore.Upsert(ctx, testSvc)
+		err := repoStore.ExternalServiceStore().Upsert(ctx, testSvc)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("Test service created, ID: %d", testSvc.ID)
 
 		// Add item to queue
-		result, err := repoStore.ExecResult(ctx, sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID))
+		q := sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID)
+		result, err := repoStore.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -48,7 +51,7 @@ func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
 		h := &fakeRepoSyncHandler{
 			jobChan: jobChan,
 		}
-		worker, resetter := repos.NewSyncWorker(ctx, repoStore.Handle().DB(), h, repos.SyncWorkerOptions{
+		worker, resetter := repos.NewSyncWorker(ctx, repoStore.Handle(), h, repos.SyncWorkerOptions{
 			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})
@@ -80,7 +83,7 @@ type fakeRepoSyncHandler struct {
 	jobChan chan *repos.SyncJob
 }
 
-func (h *fakeRepoSyncHandler) Handle(ctx context.Context, record workerutil.Record) error {
+func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	sj, ok := record.(*repos.SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)

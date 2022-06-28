@@ -3,7 +3,7 @@ import React from 'react'
 /**
  * Displays a "/"-separated path with the last path component bolded.
  */
-export const Path: React.FunctionComponent<{ path: string }> = ({ path }) => {
+export const Path: React.FunctionComponent<React.PropsWithChildren<{ path: string }>> = ({ path }) => {
     if (path === '') {
         return null
     }

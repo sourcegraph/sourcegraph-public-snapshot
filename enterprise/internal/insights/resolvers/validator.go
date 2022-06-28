@@ -29,7 +29,7 @@ func PermissionsValidatorFromBase(base *baseInsightResolver) *InsightPermissions
 	return &InsightPermissionsValidator{
 		insightStore:   base.insightStore,
 		dashboardStore: base.dashboardStore,
-		orgStore:       database.Orgs(base.postgresDB),
+		orgStore:       base.postgresDB.Orgs(),
 	}
 }
 

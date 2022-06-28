@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -41,21 +40,23 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
-			*noopJob:
+			*zoekt.RepoSubsetTextSearchJob,
+			*zoekt.SymbolSearchJob,
+			*searcher.TextSearchJob,
+			*searcher.SymbolSearchJob,
+			*run.RepoSearchJob,
+			*zoekt.GlobalTextSearchJob,
+			*structural.SearchJob,
+			*commit.SearchJob,
+			*zoekt.GlobalSymbolSearchJob,
+			*repos.ComputeExcludedJob,
+			*FeelingLuckySearchJob,
+			*generatedSearchJob,
+			*NoopJob:
 			b.WriteString(j.Name())
 
 		case *repoPagerJob:
-			b.WriteString("REPOPAGER")
+			b.WriteString("(REPOPAGER")
 			depth++
 			writeSep(b, sep, indent, depth)
 			writeSexp(j.child)
@@ -78,25 +79,6 @@ func SexpFormat(j job.Job, sep, indent string) string {
 				writeSep(b, sep, indent, depth)
 				writeSexp(child)
 			}
-			b.WriteString(")")
-			depth--
-		case *PriorityJob:
-			b.WriteString("(PRIORITY")
-			depth++
-			writeSep(b, sep, indent, depth)
-			b.WriteString("(REQUIRED")
-			depth++
-			writeSep(b, sep, indent, depth)
-			writeSexp(j.required)
-			b.WriteString(")")
-			depth--
-			writeSep(b, sep, indent, depth)
-			b.WriteString("(OPTIONAL")
-			depth++
-			writeSep(b, sep, indent, depth)
-			writeSexp(j.optional)
-			b.WriteString(")")
-			depth--
 			b.WriteString(")")
 			depth--
 		case *ParallelJob:
@@ -220,17 +202,19 @@ func PrettyMermaid(j job.Job) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
-			*noopJob:
+			*zoekt.RepoSubsetTextSearchJob,
+			*zoekt.SymbolSearchJob,
+			*searcher.TextSearchJob,
+			*searcher.SymbolSearchJob,
+			*run.RepoSearchJob,
+			*zoekt.GlobalTextSearchJob,
+			*structural.SearchJob,
+			*commit.SearchJob,
+			*zoekt.GlobalSymbolSearchJob,
+			*repos.ComputeExcludedJob,
+			*FeelingLuckySearchJob,
+			*generatedSearchJob,
+			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
 		case *repoPagerJob:
@@ -257,23 +241,6 @@ func PrettyMermaid(j job.Job) string {
 				writeEdge(b, depth, srcId, id)
 				writeMermaid(child)
 			}
-			depth--
-		case *PriorityJob:
-			srcId := id
-			depth++
-			writeNode(b, depth, RoundedStyle, &id, "PRIORITY")
-
-			requiredId := id
-			writeEdge(b, depth, srcId, requiredId)
-			writeNode(b, depth, RoundedStyle, &id, "REQUIRED")
-			writeEdge(b, depth, requiredId, id)
-			writeMermaid(j.required)
-
-			optionalId := id
-			writeEdge(b, depth, srcId, optionalId)
-			writeNode(b, depth, RoundedStyle, &id, "OPTIONAL")
-			writeEdge(b, depth, optionalId, id)
-			writeMermaid(j.optional)
 			depth--
 		case *ParallelJob:
 			srcId := id
@@ -347,99 +314,87 @@ func PrettyMermaid(j job.Job) string {
 // toJSON returns a JSON object representing a job. If `verbose` is true, values
 // for all leaf jobs are emitted; if false, only the names of leaf nodes are
 // emitted.
-func toJSON(j job.Job, verbose bool) interface{} {
-	var emitJSON func(job.Job) interface{}
-	emitJSON = func(j job.Job) interface{} {
+func toJSON(j job.Job, verbose bool) any {
+	var emitJSON func(job.Job) any
+	emitJSON = func(j job.Job) any {
 		if j == nil {
 			return struct{}{}
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
-			*noopJob:
+			*zoekt.RepoSubsetTextSearchJob,
+			*zoekt.SymbolSearchJob,
+			*searcher.TextSearchJob,
+			*searcher.SymbolSearchJob,
+			*run.RepoSearchJob,
+			*zoekt.GlobalTextSearchJob,
+			*structural.SearchJob,
+			*commit.SearchJob,
+			*zoekt.GlobalSymbolSearchJob,
+			*repos.ComputeExcludedJob,
+			*FeelingLuckySearchJob,
+			*generatedSearchJob,
+			*NoopJob:
 			if verbose {
-				return map[string]interface{}{j.Name(): j}
+				return map[string]any{j.Name(): j}
 			}
 			return j.Name()
 
 		case *repoPagerJob:
 			return struct {
-				Repopager interface{} `json:"REPOPAGER"`
+				Repopager any `json:"REPOPAGER"`
 			}{
 				Repopager: emitJSON(j.child),
 			}
 
 		case *AndJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				And []interface{} `json:"AND"`
+				And []any `json:"AND"`
 			}{
 				And: children,
 			}
 
 		case *OrJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				Or []interface{} `json:"OR"`
+				Or []any `json:"OR"`
 			}{
 				Or: children,
 			}
 
-		case *PriorityJob:
-			priority := struct {
-				Required interface{} `json:"REQUIRED"`
-				Optional interface{} `json:"OPTIONAL"`
-			}{
-				Required: emitJSON(j.required),
-				Optional: emitJSON(j.optional),
-			}
-			return struct {
-				Priority interface{} `json:"PRIORITY"`
-			}{
-				Priority: priority,
-			}
-
 		case *ParallelJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				Parallel interface{} `json:"PARALLEL"`
+				Parallel any `json:"PARALLEL"`
 			}{
 				Parallel: children,
 			}
 
 		case *SequentialJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				Sequential interface{} `json:"SEQUENTIAL"`
+				Sequential any `json:"SEQUENTIAL"`
 			}{
 				Sequential: children,
 			}
 
 		case *TimeoutJob:
 			return struct {
-				Timeout interface{} `json:"TIMEOUT"`
-				Value   string      `json:"value"`
+				Timeout any    `json:"TIMEOUT"`
+				Value   string `json:"value"`
 			}{
 				Timeout: emitJSON(j.child),
 				Value:   j.timeout.String(),
@@ -447,8 +402,8 @@ func toJSON(j job.Job, verbose bool) interface{} {
 
 		case *LimitJob:
 			return struct {
-				Limit interface{} `json:"LIMIT"`
-				Value int         `json:"value"`
+				Limit any `json:"LIMIT"`
+				Value int `json:"value"`
 			}{
 				Limit: emitJSON(j.child),
 				Value: j.limit,
@@ -456,23 +411,23 @@ func toJSON(j job.Job, verbose bool) interface{} {
 
 		case *subRepoPermsFilterJob:
 			return struct {
-				Filter interface{} `json:"FILTER"`
-				Value  string      `json:"value"`
+				Filter any    `json:"FILTER"`
+				Value  string `json:"value"`
 			}{
 				Filter: emitJSON(j.child),
 				Value:  "SubRepoPermissions",
 			}
 		case *selectJob:
 			return struct {
-				Select interface{} `json:"SELECT"`
-				Value  string      `json:"value"`
+				Select any    `json:"SELECT"`
+				Value  string `json:"value"`
 			}{
 				Select: emitJSON(j.child),
 				Value:  j.path.String(),
 			}
 		case *alertJob:
 			return struct {
-				Alert interface{} `json:"ALERT"`
+				Alert any `json:"ALERT"`
 			}{
 				Alert: emitJSON(j.child),
 			}

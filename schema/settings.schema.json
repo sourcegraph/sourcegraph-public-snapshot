@@ -12,6 +12,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "homePanelsComputeSuggestions": {
+          "type": "boolean",
+          "default": false,
+          "deprecated": false,
+          "description": "Enable the home panels compute suggestions feature."
+        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",
@@ -56,7 +62,7 @@
           }
         },
         "apiDocs": {
-          "description": "Enables API documentation.",
+          "description": "Deprecated.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -217,7 +223,7 @@
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -299,6 +305,22 @@
           "type": "string",
           "default": "monaco",
           "enum": ["monaco", "codemirror6"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "goCodeCheckerTemplates": {
+          "description": "Shows a panel with code insights templates for go code checker results.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableExtensionsDecorationsColumnView": {
+          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
+          "type": "boolean",
+          "default": false,
           "!go": {
             "pointer": true
           }
@@ -403,9 +425,9 @@
       "default": 1
     },
     "search.defaultPatternType": {
-      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as.",
+      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
       "type": "string",
-      "pattern": "literal|regexp"
+      "pattern": "literal|regexp|lucky"
     },
     "search.defaultCaseSensitive": {
       "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",
@@ -459,6 +481,7 @@
         "title": "Notice",
         "type": "object",
         "required": ["message", "location"],
+        "additionalProperties": false,
         "properties": {
           "message": {
             "description": "The message to display. Markdown formatting is supported.",

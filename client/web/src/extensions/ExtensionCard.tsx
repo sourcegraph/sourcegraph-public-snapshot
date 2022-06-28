@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager, Link, CardBody, Card, Alert, Icon } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, CardBody, Card, Alert, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -214,19 +214,21 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
                 <div className={classNames('w-100 flex-grow-1', styles.detailsSection)}>
                     <div className="mb-2">
-                        <h3 className="mb-0 mr-1 text-truncate flex-1">
+                        <H3 className="mb-0 mr-1 text-truncate flex-1">
                             <Link to={`/extensions/${extension.id}`}>{name}</Link>
-                        </h3>
+                        </H3>
                         <span>
                             by {publisher}
-                            {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
+                            {isSourcegraphExtension && (
+                                <Icon className={styles.logo} as={SourcegraphExtensionIcon} aria-hidden={true} />
+                            )}
                         </span>
                     </div>
                     <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <Icon as={WarningIcon} /> Invalid manifest
+                                    <Icon as={WarningIcon} aria-hidden={true} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -235,7 +237,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <Icon as={WarningIcon} /> No manifest
+                                <Icon as={WarningIcon} aria-hidden={true} /> No manifest
                             </span>
                         )}
                     </div>

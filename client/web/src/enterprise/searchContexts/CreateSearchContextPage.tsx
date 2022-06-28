@@ -34,7 +34,9 @@ export interface CreateSearchContextPageProps
     isSourcegraphDotCom: boolean
 }
 
-export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
+export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateSearchContextPageProps>
+> = props => {
     const { authenticatedUser, createSearchContext, platformContext } = props
 
     const query = parseSearchURLQuery(props.location.search)
@@ -55,21 +57,9 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     <PageTitle title="Create context" />
                     <PageHeader
-                        path={[
-                            {
-                                icon: MagnifyIcon,
-                                to: '/search',
-                                ariaLabel: 'Code Search',
-                            },
-                            {
-                                to: '/contexts',
-                                text: 'Contexts',
-                            },
-                            { text: 'Create context' },
-                        ]}
                         description={
                             <span className="text-muted">
                                 A search context represents a group of repositories at specified branches or revisions
@@ -84,7 +74,13 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                             </span>
                         }
                         className="mb-3"
-                    />
+                    >
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                            <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
+                            <PageHeader.Breadcrumb>Create context</PageHeader.Breadcrumb>
+                        </PageHeader.Heading>
+                    </PageHeader>
                     <SearchContextForm {...props} query={query} onSubmit={onSubmit} />
                 </div>
             </Page>

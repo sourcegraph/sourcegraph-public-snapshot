@@ -14,11 +14,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -34,6 +37,7 @@ import (
 
 func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 
 		t.Run("ServeHTTP", func(t *testing.T) {
@@ -41,7 +45,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				store := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store)
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -59,7 +67,12 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				store := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store)
 
-				u := strings.ReplaceAll(extsvc.WebhookURL(extsvc.TypeGitLab, 12345, "https://example.com/"), "12345", "foo")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				u = strings.ReplaceAll(u, "12345", "foo")
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -95,7 +108,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -117,7 +134,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -138,7 +159,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -160,7 +185,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -182,7 +211,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -205,7 +238,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString("invalid JSON"))
 				if err != nil {
 					t.Fatal(err)
@@ -227,7 +264,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				body := ct.MarshalJSON(t, &webhooks.EventCommon{
 					ObjectKind: "unknown",
 				})
@@ -248,7 +289,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("error from handleEvent", func(t *testing.T) {
 				store := gitLabTestSetup(t, db)
-				repoStore := database.ReposWith(store)
+				repoStore := database.ReposWith(logger, store)
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -267,7 +308,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
 					t.Fatal(err)
@@ -295,14 +340,18 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				for _, action := range []string{"approved", "unapproved"} {
 					t.Run(action, func(t *testing.T) {
 						store := gitLabTestSetup(t, db)
-						repoStore := database.ReposWith(store)
+						repoStore := database.ReposWith(logger, store)
 						h := NewGitLabWebhook(store)
 						es := createGitLabExternalService(t, ctx, store.ExternalServices())
 						repo := createGitLabRepo(t, ctx, repoStore, es)
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, "approved")
 
-						u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
+
 						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 						if err != nil {
 							t.Fatal(err)
@@ -341,14 +390,18 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				} {
 					t.Run(action, func(t *testing.T) {
 						store := gitLabTestSetup(t, db)
-						repoStore := database.ReposWith(store)
+						repoStore := database.ReposWith(logger, store)
 						h := NewGitLabWebhook(store)
 						es := createGitLabExternalService(t, ctx, store.ExternalServices())
 						repo := createGitLabRepo(t, ctx, repoStore, es)
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, action)
 
-						u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
+
 						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 						if err != nil {
 							t.Fatal(err)
@@ -371,7 +424,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("valid pipeline events", func(t *testing.T) {
 				store := gitLabTestSetup(t, db)
-				repoStore := database.ReposWith(store)
+				repoStore := database.ReposWith(logger, store)
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -381,7 +434,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					Status: gitlab.PipelineStatusSuccess,
 				})
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
 					t.Fatal(err)
@@ -473,7 +530,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// connection on the repo store.
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.ListFunc.SetDefaultReturn(nil, errors.New("foo"))
-			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB := database.NewMockDBFrom(database.NewDB(logger, db))
 			mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			store := gitLabTestSetup(t, db).With(mockDB)
@@ -489,7 +546,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// We can induce an error with a broken database connection.
 			s := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s)
-			h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+			db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
+			h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 			es, err := h.getExternalServiceFromRawID(ctx, "12345")
 			if es != nil {
@@ -549,7 +607,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
+				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -569,7 +628,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
+				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -584,7 +644,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Since these tests don't write to the database, we can just share
 			// the same database setup.
 			store := gitLabTestSetup(t, db)
-			repoStore := database.ReposWith(store)
+			repoStore := database.ReposWith(logger, store)
 			h := NewGitLabWebhook(store)
 			es := createGitLabExternalService(t, ctx, store.ExternalServices())
 			repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -679,7 +739,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(&noNestingTx{s.DatabaseDB()}, &observation.TestContext, nil, s.Clock())
+			store := store.NewWithClock(database.NewDBWith(logger, basestore.NewWithHandle(&noNestingTx{s.Handle()})), &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -788,17 +848,31 @@ func TestValidateGitLabSecret(t *testing.T) {
 // error, the err field will be returned; otherwise nil will be returned.
 type brokenDB struct{ err error }
 
-func (db *brokenDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+func (db *brokenDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	return nil, db.err
 }
 
-func (db *brokenDB) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
+func (db *brokenDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
 	return nil, db.err
 }
 
-func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
+func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
 	return nil
 }
+
+func (db *brokenDB) Transact(context.Context) (basestore.TransactableHandle, error) {
+	return nil, db.err
+}
+
+func (db *brokenDB) Done(err error) error {
+	return err
+}
+
+func (db *brokenDB) InTransaction() bool {
+	return false
+}
+
+var _ basestore.TransactableHandle = (*brokenDB)(nil)
 
 // brokenReader implements an io.ReadCloser that always returns an error when
 // read.
@@ -820,30 +894,34 @@ func (br *brokenReader) Read(p []byte) (int, error) {
 // It would be theoretically possible to use savepoints to implement something
 // resembling the semantics of a true nested transaction, but that's
 // unnecessary for these tests.
-type nestedTx struct{ *sql.Tx }
+type nestedTx struct{ basestore.TransactableHandle }
 
-func (ntx *nestedTx) Rollback() error                                        { return nil }
-func (ntx *nestedTx) Commit() error                                          { return nil }
-func (ntx *nestedTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error { return nil }
+func (ntx *nestedTx) Done(error) error                                               { return nil }
+func (ntx *nestedTx) Transact(context.Context) (basestore.TransactableHandle, error) { return ntx, nil }
 
 // noNestingTx is another transaction wrapper that always returns an error when
 // a transaction is attempted.
-type noNestingTx struct{ database.DB }
+type noNestingTx struct{ basestore.TransactableHandle }
 
-func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error {
-	return errors.New("foo")
+func (ntx *noNestingTx) Transact(context.Context) (basestore.TransactableHandle, error) {
+	return nil, errors.New("foo")
 }
 
 // gitLabTestSetup instantiates the stores and a clock for use within tests.
 // Any changes made to the stores will be rolled back after the test is
 // complete.
-func gitLabTestSetup(t *testing.T, db *sql.DB) *store.Store {
+func gitLabTestSetup(t *testing.T, sqlDB *sql.DB) *store.Store {
+	logger := logtest.Scoped(t)
 	c := &ct.TestClock{Time: timeutil.Now()}
-	tx := dbtest.NewTx(t, db)
+	tx := dbtest.NewTx(t, sqlDB)
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewWithClock(&nestedTx{tx}, &observation.TestContext, nil, c.Now)
+	db := database.NewDBWith(logger, basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
+
+	// Note that tx is wrapped in nestedTx to effectively neuter further use of
+	// transactions within the test.
+	return store.NewWithClock(db, &observation.TestContext, nil, c.Now)
 }
 
 // assertBodyIncludes checks for a specific substring within the given response
@@ -956,12 +1034,12 @@ func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *btypes
 	// We use an untyped set of maps here because the webhooks package doesn't
 	// export its internal mergeRequestEvent type that is used for
 	// unmarshalling. (Which is fine; it's an implementation detail.)
-	return ct.MarshalJSON(t, map[string]interface{}{
+	return ct.MarshalJSON(t, map[string]any{
 		"object_kind": "merge_request",
-		"project": map[string]interface{}{
+		"project": map[string]any{
 			"id": pid,
 		},
-		"object_attributes": map[string]interface{}{
+		"object_attributes": map[string]any{
 			"iid":    cid,
 			"action": action,
 		},

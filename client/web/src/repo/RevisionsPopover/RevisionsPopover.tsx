@@ -51,21 +51,42 @@ interface RevisionsPopoverTab {
     noun: string
     pluralNoun: string
     type?: GitRefType
+    description: string
 }
 
 const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
 const TABS: RevisionsPopoverTab[] = [
-    { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
-    { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
-    { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
+    {
+        id: 'branches',
+        label: 'Branches',
+        noun: 'branch',
+        pluralNoun: 'branches',
+        type: GitRefType.GIT_BRANCH,
+        description: 'Find a revision from the listed branches',
+    },
+    {
+        id: 'tags',
+        label: 'Tags',
+        noun: 'tag',
+        pluralNoun: 'tags',
+        type: GitRefType.GIT_TAG,
+        description: 'Find a revision from the listed tags',
+    },
+    {
+        id: 'commits',
+        label: 'Commits',
+        noun: 'commit',
+        pluralNoun: 'commits',
+        description: 'Find a revision from the listed commits',
+    },
 ]
 
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
-export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = props => {
+export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverProps>> = props => {
     const { getPathFromRevision = replaceRevisionInURL } = props
 
     useEffect(() => {
@@ -91,7 +112,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                         className={styles.tabsClose}
                         aria-label="Close"
                     >
-                        <Icon as={CloseIcon} />
+                        <Icon as={CloseIcon} aria-hidden={true} />
                     </Button>
                 }
             >
@@ -118,6 +139,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 showSpeculativeResults={
                                     props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
+                                tabLabel={tab.description}
                             />
                         ) : (
                             <RevisionsPopoverCommits
@@ -129,6 +151,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 repo={props.repo}
                                 currentCommitID={props.currentCommitID}
                                 onSelect={props.onSelect}
+                                tabLabel={tab.description}
                             />
                         )}
                     </TabPanel>

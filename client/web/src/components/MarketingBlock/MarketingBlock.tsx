@@ -9,7 +9,7 @@ interface MarketingBlockProps {
     contentClassName?: string
 }
 
-export const MarketingBlock: React.FunctionComponent<MarketingBlockProps> = ({
+export const MarketingBlock: React.FunctionComponent<React.PropsWithChildren<MarketingBlockProps>> = ({
     wrapperClassName,
     contentClassName,
     children,

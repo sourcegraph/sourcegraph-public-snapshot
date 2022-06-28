@@ -29,7 +29,7 @@ interface FileProps extends TreeLayerProps {
     isSelected: boolean
 }
 
-export const File: React.FunctionComponent<FileProps> = props => {
+export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
     const renderedFileDecorations = (
         <FileDecorator
             // If component is not specified, or it is 'sidebar', render it.
@@ -59,7 +59,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                             <TreeLayerRowContentsText>
                                 {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
                                 <TreeRowIcon style={treePadding(props.depth, true)} onClick={props.noopRowClick}>
-                                    <Icon as={SourceRepositoryIcon} />
+                                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
@@ -71,7 +71,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                         <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
                             <TreeLayerRowContentsText>
                                 <TreeRowIcon style={treePadding(props.depth, true)}>
-                                    <Icon as={SourceRepositoryIcon} />
+                                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}

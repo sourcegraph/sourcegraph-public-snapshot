@@ -12,6 +12,9 @@ import {
     MenuList,
     Position,
     MenuItem,
+    MenuDivider,
+    H4,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -47,7 +50,7 @@ export interface Props {
     tooltip?: string
 }
 
-export const DropdownButton: React.FunctionComponent<Props> = ({
+export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     actions,
     defaultAction,
     disabled,
@@ -150,7 +153,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>
@@ -165,13 +168,16 @@ interface DropdownItemProps {
     action: Action
 }
 
-const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setSelectedType }) => {
+const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItemProps>> = ({
+    action,
+    setSelectedType,
+}) => {
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <h4 className="mb-1">
+            <H4 className="mb-1">
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>
@@ -179,10 +185,10 @@ const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setS
                         <ProductStatusBadge status="experimental" as="small" />
                     </>
                 )}
-            </h4>
-            <p className="text-wrap text-muted mb-0">
+            </H4>
+            <Text className="text-wrap text-muted mb-0">
                 <small>{action.dropdownDescription}</small>
-            </p>
+            </Text>
         </MenuItem>
     )
 }

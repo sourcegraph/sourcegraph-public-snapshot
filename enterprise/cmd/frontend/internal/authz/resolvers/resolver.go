@@ -83,57 +83,32 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 
-	// Filter out bind IDs that only contains whitespaces.
 	bindIDs := make([]string, 0, len(args.UserPermissions))
-	for _, perms := range args.UserPermissions {
-		bindID := strings.TrimSpace(perms.BindID)
-		if bindID == "" {
-			continue
-		}
-		bindIDs = append(bindIDs, bindID)
+	for _, up := range args.UserPermissions {
+		bindIDs = append(bindIDs, up.BindID)
 	}
 
-	bindIDSet := make(map[string]struct{})
-	for i := range bindIDs {
-		bindIDSet[bindIDs[i]] = struct{}{}
+	mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+	if err != nil {
+		return nil, err
+	}
+
+	pendingBindIDs := make([]string, 0, len(bindIDs))
+	for _, bindID := range bindIDs {
+		if _, ok := mapping[bindID]; !ok {
+			pendingBindIDs = append(pendingBindIDs, bindID)
+		}
+	}
+
+	userIDs := make(map[int32]struct{}, len(mapping))
+	for _, id := range mapping {
+		userIDs[id] = struct{}{}
 	}
 
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: map[int32]struct{}{},
-	}
-	cfg := globals.PermissionsUserMapping()
-	switch cfg.BindID {
-	case "email":
-		emails, err := r.db.UserEmails().GetVerifiedEmails(ctx, bindIDs...)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := range emails {
-			p.UserIDs[emails[i].UserID] = struct{}{}
-			delete(bindIDSet, emails[i].Email)
-		}
-
-	case "username":
-		users, err := r.db.Users().GetByUsernames(ctx, bindIDs...)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := range users {
-			p.UserIDs[users[i].ID] = struct{}{}
-			delete(bindIDSet, users[i].Username)
-		}
-
-	default:
-		return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
-	}
-
-	pendingBindIDs := make([]string, 0, len(bindIDSet))
-	for id := range bindIDSet {
-		pendingBindIDs = append(pendingBindIDs, id)
+		UserIDs: userIDs,
 	}
 
 	txs, err := r.db.Perms().Transact(ctx)
@@ -152,6 +127,34 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errors.Wrap(err, "set repository permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, args *graphqlbackend.RepoUnrestrictedArgs) (*graphqlbackend.EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only site admins can mutate repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	ids := make([]int32, 0, len(args.Repositories))
+	for _, id := range args.Repositories {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(id)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshalling id")
+		}
+		ids = append(ids, int32(repoID))
+	}
+
+	if err := r.db.Perms().SetRepoPermissionsUnrestricted(ctx, ids, args.Unrestricted); err != nil {
+		return nil, errors.Wrap(err, "setting unrestricted field")
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -239,26 +242,20 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
-	cfg := globals.PermissionsUserMapping()
+	bindIDs := make([]string, 0, len(args.UserPermissions))
+	for _, up := range args.UserPermissions {
+		bindIDs = append(bindIDs, up.BindID)
+	}
+
+	mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+	if err != nil {
+		return nil, err
+	}
+
 	for _, perm := range args.UserPermissions {
-		var userID int32
-		switch cfg.BindID {
-		case "email":
-			user, err := db.Users().GetByVerifiedEmail(ctx, perm.BindID)
-			if err != nil {
-				return nil, errors.Wrap(err, "getting user by email")
-			}
-			userID = user.ID
-
-		case "username":
-			user, err := db.Users().GetByUsername(ctx, perm.BindID)
-			if err != nil {
-				return nil, errors.Wrap(err, "getting user by username")
-			}
-			userID = user.ID
-
-		default:
-			return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+		userID, ok := mapping[perm.BindID]
+		if !ok {
+			return nil, errors.Errorf("user %q not found", perm.BindID)
 		}
 
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
@@ -268,6 +265,51 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 			return nil, errors.Wrap(err, "upserting sub-repo permissions")
 		}
 	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
+	ctx context.Context, args *graphqlbackend.RepoPermsBitbucketProjectArgs,
+) (*graphqlbackend.EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	externalServiceID, err := graphqlbackend.UnmarshalExternalServiceID(args.CodeHost)
+	if err != nil {
+		return nil, err
+	}
+
+	unrestricted := false
+	if args.Unrestricted != nil {
+		unrestricted = *args.Unrestricted
+	}
+
+	// get the external service and check if it is Bitbucket Server
+	svc, err := r.db.ExternalServices().GetByID(ctx, externalServiceID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get external service %d", externalServiceID)
+	}
+
+	if svc.Kind != extsvc.KindBitbucketServer {
+		return nil, errors.Newf("expected Bitbucket Server external service, got: %s", svc.Kind)
+	}
+
+	jobID, err := r.db.BitbucketProjectPermissions().Enqueue(ctx, args.ProjectKey, externalServiceID, args.UserPermissions, unrestricted)
+	if err != nil {
+		return nil, err
+	}
+
+	log15.Debug("SetRepositoryPermissionsForBitbucketProject: job enqueued", "jobID", jobID)
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }
@@ -382,10 +424,64 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}, nil
 }
 
+var jobStatuses = map[string]bool{
+	"queued":     true,
+	"processing": true,
+	"completed":  true,
+	"canceled":   true,
+	"errored":    true,
+	"failed":     true,
+}
+
+func (r *Resolver) BitbucketProjectPermissionJobs(ctx context.Context, args *graphqlbackend.BitbucketProjectPermissionJobsArgs) (graphqlbackend.BitbucketProjectsPermissionJobsResolver, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	loweredAndTrimmedStatus := strings.ToLower(strings.TrimSpace(getOrDefault(args.Status)))
+	if loweredAndTrimmedStatus != "" && !jobStatuses[loweredAndTrimmedStatus] {
+		return nil, errors.New("Please provide one of the following job statuses: queued, processing, completed, canceled, errored, failed")
+	}
+	args.Status = &loweredAndTrimmedStatus
+
+	jobs, err := r.db.BitbucketProjectPermissions().ListJobs(ctx, convertJobsArgsToOpts(args))
+	if err != nil {
+		return nil, errors.Wrap(err, "getting a list of Bitbucket Projects permission sync jobs")
+	}
+	return NewBitbucketProjectsPermissionJobsResolver(jobs), nil
+}
+
+func convertJobsArgsToOpts(args *graphqlbackend.BitbucketProjectPermissionJobsArgs) database.ListJobsOptions {
+	if args == nil {
+		return database.ListJobsOptions{}
+	}
+
+	return database.ListJobsOptions{
+		ProjectKeys: getOrDefault(args.ProjectKeys),
+		State:       getOrDefault(args.Status),
+		Count:       getOrDefault(args.Count),
+	}
+}
+
+// getOrDefault accepts a pointer of a type T and returns dereferenced value if the pointer
+// is not nil, or zero-value for the given type otherwise
+func getOrDefault[T any](ptr *T) T {
+	var result T
+	if ptr == nil {
+		return result
+	} else {
+		return *ptr
+	}
+}
+
 type permissionsInfoResolver struct {
-	perms     authz.Perms
-	syncedAt  time.Time
-	updatedAt time.Time
+	perms        authz.Perms
+	syncedAt     time.Time
+	updatedAt    time.Time
+	unrestricted bool
 }
 
 func (r *permissionsInfoResolver) Permissions() []string {
@@ -401,6 +497,10 @@ func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
 
 func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.updatedAt}
+}
+
+func (r *permissionsInfoResolver) Unrestricted() bool {
+	return r.unrestricted
 }
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
@@ -432,9 +532,10 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	}
 
 	return &permissionsInfoResolver{
-		perms:     p.Perm,
-		syncedAt:  p.SyncedAt,
-		updatedAt: p.UpdatedAt,
+		perms:        p.Perm,
+		syncedAt:     p.SyncedAt,
+		updatedAt:    p.UpdatedAt,
+		unrestricted: p.Unrestricted,
 	}, nil
 }
 

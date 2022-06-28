@@ -9,6 +9,11 @@
     justify-content: center;
     align-items: flex-start;
 
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
     :global(.theme-light) & {
         --footer-bg: rgba(230, 235, 242, 0.4);
         --footer-border: var(--border-color);

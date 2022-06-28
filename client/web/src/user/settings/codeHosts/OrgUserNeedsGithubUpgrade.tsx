@@ -1,14 +1,16 @@
 import React from 'react'
 
-import { Alert, ButtonLink } from '@sourcegraph/wildcard'
+import { Alert, ButtonLink, H4 } from '@sourcegraph/wildcard'
 
 import { updateGitHubApp } from './UserAddCodeHostsPage'
 
 export interface OrgUserNeedsGithubUpgrade {}
 
-export const OrgUserNeedsGithubUpgrade: React.FunctionComponent<OrgUserNeedsGithubUpgrade> = () => (
+export const OrgUserNeedsGithubUpgrade: React.FunctionComponent<
+    React.PropsWithChildren<OrgUserNeedsGithubUpgrade>
+> = () => (
     <Alert className="mb-4" role="alert" variant="warning">
-        <h4>Update your code host connection with GitHub</h4>
+        <H4>Update your code host connection with GitHub</H4>
         We’ve changed how we sync repositories with GitHub. Please{' '}
         <ButtonLink onClick={updateGitHubApp} variant="link" display="inline" className="align-baseline m-0 p-0">
             update your code host connection

@@ -7,16 +7,19 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type configurationPolicyResolver struct {
+	logger              sglog.Logger
 	db                  database.DB
 	configurationPolicy store.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
@@ -24,6 +27,7 @@ type configurationPolicyResolver struct {
 
 func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, errTracer *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
+		logger:              sglog.Scoped("configurationPolicyResolver", ""),
 		db:                  db,
 		configurationPolicy: configurationPolicy,
 		errTracer:           errTracer,
@@ -49,7 +53,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.logger, r.db).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +114,10 @@ func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {
 
 func (r *configurationPolicyResolver) IndexIntermediateCommits() bool {
 	return r.configurationPolicy.IndexIntermediateCommits
+}
+
+func (r *configurationPolicyResolver) LockfileIndexingEnabled() bool {
+	return r.configurationPolicy.LockfileIndexingEnabled
 }
 
 func toHours(duration *time.Duration) *int32 {

@@ -6,9 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func TestRecognizersGo(t *testing.T) {
-	testRecognizers(t,
-		recognizerTestCase{
+func TestGoGenerator(t *testing.T) {
+	testGenerators(t,
+		generatorTestCase{
 			description: "go modules",
 			repositoryContents: map[string]string{
 				"foo/bar/go.mod": "",
@@ -45,7 +45,7 @@ func TestRecognizersGo(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "go files in root",
 			repositoryContents: map[string]string{
 				"main.go":       "",
@@ -63,12 +63,12 @@ func TestRecognizersGo(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "go files in non-root (no match)",
 			repositoryContents: map[string]string{
 				"cmd/src/main.go": "",
 			},
-			expected: nil,
+			expected: []config.IndexJob{},
 		},
 	)
 }

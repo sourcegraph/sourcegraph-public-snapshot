@@ -7,4 +7,3 @@
 - [Precise code intelligence examples](precise_examples.md)
 - [Environment variables](envvars.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing configuration](auto_indexing_configuration.md)
-- <span class="badge badge-experimental">Experimental</span> [LSIF Typed specification](lsif.md)

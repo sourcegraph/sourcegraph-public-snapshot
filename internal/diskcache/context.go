@@ -34,6 +34,6 @@ func (c *isolatedTimeoutContext) Err() error {
 	return c.deadlineCtx.Err()
 }
 
-func (c *isolatedTimeoutContext) Value(key interface{}) interface{} {
+func (c *isolatedTimeoutContext) Value(key any) any {
 	return c.parent.Value(key)
 }

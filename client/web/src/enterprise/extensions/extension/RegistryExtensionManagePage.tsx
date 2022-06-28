@@ -3,6 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -12,7 +13,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -154,7 +155,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             return (
                 <div className="registry-extension-manage-page">
                     <PageTitle title="Manage extension" />
-                    <h2>Manage extension</h2>
+                    <H2>Manage extension</H2>
                     <Form onSubmit={this.onSubmit}>
                         <RegistryPublisherFormGroup
                             className={styles.input}
@@ -173,14 +174,30 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             this.state.name !== this.props.extension.registryExtension.name && (
                                 <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
-                                    <code id="registry-extension__extensionID">
-                                        <strong>{extensionID}</strong>
-                                    </code>
+                                    <Code id="registry-extension__extensionID" weight="bold">
+                                        {extensionID}
+                                    </Code>
                                 </Alert>
                             )}
-                        <Button type="submit" disabled={this.state.updateOrError === 'loading'} variant="primary">
-                            {this.state.updateOrError === 'loading' ? <LoadingSpinner /> : 'Update extension'}
-                        </Button>
+                        <div aria-live="polite">
+                            <Button
+                                type="submit"
+                                disabled={this.state.updateOrError === 'loading'}
+                                variant="primary"
+                                aria-label="Update Extension"
+                            >
+                                {this.state.updateOrError === 'loading' ? <LoadingSpinner /> : 'Update extension'}
+                            </Button>
+                            {this.state.updateOrError &&
+                                !isErrorLike(this.state.updateOrError) &&
+                                (this.state.updateOrError === 'loading' ? (
+                                    <LoadingSpinner />
+                                ) : (
+                                    <span className="text-success ml-2">
+                                        <Icon aria-hidden={true} as={CheckCircleIcon} /> Updated extension successfully.
+                                    </span>
+                                ))}
+                        </div>
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
                     <Card className={classNames('mt-5', styles.otherActions)}>

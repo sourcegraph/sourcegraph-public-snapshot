@@ -14,7 +14,9 @@ exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
       >
         View billing subscription 
         <externallinkicon
+          aria-hidden="true"
           class="iconInline ml-1"
+          role="img"
         />
       </a>
       <button

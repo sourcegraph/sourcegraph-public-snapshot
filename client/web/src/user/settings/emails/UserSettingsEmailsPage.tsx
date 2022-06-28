@@ -27,7 +27,7 @@ type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' }
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
-export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
+export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
     const [emails, setEmails] = useState<UserEmail[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [emailActionError, setEmailActionError] = useState<EmailActionError>()
@@ -74,7 +74,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
     }
 
     return (
-        <div className={styles.userSettingsEmailsPage}>
+        <div className={styles.userSettingsEmailsPage} data-testid="user-settings-emails-page">
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
@@ -109,7 +109,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
             </Container>
             {/* re-fetch emails on onDidAdd to guarantee correct state */}
             <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
-            <hr className="my-4" />
+            <hr className="my-4" aria-hidden="true" />
             <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
         </div>
     )

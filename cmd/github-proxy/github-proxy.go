@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -17,20 +16,23 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	sentrylib "github.com/getsentry/sentry-go"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
@@ -59,9 +61,17 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
+
+	liblog := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
+	defer liblog.Sync()
 	conf.Init()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Ready immediately
@@ -69,7 +79,10 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
+	logger := log.Scoped("server", "the github-proxy service")
+
 	p := &githubProxy{
+		logger: logger,
 		// Use a custom client/transport because GitHub closes keep-alive
 		// connections after 60s. In order to avoid running into EOF errors, we use
 		// a IdleConnTimeout of 30s, so connections are only kept around for <30s
@@ -84,7 +97,7 @@ func main() {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
-	h = trace.HTTPMiddleware(h, conf.DefaultClient())
+	h = trace.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	http.Handle("/", h)
 
@@ -93,7 +106,7 @@ func main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	log15.Info("github-proxy: listening", "addr", addr)
+	logger.Info("github-proxy: listening", log.String("addr", addr))
 	s := http.Server{
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -108,14 +121,16 @@ func main() {
 
 		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
 		if err := s.Shutdown(ctx); err != nil {
-			log15.Error("graceful termination timeout", "error", err)
+			logger.Error("graceful termination timeout", log.Error(err))
 		}
 		cancel()
 
 		os.Exit(0)
 	}()
 
-	log.Fatal(s.ListenAndServe())
+	if err := s.ListenAndServe(); err != nil {
+		logger.Fatal(err.Error())
+	}
 }
 
 func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
@@ -161,6 +176,7 @@ func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
 }
 
 type githubProxy struct {
+	logger     log.Logger
 	tokenLocks lockMap
 	client     interface {
 		Do(*http.Request) (*http.Response, error)
@@ -202,7 +218,7 @@ func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lock.Unlock()
 
 	if err != nil {
-		log15.Warn("proxy error", "err", err)
+		p.logger.Warn("proxy error", log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -217,7 +233,10 @@ func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b, err := io.ReadAll(resp.Body)
-	log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
+	p.logger.Warn("proxy error",
+		log.Int("status", resp.StatusCode),
+		log.String("body", string(b)),
+		log.NamedError("bodyErr", err))
 	_, _ = io.Copy(w, bytes.NewReader(b))
 }
 

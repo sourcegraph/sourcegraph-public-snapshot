@@ -5,7 +5,7 @@ import { chunk, upperFirst } from 'lodash'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
@@ -15,6 +15,8 @@ import { TourTaskType } from './types'
 import styles from './Tour.module.scss'
 
 interface TourContentProps {
+    title?: string
+    keepCompletedTasks?: boolean
     tasks: (TourTaskType | TourTaskType)[]
     onClose: () => void
     variant?: 'horizontal'
@@ -22,11 +24,15 @@ interface TourContentProps {
     className?: string
 }
 
-const Header: React.FunctionComponent<{ onClose: () => void }> = ({ children, onClose }) => (
+const Header: React.FunctionComponent<{ onClose: () => void; title?: string }> = ({
+    children,
+    onClose,
+    title = 'Quick start',
+}) => (
     <div className="d-flex justify-content-between align-items-start">
-        <p className={styles.title}>Quick start</p>
-        <Button variant="icon" data-testid="tour-close-btn" onClick={onClose}>
-            <Icon as={CloseIcon} /> {children}
+        <Text className={styles.title}>{title}</Text>
+        <Button variant="icon" data-testid="tour-close-btn" onClick={onClose} aria-label="Close quick start">
+            <Icon as={CloseIcon} aria-hidden={true} /> {children}
         </Button>
     </div>
 )
@@ -35,18 +41,24 @@ const Footer: React.FunctionComponent<{ completedCount: number; totalCount: numb
     completedCount,
     totalCount,
 }) => (
-    <p className="text-right mt-2 mb-0">
+    <Text alignment="right" className="mt-2 mb-0">
         <Icon
             as={CheckCircleIcon}
             className={classNames('mr-1', completedCount === 0 ? 'text-muted' : 'text-success')}
+            aria-hidden={true}
         />
         {completedCount} of {totalCount} completed
-    </p>
+    </Text>
 )
 
 const CompletedItem: React.FunctionComponent = ({ children }) => (
     <li className="d-flex align-items-start">
-        <Icon as={CheckCircleIcon} size="sm" className={classNames('text-success mr-1', styles.completedCheckIcon)} />
+        <Icon
+            as={CheckCircleIcon}
+            size="sm"
+            className={classNames('text-success mr-1', styles.completedCheckIcon)}
+            aria-hidden={true}
+        />
         <span className="flex-1">{children}</span>
     </li>
 )
@@ -56,10 +68,21 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
     tasks,
     variant,
     className,
+    title,
+    keepCompletedTasks,
     height = 18,
 }) => {
     const { completedCount, totalCount, completedTasks, completedTaskChunks, ongoingTasks } = useMemo(() => {
         const completedTasks = tasks.filter(task => task.completed === 100)
+        if (keepCompletedTasks) {
+            return {
+                completedTasks: [],
+                ongoingTasks: tasks,
+                completedTaskChunks: [],
+                totalCount: tasks.filter(task => typeof task.completed === 'number').length,
+                completedCount: completedTasks.length,
+            }
+        }
         return {
             completedTasks,
             ongoingTasks: tasks.filter(task => task.completed !== 100),
@@ -67,17 +90,21 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
             totalCount: tasks.filter(task => typeof task.completed === 'number').length,
             completedCount: completedTasks.length,
         }
-    }, [tasks])
+    }, [keepCompletedTasks, tasks])
     const isHorizontal = variant === 'horizontal'
 
     return (
         <div className={className} data-testid="tour-content">
-            {isHorizontal && <Header onClose={onClose}>Don't show again</Header>}
+            {isHorizontal && (
+                <Header onClose={onClose} title={title}>
+                    Don't show again
+                </Header>
+            )}
             <MarketingBlock
                 wrapperClassName={classNames('w-100 d-flex', !isHorizontal && styles.marketingBlockWrapper)}
                 contentClassName={classNames(styles.marketingBlockContent, 'w-100 d-flex flex-column pt-3 pb-1')}
             >
-                {!isHorizontal && <Header onClose={onClose} />}
+                {!isHorizontal && <Header onClose={onClose} title={title} />}
                 <div
                     className={classNames(
                         styles.taskList,
@@ -88,12 +115,12 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                 >
                     {isHorizontal && completedTaskChunks.length > 0 && (
                         <div className={classNames('pl-2 flex-grow-1', styles.completedItems)}>
-                            <p className={styles.title}>Completed</p>
+                            <Text className={styles.title}>Completed</Text>
                             <div className={styles.completedItemsInner}>
                                 {completedTaskChunks.map((completedTaskChunk, index) => (
                                     <ul key={index} className="p-0 m-0 list-unstyled text-nowrap">
-                                        {completedTaskChunk.map(completedTask => (
-                                            <CompletedItem key={completedTask.title}>
+                                        {completedTaskChunk.map((completedTask, index) => (
+                                            <CompletedItem key={`${completedTask.title}-${index}`}>
                                                 {completedTask.title}
                                             </CompletedItem>
                                         ))}
@@ -102,13 +129,19 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                             </div>
                         </div>
                     )}
-                    {ongoingTasks.map(task => (
-                        <TourTask key={task.title} {...task} variant={!isHorizontal ? 'small' : undefined} />
+                    {ongoingTasks.map((task, index) => (
+                        <TourTask
+                            key={`${task.title}-${index}`}
+                            {...task}
+                            variant={!isHorizontal ? 'small' : undefined}
+                        />
                     ))}
                     {!isHorizontal && completedTasks.length > 0 && (
                         <div>
-                            {completedTasks.map(completedTask => (
-                                <CompletedItem key={completedTask.title}>{completedTask.title}</CompletedItem>
+                            {completedTasks.map((completedTask, index) => (
+                                <CompletedItem key={`${completedTask.title}-${index}`}>
+                                    {completedTask.title}
+                                </CompletedItem>
                             ))}
                         </div>
                     )}

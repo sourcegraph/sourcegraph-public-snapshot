@@ -19,6 +19,7 @@ import {
     MenuItem,
     Position,
     PageSelector,
+    H3,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -77,7 +78,7 @@ interface IPendingInvitations {
     pendingInvitations: OrganizationInvitation[]
 }
 
-const PendingInvitesHeader: React.FunctionComponent = () => (
+const PendingInvitesHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <li data-test-pendinginvitesheader="pendingInviiteslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
@@ -102,7 +103,7 @@ interface InvitationItemProps {
     onInviteResentRevoked: (recipient: string, revoked?: boolean) => void
 }
 
-const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
+const InvitationItem: React.FunctionComponent<React.PropsWithChildren<InvitationItemProps>> = ({
     orgId,
     invite,
     viewerCanAdminister,
@@ -254,7 +255,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
+export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,
@@ -376,7 +377,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
                 {authenticatedUser && data && data.pendingInvitations.length === 0 && (
                     <Container>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <h3>No invites pending</h3>
+                            <H3>No invites pending</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}

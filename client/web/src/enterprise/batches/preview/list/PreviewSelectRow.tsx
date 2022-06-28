@@ -61,10 +61,18 @@ export interface PreviewSelectRowProps {
  * Renders the top bar of the PreviewList with the publication state dropdown selector and
  * the X selected label. Provides select ALL functionality.
  */
-export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = ({
+export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<PreviewSelectRowProps>> = ({
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
+    // The user can modify the desired publication states for changesets in the preview
+    // list from this dropdown selector. However, these modifications are transient and
+    // are not persisted to the backend (until the user applies the batch change and the
+    // publication states are realized, of course). Rather, they are provided as arguments
+    // to the `applyPreview` connection, and later the `applyBatchChange` mutation, in
+    // order to override the original publication states computed by the reconciler on the
+    // backend. `BatchChangePreviewContext` is responsible for managing these publication
+    // states clientside.
     const { updatePublicationStates } = useContext(BatchChangePreviewContext)
     const { areAllVisibleSelected, deselectAll, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -90,6 +98,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                             return
                         }
 
+                        // Record the new desired publication state for each selected changeset.
                         updatePublicationStates(
                             specIDs.map(changeSpecID => ({
                                 changesetSpec: changeSpecID,
@@ -110,7 +119,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
         <>
             <div className="row align-items-center no-gutters mb-3">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetSpecIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetSpecIDs?.length} />
                     ) : (
@@ -138,7 +147,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
     )
 }
 
-const AllSelectedLabel: React.FunctionComponent<{ count?: number }> = ({ count }) => {
+const AllSelectedLabel: React.FunctionComponent<React.PropsWithChildren<{ count?: number }>> = ({ count }) => {
     if (count === undefined) {
         return <>All changesets selected</>
     }

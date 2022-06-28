@@ -4,7 +4,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExtractToken(t *testing.T) {
@@ -112,7 +115,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "NPM default",
 			config: `{"registry": "https://registry.npmjs.org"}`,
 			kind:   KindNpmPackages,
-			want:   3000.0 / 3600.0,
+			want:   6000.0 / 3600.0,
 		},
 		{
 			name:   "NPM non-default",
@@ -327,4 +330,57 @@ func TestUniqueCodeHostIdentifier(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWebhookURL(t *testing.T) {
+	const externalServiceID = 42
+	const externalURL = "https://sourcegraph.com"
+
+	t.Run("unknown kind", func(t *testing.T) {
+		u, err := WebhookURL(KindOther, externalServiceID, nil, externalURL)
+		assert.Nil(t, err)
+		assert.Equal(t, u, "")
+	})
+
+	t.Run("basic kinds", func(t *testing.T) {
+		for kind, want := range map[string]string{
+			KindGitHub:          externalURL + "/.api/github-webhooks?externalServiceID=42",
+			KindBitbucketServer: externalURL + "/.api/bitbucket-server-webhooks?externalServiceID=42",
+			KindGitLab:          externalURL + "/.api/gitlab-webhooks?externalServiceID=42",
+		} {
+			t.Run(kind, func(t *testing.T) {
+				// Note the use of a nil configuration here: these kinds do not
+				// depend on the configuration being passed in or valid.
+				have, err := WebhookURL(kind, externalServiceID, nil, externalURL)
+				assert.Nil(t, err)
+				assert.Equal(t, want, have)
+			})
+		}
+	})
+
+	t.Run("Bitbucket Cloud", func(t *testing.T) {
+		t.Run("invalid configurations", func(t *testing.T) {
+			for name, cfg := range map[string]any{
+				"nil":               nil,
+				"GitHub connection": &schema.GitHubConnection{},
+			} {
+				t.Run(name, func(t *testing.T) {
+					_, err := WebhookURL(KindBitbucketCloud, externalServiceID, cfg, externalURL)
+					assert.NotNil(t, err)
+				})
+			}
+		})
+
+		t.Run("valid configuration", func(t *testing.T) {
+			have, err := WebhookURL(
+				KindBitbucketCloud, externalServiceID,
+				&schema.BitbucketCloudConnection{
+					WebhookSecret: "foo bar",
+				},
+				externalURL,
+			)
+			assert.Nil(t, err)
+			assert.Equal(t, externalURL+"/.api/bitbucket-cloud-webhooks?externalServiceID=42&secret=foo+bar", have)
+		})
+	})
 }

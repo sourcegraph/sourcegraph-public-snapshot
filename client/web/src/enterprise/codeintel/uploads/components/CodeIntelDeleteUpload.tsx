@@ -12,7 +12,7 @@ export interface CodeIntelDeleteUploadProps {
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-export const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
+export const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteUploadProps>> = ({
     state,
     deleteUpload,
     deletionOrError,
@@ -32,6 +32,6 @@ export const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps
                     : 'Delete this upload immediately'
             }
         >
-            <Icon as={DeleteIcon} /> Delete upload
+            <Icon aria-hidden={true} as={DeleteIcon} /> Delete upload
         </Button>
     )

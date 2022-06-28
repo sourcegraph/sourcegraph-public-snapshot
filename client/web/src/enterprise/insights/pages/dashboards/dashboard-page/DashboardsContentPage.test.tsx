@@ -32,7 +32,7 @@ type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
+jest.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
@@ -42,7 +42,7 @@ const mockTelemetryService = {
     logPageView: sinon.spy(),
 }
 
-const Wrapper: React.FunctionComponent = ({ children }) => {
+const Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const apolloClient = useApolloClient()
     const api = new CodeInsightsGqlBackend(apolloClient)
 
@@ -165,7 +165,7 @@ const renderDashboardsContent = (
 
 const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
     const { user } = screen
-    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /Dashboard options/ }))
+    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /dashboard context menu/ }))
     user.click(dashboardMenu)
 
     const dashboardMenuItem = screen.getByRole('menuitem', { name })
@@ -218,14 +218,14 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, /Configure dashboard/)
+        await triggerDashboardMenuItem(screen, /configure dashboard/)
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add or remove insights/ }))
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /add or remove insights/ }))
 
         userEvent.click(addInsightsButton)
 

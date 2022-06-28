@@ -10,24 +10,24 @@ Sourcegraph is a highly scalable and configurable application. As an open source
 - user's engagement level
 - number and size of code repositories synced to Sourcegraph.
 
-_To get a better idea of your resource requirements for your instance use our_ [_resource estimator_](https://docs.sourcegraph.com/admin/install/resource_estimator)_._
+_To get a better idea of your resource requirements for your instance use our_ [_resource estimator_](deploy/resource_estimator.md)_._
 
 ## Deployment Best Practices
 
-A comparison table of supported self-hosted deployment methodologies can be [found here](install/index.md).
+A comparison table of supported self-hosted deployment methodologies can be [found here](deploy/index.md#deployment-types).
 
 ### Docker Compose
 
-- Docker Compose Sourcegraph may be customized using our [configuration guide](install/docker-compose/operations.md#configure), and should follow our [configuration best practices](install/docker-compose/operations.md#configuration-best-practices).
-- Our [Docker Compose requirements](install/docker-compose/index.md#docker-compose) must be met.
+- Be sure your deployment meets our [Docker Compose requirements](deploy/docker-compose/index.md#requirements).
+- Review the [configuration section](deploy/docker-compose/index.md#configuration) of our [Docker Compose deployment docs](deploy/docker-compose/index.md).
 
 ### Kubernetes
 
 Kubernetes deployments may be customized in a variety of ways, we consider the following best practice:
 
-- Users should configure and deploy using Helm, as covered in our guide to [using Helm with Sourcegraph](./install/kubernetes/helm.md).
-  -  If Helm cannot be used, [Kustomize can be used to apply configuration changes](./install/kubernetes/kustomize.md).
-  -  As a last resort, the [manifests can be edited in a forked copy of the Sourcegraph repository](./install/kubernetes/index.md).
+- Users should configure and deploy using Helm, as covered in our guide to [using Helm with Sourcegraph](deploy/kubernetes/helm.md).
+  -  If Helm cannot be used, [Kustomize can be used to apply configuration changes](deploy/kubernetes/kustomize.md).
+  -  As a last resort, the [manifests can be edited in a forked copy of the Sourcegraph repository](deploy/kubernetes/index.md).
 - The suggested Kubernetes version is the current [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable)
 - We attempt to support new versions of Kubernetes 2-3 months after their release.
 - Users are expected to run a compliant Kubernetes version ([a CNCF certified Kubernetes distribution](https://github.com/cncf/k8s-conformance))
@@ -52,9 +52,9 @@ _It is possible to migrate your data to a Docker-Compose or Kubernetes deploymen
 
 ## Additional Support Information
 
-### LSIF and Batch Changes
+### Precise Code Intel and Batch Changes
 
-- The list of languages currently supported for precise code intelligence (LSIF indexers) can be found [here](https://docs.sourcegraph.com/code_intelligence/references/indexers)
+- The list of languages currently supported for precise code intelligence can be found [here](https://docs.sourcegraph.com/code_intelligence/references/indexers)
 - Requirements to set-up Batch Changes can be found [here](https://docs.sourcegraph.com/batch_changes/references/requirements)
 
 ### Browsers Extensions

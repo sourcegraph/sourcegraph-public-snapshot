@@ -26,8 +26,9 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	orgStore database.OrgStore
-	args     *graphqlbackend.InsightsDashboardsArgs
+	orgStore         database.OrgStore
+	args             *graphqlbackend.InsightsDashboardsArgs
+	withViewUniqueID *string
 
 	baseInsightResolver
 
@@ -67,6 +68,10 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 			if !id.isVirtualized() {
 				args.ID = []int{int(id.Arg)}
 			}
+		}
+
+		if d.withViewUniqueID != nil {
+			args.WithViewUniqueID = d.withViewUniqueID
 		}
 
 		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)
@@ -235,7 +240,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, errors.New("dashboard must be created with at least one grant")
 	}
 
-	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	userIds, orgIds, err := getUserPermissions(ctx, database.NewDBWith(r.logger, r.workerBaseStore).Orgs())
 	if err != nil {
 		return nil, errors.Wrap(err, "getUserPermissions")
 	}
@@ -447,9 +452,9 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
-func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (_ graphqlbackend.InsightsDashboardPayloadResolver, err error) {
 	var viewID string
-	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	err = relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
 	}

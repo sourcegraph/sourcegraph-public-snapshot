@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,10 +35,11 @@ var updateRecordings = flag.Bool("update", false, "make npm API calls, record an
 func newTestHTTPClient(t *testing.T) (client *HTTPClient, stop func()) {
 	t.Helper()
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
-	client = NewHTTPClient("urn", "https://registry.npmjs.org", "")
+
 	doer, err := recorderFactory.Doer()
 	require.Nil(t, err)
-	client.doer = doer
+
+	client = NewHTTPClient("urn", "https://registry.npmjs.org", "", doer)
 	return client, stop
 }
 
@@ -76,7 +78,7 @@ func TestCredentials(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	client := NewHTTPClient("urn", server.URL, credentials)
+	client := NewHTTPClient("urn", server.URL, credentials, httpcli.ExternalDoer)
 
 	presentDep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
 	require.NoError(t, err)

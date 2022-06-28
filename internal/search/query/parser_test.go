@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -290,7 +291,7 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 func TestParse(t *testing.T) {
@@ -632,15 +633,15 @@ func TestParseAndOrLiteral(t *testing.T) {
 	autogold.Want("repo:foo (x", `(and "repo:foo" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("repo:foo (x"))
 	autogold.Want("(x or bar() )", `(or "x" "bar()") (Literal)`).Equal(t, test("(x or bar() )"))
 	autogold.Want("(x", `"(x" (HeuristicDanglingParens,Literal)`).Equal(t, test("(x"))
-	autogold.Want("x or (x", `(or "x" "(x") (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("x or (x"))
-	autogold.Want("(y or (z", `(or "(y" "(z") (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("(y or (z"))
+	autogold.Want("x or (x", `(or "x" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("x or (x"))
+	autogold.Want("(y or (z", `(or "(y" "(z") (HeuristicDanglingParens,Literal)`).Equal(t, test("(y or (z"))
 	autogold.Want("repo:foo (lisp)", `(and "repo:foo" "(lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp)"))
 	autogold.Want("repo:foo (lisp lisp())", `(and "repo:foo" "(lisp lisp())") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp lisp())"))
 	autogold.Want("repo:foo (lisp or lisp)", `(and "repo:foo" (or "lisp" "lisp")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp)"))
 	autogold.Want("repo:foo (lisp or lisp())", `(and "repo:foo" (or "lisp" "lisp()")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp())"))
 	autogold.Want("repo:foo (lisp or lisp()", `(and "repo:foo" (or "(lisp" "lisp()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("repo:foo (lisp or lisp()"))
 	autogold.Want("(y or bar())", `(or "y" "bar()") (Literal)`).Equal(t, test("(y or bar())"))
-	autogold.Want("((x or bar(", `(or "((x" "bar(") (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("((x or bar("))
+	autogold.Want("((x or bar(", `(or "((x" "bar(") (HeuristicDanglingParens,Literal)`).Equal(t, test("((x or bar("))
 	autogold.Want("", " (None)").Equal(t, test(""))
 	autogold.Want(" ", " (None)").Equal(t, test(" "))
 	autogold.Want("  ", " (None)").Equal(t, test("  "))
@@ -676,7 +677,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 	autogold.Want(`type:commit message:"a commit message" after:"10 days ago"`, `(and "type:commit" "message:a commit message" "after:10 days ago") (Quoted)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago"`))
 	autogold.Want(`type:commit message:"a commit message" after:"10 days ago" test test2`, `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2")) (Literal,Quoted)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago" test test2`))
 	autogold.Want(`type:commit message:"a com"mit message" after:"10 days ago"`, `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\"")) (Literal,Quoted)`).Equal(t, test(`type:commit message:"a com"mit message" after:"10 days ago"`))
-	autogold.Want(`bar and (foo or x\) ()`, `(or (and "bar" "(foo") (concat "x\\)" "()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test(`bar and (foo or x\) ()`))
+	autogold.Want(`bar and (foo or x\) ()`, `(or (and "bar" "(foo") (concat "x\\)" "()")) (HeuristicDanglingParens,Literal)`).Equal(t, test(`bar and (foo or x\) ()`))
 
 	// For implementation simplicity, behavior preserves whitespace inside parentheses.
 	autogold.Want("repo:foo (lisp    lisp)", `(and "repo:foo" "(lisp    lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp    lisp)"))
@@ -720,4 +721,45 @@ func TestScanBalancedPattern(t *testing.T) {
 	autogold.Want("(foo not bar)", "ERROR").Equal(t, test("(foo not bar)"))
 	autogold.Want("repo:foo AND bar", "ERROR").Equal(t, test("repo:foo AND bar"))
 	autogold.Want("repo:foo bar", "ERROR").Equal(t, test("repo:foo bar"))
+}
+
+func Test_newOperator(t *testing.T) {
+	cases := []struct {
+		query string
+		want  autogold.Value
+	}{{
+		query: `(repo:a and repo:b) (repo:d or repo:e) repo:f`,
+		want:  autogold.Want("parameters", `(and (and "repo:a" "repo:b") (or "repo:d" "repo:e") "repo:f")`),
+	}, {
+		query: `(a and b) and (d or e) and f`,
+		want:  autogold.Want("patterns", `(and (and "a" "b") (or "d" "e") "f")`),
+	}, {
+		query: `a and (b and c)`,
+		want:  autogold.Want("reducible", `(and "a" "b" "c")`),
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			q, err := ParseRegexp(tc.query)
+			require.NoError(t, err)
+
+			got := NewOperator(q, And)
+			tc.want.Equal(t, Q(got).String())
+		})
+	}
+}
+
+func TestParseStandard(t *testing.T) {
+	test := func(input string) string {
+		result, err := Parse(input, SearchTypeStandard)
+		if err != nil {
+			return err.Error()
+		}
+		json, _ := PrettyJSON(result)
+		return json
+	}
+
+	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("anjou /saumur/")))
+	})
 }

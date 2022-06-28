@@ -64,6 +64,7 @@ func NewConfig(now time.Time) Config {
 		runType = runtype.Compute(tag, branch, map[string]string{
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
@@ -111,7 +112,7 @@ func NewConfig(now time.Time) Config {
 		tag = fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
 	default:
 		// Encode branch inside build tag by default.
-		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", strings.ReplaceAll(branch, "/", "-"), buildNumber, now.Format("2006-01-02"), commit)
+		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", sanitizeBranchForDockerTag(branch), buildNumber, now.Format("2006-01-02"), commit)
 	}
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
 		// Add additional patch suffix
@@ -191,12 +192,23 @@ type MessageFlags struct {
 	// SkipHashCompare, if true, tells buildkite to disable skipping of steps that compare
 	// hash output.
 	SkipHashCompare bool
+
+	// ForceReadyForReview, if true will skip the draft pull request check and run the Chromatic steps.
+	// This allows a user to run the job without marking their PR as ready for review
+	ForceReadyForReview bool
 }
 
 // parseMessageFlags gets MessageFlags from the given commit message.
 func parseMessageFlags(msg string) MessageFlags {
 	return MessageFlags{
-		ProfilingEnabled: strings.Contains(msg, "[buildkite-enable-profiling]"),
-		SkipHashCompare:  strings.Contains(msg, "[skip-hash-compare]"),
+		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
+		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
+		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
 	}
+}
+
+func sanitizeBranchForDockerTag(branch string) string {
+	branch = strings.ReplaceAll(branch, "/", "-")
+	branch = strings.ReplaceAll(branch, "+", "-")
+	return branch
 }

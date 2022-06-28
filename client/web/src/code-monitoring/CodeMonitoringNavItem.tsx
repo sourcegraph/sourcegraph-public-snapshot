@@ -4,7 +4,7 @@ import { LinkWithIcon } from '../components/LinkWithIcon'
 
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
 
-export const CodeMonitoringNavItem: React.FunctionComponent = () => (
+export const CodeMonitoringNavItem: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <LinkWithIcon
         to="/code-monitoring"
         text="Monitoring"

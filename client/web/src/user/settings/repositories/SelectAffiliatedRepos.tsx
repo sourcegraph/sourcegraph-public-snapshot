@@ -6,7 +6,7 @@ import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageSelector, RadioButton, Select, Link } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton, Select, Link, Checkbox, Text } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -93,7 +93,7 @@ const initialSelectionState = {
 /**
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
-export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
+export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     onRepoSelectionModeChange,
     repoSelectionMode,
@@ -330,10 +330,10 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     onChange={handleRadioSelect}
                     label={
                         <div className="d-flex flex-column ml-2">
-                            <p className="mb-0">Sync all repositories</p>
-                            <p className="font-weight-normal text-muted">
+                            <Text className="mb-0">Sync all repositories</Text>
+                            <Text weight="regular" className="text-muted">
                                 Will sync all current and future public and private repositories
-                            </p>
+                            </Text>
                         </div>
                     }
                 />
@@ -347,7 +347,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     onChange={handleRadioSelect}
                     label={
                         <div className="d-flex flex-column ml-2">
-                            <p className="mb-0">Sync selected repositories</p>
+                            <Text className="mb-0">Sync selected repositories</Text>
                         </div>
                     }
                 />
@@ -358,7 +358,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const filterControls: JSX.Element = (
         <div className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
+                <Text className="text-xl-center text-nowrap mr-2">Code Host:</Text>
                 <Select
                     name="code-host"
                     aria-label="select code host type"
@@ -371,7 +371,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 </Select>
             </div>
             <FilterInput
-                className="form-control"
                 type="search"
                 placeholder="Filter..."
                 name="query"
@@ -486,27 +485,27 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     as="td"
                     className="p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
-                    <input
+                    <Checkbox
                         id="select-all-repos"
                         className="mr-3"
-                        type="checkbox"
                         checked={areAllReposSelected()}
                         onChange={selectAll}
+                        label={
+                            <small
+                                className={classNames({
+                                    'text-muted': selectionState.repos.size === 0,
+                                    'text-body': selectionState.repos.size !== 0,
+                                    'mb-0': true,
+                                })}
+                            >
+                                {selectionState.repos.size === 0
+                                    ? 'Select all'
+                                    : `${selectionState.repos.size} ${
+                                          selectionState.repos.size === 1 ? 'repository' : 'repositories'
+                                      } selected`}
+                            </small>
+                        }
                     />
-                    <label
-                        htmlFor="select-all-repos"
-                        className={classNames({
-                            'text-muted': selectionState.repos.size === 0,
-                            'text-body': selectionState.repos.size !== 0,
-                            'mb-0': true,
-                        })}
-                    >
-                        {(selectionState.repos.size > 0 && (
-                            <small>{`${selectionState.repos.size} ${
-                                selectionState.repos.size === 1 ? 'repository' : 'repositories'
-                            } selected`}</small>
-                        )) || <small>Select all</small>}
-                    </label>
                 </RepositoryNodeContainer>
             </tr>
             {filteredRepos.map((repo, index) => {
@@ -553,7 +552,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     <ListItemContainer key="from-code-hosts">
                         {externalServices && !hasCodeHosts ? (
                             <div className={styles.noCodeHosts}>
-                                <p>
+                                <Text>
                                     <Link
                                         to="/welcome"
                                         onClick={event => {
@@ -565,7 +564,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                                         Add a code host
                                     </Link>{' '}
                                     to add repositories.
-                                </p>
+                                </Text>
                             </div>
                         ) : (
                             <div>

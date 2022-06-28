@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 interface FeedbackTextProps {
     /**
@@ -14,8 +14,12 @@ interface FeedbackTextProps {
 /**
  * An abstract UI component which renders a text for feedback.
  */
-export const FeedbackText: React.FunctionComponent<FeedbackTextProps> = ({ className, footerText, headerText }) => (
-    <p className={className}>
+export const FeedbackText: React.FunctionComponent<React.PropsWithChildren<FeedbackTextProps>> = ({
+    className,
+    footerText,
+    headerText,
+}) => (
+    <Text className={className}>
         {headerText || 'Questions/feedback?'} Contact us at{' '}
         <Link to="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
             @sourcegraph
@@ -29,5 +33,5 @@ export const FeedbackText: React.FunctionComponent<FeedbackTextProps> = ({ class
             public issue tracker
         </Link>
         . {footerText}
-    </p>
+    </Text>
 )

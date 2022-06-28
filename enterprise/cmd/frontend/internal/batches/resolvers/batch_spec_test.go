@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -31,13 +33,14 @@ func TestBatchSpecResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -84,7 +87,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +96,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 
-	var unmarshaled interface{}
+	var unmarshaled any
 	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
 	if err != nil {
 		t.Fatal(err)
@@ -153,7 +156,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		State: "COMPLETED",
 	}
 
-	input := map[string]interface{}{"batchSpec": apiID}
+	input := map[string]any{"batchSpec": apiID}
 	{
 		var response struct{ Node apitest.BatchSpec }
 		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
@@ -216,7 +219,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(cstore).Delete(ctx, userID)
+	err = database.UsersWith(logger, cstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +239,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(cstore).HardDelete(ctx, userID)
+	err = database.UsersWith(logger, cstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,8 +261,9 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
@@ -287,12 +291,12 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var unmarshaled interface{}
+	var unmarshaled any
 	err = yaml.UnmarshalValidate(schema.BatchSpecJSON, []byte(spec.RawSpec), &unmarshaled)
 	if err != nil {
 		t.Fatal(err)
@@ -389,7 +393,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
-	want.ViewerCanRetry = true
+	// Nothing to retry
+	want.ViewerCanRetry = false
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed
@@ -432,12 +437,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "CANCELED"
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
 	want.ViewerCanRetry = true
-	want.FailureMessage = `Failures:
-
-* canceled
-* canceled
-* canceled
-`
+	want.FailureMessage = ""
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed, but produced invalid changeset specs
@@ -499,7 +499,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
 	t.Helper()
 
-	input := map[string]interface{}{"batchSpec": id}
+	input := map[string]any{"batchSpec": id}
 
 	var response struct{ Node apitest.BatchSpec }
 

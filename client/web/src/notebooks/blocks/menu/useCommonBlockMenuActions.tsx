@@ -5,7 +5,7 @@ import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
 import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 
-import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
@@ -21,7 +21,7 @@ export const useCommonBlockMenuActions = ({
     onDeleteBlock,
     onDuplicateBlock,
 }: Pick<BlockProps, 'id' | 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'>): BlockMenuAction[] => {
-    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
     const modifierKeyLabel = useModifierKeyLabel()
     const isInputFocused = useIsBlockInputFocused(id)
     return useMemo(() => {
@@ -32,28 +32,28 @@ export const useCommonBlockMenuActions = ({
             {
                 type: 'button',
                 label: 'Duplicate',
-                icon: <Icon as={ContentDuplicateIcon} />,
+                icon: <Icon aria-hidden={true} as={ContentDuplicateIcon} />,
                 onClick: onDuplicateBlock,
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
                 type: 'button',
                 label: 'Move Up',
-                icon: <Icon as={ArrowUpIcon} />,
+                icon: <Icon aria-hidden={true} as={ArrowUpIcon} />,
                 onClick: id => onMoveBlock(id, 'up'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
                 type: 'button',
                 label: 'Move Down',
-                icon: <Icon as={ArrowDownIcon} />,
+                icon: <Icon aria-hidden={true} as={ArrowDownIcon} />,
                 onClick: id => onMoveBlock(id, 'down'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
                 type: 'button',
                 label: 'Delete',
-                icon: <Icon as={DeleteIcon} />,
+                icon: <Icon aria-hidden={true} as={DeleteIcon} />,
                 onClick: onDeleteBlock,
                 keyboardShortcutLabel: !isInputFocused ? (isMacPlatform ? '⌘ + ⌫' : 'Del') : '',
             },

@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/singleflight"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,13 +30,13 @@ import (
 type Syncer struct {
 	Sourcer Sourcer
 	Worker  *workerutil.Worker
-	Store   *Store
+	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
 
 	// Logger if non-nil is logged to.
-	Logger log15.Logger
+	Logger log.Logger
 
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
@@ -64,7 +65,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
+func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -79,7 +80,7 @@ func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle().DB(), &syncHandler{
+	worker, resetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -100,7 +101,7 @@ func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 		if !conf.Get().DisableAutoCodeHostSyncs {
 			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
 			if err != nil && s.Logger != nil {
-				s.Logger.Error("Enqueuing sync jobs", "error", err)
+				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
 		sleep(ctx, opts.EnqueueInterval())
@@ -111,11 +112,11 @@ func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 
 type syncHandler struct {
 	syncer          *Syncer
-	store           *Store
+	store           Store
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
@@ -180,15 +181,15 @@ func (e ErrAccountSuspended) AccountSuspended() bool {
 // of s.Synced will receive a list of repos. In particular this is so that the
 // git update scheduler can start working straight away on existing
 // repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Store) {
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store) {
 	if s.Synced == nil {
 		return
 	}
 
-	stored, err := store.RepoStore.List(ctx, database.ReposListOptions{})
+	stored, err := store.RepoStore().List(ctx, database.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
-			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", log.Error(err))
 		}
 		return
 	}
@@ -259,10 +260,11 @@ func (d Diff) Len() int {
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
+	logger := s.Logger.With(log.String("name", string(name)), log.Bool("background", background))
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
-	repo, err = s.Store.RepoStore.GetByName(ctx, name)
+	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
@@ -293,22 +295,21 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 			// We don't care about the return value here, but we still want to ensure that
 			// only one is in flight at a time.
-			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
-				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
-				if err != nil {
-					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
-				}
-				return updatedRepo, nil
+			_, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
+				return s.syncRepo(ctx, codehost, name, repo)
 			})
+			if err != nil {
+				logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
+			}
 		}()
 		return repo, nil
 	}
 
-	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
+	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
+		logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -324,7 +325,7 @@ func (s *Syncer) syncRepo(
 	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
 	defer func() { save(svc, err) }()
 
-	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
+	svcs, err := s.Store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
 		// Since package host external services have the set of repositories to sync in
 		// the lsif_dependency_repos table, we can lazy-sync individual repos without wiping them
@@ -347,7 +348,7 @@ func (s *Syncer) syncRepo(
 
 	svc = svcs[0]
 
-	src, err := s.Sourcer(svc)
+	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
 		return nil, err
 	}
@@ -364,16 +365,15 @@ func (s *Syncer) syncRepo(
 
 	if stored != nil {
 		defer func() {
-			if errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
-				errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) {
+			if isDeleteableRepoError(err) {
 				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
 				if err2 != nil {
-					s.log().Error(
+					s.Logger.Error(
 						"SyncRepo failed to delete",
-						"svc", svc.DisplayName,
-						"repo", name,
-						"cause", err,
-						"error", err2,
+						log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)),
+						log.String("repo", string(name)),
+						log.NamedError("cause", err),
+						log.Error(err2),
 					)
 				}
 				s.notifyDeleted(ctx, stored.ID)
@@ -395,6 +395,13 @@ func (s *Syncer) syncRepo(
 	}
 
 	return repo, nil
+}
+
+// isDeleteableRepoError checks whether the error returned from a repo sync
+// signals that we can safely delete the repo
+func isDeleteableRepoError(err error) bool {
+	return errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
+		errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) || errcode.IsUnavailableForLegalReasons(err)
 }
 
 // RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
@@ -473,7 +480,8 @@ func (s *Syncer) SyncExternalService(
 	externalServiceID int64,
 	minSyncInterval time.Duration,
 ) (err error) {
-	s.log().Info("Syncing external service", "serviceID", externalServiceID)
+	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
+	logger.Info("syncing external service")
 
 	// Ensure the job field is recorded when monitoring external API calls
 	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
@@ -484,10 +492,31 @@ func (s *Syncer) SyncExternalService(
 
 	// We don't use tx here as the sourcing process below can be slow and we don't
 	// want to hold a lock on the external_services table for too long.
-	svc, err = s.Store.ExternalServiceStore.GetByID(ctx, externalServiceID)
+	svc, err = s.Store.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// From this point we always want to make a best effort attempt to update the
+	// service timestamps
+	var modified bool
+	defer func() {
+		now := s.Now()
+		interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, err)
+
+		svc.NextSyncAt = now.Add(interval)
+		svc.LastSyncAt = now
+
+		// We only want to log this error, not return it
+		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+			logger.Error("upserting external service", log.Error(err))
+		}
+
+		logger.Debug("synced external service", log.Duration("backoff duration", interval))
+	}()
 
 	// We have fail-safes in place to prevent enqueuing sync jobs for cloud default
 	// external services, but in case those fail to prevent a sync for any reason,
@@ -504,28 +533,25 @@ func (s *Syncer) SyncExternalService(
 	// Organization owned external services are always considered allowed.
 	allowed := func(*types.Repo) bool { return true }
 	if svc.NamespaceUserID != 0 {
-		if mode, err := database.UsersWith(s.Store).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
+		if mode, err := database.UsersWith(s.Logger, s.Store).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
 			return errors.Wrap(err, "checking if user can add private code")
 		} else if mode != conf.ExternalServiceModeAll {
 			allowed = func(r *types.Repo) bool { return !r.Private }
 		}
 	}
 
-	src, err := s.Sourcer(svc)
+	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
 		return err
 	}
 
 	results := make(chan SourceResult)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
 
-	modified := false
 	seen := make(map[api.RepoID]struct{})
 	var errs error
 	fatal := func(err error) bool {
@@ -534,12 +560,12 @@ func (s *Syncer) SyncExternalService(
 			errcode.IsAccountSuspended(err)
 	}
 
+	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
 	for res := range results {
 		if err := res.Err; err != nil {
-			s.log().Error("syncer: error from codehost",
-				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
+			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 
@@ -559,7 +585,7 @@ func (s *Syncer) SyncExternalService(
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
-			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
+			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 
 			// Stop syncing this external service as soon as we know repository limits for user or
@@ -599,30 +625,25 @@ func (s *Syncer) SyncExternalService(
 		var deletedErr error
 		deleted, deletedErr = s.delete(ctx, svc, seen)
 		if deletedErr != nil {
-			s.log().Warn("syncer: failed to delete some repos",
-				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", deletedErr, "deleted", deleted)
+			logger.Warn("failed to delete some repos",
+				log.Int("seen", len(seen)),
+				log.Int("deteled", deleted),
+				log.Error(deletedErr),
+			)
 
 			errs = errors.Append(errs, errors.Wrap(deletedErr, "some repos couldn't be deleted"))
 		}
 
 		if deleted > 0 {
-			s.log().Warn("syncer: deleted not seen repos",
-				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "deleted", deleted, "error", err)
+			logger.Warn("deleted not seen repos",
+				log.Int("seen", len(seen)),
+				log.Int("deleted", deleted),
+				log.Error(err),
+			)
 		}
 	}
 
-	now := s.Now()
 	modified = modified || deleted > 0
-	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs)
-
-	s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
-	svc.NextSyncAt = now.Add(interval)
-	svc.LastSyncAt = now
-
-	err = s.Store.ExternalServiceStore.Upsert(ctx, svc)
-	if err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
-	}
 
 	return errs
 }
@@ -665,7 +686,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 	}()
 
-	stored, err := tx.RepoStore.List(ctx, database.ReposListOptions{
+	stored, err := tx.RepoStore().List(ctx, database.ReposListOptions{
 		Names:          []string{string(sourced.Name)},
 		ExternalRepos:  []api.ExternalRepoSpec{sourced.ExternalRepo},
 		IncludeBlocked: true,
@@ -690,7 +711,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		// invariant: conflicting can't be nil due to our database constraints
-		if err = tx.RepoStore.Delete(ctx, conflicting.ID); err != nil {
+		if err = tx.RepoStore().Delete(ctx, conflicting.ID); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to delete conflicting repo")
 		}
 
@@ -757,19 +778,6 @@ func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen ma
 	s.notifyDeleted(ctx, deleted...)
 
 	return len(deleted), err
-}
-
-var discardLogger = func() log15.Logger {
-	l := log15.New()
-	l.SetHandler(log15.DiscardHandler())
-	return l
-}()
-
-func (s *Syncer) log() log15.Logger {
-	if s.Logger == nil {
-		return discardLogger
-	}
-	return s.Logger
 }
 
 func observeDiff(diff Diff) {
@@ -860,6 +868,13 @@ func syncErrorReason(err error) string {
 		return "forbidden"
 	case errcode.IsTemporary(err):
 		return "temporary"
+	case strings.Contains(err.Error(), "expected path in npm/(scope/)?name"):
+		// This is a known issue which we can filter out for now
+		return "invalid_npm_path"
+	case strings.Contains(err.Error(), "internal rate limit exceeded"):
+		// We want to identify these as it's not an issue communicating with the code
+		// host and is most likely caused by temporary traffic spikes.
+		return "internal_rate_limit"
 	default:
 		return "unknown"
 	}

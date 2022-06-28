@@ -3,16 +3,20 @@
 ## Documentation
 
 - [How to write great docs](https://documentation.divio.com/) (watch the video)
+- [How to maintain the Tech Radar](maintain-tech-radar.md)
 
 ## New features
 
 - [How to add support for a language](add_support_for_a_language.md)
 - [Release Browser Extensions](releasing_browser_extensions.md)
+- [How to implement the authentication process for an IDE extension](ide_auth_flow.md)
 
 ## Implementing Sourcegraph
 
 - [Developing the product documentation](documentation_implementation.md)
 - [Observability](../background-information/observability/index.md)
+  - [How to add observability](add_observability.md)
+  - [How to add logging](add_logging.md)
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
   - [How to enable continuous profiling in production](profiling_continuous.md)

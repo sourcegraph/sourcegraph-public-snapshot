@@ -31,7 +31,9 @@ export interface BulkOperationsTabProps {
     batchChangeID: Scalars['ID']
 }
 
-export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({ batchChangeID }) => {
+export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<BulkOperationsTabProps>> = ({
+    batchChangeID,
+}) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useBulkOperationsListConnection(batchChangeID)
 
     return (
@@ -48,6 +50,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
                     <SummaryContainer centered={true}>
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
+                            centered={true}
                             first={BATCH_COUNT}
                             connection={connection}
                             noun="bulk operation"
@@ -55,7 +58,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
                             hasNextPage={hasNextPage}
                             emptyElement={<EmptyBulkOperationsListElement />}
                         />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
@@ -63,7 +66,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
     )
 }
 
-const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
+const EmptyBulkOperationsListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
         <MapSearchIcon className="icon" />
         <div className="pt-2">No bulk operations have been run on this batch change.</div>

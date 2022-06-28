@@ -5,41 +5,53 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker/operations.md#upgrade) to upgrade your instance.
+3. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.40 -> 3.41
+
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+
+## 3.39 -> 3.40.2
+
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
+
 ## 3.39.0 -> 3.39.1
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38.1).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39.1).*
 
 ## 3.38 -> 3.39
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
 ## 3.38.0 -> 3.38.1
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38.1).*
 
 ## 3.37 -> 3.38
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
 ## 3.36 -> 3.37
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.35 -> 3.36
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.35.0 -> 3.35.1
 **Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
@@ -52,15 +64,15 @@ There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migr
 
 ## 3.33 -> 3.34
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.32 -> 3.33
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.31 -> 3.32
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.30 -> 3.31
 
@@ -80,11 +92,11 @@ You can always find the version number of the latest release at [docs.sourcegrap
 
 ## 3.28 -> 3.29
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.27 -> 3.28
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 ## 3.26 -> 3.27
 
@@ -94,7 +106,7 @@ If you are using an external database, [upgrade your database](https://docs.sour
 
 ## 3.25 -> 3.26
 
-Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
@@ -109,11 +121,11 @@ Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade)
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
-### If you wish to keep existing LSIF data
+### If you wish to keep existing precise code intel indexes
 
-> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
+> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the precise code intel data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
 
-If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
+If you had precise code intel indexes uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing indexes into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
 > Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
 
@@ -127,4 +139,4 @@ In Sourcegraph version 3.20, we would automatically generate a secret key file (
 
 ## 3.16 -> 3.17
 
-- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](../install/docker/operations.md#upgrade) listed below.
+- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade) listed below.

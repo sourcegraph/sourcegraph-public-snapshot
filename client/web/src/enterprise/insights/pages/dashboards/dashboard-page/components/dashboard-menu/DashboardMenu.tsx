@@ -26,7 +26,7 @@ export interface DashboardMenuProps {
     className?: string
 }
 
-export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
+export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<DashboardMenuProps>> = props => {
     const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
 
     const { dashboard: dashboardPermission } = useUiFeatures()
@@ -41,6 +41,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 variant="icon"
                 outline={true}
                 className={classNames(className, styles.triggerButton)}
+                aria-label="dashboard context menu"
             >
                 <VisuallyHidden>Dashboard options</VisuallyHidden>
                 <DotsVerticalIcon size={16} />
@@ -50,12 +51,13 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 {menuPermissions.configure.display && (
                     <MenuItem
                         as={Button}
+                        outline={true}
                         disabled={menuPermissions.configure.disabled}
                         data-tooltip={menuPermissions.configure.tooltip}
                         data-placement="right"
                         className={styles.menuItem}
+                        aria-label="configure dashboard"
                         onSelect={() => onSelect(DashboardMenuAction.Configure)}
-                        outline={true}
                     >
                         Configure dashboard
                     </MenuItem>

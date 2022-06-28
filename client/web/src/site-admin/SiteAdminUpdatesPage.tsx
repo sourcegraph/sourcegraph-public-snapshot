@@ -7,7 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert, Icon, Code, H2, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -20,7 +20,7 @@ interface Props extends TelemetryProps {}
 /**
  * A page displaying information about available updates for the server.
  */
-export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
@@ -37,7 +37,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
     return (
         <div>
             <PageTitle title="Updates - Admin" />
-            <h2>Updates</h2>
+            <H2>Updates</H2>
             {isErrorLike(state) && <ErrorAlert error={state} />}
             {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
                 <div>
@@ -49,7 +49,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
                             <Alert className={styles.alert} variant="success">
-                                <Icon as={CloudDownloadIcon} /> Update available:{' '}
+                                <Icon as={CloudDownloadIcon} aria-hidden={true} /> Update available:{' '}
                                 <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
                             </Alert>
                         ) : (
@@ -73,7 +73,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                 </Alert>
             )}
 
-            <p className="site-admin-updates_page__info">
+            <Text className="site-admin-updates_page__info">
                 <small>
                     <strong>Current product version:</strong> {state.productVersion} ({state.buildVersion})
                 </small>
@@ -90,15 +90,15 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                 <br />
                 <small>
                     <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
-                    <Link to="/site-admin/configuration">Configure</Link> <code>update.channel</code> to{' '}
+                    <Link to="/site-admin/configuration">Configure</Link> <Code>update.channel</Code> to{' '}
                     {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                 </small>
-            </p>
-            <p>
+            </Text>
+            <Text>
                 <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
                     Sourcegraph changelog
                 </Link>
-            </p>
+            </Text>
         </div>
     )
 }

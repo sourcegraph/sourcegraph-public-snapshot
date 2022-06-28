@@ -7,11 +7,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,7 +22,9 @@ func TestListIndexableRepos(t *testing.T) {
 		t.Skip()
 	}
 
-	createExternalService := func(ctx context.Context, db dbutil.DB) *types.ExternalService {
+	logger := logtest.Scoped(t)
+
+	createExternalService := func(ctx context.Context, db database.DB) *types.ExternalService {
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
@@ -30,7 +33,7 @@ func TestListIndexableRepos(t *testing.T) {
 			DisplayName: "GITHUB #1",
 			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		}
-		err := database.ExternalServices(db).Create(ctx, confGet, es)
+		err := db.ExternalServices().Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -38,7 +41,7 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Run("user-added repos", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		ctx := context.Background()
 
 		es := createExternalService(ctx, db)
@@ -76,7 +79,7 @@ func TestListIndexableRepos(t *testing.T) {
 		}
 
 		t.Run("List ALL repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
+			repos, err := NewIndexableReposLister(logger, db.Repos()).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -108,7 +111,7 @@ func TestListIndexableRepos(t *testing.T) {
 		})
 
 		t.Run("List only public indexable repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(database.Repos(db)).ListPublic(ctx)
+			repos, err := NewIndexableReposLister(logger, db.Repos()).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -137,7 +140,8 @@ func TestListIndexableRepos(t *testing.T) {
 }
 
 func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
-	db := dbtest.NewDB(b)
+	logger := logtest.Scoped(b)
+	db := database.NewDB(logger, dbtest.NewDB(logger, b))
 
 	ctx := context.Background()
 	select {
@@ -147,7 +151,7 @@ func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
+		_, err := NewIndexableReposLister(logger, db.Repos()).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

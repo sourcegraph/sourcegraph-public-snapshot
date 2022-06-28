@@ -27,7 +27,7 @@ interface SearchSidebarViewProps
     filters?: Filter[] | undefined
 }
 
-export const SearchSidebarView: React.FunctionComponent<SearchSidebarViewProps> = React.memo(
+export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<SearchSidebarViewProps>> = React.memo(
     ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
         const useSearchQueryState: SearchQueryStateStore = useMemo(
             () =>

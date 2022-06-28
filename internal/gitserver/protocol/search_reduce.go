@@ -162,15 +162,19 @@ func mergeOrRegexp(n Node) Node {
 		return n
 	}
 
+	union := func(left, right string) string {
+		return "(?:" + left + ")|(?:" + right + ")"
+	}
+
 	unmergeable := operator.Operands[:0]
-	mergeable := map[interface{}]Node{}
+	mergeable := map[any]Node{}
 	for _, operand := range operator.Operands {
 		switch v := operand.(type) {
 		case *AuthorMatches:
 			key := AuthorMatches{IgnoreCase: v.IgnoreCase}
 			if prev, ok := mergeable[key]; ok {
 				mergeable[key] = &AuthorMatches{
-					Expr:       "(" + prev.(*AuthorMatches).Expr + ")|(" + v.Expr + ")",
+					Expr:       union(prev.(*AuthorMatches).Expr, v.Expr),
 					IgnoreCase: v.IgnoreCase,
 				}
 			} else {
@@ -180,7 +184,7 @@ func mergeOrRegexp(n Node) Node {
 			key := CommitterMatches{IgnoreCase: v.IgnoreCase}
 			if prev, ok := mergeable[key]; ok {
 				mergeable[key] = &CommitterMatches{
-					Expr:       "(" + prev.(*CommitterMatches).Expr + ")|(" + v.Expr + ")",
+					Expr:       union(prev.(*CommitterMatches).Expr, v.Expr),
 					IgnoreCase: v.IgnoreCase,
 				}
 			} else {
@@ -190,7 +194,7 @@ func mergeOrRegexp(n Node) Node {
 			key := MessageMatches{IgnoreCase: v.IgnoreCase}
 			if prev, ok := mergeable[key]; ok {
 				mergeable[key] = &MessageMatches{
-					Expr:       "(" + prev.(*MessageMatches).Expr + ")|(" + v.Expr + ")",
+					Expr:       union(prev.(*MessageMatches).Expr, v.Expr),
 					IgnoreCase: v.IgnoreCase,
 				}
 			} else {
@@ -200,7 +204,7 @@ func mergeOrRegexp(n Node) Node {
 			key := DiffMatches{IgnoreCase: v.IgnoreCase}
 			if prev, ok := mergeable[key]; ok {
 				mergeable[key] = &DiffMatches{
-					Expr:       "(" + prev.(*DiffMatches).Expr + ")|(" + v.Expr + ")",
+					Expr:       union(prev.(*DiffMatches).Expr, v.Expr),
 					IgnoreCase: v.IgnoreCase,
 				}
 			} else {
@@ -210,7 +214,7 @@ func mergeOrRegexp(n Node) Node {
 			key := DiffModifiesFile{IgnoreCase: v.IgnoreCase}
 			if prev, ok := mergeable[key]; ok {
 				mergeable[key] = &DiffModifiesFile{
-					Expr:       "(" + prev.(*DiffModifiesFile).Expr + ")|(" + v.Expr + ")",
+					Expr:       union(prev.(*DiffModifiesFile).Expr, v.Expr),
 					IgnoreCase: v.IgnoreCase,
 				}
 			} else {

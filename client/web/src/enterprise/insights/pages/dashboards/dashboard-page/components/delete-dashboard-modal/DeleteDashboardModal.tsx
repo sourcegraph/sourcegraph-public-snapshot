@@ -6,7 +6,7 @@ import { useHistory } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, H2 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CustomInsightDashboard } from '../../../../../core/types'
@@ -20,7 +20,9 @@ export interface DeleteDashboardModalProps {
     onClose: () => void
 }
 
-export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalProps> = props => {
+export const DeleteDashboardModal: React.FunctionComponent<
+    React.PropsWithChildren<DeleteDashboardModalProps>
+> = props => {
     const { dashboard, onClose } = props
     const history = useHistory()
 
@@ -43,7 +45,7 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
                 <CloseIcon />
             </Button>
 
-            <h2 className="text-danger">Delete ”{dashboard.title}”</h2>
+            <H2 className="text-danger">Delete ”{dashboard.title}”</H2>
 
             <span className="d-block mb-4">
                 This can't be undone. You will still be able to access insights from this dashboard in ”All insights”.

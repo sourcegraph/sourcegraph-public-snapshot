@@ -3,17 +3,20 @@ package queryrunner
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -36,7 +39,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		numHandlers = 1
@@ -53,11 +56,11 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 	defaultRateLimit := rate.Limit(10.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
-	limiter := rate.NewLimiter(getRateLimit(), 1)
+	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
 
 	go conf.Watch(func() {
 		val := getRateLimit()
-		log15.Info(fmt.Sprintf("Updating insights/query-worker rate limit value=%v", val))
+		logger.Info("Updating insights/query-worker rate limit", log.Int("value", int(val)))
 		limiter.SetLimit(val)
 	})
 
@@ -69,19 +72,37 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 	}, func() float64 {
 		count, err := workerStore.QueuedCount(context.Background(), false, nil)
 		if err != nil {
-			log15.Error("Failed to get queued job count", "error", err)
+			logger.Error("Failed to get queued job count", log.Error(err))
 		}
 
 		return float64(count)
 	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
-		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
+		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
 		insightsStore:   insightsStore,
+		repoStore:       repoStore,
 		limiter:         limiter,
-		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
-		computeSearch:   query.ComputeSearch,
+		search:          query.Search,
+		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
+			decoder, streamResults := streaming.TabulationDecoder()
+			err := streaming.Search(ctx, query, decoder)
+			if err != nil {
+				return nil, errors.Wrap(err, "streaming.Search")
+			}
+			return streamResults, nil
+		},
+		computeSearch: query.ComputeSearch,
+		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
+			decoder, streamResults := streaming.ComputeDecoder()
+			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
+			if err != nil {
+				return nil, errors.Wrap(err, "streaming.Compute")
+			}
+			return streamResults, nil
+		},
 	}, options)
 }
 

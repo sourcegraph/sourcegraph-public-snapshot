@@ -38,12 +38,15 @@ export enum IssueLabel {
     PATCH = 'patch',
     MANAGED = 'managed-instances',
     DEVOPS_TEAM = 'team/devops',
+    SECURITY_TEAM = 'team/security',
+    RELEASE_BLOCKER = 'release-blocker',
 }
 
 enum IssueTitleSuffix {
     RELEASE_TRACKING = 'release tracking issue',
     PATCH_TRACKING = 'patch release tracking issue',
     MANAGED_TRACKING = 'upgrade managed instances tracking issue',
+    SECURITY_TRACKING = 'container image vulnerability assessment tracking issue',
 }
 
 /**
@@ -79,7 +82,7 @@ interface IssueTemplateArguments {
     /**
      * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
      */
-    oneWorkingDayBeforeRelease: Date
+    threeWorkingDaysBeforeRelease: Date
     /**
      * Available as `$RELEASE_DATE`
      */
@@ -100,25 +103,32 @@ const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/patch_release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const upgradeManagedInstanceIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
     }
-    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+    const securityAssessmentIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'handbook',
+        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
+        titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
+    }
+    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue, securityAssessmentIssue }
 }
 
 function dateMarkdown(date: Date, name: string): string {
@@ -128,7 +138,7 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    { version, oneWorkingDayBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
+    { version, threeWorkingDaysBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -138,8 +148,8 @@ async function execTemplate(
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
         .replace(
-            /\$ONE_WORKING_DAY_BEFORE_RELEASE/g,
-            dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${name} release`)
+            /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
+            dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
         )
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
         .replace(
@@ -164,14 +174,14 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
-    oneWorkingDayBeforeRelease,
+    threeWorkingDaysBeforeRelease,
     oneWorkingDayAfterRelease,
     dryRun,
 }: {
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
-    oneWorkingDayBeforeRelease: Date
+    threeWorkingDaysBeforeRelease: Date
     oneWorkingDayAfterRelease: Date
     dryRun: boolean
 }): Promise<MaybeIssue[]> {
@@ -207,7 +217,7 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
-            oneWorkingDayBeforeRelease,
+            threeWorkingDaysBeforeRelease,
             oneWorkingDayAfterRelease,
         })
         const issue = await ensureIssue(
@@ -343,7 +353,7 @@ export async function commentOnIssue(client: Octokit, issue: Issue, body: string
         owner: issue.owner,
         repo: issue.repo,
     })
-    return comment.data.url
+    return comment.data.html_url
 }
 
 async function closeIssue(client: Octokit, issue: Issue): Promise<void> {

@@ -30,7 +30,7 @@ type cloneURLResolver struct {
 
 // cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived
 // from the site config
-var cloneURLResolvers = conf.Cached(func() interface{} {
+var cloneURLResolvers = conf.Cached(func() any {
 	cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
 	var resolvers []*cloneURLResolver
 	for _, c := range cloneURLConfig {

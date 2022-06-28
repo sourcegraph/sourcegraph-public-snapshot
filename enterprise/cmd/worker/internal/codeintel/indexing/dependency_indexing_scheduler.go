@@ -2,16 +2,17 @@ package indexing
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -34,7 +35,7 @@ func NewDependencyIndexingScheduler(
 	externalServiceStore ExternalServiceStore,
 	repoUpdaterClient RepoUpdaterClient,
 	gitserverClient GitserverClient,
-	enqueuer IndexEnqueuer,
+	enqueuer *autoindexing.Service,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	workerMetrics workerutil.WorkerMetrics,
@@ -74,7 +75,7 @@ var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
 // recently completed processing. Each moniker is interpreted according to its
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
-func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
+func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	if !autoIndexingEnabled() || disableIndexScheduler {
 		return nil
 	}
@@ -101,7 +102,12 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 				return errors.Wrap(err, "store.Requeue")
 			}
 
-			log15.Warn("Requeued dependency indexing job (external services not yet updated)", "id", job.ID, "outdated_services", outdatedServices)
+			entries := make([]log.Field, 0, len(outdatedServices))
+			for id, d := range outdatedServices {
+				entries = append(entries, log.Duration(fmt.Sprintf("%d", id), d))
+			}
+			logger.Warn("Requeued dependency indexing job (external services not yet updated)",
+				log.Object("outdated_services", entries...))
 			return nil
 		}
 	}
@@ -134,7 +140,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			Version: packageReference.Package.Version,
 		}
 
-		repoName, _, ok := enqueuer.InferRepositoryAndRevision(pkg)
+		repoName, _, ok := autoindexing.InferRepositoryAndRevision(pkg)
 		if !ok {
 			continue
 		}

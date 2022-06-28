@@ -67,6 +67,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Overview
 
 - [Tech stack](background-information/tech_stack.md)
+- [Current Sourcegraph tech radar](https://radar.thoughtworks.com/?sheetId=https%3A%2F%2Fraw.githubusercontent.com%2Fsourcegraph%2Fsourcegraph%2Fmain%2Fdoc%2Fdev%2Fradar%2Ftech-radar.csv) (also see [how to maintain the radar](how-to/maintain-tech-radar.md))
 
 ### [Architecture](background-information/architecture/index.md)
 
@@ -76,6 +77,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Development
 
 - [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
+  - [Full `sg` reference](background-information/sg/reference.md)
 - [Developing the web clients](background-information/web/index.md)
   - [Developing the web app](background-information/web/web_app.md)
   - [Developing the code host integrations](background-information/web/code_host_integrations.md)
@@ -158,12 +160,15 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ### Observability
 
+- [How to add observability](how-to/add_observability.md)
+- [How to add logging](how-to/add_logging.md)
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
 
 ### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
+- [Architecture Decision Records (ADRs)](adr/index.md)
 
 ### Executors
 

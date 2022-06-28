@@ -20,7 +20,7 @@ export interface HistorySidebarProps extends WebviewPageProps {
 /**
  * Search history sidebar for "home" page for authenticated users.
  */
-export const HistoryHomeSidebar: React.FunctionComponent<HistorySidebarProps> = props => (
+export const HistoryHomeSidebar: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = props => (
     <div className={classNames(styles.sidebarContainer)}>
         <SavedSearchesSection {...props} />
         <RecentSearchesSection {...props} />

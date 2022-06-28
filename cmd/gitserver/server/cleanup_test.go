@@ -18,6 +18,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -34,8 +36,9 @@ const (
 func (s *Server) testSetup(t *testing.T) {
 	t.Helper()
 	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	db := dbtest.NewDB(s.Logger, t)
+	s.DB = database.NewDB(s.Logger, db)
+	s.Hostname = "gitserver-0"
 }
 
 func TestCleanup_computeStats(t *testing.T) {
@@ -62,18 +65,20 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root,
+		Logger: logtest.Scoped(t),
+	}
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
 insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
-insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
-insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
+update gitserver_repos set shard_id = 1;
+update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
@@ -124,9 +129,11 @@ func TestCleanupInactive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root,
+		Logger: logtest.Scoped(t),
+	}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -134,6 +141,99 @@ func TestCleanupInactive(t *testing.T) {
 	if _, err := os.Stat(repoC); err == nil {
 		t.Error("expected corrupt repoC to be removed during clean up")
 	}
+}
+
+func TestCleanupWrongShard(t *testing.T) {
+	t.Run("wrongShardName", func(t *testing.T) {
+		root := t.TempDir()
+		// should be allocated to shard gitserver-1
+		testRepoD := "testrepo-D"
+
+		repoA := path.Join(root, testRepoA, ".git")
+		cmd := exec.Command("git", "--bare", "init", repoA)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		repoD := path.Join(root, testRepoD, ".git")
+		cmdD := exec.Command("git", "--bare", "init", repoD)
+		if err := cmdD.Run(); err != nil {
+			t.Fatal(err)
+		}
+
+		s := &Server{ReposDir: root,
+			Logger: logtest.Scoped(t),
+		}
+		s.testSetup(t)
+		s.Hostname = "does-not-exist"
+		s.cleanupRepos([]string{"gitserver-0", "gitserver-1"})
+
+		if _, err := os.Stat(repoA); err != nil {
+			t.Error("expected repoA not to be removed")
+		}
+		if _, err := os.Stat(repoD); err != nil {
+			t.Error("expected repoD assigned to different shard not to be removed")
+		}
+	})
+	t.Run("substringShardName", func(t *testing.T) {
+		root := t.TempDir()
+		// should be allocated to shard gitserver-1
+		testRepoD := "testrepo-D"
+
+		repoA := path.Join(root, testRepoA, ".git")
+		cmd := exec.Command("git", "--bare", "init", repoA)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		repoD := path.Join(root, testRepoD, ".git")
+		cmdD := exec.Command("git", "--bare", "init", repoD)
+		if err := cmdD.Run(); err != nil {
+			t.Fatal(err)
+		}
+
+		s := &Server{ReposDir: root,
+			Logger: logtest.Scoped(t),
+		}
+		s.testSetup(t)
+		s.Hostname = "gitserver-0"
+		s.cleanupRepos([]string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"})
+
+		if _, err := os.Stat(repoA); err != nil {
+			t.Error("expected repoA not to be removed")
+		}
+		if _, err := os.Stat(repoD); !os.IsNotExist(err) {
+			t.Error("expected repoD assigned to different shard to be removed")
+		}
+	})
+	t.Run("cleanupDisabled", func(t *testing.T) {
+		root := t.TempDir()
+		// should be allocated to shard gitserver-1
+		testRepoD := "testrepo-D"
+
+		repoA := path.Join(root, testRepoA, ".git")
+		cmd := exec.Command("git", "--bare", "init", repoA)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		repoD := path.Join(root, testRepoD, ".git")
+		cmdD := exec.Command("git", "--bare", "init", repoD)
+		if err := cmdD.Run(); err != nil {
+			t.Fatal(err)
+		}
+
+		s := &Server{ReposDir: root,
+			Logger: logtest.Scoped(t),
+		}
+		s.testSetup(t)
+		wrongShardReposDeleteLimit = -1
+		s.cleanupRepos([]string{"gitserver-0", "gitserver-1"})
+
+		if _, err := os.Stat(repoA); os.IsNotExist(err) {
+			t.Error("expected repoA not to be removed")
+		}
+		if _, err := os.Stat(repoD); err != nil {
+			t.Error("expected repoD assigned to different shard not to be removed", err)
+		}
+	})
 }
 
 // Note that the exact values (e.g. 50 commits) below are related to git's
@@ -186,9 +286,11 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Handler must be invoked for Server side-effects.
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root,
+		Logger: logtest.Scoped(t),
+	}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -300,6 +402,7 @@ func TestCleanupExpired(t *testing.T) {
 	}
 
 	s := &Server{
+		Logger:           logtest.Scoped(t),
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -307,7 +410,7 @@ func TestCleanupExpired(t *testing.T) {
 		},
 	}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	// repos that shouldn't be re-cloned
 	if repoNewTime.Before(modTime(repoNew)) {
@@ -468,9 +571,9 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	isRemoved := func(path string) bool {
 		_, err := os.Stat(path)
@@ -492,7 +595,7 @@ func TestCleanupOldLocks(t *testing.T) {
 func TestSetupAndClearTmp(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 
 	// All non .git paths should become .git
 	mkFiles(t, root,
@@ -554,7 +657,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 func TestSetupAndClearTmp_Empty(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 
 	_, err := s.SetupAndClearTmp()
 	if err != nil {
@@ -566,6 +669,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
+	logger := logtest.Scoped(t)
 	root := t.TempDir()
 
 	mkFiles(t, root,
@@ -579,7 +683,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 
@@ -593,10 +697,10 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		repo := &types.Repo{
 			Name: api.RepoName(r),
 		}
-		if err := database.Repos(db).Create(ctx, repo); err != nil {
+		if err := db.Repos().Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
-		if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+		if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
 			RepoID:      repo.ID,
 			ShardID:     "test",
 			CloneStatus: types.CloneStatusCloned,
@@ -607,12 +711,24 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	s := &Server{
+		Logger:   logger,
 		ReposDir: root,
 		DB:       db,
 		ctx:      ctx,
 	}
 
 	// Remove everything but github.com/foo/survivor
+	for _, d := range []string{
+		"github.com/foo/baz/.git",
+		"github.com/bam/bam/.git",
+		"example.com/repo/.git",
+	} {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+			t.Fatalf("failed to remove %s: %s", d, err)
+		}
+	}
+
+	// Removing them a second time is safe
 	for _, d := range []string{
 		"github.com/foo/baz/.git",
 		"github.com/bam/bam/.git",
@@ -641,7 +757,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if !ok {
 			t.Fatal("id mapping not found")
 		}
-		r, err := database.GitserverRepos(db).GetByID(ctx, id)
+		r, err := db.GitserverRepos().GetByID(ctx, id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -658,6 +774,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		"github.com/foo/baz/.git/HEAD",
 	)
 	s := &Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: root,
 	}
 
@@ -673,6 +790,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
+		Logger:             logtest.Scoped(t),
 		DesiredPercentFree: 10,
 	}
 
@@ -814,13 +932,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t)}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t)}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -849,6 +967,7 @@ func TestFreeUpSpace(t *testing.T) {
 
 		// Run.
 		s := Server{
+			Logger:    logtest.Scoped(t),
 			ReposDir:  rd,
 			DiskSizer: &fakeDiskSizer{},
 		}
@@ -1196,6 +1315,7 @@ func TestPruneIfNeeded(t *testing.T) {
 }
 
 func TestCleanup_setRepoSizes(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1218,10 +1338,10 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	db := dbtest.NewDB(logger, t)
+	s.DB = database.NewDB(logger, db)
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
@@ -1229,13 +1349,13 @@ insert into repo(id, name)
 values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
        (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
        (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
-insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
-insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
+update gitserver_repos set shard_id = 1;
+update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
@@ -1255,6 +1375,7 @@ insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 22
 }
 
 func TestSGMLogFile(t *testing.T) {
+	logger := logtest.Scoped(t)
 	dir := GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
@@ -1280,16 +1401,20 @@ func TestSGMLogFile(t *testing.T) {
 	}
 
 	// failed run => log file
-	if err := sgMaintenance(dir); err == nil {
+	if err := sgMaintenance(logger, dir); err == nil {
 		t.Fatal("sgMaintenance should have returned an error")
 	}
 	mustHaveLogFile(t)
+
+	if got := bestEffortReadFailed(dir); got != 1 {
+		t.Fatalf("want 1, got %d", got)
+	}
 
 	// fix the repo
 	os.Remove(fakeRef)
 
 	// fresh sgmLog file => skip execution
-	if err := sgMaintenance(dir); err != nil {
+	if err := sgMaintenance(logger, dir); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 	mustHaveLogFile(t)
@@ -1299,10 +1424,86 @@ func TestSGMLogFile(t *testing.T) {
 	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgMaintenance(dir); err != nil {
+	if err := sgMaintenance(logger, dir); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
 		t.Fatalf("%s should have been removed", sgmLog)
+	}
+}
+
+func TestBestEffortReadFailed(t *testing.T) {
+	tc := []struct {
+		content     []byte
+		wantRetries int
+	}{
+		{
+			content:     nil,
+			wantRetries: 0,
+		},
+		{
+			content:     []byte("any content"),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed=1
+
+error message`),
+			wantRetries: 1,
+		},
+		{
+			content: []byte(`header text
+failed=2
+error message`),
+			wantRetries: 2,
+		},
+		{
+			content: []byte(`failed=
+
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed=deadbeaf
+
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed
+failed=deadbeaf
+failed=1`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed
+failed=1
+failed=deadbead`),
+			wantRetries: 1,
+		},
+		{
+			content: []byte(`failed=
+failed=
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`header failed text
+
+failed=3
+failed=4
+
+error message
+`),
+			wantRetries: 3,
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(string(tt.content), func(t *testing.T) {
+			if got := bestEffortParseFailed(tt.content); got != tt.wantRetries {
+				t.Fatalf("want %d, got %d", tt.wantRetries, got)
+			}
+		})
 	}
 }

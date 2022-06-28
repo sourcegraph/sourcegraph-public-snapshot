@@ -13,22 +13,25 @@ import { startWith } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Alert, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { RepoFileSymbolLink } from '../RepoFileSymbolLink'
 import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
@@ -54,7 +57,9 @@ function isSymbolOutputLoaded(
     return output !== undefined && !isErrorLike(output) && output !== LOADING
 }
 
-export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = React.memo(
+export const NotebookSymbolBlock: React.FunctionComponent<
+    React.PropsWithChildren<NotebookSymbolBlockProps>
+> = React.memo(
     ({
         id,
         input,
@@ -113,7 +118,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -127,7 +132,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -148,6 +153,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             }),
             [symbolOutput, extensionsController, input]
         )
+
+        const logEventOnCopy = useCallback(() => {
+            telemetryService.log(...codeCopiedEvent('notebook-symbols'))
+        }, [telemetryService])
 
         const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
@@ -205,6 +214,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 {isSymbolOutputLoaded(symbolOutput) && (
                     <div className={styles.highlightedFileWrapper}>
                         <CodeExcerpt
+                            className={styles.code}
                             repoName={input.repositoryName}
                             commitID={input.revision}
                             filePath={input.filePath}
@@ -215,6 +225,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}
+                            onCopy={logEventOnCopy}
                         />
                     </div>
                 )}
@@ -234,39 +245,39 @@ interface NotebookSymbolBlockHeaderProps extends SymbolBlockInput {
     symbolURL: string
 }
 
-const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHeaderProps> = ({
+const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren<NotebookSymbolBlockHeaderProps>> = ({
     repositoryName,
     filePath,
     symbolFoundAtLatestRevision,
     effectiveRevision,
     symbolName,
-    symbolContainerName,
     symbolKind,
     symbolURL,
-}) => (
-    <>
-        <div className="mr-2">
+}) => {
+    const repoAtRevisionURL = getRepositoryUrl(repositoryName, [effectiveRevision])
+    return (
+        <>
             <SymbolIcon kind={symbolKind} />
-        </div>
-        <div className="d-flex flex-column">
-            <div className="mb-1 d-flex align-items-center">
-                <code data-testid="selected-symbol-name">
-                    <Link className={styles.headerLink} to={symbolURL}>
-                        {symbolName}
-                    </Link>
-                    {symbolContainerName && <span className="text-muted"> {symbolContainerName}</span>}
-                </code>
-                {symbolFoundAtLatestRevision === false && (
+            <div className={styles.separator} />
+            <RepoFileSymbolLink
+                repoName={repositoryName}
+                repoURL={repoAtRevisionURL}
+                filePath={filePath}
+                fileURL={symbolURL}
+                symbolURL={symbolURL}
+                symbolName={symbolName}
+            />
+            {symbolFoundAtLatestRevision === false && (
+                <Tooltip
+                    content={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
+                >
                     <Icon
+                        aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                         as={InformationOutlineIcon}
                         className="ml-1"
-                        data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                     />
-                )}
-            </div>
-            <small className="text-muted">
-                {repositoryName}/{filePath}
-            </small>
-        </div>
-    </>
-)
+                </Tooltip>
+            )}
+        </>
+    )
+}

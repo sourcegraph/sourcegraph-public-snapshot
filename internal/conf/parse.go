@@ -10,7 +10,7 @@ import (
 
 // parseConfigData parses the provided config string into the given cfg struct
 // pointer.
-func parseConfigData(data string, cfg interface{}) error {
+func parseConfigData(data string, cfg any) error {
 	if data != "" {
 		data, err := jsonc.Parse(data)
 		if err != nil {

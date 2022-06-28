@@ -264,7 +264,7 @@ var Opt = struct {
 	RepoModifiedAt            func(time.Time) func(*types.Repo)
 	RepoDeletedAt             func(time.Time) func(*types.Repo)
 	RepoSources               func(...string) func(*types.Repo)
-	RepoMetadata              func(interface{}) func(*types.Repo)
+	RepoMetadata              func(any) func(*types.Repo)
 	RepoExternalID            func(string) func(*types.Repo)
 }{
 	ExternalServiceID: func(n int64) func(*types.ExternalService) {
@@ -322,7 +322,7 @@ var Opt = struct {
 			}
 		}
 	},
-	RepoMetadata: func(md interface{}) func(*types.Repo) {
+	RepoMetadata: func(md any) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.Metadata = md
 		}

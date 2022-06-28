@@ -3,6 +3,11 @@ package basestore
 import (
 	"database/sql"
 	"time"
+
+	"github.com/lib/pq"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CloseRows closes the given rows object. The resulting error is a multierror
@@ -25,332 +30,202 @@ import (
 //
 //     things, err := ScanThings(store.Query(ctx, query))
 func CloseRows(rows *sql.Rows, err error) error {
-	return combineErrors(err, rows.Close(), rows.Err())
+	return errors.Append(err, rows.Close(), rows.Err())
 }
 
-// ScanStrings reads string values from the given row object.
-func ScanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
+// NewSliceScanner returns a basestore scanner function that returns all
+// the values of a query result. The given function is invoked multiple
+// times with a SQL rows object to scan a single value.
+func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) ([]T, error) {
+	return func(rows *sql.Rows, queryErr error) (values []T, err error) {
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		defer func() { err = CloseRows(rows, err) }()
 
-	var values []string
-	for rows.Next() {
-		var value string
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
+		for rows.Next() {
+			value, err := f(rows)
+			if err != nil {
+				return nil, err
+			}
+
+			values = append(values, value)
 		}
 
-		values = append(values, value)
+		return values, nil
 	}
-
-	return values, nil
 }
 
-// ScanFirstString reads string values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstString(rows *sql.Rows, queryErr error) (_ string, _ bool, err error) {
-	if queryErr != nil {
-		return "", false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
+// CollectionReducer configures how scanners created by `NewCollectionReducerScanner` will
+// group values belonging to the same map key.
+type CollectionReducer[V, Vs any] interface {
+	Create() Vs
+	Reduce(collection Vs, value V) Vs
+}
 
-	if rows.Next() {
-		var value string
-		if err := rows.Scan(&value); err != nil {
-			return "", false, err
+// SliceReducer can be used as a collection reducer for `NewCollectionReducerScanner` to
+// collect values belonging to each key into a slice.
+type SliceReducer[T any] struct{}
+
+func (r SliceReducer[T]) Create() []T                        { return nil }
+func (r SliceReducer[T]) Reduce(collection []T, value T) []T { return append(collection, value) }
+
+// SingleValueReducer can be used as a collection reducer for `NewCollectionReducerScanner` to
+// return the single value belonging to each key into a slice. If there are duplicates, the last
+// value scanned will "win" for each key.
+type SingleValueReducer[T any] struct{}
+
+func (r SingleValueReducer[T]) Create() (_ T)                  { return }
+func (r SingleValueReducer[T]) Reduce(collection T, value T) T { return value }
+
+// NewKeyedCollectionScanner returns a basestore scanner function that returns the values of a
+// query result organized as a map. The given function is invoked multiple times with a SQL rows
+// object to scan a single map value. The given reducer provides a way to customize how multiple
+// values are reduced into a collection.
+func NewKeyedCollectionScanner[K comparable, V, Vs any](
+	scanPair func(dbutil.Scanner) (K, V, error),
+	reducer CollectionReducer[V, Vs],
+) func(rows *sql.Rows, queryErr error) (map[K]Vs, error) {
+	return func(rows *sql.Rows, queryErr error) (values map[K]Vs, err error) {
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		defer func() { err = CloseRows(rows, err) }()
+
+		values = map[K]Vs{}
+		for rows.Next() {
+			key, value, err := scanPair(rows)
+			if err != nil {
+				return nil, err
+			}
+
+			collection, ok := values[key]
+			if !ok {
+				collection = reducer.Create()
+			}
+
+			values[key] = reducer.Reduce(collection, value)
 		}
 
-		return value, true, nil
+		return values, nil
 	}
-
-	return "", false, nil
 }
 
-// ScanFirstNullString reads possibly null string values from the given row
-// object and returns the first one. If no rows match the query, a false-valued
-// flag is returned.
-func ScanFirstNullString(rows *sql.Rows, queryErr error) (_ string, _ bool, err error) {
-	if queryErr != nil {
-		return "", false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
+// NewMapScanner returns a basestore scanner function that returns the values of a
+// query result organized as a map. The given function is invoked multiple times with
+// a SQL rows object to scan a single map value.
+func NewMapScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows *sql.Rows, queryErr error) (map[K]V, error) {
+	return NewKeyedCollectionScanner[K, V, V](f, SingleValueReducer[V]{})
+}
 
-	if rows.Next() {
-		var value sql.NullString
-		if err := rows.Scan(&value); err != nil {
-			return "", false, err
+// NewMapSliceScanner returns a basestore scanner function that returns the values
+// of a query result organized as a map of slice values. The given function is invoked
+// multiple times with a SQL rows object to scan a single map key value.
+func NewMapSliceScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows *sql.Rows, queryErr error) (map[K][]V, error) {
+	return NewKeyedCollectionScanner[K, V, []V](f, SliceReducer[V]{})
+}
+
+// NewSliceWithCountScanner returns a basestore scanner function that returns all
+// the values of the query result, as well as the count from the `COUNT(*) OVER()`
+// window function. The given function is invoked multiple times with a SQL rows
+// object to scan a single value.
+// Example query that would avail of this function, where we want only 10 rows but still
+// the count of everything that would have been returned, without performing two separate queries:
+// SELECT u.id, COUNT(*) OVER() as count FROM users LIMIT 10
+func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) func(rows *sql.Rows, queryErr error) ([]T, int, error) {
+	return func(rows *sql.Rows, queryErr error) (values []T, totalCount int, err error) {
+		if queryErr != nil {
+			return nil, 0, queryErr
+		}
+		defer func() { err = CloseRows(rows, err) }()
+
+		for rows.Next() {
+			value, count, err := f(rows)
+			if err != nil {
+				return nil, 0, err
+			}
+
+			totalCount = count
+			values = append(values, value)
 		}
 
-		return value.String, true, nil
+		return values, totalCount, nil
 	}
-
-	return "", false, nil
 }
 
-// ScanInt is a convenience method to return an integer value and any query error from a given row object.
-func ScanInt(row *sql.Row) (int, error) {
-	var value int
-	return value, row.Scan(&value)
-}
+// NewFirstScanner returns a basestore scanner function that returns the
+// first value of a query result (assuming there is at most one value).
+// The given function is invoked with a SQL rows object to scan a single
+// value.
+func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) (T, bool, error) {
+	return func(rows *sql.Rows, queryErr error) (value T, _ bool, err error) {
+		if queryErr != nil {
+			return value, false, queryErr
+		}
+		defer func() { err = CloseRows(rows, err) }()
 
-// ScanInts reads integer values from the given row object.
-func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []int
-	for rows.Next() {
-		var value int
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
+		if !rows.Next() {
+			return value, false, nil
 		}
 
-		values = append(values, value)
+		value, err = f(rows)
+		return value, true, err
 	}
-
-	return values, nil
 }
 
-// ScanInt32s reads integer values from the given row object.
-func ScanInt32s(rows *sql.Rows, queryErr error) (_ []int32, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []int32
-	for rows.Next() {
-		var value int32
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
+// ScanAny scans a single T value from the given scanner.
+func ScanAny[T any](s dbutil.Scanner) (value T, err error) {
+	err = s.Scan(&value)
+	return
 }
 
-// ScanInt64s reads integer values from the given row object.
-func ScanInt64s(rows *sql.Rows, queryErr error) (_ []int64, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []int64
-	for rows.Next() {
-		var value int64
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
+// ScanNullString scans a single nullable string from the given scanner.
+func ScanNullString(s dbutil.Scanner) (string, error) {
+	var value sql.NullString
+	if err := s.Scan(&value); err != nil {
+		return "", err
 	}
 
-	return values, nil
+	return value.String, nil
 }
 
-// ScanUint32s reads unsigned integer values from the given row object.
-func ScanUint32s(rows *sql.Rows, queryErr error) (_ []uint32, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []uint32
-	for rows.Next() {
-		var value uint32
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
+// ScanNullInt64 scans a single int64 from the given scanner.
+func ScanNullInt64(s dbutil.Scanner) (int64, error) {
+	var value sql.NullInt64
+	if err := s.Scan(&value); err != nil {
+		return 0, err
 	}
 
-	return values, nil
+	return value.Int64, nil
 }
 
-// ScanFirstInt reads integer values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value int
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value, true, nil
+// ScanInt32Array scans a single int32 array from the given scanner.
+func ScanInt32Array(s dbutil.Scanner) ([]int32, error) {
+	var value pq.Int32Array
+	if err := s.Scan(&value); err != nil {
+		return nil, err
 	}
 
-	return 0, false, nil
+	return []int32(value), nil
 }
 
-// ScanFirstInt64 reads int64 values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value int64
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return 0, false, nil
-}
-
-// ScanFirstNullInt64 reads possibly null int64 values from the given row
-// object and returns the first one. If no rows match the query, a false-valued
-// flag is returned.
-func ScanFirstNullInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value sql.NullInt64
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value.Int64, true, nil
-	}
-
-	return 0, false, nil
-}
-
-// ScanFloats reads float values from the given row object.
-func ScanFloats(rows *sql.Rows, queryErr error) (_ []float64, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []float64
-	for rows.Next() {
-		var value float64
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
-
-// ScanFirstFloat reads float values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstFloat(rows *sql.Rows, queryErr error) (_ float64, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value float64
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return 0, false, nil
-}
-
-// ScanBools reads bool values from the given row object.
-func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []bool
-	for rows.Next() {
-		var value bool
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
-
-// ScanFirstBool reads bool values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstBool(rows *sql.Rows, queryErr error) (value bool, exists bool, err error) {
-	if queryErr != nil {
-		return false, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return false, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return false, false, nil
-}
-
-// ScanTimes reads time values from the given row object.
-func ScanTimes(rows *sql.Rows, queryErr error) (_ []time.Time, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []time.Time
-	for rows.Next() {
-		var value time.Time
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
-
-// ScanFirstTime reads time values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstTime(rows *sql.Rows, queryErr error) (_ time.Time, _ bool, err error) {
-	if queryErr != nil {
-		return time.Time{}, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value time.Time
-		if err := rows.Scan(&value); err != nil {
-			return time.Time{}, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return time.Time{}, false, nil
-}
+var (
+	ScanInt             = ScanAny[int]
+	ScanStrings         = NewSliceScanner(ScanAny[string])
+	ScanFirstString     = NewFirstScanner(ScanAny[string])
+	ScanFirstNullString = NewFirstScanner(ScanNullString)
+	ScanInts            = NewSliceScanner(ScanAny[int])
+	ScanInt32s          = NewSliceScanner(ScanAny[int32])
+	ScanInt64s          = NewSliceScanner(ScanAny[int64])
+	Scanuint32s         = NewSliceScanner(ScanAny[uint32])
+	ScanFirstInt        = NewFirstScanner(ScanAny[int])
+	ScanFirstInt64      = NewFirstScanner(ScanAny[int64])
+	ScanFirstNullInt64  = NewFirstScanner(ScanNullInt64)
+	ScanFloats          = NewSliceScanner(ScanAny[float64])
+	ScanFirstFloat      = NewFirstScanner(ScanAny[float64])
+	ScanBools           = NewSliceScanner(ScanAny[bool])
+	ScanFirstBool       = NewFirstScanner(ScanAny[bool])
+	ScanTimes           = NewSliceScanner(ScanAny[time.Time])
+	ScanFirstTime       = NewFirstScanner(ScanAny[time.Time])
+	ScanFirstInt32Array = NewFirstScanner(ScanInt32Array)
+)

@@ -36,7 +36,11 @@ interface Data {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesTab: React.FunctionComponent<Props> = ({ repo, history, location }) => {
+export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    repo,
+    history,
+    location,
+}) => {
     const [showAll, setShowAll] = useState(false)
 
     return (
@@ -74,7 +78,11 @@ export const RepositoryBranchesTab: React.FunctionComponent<Props> = ({ repo, hi
     )
 }
 
-export const RepositoryBranchesAllTab: React.FunctionComponent<Props> = ({ repo, history, location }) => {
+export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    repo,
+    history,
+    location,
+}) => {
     const queryBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_BRANCH })
 
@@ -82,7 +90,6 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<Props> = ({ repo,
         <div>
             <PageTitle title="All branches" />
             <FilteredConnection<GitRefFields>
-                className=""
                 listClassName="list-group list-group-flush"
                 noun="branch"
                 pluralNoun="branches"
@@ -97,7 +104,10 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<Props> = ({ repo,
     )
 }
 
-export const RepositoryBranchesOverviewTab: React.FunctionComponent<OverviewTabProps> = ({ repo, setShowAll }) => {
+export const RepositoryBranchesOverviewTab: React.FunctionComponent<React.PropsWithChildren<OverviewTabProps>> = ({
+    repo,
+    setShowAll,
+}) => {
     const [branches, setBranches] = useState<Data | undefined>(undefined)
 
     useEventObservable<void, Data | null | ErrorLike>(
@@ -156,7 +166,7 @@ export const RepositoryBranchesOverviewTab: React.FunctionComponent<OverviewTabP
                                         className="list-group-item list-group-item-action py-2 d-flex"
                                     >
                                         View more branches
-                                        <Icon as={ChevronRightIcon} />
+                                        <Icon as={ChevronRightIcon} aria-hidden={true} />
                                     </Button>
                                 )}
                             </div>

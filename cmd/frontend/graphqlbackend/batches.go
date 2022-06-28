@@ -78,6 +78,11 @@ type CreateEmptyBatchChangeArgs struct {
 	Name      string
 }
 
+type UpsertEmptyBatchChangeArgs struct {
+	Namespace graphql.ID
+	Name      string
+}
+
 type CreateBatchSpecFromRawArgs struct {
 	BatchSpec        string
 	AllowIgnored     bool
@@ -246,6 +251,7 @@ type BatchChangesResolver interface {
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
 	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
+	UpsertEmptyBatchChange(ctx context.Context, args *UpsertEmptyBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
 	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
 	UpsertBatchSpecInput(ctx context.Context, args *UpsertBatchSpecInputArgs) (BatchSpecResolver, error)
@@ -285,6 +291,8 @@ type BatchChangesResolver interface {
 
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
+
+	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -352,6 +360,8 @@ type BatchSpecResolver interface {
 	AllowUnsupported() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
+
+	Source() string
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -575,13 +585,18 @@ type ListChangesetsArgs struct {
 }
 
 type ListBatchSpecArgs struct {
-	First int32
-	After *string
+	First                       int32
+	After                       *string
+	IncludeLocallyExecutedSpecs *bool
 }
 
 type AvailableBulkOperationsArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
+}
+
+type CheckBatchChangesCredentialArgs struct {
+	BatchChangesCredential graphql.ID
 }
 
 type ListWorkspacesArgs struct {
@@ -799,12 +814,14 @@ type BatchSpecWorkspaceResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	CachedResultFound() bool
+	StepCacheResultCount() int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
 	OnlyFetchWorkspace() bool
 	Ignored() bool
 	Unsupported() bool
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
+	PlaceInGlobalQueue() *int32
 
 	ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool)
 	ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool)

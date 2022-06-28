@@ -10,12 +10,14 @@ import { EventStatus } from '../../../../graphql-operations'
 
 import styles from './CollapsibleDetailsWithStatus.module.scss'
 
-export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
-    title: string
-    status: EventStatus | 'skipped'
-    message: string
-    startOpen?: boolean
-}> = ({ title, status, message, startOpen = false }) => {
+export const CollapsibleDetailsWithStatus: React.FunctionComponent<
+    React.PropsWithChildren<{
+        title: string
+        status: EventStatus | 'skipped'
+        message: string
+        startOpen?: boolean
+    }>
+> = ({ title, status, message, startOpen = false }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
@@ -47,9 +49,9 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
     }, [status])
 
     return (
-        <div className={styles.wrapper}>
+        <li className={styles.wrapper}>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                 <span>{title}</span>
                 <Badge variant={statusBadge} className="ml-2 text-uppercase">
                     {statusText}
@@ -57,6 +59,6 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
             </Button>
 
             {expanded && <pre className={styles.message}>{message}</pre>}
-        </div>
+        </li>
     )
 }

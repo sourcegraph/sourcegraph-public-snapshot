@@ -7,16 +7,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetNpmDependencyRepos(t *testing.T) {
@@ -79,8 +80,9 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
-	db := database.NewDB(dbtest.NewDB(t))
-	depsSvc := live.TestService(db, nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	depsSvc := livedependencies.TestService(db, nil)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
 	if err != nil {
@@ -117,63 +119,63 @@ var testDependencyRepos = func() []dependencies.Repo {
 	return dependencyRepos
 }()
 
-func TestListRepos(t *testing.T) {
+func TestNPMPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
+	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
+		{
+			ID:      1,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "react",
+			Version: "18.1.0", // test deduplication with version from config
+		},
+		{
+			ID:      2,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "react",
+			Version: "18.0.0", // test deduplication with version from config
+		},
+		{
+			ID:      3,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "async",
+			Version: "3.2.3",
+		},
+		{
+			ID:      4,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "fastq",
+			Version: "0.9.9", // Test missing modules are skipped.
+		},
+	})
 
 	svc := types.ExternalService{
-		Kind:   extsvc.KindNpmPackages,
-		Config: `{"registry": "https://placeholder.lol", "rateLimit": {"enabled": false}}`,
-	}
-	packageSource, err := NewNpmPackagesSource(&svc)
-	require.Nil(t, err)
-	packageSource.SetDependenciesService(depsSvc)
-	packageSource.client = npmtest.NewMockClient(t, testDependencies...)
-	results := make(chan SourceResult, 10)
-	go func() {
-		packageSource.ListRepos(ctx, results)
-		close(results)
-	}()
-
-	var have []*types.Repo
-	for r := range results {
-		if r.Err != nil {
-			t.Fatal(r.Err)
-		}
-		have = append(have, r.Repo)
+		Kind: extsvc.KindNpmPackages,
+		Config: marshalJSON(t, &schema.NpmPackagesConnection{
+			Registry: "https://registry.npmjs.org",
+			Dependencies: []string{
+				"urql@2.2.0",
+				"lodash@4.17.15",
+			},
+		}),
 	}
 
-	sort.Sort(types.Repos(have))
+	cf, save := newClientFactory(t, t.Name())
+	t.Cleanup(func() { save(t) })
 
-	var want []*types.Repo
-	for _, dep := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(dep)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want = append(want, &types.Repo{
-			Name:        dep.RepoName(),
-			Description: dep.PackageSyntax() + " description",
-			URI:         string(dep.RepoName()),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          string(dep.RepoName()),
-				ServiceID:   extsvc.TypeNpmPackages,
-				ServiceType: extsvc.TypeNpmPackages,
-			},
-			Sources: map[string]*types.SourceInfo{
-				packageSource.svc.URN(): {
-					ID:       packageSource.svc.URN(),
-					CloneURL: dep.CloneURL(),
-				},
-			},
-			Metadata: &npmpackages.Metadata{
-				Package: dep.NpmPackage,
-			},
-		})
+	src, err := NewNpmPackagesSource(&svc, cf)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	sort.Sort(types.Repos(want))
+	src.SetDependenciesService(depsSvc)
 
-	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
-	require.Equal(t, want, have)
+	repos, err := listAll(ctx, src)
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
 }

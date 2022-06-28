@@ -10,7 +10,7 @@ export interface CodeIntelDeleteIndexProps {
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-export const CodeIntelDeleteIndex: FunctionComponent<CodeIntelDeleteIndexProps> = ({
+export const CodeIntelDeleteIndex: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteIndexProps>> = ({
     deleteIndex,
     deletionOrError,
 }) => (
@@ -22,6 +22,6 @@ export const CodeIntelDeleteIndex: FunctionComponent<CodeIntelDeleteIndexProps> 
         aria-describedby="upload-delete-button-help"
         data-tooltip="Deleting this index will remove it from the index queue."
     >
-        <Icon as={DeleteIcon} /> Delete index
+        <Icon aria-hidden={true} as={DeleteIcon} /> Delete index
     </Button>
 )

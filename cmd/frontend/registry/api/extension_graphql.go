@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	graphqlbackend.NodeToRegistryExtension = func(node interface{}) (graphqlbackend.RegistryExtension, bool) {
+	graphqlbackend.NodeToRegistryExtension = func(node any) (graphqlbackend.RegistryExtension, bool) {
 		switch n := node.(type) {
 		case *registryExtensionRemoteResolver:
 			return n, true

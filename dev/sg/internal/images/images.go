@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	k8syaml "sigs.k8s.io/yaml"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -65,25 +65,25 @@ func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
 	return err
 }
 
-func isImgMap(m map[string]interface{}) bool {
+func isImgMap(m map[string]any) bool {
 	if m["defaultTag"] != nil && m["name"] != nil {
 		return true
 	}
 	return false
 }
 
-func extraImages(m interface{}, acc *[]string) {
+func extraImages(m any, acc *[]string) {
 	for m != nil {
 		switch m := m.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			for k, v := range m {
-				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]interface{})) {
-					imgMap := v.(map[string]interface{})
+				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]any)) {
+					imgMap := v.(map[string]any)
 					*acc = append(*acc, fmt.Sprintf("index.docker.io/sourcegraph/%s:%s", imgMap["name"], imgMap["defaultTag"]))
 				}
 				extraImages(v, acc)
 			}
-		case []interface{}:
+		case []any:
 			for _, v := range m {
 				extraImages(v, acc)
 			}
@@ -105,7 +105,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
 	}
 
-	var values map[string]interface{}
+	var values map[string]any
 	err = json.Unmarshal(rawValues, &values)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
@@ -157,7 +157,7 @@ func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
 		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
-				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
+				std.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
 			}
 			return nil, err
@@ -201,7 +201,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 			return err
 		}
 
-		stdout.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
+		std.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
 
 		return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(updatedImage)))
 	}
@@ -376,7 +376,10 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	var targetTag string
 	isDevTag := pinTag == ""
 	if isDevTag {
-		targetTag = findLatestTag(tags)
+		targetTag, err = findLatestTag(tags)
+		if err != nil {
+			std.Out.Verbose("findLatestTag: " + err.Error())
+		}
 	} else {
 		targetTag = pinTag
 	}
@@ -427,14 +430,15 @@ func ParseTag(t string) (*SgImageTag, error) {
 }
 
 // Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
-func findLatestTag(tags []string) string {
+func findLatestTag(tags []string) (string, error) {
 	maxBuildID := 0
 	targetTag := ""
 
+	var errs error
 	for _, tag := range tags {
 		stag, err := ParseTag(tag)
 		if err != nil {
-			stdout.Out.Verbosef("%v\n", err)
+			errs = errors.Append(errs, err)
 			continue
 		}
 		if stag.buildNum > maxBuildID {
@@ -442,7 +446,7 @@ func findLatestTag(tags []string) string {
 			targetTag = tag
 		}
 	}
-	return targetTag
+	return targetTag, errs
 }
 
 // CheckLegacy prevents changing the registry if they are equivalent, internally legacyDockerhub is resolved to dockerhub

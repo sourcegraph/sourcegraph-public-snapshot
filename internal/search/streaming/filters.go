@@ -136,11 +136,11 @@ func (h *filterHeap) Less(i, j int) bool {
 	return h.filterSlice[j].Less(h.filterSlice[i])
 }
 
-func (h *filterHeap) Push(x interface{}) {
+func (h *filterHeap) Push(x any) {
 	h.filterSlice = append(h.filterSlice, x.(*Filter))
 }
 
-func (h *filterHeap) Pop() interface{} {
+func (h *filterHeap) Pop() any {
 	old := h.filterSlice
 	n := len(old)
 	x := old[n-1]

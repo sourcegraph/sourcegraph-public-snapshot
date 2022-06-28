@@ -98,7 +98,7 @@ function downloadTextAsFile(text: string, fileName: string): void {
     window.URL.revokeObjectURL(blobURL)
 }
 
-export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = React.memo(
+export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<NotebookComponentProps>> = React.memo(
     ({
         onSerializeBlocks,
         onCopyNotebook,
@@ -512,7 +512,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
         return (
             <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
-                <div className="pb-1">
+                <div className="pb-1 px-3">
                     <Button
                         className="mr-2"
                         variant="primary"
@@ -520,7 +520,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         onClick={runAllBlocks}
                         disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                     >
-                        <Icon className="mr-1" as={PlayCircleOutlineIcon} />
+                        <Icon aria-hidden={true} className="mr-1" as={PlayCircleOutlineIcon} />
                         <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                     </Button>
                     {!isEmbedded && (
@@ -531,7 +531,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             onClick={exportNotebook}
                             data-testid="export-notebook-markdown-button"
                         >
-                            <Icon className="mr-1" as={DownloadIcon} />
+                            <Icon aria-hidden={true} className="mr-1" as={DownloadIcon} />
                             <span>Export as Markdown</span>
                         </Button>
                     )}
@@ -544,7 +544,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             data-testid="copy-notebook-button"
                             disabled={copiedNotebookOrError === LOADING}
                         >
-                            <Icon className="mr-1" as={ContentCopyIcon} />
+                            <Icon aria-hidden={true} className="mr-1" as={ContentCopyIcon} />
                             <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                         </Button>
                     )}

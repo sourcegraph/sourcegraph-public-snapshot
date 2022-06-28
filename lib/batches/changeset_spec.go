@@ -35,7 +35,7 @@ func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
 
 // ParseChangesetSpecExternalID attempts to parse the ID of a changeset in the
 // batch spec that should be imported.
-func ParseChangesetSpecExternalID(id interface{}) (string, error) {
+func ParseChangesetSpecExternalID(id any) (string, error) {
 	var sid string
 
 	switch tid := id.(type) {

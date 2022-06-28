@@ -1,6 +1,6 @@
 package resolvers
 
-import "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+import "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 
 // localCursor is an upload offset and a location offset within that upload.
 type localCursor struct {

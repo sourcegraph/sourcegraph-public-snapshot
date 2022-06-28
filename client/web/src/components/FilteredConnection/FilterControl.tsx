@@ -1,8 +1,6 @@
 import React, { useCallback } from 'react'
 
-import classNames from 'classnames'
-
-import { Select } from '@sourcegraph/wildcard'
+import { Select, Text } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../RadioButtons'
 
@@ -45,7 +43,7 @@ interface FilterControlProps {
     values: Map<string, FilteredConnectionFilterValue>
 }
 
-export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
+export const FilterControl: React.FunctionComponent<React.PropsWithChildren<FilterControlProps>> = ({
     filters,
     values,
     onValueSelect,
@@ -83,15 +81,15 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
                 }
 
                 if (filter.type === 'select') {
+                    const filterLabelId = `filtered-select-label-${filter.id}`
                     return (
-                        <div
-                            key={filter.id}
-                            className={classNames('d-inline-flex flex-row align-center flex-wrap', styles.select)}
-                        >
+                        <div key={filter.id} className="d-inline-flex flex-row align-center flex-wrap">
                             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                                <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
+                                <Text className="text-xl-center text-nowrap mr-2" id={filterLabelId}>
+                                    {filter.label}:
+                                </Text>
                                 <Select
-                                    aria-label=""
+                                    aria-labelledby={filterLabelId}
                                     id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}

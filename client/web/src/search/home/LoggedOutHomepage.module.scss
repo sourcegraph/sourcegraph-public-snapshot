@@ -1,7 +1,3 @@
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities/spacing';
 @import 'wildcard/src/global-styles/breakpoints';
 
 .logged-out-homepage {
@@ -32,7 +28,7 @@
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
                 grid-auto-rows: minmax(4rem, auto);
-                gap: $spacer * 0.75;
+                gap: calc(var(--spacer) * 0.75);
             }
 
             @media (--sm-breakpoint-down) {

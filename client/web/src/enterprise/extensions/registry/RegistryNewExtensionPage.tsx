@@ -13,7 +13,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, PageHeader, Container, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, PageHeader, Container, Icon, Code, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -128,20 +128,28 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 <div className="container col-8">
                     <PageTitle title="Create new extension" />
                     <PageHeader
-                        path={[{ icon: PuzzleOutlineIcon, to: '/extensions' }, { text: 'Create extension' }]}
+                        path={[
+                            { icon: PuzzleOutlineIcon, to: '/extensions', ariaLabel: 'Extensions' },
+                            { text: 'Create extension' },
+                        ]}
                         description={
                             <>
                                 <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
                                     Learn more
                                 </Link>{' '}
                                 about authoring Sourcegraph extensions{' '}
-                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
-                                    <Icon as={HelpCircleOutline} />
+                                <Link
+                                    aria-label="Learn more about extensions authoring"
+                                    target="_blank"
+                                    rel="noopener"
+                                    to="/help/extensions/authoring"
+                                >
+                                    <Icon aria-hidden={true} as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }
                     />
-                    <Form onSubmit={this.onSubmit} className="my-4 pb-5">
+                    <Form onSubmit={this.onSubmit} className="my-4 pb-5 test-registry-new-extension">
                         <Container className="mb-4">
                             <RegistryPublisherFormGroup
                                 value={this.state.publisher}
@@ -156,18 +164,19 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             />
                             {extensionID && (
                                 <div className="form-group d-flex flex-wrap align-items-baseline mb-0">
-                                    <label
+                                    <Label
                                         htmlFor="extension-registry-create-extension-page__extensionID"
                                         className="mr-1 mb-0 mt-1"
                                     >
                                         Extension ID:
-                                    </label>
-                                    <code
+                                    </Label>
+                                    <Code
                                         id="extension-registry-create-extension-page__extensionID"
                                         className={classNames('mt-1', styles.extensionId)}
+                                        weight="bold"
                                     >
-                                        <strong>{extensionID}</strong>
-                                    </code>
+                                        {extensionID}
+                                    </Code>
                                 </div>
                             )}
                             {isErrorLike(this.state.creationOrError) && (

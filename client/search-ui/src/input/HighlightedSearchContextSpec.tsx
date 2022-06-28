@@ -41,10 +41,9 @@ function highlightSearchContextSpecPart(specPart?: string, highlightPart?: strin
     return specPart && highlightPart ? <>{highlightText(specPart, highlightPart, styles.itemHighlighted)}</> : specPart
 }
 
-export const HighlightedSearchContextSpec: React.FunctionComponent<{ spec: string; searchFilter: string }> = ({
-    spec,
-    searchFilter,
-}) => {
+export const HighlightedSearchContextSpec: React.FunctionComponent<
+    React.PropsWithChildren<{ spec: string; searchFilter: string }>
+> = ({ spec, searchFilter }) => {
     if (searchFilter.length === 0) {
         return <>{spec}</>
     }

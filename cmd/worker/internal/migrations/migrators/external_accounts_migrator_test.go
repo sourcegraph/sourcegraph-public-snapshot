@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestExternalAccountsMigrator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,7 +35,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 	}
 
-	createAccounts := func(db dbutil.DB, n int) []*extsvc.Account {
+	createAccounts := func(db database.DB, n int) []*extsvc.Account {
 		accounts := make([]*extsvc.Account, 0, n)
 
 		for i := 0; i < n; i++ {
@@ -49,7 +51,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 				AuthData: &authData,
 				Data:     &data,
 			}
-			_, err := database.ExternalAccounts(db).CreateUserAndSave(ctx, database.NewUser{Username: fmt.Sprintf("u-%d", i)}, spec, accData)
+			_, err := db.UserExternalAccounts().CreateUserAndSave(ctx, database.NewUser{Username: fmt.Sprintf("u-%d", i)}, spec, accData)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -63,9 +65,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	}
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 2
 		migrator.AllowDecrypt = true
 
@@ -133,9 +135,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/Encryption", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 
 		// Create 10 accounts
@@ -150,7 +152,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 
 		// was the data actually encrypted?
-		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
+		rows, err := db.QueryContext(ctx, "SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -190,9 +192,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 		migrator.AllowDecrypt = true
 
@@ -213,7 +215,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
+		rows, err := db.QueryContext(ctx, "SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -244,9 +246,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/InvalidKey", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 
 		// Create 10 accounts
@@ -267,9 +269,9 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(logger, db)
 		migrator.BatchSize = 10
 
 		// Create 10 accounts
@@ -289,7 +291,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
+		rows, err := db.QueryContext(ctx, "SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}

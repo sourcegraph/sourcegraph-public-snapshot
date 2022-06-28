@@ -29,7 +29,12 @@ type Status = undefined | 'loading' | ErrorLike
 
 const findPrimaryEmail = (emails: UserEmail[]): string | undefined => emails.find(email => email.isPrimary)?.email
 
-export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className }) => {
+export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    emails,
+    onDidSet,
+    className,
+}) => {
     const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(findPrimaryEmail(emails))
     const [statusOrError, setStatusOrError] = useState<Status>()
 

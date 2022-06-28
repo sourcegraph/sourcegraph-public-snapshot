@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -12,6 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,11 +27,14 @@ func TestStatusMessages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.Background()
-	db := dbtest.NewDB(t)
-	store := NewStore(db, sql.TxOptions{})
 
-	admin, err := database.Users(db).Create(ctx, database.NewUser{
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStore(logtest.Scoped(t), db)
+
+	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
 		Username:              "a1",
 		Password:              "p",
@@ -38,7 +42,7 @@ func TestStatusMessages(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	nonAdmin, err := database.Users(db).Create(ctx, database.NewUser{
+	nonAdmin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "u1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -52,7 +56,7 @@ func TestStatusMessages(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
-	err = database.ExternalServices(db).Upsert(ctx, siteLevelService)
+	err = db.ExternalServices().Upsert(ctx, siteLevelService)
 	require.NoError(t, err)
 
 	userService := &types.ExternalService{
@@ -62,7 +66,7 @@ func TestStatusMessages(t *testing.T) {
 		DisplayName:     "github.com - user",
 		NamespaceUserID: nonAdmin.ID,
 	}
-	err = database.ExternalServices(db).Upsert(ctx, userService)
+	err = db.ExternalServices().Upsert(ctx, userService)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -235,7 +239,7 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
-			err := database.Repos(db).Create(ctx, stored...)
+			err := db.Repos().Create(ctx, stored...)
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
@@ -243,7 +247,7 @@ func TestStatusMessages(t *testing.T) {
 				for _, r := range stored {
 					ids = append(ids, r.ID)
 				}
-				err := database.Repos(db).Delete(ctx, ids...)
+				err := db.Repos().Delete(ctx, ids...)
 				require.NoError(t, err)
 			})
 
@@ -264,7 +268,7 @@ func TestStatusMessages(t *testing.T) {
 				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
 					lastError = "Oops"
 				}
-				err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+				err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
 					CloneStatus: types.CloneStatusCloned,
@@ -273,7 +277,8 @@ func TestStatusMessages(t *testing.T) {
 				require.NoError(t, err)
 			}
 			t.Cleanup(func() {
-				err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM gitserver_repos`))
+				q := sqlf.Sprintf(`DELETE FROM gitserver_repos`)
+				_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				require.NoError(t, err)
 			})
 
@@ -284,14 +289,16 @@ func TestStatusMessages(t *testing.T) {
 					if !ok {
 						continue
 					}
-					err = store.Exec(ctx, sqlf.Sprintf(`
+					q := sqlf.Sprintf(`
 						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
 						VALUES (%s, %s, NULLIF(%s, 0), 'example.com')
-					`, svc.ID, repo.ID, svc.NamespaceUserID))
+					`, svc.ID, repo.ID, svc.NamespaceUserID)
+					_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 					require.NoError(t, err)
 
 					t.Cleanup(func() {
-						err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID))
+						q := sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID)
+						_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 						require.NoError(t, err)
 					})
 				}
@@ -299,11 +306,12 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Store: store,
-				Now:   clock.Now,
+				Logger: logger,
+				Store:  store,
+				Now:    clock.Now,
 			}
 
-			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB := database.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer

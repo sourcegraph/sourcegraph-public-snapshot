@@ -41,7 +41,7 @@ export const productSubscriptionFragment = gql`
     }
 `
 
-export const ProductSubscriptionNodeHeader: React.FunctionComponent = () => (
+export const ProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <thead>
         <tr>
             <th>ID</th>
@@ -54,7 +54,9 @@ export interface ProductSubscriptionNodeProps {
     node: GQL.IProductSubscription
 }
 
-export const ProductSubscriptionNode: React.FunctionComponent<ProductSubscriptionNodeProps> = ({ node }) => (
+export const ProductSubscriptionNode: React.FunctionComponent<
+    React.PropsWithChildren<ProductSubscriptionNodeProps>
+> = ({ node }) => (
     <tr>
         <td className="text-nowrap">
             <Link to={node.url} className="mr-3 font-weight-bold">

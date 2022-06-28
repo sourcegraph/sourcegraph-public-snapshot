@@ -37,12 +37,12 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.39.1
+  sourcegraph/server:3.41.0
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
 
-We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](https://docs.sourcegraph.com/admin/install/kubernetes/configure) documentation for more information.
+We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md) documentation for more information.
 
 ### NGINX SSL/HTTPS configuration
 
@@ -155,7 +155,7 @@ You should configure Sourcegraph's `externalURL` in the [site configuration](con
 
 ## Sourcegraph via Docker Compose: Caddy 2
 
-Sourcegraph's [Docker Compose deployment](../admin/install/docker-compose/index.md) uses [Caddy 2](https://caddyserver.com/) as its reverse proxy. The Docker Compose deployment ships with a few builtin templates that cover common scenarios for exposing Sourcegraph:
+Sourcegraph's [Docker Compose deployment](deploy/docker-compose/index.md) uses [Caddy 2](https://caddyserver.com/) as its reverse proxy. The Docker Compose deployment ships with a few builtin templates that cover common scenarios for exposing Sourcegraph:
 
 - plain HTTP
 - HTTPS with automatically provisioned Let's Encrypt certificates

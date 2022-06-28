@@ -10,8 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,7 +31,7 @@ type Release struct {
 // ReleaseNotFoundError occurs when an extension release is not found in the
 // extension registry.
 type ReleaseNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 // NotFound implements errcode.NotFounder.
@@ -70,8 +70,8 @@ type releaseStore struct {
 var _ ReleaseStore = (*releaseStore)(nil)
 
 // Releases instantiates and returns a new ReleasesStore with prepared statements.
-func Releases(db dbutil.DB) ReleaseStore {
-	return &releaseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Releases(db database.DB) ReleaseStore {
+	return &releaseStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 // ReleasesWith instantiates and returns a new ReleasesStore using the other store handle.
@@ -150,7 +150,7 @@ LIMIT 1`,
 	err := s.QueryRow(ctx, q).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.SourceMap, &r.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
+			return nil, ReleaseNotFoundError{[]any{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
 		}
 		return nil, err
 	}
@@ -227,13 +227,13 @@ WHERE
 
 	if err := s.QueryRow(ctx, q).Scan(&bundle, &sourcemap); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("registry extension release %d", id)}}
+			return nil, nil, ReleaseNotFoundError{[]any{fmt.Sprintf("registry extension release %d", id)}}
 		}
 		return nil, nil, err
 	}
 
 	if bundle == nil {
-		return nil, nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("no bundle for registry extension release %d", id)}}
+		return nil, nil, ReleaseNotFoundError{[]any{fmt.Sprintf("no bundle for registry extension release %d", id)}}
 	}
 
 	return bundle, sourcemap, nil

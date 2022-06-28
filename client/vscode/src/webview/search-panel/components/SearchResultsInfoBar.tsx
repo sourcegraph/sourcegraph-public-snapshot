@@ -1,9 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiFormatQuoteOpen, mdiBookmarkOutline, mdiLink } from '@mdi/js'
 import classNames from 'classnames'
-import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
-import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
-import LinkIcon from 'mdi-react/LinkIcon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -40,7 +38,9 @@ interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     className?: string
 }
 
-const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
+const ExperimentalActionButton: React.FunctionComponent<
+    React.PropsWithChildren<ExperimentalActionButtonProps>
+> = props => {
     if (props.showExperimentalVersion) {
         return <ButtonDropdownCta {...props} />
     }
@@ -62,20 +62,24 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
  * will be searching literally for `foobar` (without quotes). This notice
  * informs them that this may be the case to avoid confusion.
  */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
+const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props =>
     props.patternType === SearchPatternType.literal && props.fullQuery && props.fullQuery.includes('"') ? (
         <small
             className={styles.notice}
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <Icon className="mr-1" as={FormatQuoteOpenIcon} />
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiFormatQuoteOpen} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
     ) : null
 
-export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
+export const SearchResultsInfoBar: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props => {
     const {
         extensionCoreAPI,
         platformContext,
@@ -143,7 +147,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     }
                     button={
                         <>
-                            <Icon className="mr-1" as={CodeMonitoringLogo} />
+                            <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
                             Monitor
                         </>
                     }
@@ -180,7 +184,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
                             Save search
                         </>
                     }
@@ -216,7 +220,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     className="btn btn-sm btn-outline-secondary text-decoration-none"
                     onClick={onShareResultsClick}
                 >
-                    <Icon className="mr-1" as={LinkIcon} />
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink} />
                     Share
                 </button>
             </li>

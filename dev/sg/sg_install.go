@@ -12,7 +12,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -55,14 +55,13 @@ func installAction(cmd *cli.Context) error {
 		}
 		// Looks like sg is already installed.
 		if cmd.Bool("force") {
-			writeOrangeLinef("Removing existing 'sg' installation at %s.", path)
+			std.Out.WriteNoticef("Removing existing 'sg' installation at %s.", path)
 			if err := os.Remove(path); err != nil {
 				return err
 			}
 		} else {
 			// Instead of overwriting anything we let the user know and exit.
-			writeFingerPointingLinef("Looks like 'sg' is already installed at %s.", path)
-			writeOrangeLinef("Skipping installation.")
+			std.Out.WriteSkippedf("Looks like 'sg' is already installed at %s - skipping installation.", path)
 			return nil
 		}
 	}
@@ -87,15 +86,16 @@ func installAction(cmd *cli.Context) error {
 
 	var logoOut bytes.Buffer
 	printLogo(&logoOut)
-	stdout.Out.Write(logoOut.String())
+	std.Out.Write(logoOut.String())
 
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef("", output.StyleLogo, "Welcome to the sg installation!"))
+	std.Out.Write("")
+	std.Out.WriteLine(output.Styled(output.StyleLogo, "Welcome to the sg installation!"))
 
 	// Do not prompt for installation if we are forcefully installing
 	if !cmd.Bool("force") {
-		stdout.Out.Write("")
-		stdout.Out.Writef("We are going to install %ssg%s to %s%s%s. Okay?", output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
+		std.Out.Write("")
+		std.Out.Promptf("We are going to install %ssg%s to %s%s%s. Okay?",
+			output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
 
 		locationOkay := getBool()
 		if !locationOkay {
@@ -108,7 +108,7 @@ func installAction(cmd *cli.Context) error {
 		return err
 	}
 
-	pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Copying from %s%s%s to %s%s%s...", output.StyleBold, currentLocation, output.StyleReset, output.StyleBold, location, output.StyleReset))
+	pending := std.Out.Pending(output.Styledf(output.StylePending, "Copying from %s%s%s to %s%s%s...", output.StyleBold, currentLocation, output.StyleReset, output.StyleBold, location, output.StyleReset))
 
 	original, err := os.Open(currentLocation)
 	if err != nil {
@@ -146,8 +146,8 @@ func installAction(cmd *cli.Context) error {
 		}
 	}
 
-	stdout.Out.Write("")
-	stdout.Out.Writef("Restart your shell and run 'sg logo' to make sure the installation worked!")
+	std.Out.Write("")
+	std.Out.Writef("Restart your shell and run 'sg logo' to make sure the installation worked!")
 
 	return nil
 }
@@ -171,21 +171,21 @@ func updateProfiles(homeDir, sgDir string) error {
 		filepath.Join(homeDir, ".profile"),
 	}
 
-	stdout.Out.Write("")
-	stdout.Out.Writef("The path %s%s%s will be added to your %sPATH%s environment variable by", output.StyleBold, sgDir, output.StyleReset, output.StyleBold, output.StyleReset)
-	stdout.Out.Writef("modifying the profile files located at:")
-	stdout.Out.Write("")
+	std.Out.Write("")
+	std.Out.Writef("The path %s%s%s will be added to your %sPATH%s environment variable by", output.StyleBold, sgDir, output.StyleReset, output.StyleBold, output.StyleReset)
+	std.Out.Writef("modifying the profile files located at:")
+	std.Out.Write("")
 	for _, p := range paths {
-		stdout.Out.Writef("  %s%s", output.StyleBold, p)
+		std.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 
 	addToShellOkay := getBool()
 	if !addToShellOkay {
-		stdout.Out.Writef("Alright! Make sure to add %s to your $PATH, restart your shell and run 'sg logo'. See you!", sgDir)
+		std.Out.Writef("Alright! Make sure to add %s to your $PATH, restart your shell and run 'sg logo'. See you!", sgDir)
 		return nil
 	}
 
-	pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Writing to files..."))
+	pending := std.Out.Pending(output.Styled(output.StylePending, "Writing to files..."))
 
 	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
 	lineWrittenTo := []string{}
@@ -205,10 +205,28 @@ func updateProfiles(homeDir, sgDir string) error {
 
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
-	stdout.Out.Writef("Modified the following files:")
-	stdout.Out.Write("")
+	std.Out.Writef("Modified the following files:")
+	std.Out.Write("")
 	for _, p := range lineWrittenTo {
-		stdout.Out.Writef("  %s%s", output.StyleBold, p)
+		std.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 	return nil
+}
+
+func getBool() bool {
+	var s string
+
+	fmt.Printf("(y/N): ")
+	_, err := fmt.Scan(&s)
+	if err != nil {
+		panic(err)
+	}
+
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+
+	if s == "y" || s == "yes" {
+		return true
+	}
+	return false
 }

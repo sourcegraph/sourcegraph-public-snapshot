@@ -50,8 +50,6 @@ A more detailed introduction is available in the [development quickstart guide](
 
 ## Installation
 
-### Using pre-built binaries (recommended)
-
 Run the following command in a terminal:
 
 ```sh
@@ -60,43 +58,18 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
 
-### Manually building the binary
-
-> NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
-
-If you want full control over where the `sg` binary ends up, use this option.
-
-In the root of `sourcegraph/sourcegraph`, run:
-
-```sh
-go build -o ~/my/path/sg ./dev/sg
-```
-
-Then make sure that `~/my/path` is in your `$PATH`.
-
-> NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
->
-> `export PATH=$GOPATH/bin:$PATH`
->
-> Instead of the more conventional:
->
-> `export PATH=$PATH:$GOPATH/bin`
->
-> Or you may add an alias to your `.bashrc`:
->
-> `alias sg=$HOME/go/bin/sg`
+For other installation options, see [Advanced installation](#advanced-installation).
 
 ## Updates
 
 Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
-
 To force a manual update of `sg`, run:
 
 ```sh
 sg update
 ```
 
-In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag: 
+In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag or `SG_SKIP_AUTO_UPDATE` environment variable:
 
 ```sh
 sg -skip-auto-update [cmds ...]
@@ -104,15 +77,15 @@ sg -skip-auto-update [cmds ...]
 
 On the next command run, if a new version is detected, `sg` will auto update before running.
 
-> NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
+To see what's changed, use `sg version changelog`.
 
 ## Usage
 
-See [configuration](#configuration) to learn more about configuring `sg` behaviour.
+Refer to the [generated `sg` reference](reference.md) for complete documentation of all commands.
 
 ### Help
 
-You can get help about commands in a variety of ways:
+You can get help about commands locally in a variety of ways:
 
 ```sh
 sg help # show all available commands
@@ -121,6 +94,8 @@ sg help # show all available commands
 sg <command> -h
 sg <command> --help
 ```
+
+A full reference is available in the [generated `sg` reference](reference.md). You can also view the full reference locally with `sg help -full`.
 
 ### Autocompletion
 
@@ -140,215 +115,6 @@ Both of the above work if you provide partial values as well to narrow down the 
 
 ```none
 sg start web-<tab><tab>
-```
-
-### `sg start` - Start dev environments
-
-```bash
-# Run default environment, Sourcegraph enterprise:
-sg start
-
-# (macOs only) Automatically add exceptions to the system firewall 
-sg start -add-to-macos-firewall
-
-# List available environments (defined under `commandSets` in `sg.config.yaml`):
-sg start -help
-
-# Run the enterprise environment with code-intel enabled:
-sg start enterprise-codeintel
-
-# Run the environment for Batch Changes development:
-sg start batches
-
-# Override the logger levels for specific services
-sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
-```
-
-### `sg run` - Run single commands
-
-```bash
-# Run specific commands:
-sg run gitserver
-sg run frontend
-
-# List available commands (defined under `commands:` in `sg.config.yaml`):
-sg run -help
-
-# Run multiple commands:
-sg run gitserver frontend repo-updater
-```
-
-### `sg test` - Running test suites
-
-```bash
-# Run different test suites:
-sg test backend
-sg test backend-integration
-sg test frontend
-sg test frontend-e2e
-
-# List available test suites:
-sg test -help
-
-# Arguments are passed along to the command
-sg test backend-integration -run TestSearch
-```
-
-### `sg doctor` - Check health of dev environment
-
-```bash
-# Run the checks defined in sg.config.yaml
-sg doctor
-```
-
-### `sg live` - See currently deployed version
-
-```bash
-# See which version is deployed on a preset environment
-sg live cloud
-sg live k8s
-
-# See which version is deployed on a custom environment
-sg live https://demo.sourcegraph.com
-
-# List environments:
-sg live -help
-```
-
-### `sg migration` - Run or manipulate database migrations
-
-```bash
-# Migrate local default database up all the way
-sg migration up
-
-# Migrate specific database down one migration
-sg migration down --db codeintel
-
-# Add new migration for specific database
-sg migration add --db codeintel 'add missing index'
-
-# Squash migrations for default database
-sg migration squash
-```
-
-### `sg rfc` - List or open Sourcegraph RFCs
-
-```bash
-# List all RFCs
-sg rfc list
-
-# Search for an RFC
-sg rfc search "search terms"
-
-# Open a specific RFC
-sg rfc open 420
-```
-
-### `sg ci` - Interact with Sourcegraph's continuous integration
-
-Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/ci) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
-
-```bash
-# Preview what a CI run for your current changes will look like
-sg ci preview
-
-# Check on the status of your changes on the current branch in the Buildkite pipeline
-sg ci status
-# Check on the status of a specific branch instead
-sg ci status --branch my-branch
-# Block until the build has completed (it will send a system notification)
-sg ci status --wait
-# Get status for a specific build number
-sg ci status --build 123456 
-
-# Pull logs of failed jobs to stdout
-sg ci logs
-# Push logs of most recent main failure to local Loki for analysis
-# You can spin up a Loki instance with 'sg run loki grafana'
-sg ci logs --branch main --out http://127.0.0.1:3100
-# Get the logs for a specific build number, useful when debugging
-sg ci logs --build 123456 
-
-# Manually trigger a build on the CI with the current branch
-sg ci build 
-# Manually trigger a build on the CI on the current branch, but with a specific commit
-sg ci build --commit my-commit
-# Manually trigger a main-dry-run build of the HEAD commit on the current branch
-sg ci build main-dry-run
-sg ci build --force main-dry-run
-# Manually trigger a main-dry-run build of a specified commit on the current ranch
-sg ci build --force --commit my-commit main-dry-run
-# View the available special build types
-sg ci build --help
-```
-
-### `sg teammate` - Get current time or open their handbook page
-
-```bash
-# Get the current time of a team mate based on their slack handle (case insensitive).
-sg teammate time @dax
-sg teammate time dax
-# or their full name (case insensitive)
-sg teammate time thorsten ball
-
-# Open their handbook bio
-sg teammate handbook asdine
-```
-
-### `sg secret` - Interact with `sg` secrets
-
-```bash
-# List all secrets stored in your local configuration. 
-sg secret list
-
-# Remove the secrets associated with buildkite (sg ci build)
-sg secret reset buildkite
-
-```
-
-### `sg lint` - Run linters against local code
-
-```bash
-# Run all possible checks 
-sg lint
-
-# Run only go related checks
-sg lint go
-
-# Run only shell related checks
-sg lint shell
-
-# Run only client related checks
-sg lint client
-
-# List all available check groups 
-sg lint --help
-```
-
-### `sg db` - Interact with your local Sourcegraph database(s)
-
-```bash
-# Reset the Sourcegraph 'frontend' database
-sg db reset-pg
-
-# Reset the 'frontend' and 'codeintel' databases
-sg db reset-pg -db=frontend,codeintel
-
-# Reset all databases ('frontend', 'codeintel', 'codeinsights')
-sg db reset-pg -db=all
-
-# Reset the redis database
-sg db reset-redis
-
-# Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-sg db add-user -name=foo
-```
-
-### `sg update` - Update sg itself
-
-```bash 
-# Manually update sg
-sg update
 ```
 
 ## Configuration
@@ -446,16 +212,40 @@ Have questions or need help? Feel free to [open a discussion](https://github.com
 
 > NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
 
-## Dockerized sg
+## Advanced installation
 
-A `sourcegraph/sg` Docker image is available: 
+### Dockerized sg
 
-```
+A `sourcegraph/sg` Docker image is available:
+
+```dockerfile
 # ... 
 COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
 # ...
 ```
 
-### Development tips
+### Manually building the binary
 
-- Due to [#29222](https://github.com/sourcegraph/sourcegraph/issues/29222), you might need to set `CONFIGURATION_MODE: 'empty'` if you encounter errors where `sg` tries to connect to `frontend`.
+> NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
+
+If you want full control over where the `sg` binary ends up, use this option.
+
+In the root of `sourcegraph/sourcegraph`, run:
+
+```sh
+go build -o ~/my/path/sg ./dev/sg
+```
+
+Then make sure that `~/my/path` is in your `$PATH`.
+
+> NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
+>
+> `export PATH=$GOPATH/bin:$PATH`
+>
+> Instead of the more conventional:
+>
+> `export PATH=$PATH:$GOPATH/bin`
+>
+> Or you may add an alias to your `.bashrc`:
+>
+> `alias sg=$HOME/go/bin/sg`

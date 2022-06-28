@@ -1,15 +1,17 @@
 import React from 'react'
 
-import { Insight, InsightDashboard } from '../../../../core/types'
+import { H3, Text } from '@sourcegraph/wildcard'
+
+import { Insight, InsightDashboard } from '../../../../core'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
-import { ConfirmationModal, ConfirmationModalProps } from '../ConfirmationModal'
+import { ConfirmationModal, ConfirmationModalProps } from '../../../modals/ConfirmationModal'
 
 interface ConfirmRemoveModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
     insight: Insight
     dashboard: InsightDashboard | null
 }
 
-export const ConfirmRemoveModal: React.FunctionComponent<ConfirmRemoveModalProps> = ({
+export const ConfirmRemoveModal: React.FunctionComponent<React.PropsWithChildren<ConfirmRemoveModalProps>> = ({
     insight,
     dashboard,
     showModal,
@@ -26,11 +28,11 @@ export const ConfirmRemoveModal: React.FunctionComponent<ConfirmRemoveModalProps
             disabled={loading}
             variant="danger"
         >
-            <h3 className="text-danger mb-4">Remove Insight?</h3>
-            <p className="mb-4">
+            <H3 className="text-danger mb-4">Remove Insight?</H3>
+            <Text className="mb-4">
                 Are you sure you want to remove the insight <strong>{insight.title}</strong> from the dashboard{' '}
                 <strong>{dashboard?.title}</strong>?
-            </p>
+            </Text>
         </ConfirmationModal>
     )
 }

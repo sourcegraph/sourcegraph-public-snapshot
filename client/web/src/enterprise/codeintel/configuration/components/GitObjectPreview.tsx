@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, H3, Text } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
 import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'
@@ -17,9 +17,13 @@ export interface GitObjectPreviewWrapperProps {
     pattern: string
 }
 
-const GitObjectHeader = <h3>Preview of Git object filter</h3>
+const GitObjectHeader = <H3>Preview of Git object filter</H3>
 
-export const GitObjectPreviewWrapper: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) => (
+export const GitObjectPreviewWrapper: FunctionComponent<React.PropsWithChildren<GitObjectPreviewWrapperProps>> = ({
+    repoId,
+    type,
+    pattern,
+}) => (
     <div className="form-group">
         {pattern === '' ? (
             <>
@@ -47,7 +51,7 @@ export interface GitPreviewProps {
     typeText: string
 }
 
-const createGitCommitPreview = (type: GitObjectType): FunctionComponent<GitPreviewProps> => ({
+const createGitCommitPreview = (type: GitObjectType): FunctionComponent<React.PropsWithChildren<GitPreviewProps>> => ({
     repoId,
     pattern,
     typeText,
@@ -64,9 +68,15 @@ const createGitCommitPreview = (type: GitObjectType): FunctionComponent<GitPrevi
     )
 }
 
-const GitTagPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TAG)
-const GitBranchesPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TREE)
-const GitCommitPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_COMMIT)
+const GitTagPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
+    GitObjectType.GIT_TAG
+)
+const GitBranchesPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
+    GitObjectType.GIT_TREE
+)
+const GitCommitPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
+    GitObjectType.GIT_COMMIT
+)
 
 interface GitObjectPreviewProps {
     typeText: string
@@ -75,7 +85,7 @@ interface GitObjectPreviewProps {
     previewLoading: boolean
 }
 
-const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
+const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPreviewProps>> = ({
     typeText,
     preview,
     previewError,
@@ -103,14 +113,14 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
                 {preview.preview.length === 0 ? (
                     <div className="mt-2 pt-2">
                         <div className={styles.empty}>
-                            <p className="text-monospace">N/A</p>
+                            <Text className="text-monospace">N/A</Text>
                         </div>
                     </div>
                 ) : (
                     <div className="mt-2 pt-2">
                         <div className={classNames('bg-dark text-light p-2', styles.container)}>
                             {preview.preview.map(tag => (
-                                <p key={`${tag.repoName}@${tag.name}`} className="text-monospace p-0 m-0">
+                                <Text key={`${tag.repoName}@${tag.name}`} className="text-monospace p-0 m-0">
                                     <span className="search-filter-keyword">repo:</span>
                                     <span>{tag.repoName}</span>
                                     <span className="search-filter-keyword">@</span>
@@ -118,7 +128,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
                                     <Badge variant="info" className="ml-4">
                                         {tag.rev.slice(0, 7)}
                                     </Badge>
-                                </p>
+                                </Text>
                             ))}
                         </div>
                     </div>

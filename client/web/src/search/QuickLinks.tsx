@@ -14,13 +14,13 @@ interface Props {
     className?: string
 }
 
-export const QuickLinks: React.FunctionComponent<Props> = ({ quickLinks, className = '' }) =>
+export const QuickLinks: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ quickLinks, className = '' }) =>
     quickLinks && quickLinks.length > 0 ? (
         <div className={className}>
             {quickLinks.map((quickLink, index) => (
                 <small className={classNames('text-nowrap mr-2', styles.quicklink)} key={index}>
                     <Link to={quickLink.url} data-tooltip={quickLink.description}>
-                        <Icon className="pr-1" as={LinkIcon} />
+                        <Icon aria-hidden={true} className="pr-1" as={LinkIcon} />
                         {quickLink.name}
                     </Link>
                 </small>

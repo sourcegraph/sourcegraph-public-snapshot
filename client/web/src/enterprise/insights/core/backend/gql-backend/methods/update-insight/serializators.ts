@@ -1,10 +1,11 @@
 import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
+    SeriesDisplayOptionsInput,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
-import { InsightExecutionType } from '../../../../types'
+import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import {
     MinimalCaptureGroupInsightData,
     MinimalLangStatsInsightData,
@@ -13,16 +14,16 @@ import {
 import { getStepInterval } from '../../utils/get-step-interval'
 
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
-    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
+    const repositories = insight.repositories
     const [unit, value] = getStepInterval(insight.step)
-    const filters: InsightViewFiltersInput =
-        insight.executionType === InsightExecutionType.Backend
-            ? {
-                  includeRepoRegex: insight.filters.includeRepoRegexp,
-                  excludeRepoRegex: insight.filters.excludeRepoRegexp,
-                  searchContexts: insight.filters.contexts,
-              }
-            : {}
+    const filters: InsightViewFiltersInput = {
+        includeRepoRegex: insight.filters.includeRepoRegexp,
+        excludeRepoRegex: insight.filters.excludeRepoRegexp,
+        searchContexts: insight.filters.context ? [insight.filters.context] : [],
+    }
+
+    // TODO: update when sorting all insights are supported
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {}
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -38,14 +39,14 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         presentationOptions: {
             title: insight.title,
         },
-        viewControls: { filters },
+        viewControls: { filters, seriesDisplayOptions },
     }
 }
 
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories } = insight
+    const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
     return {
@@ -65,8 +66,9 @@ export function getCaptureGroupInsightUpdateInput(
             filters: {
                 includeRepoRegex: filters.includeRepoRegexp,
                 excludeRepoRegex: filters.excludeRepoRegexp,
-                searchContexts: filters.contexts,
+                searchContexts: insight.filters.context ? [filters.context] : [],
             },
+            seriesDisplayOptions: parseSeriesDisplayOptions(seriesDisplayOptions),
         },
     }
 }

@@ -34,7 +34,9 @@ export type BlockMenuActionComponentProps = {
 } & BlockMenuAction &
     Pick<ButtonProps, 'variant'>
 
-const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponentProps> = props => {
+const BlockMenuActionComponent: React.FunctionComponent<
+    React.PropsWithChildren<BlockMenuActionComponentProps>
+> = props => {
     const { className, label, type, id, isDisabled, icon, iconClassName, variant } = props
 
     const element = type === 'button' ? 'button' : 'a'
@@ -51,6 +53,7 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
             disabled={isDisabled}
             role="menuitem"
             data-testid={label}
+            aria-label={label}
             size="sm"
             variant={variant}
             {...elementSpecificProps}
@@ -73,7 +76,11 @@ export interface NotebookBlockMenuProps {
     actions: BlockMenuAction[]
 }
 
-export const NotebookBlockMenu: React.FunctionComponent<NotebookBlockMenuProps> = ({ id, mainAction, actions }) => (
+export const NotebookBlockMenu: React.FunctionComponent<React.PropsWithChildren<NotebookBlockMenuProps>> = ({
+    id,
+    mainAction,
+    actions,
+}) => (
     <div
         className={classNames('block-menu', styles.blockMenu)}
         // To fix Rule: "aria-required-children"

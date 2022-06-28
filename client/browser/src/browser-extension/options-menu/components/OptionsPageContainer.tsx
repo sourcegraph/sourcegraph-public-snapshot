@@ -6,7 +6,7 @@ import styles from './OptionsPageContainer.module.scss'
 
 type OptionsPageContainerProps = HTMLAttributes<HTMLElement> & { isFullPage?: boolean }
 
-export const OptionsPageContainer: React.FunctionComponent<OptionsPageContainerProps> = ({
+export const OptionsPageContainer: React.FunctionComponent<React.PropsWithChildren<OptionsPageContainerProps>> = ({
     children,
     isFullPage,
     className,

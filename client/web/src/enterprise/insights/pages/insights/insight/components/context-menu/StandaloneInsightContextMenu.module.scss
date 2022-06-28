@@ -1,0 +1,16 @@
+.button {
+    display: inline-flex;
+    cursor: pointer;
+}
+
+.button-icon {
+    fill: var(--icon-color);
+
+    &--active {
+        fill: var(--body-color);
+    }
+}
+
+.item[data-reach-menu-item] {
+    text-align: right;
+}

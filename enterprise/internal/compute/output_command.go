@@ -10,14 +10,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type Output struct {
 	SearchPattern MatchPattern
 	OutputPattern string
 	Separator     string
+	Selector      string
+	TypeValue     string
 }
 
 func (c *Output) ToSearchPattern() string {
@@ -60,16 +62,27 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func resultContent(ctx context.Context, db database.DB, r result.Match) (string, bool, error) {
+func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath bool) (string, bool, error) {
 	switch m := r.(type) {
 	case *result.RepoMatch:
 		return string(m.Name), true, nil
 	case *result.FileMatch:
-		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
+		if onlyPath {
+			return m.Path, true, nil
+		}
+		contentBytes, err := gitserver.NewClient(db).ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
 		}
 		return string(contentBytes), true, nil
+	case *result.CommitDiffMatch:
+		var sb strings.Builder
+		for _, h := range m.Hunks {
+			for _, l := range h.Lines {
+				sb.WriteString(l)
+			}
+		}
+		return sb.String(), true, nil
 	case *result.CommitMatch:
 		var content string
 		if m.DiffPreview != nil {
@@ -84,7 +97,8 @@ func resultContent(ctx context.Context, db database.DB, r result.Match) (string,
 }
 
 func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
-	content, ok, err := resultContent(ctx, db, r)
+	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
+	content, ok, err := resultContent(ctx, db, r, onlyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -96,5 +110,12 @@ func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Resul
 	if err != nil {
 		return nil, err
 	}
+
+	if c.Selector != "" {
+		// Don't run the search pattern over the search result content
+		// when there's an explicit `select:` value.
+		return &Text{Value: outputPattern, Kind: "output"}, nil
+	}
+
 	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
 }

@@ -133,16 +133,23 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <Card className={styles.card}>
                                 <CardHeader>Default branch</CardHeader>
                                 <ul className="list-group list-group-flush">
-                                    <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
+                                    <GitReferenceNode
+                                        node={this.state.dataOrError.defaultBranch}
+                                        ariaLabel={`View this repository using ${this.state.dataOrError.defaultBranch.displayName} as the selected revision`}
+                                    />
                                 </ul>
                             </Card>
                         )}
                         {this.state.dataOrError.activeBranches.length > 0 && (
                             <Card className={styles.card}>
                                 <CardHeader>Active branches</CardHeader>
-                                <div className="list-group list-group-flush">
+                                <ul className="list-group list-group-flush" data-testid="active-branches-list">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (
-                                        <GitReferenceNode key={index} node={gitReference} />
+                                        <GitReferenceNode
+                                            key={index}
+                                            node={gitReference}
+                                            ariaLabel={`View this repository using ${gitReference.displayName} as the selected revision`}
+                                        />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
                                         <Link
@@ -150,10 +157,10 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <Icon as={ChevronRightIcon} />
+                                            <Icon as={ChevronRightIcon} aria-hidden={true} />
                                         </Link>
                                     )}
-                                </div>
+                                </ul>
                             </Card>
                         )}
                     </div>

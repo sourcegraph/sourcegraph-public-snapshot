@@ -29,8 +29,8 @@ let
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/a5d12145047970d663764ce95bf1e459e734a014.tar.gz";
-      sha256 = "1rbnmbc3mvk5in86wx6hla54d7kkmgn6pz0zwigcchhmi2dv76h3";
+        "https://github.com/NixOS/nixpkgs/archive/cbe587c735b734405f56803e267820ee1559e6c1.tar.gz";
+      sha256 = "0jii8slqbwbvrngf9911z3al1s80v7kk8idma9p9k0d5fm3g4z7h";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -64,6 +64,7 @@ pkgs.mkShell {
     # Lots of our tooling and go tests rely on git et al.
     git
     parallel
+    nssTools
 
     # CI lint tools you need locally
     shfmt
@@ -80,12 +81,15 @@ pkgs.mkShell {
     rustc
     rustfmt
     libiconv
+    clippy
   ];
 
   # Startup postgres
   shellHook = ''
     . ./dev/nix/shell-hook.sh
   '';
+
+  hardeningDisable = [ "fortify" ];
 
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.

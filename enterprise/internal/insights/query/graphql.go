@@ -21,8 +21,8 @@ import (
 
 // graphQLQuery describes a general GraphQL query and its variables.
 type graphQLQuery struct {
-	Query     string      `json:"query"`
-	Variables interface{} `json:"variables"`
+	Query     string `json:"query"`
+	Variables any    `json:"variables"`
 }
 
 const gqlSearchQuery = `query Search(
@@ -96,7 +96,7 @@ type GqlSearchResponse struct {
 			}
 		}
 	}
-	Errors []interface{}
+	Errors []any
 }
 
 // search executes the given search query.

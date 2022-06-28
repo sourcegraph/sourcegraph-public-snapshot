@@ -11,7 +11,7 @@ import (
 // different results.
 // Something to consider for later. That's why the code lives in a separate place though.
 
-func MaxMemoryInKB(usage interface{}) (int64, error) {
+func MaxMemoryInKB(usage any) (int64, error) {
 	sysUsage, ok := usage.(*syscall.Rusage)
 
 	if !ok {

@@ -2,6 +2,8 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import { Label, Input } from '@sourcegraph/wildcard'
+
 interface Props {
     /** The user count input by the user. */
     value: number | null
@@ -26,7 +28,7 @@ const USER_COUNT_STEP = 25
 /**
  * Displays a form control for inputting the user count for a product subscription.
  */
-export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Props> = ({
+export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     value,
     onChange,
     disabled,
@@ -42,14 +44,14 @@ export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Pr
 
     return (
         <div className={classNames('product-subscription-user-count-control form-group align-items-center', className)}>
-            <label htmlFor="product-subscription-user-count-control__userCount" className="mb-0 mr-2 font-weight-bold">
+            <Label htmlFor="product-subscription-user-count-control__userCount" className="mb-0 mr-2" weight="bold">
                 Users
-            </label>
+            </Label>
             <div className="d-flex align-items-center">
-                <input
+                <Input
                     id="product-subscription-user-count-control__userCount"
                     type="number"
-                    className="form-control w-auto"
+                    className="w-auto"
                     min={MIN_USER_COUNT}
                     step={USER_COUNT_STEP}
                     max={50000}

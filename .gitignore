@@ -123,7 +123,7 @@ elm-stuff
 /client/extension-api/dist
 
 # Compute Component
-/client/web/src/notebooks/blocks/compute/component/public/dist
+/client/web/src/search/results/components/compute/public/dist
 
 # Direnv
 .envrc
@@ -173,6 +173,7 @@ test-reports/
 
 # go workspace files shouldn't be committed
 go.work
+go.work.sum
 
 # binary
 /sg

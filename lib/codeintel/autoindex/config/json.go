@@ -53,7 +53,7 @@ func UnmarshalJSON(data []byte) (IndexConfiguration, error) {
 
 // jsonUnmarshal unmarshals the JSON using a fault-tolerant parser that allows comments
 // and trailing commas. If any unrecoverable faults are found, an error is returned.
-func jsonUnmarshal(text string, v interface{}) error {
+func jsonUnmarshal(text string, v any) error {
 	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(errs) > 0 {
 		return errors.Errorf("failed to parse JSON: %v", errs)

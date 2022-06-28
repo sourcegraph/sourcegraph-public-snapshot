@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 
-import { Button, CardFooter, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Link, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -23,7 +23,7 @@ interface Props {
  * Displays a certificate with information about and status for a user's product subscription. It
  * supports both billing-linked and non-billing-linked subscriptions.
  */
-export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
+export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     subscriptionName,
     productNameWithBrand,
     userCount,
@@ -47,25 +47,22 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                 <>
                     <CardFooter className="d-flex align-items-center justify-content-between flex-wrap">
                         <Button className="mr-4 my-1" onClick={toggleShowLicenseKey} variant="primary">
-                            <Icon as={KeyIcon} /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
+                            <Icon aria-hidden={true} as={KeyIcon} /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
                         </Button>
                         <div className="flex-fill" />
                         <div className="my-1" />
                     </CardFooter>
                     {showLicenseKey && (
                         <CardFooter>
-                            <h3>License key</h3>
+                            <H3>License key</H3>
                             {licenseKey ? (
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />
                                     <small className="mt-2 d-flex align-items-center">
-                                        <Icon className="mr-1" as={InformationIcon} />{' '}
+                                        <Icon aria-hidden={true} className="mr-1" as={InformationIcon} />{' '}
                                         <span>
-                                            Use this license key as the{' '}
-                                            <code>
-                                                <strong>licenseKey</strong>
-                                            </code>{' '}
-                                            property value in Sourcegraph site configuration.
+                                            Use this license key as the <Code weight="bold">licenseKey</Code> property
+                                            value in Sourcegraph site configuration.
                                         </span>
                                     </small>
                                     <LicenseGenerationKeyWarning className="mb-0 mt-1" />

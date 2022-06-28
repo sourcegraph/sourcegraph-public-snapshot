@@ -1,7 +1,6 @@
 import React from 'react'
 
 import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -15,7 +14,6 @@ import { Button, ButtonGroup, Icon, Link } from '@sourcegraph/wildcard'
 
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { TreePageRepositoryFields } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 
 interface TreeNavigationProps {
     repo: TreePageRepositoryFields
@@ -25,78 +23,63 @@ interface TreeNavigationProps {
     batchChangesEnabled: boolean
 }
 
-export const TreeNavigation: React.FunctionComponent<TreeNavigationProps> = ({
+export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<TreeNavigationProps>> = ({
     repo,
     revision,
     tree,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-}) => {
-    // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
-
-    return (
-        <ButtonGroup>
-            {enableAPIDocs && (
-                <Button to={`${tree.url}/-/docs`} variant="secondary" outline={true} as={Link}>
-                    <Icon as={BookOpenBlankVariantIcon} /> API docs
-                </Button>
-            )}
-            <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
-                <Icon as={SourceCommitIcon} /> Commits
-            </Button>
+}) => (
+    <ButtonGroup>
+        <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
+            <Icon as={SourceCommitIcon} aria-hidden={true} /> Commits
+        </Button>
+        <Button to={`/${encodeURIPathComponent(repo.name)}/-/branches`} variant="secondary" outline={true} as={Link}>
+            <Icon as={SourceBranchIcon} aria-hidden={true} /> Branches
+        </Button>
+        <Button to={`/${encodeURIPathComponent(repo.name)}/-/tags`} variant="secondary" outline={true} as={Link}>
+            <Icon as={TagIcon} aria-hidden={true} /> Tags
+        </Button>
+        <Button
+            to={
+                revision
+                    ? `/${encodeURIPathComponent(repo.name)}/-/compare/...${encodeURIComponent(revision)}`
+                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
+            }
+            variant="secondary"
+            outline={true}
+            as={Link}
+        >
+            <Icon as={HistoryIcon} aria-hidden={true} /> Compare
+        </Button>
+        <Button
+            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
+            variant="secondary"
+            outline={true}
+            as={Link}
+        >
+            <Icon as={AccountIcon} aria-hidden={true} /> Contributors
+        </Button>
+        {codeIntelligenceEnabled && (
             <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
+                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                 variant="secondary"
                 outline={true}
                 as={Link}
             >
-                <Icon as={SourceBranchIcon} /> Branches
+                <Icon as={BrainIcon} aria-hidden={true} /> Code Intelligence
             </Button>
-            <Button to={`/${encodeURIPathComponent(repo.name)}/-/tags`} variant="secondary" outline={true} as={Link}>
-                <Icon as={TagIcon} /> Tags
-            </Button>
+        )}
+        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
+        {repo.viewerCanAdminister && (
             <Button
-                to={
-                    revision
-                        ? `/${encodeURIPathComponent(repo.name)}/-/compare/...${encodeURIComponent(revision)}`
-                        : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                }
+                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
                 variant="secondary"
                 outline={true}
                 as={Link}
             >
-                <Icon as={HistoryIcon} /> Compare
+                <Icon as={SettingsIcon} aria-hidden={true} /> Settings
             </Button>
-            <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                variant="secondary"
-                outline={true}
-                as={Link}
-            >
-                <Icon as={AccountIcon} /> Contributors
-            </Button>
-            {codeIntelligenceEnabled && (
-                <Button
-                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                    variant="secondary"
-                    outline={true}
-                    as={Link}
-                >
-                    <Icon as={BrainIcon} /> Code Intelligence
-                </Button>
-            )}
-            {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
-            {repo.viewerCanAdminister && (
-                <Button
-                    to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                    variant="secondary"
-                    outline={true}
-                    as={Link}
-                >
-                    <Icon as={SettingsIcon} /> Settings
-                </Button>
-            )}
-        </ButtonGroup>
-    )
-}
+        )}
+    </ButtonGroup>
+)

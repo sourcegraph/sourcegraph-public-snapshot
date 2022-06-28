@@ -8,7 +8,7 @@ import styles from './ConnectionPopoverList.module.scss'
 
 type ConnectionPopoverListProps = HTMLAttributes<HTMLDivElement>
 
-export const ConnectionPopoverList: React.FunctionComponent<ConnectionPopoverListProps> = ({
+export const ConnectionPopoverList: React.FunctionComponent<React.PropsWithChildren<ConnectionPopoverListProps>> = ({
     className,
     children,
     ...rest

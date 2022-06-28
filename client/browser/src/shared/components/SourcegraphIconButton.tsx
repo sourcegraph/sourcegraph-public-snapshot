@@ -14,7 +14,7 @@ export interface SourcegraphIconButtonProps
     dataTestId?: string
 }
 
-export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButtonProps> = ({
+export const SourcegraphIconButton: React.FunctionComponent<React.PropsWithChildren<SourcegraphIconButtonProps>> = ({
     iconClassName,
     label,
     ariaLabel,

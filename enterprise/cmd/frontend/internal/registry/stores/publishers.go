@@ -25,7 +25,7 @@ func (p Publisher) IsZero() bool { return p == Publisher{} }
 
 // PublisherNotFoundError occurs when a registry extension publisher is not found.
 type PublisherNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 // NotFound implements errcode.NotFounder.
@@ -164,7 +164,7 @@ LIMIT 1
 	err := s.QueryRow(ctx, q).Scan(&userID, &orgID, &p.NonCanonicalName)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &PublisherNotFoundError{[]interface{}{"name", name}}
+			return nil, &PublisherNotFoundError{[]any{"name", name}}
 		}
 		return nil, err
 	}

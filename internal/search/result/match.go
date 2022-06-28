@@ -33,6 +33,7 @@ var (
 	_ Match = (*FileMatch)(nil)
 	_ Match = (*RepoMatch)(nil)
 	_ Match = (*CommitMatch)(nil)
+	_ Match = (*CommitDiffMatch)(nil)
 )
 
 // Match ranks are used for sorting the different match types.

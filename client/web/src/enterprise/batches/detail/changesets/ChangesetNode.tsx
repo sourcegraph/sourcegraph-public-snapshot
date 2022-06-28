@@ -40,7 +40,7 @@ export interface ChangesetNodeProps extends ThemeProps {
     expandByDefault?: boolean
 }
 
-export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
+export const ChangesetNode: React.FunctionComponent<React.PropsWithChildren<ChangesetNodeProps>> = ({
     node,
     separator = <span className={styles.changesetNodeSeparator} />,
     ...props

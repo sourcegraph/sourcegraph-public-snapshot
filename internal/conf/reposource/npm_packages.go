@@ -152,6 +152,9 @@ type NpmDependency struct {
 
 	// The URL of the tarball to download. Possibly empty.
 	TarballURL string
+
+	// The description of the package. Possibly empty.
+	PackageDescription string
 }
 
 // ParseNpmDependency parses a string in a '(@scope/)?module@version' format into an NpmDependency.
@@ -183,6 +186,14 @@ func ParseNpmDependency(dependency string) (*NpmDependency, error) {
 	}
 	scope, name, version := result["scope"], result["name"], result["version"]
 	return &NpmDependency{NpmPackage: &NpmPackage{scope, name}, Version: version}, nil
+}
+
+func (d *NpmDependency) Description() string {
+	return d.PackageDescription
+}
+
+type NpmMetadata struct {
+	Package *NpmPackage
 }
 
 // PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned

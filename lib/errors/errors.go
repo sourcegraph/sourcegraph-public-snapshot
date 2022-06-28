@@ -94,7 +94,7 @@ func (e *multiError) Is(refError error) bool {
 	return false
 }
 
-func (e *multiError) As(target interface{}) bool {
+func (e *multiError) As(target any) bool {
 	if m, ok := target.(*multiError); ok {
 		*m = *e
 		return true

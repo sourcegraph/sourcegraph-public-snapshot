@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -44,22 +44,27 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	}
 	if resp.Cloned {
 		if mtime, err := repoLastFetched(dir); err != nil {
-			log15.Warn("error computing last-fetched date", "repo", repo, "err", err)
+			s.Logger.Warn("error computing last-fetched date", log.String("repo", string(repo)), log.Error(err))
 		} else {
 			resp.LastFetched = &mtime
 		}
 
 		if cloneTime, err := getRecloneTime(dir); err != nil {
-			log15.Warn("error getting re-clone time", "repo", repo, "err", err)
+			s.Logger.Warn("error getting re-clone time", log.String("repo", string(repo)), log.Error(err))
 		} else {
 			resp.CloneTime = &cloneTime
 		}
 
 		if lastChanged, err := repoLastChanged(dir); err != nil {
-			log15.Warn("error getting last changed", "repo", repo, "err", err)
+			s.Logger.Warn("error getting last changed", log.String("repo", string(repo)), log.Error(err))
 		} else {
 			resp.LastChanged = &lastChanged
 		}
+	}
+	gitRepo, err := s.DB.GitserverRepos().GetByName(ctx, repo)
+	if err == nil {
+		resp.Size = gitRepo.RepoSizeBytes
+		resp.LastError = gitRepo.LastError
 	}
 	return &resp, nil
 }
@@ -147,15 +152,17 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.deleteRepo(r.Context(), req.Repo); err != nil {
-		log15.Error("failed to delete repository", "repo", req.Repo, "error", err)
+		s.Logger.Error("failed to delete repository", log.String("repo", string(req.Repo)), log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log15.Info("deleted repository", "repo", req.Repo)
+	s.Logger.Info("deleted repository", log.String("repo", string(req.Repo)))
 }
 
 func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
-	err := s.removeRepoDirectory(s.dir(repo))
+	// The repo may be deleted in the database, in this case we need to get the
+	// original name in order to find it on disk
+	err := s.removeRepoDirectory(s.dir(api.UndeletedRepoName(repo)))
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}

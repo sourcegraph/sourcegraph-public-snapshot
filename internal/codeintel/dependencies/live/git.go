@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type gitService struct {
@@ -24,11 +24,15 @@ func NewGitService(db database.DB) dependencies.GitService {
 	}
 }
 
+func (s *gitService) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error) {
+	return gitserver.NewClient(s.db).GetCommits(ctx, repoCommits, ignoreErrors, s.checker)
+}
+
 func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {
-	return git.LsFiles(ctx, s.db, s.checker, repo, commits, pathspecs...)
+	return gitserver.NewClient(s.db).LsFiles(ctx, s.checker, repo, commits, pathspecs...)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	// Note: the sub-repo perms checker is nil here because sub-repo filtering is applied when LsFiles is called
-	return git.ArchiveReader(ctx, s.db, nil, repo, opts)
+	return gitserver.NewClient(s.db).ArchiveReader(ctx, nil, repo, opts)
 }

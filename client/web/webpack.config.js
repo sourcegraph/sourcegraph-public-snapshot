@@ -35,7 +35,6 @@ const {
   CI: IS_CI,
   ENTERPRISE,
   EMBED_DEVELOPMENT,
-  ENABLE_TELEMETRY,
   ENABLE_MONITORING,
   SOURCEGRAPH_API_URL,
   WEBPACK_SERVE_INDEX,
@@ -48,7 +47,6 @@ const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOP
 
 const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
-  ENABLE_TELEMETRY,
   ENABLE_MONITORING,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
@@ -233,7 +231,7 @@ const config = {
         use: {
           loader: 'elm-webpack-loader',
           options: {
-            cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+            cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
             report: 'json',
             pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
           },

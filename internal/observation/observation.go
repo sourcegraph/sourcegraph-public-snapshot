@@ -1,84 +1,30 @@
 // Package observation provides a unified way to wrap an operation with logging, tracing, and metrics.
 //
-// High-level ideas:
-//
-//     - Each service creates an observation Context that carries a root logger, tracer,
-//       and a metrics registerer as its context.
-//
-//     - An observation Context can create an observation Operation which represents a
-//       section of code that can be invoked many times. An observation Operation is
-//       configured with state that applies to all invocation of the code.
-//
-//     - An observation Operation can wrap a an invocation of a section of code by calling its
-//       With method. This prepares a trace and some state to be reconciled after the invocation
-//       has completed. The With method returns a function that, when deferred, will emit metrics,
-//       additional logs, and finalize the trace span.
-//
-// Sample usage:
-//
-//     observationContext := observation.Context{
-//         Logger:     log.Scoped("my-scope", "a simple description"),
-//         Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-//         Registerer: prometheus.DefaultRegisterer,
-//     }
-//
-//     metrics := metrics.NewREDMetrics(
-//         observationContext.Registerer,
-//         "thing",
-//         metrics.WithLabels("op"),
-//     )
-//
-//     operation := observationContext.Operation(observation.Op{
-//         Name:         "Thing.SomeOperation",
-//         MetricLabels: []string{"some_operation"},
-//         Metrics:      metrics,
-//     })
-//
-//     // You can log some logs directly using operation - these logs will be structured
-//     // with context about your operation.
-//     operation.Info("something happened!", log.String("additional", "context"))
-//
-//     function SomeOperation(ctx context.Context) (err error) {
-//         // logs and metrics may be available before or after the operation, so they
-//         // can be supplied either at the start of the operation, or after in the
-//         // defer of endObservation.
-//
-//         ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{ /* logs and metrics */ })
-//         defer func() { endObservation(1, observation.Args{ /* additional logs and metrics */ }) }()
-//
-//         // ...
-//
-//         // You can log some logs directly from the returned trace - these logs will be
-//         // structured with the trace ID, trace fields, and observation context.
-//         trace.Info("I did the thing!", log.Int("things", 3))
-//
-//         // ...
-//     }
-//
-// Log fields and metric labels can be supplied at construction of an Operation, at invocation
-// of an operation (the With function), or after the invocation completes but before the observation
-// has terminated (the endObservation function). Log fields and metric labels are concatenated
-// together in the order they are attached to an operation.
+// To learn more, refer to "How to add observability": https://docs.sourcegraph.com/dev/how-to/add_observability
 package observation
 
 import (
 	"context"
-	"fmt"
+	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
+
+// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level,
+// which is useful in environments like Datadog that don't support OpenTrace/OpenTelemetry
+// trace log events.
+var enableTraceLog = os.Getenv("SRC_TRACE_LOG") == "true"
 
 // Context carries context about where to send logs, trace spans, and register
 // metrics. It should be created once on service startup, and passed around to
@@ -88,11 +34,10 @@ type Context struct {
 	Tracer       *trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
-	Sentry       *sentry.Hub
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Registerer: metrics.TestRegisterer}
+var TestContext = Context{Logger: log.Scoped("TestContext", ""), Registerer: metrics.TestRegisterer}
 
 type ErrorFilterBehaviour uint8
 
@@ -102,7 +47,6 @@ const (
 	EmitForLogs
 	EmitForTraces
 	EmitForHoney
-	EmitForSentry
 
 	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces
 )
@@ -120,7 +64,7 @@ type Op struct {
 	Description string
 	// MetricLabelValues that apply for every invocation of this operation.
 	MetricLabelValues []string
-	// LogFields that apply for for every invocation of this operation.
+	// LogFields that apply for every invocation of this operation.
 	LogFields []otlog.Field
 	// ErrorFilter returns true for any error that should be converted to nil
 	// for the purposes of metrics and tracing. If this field is not set then
@@ -204,7 +148,7 @@ type traceLogger struct {
 	log.Logger
 }
 
-// initWithTags adds tags to everything except the underlying Logger, which should have
+// initWithTags adds tags to everything except the underlying Logger, which should
 // already have init fields due to being spawned from a parent Logger.
 func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 	if honey.Enabled() {
@@ -225,10 +169,12 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 	}
 	if t.trace != nil {
 		t.trace.LogFields(fields...)
+		if enableTraceLog {
+			t.Logger.
+				AddCallerSkip(1). // Log() -> Logger
+				Info("trace.log", toLogFields(fields)...)
+		}
 	}
-	t.Logger.
-		AddCallerSkip(1). // Log() -> Logger
-		Info("trace.log", toLogFields(fields)...)
 }
 
 func (t *traceLogger) Tag(fields ...otlog.Field) {
@@ -331,7 +277,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
 	if op.context.HoneyDataset != nil {
-		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
+		event = op.context.HoneyDataset.EventWithFields(map[string]any{
 			"operation":     snakecaseOpName,
 			"meta.hostname": hostname.Get(),
 			"meta.version":  version.Version(),
@@ -378,7 +324,6 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
 			traceErr   = op.applyErrorFilter(err, EmitForTraces)
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
-			sentryErr  = op.applyErrorFilter(err, EmitForSentry)
 		)
 
 		// already has all the other log fields
@@ -389,7 +334,6 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
-		op.emitSentryError(sentryErr, logFields)
 	}
 }
 
@@ -411,11 +355,11 @@ func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields [
 	if err == nil || *err == nil {
 		return
 	}
-	fields := append(toLogFields(logFields), zap.Error(*err))
+	fields := append(toLogFields(logFields), log.Error(*err))
 
 	trLogger.
 		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger
-		Error(op.name, fields...)
+		Error("operation.error", fields...)
 }
 
 func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []otlog.Field, duration int64) {
@@ -430,26 +374,6 @@ func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event
 	}
 
 	event.Send()
-}
-
-// emitSentryError will send errors to Sentry.
-func (op *Operation) emitSentryError(err *error, logFields []otlog.Field) {
-	if err == nil || *err == nil {
-		return
-	}
-
-	if op.context.Sentry == nil {
-		return
-	}
-
-	logs := make(map[string]string)
-	for _, field := range logFields {
-		logs[field.Key()] = fmt.Sprintf("%v", field.Value())
-	}
-
-	logs["operation"] = op.name
-
-	op.context.Sentry.CaptureError(*err, logs)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics

@@ -20,7 +20,7 @@ interface ModalVideoProps {
     assetsRoot?: string
 }
 
-export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
+export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVideoProps>> = ({
     title,
     src,
     thumbnail,

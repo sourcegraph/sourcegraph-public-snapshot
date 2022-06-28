@@ -15,7 +15,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 Please see the instructions for your deployment type:
 
-- [Sourcegraph with Docker Compose](docker_compose.md)
+- [Sourcegraph with Docker Compose](upgrade_docker-compose.md)
 - [Sourcegraph with Kubernetes](kubernetes.md)
 - [Single-container Sourcegraph with Docker](server.md)
 - [Pure-Docker custom deployments](pure_docker.md)
@@ -24,7 +24,7 @@ For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 
 ## Migrating to a new deployment type
 
-See [this page](../install/index.md) to get advice on which deployment type you should be running.
+See [this page](../deploy/index.md) to get advice on which deployment type you should be running.
 
-- [Migrate to Docker Compose](../install/docker-compose/migrate.md) for improved stability and performance if you are using a single-container `sourcegraph/server` deployment.
-- [Migrate to a Kubernetes cluster](../install/kubernetes/index.md) if you exceed the limits of a single machine Docker Compose deployment.
+- [Migrate to Docker Compose](../deploy/docker-compose/migrate.md) for improved stability and performance if you are using a single-container `sourcegraph/server` deployment.
+- [Migrate to a Kubernetes cluster](../deploy/kubernetes/index.md) if you exceed the limits of a single machine Docker Compose deployment.

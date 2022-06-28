@@ -68,14 +68,6 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 	return orgID, nil
 }
 
-func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
-	err = c.postInternal(ctx, "users/get-by-username", username, &user)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
 	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)
 	if err != nil {
@@ -96,15 +88,6 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return externalURL, nil
-}
-
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, err error) {
-	err = c.postInternal(ctx, "can-send-email", nil, &canSendEmail)
-	if err != nil {
-		return false, err
-	}
-	return canSendEmail, nil
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
@@ -141,11 +124,11 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo api.Rep
 	}, nil)
 }
 
-var MockExternalServiceConfigs func(kind string, result interface{}) error
+var MockExternalServiceConfigs func(kind string, result any) error
 
 // ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
 // which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
+func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result any) error {
 	if MockExternalServiceConfigs != nil {
 		return MockExternalServiceConfigs(kind, result)
 	}
@@ -163,16 +146,16 @@ func (c *internalClient) ExternalServicesList(
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
-func (c *internalClient) LogTelemetry(ctx context.Context, reqBody interface{}) error {
+func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
 	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.
-func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody interface{}) error {
+func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody any) error {
 	return c.meteredPost(ctx, "/.internal/"+route, reqBody, respBody)
 }
 
-func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody interface{}) error {
+func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody any) error {
 	start := time.Now()
 	statusCode, err := c.post(ctx, route, reqBody, respBody)
 	d := time.Since(start)
@@ -188,7 +171,7 @@ func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody,
 // post sends an HTTP post request to the provided route. If reqBody is
 // non-nil it will Marshal it as JSON and set that as the Request body. If
 // respBody is non-nil the response body will be JSON unmarshalled to resp.
-func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) (int, error) {
+func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody any) (int, error) {
 	var data []byte
 	if reqBody != nil {
 		var err error

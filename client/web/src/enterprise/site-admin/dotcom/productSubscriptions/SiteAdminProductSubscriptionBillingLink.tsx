@@ -31,7 +31,7 @@ const LOADING = 'loading' as const
  * SiteAdminProductSubscriptionBillingLink shows a link to the product subscription on the billing system, if there
  * is an associated billing record. It also supports setting or unsetting the association with the billing system.
  */
-export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Props> = ({
+export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     productSubscription,
     onDidUpdate,
 }) => {
@@ -73,11 +73,16 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
             <div className="d-flex align-items-center">
                 {productSubscription.urlForSiteAdminBilling && (
                     <Link to={productSubscription.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View billing subscription <Icon className="ml-1" as={ExternalLinkIcon} />
+                        View billing subscription <Icon aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
+                    <Icon
+                        className="text-danger mr-2"
+                        aria-label={update.message}
+                        data-tooltip={update.message}
+                        as={AlertCircleIcon}
+                    />
                 )}
                 <Button
                     onClick={productSubscriptionHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

@@ -36,7 +36,7 @@ export interface NotebookContentProps
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
 
-export const NotebookContent: React.FunctionComponent<NotebookContentProps> = React.memo(
+export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<NotebookContentProps>> = React.memo(
     ({
         viewerCanManage,
         blocks,

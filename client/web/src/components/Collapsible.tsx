@@ -51,7 +51,7 @@ interface Props {
  * Collapsible is an element with a title that is always displayed and children that are displayed
  * only when expanded.
  */
-export const Collapsible: React.FunctionComponent<Props> = ({
+export const Collapsible: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     title,
     detail,
     children,
@@ -99,11 +99,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
-                    {isExpanded ? (
-                        <Icon aria-label="Close section" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                    )}
+                    <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
                 </Button>
                 {!titleAtStart && titleNode}
             </div>

@@ -112,7 +112,7 @@ func initSourcegraph() {
 
 	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
 }
-func mustMarshalJSONString(v interface{}) string {
+func mustMarshalJSONString(v any) string {
 	str, err := jsoniter.MarshalToString(v)
 	if err != nil {
 		panic(err)

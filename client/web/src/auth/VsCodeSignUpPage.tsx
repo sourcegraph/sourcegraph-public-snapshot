@@ -6,11 +6,10 @@ import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { VSCodeIcon } from '../components/CtaIcons'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
 import { ExternalsAuth } from './ExternalsAuth'
@@ -19,7 +18,7 @@ import { SignUpArguments, SignUpForm } from './SignUpForm'
 import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
-interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
+interface Props extends ThemeProps, TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -30,13 +29,12 @@ interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
 /**
  * Sign up page specifically from users via our VS Code integration
  */
-export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
+export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     showEmailForm,
     onSignUp,
     context,
     telemetryService,
-    featureFlags,
 }) => {
     const location = useLocation()
 
@@ -60,7 +58,6 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
 
     const signUpForm = (
         <SignUpForm
-            featureFlags={featureFlags}
             onSignUp={args => {
                 logEvent('builtin')
                 return onSignUp(args)
@@ -98,7 +95,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} aria-hidden={true} />
                     Go back
                 </Link>
             </small>
@@ -119,12 +116,12 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
             <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
                 <div className={styles.leftOrRight}>
                     <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    <h2 className={classNames('d-flex', 'align-items-center', 'mb-3', 'mt-1', styles.pageHeading)}>
+                    <H2 className={classNames('d-flex', 'align-items-center', 'mb-3', 'mt-1', styles.pageHeading)}>
                         <div className={classNames(styles.iconCirlce, 'mr-3')}>
                             <VSCodeIcon />
                         </div>{' '}
                         <strong className="mr-1">Unlock the full potential of the Sourcegraph extension</strong>
-                    </h2>
+                    </H2>
                     With a Sourcegraph account, you can:
                     <ul className={styles.featureList}>
                         <li>Search all of your code from your code host, even without downloading it locally</li>
@@ -142,7 +139,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
                 </div>
                 <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
                     {' '}
-                    <h2>Create a free account</h2>
+                    <H2>Create a free account</H2>
                     {renderAuthMethod()}
                     <small className="text-muted">
                         By registering, you agree to our{' '}

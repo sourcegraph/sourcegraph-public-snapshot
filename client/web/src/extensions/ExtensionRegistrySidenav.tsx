@@ -4,7 +4,19 @@ import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Icon,
+    H3,
+    H4,
+    Checkbox,
+} from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -36,7 +48,7 @@ interface ExtensionsEnablementDropdownProps {
  * Includes category filter buttons and enablement filter dropdown.
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
-    ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
+    React.PropsWithChildren<ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps>
 > = ({
     selectedCategory,
     onSelectCategory,
@@ -70,7 +82,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
             <Menu>
                 <MenuButton size="sm" variant="secondary" outline={true}>
-                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} />
+                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} aria-hidden={true} />
                 </MenuButton>
                 <MenuList>
                     <MenuItem onSelect={showAll} disabled={enablementFilter === 'all'}>
@@ -85,23 +97,12 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
                     <MenuDivider />
 
-                    <MenuItem
-                        // Hack: clicking <label> inside <MenuItem> doesn't affect checked state,
-                        // so use a <span> for which click events are handled by <MenuItem>.
-                        onSelect={toggleExperimentalExtensions}
-                    >
-                        <div className="d-flex align-items-center">
-                            <input
-                                type="checkbox"
-                                checked={showExperimentalExtensions}
-                                onChange={toggleExperimentalExtensions}
-                                className=""
-                                aria-labelledby="show-experimental-extensions"
-                            />
-                            <span className="m-0 pl-2" id="show-experimental-extensions">
-                                Show experimental extensions
-                            </span>
-                        </div>
+                    <MenuItem onSelect={toggleExperimentalExtensions}>
+                        <Checkbox
+                            id="show-experimental-extensions"
+                            checked={showExperimentalExtensions}
+                            label="Show experimental extensions"
+                        />
                     </MenuItem>
                 </MenuList>
             </Menu>
@@ -111,7 +112,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
     )
 }
 
-const ExtensionSidenavBanner: React.FunctionComponent = () => (
+const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames(styles.banner, 'mx-2')}>
         <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}

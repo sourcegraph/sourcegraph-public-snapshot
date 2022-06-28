@@ -104,7 +104,7 @@ func (e *MergeRequestMergedEvent) Key() string {
 
 // ToEvent returns a pointer to a more specific struct, or
 // nil if the ResourceStateEvent is not of a known kind.
-func (rse *ResourceStateEvent) ToEvent() interface{} {
+func (rse *ResourceStateEvent) ToEvent() any {
 	switch rse.State {
 	case ResourceStateEventStateClosed:
 		return &MergeRequestClosedEvent{rse}

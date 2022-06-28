@@ -71,7 +71,7 @@ func TestCreateJWT(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		parsed, err := jwt.ParseWithClaims(token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
+		parsed, err := jwt.ParseWithClaims(token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
 			// Validate the alg is what we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
@@ -128,7 +128,7 @@ func TestOrgInvitationURL(t *testing.T) {
 		items := strings.Split(url, "/")
 		token := items[len(items)-1]
 
-		parsed, err := jwt.ParseWithClaims(token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
+		parsed, err := jwt.ParseWithClaims(token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
 			// Validate the alg is what we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
@@ -207,7 +207,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 					"username":     "foo",
 				},
@@ -241,7 +241,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 					"username":     "foo",
 				},
@@ -249,7 +249,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "cannot invite user because their primary email address is not verified",
-						Path:    []interface{}{"inviteUserToOrganization"},
+						Path:    []any{"inviteUserToOrganization"},
 					},
 				},
 			},
@@ -270,7 +270,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 					"username":     "foo",
 				},
@@ -300,7 +300,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 					"email":        "foo@bar.baz",
 				},
@@ -308,7 +308,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "inviting by email is not supported for this organization",
-						Path:    []interface{}{"inviteUserToOrganization"},
+						Path:    []any{"inviteUserToOrganization"},
 					},
 				},
 			},
@@ -334,7 +334,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 					"email":        "foo@bar.baz",
 				},
@@ -398,7 +398,7 @@ func TestPendingInvitations(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 				},
 				ExpectedResult: fmt.Sprintf(`{
@@ -427,7 +427,7 @@ func TestPendingInvitations(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 				},
 				ExpectedResult: fmt.Sprintf(`{
@@ -491,14 +491,14 @@ func TestInvitationByToken(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"token": token,
 				},
 				ExpectedResult: `null`,
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.",
-						Path:    []interface{}{"invitationByToken"},
+						Path:    []any{"invitationByToken"},
 					},
 				},
 			},
@@ -526,7 +526,7 @@ func TestInvitationByToken(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"token": token,
 				},
 				ExpectedResult: `{
@@ -592,7 +592,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "REJECT",
 				},
@@ -631,7 +631,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
@@ -676,7 +676,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
@@ -721,7 +721,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
@@ -729,7 +729,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "your email addresses [something@else.invalid] do not match the email address on the invitation.",
-						Path:    []interface{}{"respondToOrganizationInvitation"},
+						Path:    []any{"respondToOrganizationInvitation"},
 					},
 				},
 			},
@@ -801,7 +801,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id": string(MarshalOrgInvitationID(invitationID)),
 				},
 				ExpectedResult: `{
@@ -845,7 +845,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id": string(MarshalOrgInvitationID(invitationID)),
 				},
 				ExpectedResult: `{
@@ -886,14 +886,14 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id": string(MarshalOrgInvitationID(invitationID)),
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: wantErr.Error(),
-						Path:    []interface{}{"resendOrganizationInvitationNotification"},
+						Path:    []any{"resendOrganizationInvitationNotification"},
 					},
 				},
 			},
@@ -918,14 +918,14 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"id": string(MarshalOrgInvitationID(invitationID)),
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "refusing to send notification because recipient has no verified email address",
-						Path:    []interface{}{"resendOrganizationInvitationNotification"},
+						Path:    []any{"resendOrganizationInvitationNotification"},
 					},
 				},
 			},

@@ -1,7 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-export const LogoAscii: React.FunctionComponent<{ fontSize?: number }> = ({ fontSize = 8 }) => {
+export const LogoAscii: React.FunctionComponent<React.PropsWithChildren<{ fontSize?: number }>> = ({
+    fontSize = 8,
+}) => {
     // colors are hardcoded as it's a 1-to-1 conversion from src-cli ASCII logo
     const color_af5f5f = { color: '#af5f5f' }
     const color_d75f00 = { color: '#d75f00' }

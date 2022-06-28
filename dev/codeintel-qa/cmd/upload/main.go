@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	numConcurrentUploads int
 	indexDir             string
+	numConcurrentUploads int
 	verbose              bool
 	pollInterval         time.Duration
 	timeout              time.Duration
@@ -31,6 +31,8 @@ func init() {
 }
 
 func main() {
+	// FIXME: Flaky test in CI. Re-enable https://github.com/sourcegraph/sourcegraph/issues/37671
+	return
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
@@ -54,7 +56,7 @@ func mainErr(ctx context.Context) error {
 		return err
 	}
 
-	commitsByRepo, err := commitsByRepo()
+	commitsByRepo, err := internal.CommitsByRepo(indexDir)
 	if err != nil {
 		return err
 	}

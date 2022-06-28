@@ -134,7 +134,7 @@ func TestLockoutStore(t *testing.T) {
 
 		assert.Empty(t, err)
 
-		parsed, err := jwt.ParseWithClaims(token, &unlockAccountClaims{}, func(token *jwt.Token) (interface{}, error) {
+		parsed, err := jwt.ParseWithClaims(token, &unlockAccountClaims{}, func(token *jwt.Token) (any, error) {
 			// Validate the alg is what we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)

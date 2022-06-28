@@ -23,7 +23,8 @@ const typescriptRawManifest = JSON.stringify({
     main: 'dist/extension.js',
     name: 'typescript',
     publisher: 'sourcegraph',
-    readme: '# Code intelligence for TypeScript/JavaScript',
+    readme:
+        '# Codecov Sourcegraph extension \n\n A [Sourcegraph extension](https://docs.sourcegraph.com/extensions) for showing code coverage information from [Codecov](https://codecov.io) on GitHub, Sourcegraph, and other tools. \n\n ## Features \n\n - Support for GitHub.com and Sourcegraph.com \n - Line coverage overlays on files (with green/yellow/red background colors) \n - Line branches/hits annotations on files \n - File coverage ratio indicator (`Coverage: N%`) and toggle button \n - Support for using a Codecov API token to see coverage for private repositories \n - File and directory coverage decorations on Sourcegraph \n\n ## Usage \n\n ### On GitHub using the Chrome extension \n 1. Install [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack) \n 2. [Enable the Codecov extension on Sourcegraph](https://sourcegraph.com/extensions/sourcegraph/codecov) \n 3. Visit [tuf_store.go in theupdateframework/notary on GitHub](https://github.com/theupdateframework/notary/blob/master/server/storage/tuf_store.go) (or any other file in a public repository that has Codecov code coverage) \n 4. Click the `Coverage: N%` button to toggle Codecov test coverage background colors on the file (scroll down if they aren’t immediately visible) \n\n',
     scripts: {},
     tags: [],
     url:
@@ -188,6 +189,7 @@ describe('Extension Registry', () => {
                     session: { canSignOut: true },
                     viewerCanAdminister: true,
                     searchable: true,
+                    emails: [],
                 },
             }),
             RegistryExtensions: () => ({
@@ -198,6 +200,12 @@ describe('Extension Registry', () => {
                         nodes: registryExtensionNodes,
                     },
                     featuredExtensions: null,
+                },
+            }),
+            RegistryExtension: () => ({
+                extensionRegistry: {
+                    __typename: 'ExtensionRegistry',
+                    extension: { ...registryExtensionNodes[0], publishedAt: '2018-10-28T22:33:08Z' },
                 },
             }),
             Extensions: () => ({
@@ -269,10 +277,10 @@ describe('Extension Registry', () => {
             overrideGraphQLExtensionRegistry({ enabled: false })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
-            await driver.page.waitForSelector('.test-extension-registry-input')
+            await driver.page.waitForSelector('[data-testid=test-extension-registry-input]')
             const request = await testContext.waitForGraphQLRequest(async () => {
                 await driver.replaceText({
-                    selector: '.test-extension-registry-input',
+                    selector: '[data-testid=test-extension-registry-input]',
                     newText: 'sqs',
                     enterTextMethod: 'paste',
                 })
@@ -329,6 +337,32 @@ describe('Extension Registry', () => {
                     value: !enabled,
                 },
             })
+        })
+    })
+    describe('Accessibility', () => {
+        it('View extension detail page', async () => {
+            overrideGraphQLExtensionRegistry({ enabled: false })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions/sourcegraph/typescript')
+            await driver.page.waitForSelector("[data-testid='registry-extension-overview']")
+
+            await percySnapshotWithVariants(driver.page, 'Extension registry list page')
+            await accessibilityAudit(driver.page)
+        })
+        it('Create extension page', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ViewerRegistryPublishers: () => ({
+                    extensionRegistry: {
+                        viewerPublishers: [{ __typename: 'User', id: 'VXNlcjo0ODA4OQ==', username: 'Alice' }],
+                        localExtensionIDPrefix: null,
+                    },
+                }),
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions/registry/new?toast=integrations')
+            await driver.page.waitForSelector('.test-registry-new-extension')
+
+            await percySnapshotWithVariants(driver.page, 'Extension registry create page')
+            await accessibilityAudit(driver.page)
         })
     })
 })

@@ -18,8 +18,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -77,6 +79,7 @@ func createMaliciousTgz(t *testing.T) []byte {
 
 func TestNpmCloneCommand(t *testing.T) {
 	dir := t.TempDir()
+	logger := logtest.Scoped(t)
 
 	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
@@ -100,13 +103,12 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := live.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), livedependencies.NewSyncer())
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		depsSvc,
 		&client,
-		"urn",
 	).(*vcsDependenciesSyncer)
 
 	bareGitDirectory := path.Join(dir, "git")
@@ -236,7 +238,7 @@ func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
 func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
-func (info *fileInfo) Sys() interface{}   { return nil }
+func (info *fileInfo) Sys() any           { return nil }
 
 func TestDecompressTgz(t *testing.T) {
 	table := []struct {

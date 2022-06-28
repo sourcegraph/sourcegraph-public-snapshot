@@ -35,7 +35,7 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 		const delayBeforeUnreachableLog = 150 * time.Millisecond // assumes first loop iter executes within this time period
 		go client.continuouslyUpdate(&continuousUpdateOptions{
 			delayBeforeUnreachableLog: delayBeforeUnreachableLog,
-			log: func(format string, v ...interface{}) {
+			log: func(format string, v ...any) {
 				logMessages = append(logMessages, fmt.Sprintf(format, v...))
 			},
 			sleep: func() {

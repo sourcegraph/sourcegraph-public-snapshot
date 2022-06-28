@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
@@ -23,7 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+
+	// This import is required to force a binary hash change when the src-cli version is bumped.
+	_ "github.com/sourcegraph/sourcegraph/internal/src-cli"
 )
 
 func main() {
@@ -34,21 +38,24 @@ func main() {
 	env.HandleHelpFlag()
 
 	logging.Init()
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 	trace.Init()
 
+	logger := log.Scoped("executor", "the executor service polls the public frontend API for work to perform")
+
 	if err := config.Validate(); err != nil {
-		log.Fatalf("failed to read config: %s", err)
+		logger.Error("failed to read config", log.Error(err))
+		os.Exit(1)
 	}
 
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
-		Logger:     sglog.Scoped("service", "executor service"),
+		Logger:     log.Scoped("service", "executor service"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -66,7 +73,7 @@ func main() {
 
 		return apiclient.NewTelemetryOptions(ctx)
 	}()
-	log15.Info("Telemetry information gathered", "info", fmt.Sprintf("%+v", telemetryOptions))
+	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -105,7 +112,7 @@ func main() {
 
 func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
 	observationContext := &observation.Context{
-		Logger:     sglog.Scoped("executor_processor", "executor worker processor"),
+		Logger:     log.Scoped("executor_processor", "executor worker processor"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

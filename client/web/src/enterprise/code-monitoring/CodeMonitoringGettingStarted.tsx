@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, CardBody, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -61,11 +63,14 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
     return `/code-monitoring/new?${searchParameters.toString()}`
 }
 
-export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
-    isLightTheme,
-    isSignedIn,
-}) => {
+export const CodeMonitoringGettingStarted: React.FunctionComponent<
+    React.PropsWithChildren<CodeMonitoringGettingStartedProps>
+> = ({ isLightTheme, isSignedIn }) => {
     const assetsRoot = window.context?.assetsRoot || ''
+
+    const logExampleMonitorClicked = useCallback(() => {
+        eventLogger.log('CodeMonitoringExampleMonitorClicked')
+    }, [])
 
     return (
         <div>
@@ -76,20 +81,20 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     className={classNames('mr-lg-5', styles.heroImage)}
                 />
                 <div className="align-self-center">
-                    <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
-                    <p className={classNames('mb-4')}>
+                    <H2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</H2>
+                    <Text className={classNames('mb-4')}>
                         With code monitoring, you can automatically track changes made across multiple code hosts and
                         repositories.
-                    </p>
+                    </Text>
 
-                    <h3>Common use cases</h3>
+                    <H3>Common use cases</H3>
                     <ul>
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
                     {isSignedIn ? (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
-                            <Icon className="mr-2" as={PlusIcon} />
+                            <Icon aria-hidden={true} className="mr-2" as={PlusIcon} />
                             Create a code monitor
                         </Button>
                     ) : (
@@ -102,16 +107,18 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                 </div>
             </Card>
             <div>
-                <h3 className="mb-3">Example code monitors</h3>
+                <H3 className="mb-3">Example code monitors</H3>
 
                 <div className={classNames('mb-3', styles.startingPointsContainer)}>
                     {exampleCodeMonitors.map(monitor => (
                         <div className={styles.startingPoint} key={monitor.title}>
                             <Card className="h-100">
                                 <CardBody className="d-flex flex-column">
-                                    <h3>{monitor.title}</h3>
-                                    <p className="text-muted flex-grow-1">{monitor.description}</p>
-                                    <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
+                                    <H3>{monitor.title}</H3>
+                                    <Text className="text-muted flex-grow-1">{monitor.description}</Text>
+                                    <Link to={createCodeMonitorUrl(monitor)} onClick={logExampleMonitorClicked}>
+                                        Create copy of monitor
+                                    </Link>
                                 </CardBody>
                             </Card>
                         </div>
@@ -122,11 +129,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                 <div className="row">
                     <div className="col-4">
                         <div>
-                            <h4>Get started</h4>
-                            <p className="text-muted">
+                            <H4>Get started</H4>
+                            <Text className="text-muted">
                                 Craft searches that will monitor your code and trigger actions such as email
                                 notifications.
-                            </p>
+                            </Text>
                             <Link to="/help/code_monitoring" className="link">
                                 Code monitoring documentation
                             </Link>
@@ -134,11 +141,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     </div>
                     <div className="col-4">
                         <div>
-                            <h4>Starting points and ideas</h4>
-                            <p className="text-muted">
+                            <H4>Starting points and ideas</H4>
+                            <Text className="text-muted">
                                 Find specific examples of useful code monitors to keep on top of security and
                                 consistency concerns.
-                            </p>
+                            </Text>
                             <Link to="/help/code_monitoring/how-tos/starting_points" className="link">
                                 Explore starting points
                             </Link>
@@ -147,10 +154,10 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     {isSignedIn ? (
                         <div className="col-4">
                             <div>
-                                <h4>Questions and feedback</h4>
-                                <p className="text-muted">
+                                <H4>Questions and feedback</H4>
+                                <Text className="text-muted">
                                     Have a question or idea about code monitoring? We want to hear your feedback!
-                                </p>
+                                </Text>
                                 <Link to="mailto:feedback@sourcegraph.com" className="link">
                                     Share your thoughts
                                 </Link>
@@ -159,8 +166,8 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     ) : (
                         <div className="col-4">
                             <Card className={styles.signUpCard}>
-                                <h4>Free for registered users</h4>
-                                <p className="text-muted">Sign up and build your first code monitor today.</p>
+                                <H4>Free for registered users</H4>
+                                <Text className="text-muted">Sign up and build your first code monitor today.</Text>
                                 <CodeMonitorSignUpLink
                                     className={styles.createButton}
                                     eventName="SignUpPLGMonitor_GettingStarted"

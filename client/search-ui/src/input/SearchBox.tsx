@@ -36,7 +36,6 @@ export interface SearchBoxProps
     onFocus?: () => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     onCompletionItemSelected?: () => void
-    onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     className?: string
@@ -60,7 +59,7 @@ export interface SearchBoxProps
     onEditorCreated?: (editor: IEditor) => void
 }
 
-export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
+export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback } = props
 
     const [editor, setEditor] = useState<IEditor>()
@@ -107,17 +106,40 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                 */}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
                     <LazyMonacoQueryInput
-                        {...props}
-                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
+                        preventNewLine={true}
+                        autoFocus={props.autoFocus}
+                        caseSensitive={props.caseSensitive}
+                        editorComponent={props.editorComponent}
+                        fetchStreamSuggestions={props.fetchStreamSuggestions}
+                        globbing={props.globbing}
+                        interpretComments={props.interpretComments}
+                        isLightTheme={props.isLightTheme}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        keyboardShortcutForFocus={props.keyboardShortcutForFocus}
+                        onChange={props.onChange}
+                        onCompletionItemSelected={props.onCompletionItemSelected}
+                        onFocus={props.onFocus}
+                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                        onSubmit={props.onSubmit}
+                        patternType={props.patternType}
+                        queryState={props.queryState}
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                     />
                     <Toggles
-                        {...props}
+                        patternType={props.patternType}
+                        setPatternType={props.setPatternType}
+                        caseSensitive={props.caseSensitive}
+                        setCaseSensitivity={props.setCaseSensitivity}
+                        settingsCascade={props.settingsCascade}
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
+                        showCopyQueryButton={props.showCopyQueryButton}
+                        structuralSearchDisabled={props.structuralSearchDisabled}
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                     />
                 </div>
             </div>

@@ -20,7 +20,11 @@ interface Props {
     _now?: Date
 }
 
-export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset, viewerCanAdminister, _now }) => {
+export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    changeset,
+    viewerCanAdminister,
+    _now,
+}) => {
     // initially, the changeset was never last updated
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
     // .. if it was, and the changesets current updatedAt doesn't match the previous updated at, we know that it has been synced
@@ -71,13 +75,19 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <Icon className="text-danger" as={AlertCircleIcon} /> Syncing from code host failed.
+                    <Icon aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> Syncing from code host
+                    failed.
                 </span>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
-                <Icon data-tooltip={lastUpdatedAt.message} className="ml-2 small" as={AlertCircleIcon} />
+                <Icon
+                    data-tooltip={lastUpdatedAt.message}
+                    aria-label={lastUpdatedAt.message}
+                    className="ml-2 small"
+                    as={AlertCircleIcon}
+                />
             )}
             <span data-tooltip={tooltipText}>
                 <UpdateLoaderIcon
@@ -91,19 +101,29 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
     )
 }
 
-const UpdateLoaderIcon: React.FunctionComponent<{
-    lastUpdatedAt: string | Error | null
-    changesetUpdatedAt: string
-    viewerCanAdminister: boolean
-    onEnqueueChangeset: React.MouseEventHandler
-}> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
+const UpdateLoaderIcon: React.FunctionComponent<
+    React.PropsWithChildren<{
+        lastUpdatedAt: string | Error | null
+        changesetUpdatedAt: string
+        viewerCanAdminister: boolean
+        onEnqueueChangeset: React.MouseEventHandler
+    }>
+> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
     if (typeof lastUpdatedAt === 'string' && changesetUpdatedAt === lastUpdatedAt) {
         return <LoadingSpinner inline={true} />
     }
 
     if (viewerCanAdminister) {
-        return <Icon className="cursor-pointer" onClick={onEnqueueChangeset} role="button" as={SyncIcon} />
+        return (
+            <Icon
+                aria-label="Refresh"
+                className="cursor-pointer"
+                onClick={onEnqueueChangeset}
+                role="button"
+                as={SyncIcon}
+            />
+        )
     }
 
-    return <Icon as={InfoCircleOutlineIcon} />
+    return <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
 }

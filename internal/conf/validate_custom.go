@@ -81,7 +81,7 @@ func validateCustom(cfg Unified) (problems Problems) {
 // TestValidator is an exported helper function for other packages to test their contributed
 // validators (registered with ContributeValidator). It should only be called by tests.
 func TestValidator(t interface {
-	Errorf(format string, args ...interface{})
+	Errorf(format string, args ...any)
 	Helper()
 }, c conftypes.UnifiedQuerier, f Validator, wantProblems Problems) {
 	t.Helper()

@@ -24,7 +24,7 @@ export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     history: H.History
 }
 
-export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
+export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<ConfigurationEditorProps>> = ({
     repoId,
     authenticatedUser,
     isLightTheme,

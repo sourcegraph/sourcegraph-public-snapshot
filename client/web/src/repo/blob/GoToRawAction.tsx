@@ -31,11 +31,11 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 <RepoHeaderActionAnchor
                     to={to}
                     target="_blank"
+                    file={true}
                     onClick={this.onClick.bind(this)}
                     download={true}
-                    file={true}
                 >
-                    <Icon as={FileDownloadOutlineIcon} />
+                    <Icon as={FileDownloadOutlineIcon} aria-hidden={true} />
                     <span>{descriptiveText}</span>
                 </RepoHeaderActionAnchor>
             )
@@ -50,9 +50,8 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 data-tooltip={descriptiveText}
                 aria-label={descriptiveText}
                 download={true}
-                file={true}
             >
-                <Icon as={FileDownloadOutlineIcon} />
+                <Icon as={FileDownloadOutlineIcon} aria-hidden={true} />
             </RepoHeaderActionAnchor>
         )
     }

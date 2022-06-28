@@ -107,10 +107,14 @@ function getSymbolIconClassName(kind: SymbolKind): string | undefined {
 /**
  * Renders an Icon for a given symbol kind
  */
-export const SymbolIcon: React.FunctionComponent<SymbolIconProps> = ({ kind, className = '' }) => (
+export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolIconProps>> = ({
+    kind,
+    className = '',
+}) => (
     <Icon
         className={classNames(getSymbolIconClassName(kind), className)}
         data-tooltip={kind.toLowerCase()}
         as={getSymbolIconComponent(kind)}
+        aria-label={`Symbol kind ${kind.toLowerCase()}`}
     />
 )

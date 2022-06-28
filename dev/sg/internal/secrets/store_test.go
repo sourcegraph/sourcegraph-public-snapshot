@@ -49,7 +49,7 @@ func TestSecrets(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
-		data := map[string]interface{}{"key": "val"}
+		data := map[string]any{"key": "val"}
 		s.Put("foo", data)
 		err = s.SaveFile()
 		if err != nil {

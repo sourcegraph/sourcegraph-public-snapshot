@@ -98,19 +98,19 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Users(db).Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	defer recordOperation("hasRepos")(&err)
-	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
+	rs, err := db.Repos().List(ctx, database.ReposListOptions{
 		LimitOffset: &database.LimitOffset{Limit: 1},
 	})
 	return len(rs) > 0, err
@@ -123,7 +123,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
-	return database.UserEmails(db).GetInitialSiteAdminInfo(ctx)
+	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
 }
 
 func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -274,6 +274,17 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (
 	return json.Marshal(codeMonitoringUsage)
 }
 
+func getAndMarshalNotebooksUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalNotebooksUsageJSON")
+
+	notebooksUsage, err := usagestats.GetNotebooksUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(notebooksUsage)
+}
+
 func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
 
@@ -297,7 +308,6 @@ func getAndMarshalIDEExtensionsUsageJSON(ctx context.Context, db database.DB) (_
 }
 
 func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
-
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()
@@ -307,7 +317,7 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 	return json.Marshal(versions)
 }
 
-func getDependencyVersions(ctx context.Context, db database.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
+func getDependencyVersions(ctx context.Context, db database.DB, logFunc func(string, ...any)) (json.RawMessage, error) {
 	var (
 		err error
 		dv  dependencyVersions
@@ -394,6 +404,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		CodeInsightsUsage:             []byte("{}"),
 		CodeInsightsCriticalTelemetry: []byte("{}"),
 		CodeMonitoringUsage:           []byte("{}"),
+		NotebooksUsage:                []byte("{}"),
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 	}
@@ -506,6 +517,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}
 
+		r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalNotebooksUsageJSON failed", "error", err)
+		}
+
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeHostIntegrationUsageJSON failed", "error", err)
@@ -580,7 +596,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		return nil, err
 	}
 
-	err = database.EventLogs(db).Insert(ctx, &database.Event{
+	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
@@ -604,7 +620,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
+	kinds, err = db.ExternalServices().DistinctKinds(ctx)
 	return kinds, err
 }
 

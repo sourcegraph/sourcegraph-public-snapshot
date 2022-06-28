@@ -28,7 +28,9 @@ export interface UserFacingCodeIntelligenceBadgeContentProps
     onClose?: () => void
 }
 
-export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<UserFacingCodeIntelligenceBadgeContentProps> = ({
+export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<
+    React.PropsWithChildren<UserFacingCodeIntelligenceBadgeContentProps>
+> = ({
     repoName,
     indexerSupportMetadata: { allIndexers, indexerNames, uploadsByIndexerName, indexesByIndexerName },
     onClose,
@@ -58,9 +60,9 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<Use
     return indexerNames.length === 0 ? (
         <Unsupported />
     ) : (
-        <>
+        <ul className={styles.list}>
             {indexerNames.map((name, index) => (
-                <React.Fragment key={`indexer-${name}`}>
+                <li key={`indexer-${name}`}>
                     {index > 0 && <MenuDivider />}
                     <IndexerSummary
                         repoName={repoName}
@@ -71,12 +73,12 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<Use
                             indexer: allIndexers.find(candidate => candidate.name === name),
                         }}
                         className={className}
+                        now={now}
                         useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
                         useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
-                        now={now}
                     />
-                </React.Fragment>
+                </li>
             ))}
-        </>
+        </ul>
     )
 }

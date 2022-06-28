@@ -1,18 +1,42 @@
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 
 import { Tour, TourProps } from './components/Tour/Tour'
 import { TourInfo } from './components/Tour/TourInfo'
 import { withErrorBoundary } from './components/withErrorBoundary'
-import { authenticatedExtraTask, authenticatedTasks, visitorsTasks } from './data'
+import {
+    authenticatedExtraTask,
+    authenticatedTasks,
+    visitorsTasks,
+    visitorsTasksWithNotebook,
+    visitorsTasksWithNotebookExtraTask,
+} from './data'
 
-type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> &
-    FeatureFlagProps & {
-        isAuthenticated?: boolean
-        isSourcegraphDotCom: boolean
-    }
+function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
+    return (
+        <Tour
+            {...props}
+            id="TourWithNotebook"
+            title="Code search basics"
+            keepCompletedTasks={true}
+            tasks={visitorsTasksWithNotebook}
+            extraTask={visitorsTasksWithNotebookExtraTask}
+        />
+    )
+}
+
+function TourVisitorRegular(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
+    return <Tour {...props} id="Tour" tasks={visitorsTasks} />
+}
+
+const TourVisitor = withFeatureFlag('ab-visitor-tour-with-notebooks', TourVisitorWithNotebook, TourVisitorRegular)
+
+type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> & {
+    isAuthenticated?: boolean
+    isSourcegraphDotCom: boolean
+}
 
 const TourWithErrorBoundary = withErrorBoundary(
-    ({ isAuthenticated, featureFlags, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
+    ({ isAuthenticated, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
         // Do not show if on prem
         if (!isSourcegraphDotCom) {
             return null
@@ -20,20 +44,22 @@ const TourWithErrorBoundary = withErrorBoundary(
 
         // Show visitors version
         if (!isAuthenticated) {
-            return <Tour {...props} id="Tour" tasks={visitorsTasks} />
+            return <TourVisitor {...props} />
         }
 
-        // Show for enabled control group
-        if (featureFlags.get('quick-start-tour-for-authenticated-users')) {
-            return (
-                <Tour {...props} id="TourAuthenticated" tasks={authenticatedTasks} extraTask={authenticatedExtraTask} />
-            )
-        }
-
-        // Do not show for the rest
-        return null
+        return (
+            <TourAuthenticated
+                {...props}
+                id="TourAuthenticated"
+                tasks={authenticatedTasks}
+                extraTask={authenticatedExtraTask}
+            />
+        )
     }
 )
+
+// Show for enabled control group
+export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', Tour)
 
 export const GettingStartedTour = Object.assign(TourWithErrorBoundary, {
     Info: TourInfo,

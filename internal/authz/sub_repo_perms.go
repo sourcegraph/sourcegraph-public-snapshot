@@ -28,8 +28,6 @@ type RepoContent struct {
 
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
-//
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms_checker.go
 type SubRepoPermissionChecker interface {
 	// Permissions returns the level of access the provided user has for the requested
 	// content.
@@ -74,8 +72,6 @@ func (*noopPermsChecker) EnabledForRepo(ctx context.Context, repo api.RepoName) 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
-//
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionsGetter -o mock_sub_repo_perms_getter.go
 type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
@@ -249,7 +245,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
 	// work
 	groupKey := strconv.FormatInt(int64(userID), 10)
-	result, err, _ := s.group.Do(groupKey, func() (interface{}, error) {
+	result, err, _ := s.group.Do(groupKey, func() (any, error) {
 		repoPerms, err := s.permissionsGetter.GetByUser(ctx, userID)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching rules")

@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -21,7 +21,7 @@ interface Props extends TelemetryProps {
  * A search button with a dropdown with related links. It must be wrapped in a form whose onSubmit
  * handler performs the search.
  */
-export const SearchButton: React.FunctionComponent<Props> = ({
+export const SearchButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     hideHelpButton,
     className,
     isSourcegraphDotCom,
@@ -35,7 +35,7 @@ export const SearchButton: React.FunctionComponent<Props> = ({
             aria-label="Search"
             variant="primary"
         >
-            <Icon aria-hidden="true" as={SearchIcon} />
+            <Icon aria-hidden="true" svgPath={mdiMagnify} />
         </Button>
         {!hideHelpButton && (
             <SearchHelpDropdownButton isSourcegraphDotCom={isSourcegraphDotCom} telemetryService={telemetryService} />

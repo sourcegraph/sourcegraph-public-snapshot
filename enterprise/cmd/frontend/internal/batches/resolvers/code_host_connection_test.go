@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -26,8 +28,9 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -42,7 +45,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +96,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-				input := map[string]interface{}{"user": userAPIID, "first": int64(tc.firstParam)}
+				input := map[string]any{"user": userAPIID, "first": int64(tc.firstParam)}
 				var response struct {
 					BatchChangesCodeHosts apitest.BatchChangesCodeHostsConnection
 				}
@@ -121,7 +124,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		var endCursor *string
 		for i := range nodes {
-			input := map[string]interface{}{"user": userAPIID, "first": 1}
+			input := map[string]any{"user": userAPIID, "first": 1}
 			if endCursor != nil {
 				input["after"] = *endCursor
 			}
@@ -214,7 +217,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-				input := map[string]interface{}{"user": userAPIID, "first": int64(tc.firstParam)}
+				input := map[string]any{"user": userAPIID, "first": int64(tc.firstParam)}
 				var response struct{ Node apitest.User }
 				apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
 
@@ -240,7 +243,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		var endCursor *string
 		for i := range nodes {
-			input := map[string]interface{}{"user": userAPIID, "first": 1}
+			input := map[string]any{"user": userAPIID, "first": 1}
 			if endCursor != nil {
 				input["after"] = *endCursor
 			}

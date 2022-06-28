@@ -32,262 +32,25 @@ const (
 	SearchTypeRegex SearchType = iota
 	SearchTypeLiteral
 	SearchTypeStructural
+	SearchTypeLucky
+	SearchTypeStandard
 )
 
 func (s SearchType) String() string {
 	switch s {
+	case SearchTypeStandard:
+		return "standard"
 	case SearchTypeRegex:
 		return "regex"
 	case SearchTypeLiteral:
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
+	case SearchTypeLucky:
+		return "lucky"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
-}
-
-// A query plan represents a set of disjoint queries for the search engine to
-// execute. The result of executing a plan is the union of individual query results.
-type Plan []Basic
-
-// ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
-func (p Plan) ToParseTree() Q {
-	nodes := make([]Node, 0, len(p))
-	for _, basic := range p {
-		operands := basic.ToParseTree()
-		nodes = append(nodes, newOperator(operands, And)...)
-	}
-	return Q(newOperator(nodes, Or))
-}
-
-// Basic represents a leaf expression to evaluate in our search engine. A basic
-// query comprises:
-//   (1) a single search pattern expression, which may contain
-//       'and' or 'or' operators; and
-//   (2) parameters that scope the evaluation of search
-//       patterns (e.g., to repos, files, etc.).
-type Basic struct {
-	Pattern    Node
-	Parameters []Parameter
-}
-
-func (b Basic) ToParseTree() Q {
-	var nodes []Node
-	for _, n := range b.Parameters {
-		nodes = append(nodes, Node(n))
-	}
-	if b.Pattern == nil {
-		return nodes
-	}
-	nodes = append(nodes, b.Pattern)
-	if hoisted, err := Hoist(nodes); err == nil {
-		return hoisted
-	}
-	return nodes
-}
-
-// MapPattern returns a copy of a basic query with updated pattern.
-func (b Basic) MapPattern(pattern Node) Basic {
-	return Basic{Parameters: b.Parameters, Pattern: pattern}
-}
-
-// MapParameters returns a copy of a basic query with updated parameters.
-func (b Basic) MapParameters(parameters []Parameter) Basic {
-	return Basic{Parameters: parameters, Pattern: b.Pattern}
-}
-
-// Count returns the string value of the "count:" field. Returns empty string if none.
-func (b Basic) Count() (count *int) {
-	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
-		c, err := strconv.Atoi(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
-		}
-		count = &c
-	})
-	return count
-}
-
-// GetTimeout returns the time.Duration value from the `timeout:` field.
-func (b Basic) GetTimeout() *time.Duration {
-	var timeout *time.Duration
-	VisitField(ToNodes(b.Parameters), FieldTimeout, func(value string, _ bool, _ Annotation) {
-		t, err := time.ParseDuration(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
-		}
-		timeout = &t
-	})
-	return timeout
-}
-
-// MapCount returns a copy of a basic query with a count parameter set.
-func (b Basic) MapCount(count int) Basic {
-	parameters := MapParameter(ToNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
-		if field == "count" {
-			value = strconv.FormatInt(int64(count), 10)
-		}
-		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-	})
-	return Basic{Parameters: toParameters(parameters), Pattern: b.Pattern}
-}
-
-func (b Basic) String() string {
-	return fmt.Sprintf("%s %s", Q(ToNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
-}
-
-func (b Basic) StringHuman() string {
-	return fmt.Sprintf("%s %s", StringHuman(ToNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
-}
-
-func (b Basic) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
-	for _, p := range b.Parameters {
-		if p.Field == field {
-			f(p.Value, p.Negated, p.Annotation)
-		}
-	}
-}
-
-// HasPatternLabel returns whether a pattern atom has a specified label.
-func (b Basic) HasPatternLabel(label labels) bool {
-	if b.Pattern == nil {
-		return false
-	}
-	if _, ok := b.Pattern.(Pattern); !ok {
-		// Basic query is not atomic.
-		return false
-	}
-	annot := b.Pattern.(Pattern).Annotation
-	return annot.Labels.IsSet(label)
-}
-
-func (b Basic) IsLiteral() bool {
-	return b.HasPatternLabel(Literal)
-}
-
-func (b Basic) IsRegexp() bool {
-	return b.HasPatternLabel(Regexp)
-}
-
-func (b Basic) IsStructural() bool {
-	return b.HasPatternLabel(Structural)
-}
-
-// FindParameter calls f on parameters matching field in b.
-func (b Basic) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
-	for _, p := range b.Parameters {
-		if p.Field == field {
-			f(p.Value, p.Negated, p.Annotation)
-			break
-		}
-	}
-}
-
-// FindValue returns the first value of a parameter matching field in b. It
-// doesn't inspect whether the field is negated.
-func (b Basic) FindValue(field string) (value string) {
-	var found string
-	b.FindParameter(field, func(v string, _ bool, _ Annotation) {
-		found = v
-	})
-	return found
-}
-
-func (b Basic) IsCaseSensitive() bool {
-	return Q(ToNodes(b.Parameters)).IsCaseSensitive()
-}
-
-func (b Basic) Index() YesNoOnly {
-	v := Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldIndex)
-	if v == nil {
-		return Yes
-	}
-	return *v
-}
-
-func (b Basic) Fork() *YesNoOnly {
-	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldFork)
-}
-
-func (b Basic) Archived() *YesNoOnly {
-	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldArchived)
-}
-
-func (b Basic) Repositories() (repos, excludeRepos []string) {
-	return Q(ToNodes(b.Parameters)).Repositories()
-}
-
-func (b Basic) Visibility() RepoVisibility {
-	visibilityStr := b.FindValue(FieldVisibility)
-	return ParseVisibility(visibilityStr)
-}
-
-// PatternString returns the simple string pattern of a basic query. It assumes
-// there is only on pattern atom.
-func (b Basic) PatternString() string {
-	if p, ok := b.Pattern.(Pattern); ok {
-		if b.IsLiteral() {
-			// Escape regexp meta characters if this pattern should be treated literally.
-			return regexp.QuoteMeta(p.Value)
-		} else {
-			return p.Value
-		}
-	}
-	return ""
-}
-
-func (b Basic) IsEmptyPattern() bool {
-	if b.Pattern == nil {
-		return true
-	}
-	if p, ok := b.Pattern.(Pattern); ok {
-		return p.Value == ""
-	}
-	return false
-}
-
-// IncludeExcludeValues partitions multiple values of a field into positive
-// (include) and negated (exclude) values.
-func (b Basic) IncludeExcludeValues(field string) (include, exclude []string) {
-	b.VisitParameter(field, func(v string, negated bool, _ Annotation) {
-		if negated {
-			exclude = append(exclude, v)
-		} else {
-			include = append(include, v)
-		}
-	})
-	return include, exclude
-}
-
-// Exists returns whether a parameter exists in the query (whether negated or not).
-func (b Basic) Exists(field string) bool {
-	found := false
-	b.VisitParameter(field, func(_ string, _ bool, _ Annotation) {
-		found = true
-	})
-	return found
-}
-
-func (b Basic) Dependencies() (dependencies []string) {
-	VisitPredicate(b.ToParseTree(), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
-		}
-	})
-	return dependencies
-}
-
-func (b Basic) MaxResults(defaultLimit int) int {
-	if count := b.Count(); count != nil {
-		return *count
-	}
-
-	if defaultLimit != 0 {
-		return defaultLimit
-	}
-
-	return limits.DefaultMaxSearchResults
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
@@ -295,17 +58,6 @@ type Q []Node
 
 func (q Q) String() string {
 	return toString(q)
-}
-
-func (q Q) RegexpPatterns(field string) (values, negatedValues []string) {
-	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
-		if negated {
-			negatedValues = append(negatedValues, visitedValue)
-		} else {
-			values = append(values, visitedValue)
-		}
-	})
-	return values, negatedValues
 }
 
 func (q Q) StringValues(field string) (values, negatedValues []string) {
@@ -328,14 +80,6 @@ func (q Q) StringValue(field string) (value, negatedValue string) {
 		}
 	})
 	return value, negatedValue
-}
-
-func (q Q) Index() YesNoOnly {
-	v := q.yesNoOnlyValue(FieldIndex)
-	if v == nil {
-		return Yes
-	}
-	return *v
 }
 
 func (q Q) Exists(field string) bool {
@@ -377,25 +121,13 @@ func (q Q) Fork() *YesNoOnly {
 func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
 	var res *YesNoOnly
 	VisitField(q, field, func(value string, _ bool, _ Annotation) {
-		yno := ParseYesNoOnly(value)
+		yno := parseYesNoOnly(value)
 		if yno == Invalid {
 			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
 		}
 		res = &yno
 	})
 	return res
-}
-
-func (q Q) Timeout() *time.Duration {
-	var timeout *time.Duration
-	VisitField(q, FieldTimeout, func(value string, _ bool, _ Annotation) {
-		t, err := time.ParseDuration(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
-		}
-		timeout = &t
-	})
-	return timeout
 }
 
 func (q Q) IsCaseSensitive() bool {
@@ -426,6 +158,15 @@ func (q Q) Dependencies() (dependencies []string) {
 	return dependencies
 }
 
+func (q Q) Dependents() (dependents []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependents" || name == "revdeps") {
+			dependents = append(dependents, value)
+		}
+	})
+	return dependents
+}
+
 func (q Q) MaxResults(defaultLimit int) int {
 	if q == nil {
 		return 0
@@ -440,4 +181,353 @@ func (q Q) MaxResults(defaultLimit int) int {
 	}
 
 	return limits.DefaultMaxSearchResults
+}
+
+// A query plan represents a set of disjoint queries for the search engine to
+// execute. The result of executing a plan is the union of individual query results.
+type Plan []Basic
+
+// ToQ models a plan as a parse tree of an Or-expression on plan queries.
+func (p Plan) ToQ() Q {
+	nodes := make([]Node, 0, len(p))
+	for _, basic := range p {
+		operands := basic.ToParseTree()
+		nodes = append(nodes, NewOperator(operands, And)...)
+	}
+	return Q(NewOperator(nodes, Or))
+}
+
+// Basic represents a leaf expression to evaluate in our search engine. A basic
+// query comprises:
+//   (1) a single search pattern expression, which may contain
+//       'and' or 'or' operators; and
+//   (2) parameters that scope the evaluation of search
+//       patterns (e.g., to repos, files, etc.).
+type Basic struct {
+	Parameters
+	Pattern Node
+}
+
+func (b Basic) ToParseTree() Q {
+	var nodes []Node
+	for _, n := range b.Parameters {
+		nodes = append(nodes, Node(n))
+	}
+	if b.Pattern == nil {
+		return nodes
+	}
+	nodes = append(nodes, b.Pattern)
+	if hoisted, err := Hoist(nodes); err == nil {
+		return hoisted
+	}
+	return nodes
+}
+
+// MapPattern returns a copy of a basic query with updated pattern.
+func (b Basic) MapPattern(pattern Node) Basic {
+	return Basic{Parameters: b.Parameters, Pattern: pattern}
+}
+
+// MapParameters returns a copy of a basic query with updated parameters.
+func (b Basic) MapParameters(parameters []Parameter) Basic {
+	return Basic{Parameters: parameters, Pattern: b.Pattern}
+}
+
+// MapCount returns a copy of a basic query with a count parameter set.
+func (b Basic) MapCount(count int) Basic {
+	parameters := MapParameter(toNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
+		if field == "count" {
+			value = strconv.FormatInt(int64(count), 10)
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+	return Basic{Parameters: toParameters(parameters), Pattern: b.Pattern}
+}
+
+func (b Basic) String() string {
+	return b.toString(func(nodes []Node) string {
+		return Q(nodes).String()
+	})
+}
+
+func (b Basic) StringHuman() string {
+	return b.toString(StringHuman)
+}
+
+// toString is a helper for String and StringHuman
+func (b Basic) toString(marshal func([]Node) string) string {
+	param := marshal(toNodes(b.Parameters))
+	if b.Pattern != nil {
+		return param + " " + marshal([]Node{b.Pattern})
+	}
+	return param
+}
+
+// HasPatternLabel returns whether a pattern atom has a specified label.
+func (b Basic) HasPatternLabel(label labels) bool {
+	if b.Pattern == nil {
+		return false
+	}
+	if _, ok := b.Pattern.(Pattern); !ok {
+		// Basic query is not atomic.
+		return false
+	}
+	annot := b.Pattern.(Pattern).Annotation
+	return annot.Labels.IsSet(label)
+}
+
+func (b Basic) IsLiteral() bool {
+	return b.HasPatternLabel(Literal)
+}
+
+func (b Basic) IsRegexp() bool {
+	return b.HasPatternLabel(Regexp)
+}
+
+func (b Basic) IsStructural() bool {
+	return b.HasPatternLabel(Structural)
+}
+
+// PatternString returns the simple string pattern of a basic query. It assumes
+// there is only on pattern atom.
+func (b Basic) PatternString() string {
+	if b.Pattern == nil {
+		return ""
+	}
+	if p, ok := b.Pattern.(Pattern); ok {
+		if b.IsLiteral() {
+			// Escape regexp meta characters if this pattern should be treated literally.
+			return regexp.QuoteMeta(p.Value)
+		} else {
+			return p.Value
+		}
+	}
+	return ""
+}
+
+func (b Basic) IsEmptyPattern() bool {
+	if b.Pattern == nil {
+		return true
+	}
+	if p, ok := b.Pattern.(Pattern); ok {
+		return p.Value == ""
+	}
+	return false
+}
+
+type Parameters []Parameter
+
+// IncludeExcludeValues partitions multiple values of a field into positive
+// (include) and negated (exclude) values.
+func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
+	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+	return include, exclude
+}
+
+func (p Parameters) RepoContainsFile() (include, exclude []string) {
+	nodes := toNodes(p)
+	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+
+	VisitField(nodes, FieldRepo, func(v string, negated bool, ann Annotation) {
+		if !ann.Labels.IsSet(IsPredicate) {
+			return
+		}
+
+		name, params := ParseAsPredicate(v)
+		if name != "contains.file" {
+			return
+		}
+
+		var p RepoContainsFilePredicate
+		if err := p.ParseParams(params); err != nil {
+			return
+		}
+
+		if negated {
+			exclude = append(exclude, p.Pattern)
+		} else {
+			include = append(include, p.Pattern)
+		}
+	})
+
+	return include, exclude
+}
+
+// Exists returns whether a parameter exists in the query (whether negated or not).
+func (p Parameters) Exists(field string) bool {
+	found := false
+	VisitField(toNodes(p), field, func(_ string, _ bool, _ Annotation) {
+		found = true
+	})
+	return found
+}
+
+func (p Parameters) Dependencies() (dependencies []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
+}
+
+func (p Parameters) Dependents() (dependents []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
+			dependents = append(dependents, value)
+		}
+	})
+	return dependents
+}
+
+func (p Parameters) MaxResults(defaultLimit int) int {
+	if count := p.Count(); count != nil {
+		return *count
+	}
+
+	if defaultLimit != 0 {
+		return defaultLimit
+	}
+
+	return limits.DefaultMaxSearchResults
+}
+
+// Count returns the string value of the "count:" field. Returns empty string if none.
+func (p Parameters) Count() (count *int) {
+	VisitField(toNodes(p), FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
+		}
+		count = &c
+	})
+	return count
+}
+
+// GetTimeout returns the time.Duration value from the `timeout:` field.
+func (p Parameters) GetTimeout() *time.Duration {
+	var timeout *time.Duration
+	VisitField(toNodes(p), FieldTimeout, func(value string, _ bool, _ Annotation) {
+		t, err := time.ParseDuration(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
+		}
+		timeout = &t
+	})
+	return timeout
+}
+
+func (p Parameters) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, parameter := range p {
+		if parameter.Field == field {
+			f(parameter.Value, parameter.Negated, parameter.Annotation)
+		}
+	}
+}
+
+func (p Parameters) boolValue(field string) bool {
+	result := false
+	VisitField(toNodes(p), field, func(value string, _ bool, _ Annotation) {
+		result, _ = parseBool(value) // err was checked during parsing and validation.
+	})
+	return result
+}
+
+func (p Parameters) IsCaseSensitive() bool {
+	return p.boolValue(FieldCase)
+}
+
+func (p Parameters) yesNoOnlyValue(field string) *YesNoOnly {
+	var res *YesNoOnly
+	VisitField(toNodes(p), field, func(value string, _ bool, _ Annotation) {
+		yno := parseYesNoOnly(value)
+		if yno == Invalid {
+			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+		}
+		res = &yno
+	})
+	return res
+}
+
+func (p Parameters) Index() YesNoOnly {
+	v := p.yesNoOnlyValue(FieldIndex)
+	if v == nil {
+		return Yes
+	}
+	return *v
+}
+
+func (p Parameters) Fork() *YesNoOnly {
+	return p.yesNoOnlyValue(FieldFork)
+}
+
+func (p Parameters) Archived() *YesNoOnly {
+	return p.yesNoOnlyValue(FieldArchived)
+}
+
+func (p Parameters) Repositories() (repos []string, negatedRepos []string) {
+	VisitField(toNodes(p), FieldRepo, func(value string, negated bool, a Annotation) {
+		if a.Labels.IsSet(IsPredicate) {
+			return
+		}
+
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+		} else {
+			repos = append(repos, value)
+		}
+	})
+	return repos, negatedRepos
+}
+
+func (p Parameters) Visibility() RepoVisibility {
+	visibilityStr := p.FindValue(FieldVisibility)
+	return ParseVisibility(visibilityStr)
+}
+
+// FindValue returns the first value of a parameter matching field in b. It
+// doesn't inspect whether the field is negated.
+func (p Parameters) FindValue(field string) (value string) {
+	var found string
+	p.FindParameter(field, func(v string, _ bool, _ Annotation) {
+		found = v
+	})
+	return found
+}
+
+// FindParameter calls f on parameters matching field in b.
+func (p Parameters) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, parameter := range p {
+		if parameter.Field == field {
+			f(parameter.Value, parameter.Negated, parameter.Annotation)
+			break
+		}
+	}
+}
+
+// Flat is a more restricted form of Basic that has exactly zero or one atomic
+// pattern nodes.
+type Flat struct {
+	Parameters
+	Pattern *Pattern
+}
+
+func (f *Flat) ToBasic() Basic {
+	var pattern Node
+	if f.Pattern != nil {
+		pattern = *f.Pattern
+	}
+	return Basic{Parameters: f.Parameters, Pattern: pattern}
 }

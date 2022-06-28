@@ -101,7 +101,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 	}
 
 	newSpec := func(branch, diff string) (*ChangesetSpec, error) {
-		var published interface{} = nil
+		var published any = nil
 		if input.Template.Published != nil {
 			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
 

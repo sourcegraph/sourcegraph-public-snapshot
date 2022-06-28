@@ -21,6 +21,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 			isCaseSensitive,
 			resultTypes.Has(result.TypeFile),
 			resultTypes.Has(result.TypePath),
+			typ,
 		)
 		if err != nil {
 			return nil, err
@@ -31,16 +32,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, search.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, search.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
-
-	if typ == search.SymbolRequest && q != nil {
-		// Tell zoekt q must match on symbols
-		q = &zoekt.Symbol{
-			Expr: q,
-		}
-	}
+	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 
 	var and []zoekt.Q
 	if q != nil {
@@ -58,7 +52,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		and = append(and, q)
 	}
 	if len(filesExclude) > 0 {
-		q, err := FileRe(search.UnionRegExps(filesExclude), isCaseSensitive)
+		q, err := FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +100,8 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
 }
 
-func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
+func toZoektPattern(
+	expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType) (zoekt.Q, error) {
 	var fold func(node query.Node) (zoekt.Q, error)
 	fold = func(node query.Node) (zoekt.Q, error) {
 		switch n := node.(type) {
@@ -131,6 +126,7 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 		case query.Pattern:
 			var q zoekt.Q
 			var err error
+
 			fileNameOnly := patternMatchesPath && !patternMatchesContent
 			contentOnly := !patternMatchesPath && patternMatchesContent
 
@@ -142,6 +138,13 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 			q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
 			if err != nil {
 				return nil, err
+			}
+
+			if typ == search.SymbolRequest && q != nil {
+				// Tell zoekt q must match on symbols
+				q = &zoekt.Symbol{
+					Expr: q,
+				}
 			}
 
 			if n.Negated {

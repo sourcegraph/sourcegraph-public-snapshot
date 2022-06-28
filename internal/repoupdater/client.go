@@ -295,7 +295,7 @@ func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api
 	return res.ExternalServices, nil
 }
 
-func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
+func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

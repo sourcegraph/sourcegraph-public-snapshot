@@ -10,16 +10,17 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitCommand is an interface describing a git command to be executed remotely.
+// GitCommand is an interface describing a git commands to be executed.
 type GitCommand interface {
 	// DividedOutput runs the command and returns its standard output and standard error.
 	DividedOutput(ctx context.Context) ([]byte, []byte, error)
@@ -62,6 +63,7 @@ type GitCommand interface {
 // This struct uses composition with exec.RemoteGitCommand which already provides all necessary means to run commands against
 // local system.
 type LocalGitCommand struct {
+	Logger  log.Logger
 	command *exec.Cmd
 
 	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
@@ -87,7 +89,7 @@ const NoReposDirErrorMsg = "No ReposDir provided, command cannot be run without 
 
 func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	if l.ReposDir == "" {
-		log15.Error(NoReposDirErrorMsg)
+		l.Logger.Error(NoReposDirErrorMsg)
 		return nil, nil, errors.New(NoReposDirErrorMsg)
 	}
 	// cmd is a version of the command in LocalGitCommand with given context
@@ -98,13 +100,14 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	cmd.Stderr = &stderrBuf
 
 	dir := protocol.NormalizeRepo(l.Repo())
-	path := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)), ".git")
-	cmd.Dir = path
+	repoPath := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)))
+	gitPath := filepath.Join(repoPath, ".git")
+	cmd.Dir = repoPath
 	if cmd.Env == nil {
 		// Do not strip out existing env when setting.
 		cmd.Env = os.Environ()
 	}
-	cmd.Env = append(cmd.Env, "GIT_DIR="+path)
+	cmd.Env = append(cmd.Env, "GIT_DIR="+gitPath)
 
 	err := cmd.Run()
 	exitStatus := -10810
@@ -113,7 +116,12 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	}
 	l.exitStatus = exitStatus
 
-	return stdoutBuf.Bytes(), stderrBuf.Bytes(), err
+	// We want to treat actions on files that don't exist as an os.ErrNotExist
+	if err != nil && strings.Contains(stderrBuf.String(), "does not exist in") {
+		err = os.ErrNotExist
+	}
+
+	return stdoutBuf.Bytes(), bytes.TrimSpace(stderrBuf.Bytes()), err
 }
 
 func (l *LocalGitCommand) Output(ctx context.Context) ([]byte, error) {
@@ -154,7 +162,7 @@ type RemoteGitCommand struct {
 	args           []string
 	noTimeout      bool
 	exitStatus     int
-	execFn         func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
+	execFn         func(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -165,9 +173,11 @@ func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, e
 	}
 
 	stdout, err := io.ReadAll(rc)
-	rc.Close()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "reading exec output")
+	}
+	if err := rc.Close(); err != nil {
+		return nil, nil, errors.Wrap(err, "closing exec reader")
 	}
 
 	c.exitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))

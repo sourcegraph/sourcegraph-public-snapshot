@@ -1,5 +1,5 @@
 .input {
-    padding: 0.5rem 1rem;
+    padding: 1rem;
     background-color: var(--color-bg-1);
 
     :global(.cm-editor) {
@@ -26,34 +26,34 @@
     // https://sourcegraph.com/github.com/codemirror/lang-markdown@fa2b51164dbad56f1a7cc7fff6e228929ed44501/-/blob/src/markdown.ts
 
     // Headings
-    :global(.cmt-heading) {
+    :global(.tok-heading) {
         color: var(--search-keyword-color);
         font-weight: bold;
     }
 
     // _content_ and *content*
-    :global(.cmt-emphasis) {
+    :global(.tok-emphasis) {
         font-style: italic;
     }
 
     // **content**
-    :global(.cmt-strong) {
+    :global(.tok-strong) {
         font-weight: bold;
     }
 
     // Various special markup characters such as #, *, `, >, etc
-    :global(.cmt-meta) {
+    :global(.tok-meta) {
         color: var(--gray-06);
     }
 
     // HTML comments
-    :global(.cmt-comment) {
+    :global(.tok-comment) {
         color: var(--oc-orange-9);
     }
 
     // stylelint-disable selector-class-pattern
-    :global(.cmt-punctuation),
-    :global(.cmt-typeName) {
+    :global(.tok-punctuation),
+    :global(.tok-typeName) {
         color: var(--oc-cyan-7);
     }
     // stylelint-enable selector-class-pattern
@@ -70,7 +70,7 @@
 }
 
 .output {
-    padding: 0.5rem 1rem;
+    padding: 1rem;
 }
 
 .markdown {

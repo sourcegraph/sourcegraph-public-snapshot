@@ -9,7 +9,9 @@ import {
 
 import styles from './WebCommandListPopoverButton.module.scss'
 
-export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => (
+export const WebCommandListPopoverButton: React.FunctionComponent<
+    React.PropsWithChildren<CommandListPopoverButtonProps>
+> = props => (
     <CommandListPopoverButton
         {...props}
         variant="link"
@@ -22,6 +24,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPop
         actionItemClassName={classNames('list-group-item list-group-item-action p-2 border-0', styles.actionItem)}
         selectedActionItemClassName="active border-primary"
         noResultsClassName="list-group-item text-muted"
+        buttonElement="button"
     />
 )
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"database/sql"
 	"math/big"
 	"net/http"
 	"reflect"
@@ -13,6 +12,8 @@ import (
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -159,7 +160,8 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
@@ -183,7 +185,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 				ExternalServiceID:   "https://github.com",
 			}
 
-			cred, err := UserCredentials(db, key).Create(ctx, scope, auth)
+			cred, err := db.UserCredentials(key).Create(ctx, scope, auth)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			} else if cred == nil {
@@ -220,7 +222,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			}
 
 			// Ensure that trying to insert again fails.
-			if cred, err := UserCredentials(db, key).Create(ctx, scope, auth); err == nil {
+			if cred, err := db.UserCredentials(key).Create(ctx, scope, auth); err == nil {
 				t.Error("unexpected nil error")
 			} else if cred != nil {
 				t.Errorf("unexpected non-nil credential: %v", cred)
@@ -230,11 +232,11 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 			cred.ExternalServiceType = newExternalServiceType
 
-			if err := UserCredentials(db, key).Update(ctx, cred); err != nil {
+			if err := db.UserCredentials(key).Update(ctx, cred); err != nil {
 				t.Errorf("unexpected non-nil error updating: %+v", err)
 			}
 
-			updatedCred, err := UserCredentials(db, key).GetByID(ctx, cred.ID)
+			updatedCred, err := db.UserCredentials(key).GetByID(ctx, cred.ID)
 			if err != nil {
 				t.Errorf("unexpected non-nil error getting credential: %+v", err)
 			}
@@ -247,11 +249,12 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 func TestUserCredentials_Delete(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
-		err := UserCredentials(db, key).Delete(ctx, 1)
+		err := db.UserCredentials(key).Delete(ctx, 1)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -274,16 +277,16 @@ func TestUserCredentials_Delete(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		cred, err := UserCredentials(db, key).Create(ctx, scope, token)
+		cred, err := db.UserCredentials(key).Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := UserCredentials(db, key).Delete(ctx, cred.ID); err != nil {
+		if err := db.UserCredentials(key).Delete(ctx, cred.ID); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		_, err = UserCredentials(db, key).GetByID(ctx, cred.ID)
+		_, err = db.UserCredentials(key).GetByID(ctx, cred.ID)
 		if !errors.HasType(err, UserCredentialNotFoundErr{}) {
 			t.Errorf("unexpected error retrieving credential after deletion: %v", err)
 		}
@@ -292,11 +295,12 @@ func TestUserCredentials_Delete(t *testing.T) {
 
 func TestUserCredentials_GetByID(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
-		cred, err := UserCredentials(db, key).GetByID(ctx, 1)
+		cred, err := db.UserCredentials(key).GetByID(ctx, 1)
 		if cred != nil {
 			t.Errorf("unexpected non-nil credential: %v", cred)
 		}
@@ -322,12 +326,12 @@ func TestUserCredentials_GetByID(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		want, err := UserCredentials(db, key).Create(ctx, scope, token)
+		want, err := db.UserCredentials(key).Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, err := UserCredentials(db, key).GetByID(ctx, want.ID)
+		have, err := db.UserCredentials(key).GetByID(ctx, want.ID)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -339,7 +343,8 @@ func TestUserCredentials_GetByID(t *testing.T) {
 
 func TestUserCredentials_GetByScope(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -351,7 +356,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	t.Run("nonextant", func(t *testing.T) {
-		cred, err := UserCredentials(db, key).GetByScope(ctx, scope)
+		cred, err := db.UserCredentials(key).GetByScope(ctx, scope)
 		if cred != nil {
 			t.Errorf("unexpected non-nil credential: %v", cred)
 		}
@@ -363,18 +368,18 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 		if !errors.As(err, &e) {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
-		if diff := cmp.Diff(e.args, []interface{}{scope}); diff != "" {
+		if diff := cmp.Diff(e.args, []any{scope}); diff != "" {
 			t.Errorf("unexpected args:\n%s", diff)
 		}
 	})
 
 	t.Run("extant", func(t *testing.T) {
-		want, err := UserCredentials(db, key).Create(ctx, scope, token)
+		want, err := db.UserCredentials(key).Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, err := UserCredentials(db, key).GetByScope(ctx, scope)
+		have, err := db.UserCredentials(key).GetByScope(ctx, scope)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -386,7 +391,8 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 
 func TestUserCredentials_List(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -405,18 +411,18 @@ func TestUserCredentials_List(t *testing.T) {
 
 	// Unlike the other tests in this file, we'll set up a couple of credentials
 	// right now, and then list from there.
-	githubCred, err := UserCredentials(db, key).Create(ctx, githubScope, token)
+	githubCred, err := db.UserCredentials(key).Create(ctx, githubScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gitlabCred, err := UserCredentials(db, key).Create(ctx, gitlabScope, token)
+	gitlabCred, err := db.UserCredentials(key).Create(ctx, gitlabScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		creds, next, err := UserCredentials(db, key).List(ctx, UserCredentialsListOpts{
+		creds, next, err := db.UserCredentials(key).List(ctx, UserCredentialsListOpts{
 			Scope: UserCredentialScope{
 				Domain: "this is not a valid domain",
 			},
@@ -454,7 +460,7 @@ func TestUserCredentials_List(t *testing.T) {
 		},
 	} {
 		t.Run("single match on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials(db, key).List(ctx, UserCredentialsListOpts{
+			creds, next, err := db.UserCredentials(key).List(ctx, UserCredentialsListOpts{
 				Scope: tc.scope,
 			})
 			if err != nil {
@@ -481,7 +487,7 @@ func TestUserCredentials_List(t *testing.T) {
 		},
 	} {
 		t.Run("multiple matches on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials(db, key).List(ctx, opts)
+			creds, next, err := db.UserCredentials(key).List(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -496,7 +502,7 @@ func TestUserCredentials_List(t *testing.T) {
 		t.Run("pagination for "+name, func(t *testing.T) {
 			o := opts
 			o.LimitOffset = &LimitOffset{Limit: 1}
-			creds, next, err := UserCredentials(db, key).List(ctx, o)
+			creds, next, err := db.UserCredentials(key).List(ctx, o)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -508,7 +514,7 @@ func TestUserCredentials_List(t *testing.T) {
 			}
 
 			o.LimitOffset = &LimitOffset{Limit: 1, Offset: next}
-			creds, next, err = UserCredentials(db, key).List(ctx, o)
+			creds, next, err = db.UserCredentials(key).List(ctx, o)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -524,11 +530,12 @@ func TestUserCredentials_List(t *testing.T) {
 
 func TestUserCredentials_Invalid(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {
-		if _, err := UserCredentials(db, key).Create(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
+		if _, err := db.UserCredentials(key).Create(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -575,7 +582,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 			"malformed JSON":          insertRawCredential(t, "malformed", "this is not valid JSON"),
 		} {
 			t.Run(name, func(t *testing.T) {
-				cred, err := UserCredentials(db, key).GetByID(ctx, id)
+				cred, err := db.UserCredentials(key).GetByID(ctx, id)
 				if err != nil {
 					t.Error("unexpected error")
 				}
@@ -636,7 +643,7 @@ func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
 	return auths
 }
 
-func setUpUserCredentialTest(t *testing.T, db *sql.DB) (context.Context, encryption.Key, *types.User) {
+func setUpUserCredentialTest(t *testing.T, db DB) (context.Context, encryption.Key, *types.User) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -645,7 +652,7 @@ func setUpUserCredentialTest(t *testing.T, db *sql.DB) (context.Context, encrypt
 	ctx := context.Background()
 
 	// Create a user that allows us to link the credential somewhere.
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",

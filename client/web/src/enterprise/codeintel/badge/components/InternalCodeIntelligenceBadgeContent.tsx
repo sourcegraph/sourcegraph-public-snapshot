@@ -2,7 +2,7 @@ import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { MenuDivider } from '@sourcegraph/wildcard'
+import { MenuDivider, Code, H3 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -16,11 +16,9 @@ export type InternalCodeIntelligenceBadgeContentProps = SettingsCascadeProps & {
     now?: () => Date
 }
 
-export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<InternalCodeIntelligenceBadgeContentProps> = ({
-    data,
-    now,
-    settingsCascade,
-}) => {
+export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
+    React.PropsWithChildren<InternalCodeIntelligenceBadgeContentProps>
+> = ({ data, now, settingsCascade }) => {
     const forNerds =
         !isErrorLike(settingsCascade.final) &&
         settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds
@@ -39,7 +37,7 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<Inter
             <MenuDivider />
 
             <div className="px-2 py-1">
-                <Collapsible titleAtStart={true} title={<h3>Activity (repo)</h3>}>
+                <Collapsible titleAtStart={true} title={<H3>Activity (repo)</H3>}>
                     <div>
                         <span>
                             Last auto-indexing job schedule attempt:{' '}
@@ -58,11 +56,11 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<Inter
                     </div>
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Support (tree)</h3>}>
+                <Collapsible titleAtStart={true} title={<H3>Support (tree)</H3>}>
                     <ul>
                         {preciseSupportLevels.map(supportLevel => (
                             <li key={`precise-support-level-${supportLevel}`}>
-                                <code>{supportLevel}</code>
+                                <Code>{supportLevel}</Code>
                                 <ul>
                                     {data.preciseSupport
                                         ?.filter(support => support.supportLevel === supportLevel)
@@ -83,7 +81,7 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<Inter
 
                         {searchBasedSupportLevels.map(supportLevel => (
                             <li key={`search-support-level-${supportLevel}`}>
-                                <code>{supportLevel}</code>
+                                <Code>{supportLevel}</Code>
                                 <ul>
                                     {data.searchBasedSupport
                                         ?.filter(support => support.supportLevel === supportLevel)
@@ -98,21 +96,21 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<Inter
                     </ul>
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Recent uploads (repo)</h3>}>
+                <Collapsible titleAtStart={true} title={<H3>Recent uploads (repo)</H3>}>
                     <UploadOrIndexMetaTable
                         prefix="recent-uploads"
                         nodes={data.recentUploads.flatMap(namespacedUploads => namespacedUploads.uploads)}
                     />
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Recent indexes (repo)</h3>}>
+                <Collapsible titleAtStart={true} title={<H3>Recent indexes (repo)</H3>}>
                     <UploadOrIndexMetaTable
                         prefix="recent-indexes"
                         nodes={data.recentIndexes.flatMap(namespacedIndexes => namespacedIndexes.indexes)}
                     />
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Uploads providing intel (tree)</h3>}>
+                <Collapsible titleAtStart={true} title={<H3>Uploads providing intel (tree)</H3>}>
                     <UploadOrIndexMetaTable prefix="active-uploads" nodes={data.activeUploads} />
                 </Collapsible>
             </div>

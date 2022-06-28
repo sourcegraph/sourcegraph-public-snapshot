@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 )
 
 func TestCachedCommitChecker(t *testing.T) {

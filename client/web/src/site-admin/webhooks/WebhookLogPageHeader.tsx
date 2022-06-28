@@ -21,7 +21,7 @@ export interface Props {
     onSetOnlyErrors: (onlyErrors: boolean) => void
 }
 
-export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
+export const WebhookLogPageHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     externalService,
     onlyErrors,
     onSelectExternalService: onExternalServiceSelected,
@@ -72,7 +72,11 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
             </div>
             <div className={styles.errorButton}>
                 <Button variant="danger" onClick={onErrorToggle} outline={!onlyErrors}>
-                    <Icon className={classNames(styles.icon, onlyErrors && styles.enabled)} as={AlertCircleIcon} />
+                    <Icon
+                        className={classNames(styles.icon, onlyErrors && styles.enabled)}
+                        as={AlertCircleIcon}
+                        aria-hidden={true}
+                    />
                     <span className="ml-1">Only errors</span>
                 </Button>
             </div>

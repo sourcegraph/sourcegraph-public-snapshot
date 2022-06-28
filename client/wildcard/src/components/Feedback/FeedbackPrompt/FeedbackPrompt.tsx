@@ -6,7 +6,7 @@ import TickIcon from 'mdi-react/TickIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 
-import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link } from '../..'
+import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
 import { Modal } from '../../Modal'
 
@@ -54,7 +54,7 @@ interface FeedbackPromptContentProps {
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps> = ({
+const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptContentProps>> = ({
     onClose,
     productResearchEnabled,
     onSubmit,
@@ -110,8 +110,8 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
                     <TickIcon className={styles.successTick} />
-                    <h3>We‘ve received your feedback!</h3>
-                    <p className="d-inline">
+                    <H3>We‘ve received your feedback!</H3>
+                    <Text className="d-inline">
                         Thank you for your help.
                         {productResearchEnabled && (
                             <>
@@ -123,11 +123,11 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                                 and share your feedback on our latest features and ideas.
                             </>
                         )}
-                    </p>
+                    </Text>
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <h3 className="mb-3">What’s on your mind?</h3>
+                    <H3 className="mb-3">What’s on your mind?</H3>
 
                     <FlexTextArea
                         onChange={handleTextChange}
@@ -187,10 +187,10 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     position?: Position
     modal?: boolean
     modalLabelId?: string
-    children: React.FunctionComponent<FeedbackPromptTriggerProps> | ReactNode
+    children: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
 }
 
-export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
+export const FeedbackPrompt: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptProps>> = ({
     openByDefault = false,
     onSubmit,
     children,

@@ -14,6 +14,8 @@ import (
 
 	gh "github.com/google/go-github/v43/github"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,7 +27,7 @@ import (
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h := GitHubWebhook{}
 	var called bool
-	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload any) error {
 		called = true
 		return nil
 	}, "test-event-1")
@@ -53,11 +55,11 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 		h      = GitHubWebhook{}
 		called = make(chan struct{}, 2)
 	)
-	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload any) error {
 		called <- struct{}{}
 		return nil
 	}, "test-event-1")
-	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload any) error {
 		called <- struct{}{}
 		return nil
 	}, "test-event-1")
@@ -76,11 +78,11 @@ func TestGithubWebhookDispatchError(t *testing.T) {
 		h      = GitHubWebhook{}
 		called = make(chan struct{}, 2)
 	)
-	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload any) error {
 		called <- struct{}{}
 		return errors.Errorf("oh no")
 	}, "test-event-1")
-	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload any) error {
 		called <- struct{}{}
 		return nil
 	}, "test-event-1")
@@ -108,12 +110,14 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 
 	secret := "secret"
-	esStore := database.ExternalServices(db)
+	esStore := db.ExternalServices()
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
@@ -135,7 +139,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	}
 
 	var called bool
-	hook.Register(func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+	hook.Register(func(ctx context.Context, extSvc *types.ExternalService, payload any) error {
 		evt, ok := payload.(*gh.PublicEvent)
 		if !ok {
 			t.Errorf("Expected *gh.PublicEvent event, got %T", payload)
@@ -147,9 +151,14 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		return nil
 	}, "public")
 
+	u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	urls := []string{
 		// current webhook URLs, uses fast path for finding external service
-		extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/"),
+		u,
 		// old webhook URLs, finds external service by searching all configured external services
 		"https://example.com/.api/github-webhook",
 	}
@@ -178,7 +187,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	}
 }
 
-func marshalJSON(t testing.TB, v interface{}) string {
+func marshalJSON(t testing.TB, v any) string {
 	t.Helper()
 
 	bs, err := json.Marshal(v)

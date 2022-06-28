@@ -6,9 +6,10 @@ import { noop } from 'rxjs'
 import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { Insight } from '../../../../../../core'
-import { CreateInsightFormFields } from '../../types'
+import { LineChartLivePreview } from '../../../LineChartLivePreview'
+import { CreateInsightFormFields, EditableDataSeries } from '../../types'
+import { getSanitizedSeries } from '../../utils/insight-sanitizer'
 import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
-import { SearchInsightLivePreview } from '../SearchInsightLivePreview'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import { useInsightCreationForm } from './hooks/use-insight-creation-form/use-insight-creation-form'
@@ -29,7 +30,9 @@ export interface SearchInsightCreationContentProps {
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
 
-export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
+export const SearchInsightCreationContent: React.FunctionComponent<
+    React.PropsWithChildren<SearchInsightCreationContentProps>
+> = props => {
     const {
         mode = 'creation',
         initialValue,
@@ -111,15 +114,25 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 onFormReset={handleFormReset}
             />
 
-            <SearchInsightLivePreview
+            <LineChartLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
                 isAllReposMode={allReposMode.input.value}
-                series={editSeries}
+                series={seriesToPreview(editSeries)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}
             />
         </div>
     )
+}
+
+function seriesToPreview(currentSeries: EditableDataSeries[]): any {
+    const validSeries = currentSeries.filter(series => series.valid)
+    return getSanitizedSeries(validSeries).map(series => ({
+        query: series.query,
+        stroke: series.stroke ? series.stroke : '',
+        label: series.name,
+        generatedFromCaptureGroup: false,
+    }))
 }

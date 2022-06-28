@@ -15,12 +15,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -45,6 +47,8 @@ func TestIndex(t *testing.T) {
 			t.Fatal(errors.Wrap(err, message))
 		}
 	}
+
+	logger := logtest.Scoped(t)
 
 	gitDir, err := os.MkdirTemp("", "rockskip-test-index")
 	fatalIfError(err, "faiMkdirTemp")
@@ -101,10 +105,10 @@ func TestIndex(t *testing.T) {
 	fatalIfError(err, "NewSubprocessGit")
 	defer git.Close()
 
-	db := dbtest.NewDB(t)
+	db := dbtest.NewDB(logger, t)
 	defer db.Close()
 
-	createParser := func() ParseSymbolsFunc { return simpleParse }
+	createParser := func() (ParseSymbolsFunc, error) { return simpleParse, nil }
 
 	service, err := NewService(db, git, createParser, 1, 1, false, 1, 1, 1)
 	fatalIfError(err, "NewService")
@@ -112,7 +116,7 @@ func TestIndex(t *testing.T) {
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
-		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+		args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
 		symbols, err := service.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
@@ -247,7 +251,7 @@ func (g SubprocessGit) LogReverseEach(repo string, db database.DB, givenCommit s
 }
 
 func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
-	revList := exec.Command("git", git.RevListArgs(givenCommit)...)
+	revList := exec.Command("git", gitserver.RevListArgs(givenCommit)...)
 	revList.Dir = g.gitDir
 	output, err := revList.StdoutPipe()
 	if err != nil {
@@ -265,7 +269,7 @@ func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit stri
 		}
 	}()
 
-	return git.RevListEach(output, onCommit)
+	return gitserver.NewClient(db).RevListEach(output, onCommit)
 }
 
 func (g SubprocessGit) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {

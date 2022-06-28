@@ -3,6 +3,8 @@ package run
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -42,4 +44,30 @@ func TestDetectSearchType(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("errors", func(t *testing.T) {
+		typeInvalid := "invalid"
+
+		cases := []struct {
+			version     string
+			patternType *string
+			errorString string
+		}{{
+			version:     "",
+			patternType: &typeInvalid,
+			errorString: `unrecognized patternType "invalid"`,
+		}, {
+			version:     "V3",
+			patternType: nil,
+			errorString: `unrecognized version: want "V1" or "V2", got "V3"`,
+		}}
+
+		for _, tc := range cases {
+			t.Run("", func(t *testing.T) {
+				_, err := detectSearchType(tc.version, tc.patternType)
+				require.Error(t, err)
+				require.Equal(t, tc.errorString, err.Error())
+			})
+		}
+	})
 }

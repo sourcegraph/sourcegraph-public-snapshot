@@ -13,10 +13,9 @@ export interface ChangesetsArchivedNoticeProps {
     location: H.Location
 }
 
-export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchivedNoticeProps> = ({
-    history,
-    location,
-}) => {
+export const ChangesetsArchivedNotice: React.FunctionComponent<
+    React.PropsWithChildren<ChangesetsArchivedNoticeProps>
+> = ({ history, location }) => {
     const [archivedCount, setArchivedCount] = useState<number | undefined>()
     const [archivedBy, setArchivedBy] = useState<string | undefined>()
     useEffect(() => {
@@ -44,7 +43,7 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
         <DismissibleAlert variant="info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
             <div className="d-flex align-items-center">
                 <div className="d-none d-md-block">
-                    <Icon className="icon mr-2" as={ArchiveIcon} />
+                    <Icon aria-hidden={true} className="icon mr-2" as={ArchiveIcon} />
                 </div>
                 <div className="flex-grow-1">
                     {archivedCount} {pluralize('changeset', archivedCount)} {pluralize('has', archivedCount, 'have')}{' '}

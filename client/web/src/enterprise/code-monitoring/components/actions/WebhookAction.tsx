@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -18,7 +18,7 @@ export const SEND_TEST_WEBHOOK = gql`
     }
 `
 
-export const WebhookAction: React.FunctionComponent<ActionProps> = ({
+export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,
@@ -101,8 +101,8 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     return (
         <ActionEditor
             title={
-                <div className="d-flex align-items-center">
-                    Call a webhook <ProductStatusBadge className="ml-1" status="experimental" />{' '}
+                <div>
+                    Call a webhook <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
             label="Call a webhook"
@@ -127,12 +127,15 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             onTest={onSendTestMessage}
             _testStartOpen={_testStartOpen}
         >
-            <Alert variant="info" className="mt-4">
-                The specified webhook URL will be called with a JSON payload. The format of this JSON payload is still
-                being modified. Once it is decided on, documentation will be available.
+            <Alert aria-live="off" variant="info" className="mt-4">
+                The specified webhook URL will be called with a JSON payload.
+                <br />
+                <Link to="/help/code_monitoring/how-tos/webhook" target="_blank" rel="noopener">
+                    Read more about how to set up webhooks and the JSON schema in the docs.
+                </Link>
             </Alert>
             <div className="form-group">
-                <label htmlFor="code-monitor-webhook-url">Webhook URL</label>
+                <Label htmlFor="code-monitor-webhook-url">Webhook URL</Label>
                 <Input
                     id="code-monitor-webhook-url"
                     type="url"

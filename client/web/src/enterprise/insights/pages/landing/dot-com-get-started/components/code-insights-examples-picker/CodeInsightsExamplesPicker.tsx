@@ -1,12 +1,12 @@
-import React, { useLayoutEffect, useState } from 'react'
+import { FunctionComponent, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { throttle } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, H2, Text } from '@sourcegraph/wildcard'
 
-import { CodeInsightExample } from '../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
+import { CodeInsightExampleCard } from '../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 
 import { CodeInsightsExamplesSlider } from './code-insights-examples-slider/CodeInsightsExamplesSlider'
 import { EXAMPLES } from './examples'
@@ -15,9 +15,8 @@ import styles from './CodeInsightsExamplesPicker.module.scss'
 
 interface CodeInsightsExamplesPickerProps extends TelemetryProps {}
 
-export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExamplesPickerProps> = ({
-    telemetryService,
-}) => {
+export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesPickerProps> = props => {
+    const { telemetryService } = props
     const [activeExampleIndex, setActiveExampleIndex] = useState(0)
     const [windowSize, setWindowSize] = useState(0)
 
@@ -40,12 +39,12 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExa
     return (
         <Card as={CardBody} className={classNames(styles.root, { [styles.rootMobile]: isMobileLayout })}>
             <div className={styles.section}>
-                <h2>How engineering teams and leaders use Code Insights</h2>
+                <H2>How engineering teams and leaders use Code Insights</H2>
 
-                <p className="text-muted">
+                <Text className="text-muted">
                     We've created a few common simple insights to show you what the tool can do.{' '}
                     <Link to="/help/code_insights">Explore more use cases.</Link>
-                </p>
+                </Text>
 
                 {!isMobileLayout && (
                     <ul className={styles.list}>
@@ -76,7 +75,7 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExa
             </div>
 
             {!isMobileLayout && (
-                <CodeInsightExample
+                <CodeInsightExampleCard
                     {...EXAMPLES[activeExampleIndex]}
                     className={styles.section}
                     telemetryService={telemetryService}

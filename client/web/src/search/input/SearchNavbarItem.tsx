@@ -51,7 +51,7 @@ const selectQueryState = ({
 /**
  * The search item in the navbar
  */
-export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
+export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const autoFocus = props.isSearchAutoFocusRequired ?? true
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button

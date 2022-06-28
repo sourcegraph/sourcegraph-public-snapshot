@@ -19,7 +19,9 @@ enum DownloadState {
 
 type State = DownloadState | Error
 
-export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps> = ({ changesetID }) => {
+export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren<DownloadDiffButtonProps>> = ({
+    changesetID,
+}) => {
     const [state, setState] = useState<State>(DownloadState.READY)
 
     const loadDiff = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -61,11 +63,11 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
 
     let icon: JSX.Element
     if (isErrorLike(state)) {
-        icon = <Icon className="icon" data-tooltip={state?.message} as={AlertCircleIcon} />
+        icon = <Icon aria-hidden={true} className="icon" data-tooltip={state?.message} as={AlertCircleIcon} />
     } else if (state === DownloadState.LOADING) {
         icon = <LoadingSpinner />
     } else {
-        icon = <Icon as={DownloadIcon} />
+        icon = <Icon aria-hidden={true} as={DownloadIcon} />
     }
 
     return (

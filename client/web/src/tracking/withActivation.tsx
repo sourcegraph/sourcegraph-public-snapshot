@@ -201,8 +201,8 @@ interface WithActivationState {
  * `activation` field of its props.
  */
 export const withActivation = <P extends ActivationProps>(
-    Component: React.ComponentType<P>
-): React.ComponentType<WithActivationProps & Subtract<P, ActivationProps>> =>
+    Component: React.ComponentType<React.PropsWithChildren<P>>
+): React.ComponentType<React.PropsWithChildren<WithActivationProps & Subtract<P, ActivationProps>>> =>
     class WithActivation extends React.Component<
         WithActivationProps & Subtract<P, ActivationProps>,
         WithActivationState

@@ -6,6 +6,7 @@ import html from 'tagged-template-noop'
 import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
@@ -62,39 +63,44 @@ export const createWebIntegrationTestContext = async ({
     directory,
     customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
+    const config = getConfig('disableAppAssetsMocking')
+
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
     >({ driver, currentTest, directory })
+
     sharedTestContext.overrideGraphQL(commonWebGraphQlResults)
-
-    // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.
-    // This branching will be redundant after switching to production bundles for integration tests:
-    // https://github.com/sourcegraph/sourcegraph/issues/22831
-    const runtimeChunkScriptTag = isHotReloadEnabled ? `<script src=${getRuntimeAppBundle()}></script>` : ''
-
-    // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
     let jsContext = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
-    sharedTestContext.server
-        .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
-        .filter(request => !request.pathname.startsWith('/-/'))
-        .intercept((request, response) => {
-            response.type('text/html').send(html`
-                <html lang="en">
-                    <head>
-                        <title>Sourcegraph Test</title>
-                    </head>
-                    <body>
-                        <div id="root"></div>
-                        <script>
-                            window.context = ${JSON.stringify({ ...jsContext, ...customContext })}
-                        </script>
-                        ${runtimeChunkScriptTag}
-                        <script src=${getAppBundle()}></script>
-                    </body>
-                </html>
-            `)
-        })
+
+    if (!config.disableAppAssetsMocking) {
+        // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.
+        // This branching will be redundant after switching to production bundles for integration tests:
+        // https://github.com/sourcegraph/sourcegraph/issues/22831
+        const runtimeChunkScriptTag = isHotReloadEnabled ? `<script src=${getRuntimeAppBundle()}></script>` : ''
+
+        // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
+        sharedTestContext.server
+            .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
+            .filter(request => !request.pathname.startsWith('/-/'))
+            .intercept((request, response) => {
+                response.type('text/html').send(html`
+                    <html lang="en">
+                        <head>
+                            <title>Sourcegraph Test</title>
+                        </head>
+                        <body>
+                            <div id="root"></div>
+                            <script>
+                                window.context = ${JSON.stringify({ ...jsContext, ...customContext })}
+                            </script>
+                            ${runtimeChunkScriptTag}
+                            <script src=${getAppBundle()}></script>
+                        </body>
+                    </html>
+                `)
+            })
+    }
 
     let searchStreamEventOverrides: SearchEvent[] = []
     sharedTestContext.server

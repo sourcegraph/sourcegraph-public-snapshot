@@ -1,7 +1,7 @@
 import React, { FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Input, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightDashboardsVisibility, CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
@@ -63,7 +63,9 @@ interface CreationSearchInsightFormProps {
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
  */
-export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
+export const SearchInsightCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<CreationSearchInsightFormProps>
+> = props => {
     const {
         mode,
         innerRef,
@@ -124,27 +126,26 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     {...getDefaultInputProps(repositories)}
                 />
 
-                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
-                    <input
-                        type="checkbox"
-                        {...allReposMode.input}
-                        value="all-repos-mode"
-                        checked={allReposMode.input.value}
-                    />
+                <Checkbox
+                    {...allReposMode.input}
+                    type="checkbox"
+                    id="RunInsightsOnAllRepoCheck"
+                    wrapperClassName="mb-1 mt-3 font-weight-normal"
+                    value="all-repos-mode"
+                    checked={allReposMode.input.value}
+                    label="Run your insight over all your repositories"
+                />
 
-                    <span className="pl-2">Run your insight over all your repositories</span>
-
-                    <small className="w-100 mt-2 text-muted">
-                        This feature is actively in development. Read about the{' '}
-                        <Link
-                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            limitations here.
-                        </Link>
-                    </small>
-                </label>
+                <small className="w-100 mt-2 text-muted">
+                    This feature is actively in development. Read about the{' '}
+                    <Link
+                        to="/help/code_insights/explanations/current_limitations_of_code_insights"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        limitations here.
+                    </Link>
+                </small>
 
                 <hr className="my-4 w-100" />
             </FormGroup>
@@ -209,7 +210,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <LoaderButton
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     type="submit"
                     disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"

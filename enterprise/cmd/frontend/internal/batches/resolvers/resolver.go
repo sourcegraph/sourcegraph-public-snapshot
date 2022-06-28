@@ -87,7 +87,7 @@ type batchChangeEventArg struct {
 	BatchChangeID int64 `json:"batch_change_id"`
 }
 
-func logBackendEvent(ctx context.Context, db database.DB, name string, args interface{}, publicArgs interface{}) error {
+func logBackendEvent(ctx context.Context, db database.DB, name string, args any, publicArgs any) error {
 	actor := actor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
 	if err != nil {
@@ -98,8 +98,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args inte
 		return err
 	}
 
-	featureFlags := featureflag.FromContext(ctx)
-	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureFlags, nil)
+	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -260,7 +259,12 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
 }
 
-func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
+type batchChangesCredentialResolver interface {
+	graphqlbackend.BatchChangesCredentialResolver
+	authenticator(ctx context.Context) (auth.Authenticator, error)
+}
+
+func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (batchChangesCredentialResolver, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
@@ -281,7 +285,7 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 	return r.batchChangesUserCredentialByID(ctx, dbID)
 }
 
-func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	cred, err := r.store.UserCredentials().GetByID(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -297,7 +301,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	// Todo: Is this required? Should everyone be able to see there are _some_ credentials?
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
@@ -1481,6 +1485,10 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		NewestFirst: true,
 	}
 
+	if args.IncludeLocallyExecutedSpecs != nil {
+		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
+	}
+
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include
 	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
 	// by the user
@@ -1517,6 +1525,36 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 	}
 
 	batchChange, err := svc.CreateEmptyBatchChange(ctx, service.CreateEmptyBatchChangeOpts{
+		NamespaceUserID: uid,
+		NamespaceOrgID:  oid,
+		Name:            args.Name,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
+}
+
+func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlbackend.UpsertEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpsertEmptyBatchChange", fmt.Sprintf("Namespace: %s", args.Namespace))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+
+	var uid, oid int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
+	batchChange, err := svc.UpsertEmptyBatchChange(ctx, service.UpsertEmptyBatchChangeOpts{
 		NamespaceUserID: uid,
 		NamespaceOrgID:  oid,
 		Name:            args.Name,
@@ -1857,6 +1895,34 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 	}
 
 	return availableBulkOperations, nil
+}
+
+func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphqlbackend.CheckBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CheckBatchChangesCredential", fmt.Sprintf("Credential: %q", args.BatchChangesCredential))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	cred, err := r.batchChangesCredentialByID(ctx, args.BatchChangesCredential)
+	if err != nil {
+		return nil, err
+	}
+	if cred == nil {
+		return nil, ErrIDIsZero{}
+	}
+
+	a, err := cred.authenticator(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
+		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {

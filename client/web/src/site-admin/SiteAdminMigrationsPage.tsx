@@ -13,7 +13,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -71,7 +71,9 @@ const UPGRADE_RANGE = 1
 /* How many (minor) versions we can downgrade at once. */
 const DOWNGRADE_RANGE = 1
 
-export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigrationsPageProps> = ({
+export const SiteAdminMigrationsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminMigrationsPageProps>
+> = ({
     fetchAllMigrations = defaultFetchAllMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
@@ -128,13 +130,13 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <h2>Out-of-band migrations</h2>
+                    <H2>Out-of-band migrations</H2>
 
-                    <p>
+                    <Text>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
                         old format into a new format. Consult this page prior to upgrading your Sourcegraph instance to
                         ensure that all expected migrations have completed.
-                    </p>
+                    </Text>
 
                     <MigrationBanners migrations={migrationsOrError} fetchSiteUpdateCheck={fetchSiteUpdateCheck} />
 
@@ -163,7 +165,7 @@ interface MigrationBannersProps {
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
 }
 
-const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
+const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<MigrationBannersProps>> = ({
     migrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
@@ -202,15 +204,17 @@ interface MigrationInvalidBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
+const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<MigrationInvalidBannerProps>> = ({
+    migrations,
+}) => (
     <Alert variant="danger">
-        <p>
-            <Icon className="mr-2" as={AlertCircleIcon} />
+        <Text>
+            <Icon className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
             <strong>Continuing to run your instance in this state will result in errors and possible data loss.</strong>
-        </p>
+        </Text>
 
         <ul className="mb-0">
             {migrations.map(migration => (
@@ -224,13 +228,15 @@ interface MigrationUpgradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
+const MigrationUpgradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationUpgradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
-        <p>
+        <Text>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
             <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
-        </p>
+        </Text>
         <ul>
             {migrations.map(migration => (
                 <li key={migration.id}>{migration.description}</li>
@@ -244,19 +250,19 @@ interface MigrationDowngradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
-    migrations,
-}) => (
+const MigrationDowngradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationDowngradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
-        <p>
-            <Icon className="mr-2" as={WarningIcon} />
+        <Text>
+            <Icon className="mr-2" as={WarningIcon} aria-hidden={true} />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
                 format. Your Sourcegraph instance must undo the following migrations to ensure your data can be read by
                 the previous version.{' '}
                 <strong>If you downgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
             </span>
-        </p>
+        </Text>
 
         <ul>
             {migrations.map(migration => (
@@ -273,21 +279,21 @@ interface MigrationNodeProps {
     now?: () => Date
 }
 
-const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
+const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNodeProps>> = ({ node, now }) => (
     <React.Fragment key={node.id}>
         <span className={styles.separator} />
 
         <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
-                <h3>{node.description}</h3>
+                <H3>{node.description}</H3>
 
-                <p className="m-0">
+                <Text className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}
                     <span className="text-muted">is migrating data in</span> <strong>{node.component}</strong>
                     <span className="text-muted">.</span>
-                </p>
+                </Text>
 
-                <p className="m-0">
+                <Text className="m-0">
                     <span className="text-muted">Began running in v</span>
                     {node.introduced}
                     {node.deprecated && (
@@ -298,7 +304,7 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                         </>
                     )}
                     .
-                </p>
+                </Text>
             </div>
         </div>
 
@@ -306,9 +312,9 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
                     {node.applyReverse ? (
-                        <Icon className="mr-1 text-danger" as={ArrowLeftBoldIcon} />
+                        <Icon className="mr-1 text-danger" as={ArrowLeftBoldIcon} aria-hidden={true} />
                     ) : (
-                        <Icon className="mr-1" as={ArrowRightBoldIcon} />
+                        <Icon className="mr-1" as={ArrowRightBoldIcon} aria-hidden={true} />
                     )}
                     {Math.floor(node.progress * 100)}%
                 </div>
@@ -360,7 +366,7 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                                 </div>
 
                                 <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                    <code>{error.message}</code>
+                                    <Code>{error.message}</Code>
                                 </span>
                             </React.Fragment>
                         ))}

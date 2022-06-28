@@ -10,17 +10,17 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestHandle(t *testing.T) {
@@ -67,7 +67,7 @@ func TestHandle(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
@@ -98,10 +98,6 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
 	}
 
-	filter, err := bloomfilter.CreateFilter([]string{"ident A"})
-	if err != nil {
-		t.Fatalf("unexpected error creating filter: %s", err)
-	}
 	expectedPackageReferencesDumpID := 42
 	expectedPackageReferences := []precise.PackageReference{
 		{
@@ -110,7 +106,6 @@ func TestHandle(t *testing.T) {
 				Name:    "pkg A",
 				Version: "v0.1.0",
 			},
-			Filter: filter,
 		},
 	}
 	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {
@@ -201,7 +196,7 @@ func TestHandleError(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -256,7 +251,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {

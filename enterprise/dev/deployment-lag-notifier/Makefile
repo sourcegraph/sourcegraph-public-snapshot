@@ -11,7 +11,7 @@ run: clean build
 	./deployment-lag-notifier -dry-run -num-commits 10 -allowed-age 10m
 
 prod: clean build
-	./deployment-lag-notifier -num-commits 20 -allowed-age 2h30m
+	./deployment-lag-notifier -num-commits 20 -allowed-age 3h
 
 test:
 	go test -v

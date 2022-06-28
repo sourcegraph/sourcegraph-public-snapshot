@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
+// eslint-disable-next-line no-restricted-imports
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -25,7 +26,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps, Pick<WebviewPage
     instanceURL?: string
 }
 
-export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> = ({
+export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<ButtonDropdownCtaProps>> = ({
     button,
     icon,
     title,

@@ -15,7 +15,7 @@ interface DynamicWebFontsProps {
  * Show loading spinner until fonts are ready.
  * In case of a network error proceed to UI rendering.
  */
-export const DynamicWebFonts: React.FunctionComponent<DynamicWebFontsProps> = props => {
+export const DynamicWebFonts: React.FunctionComponent<React.PropsWithChildren<DynamicWebFontsProps>> = props => {
     const { children, fonts } = props
     const areFontsLoading = useDynamicWebFonts(fonts)
 

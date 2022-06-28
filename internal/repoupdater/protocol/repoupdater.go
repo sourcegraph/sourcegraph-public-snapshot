@@ -246,6 +246,10 @@ type RepoUpdateResponse struct {
 	URL string `json:"url"`
 }
 
+func (a *RepoUpdateResponse) String() string {
+	return fmt.Sprintf("RepoUpdateResponse{ID: %d Name: %s URL: %s}", a.ID, a.Name, a.URL)
+}
+
 // ChangesetSyncRequest is a request to sync a number of changesets
 type ChangesetSyncRequest struct {
 	IDs []int64

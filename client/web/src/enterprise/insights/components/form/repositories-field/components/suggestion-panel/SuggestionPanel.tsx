@@ -24,7 +24,7 @@ interface RepositorySuggestion {
 /**
  * Renders suggestion panel for repositories combobox component.
  */
-export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = props => {
+export const SuggestionsPanel: React.FunctionComponent<React.PropsWithChildren<SuggestionsPanelProps>> = props => {
     const { value, suggestions, className } = props
 
     if (suggestions === undefined) {

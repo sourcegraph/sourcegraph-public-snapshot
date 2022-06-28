@@ -56,7 +56,7 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
-    title: 'shared/ActivationDropdown',
+    title: 'web/ActivationDropdown',
     decorators: [decorator],
 }
 

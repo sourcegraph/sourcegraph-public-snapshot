@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -27,14 +25,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type CommitSearch struct {
+type SearchJob struct {
 	Query                gitprotocol.Node
 	RepoOpts             search.RepoOptions
 	Diff                 bool
-	HasTimeFilter        bool
 	Limit                int
-	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
+	Concurrency          int
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
@@ -48,44 +45,18 @@ type GitserverClient interface {
 	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
+func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
 		return nil, err
 	}
 
-	opts := j.RepoOpts
-	if opts.Limit == 0 {
-		opts.Limit = reposLimit(j.HasTimeFilter)
-	}
-
-	resultType := "commit"
-	if j.Diff {
-		resultType = "diff"
-	}
-
-	var repoRevs []*search.RepositoryRevisions
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: opts}
-	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		if repoRevs = page.RepoRevs; page.Next != nil {
-			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	bounded := goroutine.NewBounded(8)
-	for _, repoRev := range repoRevs {
-		repoRev := repoRev // we close over repoRev in onMatches
-
+	searchRepoRev := func(repoRev *search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
-			continue
+			return nil
 		}
 
 		args := &protocol.SearchRequest{
@@ -117,36 +88,49 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 			return err
 		}
 
-		bounded.Go(func() error {
-			if j.CodeMonitorSearchWrapper != nil {
-				return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
+		if j.CodeMonitorSearchWrapper != nil {
+			return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
+		}
+		return doSearch(args)
+	}
+
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
+	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+		bounded := goroutine.NewBounded(j.Concurrency)
+
+		for _, repoRev := range page.RepoRevs {
+			repoRev := repoRev
+			if ctx.Err() != nil {
+				// Don't keep spinning up goroutines if context has been canceled
+				return ctx.Err()
 			}
-			return doSearch(args)
-		})
-	}
+			bounded.Go(func() error {
+				return searchRepoRev(repoRev)
+			})
+		}
 
-	return nil, bounded.Wait()
+		return bounded.Wait()
+	})
 }
 
-func (j CommitSearch) Name() string {
+func (j SearchJob) Name() string {
 	if j.Diff {
-		return "Diff"
+		return "DiffSearchJob"
 	}
-	return "Commit"
+	return "CommitSearchJob"
 }
 
-func (j *CommitSearch) Tags() []log.Field {
+func (j *SearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("query", j.Query),
 		trace.Stringer("repoOpts", &j.RepoOpts),
 		log.Bool("diff", j.Diff),
-		log.Bool("hasTimeFilter", j.HasTimeFilter),
 		log.Int("limit", j.Limit),
 		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 	}
 }
 
-func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
+func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n
@@ -168,7 +152,7 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err
 			return n
 		}
 
-		*expr = "(" + strings.Join(expanded, ")|(") + ")"
+		*expr = "(?:" + strings.Join(expanded, ")|(?:") + ")"
 		return n
 	})
 	return err
@@ -222,8 +206,26 @@ func expandUsernamesToEmails(ctx context.Context, db database.DB, values []strin
 	return expandedValues, nil
 }
 
-func QueryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
-	return gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...))
+func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
+	caseSensitive := b.IsCaseSensitive()
+
+	res := make([]gitprotocol.Node, 0, len(b.Parameters)+2)
+
+	// Convert parameters to nodes
+	for _, parameter := range b.Parameters {
+		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
+		if newPred != nil {
+			res = append(res, newPred)
+		}
+	}
+
+	// Convert pattern to nodes
+	newPred := queryPatternToPredicate(b.Pattern, caseSensitive, diff)
+	if newPred != nil {
+		res = append(res, newPred)
+	}
+
+	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
 func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
@@ -238,18 +240,33 @@ func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.Revi
 	return out
 }
 
-func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
+func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitprotocol.Node {
+	switch v := node.(type) {
+	case query.Operator:
+		return patternOperatorToPredicate(v, caseSensitive, diff)
+	case query.Pattern:
+		return patternAtomToPredicate(v, caseSensitive, diff)
+	default:
+		// Invariant: the node passed to queryPatternToPredicate should only contain pattern nodes
+		return nil
+	}
+}
+
+func patternOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
+	switch op.Kind {
+	case query.And:
+		return gitprotocol.NewAnd(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
+	case query.Or:
+		return gitprotocol.NewOr(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
+	default:
+		return nil
+	}
+}
+
+func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
 	res := make([]gitprotocol.Node, 0, len(nodes))
 	for _, node := range nodes {
-		var newPred gitprotocol.Node
-		switch v := node.(type) {
-		case query.Operator:
-			newPred = queryOperatorToPredicate(v, caseSensitive, diff)
-		case query.Pattern:
-			newPred = queryPatternToPredicate(v, caseSensitive, diff)
-		case query.Parameter:
-			newPred = queryParameterToPredicate(v, caseSensitive, diff)
-		}
+		newPred := queryPatternToPredicate(node, caseSensitive, diff)
 		if newPred != nil {
 			res = append(res, newPred)
 		}
@@ -257,19 +274,7 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 	return res
 }
 
-func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
-	switch op.Kind {
-	case query.And:
-		return gitprotocol.NewAnd(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
-	case query.Or:
-		return gitprotocol.NewOr(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
-	default:
-		// I don't think we should have concats at this point, but ignore it if we do
-		return nil
-	}
-}
-
-func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
+func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
 	patString := pattern.Value
 	if pattern.Annotation.Labels.IsSet(query.Literal) {
 		patString = regexp.QuoteMeta(pattern.Value)
@@ -313,7 +318,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldFile:
 		newPred = &gitprotocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldLang:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: search.LangToFileRegexp(parameter.Value), IgnoreCase: true}
+		newPred = &gitprotocol.DiffModifiesFile{Expr: query.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
 	if parameter.Negated && newPred != nil {
@@ -351,37 +356,4 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		MessagePreview: messagePreview,
 		ModifiedFiles:  in.ModifiedFiles,
 	}
-}
-
-func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {
-	if hasTimeFilter {
-		return &TimeLimitError{ResultType: resultType, Max: limit}
-	}
-	return &RepoLimitError{ResultType: resultType, Max: limit}
-}
-
-func reposLimit(hasTimeFilter bool) int {
-	searchLimits := limits.SearchLimits(conf.Get())
-	if hasTimeFilter {
-		return searchLimits.CommitDiffWithTimeFilterMaxRepos
-	}
-	return searchLimits.CommitDiffMaxRepos
-}
-
-type DiffCommitError struct {
-	ResultType string
-	Max        int
-}
-
-type (
-	RepoLimitError DiffCommitError
-	TimeLimitError DiffCommitError
-)
-
-func (*RepoLimitError) Error() string {
-	return "repo limit error"
-}
-
-func (*TimeLimitError) Error() string {
-	return "time limit error"
 }

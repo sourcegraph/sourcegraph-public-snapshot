@@ -13,7 +13,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -130,11 +129,6 @@ type accessTokenStore struct {
 
 var _ AccessTokenStore = (*accessTokenStore)(nil)
 
-// AccessTokens instantiates and returns a new AccessTokenStore with prepared statements.
-func AccessTokens(db dbutil.DB) AccessTokenStore {
-	return &accessTokenStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // AccessTokensWith instantiates and returns a new AccessTokenStore using the other store handle.
 func AccessTokensWith(other basestore.ShareableStore) AccessTokenStore {
 	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -170,7 +164,7 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	if err := s.Handle().DB().QueryRowContext(ctx,
+	if err := s.Handle().QueryRowContext(ctx,
 		// Include users table query (with "FOR UPDATE") to ensure that subject/creator users have
 		// not been deleted. If they were deleted, the query will return an error.
 		`
@@ -203,7 +197,7 @@ func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, required
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := s.Handle().DB().QueryRowContext(ctx,
+	if err := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
 		`
 UPDATE access_tokens t SET last_used_at=now()

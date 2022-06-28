@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Location } from 'history'
@@ -8,10 +8,12 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { useEventBus } from '../emitter'
+import { calculateLeftGetStartedSteps, showGetStartPage } from '../openBeta/GettingStarted'
 import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaPageProps } from './OrgArea'
@@ -28,7 +30,7 @@ export interface OrgSummary {
     extServices: { totalCount: number }
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org' | 'featureFlags'> {
+export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
     newMembersInviteEnabled: boolean
     getStartedInfo: OrgSummary | undefined
@@ -60,7 +62,7 @@ const GET_STARTED_INFO_QUERY = gql`
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.FunctionComponent<Props> = ({
+export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangesEnabled,
     batchChangesExecutionEnabled,
     batchChangesWebhookLogsEnabled,
@@ -70,7 +72,6 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
     className = '',
     isSourcegraphDotCom,
     newMembersInviteEnabled,
-    featureFlags,
 }) => {
     const emitter = useEventBus()
 
@@ -87,6 +88,23 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
         variables: { organization: org.id },
     })
 
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+
+    const memoizedNavItems = useMemo(
+        (): readonly OrgAreaHeaderNavItem[] => [
+            {
+                to: '/getstarted',
+                label: 'Get started',
+                dynamicLabel: ({ getStartedInfo, org }) => calculateLeftGetStartedSteps(getStartedInfo, org.name),
+                isActive: (_match, location) => location.pathname.includes('getstarted'),
+                condition: ({ getStartedInfo, org, isSourcegraphDotCom }) =>
+                    showGetStartPage(getStartedInfo, org.name, isOpenBetaEnabled, isSourcegraphDotCom),
+            },
+            ...navItems,
+        ],
+        [navItems, isOpenBetaEnabled]
+    )
+
     const context = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
@@ -94,7 +112,6 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
         org,
         isSourcegraphDotCom,
         newMembersInviteEnabled,
-        featureFlags,
         getStartedInfo: data ? (data as OrgSummary) : undefined,
     }
 
@@ -124,7 +141,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         />
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
-                                {navItems.map(
+                                {memoizedNavItems.map(
                                     ({
                                         to,
                                         label,
@@ -148,7 +165,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                                     }
                                                 >
                                                     <span>
-                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>

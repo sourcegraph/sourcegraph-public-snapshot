@@ -10,8 +10,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,7 +22,7 @@ import (
 
 // userExternalAccountNotFoundError is the error that is returned when a user external account is not found.
 type userExternalAccountNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 func (err userExternalAccountNotFoundError) Error() string {
@@ -32,7 +33,7 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 	return true
 }
 
-// userExternalAccountsStore provides access to the `user_external_accounts` table.
+// UserExternalAccountsStore provides access to the `user_external_accounts` table.
 type UserExternalAccountsStore interface {
 	// AssociateUserAndSave is used for linking a new, additional external account with an existing
 	// Sourcegraph account.
@@ -96,29 +97,26 @@ type userExternalAccountsStore struct {
 	*basestore.Store
 
 	key encryption.Key
-}
 
-// ExternalAccounts instantiates and returns a new UserExternalAccountsStore with prepared statements.
-func ExternalAccounts(db dbutil.DB) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	logger log.Logger
 }
 
 // ExternalAccountsWith instantiates and returns a new UserExternalAccountsStore using the other store handle.
-func ExternalAccountsWith(other basestore.ShareableStore) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: basestore.NewWithHandle(other.Handle())}
+func ExternalAccountsWith(logger log.Logger, other basestore.ShareableStore) UserExternalAccountsStore {
+	return &userExternalAccountsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (s *userExternalAccountsStore) With(other basestore.ShareableStore) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: s.Store.With(other), key: s.key}
+	return &userExternalAccountsStore{logger: s.logger, Store: s.Store.With(other), key: s.key}
 }
 
 func (s *userExternalAccountsStore) WithEncryptionKey(key encryption.Key) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: s.Store, key: key}
+	return &userExternalAccountsStore{logger: s.logger, Store: s.Store, key: key}
 }
 
 func (s *userExternalAccountsStore) Transact(ctx context.Context) (UserExternalAccountsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &userExternalAccountsStore{Store: txBase, key: s.key}, err
+	return &userExternalAccountsStore{logger: s.logger, Store: txBase, key: s.key}, err
 }
 
 func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
@@ -152,7 +150,7 @@ func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 		data.Data = rawMessagePtr(encrypted)
 	}
 
-	err = s.Handle().DB().QueryRowContext(ctx, `
+	err = s.Handle().QueryRowContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.LookupUserAndSave
 UPDATE user_external_accounts
 SET
@@ -170,7 +168,7 @@ AND deleted_at IS NULL
 RETURNING user_id
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID).Scan(&userID)
 	if err == sql.ErrNoRows {
-		err = userExternalAccountNotFoundError{[]interface{}{spec}}
+		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
 	return userID, err
 }
@@ -258,7 +256,7 @@ AND deleted_at IS NULL
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]interface{}{existingID}}
+		return userExternalAccountNotFoundError{[]any{existingID}}
 	}
 	return nil
 }
@@ -270,14 +268,14 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(tx).CreateInTransaction(ctx, newUser)
+	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser)
 	if err != nil {
 		return 0, err
 	}
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
-		logAccountCreatedEvent(ctx, s.Handle().DB(), createdUser, spec.ServiceType)
+		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
 	return createdUser.ID, err
 }
@@ -311,7 +309,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	_, err := s.Handle().DB().ExecContext(ctx, `
+	_, err := s.Handle().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
@@ -321,7 +319,7 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
-	_, err := s.Handle().DB().ExecContext(ctx, `
+	_, err := s.Handle().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
 SET
@@ -333,7 +331,7 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -342,7 +340,7 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]interface{}{id}}
+		return userExternalAccountNotFoundError{[]any{id}}
 	}
 	return nil
 }
@@ -352,7 +350,11 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
-	ExcludeExpired                   bool
+
+	// Only one of these should be set
+	ExcludeExpired bool
+	OnlyExpired    bool
+
 	*LimitOffset
 }
 
@@ -452,14 +454,23 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
 	}
-	if opt.ServiceType != "" || opt.ServiceID != "" || opt.ClientID != "" {
-		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
+	if opt.ServiceType != "" {
+		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
+	}
+	if opt.ServiceID != "" {
+		conds = append(conds, sqlf.Sprintf("service_id=%s", opt.ServiceID))
+	}
+	if opt.ClientID != "" {
+		conds = append(conds, sqlf.Sprintf("client_id=%s", opt.ClientID))
 	}
 	if opt.AccountID != 0 {
 		conds = append(conds, sqlf.Sprintf("account_id=%d", strconv.Itoa(int(opt.AccountID))))
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
+	}
+	if opt.OnlyExpired {
+		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
 	}
 
 	return conds

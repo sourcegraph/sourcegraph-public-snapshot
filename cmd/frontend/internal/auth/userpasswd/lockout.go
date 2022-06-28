@@ -147,7 +147,7 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 		return false, errors.Newf("signing key not provided, cannot validate JWT on account reset URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 	}
 
-	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(signingKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 

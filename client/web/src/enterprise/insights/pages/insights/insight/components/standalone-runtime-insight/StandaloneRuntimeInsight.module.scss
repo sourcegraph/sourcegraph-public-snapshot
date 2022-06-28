@@ -1,0 +1,10 @@
+.chart {
+    min-height: 30rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-parent-size {
+    flex: 1;
+}

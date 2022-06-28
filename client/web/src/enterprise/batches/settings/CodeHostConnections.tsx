@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Link } from '@sourcegraph/wildcard'
+import { Container, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -21,7 +21,9 @@ export interface GlobalCodeHostConnectionsProps {
     headerLine: JSX.Element
 }
 
-export const GlobalCodeHostConnections: React.FunctionComponent<GlobalCodeHostConnectionsProps> = props => (
+export const GlobalCodeHostConnections: React.FunctionComponent<
+    React.PropsWithChildren<GlobalCodeHostConnectionsProps>
+> = props => (
     <CodeHostConnections userID={null} connectionResult={useGlobalBatchChangesCodeHostConnection()} {...props} />
 )
 
@@ -29,16 +31,16 @@ export interface UserCodeHostConnectionsProps extends GlobalCodeHostConnectionsP
     userID: Scalars['ID']
 }
 
-export const UserCodeHostConnections: React.FunctionComponent<UserCodeHostConnectionsProps> = props => (
-    <CodeHostConnections connectionResult={useUserBatchChangesCodeHostConnection(props.userID)} {...props} />
-)
+export const UserCodeHostConnections: React.FunctionComponent<
+    React.PropsWithChildren<UserCodeHostConnectionsProps>
+> = props => <CodeHostConnections connectionResult={useUserBatchChangesCodeHostConnection(props.userID)} {...props} />
 
 interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
     userID: Scalars['ID'] | null
     connectionResult: UseConnectionResult<BatchChangesCodeHostFields>
 }
 
-const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
+const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionsProps>> = ({
     userID,
     headerLine,
     connectionResult,
@@ -46,7 +48,7 @@ const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = (
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     return (
         <Container>
-            <h3>Code host tokens</h3>
+            <H3>Code host tokens</H3>
             {headerLine}
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
@@ -66,22 +68,23 @@ const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = (
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
                             first={15}
+                            centered={true}
                             connection={connection}
                             noun="code host"
                             pluralNoun="code hosts"
                             hasNextPage={hasNextPage}
                         />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
-            <p className="mb-0">
+            <Text className="mb-0">
                 Code host not present? Site admins can add a code host in{' '}
                 <Link to="/help/admin/external_service" target="_blank" rel="noopener noreferrer">
                     the manage repositories settings
                 </Link>
                 .
-            </p>
+            </Text>
         </Container>
     )
 }

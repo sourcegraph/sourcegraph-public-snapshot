@@ -4,24 +4,24 @@ import (
 	"archive/tar"
 	"context"
 	"io"
-	"strings"
 
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepositoryFetcher interface {
-	FetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string) <-chan parseRequestOrError
+	FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan parseRequestOrError
 }
 
 type repositoryFetcher struct {
 	gitserverClient     gitserver.GitserverClient
 	operations          *operations
 	maxTotalPathsLength int
+	maxFileSize         int64
 }
 
 type ParseRequest struct {
@@ -34,21 +34,22 @@ type parseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64, observationContext *observation.Context) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
 		operations:          newOperations(observationContext),
 		maxTotalPathsLength: maxTotalPathsLength,
+		maxFileSize:         maxFileSize,
 	}
 }
 
-func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string) <-chan parseRequestOrError {
+func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan parseRequestOrError {
 	requestCh := make(chan parseRequestOrError)
 
 	go func() {
 		defer close(requestCh)
 
-		if err := f.fetchRepositoryArchive(ctx, args, paths, func(request ParseRequest) {
+		if err := f.fetchRepositoryArchive(ctx, repo, commit, paths, func(request ParseRequest) {
 			requestCh <- parseRequestOrError{ParseRequest: request}
 		}); err != nil {
 			requestCh <- parseRequestOrError{Err: err}
@@ -58,12 +59,11 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args typ
 	return requestCh
 }
 
-func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string, callback func(request ParseRequest)) (err error) {
+func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string, callback func(request ParseRequest)) (err error) {
 	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(args.Repo)),
-		log.String("commitID", string(args.CommitID)),
+		log.String("repo", string(repo)),
+		log.String("commitID", string(commit)),
 		log.Int("paths", len(paths)),
-		log.String("paths", strings.Join(paths, ":")),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -71,13 +71,13 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 	defer f.operations.fetching.Dec()
 
 	fetchAndRead := func(paths []string) error {
-		rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, paths)
+		rc, err := f.gitserverClient.FetchTar(ctx, repo, commit, paths)
 		if err != nil {
 			return errors.Wrap(err, "gitserverClient.FetchTar")
 		}
 		defer rc.Close()
 
-		err = readTar(ctx, tar.NewReader(rc), callback, trace)
+		err = readTar(ctx, tar.NewReader(rc), callback, trace, f.maxFileSize)
 		if err != nil {
 			return errors.Wrap(err, "readTar")
 		}
@@ -125,7 +125,7 @@ func batchByTotalLength(paths []string, maxTotalLength int) [][]string {
 	return batches
 }
 
-func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
+func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger, maxFileSize int64) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -139,6 +139,11 @@ func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request P
 		}
 
 		if tarHeader.FileInfo().IsDir() || tarHeader.Typeflag == tar.TypeXGlobalHeader {
+			continue
+		}
+
+		if tarHeader.Size > maxFileSize {
+			callback(ParseRequest{Path: tarHeader.Name, Data: []byte{}})
 			continue
 		}
 

@@ -14,8 +14,14 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -47,16 +53,23 @@ type Resolver struct {
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
 func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
-	return &Resolver{
+	baseResolver := &Resolver{
 		db:                 db,
 		gitserver:          gitserver,
 		resolver:           resolver,
 		locationResolver:   NewCachedLocationResolver(db),
 		observationContext: newOperations(observationContext),
 	}
+
+	return &frankenResolver{
+		Resolver:                    baseResolver,
+		AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
+		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db)),
+		PoliciesServiceResolver:     policiesgraphql.GetResolver(policies.GetService(db)),
+	}
 }
 
-func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
+func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"LSIFUpload": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.LSIFUploadByID(ctx, id)
@@ -446,6 +459,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	})
 	if err != nil {
 		return nil, err
@@ -486,6 +500,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	}); err != nil {
 		return nil, err
 	}
@@ -613,7 +628,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 
 	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(r.locationResolver.logger, r.db).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}

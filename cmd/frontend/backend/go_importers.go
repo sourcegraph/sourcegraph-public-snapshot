@@ -58,11 +58,11 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 
 	var q struct {
 		Query     string
-		Variables map[string]interface{}
+		Variables map[string]any
 	}
 
 	q.Query = countGoImportersGraphQLQuery
-	q.Variables = map[string]interface{}{
+	q.Variables = map[string]any{
 		"query": countGoImportersSearchQuery(repo),
 	}
 
@@ -96,7 +96,7 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 		Data struct {
 			Search struct{ Results struct{ MatchCount int } }
 		}
-		Errors []interface{}
+		Errors []any
 	}
 
 	if err := json.Unmarshal(respBody, &v); err != nil {

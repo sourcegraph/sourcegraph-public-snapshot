@@ -2,15 +2,34 @@ package search
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+type Protocol int
+
+const (
+	Streaming Protocol = iota
+	Batch
+)
+
+func (p Protocol) String() string {
+	switch p {
+	case Streaming:
+		return "Streaming"
+	case Batch:
+		return "Batch"
+	default:
+		return fmt.Sprintf("unknown{%d}", p)
+	}
+}
 
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
@@ -44,6 +63,14 @@ type SymbolsParameters struct {
 
 	// First indicates that only the first n symbols should be returned.
 	First int
+
+	// Timeout in seconds.
+	Timeout int
+}
+
+type SymbolsResponse struct {
+	Symbols result.Symbols `json:"symbols,omitempty"`
+	Err     string         `json:"error,omitempty"`
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global
@@ -115,6 +142,9 @@ type SearcherParameters struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -215,12 +245,19 @@ type Features struct {
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool
+
+	// HybridSearch when true will consult the Zoekt index when running
+	// unindexed searches. Searcher (unindexed search) will the only search
+	// what has changed since the indexed commit.
+	HybridSearch bool
 }
 
 type RepoOptions struct {
-	RepoFilters              []string
-	MinusRepoFilters         []string
-	Dependencies             []string
+	RepoFilters      []string
+	MinusRepoFilters []string
+	Dependencies     []string
+	Dependents       []string
+
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
@@ -229,11 +266,13 @@ type RepoOptions struct {
 	Limit       int
 	Cursors     []*types.Cursor
 
-	// Explicit forks indicates whether `fork:` was set explicitly in the query,
+	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
 	ForkSet   bool
 	NoForks   bool
 	OnlyForks bool
+
+	OnlyCloned bool
 
 	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -244,41 +283,44 @@ type RepoOptions struct {
 
 func (op *RepoOptions) String() string {
 	var b strings.Builder
-	if len(op.RepoFilters) == 0 {
-		b.WriteString("r=[]")
+
+	if len(op.RepoFilters) > 0 {
+		fmt.Fprintf(&b, "RepoFilters: %q\n", op.RepoFilters)
+	} else {
+		b.WriteString("RepoFilters: []\n")
 	}
-	for i, r := range op.RepoFilters {
-		if i != 0 {
-			b.WriteByte(' ')
-		}
-		b.WriteString(strconv.Quote(r))
+	if len(op.MinusRepoFilters) > 0 {
+		fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
+	} else {
+		b.WriteString("MinusRepoFilters: []\n")
 	}
 
-	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
-	}
+	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.CaseSensitiveRepoFilters {
-		b.WriteString(" CaseSensitiveRepoFilters")
+		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
 	}
-
+	if op.ForkSet {
+		fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)
+	}
 	if op.NoForks {
-		b.WriteString(" NoForks")
+		fmt.Fprintf(&b, "NoForks: %t\n", op.NoForks)
 	}
 	if op.OnlyForks {
-		b.WriteString(" OnlyForks")
+		fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	}
+	if op.OnlyCloned {
+		fmt.Fprintf(&b, "OnlyCloned: %t\n", op.OnlyCloned)
+	}
+	if op.ArchivedSet {
+		fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
 	}
 	if op.NoArchived {
-		b.WriteString(" NoArchived")
+		fmt.Fprintf(&b, "NoArchived: %t\n", op.NoArchived)
 	}
 	if op.OnlyArchived {
-		b.WriteString(" OnlyArchived")
-	}
-	if op.Visibility != query.Any {
-		b.WriteString(" Visibility" + string(op.Visibility))
+		fmt.Fprintf(&b, "OnlyArchived: %t\n", op.OnlyArchived)
 	}
 
 	return b.String()

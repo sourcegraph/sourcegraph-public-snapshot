@@ -76,7 +76,7 @@ type gqlDocReferencesResponse struct {
 			}
 		}
 	}
-	Errors []interface{}
+	Errors []any
 }
 
 type DocumentationReference struct {

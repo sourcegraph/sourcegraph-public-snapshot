@@ -8,14 +8,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,27 +49,27 @@ var (
 // errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
 var errCommitDoesNotExist = errors.Errorf("commit does not exist")
 
-func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	upload := record.(store.Upload)
 
 	var requeued bool
 
-	ctx, logger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
+	ctx, otLogger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{
 			LogFields: append(
 				createLogFields(upload),
-				log.Bool("requeued", requeued),
+				otlog.Bool("requeued", requeued),
 			),
 		})
 	}()
 
-	requeued, err = h.handle(ctx, upload, logger)
+	requeued, err = h.handle(ctx, logger, upload, otLogger)
 
 	return err
 }
 
-func (h *handler) PreDequeue(ctx context.Context) (bool, interface{}, error) {
+func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any, error) {
 	if !h.enableBudget {
 		return true, nil, nil
 	}
@@ -81,11 +82,11 @@ func (h *handler) PreDequeue(ctx context.Context) (bool, interface{}, error) {
 	return true, []*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", budgetRemaining)}, nil
 }
 
-func (h *handler) PreHandle(ctx context.Context, record workerutil.Record) {
+func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
 	atomic.AddInt64(&h.budgetRemaining, -h.getSize(record))
 }
 
-func (h *handler) PostHandle(ctx context.Context, record workerutil.Record) {
+func (h *handler) PostHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
 	atomic.AddInt64(&h.budgetRemaining, +h.getSize(record))
 }
 
@@ -99,14 +100,14 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-	db := database.NewDBWith(h.workerStore)
-	repo, err := backend.NewRepos(db).Get(ctx, api.RepoID(upload.RepositoryID))
+func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
+	db := database.NewDBWith(logger, h.workerStore)
+	repo, err := backend.NewRepos(logger, db).Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, db, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, db, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
@@ -116,7 +117,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
 
-	trace.Log(log.Bool("defaultBranch", isDefaultBranch))
+	trace.Log(otlog.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
@@ -126,7 +127,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, h.uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, logger, h.uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
 		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
@@ -140,8 +141,8 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 				// upload record up to this point, but failed to perform the transaction below. We can
 				// safely assume that the entire index's data is in the codeintel database, as it's
 				// parsed deterministically and written atomically.
-				log15.Warn("LSIF data already exists for upload record")
-				trace.Log(log.Bool("rewriting", true))
+				logger.Warn("LSIF data already exists for upload record")
+				trace.Log(otlog.Bool("rewriting", true))
 			} else {
 				return err
 			}
@@ -169,18 +170,18 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 			if !revisionExists {
 				return errCommitDoesNotExist
 			}
-			trace.Log(log.String("commitDate", commitDate.String()))
+			trace.Log(otlog.String("commitDate", commitDate.String()))
 
 			if err := tx.UpdateCommitedAt(ctx, upload.ID, commitDate); err != nil {
 				return errors.Wrap(err, "store.CommitDate")
 			}
 
-			trace.Log(log.Int("packages", len(groupedBundleData.Packages)))
+			trace.Log(otlog.Int("packages", len(groupedBundleData.Packages)))
 			// Update package and package reference data to support cross-repo queries.
 			if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
 				return errors.Wrap(err, "store.UpdatePackages")
 			}
-			trace.Log(log.Int("packageReferences", len(groupedBundleData.Packages)))
+			trace.Log(otlog.Int("packageReferences", len(groupedBundleData.Packages)))
 			if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
@@ -193,7 +194,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 			if err != nil {
 				return errors.Wrap(err, "store.UpdateReferenceCount")
 			}
-			trace.Log(log.Int("updatedReferencingUploads", updated))
+			trace.Log(otlog.Int("updatedReferencingUploads", updated))
 
 			// Insert a companion record to this upload that will asynchronously trigger other workers to
 			// sync/create referenced dependency repositories and queue auto-index records for the monikers
@@ -236,8 +237,8 @@ const requeueDelay = time.Minute
 // cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := backend.NewRepos(db).ResolveRev(ctx, repo, upload.Commit)
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
+	_, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
 		return false, nil
@@ -257,17 +258,19 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, db database.DB, worker
 	if err := workerStore.Requeue(ctx, upload.ID, after); err != nil {
 		return false, errors.Wrap(err, "store.Requeue")
 	}
-	log15.Warn("Requeued LSIF upload record", "id", upload.ID, "reason", reason)
+	logger.Warn("Requeued LSIF upload record",
+		log.Int("id", upload.ID),
+		log.String("reason", reason))
 	return true, nil
 }
 
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
+func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
-	trace.Log(log.String("uploadFilename", uploadFilename))
+	trace.Log(otlog.String("uploadFilename", uploadFilename))
 
 	// Pull raw uploaded data from bucket
 	rc, err := uploadStore.Get(ctx, uploadFilename)
@@ -287,7 +290,9 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 	}
 
 	if err := uploadStore.Delete(ctx, uploadFilename); err != nil {
-		log15.Warn("Failed to delete upload file", "err", err, "filename", uploadFilename)
+		logger.Warn("Failed to delete upload file",
+			log.NamedError("err", err),
+			log.String("filename", uploadFilename))
 	}
 
 	return nil
@@ -295,13 +300,6 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
 func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
-	// Upsert values used for documentation search that have high contention. We do this with the raw LSIF store
-	// instead of in the transaction below because the rows being upserted tend to have heavy contention.
-	repositoryNameID, languageNameID, err := lsifStore.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationSearchPrework")
-	}
-
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -315,49 +313,31 @@ func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, re
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	trace.Log(log.Uint32("numDocuments", count))
+	trace.Log(otlog.Uint32("numDocuments", count))
 
 	count, err = tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	trace.Log(log.Uint32("numResultChunks", count))
+	trace.Log(otlog.Uint32("numResultChunks", count))
 
 	count, err = tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	trace.Log(log.Uint32("numDefinitions", count))
+	trace.Log(otlog.Uint32("numDefinitions", count))
 
 	count, err = tx.WriteReferences(ctx, upload.ID, groupedBundleData.References)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	trace.Log(log.Uint32("numReferences", count))
+	trace.Log(otlog.Uint32("numReferences", count))
 
 	count, err = tx.WriteImplementations(ctx, upload.ID, groupedBundleData.Implementations)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteImplementations")
 	}
-	trace.Log(log.Uint32("numImplementations", count))
-
-	count, err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages, repositoryNameID, languageNameID)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationPages")
-	}
-	trace.Log(log.Uint32("numDocPages", count))
-
-	count, err = tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
-	}
-	trace.Log(log.Uint32("numDocPathInfo", count))
-
-	count, err = tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationMappings")
-	}
-	trace.Log(log.Uint32("numDocMappings", count))
+	trace.Log(otlog.Uint32("numImplementations", count))
 
 	return nil
 }
@@ -367,18 +347,18 @@ func isUniqueConstraintViolation(err error) bool {
 	return errors.As(err, &e) && e.Code == "23505"
 }
 
-func createLogFields(upload store.Upload) []log.Field {
-	fields := []log.Field{
-		log.Int("uploadID", upload.ID),
-		log.Int("repositoryID", upload.RepositoryID),
-		log.String("commit", upload.Commit),
-		log.String("root", upload.Root),
-		log.String("indexer", upload.Indexer),
-		log.Int("queueDuration", int(time.Since(upload.UploadedAt))),
+func createLogFields(upload store.Upload) []otlog.Field {
+	fields := []otlog.Field{
+		otlog.Int("uploadID", upload.ID),
+		otlog.Int("repositoryID", upload.RepositoryID),
+		otlog.String("commit", upload.Commit),
+		otlog.String("root", upload.Root),
+		otlog.String("indexer", upload.Indexer),
+		otlog.Int("queueDuration", int(time.Since(upload.UploadedAt))),
 	}
 
 	if upload.UploadSize != nil {
-		fields = append(fields, log.Int64("uploadSize", *upload.UploadSize))
+		fields = append(fields, otlog.Int64("uploadSize", *upload.UploadSize))
 	}
 
 	return fields

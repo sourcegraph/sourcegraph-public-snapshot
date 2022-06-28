@@ -18,7 +18,7 @@ precise-code-intel-worker-9b69b5b59-z7xx4   0/1     CrashLoopBackOff   415      
 
 1. Check what version of Sourcegraph you are on. If it is 3.22 or later, you will need to deploy MinIO because the `precise-code-intel-worker` depends on MinIO to function.
 
-2. [Check what pods you have deployed and make sure MinIO is in the list.](https://docs.sourcegraph.com/admin/install/kubernetes/operations#list-pods-in-cluster)
+2. [Check what pods you have deployed and make sure MinIO is in the list.](../deploy/kubernetes/operations.md#list-pods-in-cluster)
 
 	`kubectl get pods -o wide`
 
@@ -28,5 +28,5 @@ precise-code-intel-worker-9b69b5b59-z7xx4   0/1     CrashLoopBackOff   415      
 
 ## Further resources
 
-* [Sourcegraph - Kubernetes Configuration](https://docs.sourcegraph.com/admin/install/kubernetes/configure)
+* [Sourcegraph - Kubernetes Configuration](../deploy/kubernetes/configure.md)
 * [Deploy Sourcegraph - Minio](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/base/minio)

@@ -56,6 +56,7 @@ const config = {
     path.join(__dirname, 'client/shared/dev/mockPopper.ts'),
     path.join(__dirname, 'client/shared/dev/fetch'),
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
+    path.join(__dirname, 'client/shared/dev/mockDomRect.ts'),
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),

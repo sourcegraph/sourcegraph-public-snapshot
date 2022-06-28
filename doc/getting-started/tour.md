@@ -14,7 +14,7 @@ Using Sourcegraph makes you a more effective code reviewer because code intellig
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install/index.md) and add repositories
+- [Deploy and Configure Sourcegraph](../admin/deploy/index.md) and add repositories
 - [Install the integration for your code host/review tool](../integration/index.md)
 
 Workflow:
@@ -35,7 +35,7 @@ Viewing cross-references (internal and external) on Sourcegraph is a great way t
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install/index.md) and add repositories
+- [Deploy and Configure Sourcegraph](../admin/deploy/index.md) and add repositories
 - [Install the browser extension and editor plugin](../integration/index.md) for a faster way to initiate searches (optional)
 
 Workflow:
@@ -58,7 +58,7 @@ Navigating your code with code intelligence on Sourcegraph is a great way to und
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install/index.md) and add repositories
+- [Deploy and Configure Sourcegraph](../admin/deploy/index.md) and add repositories
 - [Install the browser extension and editor plugin](../integration/index.md) for a faster way to initiate searches (optional)
 
 Workflow:
@@ -80,7 +80,7 @@ Diff search on Sourcegraph is a great starting point for your investigation into
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install/index.md) and add repositories
+- [Deploy and Configure Sourcegraph](../admin/deploy/index.md) and add repositories
 - [Install the browser extension and editor plugin](../integration/index.md) for a faster way to initiate searches (optional)
 
 Workflow:

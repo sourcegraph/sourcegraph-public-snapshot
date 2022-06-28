@@ -13,8 +13,8 @@ type Message struct {
 	MessageID  *string  // optional "Message-ID" header
 	References []string // optional "References" header list
 
-	Template Templates   // unparsed subject/body templates
-	Data     interface{} // template data
+	Template Templates // unparsed subject/body templates
+	Data     any       // template data
 }
 
 // Templates contains the text and HTML templates for an email.

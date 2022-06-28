@@ -2,14 +2,16 @@ package background
 
 import (
 	"context"
-	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -21,7 +23,7 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_enqueuer",
@@ -47,7 +49,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 			}
 			now := time.Now
 
-			return discoverAndEnqueueInsights(ctx, now, insightStore, queryRunnerEnqueueJob)
+			return discoverAndEnqueueInsights(ctx, now, insightStore, featureFlagStore, queryRunnerEnqueueJob)
 		},
 	), operation)
 }
@@ -56,13 +58,15 @@ func discoverAndEnqueueInsights(
 	ctx context.Context,
 	now func() time.Time,
 	insightStore store.DataSeriesStore,
+	ffs database.FeatureFlagStore,
 	queryRunnerEnqueueJob func(ctx context.Context, job *queryrunner.Job) error) error {
 
 	var multi error
 
 	log15.Info("enqueuing indexed insight recordings")
 	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now(), GlobalOnly: true})
+	recordingArgs := store.GetDataSeriesArgs{NextRecordingBefore: now(), ExcludeJustInTime: true}
+	recordingSeries, err := insightStore.GetDataSeries(ctx, recordingArgs)
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
 	}
@@ -72,7 +76,8 @@ func discoverAndEnqueueInsights(
 	}
 
 	log15.Info("enqueuing indexed insight snapshots")
-	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now(), GlobalOnly: true})
+	snapshotArgs := store.GetDataSeriesArgs{NextSnapshotBefore: now(), ExcludeJustInTime: true}
+	snapshotSeries, err := insightStore.GetDataSeries(ctx, snapshotArgs)
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
 	}
@@ -102,9 +107,24 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		}
 		uniqueSeries[seriesID] = series
 
-		err := enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+		// Construct the search query that will generate data for this repository and time (revision) tuple.
+		defaultQueryParams := querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0)
+		var modifiedQuery string
+		var err error
+		if len(series.Repositories) > 0 {
+			modifiedQuery, err = querybuilder.MultiRepoQuery(series.Query, series.Repositories, defaultQueryParams)
+		} else {
+			modifiedQuery, err = querybuilder.GlobalQuery(series.Query, defaultQueryParams)
+		}
+
+		if err != nil {
+			multi = errors.Append(multi, errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID))
+			continue
+		}
+
+		err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 			SeriesID:    seriesID,
-			SearchQuery: withCountUnlimited(series.Query),
+			SearchQuery: modifiedQuery,
 			State:       "queued",
 			Priority:    int(priority.High),
 			Cost:        int(priority.Indexed),
@@ -126,17 +146,4 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 	}
 
 	return multi
-}
-
-// withCountUnlimited adds `count:9999999` to the given search query string iff `count:` does not
-// exist in the query string. This is extremely important as otherwise the number of results our
-// search query would return would be incomplete and fluctuate.
-//
-// TODO(slimsag): future: we should pull in the search query parser to avoid cases where `count:`
-// is actually e.g. a search query like `content:"count:"`.
-func withCountUnlimited(s string) string {
-	if strings.Contains(s, "count:") {
-		return s
-	}
-	return s + " count:all"
 }

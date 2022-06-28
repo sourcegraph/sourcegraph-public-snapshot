@@ -35,7 +35,7 @@ func Read(ctx context.Context, r io.Reader) <-chan Pair {
 	return elements
 }
 
-func translatePayload(payload interface{}) interface{} {
+func translatePayload(payload any) any {
 	switch v := payload.(type) {
 	case reader.Edge:
 		return Edge(v)

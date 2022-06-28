@@ -8,8 +8,9 @@ import React, {
     useState,
 } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
+// eslint-disable-next-line no-restricted-imports
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
@@ -20,23 +21,25 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Link, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Icon, Input, ButtonLink } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
 import styles from './SearchContextMenu.module.scss'
 
 export const SearchContextMenuItem: React.FunctionComponent<
-    {
-        spec: string
-        description: string
-        query: string
-        selected: boolean
-        isDefault: boolean
-        selectSearchContextSpec: (spec: string) => void
-        searchFilter: string
-        onKeyDown: (key: string) => void
-    } & TelemetryProps
+    React.PropsWithChildren<
+        {
+            spec: string
+            description: string
+            query: string
+            selected: boolean
+            isDefault: boolean
+            selectSearchContextSpec: (spec: string) => void
+            searchFilter: string
+            onKeyDown: (key: string) => void
+        } & TelemetryProps
+    >
 > = ({
     spec,
     description,
@@ -94,6 +97,7 @@ export interface SearchContextMenuProps
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void
+    className?: string
 }
 
 interface PageInfo {
@@ -113,7 +117,7 @@ const searchContextsPerPageToLoad = 15
 const getSearchContextMenuItem = (spec: string): HTMLButtonElement | null =>
     document.querySelector(`[data-search-context-spec="${spec}"]`)
 
-export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
+export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<SearchContextMenuProps>> = ({
     authenticatedUser,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
@@ -125,6 +129,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     showSearchContextManagement,
     platformContext,
     telemetryService,
+    className,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
@@ -147,6 +152,18 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             event.stopPropagation()
         }
     }, [])
+
+    // A keydown event is needed here in addition to the button's click event because
+    // otherwise the keydown event will be propagated to `onMenuKeyDown` and the
+    // click event will not be fired.
+    const onCloseButtonKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
+            if (event.key === ' ' || event.key === 'Enter') {
+                closeMenu(true)
+            }
+        },
+        [closeMenu]
+    )
 
     const onMenuKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLDivElement>): void => {
@@ -286,15 +303,21 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div onKeyDown={onMenuKeyDown}>
+        <div onKeyDown={onMenuKeyDown} className={classNames(styles.container, className)}>
             <div className={styles.title}>
                 <small>Choose search context</small>
-                <Button onClick={() => closeMenu()} variant="icon" className={styles.titleClose} aria-label="Close">
-                    <Icon as={CloseIcon} />
+                <Button
+                    onClick={() => closeMenu()}
+                    onKeyDown={onCloseButtonKeyDown}
+                    variant="icon"
+                    className={styles.titleClose}
+                    aria-label="Close"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>
-                <input
+                <Input
                     ref={inputElement}
                     onInput={onSearchFilterChanged}
                     onKeyDown={onInputKeyDown}
@@ -302,7 +325,9 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     placeholder="Find..."
                     aria-label="Find a context"
                     data-testid="search-context-menu-header-input"
-                    className={classNames('form-control form-control-sm', styles.headerInput)}
+                    className="w-100"
+                    inputClassName={styles.headerInput}
+                    variant="small"
                 />
             </div>
             <div data-testid="search-context-menu-list" className={styles.list} ref={infiniteScrollList} role="menu">
@@ -356,16 +381,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 </Button>
                 <span className="flex-grow-1" />
                 {showSearchContextManagement && (
-                    <Button
+                    <ButtonLink
                         to="/contexts"
                         className={styles.footerButton}
                         onClick={() => closeMenu()}
                         variant="link"
                         size="sm"
-                        as={Link}
                     >
                         Manage contexts
-                    </Button>
+                    </ButtonLink>
                 )}
             </div>
         </div>

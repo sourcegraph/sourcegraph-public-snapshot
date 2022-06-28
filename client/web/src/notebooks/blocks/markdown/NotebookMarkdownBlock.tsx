@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
-import { defaultKeymap, indentWithTab } from '@codemirror/commands'
-import { tags, HighlightStyle, classHighlightStyle } from '@codemirror/highlight'
-import { history } from '@codemirror/history'
+import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
-import { indentUnit } from '@codemirror/language'
+import { indentUnit, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import { classHighlighter, tags } from '@lezer/highlight'
 import classNames from 'classnames'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
@@ -69,14 +68,17 @@ const staticExtensions: Extension[] = [
         },
         indentWithTab,
     ]),
+    keymap.of(historyKeymap),
     keymap.of(defaultKeymap),
     EditorView.lineWrapping,
     markdown({ base: markdownLanguage }),
-    classHighlightStyle,
-    HighlightStyle.define([
-        { tag: tags.monospace, class: styles.markdownCode },
-        { tag: tags.url, class: styles.markdownCode },
-    ]),
+    syntaxHighlighting(classHighlighter),
+    syntaxHighlighting(
+        HighlightStyle.define([
+            { tag: tags.monospace, class: styles.markdownCode },
+            { tag: tags.url, class: styles.markdownCode },
+        ])
+    ),
 ]
 
 function focusInput(editor: EditorView): void {
@@ -93,7 +95,9 @@ interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemePro
     isEmbedded?: boolean
 }
 
-export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = React.memo(
+export const NotebookMarkdownBlock: React.FunctionComponent<
+    React.PropsWithChildren<NotebookMarkdownBlockProps>
+> = React.memo(
     ({
         id,
         input,
@@ -161,14 +165,14 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
                     ? {
                           type: 'button',
                           label: 'Render',
-                          icon: <Icon as={PlayCircleOutlineIcon} />,
+                          icon: <Icon aria-hidden={true} as={PlayCircleOutlineIcon} />,
                           onClick: runBlock,
                           keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
                       }
                     : {
                           type: 'button',
                           label: 'Edit',
-                          icon: <Icon as={PencilIcon} />,
+                          icon: <Icon aria-hidden={true} as={PencilIcon} />,
                           onClick: editMarkdown,
                           keyboardShortcutLabel: '↵',
                       },

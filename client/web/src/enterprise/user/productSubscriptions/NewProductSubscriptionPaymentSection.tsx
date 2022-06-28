@@ -65,7 +65,7 @@ const undefinedIsLoading = <T extends any>(value: T | undefined): T | typeof LOA
 /**
  * Displays the payment section of the new product subscription form.
  */
-export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props> = ({
+export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     accountID,
     subscriptionID,
     productSubscription,
@@ -107,7 +107,12 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
-                        <Icon data-tooltip={previewInvoice.message} as={AlertCircleIcon} /> Error
+                        <Icon
+                            aria-label={previewInvoice.message}
+                            data-tooltip={previewInvoice.message}
+                            as={AlertCircleIcon}
+                        />{' '}
+                        Error
                     </span>
                 ) : previewInvoice.beforeInvoiceItem ? (
                     <>

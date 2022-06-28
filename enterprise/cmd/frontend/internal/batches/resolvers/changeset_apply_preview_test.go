@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -28,12 +30,13 @@ import (
 )
 
 func TestChangesetApplyPreviewResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -52,8 +55,8 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID)
 
-	esStore := database.ExternalServicesWith(cstore)
-	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
+	repoStore := database.ReposWith(logger, cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -106,14 +109,14 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
 
-	input := map[string]interface{}{"batchSpec": apiID}
+	input := map[string]any{"batchSpec": apiID}
 	var response struct{ Node apitest.BatchSpec }
 	apitest.MustExec(ctx, t, s, input, &response, queryChangesetApplyPreview)
 
@@ -258,19 +261,21 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
 	bstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(bstore)
-	repoStore := database.ReposWith(bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := database.ReposWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,
@@ -294,7 +299,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// are correctly handled across pages.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			fx.DecorateInput(map[string]interface{}{}),
+			fx.DecorateInput(map[string]any{}),
 			queryChangesetApplyPreview,
 			1,
 		)
@@ -326,7 +331,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// it up.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			newFx.DecorateInput(map[string]interface{}{}),
+			newFx.DecorateInput(map[string]any{}),
 			queryChangesetApplyPreview,
 			2,
 		)
@@ -387,8 +392,8 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// it up.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			newFx.DecorateInput(map[string]interface{}{
-				"publicationStates": []map[string]interface{}{
+			newFx.DecorateInput(map[string]any{
+				"publicationStates": []map[string]any{
 					{
 						"changesetSpec":    marshalChangesetSpecRandID(newFx.specPublished.RandID),
 						"publicationState": true,
@@ -415,8 +420,8 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		var response struct{ Node apitest.BatchSpec }
 		err := apitest.Exec(
 			ctx, t, s,
-			fx.DecorateInput(map[string]interface{}{
-				"publicationStates": []map[string]interface{}{
+			fx.DecorateInput(map[string]any{
+				"publicationStates": []map[string]any{
 					{
 						"changesetSpec":    marshalChangesetSpecRandID(fx.specPublished.RandID),
 						"publicationState": true,
@@ -471,7 +476,7 @@ func repeatApplyPreview(
 	ctx context.Context,
 	t *testing.T,
 	schema *graphql.Schema,
-	in map[string]interface{},
+	in map[string]any,
 	query string,
 	pageSize int,
 ) []apitest.ChangesetApplyPreview {
@@ -552,8 +557,8 @@ func newApplyPreviewTestFixture(
 	}
 }
 
-func (fx *applyPreviewTestFixture) DecorateInput(in map[string]interface{}) map[string]interface{} {
-	commonInputs := map[string]interface{}{
+func (fx *applyPreviewTestFixture) DecorateInput(in map[string]any) map[string]any {
+	commonInputs := map[string]any{
 		"batchSpec":         marshalBatchSpecRandID(fx.batchSpec.RandID),
 		"publicationStates": fx.DefaultPublicationStates(),
 	}
@@ -565,8 +570,8 @@ func (fx *applyPreviewTestFixture) DecorateInput(in map[string]interface{}) map[
 	return commonInputs
 }
 
-func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]interface{} {
-	return []map[string]interface{}{
+func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]any {
+	return []map[string]any{
 		{
 			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBePublished.RandID),
 			"publicationState": true,
@@ -592,7 +597,7 @@ func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]inter
 func (fx *applyPreviewTestFixture) DefaultUiPublicationStates() service.UiPublicationStates {
 	ups := service.UiPublicationStates{}
 
-	for spec, state := range map[*btypes.ChangesetSpec]interface{}{
+	for spec, state := range map[*btypes.ChangesetSpec]any{
 		fx.specToBePublished:   true,
 		fx.specToBeDraft:       "draft",
 		fx.specToBeUnpublished: false,

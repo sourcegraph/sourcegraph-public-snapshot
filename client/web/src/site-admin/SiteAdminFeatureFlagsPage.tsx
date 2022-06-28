@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Code, H3, Text } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -120,11 +120,9 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeatureFlagsPageProps> = ({
-    fetchFeatureFlags = defaultFetchFeatureFlags,
-    productVersion = window.context.version,
-    ...props
-}) => {
+export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminFeatureFlagsPageProps>
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, ...props }) => {
     const history = useHistory()
 
     // Try to parse out a git rev based on the product version, otherwise just fall back
@@ -138,18 +136,20 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                 // T => Observable<T[]>
                 map(flags =>
                     // Observable<T>[] => Observable<T[]>
-                    forkJoin(
-                        flags.map(flag =>
-                            getFeatureFlagReferences(flag.name, productGitVersion).pipe(
-                                map(
-                                    (references): FeatureFlagAndReferences => ({
-                                        ...flag,
-                                        references,
-                                    })
-                                )
-                            )
-                        )
-                    )
+                    flags.length > 0
+                        ? forkJoin(
+                              flags.map(flag =>
+                                  getFeatureFlagReferences(flag.name, productGitVersion).pipe(
+                                      map(
+                                          (references): FeatureFlagAndReferences => ({
+                                              ...flag,
+                                              references,
+                                          })
+                                      )
+                                  )
+                              )
+                          )
+                        : of([])
                 ),
                 // Observable<T[]> => T[]
                 mergeMap(flags => flags),
@@ -193,7 +193,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                 ]}
                 description={
                     <>
-                        <p>
+                        <Text>
                             Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
                             They are designed to be useful for A/B testing, and the values of all active feature flags
                             are added to every event log for the purpose of analytics. To learn more, refer to{' '}
@@ -201,7 +201,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                                 How to use feature flags
                             </Link>
                             .
-                        </p>
+                        </Text>
                     </>
                 }
                 className="mb-3"
@@ -233,17 +233,17 @@ interface FeatureFlagNodeProps {
     node: FeatureFlagAndReferences
 }
 
-const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }) => {
+const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFlagNodeProps>> = ({ node }) => {
     const { name, overrides, references } = node
     const hasOverridesOrReferences = overrides.length > 0 || references.length > 0
     return (
         <React.Fragment key={name}>
             <div className={classNames('d-flex flex-column', styles.information)}>
                 <div>
-                    <h3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</h3>
+                    <H3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</H3>
 
                     {hasOverridesOrReferences && (
-                        <p className="m-0">
+                        <Text className="m-0">
                             <span className="text-muted">
                                 {overrides.length > 0 &&
                                     `${overrides.length} ${overrides.length !== 1 ? 'overrides' : 'override'}`}
@@ -251,7 +251,7 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
                                 {references.length > 0 &&
                                     `${references.length} ${pluralize('reference', references.length)}`}
                             </span>
-                        </p>
+                        </Text>
                     )}
                 </div>
             </div>
@@ -259,7 +259,7 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
             <span className={classNames('d-none d-md-inline', styles.progress)}>
                 <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                     <div>
-                        {node.__typename === 'FeatureFlagBoolean' && <code>{JSON.stringify(node.value)}</code>}
+                        {node.__typename === 'FeatureFlagBoolean' && <Code>{JSON.stringify(node.value)}</Code>}
                         {node.__typename === 'FeatureFlagRollout' && node.rolloutBasisPoints}
                     </div>
 

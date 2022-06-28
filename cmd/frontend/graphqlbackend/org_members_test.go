@@ -51,7 +51,7 @@ func TestAutocompleteMembersSearch(t *testing.T) {
 					}
 				}
 				`,
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"organization": string(MarshalOrgID(1)),
 					"query":        "test",
 				},

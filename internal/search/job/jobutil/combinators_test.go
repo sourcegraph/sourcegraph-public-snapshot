@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -175,53 +176,6 @@ func TestParallelJob(t *testing.T) {
 	})
 }
 
-func TestPriorityJob(t *testing.T) {
-	t.Run("optional job is canceled after required finishes", func(t *testing.T) {
-		required, optional := mockjob.NewMockJob(), mockjob.NewMockJob()
-		required.RunFunc.SetDefaultReturn(nil, nil)
-		optional.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(200 * time.Millisecond):
-				return nil, nil
-			}
-		})
-
-		start := time.Now()
-		j := NewPriorityJob(required, optional)
-		_, err := j.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.ErrorIs(t, err, context.Canceled)
-		require.WithinDuration(t, time.Now(), start.Add(100*time.Millisecond), 40*time.Millisecond)
-	})
-
-	t.Run("optional job has some time to complete", func(t *testing.T) {
-		required, optional := mockjob.NewMockJob(), mockjob.NewMockJob()
-		required.RunFunc.SetDefaultReturn(nil, nil)
-		optional.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(50 * time.Millisecond):
-				return nil, nil
-			}
-		})
-
-		start := time.Now()
-		j := NewPriorityJob(required, optional)
-		_, err := j.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.NoError(t, err, context.Canceled)
-		require.WithinDuration(t, time.Now(), start.Add(50*time.Millisecond), 30*time.Millisecond)
-	})
-
-	t.Run("NewPriorityJob", func(t *testing.T) {
-		t.Run("noop optional is simplified", func(t *testing.T) {
-			j := mockjob.NewMockJob()
-			require.Equal(t, j, NewPriorityJob(j, NewNoopJob()))
-		})
-	})
-}
-
 func TestSequentialJob(t *testing.T) {
 	// Setup: A child job that sends up to 10 results.
 	mockJob := mockjob.NewMockJob()
@@ -233,7 +187,9 @@ func TestSequentialJob(t *testing.T) {
 			default:
 			}
 			s.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{}},
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{Path: strconv.Itoa(i)},
+				}},
 			})
 		}
 		return nil, nil
@@ -247,7 +203,7 @@ func TestSequentialJob(t *testing.T) {
 	// Setup: A child job that panics.
 	neverJob := mockjob.NewStrictMockJob()
 	t.Run("sequential job returns early after cancellation when limit job sees 5 events", func(t *testing.T) {
-		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(mockJob, neverJob))
+		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(true, mockJob, neverJob))
 		require.NotPanics(t, func() {
 			limitedSequentialJob.Run(context.Background(), job.RuntimeClients{}, stream)
 		})

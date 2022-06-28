@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Modal, H3, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -19,7 +19,7 @@ export interface PublishChangesetsModalProps {
     publishChangesets?: typeof _publishChangesets
 }
 
-export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsModalProps> = ({
+export const PublishChangesetsModal: React.FunctionComponent<React.PropsWithChildren<PublishChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,
@@ -45,23 +45,19 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
-            <h3 id={MODAL_LABEL_ID}>Publish changesets</h3>
-            <p className="mb-4">Are you sure you want to publish all the selected changesets to the code hosts?</p>
+            <H3 id={MODAL_LABEL_ID}>Publish changesets</H3>
+            <Text className="mb-4">
+                Are you sure you want to publish all the selected changesets to the code hosts?
+            </Text>
             <Form>
                 <div className="form-group">
-                    <div className="form-check">
-                        <input
-                            id={CHECKBOX_ID}
-                            type="checkbox"
-                            checked={draft}
-                            onChange={onToggleDraft}
-                            className="form-check-input"
-                            disabled={isLoading === true}
-                        />
-                        <label className="form-check-label" htmlFor={CHECKBOX_ID}>
-                            Publish as draft.
-                        </label>
-                    </div>
+                    <Checkbox
+                        id={CHECKBOX_ID}
+                        checked={draft}
+                        onChange={onToggleDraft}
+                        disabled={isLoading === true}
+                        label="Publish as draft."
+                    />
                 </div>
             </Form>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}

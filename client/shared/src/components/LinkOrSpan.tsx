@@ -1,7 +1,5 @@
 import * as React from 'react'
 
-import { LocationDescriptor } from 'history'
-
 import { Link } from '@sourcegraph/wildcard'
 
 /**
@@ -9,10 +7,12 @@ import { Link } from '@sourcegraph/wildcard'
  * text in a <span> (with no link).
  */
 export const LinkOrSpan: React.FunctionComponent<
-    {
-        to: LocationDescriptor | undefined | null
-        children?: React.ReactNode
-    } & React.AnchorHTMLAttributes<HTMLAnchorElement>
+    React.PropsWithChildren<
+        {
+            to: string | undefined | null
+            children?: React.ReactNode
+        } & React.AnchorHTMLAttributes<HTMLAnchorElement>
+    >
 > = ({ to, className = '', children, ...otherProps }) => {
     if (to) {
         return (

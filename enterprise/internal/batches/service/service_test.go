@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -37,8 +39,9 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -195,8 +198,9 @@ func TestService(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -534,7 +538,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Create org membership and try again
-			if _, err := database.OrgMembers(db).Create(ctx, orgID, user.ID); err != nil {
+			if _, err := db.OrgMembers().Create(ctx, orgID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -733,7 +737,7 @@ func TestService(t *testing.T) {
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
 			_, err := svc.MoveBatchChange(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+			if have, want := err, backend.ErrNotAnOrgMember; !errors.Is(have, want) {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
@@ -1498,6 +1502,31 @@ func TestService(t *testing.T) {
 			assertNoChangesetSpecs(t, newSpec.ID)
 			assertNoChangesetSpecs(t, spec.ID)
 		})
+
+		t.Run("mount error", func(t *testing.T) {
+			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
+
+			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+		})
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
@@ -1531,7 +1560,7 @@ func TestService(t *testing.T) {
 				Name:        "test-batch-change",
 				Description: "only importing",
 				ImportChangesets: []batcheslib.ImportChangeset{
-					{Repository: string(rs[0].Name), ExternalIDs: []interface{}{true, false}},
+					{Repository: string(rs[0].Name), ExternalIDs: []any{true, false}},
 				},
 			}
 
@@ -1550,6 +1579,29 @@ func TestService(t *testing.T) {
 			if !strings.Contains(err.Error(), "Invalid type. Expected: string, given: boolean") {
 				t.Fatalf("wrong error message: %s", err)
 			}
+		})
+
+		t.Run("mount error", func(t *testing.T) {
+			_, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
 		})
 	})
 
@@ -1593,6 +1645,29 @@ func TestService(t *testing.T) {
 				ID: oldSpec.ID,
 			})
 			assert.Equal(t, store.ErrNoResults, err)
+		})
+
+		t.Run("mount error", func(t *testing.T) {
+			_, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
 		})
 	})
 
@@ -2160,7 +2235,7 @@ func TestService(t *testing.T) {
 			if err == nil {
 				t.Fatal("no error")
 			}
-			if err != ErrRetryNonFinal {
+			if !errors.Is(err, ErrRetryNonFinal) {
 				t.Fatalf("wrong error: %s", err)
 			}
 		})
@@ -2434,6 +2509,78 @@ func TestService(t *testing.T) {
 			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+	})
+
+	t.Run("UpsertEmptyBatchChange", func(t *testing.T) {
+		t.Run("creates new batch change if it is non-existent", func(t *testing.T) {
+			name := "random-bc-name"
+
+			// verify that the batch change doesn't exist
+			_, err := s.GetBatchChange(ctx, store.GetBatchChangeOpts{
+				Name:            name,
+				NamespaceUserID: user.ID,
+			})
+
+			if err != store.ErrNoResults {
+				t.Fatalf("batch change %s should not exist", name)
+			}
+
+			batchChange, err := svc.UpsertEmptyBatchChange(ctx, UpsertEmptyBatchChangeOpts{
+				Name:            name,
+				NamespaceUserID: user.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if batchChange.ID == 0 {
+				t.Fatalf("BatchChange ID is 0")
+			}
+
+			if have, want := batchChange.NamespaceUserID, user.ID; have != want {
+				t.Fatalf("UserID is %d, want %d", have, want)
+			}
+		})
+
+		t.Run("returns existing Batch Change", func(t *testing.T) {
+			spec := &btypes.BatchSpec{
+				UserID:          user.ID,
+				NamespaceUserID: user.ID,
+				NamespaceOrgID:  0,
+			}
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			bc := testBatchChange(user.ID, spec)
+			if err := s.CreateBatchChange(ctx, bc); err != nil {
+				t.Fatal(err)
+			}
+
+			haveBatchChange, err := svc.UpsertEmptyBatchChange(ctx, UpsertEmptyBatchChangeOpts{
+				Name:            bc.Name,
+				NamespaceUserID: user.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if haveBatchChange == nil {
+				t.Fatal("expected to have matching batch change, but got nil")
+			}
+
+			if haveBatchChange.ID == 0 {
+				t.Fatal("BatchChange ID is 0")
+			}
+
+			if haveBatchChange.ID != bc.ID {
+				t.Fatal("expected same ID for batch change")
+			}
+
+			if haveBatchChange.BatchSpecID == bc.BatchSpecID {
+				t.Fatal("expected different spec ID for batch change")
 			}
 		})
 	})

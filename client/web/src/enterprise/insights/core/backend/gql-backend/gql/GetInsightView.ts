@@ -20,6 +20,20 @@ const INSIGHT_DATA_SERIES_FRAGMENT = gql`
 const INSIGHT_DATA_NODE_FRAGMENT = gql`
     fragment InsightDataNode on InsightView {
         id
+        defaultSeriesDisplayOptions {
+            limit
+            sortOptions {
+                mode
+                direction
+            }
+        }
+        appliedSeriesDisplayOptions {
+            limit
+            sortOptions {
+                mode
+                direction
+            }
+        }
         dataSeries {
             ...InsightDataSeries
         }
@@ -32,8 +46,8 @@ const INSIGHT_DATA_NODE_FRAGMENT = gql`
  * information.
  */
 export const GET_INSIGHT_VIEW_GQL = gql`
-    query GetInsightView($id: ID, $filters: InsightViewFiltersInput) {
-        insightViews(id: $id, filters: $filters) {
+    query GetInsightView($id: ID, $filters: InsightViewFiltersInput, $seriesDisplayOptions: SeriesDisplayOptionsInput) {
+        insightViews(id: $id, filters: $filters, seriesDisplayOptions: $seriesDisplayOptions) {
             nodes {
                 ...InsightDataNode
             }

@@ -11,14 +11,16 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type UploadHandler struct {
+	logger      sglog.Logger
 	db          database.DB
 	dbStore     DBStore
 	uploadStore uploadstore.Store
@@ -32,7 +34,6 @@ func NewUploadHandler(
 	internal bool,
 	authValidators AuthValidatorMap,
 	operations *Operations,
-	hub *sentry.Hub,
 ) http.Handler {
 	handler := &UploadHandler{
 		db:          db,
@@ -55,7 +56,7 @@ var errUnprocessableRequest = errors.New("unprocessable request: missing expecte
 // POST /upload
 //
 // handleEnqueue dispatches to the correct handler function based on the request's query args. Running
-// the `src lsif upload` command will cause one of two sequences of requests to occur. For uploads that
+// the `src code-intel upload` command will cause one of two sequences of requests to occur. For uploads that
 // are small enough repos (that can be uploaded in one-shot), only one request will be made:
 //
 //    - POST `/upload?repositoryId,commit,root,indexerName`
@@ -78,7 +79,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	// executed so that we can instrument the duration and the resulting error more
 	// easily. The remainder of the function simply serializes the result to the
 	// HTTP response writer.
-	payload, statusCode, err := func() (_ interface{}, statusCode int, err error) {
+	payload, statusCode, err := func() (_ any, statusCode int, err error) {
 		ctx, trace, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
@@ -142,7 +143,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type uploadHandlerFunc = func(context.Context, uploadState, io.Reader) (interface{}, int, error)
+type uploadHandlerFunc = func(context.Context, uploadState, io.Reader) (any, int, error)
 
 func (h *UploadHandler) selectUploadHandlerFunc(uploadState uploadState) uploadHandlerFunc {
 	if uploadState.uploadID == 0 {

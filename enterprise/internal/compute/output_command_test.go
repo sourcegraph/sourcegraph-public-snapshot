@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func Test_output(t *testing.T) {
@@ -51,7 +51,7 @@ train(commuter, lightrail)`).
 }
 
 func fileMatch(content string) result.Match {
-	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+	gitserver.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
@@ -74,7 +74,7 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 		computeQuery, _ := Parse(q)
 		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {
@@ -90,8 +90,13 @@ func TestRun(t *testing.T) {
 
 	autogold.Want(
 		"handles repo match via select on file match",
-		"my/awesome/repo\n").
-		Equal(t, test(`lang:ocaml content:output(.* -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
+		"my/awesome/repo").
+		Equal(t, test(`lang:ocaml content:output((\d) -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
+		"honor type:path efficiently (don't hydrate file content when type:path is set)",
+		"my/awesome/path.ml content is my/awesome/path.ml with extension: ml\n").
+		Equal(t, test(`content:output(awesome/.+\.(\w+) -> $path content is $content with extension: $1) type:path`, fileMatch("a 1 b 2 c 3")))
 
 	autogold.Want(
 		"template substitution regexp with commit author",

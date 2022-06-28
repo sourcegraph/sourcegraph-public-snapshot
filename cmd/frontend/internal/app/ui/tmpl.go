@@ -122,7 +122,7 @@ func doLoadTemplate(path string) (*template.Template, error) {
 // is its file name, relative to the template directory.
 //
 // The given data is accessible in the template via $.Foobar
-func renderTemplate(w http.ResponseWriter, name string, data interface{}) error {
+func renderTemplate(w http.ResponseWriter, name string, data any) error {
 	root, err := loadTemplate(name)
 	if err != nil {
 		return err

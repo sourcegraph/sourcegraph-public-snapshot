@@ -8,7 +8,7 @@ func (p *pendingSimple) Update(s string) {
 	p.Write(s + "...")
 }
 
-func (p *pendingSimple) Updatef(format string, args ...interface{}) {
+func (p *pendingSimple) Updatef(format string, args ...any) {
 	p.Writef(format+"...", args...)
 }
 

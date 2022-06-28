@@ -9,14 +9,15 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func testStore(db dbutil.DB, options Options) *store {
+func testStore(db *sql.DB, options Options) *store {
 	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
 }
 
@@ -104,8 +105,9 @@ func testScanFirstRecordRetry(rows *sql.Rows, queryErr error) (v workerutil.Reco
 	return nil, false, nil
 }
 
-func setupStoreTest(t *testing.T) dbutil.DB {
-	db := dbtest.NewDB(t)
+func setupStoreTest(t *testing.T) *sql.DB {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
@@ -139,13 +141,13 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 func defaultTestStoreOptions(clock glock.Clock) Options {
 	return Options{
 		Name:              "test",
-		TableName:         "workerutil_test w",
+		TableName:         "workerutil_test",
 		Scan:              testScanFirstRecord,
-		OrderByExpression: sqlf.Sprintf("w.created_at"),
+		OrderByExpression: sqlf.Sprintf("workerutil_test.created_at"),
 		ColumnExpressions: []*sqlf.Query{
-			sqlf.Sprintf("w.id"),
-			sqlf.Sprintf("w.state"),
-			sqlf.Sprintf("w.execution_logs"),
+			sqlf.Sprintf("workerutil_test.id"),
+			sqlf.Sprintf("workerutil_test.state"),
+			sqlf.Sprintf("workerutil_test.execution_logs"),
 		},
 		AlternateColumnNames: map[string]string{
 			"queued_at": "created_at",
@@ -157,7 +159,7 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 	}
 }
 
-func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, ok bool, err error) {
+func assertDequeueRecordResult(t *testing.T, expectedID int, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -173,13 +175,13 @@ func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{},
 	}
 }
 
-func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record interface{}) {
+func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record any) {
 	if val := len(record.(TestRecord).ExecutionLogs); val != expectedLogCount {
 		t.Errorf("unexpected count of logs. want=%d have=%d", expectedLogCount, val)
 	}
 }
 
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, ok bool, err error) {
+func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -198,7 +200,7 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

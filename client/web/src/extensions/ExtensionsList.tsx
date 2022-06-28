@@ -10,7 +10,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, H3 } from '@sourcegraph/wildcard'
 
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
@@ -47,7 +47,7 @@ const ORDERED_EXTENSION_CATEGORIES: ExtensionCategory[] = [
 /**
  * Displays a list of extensions.
  */
-export const ExtensionsList: React.FunctionComponent<Props> = ({
+export const ExtensionsList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     subject,
     settingsCascade,
     platformContext,
@@ -118,12 +118,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
     const featuredExtensionsSection = featuredExtensions && featuredExtensions.length > 0 && (
         <div key="Featured" className={styles.featuredSection}>
-            <h3
+            <H3
                 className={classNames('mb-3 font-weight-normal', styles.category)}
                 data-test-extension-category-header="Featured"
             >
                 Featured
-            </h3>
+            </H3>
             <div className={classNames('mt-1', styles.cards, styles.cardsFeatured)}>
                 {featuredExtensions.map(featuredExtension => (
                     <ExtensionCard
@@ -189,12 +189,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
             return (
                 <div key={category} className="mt-1">
-                    <h3
+                    <H3
                         className={classNames('mb-3 font-weight-normal', styles.category)}
                         data-test-extension-category-header={category}
                     >
                         {category}
-                    </h3>
+                    </H3>
                     <div className={classNames('mt-1', styles.cards)}>
                         {extensionIDsForCategory.slice(0, 6).map(extensionId => (
                             <ExtensionCard
@@ -243,12 +243,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
         categorySections = [
             <div key={selectedCategory} className="mt-1">
-                <h3
+                <H3
                     className={classNames('mb-3 font-weight-normal', styles.category)}
                     data-test-extension-category-header={selectedCategory}
                 >
                     {selectedCategory}
-                </h3>
+                </H3>
                 <div className={classNames('mt-1', styles.cards)}>
                     {extensionIDs.map(extensionId => (
                         <ExtensionCard
@@ -276,7 +276,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     return (
         <>
             {error && <ErrorAlert className="mb-2" error={error} />}
-            {featuredExtensionsSection}
+            {enablementFilter === 'all' && featuredExtensionsSection}
             {categorySections.length > 0 ? (
                 categorySections
             ) : (

@@ -146,7 +146,7 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repoName": repoName,
 		"revision": revision,
 		"filePath": filePath,
@@ -186,7 +186,7 @@ query Repository($name: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"name": name,
 	}
 	var resp struct {
@@ -224,7 +224,7 @@ query RepositoryPermissionsInfo($name: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"name": name,
 	}
 	var resp struct {

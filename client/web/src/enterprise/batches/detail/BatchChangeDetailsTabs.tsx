@@ -7,14 +7,15 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon } from '@sourcegraph/wildcard'
 
+import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
 import {
     BatchChangeTab,
@@ -72,7 +73,7 @@ interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsC
     refetchBatchChange: () => void
 }
 
-export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsTabsProps> = ({
+export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangeDetailsTabsProps>> = ({
     batchChange,
     extensionsController,
     history,
@@ -87,11 +88,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     refetchBatchChange,
     telemetryService,
 }) => {
-    const isExecutionEnabled =
-        (settingsCascade.final &&
-            !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
-        false
+    const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
     const executingCount = useMemo(
         () =>
@@ -101,73 +98,73 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
         [batchChange.batchSpecs.nodes]
     )
 
+    const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
+    const shouldDisplayOldUI = !isExecutionEnabled || isBatchSpecLocallyCreated
+
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
                     <span>
-                        <Icon className="text-muted mr-1" as={SourceBranchIcon} />
+                        <Icon aria-hidden={true} className="text-muted mr-2" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
-                        </span>{' '}
-                        <Badge variant="secondary" pill={true} className="ml-1">
+                        </span>
+                        <Badge variant="secondary" pill={true} className="ml-2">
                             {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
                         </Badge>
                     </span>
                 </BatchChangeTab>
                 <BatchChangeTab index={1} name={TabName.Chart}>
                     <span>
-                        <Icon className="text-muted mr-1" as={ChartLineVariantIcon} />{' '}
+                        <Icon aria-hidden={true} className="text-muted mr-2" as={ChartLineVariantIcon} />
                         <span className="text-content" data-tab-content="Burndown chart">
                             Burndown chart
                         </span>
                     </span>
                 </BatchChangeTab>
-                {!isExecutionEnabled && (
+                {shouldDisplayOldUI ? (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
-                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                            <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
                             <span className="text-content" data-tab-content="Spec">
                                 Spec
                             </span>
                         </span>
                     </BatchChangeTab>
-                )}
-                {isExecutionEnabled && (
+                ) : (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
-                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                            <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
-                            </span>{' '}
-                            <Badge
-                                variant={executingCount === 0 ? 'secondary' : 'warning'}
-                                pill={true}
-                                className="ml-1"
-                            >
-                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
-                            </Badge>
+                            </span>
+                            {executingCount > 0 && (
+                                <Badge variant="warning" pill={true} className="ml-2">
+                                    {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                                </Badge>
+                            )}
                         </span>
                     </BatchChangeTab>
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
                     <span>
-                        <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
+                        <Icon aria-hidden={true} className="text-muted mr-2" as={ArchiveIcon} />
                         <span className="text-content" data-tab-content="Archived">
                             Archived
-                        </span>{' '}
-                        <Badge variant="secondary" pill={true} className="ml-1">
+                        </span>
+                        <Badge variant="secondary" pill={true} className="ml-2">
                             {batchChange.changesetsStats.archived}
                         </Badge>
                     </span>
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
                     <span>
-                        <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
+                        <Icon aria-hidden={true} className="text-muted mr-2" as={MonitorStarIcon} />
                         <span className="text-content" data-tab-content="Bulk operations">
                             Bulk operations
-                        </span>{' '}
-                        <Badge variant="secondary" pill={true} className="ml-1">
+                        </span>
+                        <Badge variant="secondary" pill={true} className="ml-2">
                             {batchChange.bulkOperations.totalCount}
                         </Badge>
                     </span>
@@ -201,7 +198,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
-                    {!isExecutionEnabled ? (
+                    {shouldDisplayOldUI ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta

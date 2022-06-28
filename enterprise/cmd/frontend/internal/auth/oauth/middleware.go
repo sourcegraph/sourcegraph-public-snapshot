@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -14,6 +14,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -72,7 +74,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		p := GetProvider(serviceType, id)
 		if p == nil {
 			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
-			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
+			msg := fmt.Sprintf("Misconfigured %s auth provider.", serviceType)
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		op := LoginStateOp(req.URL.Query().Get("op"))
@@ -101,6 +104,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	mux.Handle("/get-user-orgs", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		logger := log.Scoped("get-user-orgs", "handler for getting github user orgs")
+
 		dotcomConfig := conf.SiteConfig().Dotcom
 		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
 		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
@@ -121,7 +126,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			Kinds:           []string{extsvc.KindGitHub},
 		})
 		if err != nil {
-			log15.Error("Unexpected error while fetching user's external services.", "error", err)
+			logger.Error("Unexpected error while fetching user's external services.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
 			return
 		}
@@ -132,25 +137,26 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 
 		esConfg, err := extsvc.ParseConfig("github", externalServices[0].Config)
 		if err != nil {
-			log15.Error("Unexpected error while parsing external service config.", "error", err)
+			logger.Error("Unexpected error while parsing external service config.", log.Error(err))
 			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
 			return
 		}
 
 		conn := esConfg.(*schema.GitHubConnection)
 		auther := &eauth.OAuthBearerToken{Token: conn.Token}
-		client := github.NewV3Client(extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
+		client := github.NewV3Client(logger,
+			extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
 
 		installs, err := client.GetUserInstallations(req.Context())
 		if err != nil {
-			log15.Error("Unexpected error while fetching app installs.", "error", err)
+			logger.Error("Unexpected error while fetching app installs.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching list of GitHub organizations.", http.StatusBadRequest)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(installs)
 		if err != nil {
-			log15.Error("Failed to encode the list of GitHub organizations.", "error", err)
+			logger.Error("Failed to encode the list of GitHub organizations.", log.Error(err))
 		}
 	}))
 	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -165,11 +171,13 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
 	}))
 	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		logger := log.Scoped("get-github-app-installation", "handler for getting github app installations")
+
 		dotcomConfig := conf.SiteConfig().Dotcom
 
 		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 		if err != nil {
-			log15.Error("Unexpected error while decoding GitHub App private key.", "error", err)
+			logger.Error("Unexpected error while decoding GitHub App private key.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
@@ -178,44 +186,45 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 
 		installationIDParam, err := base64.StdEncoding.DecodeString(installationIDQueryUnecoded)
 		if err != nil {
-			log15.Error("Unexpected error while decoding base64 encoded installation ID.", "error", err)
+			logger.Error("Unexpected error while decoding base64 encoded installation ID.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
 
 		installationIDDecoded, err := app.DecryptWithPrivateKey(string(installationIDParam), privateKey)
 		if err != nil {
-			log15.Error("Unexpected error while decrypting installation ID.", "error", err)
+			logger.Error("Unexpected error while decrypting installation ID.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
 
 		installationID, err := strconv.ParseInt(installationIDDecoded, 10, 64)
 		if err != nil {
-			log15.Error("Unexpected error while creating parsing installation ID.", "error", err)
+			logger.Error("Unexpected error while creating parsing installation ID.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
 
 		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
 		if err != nil {
-			log15.Error("Unexpected error while creating Auth token.", "error", err)
+			logger.Error("Unexpected error while creating Auth token.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
 
-		client := github.NewV3Client(extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
+		client := github.NewV3Client(logger,
+			extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
 
 		installation, err := client.GetAppInstallation(req.Context(), installationID)
 		if err != nil {
-			log15.Error("Unexpected error while fetching installation.", "error", err)
+			logger.Error("Unexpected error while fetching installation.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(installation)
 		if err != nil {
-			log15.Error("Failed to encode installation data.", "error", err)
+			logger.Error("Failed to encode installation data.", log.Error(err))
 		}
 	}))
 	return mux
@@ -261,7 +270,10 @@ func withOAuthExternalClient(r *http.Request) *http.Request {
 	client := httpcli.ExternalClient
 	if traceLogEnabled {
 		loggingClient := *client
-		loggingClient.Transport = &loggingRoundTripper{underlying: client.Transport}
+		loggingClient.Transport = &loggingRoundTripper{
+			log:        log.Scoped("oauth_external.transport", "transport logger for withOAuthExternalClient"),
+			underlying: client.Transport,
+		}
 		client = &loggingClient
 	}
 	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, client)
@@ -271,6 +283,7 @@ func withOAuthExternalClient(r *http.Request) *http.Request {
 var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_OAUTH2_LOG_TRACES", "false", "Log all OAuth2-related HTTP requests and responses. Only use during testing because the log messages will contain sensitive data."))
 
 type loggingRoundTripper struct {
+	log        log.Logger
 	underlying http.RoundTripper
 }
 
@@ -296,15 +309,26 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		var preview string
 		preview, req.Body, err = previewAndDuplicateReader(req.Body)
 		if err != nil {
-			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading request body", "error", err)
+			l.log.Error("Unexpected error in OAuth2 debug log",
+				log.String("operation", "reading request body"),
+				log.Error(err))
 			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading request body")
 		}
-		log.Printf(">>>>> HTTP Request: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), req.Header, preview)
+
+		headerFields := make([]log.Field, 0, len(req.Header))
+		for k, v := range req.Header {
+			headerFields = append(headerFields, log.Strings(k, v))
+		}
+		l.log.Info("HTTP request",
+			log.String("method", req.Method),
+			log.String("url", req.URL.String()),
+			log.Object("header", headerFields...),
+			log.String("body", preview))
 	}
 
 	resp, err := l.underlying.RoundTrip(req)
 	if err != nil {
-		log.Printf("<<<<< Error getting HTTP response: %s", err)
+		l.log.Error("Error getting HTTP response", log.Error(err))
 		return resp, err
 	}
 
@@ -313,10 +337,20 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		var preview string
 		preview, resp.Body, err = previewAndDuplicateReader(resp.Body)
 		if err != nil {
-			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading response body", "error", err)
+			l.log.Error("Unexpected error in OAuth2 debug log", log.String("operation", "reading response body"), log.Error(err))
 			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading response body")
 		}
-		log.Printf("<<<<< HTTP Response: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), resp.Header, preview)
+
+		headerFields := make([]log.Field, 0, len(resp.Header))
+		for k, v := range resp.Header {
+			headerFields = append(headerFields, log.Strings(k, v))
+		}
+		l.log.Info("HTTP response",
+			log.String("method", req.Method),
+			log.String("url", req.URL.String()),
+			log.Object("header", headerFields...),
+			log.String("body", preview))
+
 		return resp, err
 	}
 }

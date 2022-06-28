@@ -9,7 +9,11 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
 import { isDefined, property } from '@sourcegraph/common'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import {
+    DecorationMapByLine,
+    flattenDecorations,
+    groupDecorationsByLine,
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
@@ -61,7 +65,7 @@ export interface FileHunksProps extends ThemeProps {
 }
 
 /** Displays hunks in a unified file diff. */
-export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
+export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<FileHunksProps>> = ({
     className,
     fileDiffAnchor,
     hunks,
@@ -180,8 +184,8 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
 
                     tap(([baseDecorations, headDecorations]) => {
                         setDecorations({
-                            base: groupDecorationsByLine(baseDecorations),
-                            head: groupDecorationsByLine(headDecorations),
+                            base: groupDecorationsByLine(baseDecorations && flattenDecorations(baseDecorations)),
+                            head: groupDecorationsByLine(headDecorations && flattenDecorations(headDecorations)),
                         })
                     })
                 ),

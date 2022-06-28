@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 
@@ -27,7 +28,9 @@ interface CreateCodeMonitorPageProps extends ThemeProps {
     isSourcegraphDotCom: boolean
 }
 
-const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
+const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateCodeMonitorPageProps>
+> = ({
     authenticatedUser,
     history,
     location,
@@ -45,7 +48,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
 
     useEffect(
         () =>
-            eventLogger.logViewEvent('CreateCodeMonitorPage', {
+            eventLogger.logPageView('CreateCodeMonitorPage', {
                 hasTriggerQuery: !!triggerQuery,
                 hasDescription: !!description,
             }),
@@ -70,22 +73,28 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
     )
 
     return (
-        <div className="container col-8">
+        <div className="container col-sm-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
-                path={[
-                    { icon: CodeMonitoringLogo, to: '/code-monitoring', ariaLabel: 'Code monitoring logo' },
-                    { text: 'Create code monitor' },
-                ]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
                         <Link to="/help/code_monitoring/how-tos/starting_points" target="_blank" rel="noopener">
-                            Learn more
+                            <VisuallyHidden>Learn more about code monitors</VisuallyHidden>
+                            <span aria-hidden={true}>Learn more</span>
                         </Link>
                     </>
                 }
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb
+                        icon={CodeMonitoringLogo}
+                        to="/code-monitoring"
+                        aria-label="Code monitoring"
+                    />
+                    <PageHeader.Breadcrumb>Create code monitor</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <CodeMonitorForm
                 history={history}
                 location={location}

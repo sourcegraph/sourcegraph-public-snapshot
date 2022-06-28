@@ -24,7 +24,7 @@ type SearchInputs struct {
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
-	Features            featureflag.FlagSet
+	Features            *featureflag.FlagSet
 	Protocol            search.Protocol
 }
 
@@ -90,7 +90,7 @@ func NewSearchInputs(
 
 	inputs := &SearchInputs{
 		Plan:                plan,
-		Query:               plan.ToParseTree(),
+		Query:               plan.ToQ(),
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
@@ -113,23 +113,26 @@ func (e *QueryError) Error() string {
 	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
 }
 
-// detectSearchType returns the search type to perform ("regexp", or
-// "literal"). The search type derives from three sources: the version and
-// patternType parameters passed to the search endpoint (literal search is the
-// default in V2), and the `patternType:` filter in the input query string which
-// overrides the searchType, if present.
+// detectSearchType returns the search type to perform. The search type derives
+// from three sources: the version and patternType parameters passed to the
+// search endpoint (literal search is the default in V2), and the `patternType:`
+// filter in the input query string which overrides the searchType, if present.
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
+		case "standard":
+			searchType = query.SearchTypeStandard
 		case "literal":
 			searchType = query.SearchTypeLiteral
 		case "regexp":
 			searchType = query.SearchTypeRegex
 		case "structural":
 			searchType = query.SearchTypeStructural
+		case "lucky":
+			searchType = query.SearchTypeLucky
 		default:
-			return -1, errors.Errorf("unrecognized patternType: %v", patternType)
+			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
 		}
 	} else {
 		switch version {
@@ -138,7 +141,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V2":
 			searchType = query.SearchTypeLiteral
 		default:
-			return -1, errors.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\" or \"V2\", got %q", version)
 		}
 	}
 	return searchType, nil
@@ -154,12 +157,16 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	}
 	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
 		switch value {
+		case "standard":
+			searchType = query.SearchTypeStandard
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
 			searchType = query.SearchTypeLiteral
 		case "structural":
 			searchType = query.SearchTypeStructural
+		case "lucky":
+			searchType = query.SearchTypeLucky
 		}
 	})
 	return searchType

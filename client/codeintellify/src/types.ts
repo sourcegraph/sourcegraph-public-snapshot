@@ -14,7 +14,7 @@ export interface HoverOverlayProps<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
 
     /** The position of the tooltip (assigned to `style`) */
-    overlayPosition?: { left: number; top: number }
+    overlayPosition?: { left: number } & ({ top: number } | { bottom: number })
 
     /**
      * The hovered token (position and word).

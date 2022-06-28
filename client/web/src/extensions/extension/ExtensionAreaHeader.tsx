@@ -8,7 +8,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon, Text } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -33,7 +33,7 @@ const FEEDBACK_DELAY = 5000
 /**
  * Header for the extension area.
  */
-export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderProps> = (
+export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildren<ExtensionAreaHeaderProps>> = (
     props: ExtensionAreaHeaderProps
 ) => {
     const manifest: ExtensionManifest | undefined =
@@ -95,11 +95,15 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     />
                                 )
                             }
-                            path={[{ to: '/extensions', icon: PuzzleOutlineIcon }, { text: publisher }, { text: name }]}
+                            path={[
+                                { to: '/extensions', icon: PuzzleOutlineIcon, ariaLabel: 'Extensions' },
+                                { text: publisher },
+                                { text: name },
+                            ]}
                             description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (
-                                    <p className="mt-1 mb-0">{manifest.description}</p>
+                                    <Text className="mt-1 mb-0">{manifest.description}</Text>
                                 )
                             }
                             actions={
@@ -212,7 +216,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     exact={exact}
                                                 >
                                                     <span>
-                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

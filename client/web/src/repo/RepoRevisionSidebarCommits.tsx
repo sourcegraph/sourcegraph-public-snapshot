@@ -33,7 +33,11 @@ interface CommitNodeProps {
     preferAbsoluteTimestamps: boolean
 }
 
-const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location, preferAbsoluteTimestamps }) => (
+const CommitNode: React.FunctionComponent<React.PropsWithChildren<CommitNodeProps>> = ({
+    node,
+    location,
+    preferAbsoluteTimestamps,
+}) => (
     <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
         <GitCommitNode
             className={styles.commitNode}
@@ -47,7 +51,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location, 
                     className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
-                    <Icon as={FileIcon} />
+                    <Icon as={FileIcon} aria-hidden={true} />
                 </Link>
             }
         />
@@ -61,7 +65,7 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
     preferAbsoluteTimestamps: boolean
 }
 
-export const RepoRevisionSidebarCommits: React.FunctionComponent<Props> = props => {
+export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const queryCommits = useCallback(
         (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
             fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '' }),

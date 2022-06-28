@@ -18,6 +18,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -76,7 +78,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(extsvc.URNGitHubAppCloud, apiURL, auther, nil)
+	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubAppCloud, apiURL, auther, nil)
 
 	enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 		return newGitHubAppCloudSetupHandler(db, apiURL, client)

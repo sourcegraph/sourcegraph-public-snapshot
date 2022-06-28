@@ -58,27 +58,13 @@ $custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/
 // Hide feedback icon for custom-select
 $custom-select-feedback-icon-size: 0;
 
-// Dropdown
-$dropdown-bg: var(--dropdown-bg);
-$dropdown-border-color: var(--dropdown-border-color);
-$dropdown-divider-bg: var(--border-color);
-$dropdown-link-color: var(--body-color);
-$dropdown-link-hover-color: var(--body-color);
-$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
-$dropdown-link-active-color: #ffffff;
-$dropdown-link-active-bg: var(--primary);
-$dropdown-link-disabled-color: var(--text-muted);
-$dropdown-header-color: var(--dropdown-header-color);
-$dropdown-item-padding-y: 0.25rem;
-$dropdown-item-padding-x: 0.5rem;
-$dropdown-padding-y: $dropdown-item-padding-y;
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
 // Disable all Bootstrap transitions
 $enable-transitions: false;
 
+/* stylelint-disable @sourcegraph/no-restricted-imports */
 // Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
@@ -88,6 +74,7 @@ $enable-transitions: false;
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
+/* stylelint-enable @sourcegraph/no-restricted-imports */
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';

@@ -37,7 +37,9 @@ export interface LangStatsInsightCreationFormProps {
     onFormReset: () => void
 }
 
-export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
+export const LangStatsInsightCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<LangStatsInsightCreationFormProps>
+> = props => {
     const {
         mode = 'creation',
         innerRef,
@@ -77,7 +79,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             onSubmit={handleSubmit}
             onReset={onFormReset}
         >
-            {/* 
+            {/*
                 a11y-ignore
                 Rule: aria-allowed-role ARIA - role should be appropriate for the element
                 Error occurs as a result of using `role=combobox` on `textarea` element.
@@ -136,7 +138,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     alwaysShowLabel={true}
                     data-testid="insight-save-button"
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     type="submit"
                     disabled={submitting || !creationPermission?.available}
                     className="mr-2 mb-2"

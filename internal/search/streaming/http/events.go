@@ -27,7 +27,8 @@ type EventContentMatch struct {
 	Branches        []string         `json:"branches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
-	LineMatches     []EventLineMatch `json:"lineMatches"`
+	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -72,6 +73,12 @@ type Location struct {
 type DecoratedContent struct {
 	Plaintext string `json:"plaintext,omitempty"`
 	HTML      string `json:"html,omitempty"`
+}
+
+type ChunkMatch struct {
+	Content      string   `json:"content"`
+	ContentStart Location `json:"contentStart"`
+	Ranges       []Range  `json:"ranges"`
 }
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
@@ -165,6 +172,7 @@ type EventFilter struct {
 type EventAlert struct {
 	Title           string          `json:"title"`
 	Description     string          `json:"description,omitempty"`
+	Kind            string          `json:"kind,omitempty"`
 	ProposedQueries []ProposedQuery `json:"proposedQueries"`
 }
 

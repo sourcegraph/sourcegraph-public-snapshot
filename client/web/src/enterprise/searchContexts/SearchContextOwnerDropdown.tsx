@@ -43,12 +43,9 @@ export interface SearchContextOwnerDropdownProps {
     setSelectedNamespace: (selectedNamespace: SelectedNamespace) => void
 }
 
-export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOwnerDropdownProps> = ({
-    isDisabled,
-    authenticatedUser,
-    selectedNamespace,
-    setSelectedNamespace,
-}) => {
+export const SearchContextOwnerDropdown: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextOwnerDropdownProps>
+> = ({ isDisabled, authenticatedUser, selectedNamespace, setSelectedNamespace }) => {
     const selectedUserNamespace = useMemo(() => getSelectedNamespaceFromUser(authenticatedUser), [authenticatedUser])
     return (
         <Menu>
@@ -60,7 +57,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 data-tooltip={isDisabled ? "Owner can't be changed." : ''}
             >
                 {selectedNamespace.type === 'global-owner' ? 'Global' : `@${selectedNamespace.name}`}{' '}
-                <Icon as={MenuDownIcon} />
+                <Icon aria-hidden={true} as={MenuDownIcon} />
             </MenuButton>
             <MenuList className={styles.menuList}>
                 <MenuItem onSelect={() => setSelectedNamespace(selectedUserNamespace)}>

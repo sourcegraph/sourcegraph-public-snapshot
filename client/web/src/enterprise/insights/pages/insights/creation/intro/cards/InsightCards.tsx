@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Button, CardBody, Card, H3, H2 } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -20,7 +20,7 @@ interface InsightCardProps extends React.HTMLAttributes<HTMLDivElement> {
  * Low-level styled component for building insight link card for
  * the creation page gallery.
  */
-const InsightCard: React.FunctionComponent<InsightCardProps> = props => {
+const InsightCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => {
     const { children, onClick, handleCreate, ...otherProps } = props
 
     return (
@@ -39,7 +39,7 @@ interface InsightCardBodyProps {
     className?: string
 }
 
-const InsightCardBody: React.FunctionComponent<InsightCardBodyProps> = props => {
+const InsightCardBody: React.FunctionComponent<React.PropsWithChildren<InsightCardBodyProps>> = props => {
     const { title, className, children } = props
 
     return (
@@ -47,19 +47,19 @@ const InsightCardBody: React.FunctionComponent<InsightCardBodyProps> = props => 
             <H3 as={H2} className={styles.cardTitle}>
                 {title}
             </H3>
-            <p className="d-flex flex-column text-muted m-0">{children}</p>
+            <Text className="d-flex flex-column text-muted m-0">{children}</Text>
         </CardBody>
     )
 }
 
-const InsightCardExampleBlock: React.FunctionComponent = props => (
+const InsightCardExampleBlock: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
     <footer className={styles.cardFooter}>
         <small className="text-muted">Example use</small>
         <small className={styles.cardExampleBlock}>{props.children}</small>
     </footer>
 )
 
-export const SearchInsightCard: React.FunctionComponent<InsightCardProps> = props => (
+export const SearchInsightCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
     <InsightCard {...props}>
         <SearchBasedInsightChart className={styles.chart} />
         <InsightCardBody title="Track changes" className="mb-3">
@@ -71,7 +71,7 @@ export const SearchInsightCard: React.FunctionComponent<InsightCardProps> = prop
     </InsightCard>
 )
 
-export const LangStatsInsightCard: React.FunctionComponent<InsightCardProps> = props => (
+export const LangStatsInsightCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
     <InsightCard {...props}>
         <LangStatsInsightChart viewBox="0 0 169 148" className={styles.chart} />
         <InsightCardBody title="Language usage">
@@ -80,7 +80,7 @@ export const LangStatsInsightCard: React.FunctionComponent<InsightCardProps> = p
     </InsightCard>
 )
 
-export const CaptureGroupInsightCard: React.FunctionComponent<InsightCardProps> = props => (
+export const CaptureGroupInsightCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
     <InsightCard {...props}>
         <CaptureGroupInsightChart className={styles.chart} />
 
@@ -94,7 +94,7 @@ export const CaptureGroupInsightCard: React.FunctionComponent<InsightCardProps> 
     </InsightCard>
 )
 
-export const ExtensionInsightsCard: React.FunctionComponent<InsightCardProps> = props => (
+export const ExtensionInsightsCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
     <InsightCard {...props} className={styles.cardExtensionCard}>
         <div className={styles.images}>
             <img

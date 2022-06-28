@@ -25,6 +25,7 @@ type CoreTestOperationsOptions struct {
 	ChromaticShouldAutoAccept  bool
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
+	ForceReadyForReview        bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -45,33 +46,25 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	linterOps := operations.NewNamedSet("Linters and static analysis",
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
-		addPrettier,
-		addCheck)
+		addPrettier)
 	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
-	if diff.Has(changed.SVG) {
-		linterOps.Append(addSVGLint)
+	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
+		linterOps.Append(addSgLints(targets))
 	}
-	if diff.Has(changed.Client) {
-		linterOps.Append(addYarnDeduplicateLint)
-	}
-	if diff.Has(changed.Dockerfiles) {
-		linterOps.Append(addDockerfileLint)
-	}
-	if diff.Has(changed.Docs) {
-		linterOps.Append(addDocs)
-	}
+
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
-			clientChromaticTests(opts.ChromaticShouldAutoAccept),
+			clientChromaticTests(opts),
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
+			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -108,6 +101,25 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	return ops
 }
 
+// addSgLints runs linters for the given targets.
+func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
+	cmd := "go run ./dev/sg "
+
+	if retryCount := os.Getenv("BUILDKITE_RETRY_COUNT"); retryCount != "" && retryCount != "0" {
+		cmd = cmd + "-v "
+	}
+
+	cmd = cmd + "lint -annotations " + strings.Join(targets, " ")
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
+			withYarnCache(),
+			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{IncludeNames: true},
+			}))
+	}
+}
+
 // Run enterprise/dev/ci/scripts tests
 func addCIScriptsTests(pipeline *bk.Pipeline) {
 	testDir := "./enterprise/dev/ci/scripts/tests"
@@ -124,36 +136,12 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 	}
 }
 
-// Verifies the docs formatting and builds the `docsite` command.
-func addDocs(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":memo: Check and build docsite",
-		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{},
-		}))
-}
-
 // Adds the terraform scanner step.  This executes very quickly ~6s
 // func addTerraformScan(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
 //}
-
-// Adds the static check test step.
-func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":clipboard: Misc linters",
-		withYarnCache(),
-		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{IncludeNames: true},
-		}))
-}
-
-// yarn ~41s + ~30s
-func addPrettier(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: Prettier",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh format:check"))
-}
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
@@ -162,14 +150,11 @@ func addGraphQLLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
-func addSVGLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :compression: SVG lint",
-		bk.Cmd("dev/check/svgo.sh"))
-}
-
-func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :yarn: Yarn deduplicate lint",
-		bk.Cmd("dev/check/yarn-deduplicate.sh"))
+// yarn ~41s + ~30s
+func addPrettier(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: Prettier",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh format:check"))
 }
 
 // Adds Typescript check.
@@ -237,6 +222,19 @@ func getParallelTestCount(webParallelTestCount int) int {
 	return webParallelTestCount + len(browsers)
 }
 
+// Builds and tests the VS Code extensions.
+func addVsceIntegrationTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode: Puppeteer tests for VS Code extension",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s build:test"),
+		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
+		bk.AutomaticRetry(1),
+	)
+}
+
 func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
 	testCount := getParallelTestCount(parallelTestCount)
 	return func(pipeline *bk.Pipeline) {
@@ -293,6 +291,15 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/jetbrains -s build"),
+	)
+}
+
 func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
@@ -334,7 +341,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	}
 }
 
-func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
+func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
@@ -346,12 +353,12 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-		if autoAcceptChanges {
+		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
-			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
 			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
@@ -378,6 +385,14 @@ func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
+			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
+			// Because we run tests concurrently, the following must hold to avoid connection issues:
+			//
+			//   GOMAXPROCS * TESTDB_MAXOPENCONNS < 200
+			//
+			// We aim a bit below the threshold to be safe.
+			bk.Env("GOMAXPROCS", "10"),
+			bk.Env("TESTDB_MAXOPENCONNS", "15"),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
 				TestReports: &bk.TestReportOpts{
@@ -412,8 +427,8 @@ func buildGoTests(f func(description, testSuffix string)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
 	slowGoTestPackages := []string{
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",       // 224s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore",     // 122s
+		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore",                  // 224s
+		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore",                // 122s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
 		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
@@ -435,14 +450,6 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
-}
-
-// Lints the Dockerfiles.
-func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Docker linters",
-		bk.AnnotatedCmd("go run ./dev/sg lint -annotations docker", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{IncludeNames: true},
-		}))
 }
 
 // Adds backend integration tests step.
@@ -503,6 +510,16 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
+// Release the VS Code extension.
+func addVsceReleaseSteps(pipeline *bk.Pipeline) {
+	// Publish extension to the VS Code Marketplace
+	pipeline.AddStep(":vscode: Extension release",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s run release"))
+}
+
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
@@ -543,6 +560,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.Skip("Disabled because flaky"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -679,7 +697,11 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 10),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 222),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
@@ -773,7 +795,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor")),
+			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", version),
 		}
 		if !skipHashCompare {
@@ -784,7 +806,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/build.sh"))
+			bk.Cmd("./enterprise/cmd/executor/vm-image/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
@@ -792,7 +814,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 
 func publishExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor")
+		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", version),
@@ -806,7 +828,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/release.sh"))
+			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
@@ -816,7 +838,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 func buildExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor-docker-mirror")),
+			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", version),
 		}
 		stepOpts = append(stepOpts,
@@ -828,7 +850,7 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 
 func publishExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor-docker-mirror")
+		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", version),
@@ -853,8 +875,7 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			// Soft-fail with code 222 if nothing has changed
-			bk.SoftFail(222),
+			bk.SoftFail(),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

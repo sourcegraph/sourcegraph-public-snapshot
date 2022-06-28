@@ -110,7 +110,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		for _, service := range prServices {
 			prServiceEvent := newTraceEvent(deploymentTraceID, r)
 			prServiceEvent.Timestamp = pr.GetMergedAt()
-			prServiceEvent.Add(map[string]interface{}{
+			prServiceEvent.Add(map[string]any{
 				// Honeycomb fields
 				"name":            service,
 				"service.name":    spanServiceNameService,
@@ -129,7 +129,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 
 		prEvent := newTraceEvent(deploymentTraceID, r)
 		prEvent.Timestamp = pr.GetMergedAt()
-		prEvent.Add(map[string]interface{}{
+		prEvent.Add(map[string]any{
 			// Honeycomb fields
 			"name":            pr.GetNumber(),
 			"service.name":    spanServiceNamePullRequest,
@@ -149,7 +149,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 
 	root := newTraceEvent(deploymentTraceID, r)
 	root.Timestamp = oldestPR
-	root.Add(map[string]interface{}{
+	root.Add(map[string]any{
 		// Honeycomb fields
 		"name":          fmt.Sprintf("%s (%s)", r.Environment, r.DeployedAt),
 		"service.name":  fmt.Sprintf("deploy/%s", r.Environment),

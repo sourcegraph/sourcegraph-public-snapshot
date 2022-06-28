@@ -14,7 +14,7 @@ interface ButtonVariantsProps extends Pick<ButtonProps, 'size' | 'outline'> {
     icon?: React.ComponentType<{ className?: string }>
 }
 
-export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
+export const ButtonVariants: React.FunctionComponent<React.PropsWithChildren<ButtonVariantsProps>> = ({
     variants,
     size,
     outline,
@@ -24,15 +24,15 @@ export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
         {variants.map(variant => (
             <React.Fragment key={variant}>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log}>
-                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     {startCase(variant)}
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
-                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     Focus
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
-                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     Disabled
                 </Button>
             </React.Fragment>

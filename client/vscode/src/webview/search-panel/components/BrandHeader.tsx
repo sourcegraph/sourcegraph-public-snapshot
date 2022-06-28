@@ -6,7 +6,9 @@ import { WebviewPageProps } from '../../platform/context'
 
 import styles from '../index.module.scss'
 
-export const BrandHeader: React.FunctionComponent<Pick<WebviewPageProps, 'theme'>> = ({ theme }) => (
+export const BrandHeader: React.FunctionComponent<React.PropsWithChildren<Pick<WebviewPageProps, 'theme'>>> = ({
+    theme,
+}) => (
     <>
         <img
             className={classNames(styles.logo)}

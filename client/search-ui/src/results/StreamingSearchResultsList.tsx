@@ -4,20 +4,16 @@ import classNames from 'classnames'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { SearchResult } from '@sourcegraph/search-ui'
+import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -72,7 +68,9 @@ export interface StreamingSearchResultsListProps
     resultClassName?: string
 }
 
-export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
+export const StreamingSearchResultsList: React.FunctionComponent<
+    React.PropsWithChildren<StreamingSearchResultsListProps>
+> = ({
     results,
     allExpanded,
     fetchHighlightedFileLineRanges,
@@ -113,7 +111,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 case 'path':
                 case 'symbol':
                     return (
-                        <FileMatch
+                        <FileSearchResult
+                            index={index}
                             location={location}
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
@@ -129,29 +128,29 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'commit':
                     return (
-                        <SearchResult
-                            icon={SourceCommitIcon}
+                        <CommitSearchResult
+                            index={index}
                             result={result}
-                            repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'repo':
                     return (
-                        <SearchResult
-                            icon={SourceRepositoryIcon}
+                        <RepoSearchResult
+                            index={index}
                             result={result}
-                            repoName={result.repository}
-                            platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
             }
@@ -185,7 +184,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 </div>
             </div>
             <VirtualList<SearchMatch>
-                className="mt-2"
+                as="ol"
+                aria-label="Search results"
+                className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}

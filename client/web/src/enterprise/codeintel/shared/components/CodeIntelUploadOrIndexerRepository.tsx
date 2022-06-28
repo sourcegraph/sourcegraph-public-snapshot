@@ -8,7 +8,9 @@ export interface CodeIntelUploadOrIndexRepositoryProps {
     node: Pick<LsifUploadFields | LsifIndexFields, 'projectRoot'>
 }
 
-export const CodeIntelUploadOrIndexRepository: FunctionComponent<CodeIntelUploadOrIndexRepositoryProps> = ({ node }) =>
+export const CodeIntelUploadOrIndexRepository: FunctionComponent<
+    React.PropsWithChildren<CodeIntelUploadOrIndexRepositoryProps>
+> = ({ node }) =>
     node.projectRoot ? (
         <Link to={node.projectRoot.repository.url}>{node.projectRoot.repository.name}</Link>
     ) : (

@@ -13,7 +13,8 @@ import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
+import { Location } from './location'
+import { getLineContent, ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
 import { buildReferencePanelMocks } from './ReferencesPanel.mocks'
 
 const NOOP_SETTINGS_CASCADE = {
@@ -91,11 +92,16 @@ describe('ReferencesPanel', () => {
 
         expect(result.getByText('Definitions')).toBeVisible()
 
-        const definitions = ['OrigName string']
+        const definitions = [['', 'string']]
 
         const definitionsList = result.getByTestId('definitions')
         for (const line of definitions) {
-            expect(within(definitionsList).getByText(line)).toBeVisible()
+            for (const surrounding of line) {
+                if (surrounding === '') {
+                    continue
+                }
+                expect(within(definitionsList).getByText(surrounding)).toBeVisible()
+            }
         }
     })
 
@@ -105,14 +111,19 @@ describe('ReferencesPanel', () => {
         expect(result.getByText('References')).toBeVisible()
 
         const references = [
-            'OrigName string',
-            'label = fmt.Sprintf("orig(%s) new(%s)", fdiff.OrigName, fdiff.NewName)',
-            'if err := printFileHeader(&buf, "--- ", d.OrigName, d.OrigTime); err != nil {',
+            ['', 'string'],
+            ['label = fmt.Sprintf("orig(%s) new(%s)", fdiff.', ', fdiff.NewName)'],
+            ['if err := printFileHeader(&buf, "--- ", d.', ', d.OrigTime); err != nil {'],
         ]
 
         const referencesList = result.getByTestId('references')
         for (const line of references) {
-            expect(within(referencesList).getByText(line)).toBeVisible()
+            for (const surrounding of line) {
+                if (surrounding === '') {
+                    continue
+                }
+                expect(within(referencesList).getByText(surrounding)).toBeVisible()
+            }
         }
     })
 
@@ -125,7 +136,7 @@ describe('ReferencesPanel', () => {
         const referenceButton = within(referencesList).getByRole('button', { name: '16: OrigName string' })
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
-        expect(referenceButton).toHaveAttribute('to', fullReferenceURL)
+        expect(referenceButton).toHaveAttribute('data-test-reference-url', fullReferenceURL)
         expect(referenceButton.parentNode).not.toHaveClass('locationActive')
 
         // Click on reference
@@ -148,11 +159,92 @@ describe('ReferencesPanel', () => {
         const closeCodeViewButton = result.getByRole('button', { name: 'Close code view' })
         expect(closeCodeViewButton).toBeVisible()
 
-        const fileLink = result.getByRole('link', { name: 'diff/diff.go' })
+        const rightPane = result.getByTestId('right-pane')
+
+        // This tests that the header of the "peek" code view on the right exists
+        const fileLink = within(rightPane).getByRole('link', { name: 'diff/diff.go' })
         expect(fileLink).toBeVisible()
 
-        const codeView = result.getByRole('table')
         // Assert the code view is rendered, by doing a partial match against its content
+        const codeView = within(rightPane).getByRole('table')
         expect(codeView).toHaveTextContent('package diff import')
+    })
+})
+
+describe('getLineContent', () => {
+    const testFileLines = [
+        'package main',
+        '',
+        'import "fmt"',
+        '',
+        'type Animal interface {',
+        '\tSound() string',
+        '}',
+        '',
+        'var _ Animal = Cat{}',
+        '',
+        'type Cat struct{}',
+        '',
+        'func (c Cat) Sound() string { return "i am a cat" }',
+        '',
+        'type Dog struct{}',
+        '',
+        'func (d Dog) Sound() string { return "it is i, the dog" }',
+        '',
+        'func animalFarm() {',
+        '\tmakeSound(Cat{})',
+        '\tmakeSound(Dog{})',
+        '}',
+        '',
+        'func makeSound(a Animal) {',
+        '\tfmt.Printf("animal made a sound: %s", a.Sound())',
+        '',
+        '\tfoo := a',
+        '',
+        '\tfmt.Printf("another animal: %s", foo.Sound())',
+        '}',
+        '',
+    ]
+
+    it('returns pre/post and token of line', () => {
+        const location: Location = {
+            repo: 'a',
+            file: 'file',
+            commitID: 'f00b4r',
+            url: 'url',
+            precise: true,
+            content: '',
+            lines: testFileLines,
+            range: {
+                start: { line: 23, character: 5 },
+                end: { line: 23, character: 14 },
+            },
+        }
+
+        const content = getLineContent(location)
+        expect(content.prePostToken?.pre).toEqual('func ')
+        expect(content.prePostToken?.token).toEqual('makeSound')
+        expect(content.prePostToken?.post).toEqual('(a Animal) {')
+    })
+
+    it('handles token on multiple lines', () => {
+        const location: Location = {
+            repo: 'a',
+            file: 'file',
+            commitID: 'f00b4r',
+            url: 'url',
+            precise: true,
+            content: '',
+            lines: ['line0 start-of-tok', 'en-ends-here line1'],
+            range: {
+                start: { line: 0, character: 6 },
+                end: { line: 1, character: 12 },
+            },
+        }
+
+        const content = getLineContent(location)
+        expect(content.prePostToken?.pre).toEqual('line0 ')
+        expect(content.prePostToken?.token).toEqual('start-of-tok')
+        expect(content.prePostToken?.post).toEqual('')
     })
 })

@@ -69,15 +69,16 @@ const commonProps = (): UserNavItemProps => ({
         ['browser-extension', 'native-integration'] as const,
         'browser-extension'
     ),
-    featureFlags: new Map(),
     showRepositorySection: true,
     authenticatedUser,
     position: Position.bottomStart,
 })
 
-const OpenByDefaultWrapper: React.FunctionComponent<{
-    children: React.FunctionComponent<{ menuButtonRef: React.Ref<HTMLButtonElement> }>
-}> = ({ children }) => {
+const OpenByDefaultWrapper: React.FunctionComponent<
+    React.PropsWithChildren<{
+        children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
+    }>
+> = ({ children }) => {
     const menuButtonReference = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {

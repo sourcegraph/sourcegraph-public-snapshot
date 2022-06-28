@@ -39,6 +39,8 @@ done
 # Set a default context that is unique per job/custom context and type combination.
 CONTEXT=${CUSTOM_CONTEXT:-$BUILDKITE_JOB_ID}
 CONTEXT="$CONTEXT-$TYPE"
+# when the markdown is created, write the output to a file as well
+TEE_FILE="./annotations/${BUILDKITE_JOB_ID}-annotation.md"
 
 # If we are not in Buildkite, exit before doing annotations
 if [[ -z "$BUILDKITE" ]]; then
@@ -59,7 +61,7 @@ if [[ -z "$CUSTOM_CONTEXT" ]]; then
 
   if [ ! -f "$FILE" ]; then
     touch $FILE
-    printf "**%s** ([logs](#%s))\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+    printf "**%s** ([logs](#%s))\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
   fi
 fi
 
@@ -72,12 +74,14 @@ while IFS= read -r line; do
   fi
 done
 
+
 if [ -n "$SECTION" ]; then
-  printf "**%s**\n" "$SECTION" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "**%s**\n" "$SECTION" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
 
+
 if [ "$MARKDOWN" = true ]; then
-  printf "%s\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "%s\n" "$BODY" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 else
-  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi

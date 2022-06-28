@@ -12,7 +12,15 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, useLocalStorage, Popover, PopoverTrigger, PopoverOpenEvent, Icon } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    useLocalStorage,
+    Popover,
+    PopoverTrigger,
+    PopoverTail,
+    PopoverOpenEvent,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -54,7 +62,9 @@ const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
-export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
+export const GoToCodeHostAction: React.FunctionComponent<
+    React.PropsWithChildren<Props & RepoHeaderContext>
+> = props => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 
     const showPopover = useCallback(() => {
@@ -232,7 +242,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 onClick={onClick}
                 onAuxClick={onClick}
             >
-                <Icon as={exportIcon} />
+                <Icon as={exportIcon} aria-hidden={true} />
                 <span>{descriptiveText}</span>
             </RepoHeaderActionAnchor>
         )
@@ -254,7 +264,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
         return (
             <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
                 <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
-                    <Icon as={exportIcon} />
+                    <Icon as={exportIcon} aria-hidden={true} />
                 </PopoverTrigger>
                 <InstallBrowserExtensionPopover
                     url={url}
@@ -263,13 +273,14 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                     onReject={onReject}
                     onInstall={onInstall}
                 />
+                <PopoverTail />
             </Popover>
         )
     }
 
     return (
         <RepoHeaderActionAnchor {...commonProps}>
-            <Icon as={exportIcon} />
+            <Icon as={exportIcon} aria-hidden={true} />
         </RepoHeaderActionAnchor>
     )
 }

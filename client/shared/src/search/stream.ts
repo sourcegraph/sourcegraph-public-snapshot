@@ -1,3 +1,4 @@
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
@@ -116,6 +117,7 @@ export interface CommitMatch {
     repoLastFetched?: string
 
     content: MarkdownText
+    // Array of [line, character, length] triplets
     ranges: number[][]
 }
 
@@ -214,9 +216,12 @@ export interface Filter {
     kind: string
 }
 
+export type AlertKind = 'lucky-search-queries'
+
 interface Alert {
     title: string
     description?: string | null
+    kind?: AlertKind | null
     proposedQueries: ProposedQuery[] | null
 }
 
@@ -542,4 +547,25 @@ export function isSearchMatchOfType<T extends SearchMatch['type']>(
     type: T
 ): (match: SearchMatch) => match is SearchMatchOfType<T> {
     return (match): match is SearchMatchOfType<T> => match.type === type
+}
+
+// Call the compute endpoint with the given query
+const computeStreamUrl = '/.api/compute/stream'
+export function streamComputeQuery(query: string): Observable<string[]> {
+    const allData: string[] = []
+    return new Observable<string[]>(observer => {
+        fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'Sourcegraph',
+            },
+            onmessage(event) {
+                allData.push(event.data)
+                observer.next(allData)
+            },
+        }).then(
+            () => observer.complete(),
+            error => observer.error(error)
+        )
+    })
 }

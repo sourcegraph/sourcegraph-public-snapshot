@@ -7,14 +7,16 @@ Array [
     aria-disabled="true"
     aria-label="Case sensitivity toggle"
     class="btn btnIcon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
-    data-tooltip="Query already contains one or more case subexpressions"
+    data-state="closed"
     role="checkbox"
     tabindex="0"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >
@@ -33,14 +35,16 @@ Array [
     aria-disabled="true"
     aria-label="Case sensitivity toggle"
     class="btn btnIcon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
-    data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
+    data-state="closed"
     role="checkbox"
     tabindex="0"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >
@@ -59,14 +63,16 @@ Array [
     aria-disabled="true"
     aria-label="Regular expression toggle"
     class="btn btnIcon toggle test-regexp-toggle disabled test-regexp-toggle--active"
-    data-tooltip="Query already contains one or more patterntype subexpressions"
+    data-state="closed"
     role="checkbox"
     tabindex="0"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >

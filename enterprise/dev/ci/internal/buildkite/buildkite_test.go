@@ -36,7 +36,7 @@ func TestOutputSanitization(t *testing.T) {
 					Message:  "incredibly complex markdown with some `backticks`",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `{
@@ -57,7 +57,7 @@ func TestOutputSanitization(t *testing.T) {
 					Message:  "incredibly complex markdown with some $dollar",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `{
@@ -96,7 +96,7 @@ func TestOutputSanitization(t *testing.T) {
 					Message:  "incredibly complex markdown with some `backticks`",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `branch: tree
@@ -114,7 +114,7 @@ meta_data:
 					Message:  "incredibly complex markdown with some $dollar",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `branch: tree

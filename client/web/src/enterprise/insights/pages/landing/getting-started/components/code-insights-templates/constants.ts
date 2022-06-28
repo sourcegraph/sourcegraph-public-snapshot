@@ -1,10 +1,13 @@
-import { InsightType } from '../../../../../core/types'
+import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
+
+import { InsightType } from '../../../../../core'
 import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights/creation/search-insight'
 
 export interface TemplateSection {
     title: string
     templates: Template[]
+    experimental?: boolean
 }
 
 export type Template = SearchTemplate | CaptureGroupTemplate
@@ -33,14 +36,12 @@ const TERRAFORM_VERSIONS: Template = {
         series: [
             {
                 name: '1.1.0',
-                query:
-                    'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform archived:no fork:no',
+                query: 'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: '1.2.0',
-                query:
-                    'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform archived:no fork:no',
+                query: 'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -57,12 +58,12 @@ const CSS_MODULES_MIGRATION: Template = {
         series: [
             {
                 name: 'Global CSS',
-                query: 'select:file lang:SCSS -file:module patterntype:regexp archived:no fork:no',
+                query: 'select:file lang:SCSS -file:module patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'CSS Modules',
-                query: 'select:file lang:SCSS file:module patterntype:regexp archived:no fork:no',
+                query: 'select:file lang:SCSS file:module patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -80,13 +81,12 @@ const LOG4J_FIXED_VERSIONS: Template = {
             {
                 name: 'Vulnerable',
                 query:
-                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'Fixed',
-                query:
-                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -104,7 +104,7 @@ const YARN_ADOPTION: Template = {
         series: [
             {
                 name: 'Yarn',
-                query: 'select:repo file:yarn.lock archived:no fork:no',
+                query: 'select:repo file:yarn.lock',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
         ],
@@ -118,7 +118,7 @@ const JAVA_VERSIONS: Template = {
     templateValues: {
         title: 'Java versions',
         allRepos: true,
-        groupSearchQuery: 'file:pom\\.xml$ <java\\.version>(.*)</java\\.version> archived:no fork:no',
+        groupSearchQuery: 'file:pom\\.xml$ <java\\.version>(.*)</java\\.version>',
     },
 }
 
@@ -132,7 +132,7 @@ const LINTER_OVERRIDE_RULES: Template = {
         series: [
             {
                 name: 'Rule overrides',
-                query: 'file:^\\.eslintignore ^[^#].*.\\n patternType:regexp archived:no fork:no',
+                query: 'file:^\\.eslintignore ^[^#].*.\\n patternType:regexp',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -171,7 +171,7 @@ const CONFIG_OR_DOC_FILE: Template = {
         series: [
             {
                 name: 'Repositories with doc',
-                query: 'select:repo file:docs/*/new_config_filename archived:no fork:no',
+                query: 'select:repo file:docs/*/new_config_filename',
                 stroke: DATA_SERIES_COLORS.PINK,
             },
         ],
@@ -188,12 +188,12 @@ const ALLOW_DENY_LIST_TRACKING: Template = {
         series: [
             {
                 name: 'blacklist/whitelist',
-                query: 'select:file blacklist OR whitelist archived:no fork:no',
+                query: 'select:file blacklist OR whitelist',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'denylist/allowlist',
-                query: 'select:file denylist OR allowlist archived:no fork:no',
+                query: 'select:file denylist OR allowlist',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -210,12 +210,12 @@ const PYTHON_2_3: Template = {
         series: [
             {
                 name: 'Python 3',
-                query: '#!/usr/bin/env python3 archived:no fork:no',
+                query: '#!/usr/bin/env python3',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Python 2',
-                query: '#!/usr/bin/env python2 archived:no fork:no',
+                query: '#!/usr/bin/env python2',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -252,7 +252,7 @@ const NEW_API_USAGE: Template = {
         series: [
             {
                 name: 'New API',
-                query: 'select:repo ourApiLibraryName.load archived:no fork:no',
+                query: 'select:repo ourApiLibraryName.load',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
         ],
@@ -269,12 +269,12 @@ const FREQUENTLY_USED_DATABASE: Template = {
         series: [
             {
                 name: 'Redis',
-                query: 'redis\\.set patternType:regexp archived:no fork:no',
+                query: 'redis\\.set patternType:regexp',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'GraphQL',
-                query: 'graphql\\( patternType:regexp archived:no fork:no',
+                query: 'graphql\\( patternType:regexp',
                 stroke: DATA_SERIES_COLORS.PINK,
             },
         ],
@@ -291,7 +291,7 @@ const LARGE_PACKAGE_USAGE: Template = {
         series: [
             {
                 name: 'Repositories with large package usage',
-                query: 'select:repo import\\slargePkg patternType:regexp archived:no fork:no',
+                query: 'select:repo import\\slargePkg patternType:regexp',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -308,7 +308,7 @@ const REACT_COMPONENT_LIB_USAGE: Template = {
         series: [
             {
                 name: 'Library imports',
-                query: "from '@sourceLibrary/component' patternType:literal archived:no fork:no",
+                query: "from '@sourceLibrary/component' patternType:literal",
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -325,7 +325,7 @@ const CI_TOOLING: Template = {
         series: [
             {
                 name: 'Repo with CircleCI config',
-                query: 'file:\\.circleci/config.yml select:repo fork:no archived:no',
+                query: 'file:\\.circleci/config.yml select:repo',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -342,7 +342,7 @@ const CSS_CLASS: Template = {
         series: [
             {
                 name: 'Deprecated CSS class',
-                query: 'deprecated-class archived:no fork:no',
+                query: 'deprecated-class',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -359,7 +359,7 @@ const ICON_OR_IMAGE: Template = {
         series: [
             {
                 name: 'Deprecated logo',
-                query: '2018logo.png archived:no fork:no',
+                query: '2018logo.png',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -377,8 +377,7 @@ const STRUCTURAL_CODE_PATTERN: Template = {
         series: [
             {
                 name: 'Try catch',
-                query:
-                    'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural archived:no fork:no',
+                query: 'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -395,7 +394,7 @@ const TOOLING_MIGRATION: Template = {
         series: [
             {
                 name: 'Deprecated logger',
-                query: 'deprecatedEventLogger.log archived:no fork:no',
+                query: 'deprecatedEventLogger.log',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -412,7 +411,7 @@ const VAR_KEYWORDS: Template = {
         series: [
             {
                 name: 'var statements',
-                query: '(lang:TypeScript OR lang:JavaScript) var ... = archived:no fork:no patterntype:structural',
+                query: '(lang:TypeScript OR lang:JavaScript) var ... = patterntype:structural',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -429,12 +428,12 @@ const TESTING_LIBRARIES: Template = {
         series: [
             {
                 name: '@testing-library',
-                query: "from '@testing-library/react' archived:no fork:no",
+                query: "from '@testing-library/react'",
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'enzume',
-                query: "from 'enzyme' archived:no fork:no",
+                query: "from 'enzyme'",
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -448,7 +447,7 @@ const LICENSE_TYPES: Template = {
     templateValues: {
         title: 'License types in the codebase',
         allRepos: true,
-        groupSearchQuery: 'file:package.json "license":\\s"(.*)" archived:no fork:no',
+        groupSearchQuery: 'file:package.json "license":\\s"(.*)"',
     },
 }
 
@@ -459,7 +458,7 @@ const ALL_LOG4J_VERSIONS: Template = {
     templateValues: {
         title: 'All log4j versions',
         allRepos: true,
-        groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\. archived:no fork:no',
+        groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\.',
     },
 }
 
@@ -470,7 +469,7 @@ const PYTHON_VERSIONS: Template = {
     templateValues: {
         title: 'Python versions',
         allRepos: true,
-        groupSearchQuery: '#!/usr/bin/env python([0-9]\\.[0-9]+) archived:no fork:no',
+        groupSearchQuery: '#!/usr/bin/env python([0-9]\\.[0-9]+)',
     },
 }
 
@@ -481,7 +480,7 @@ const NODEJS_VERSIONS: Template = {
     templateValues: {
         title: 'Node.js versions',
         allRepos: true,
-        groupSearchQuery: 'nvm\\suse\\s([0-9]+\\.[0-9]+) archived:no fork:no',
+        groupSearchQuery: 'nvm\\suse\\s([0-9]+\\.[0-9]+)',
     },
 }
 
@@ -492,7 +491,7 @@ const CSS_COLORS: Template = {
     templateValues: {
         title: 'CSS Colors',
         allRepos: true,
-        groupSearchQuery: 'color:#([0-9a-fA-f]{3,6}) archived:no fork:no',
+        groupSearchQuery: 'color:#([0-9a-fA-f]{3,6})',
     },
 }
 
@@ -503,7 +502,7 @@ const CHECKOV_SKIP_TYPES: Template = {
     templateValues: {
         title: 'Types of checkov skips',
         allRepos: true,
-        groupSearchQuery: 'patterntype:regexp file:.tf #checkov:skip=(.*) archived:no fork:no',
+        groupSearchQuery: 'patterntype:regexp file:.tf #checkov:skip=(.*)',
     },
 }
 
@@ -517,7 +516,7 @@ const TODOS: Template = {
         series: [
             {
                 name: 'TODOs',
-                query: 'TODO archived:no fork:no',
+                query: 'TODO',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
         ],
@@ -534,7 +533,7 @@ const REVERT_COMMITS: Template = {
         series: [
             {
                 name: 'Reverts',
-                query: 'type:commit revert archived:no fork:no',
+                query: 'type:commit revert',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -551,7 +550,7 @@ const DEPRECATED_CALLS: Template = {
         series: [
             {
                 name: '@deprecated',
-                query: 'lang:java @deprecated archived:no fork:no',
+                query: 'lang:java @deprecated',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -568,7 +567,7 @@ const STORYBOOK_TESTS: Template = {
         series: [
             {
                 name: 'Stories',
-                query: 'patternType:regexp f:\\.story\\.tsx$ \\badd\\( archived:no fork:no',
+                query: 'patternType:regexp f:\\.story\\.tsx$ \\badd\\(',
                 stroke: DATA_SERIES_COLORS.PINK,
             },
         ],
@@ -585,12 +584,12 @@ const REPOS_WITH_README: Template = {
         series: [
             {
                 name: 'with readme',
-                query: 'repohasfile:readme.md select:repo archived:no fork:no',
+                query: 'repohasfile:readme.md select:repo',
                 stroke: DATA_SERIES_COLORS.LIME,
             },
             {
                 name: 'without readme',
-                query: '-repohasfile:readme.md select:repo archived:no fork:no',
+                query: '-repohasfile:readme.md select:repo',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
         ],
@@ -607,12 +606,12 @@ const OWNERSHIP_TRACKING: Template = {
         series: [
             {
                 name: 'with readme',
-                query: 'repohasfile:CODEOWNERS select:repo archived:no fork:no',
+                query: 'repohasfile:CODEOWNERS select:repo',
                 stroke: DATA_SERIES_COLORS.LIME,
             },
             {
                 name: 'without readme',
-                query: '-repohasfile:CODEOWNERS select:repo archived:no fork:no',
+                query: '-repohasfile:CODEOWNERS select:repo',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
         ],
@@ -630,7 +629,7 @@ const VULNERABLE_OPEN_SOURCE: Template = {
         series: [
             {
                 name: 'vulnerableLibrary@14.3.9',
-                query: 'vulnerableLibrary@14.3.9 archived:no fork:no',
+                query: 'vulnerableLibrary@14.3.9',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -647,7 +646,7 @@ const API_KEYS_DETECTION: Template = {
         series: [
             {
                 name: 'API key',
-                query: 'regexMatchingAPIKey patternType:regexp archived:no fork:no',
+                query: 'regexMatchingAPIKey patternType:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
         ],
@@ -664,7 +663,7 @@ const SKIPPED_TESTS: Template = {
         series: [
             {
                 name: 'Skipped tests',
-                query: '(this.skip() OR it.skip) lang:TypeScript archived:no fork:no',
+                query: '(this.skip() OR it.skip) lang:TypeScript',
                 stroke: DATA_SERIES_COLORS.RED,
             },
         ],
@@ -681,17 +680,17 @@ const TEST_AMOUNT_AND_TYPES: Template = {
         series: [
             {
                 name: 'e2e tests',
-                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/end-to-end/.*\\.test\\.ts$ archived:no fork:no',
+                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/end-to-end/.*\\.test\\.ts$',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'regression tests',
-                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/regression/.*\\.test\\.ts$ archived:no fork:no',
+                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/regression/.*\\.test\\.ts$',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'integration tests',
-                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$ archived:no fork:no',
+                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -708,12 +707,12 @@ const TS_VS_GO: Template = {
         series: [
             {
                 name: 'TypeScript',
-                query: 'select:file lang:TypeScript archived:no fork:no',
+                query: 'select:file lang:TypeScript',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'GO lang',
-                query: 'select:file lang:Go archived:no fork:no',
+                query: 'select:file lang:Go',
                 stroke: DATA_SERIES_COLORS.INDIGO,
             },
         ],
@@ -730,7 +729,7 @@ const IOS_APP_SCREENS: Template = {
         series: [
             {
                 name: 'Screens',
-                query: 'struct\\s(.*):\\sview$ patternType:regexp lang:swift archived:no fork:no',
+                query: 'struct\\s(.*):\\sview$ patternType:regexp lang:swift',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
         ],
@@ -747,12 +746,12 @@ const ADOPTING_NEW_API: Template = {
         series: [
             {
                 name: 'Mobile team',
-                query: 'file:mobileTeam newAPI.call archived:no fork:no',
+                query: 'file:mobileTeam newAPI.call',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Web team',
-                query: 'file:webappTeam newAPI.call archived:no fork:no',
+                query: 'file:webappTeam newAPI.call',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -769,12 +768,12 @@ const PROBLEMATIC_API_BY_TEAM: Template = {
         series: [
             {
                 name: 'Mobile team',
-                query: 'problemAPI file:teamOneDirectory archived:no fork:no',
+                query: 'problemAPI file:teamOneDirectory',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Web team',
-                query: 'problemAPI file:teamTwoDirectory archived:no fork:no',
+                query: 'problemAPI file:teamTwoDirectory',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -791,106 +790,591 @@ const DATA_FETCHING_GQL: Template = {
         series: [
             {
                 name: 'requestGraphQL',
-                query: 'patternType:regexp requestGraphQL(\\(|<[^>]*>\\() archived:no fork:no',
+                query: 'patternType:regexp requestGraphQL(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'Direct query/mutate calls',
-                query: 'patternType:regexp (query|mutate)GraphQL(\\(|<[^>]*>\\() archived:no fork:no',
+                query: 'patternType:regexp (query|mutate)GraphQL(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Hooks',
-                query:
-                    'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\() archived:no fork:no',
+                query: 'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
     },
 }
 
-export const TEMPLATE_SECTIONS: TemplateSection[] = [
-    {
-        title: 'Popular',
-        templates: [
-            TERRAFORM_VERSIONS,
-            CSS_MODULES_MIGRATION,
-            LOG4J_FIXED_VERSIONS,
-            YARN_ADOPTION,
-            JAVA_VERSIONS,
-            LINTER_OVERRIDE_RULES,
-            TS_JS_USAGE,
+const GO_STATIC_CHECK_SA6005: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
+        allRepos: true,
+        series: [
+            {
+                name: 'SA6005',
+                query:
+                    'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'SA6005 - fixed',
+                query:
+                    'if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) or if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Migration',
-        templates: [
-            CONFIG_OR_DOC_FILE,
-            ALLOW_DENY_LIST_TRACKING,
-            CSS_MODULES_MIGRATION,
-            PYTHON_2_3,
-            REACT_FUNCTION_CLASS,
+}
+
+const GO_STATIC_CHECK_S1002: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit comparison with boolean constant',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit comparison with boolean constant',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1002',
+                query: 'if :[1:e] == false or if :[1:e] == true patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
         ],
     },
-    {
-        title: 'Adoption',
-        templates: [
-            NEW_API_USAGE,
-            YARN_ADOPTION,
-            FREQUENTLY_USED_DATABASE,
-            LARGE_PACKAGE_USAGE,
-            REACT_COMPONENT_LIB_USAGE,
-            CI_TOOLING,
+}
+
+const GO_STATIC_CHECK_S1003: Template = {
+    type: InsightType.SearchBased,
+    title: 'Replace call to strings.Index with strings.Contains',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace call to strings.Index with strings.Contains',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1003',
+                query:
+                    'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1003 - fixed',
+                query:
+                    'strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Deprecation',
-        templates: [
-            CSS_CLASS,
-            ICON_OR_IMAGE,
-            STRUCTURAL_CODE_PATTERN,
-            TOOLING_MIGRATION,
-            VAR_KEYWORDS,
-            TESTING_LIBRARIES,
+}
+
+const GO_STATIC_CHECK_S1004: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1004',
+                query:
+                    'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1004 - fixed',
+                query: '!bytes.Equal(:[1], :[2]) or bytes.Equal(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Versions and patterns',
-        templates: [
-            JAVA_VERSIONS,
-            LICENSE_TYPES,
-            ALL_LOG4J_VERSIONS,
-            PYTHON_VERSIONS,
-            NODEJS_VERSIONS,
-            CSS_COLORS,
-            CHECKOV_SKIP_TYPES,
+}
+
+const GO_STATIC_CHECK_S1005: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Drop unnecessary use of the blank identifier',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Drop unnecessary use of the blank identifier',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1005',
+                query:
+                    'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1005 - fixed',
+                query: 'for range or for :[1] := range or for :[1] = range patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Code health',
-        templates: [
-            TODOS,
-            LINTER_OVERRIDE_RULES,
-            REVERT_COMMITS,
-            DEPRECATED_CALLS,
-            STORYBOOK_TESTS,
-            REPOS_WITH_README,
-            OWNERSHIP_TRACKING,
-            CI_TOOLING,
+}
+
+const GO_STATIC_CHECK_S1006: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Use for { ... } for infinite loops',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Use for { ... } for infinite loops',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1006',
+                query: 'for true {:[x]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1006 - fixed',
+                query: 'for {:[x]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Security',
-        templates: [
-            VULNERABLE_OPEN_SOURCE,
-            API_KEYS_DETECTION,
-            LOG4J_FIXED_VERSIONS,
-            SKIPPED_TESTS,
-            TEST_AMOUNT_AND_TYPES,
+}
+
+const GO_STATIC_CHECK_S1010: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit default slice index',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit default slice index',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10010',
+                query: ':[s.][:len(:[s])] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1010 - fixed',
+                query: ':[s.][:] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Other',
-        templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
+}
+
+const GO_STATIC_CHECK_S1012: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10012',
+                query: 'time.Now().Sub(:[x]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1012 - fixed',
+                query: 'time.Since(:[x]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
     },
-]
+}
+
+// const GO_STATIC_CHECK_S1017: skipped
+// const GO_STATIC_CHECK_S1018: skipped
+
+const GO_STATIC_CHECK_S1019: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Simplify make call by omitting redundant arguments',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Simplify make call by omitting redundant arguments',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10019',
+                query:
+                    'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1019 - fixed',
+                query:
+                    'make(chan int) or make(map[:[[1]]]:[[1]]) or make(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1020: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit redundant nil check in type assertion',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit redundant nil check in type assertion',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1020',
+                query:
+                    'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1020 - fixed',
+                query: 'if :[_.], ok := :[i.].(:[T]); ok {:[body]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1023: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit redundant control flow',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit redundant control flow',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1023',
+                query:
+                    'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1023 - fixed',
+                query: 'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1024: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1024',
+                query: ':[x.].Sub(time.Now()) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1024 - fixed',
+                query: 'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1025: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1025',
+                query: 'fmt.Println("%s", ":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1025 - fixed',
+                query: 'fmt.Println(":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1028: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Simplify error construction with fmt.Errorf',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Simplify error construction with fmt.Errorf',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1028',
+                query: 'errors.New(fmt.Sprintf(:[1])) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1028 - fixed',
+                query: 'fmt.Errorf(:[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1029: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Range over the string directly',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Range over the string directly',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1029',
+                query: 'for :[~_], :[r.] := range []rune(:[s.]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1029 - fixed',
+                query: 'for _, :[r] := range :[s] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1032: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1032',
+                query:
+                    'sort.Float64s(:[1]) or sort.Strings(:[1]) or sort.Ints(:[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1035: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1035',
+                query:
+                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1035 - fixed',
+                query:
+                    'headers.Set(:[1]) or headers.Get(:[1]) or headers.Del(:[1]) or headers.Add(:[1], :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+// const GO_STATIC_CHECK_S1036: skipped
+
+const GO_STATIC_CHECK_S1037: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1035',
+                query:
+                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1037 - fixed',
+                query: 'time.Sleep(:[t]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1038: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Unnecessarily complex way of printing formatted string',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Unnecessarily complex way of printing formatted string',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1038',
+                query: 'select {	case <-time.After(:[t]):} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1038 - fixed',
+                query: 'time.Sleep(:[t]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1039: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Unnecessary use of fmt.Sprint',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] Unnecessary use of fmt.Sprint',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1039',
+                query: 'fmt.Sprintf("%s", ":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1025 - fixed',
+                query: '":[s]" patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+export const getTemplateSections = (features: SettingsExperimentalFeatures): TemplateSection[] => {
+    const allButGoChecker: TemplateSection[] = [
+        {
+            title: 'Popular',
+            templates: [
+                TERRAFORM_VERSIONS,
+                CSS_MODULES_MIGRATION,
+                LOG4J_FIXED_VERSIONS,
+                YARN_ADOPTION,
+                JAVA_VERSIONS,
+                LINTER_OVERRIDE_RULES,
+                TS_JS_USAGE,
+            ],
+        },
+        {
+            title: 'Migration',
+            templates: [
+                CONFIG_OR_DOC_FILE,
+                ALLOW_DENY_LIST_TRACKING,
+                CSS_MODULES_MIGRATION,
+                PYTHON_2_3,
+                REACT_FUNCTION_CLASS,
+            ],
+        },
+        {
+            title: 'Adoption',
+            templates: [
+                NEW_API_USAGE,
+                YARN_ADOPTION,
+                FREQUENTLY_USED_DATABASE,
+                LARGE_PACKAGE_USAGE,
+                REACT_COMPONENT_LIB_USAGE,
+                CI_TOOLING,
+            ],
+        },
+        {
+            title: 'Deprecation',
+            templates: [
+                CSS_CLASS,
+                ICON_OR_IMAGE,
+                STRUCTURAL_CODE_PATTERN,
+                TOOLING_MIGRATION,
+                VAR_KEYWORDS,
+                TESTING_LIBRARIES,
+            ],
+        },
+        {
+            title: 'Versions and patterns',
+            templates: [
+                JAVA_VERSIONS,
+                LICENSE_TYPES,
+                ALL_LOG4J_VERSIONS,
+                PYTHON_VERSIONS,
+                NODEJS_VERSIONS,
+                CSS_COLORS,
+                CHECKOV_SKIP_TYPES,
+            ],
+        },
+        {
+            title: 'Code health',
+            templates: [
+                TODOS,
+                LINTER_OVERRIDE_RULES,
+                REVERT_COMMITS,
+                DEPRECATED_CALLS,
+                STORYBOOK_TESTS,
+                REPOS_WITH_README,
+                OWNERSHIP_TRACKING,
+                CI_TOOLING,
+            ],
+        },
+        {
+            title: 'Security',
+            templates: [
+                VULNERABLE_OPEN_SOURCE,
+                API_KEYS_DETECTION,
+                LOG4J_FIXED_VERSIONS,
+                SKIPPED_TESTS,
+                TEST_AMOUNT_AND_TYPES,
+            ],
+        },
+        {
+            title: 'Other',
+            templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
+        },
+    ]
+
+    if (!features?.goCodeCheckerTemplates) {
+        return allButGoChecker
+    }
+
+    const all = [...allButGoChecker]
+
+    all.splice(-1, 0, {
+        title: 'Go code checker',
+        experimental: true,
+        templates: [
+            GO_STATIC_CHECK_SA6005,
+            GO_STATIC_CHECK_S1002,
+            GO_STATIC_CHECK_S1003,
+            GO_STATIC_CHECK_S1004,
+            GO_STATIC_CHECK_S1005,
+            GO_STATIC_CHECK_S1006,
+            GO_STATIC_CHECK_S1010,
+            GO_STATIC_CHECK_S1012,
+            GO_STATIC_CHECK_S1019,
+            GO_STATIC_CHECK_S1020,
+            GO_STATIC_CHECK_S1023,
+            GO_STATIC_CHECK_S1024,
+            GO_STATIC_CHECK_S1025,
+            GO_STATIC_CHECK_S1028,
+            GO_STATIC_CHECK_S1029,
+            GO_STATIC_CHECK_S1032,
+            GO_STATIC_CHECK_S1035,
+            GO_STATIC_CHECK_S1037,
+            GO_STATIC_CHECK_S1038,
+            GO_STATIC_CHECK_S1039,
+        ],
+    })
+
+    return all
+}

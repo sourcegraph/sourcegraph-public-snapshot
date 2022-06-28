@@ -4,11 +4,9 @@
 }
 </style>
 
-# LSIF indexers
+# Indexers
 
-Language support is an ever-evolving feature of Sourcegraph. Some languages may be better supported than others due to demand or developer bandwidth/expertise. This page clarifies the status of the LSIF indexers which the Sourcegraph team can both recommend to customers and provide support for.
-
-For a more complete description of the LSIF indexer ecosystem, see [LSIF.dev](https://lsif.dev/). A Sourcegraph instance can ingest any LSIF index file confirming to the [LSIF specification](https://microsoft.github.io/language-server-protocol/specifications/lsif/0.4.0/specification/). The absence of a third-party indexer on this page is not a quality judgment on that indexer; it is that Sourcegraph engineers may not have the required knowledge to provide deep technical support.
+Language support is an ever-evolving feature of Sourcegraph. Some languages may be better supported than others due to demand or developer bandwidth/expertise. This page clarifies the status of the indexers which the Sourcegraph team can both recommend to customers and provide support for.
 
 ## Quick reference
 
@@ -46,14 +44,14 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td>TypeScript/JavaScript</td>
-        <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
-        <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
+        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
         <td>-</td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -70,31 +68,31 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
          <td>Java</td>
-        <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
-        <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
+        <td><a href="https://sourcegraph.github.io/scip-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
         <td>Scala</td>
-        <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
-        <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
+        <td><a href="https://sourcegraph.github.io/scip-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
         <td>Kotlin</td>
-        <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
@@ -102,7 +100,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
         <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
-        <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
+        <td><a href="https://sourcegraph.github.io/scip-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
         <td>Rust</td>
@@ -112,9 +110,21 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
-        <td class="indexer-implemented-y">✗</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✗</td> <!-- Cross-repository -->
         <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://rust-analyzer.github.io/">See notes</a></td> <!-- Build tooling -->
+      </tr>
+     <tr>
+        <td>Python</td>
+        <td><a href="https://github.com/sourcegraph/scip-python">scip-python</a></td>
+        <td><a href="#status-definitions" class="indexer-status">🟠</a></td>
+        <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
+        <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find references -->
+        <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
+        <td class="indexer-implemented-n">✗</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
+        <td><a href="https://github.com/sourcegraph/scip-python">See notes</a></td> <!-- Build tooling -->
       </tr>
    </tbody>
 </table>
@@ -131,19 +141,19 @@ An indexer status is:
 
 ## Milestone definitions
 
-A common set of steps required to build feature-complete LSIF indexers is broadly outlined below. The implementation order and _doneness criteria_ of these steps may differ between language and development ecosystems. Major divergences will be detailed in the notes below.
+A common set of steps required to build feature-complete indexers is broadly outlined below. The implementation order and _doneness criteria_ of these steps may differ between language and development ecosystems. Major divergences will be detailed in the notes below.
 
 ### Cross repository: Emits monikers for cross-repository support
 
 The next milestone provides support for cross-repository definitions and references.
 
-The indexer can emit a validated LSIF index file including import monikers for each symbol defined non-locally, and export monikers for each symbol importable by another repository. This index should be consumed without error by the latest Sourcegraph instance and Go to Definition and Find References should work on cross-repository symbols _given that both repositories are indexed at the exact commit imported_.
+The indexer can emit a valid index including import monikers for each symbol defined non-locally, and export monikers for each symbol importable by another repository. This index should be consumed without error by the latest Sourcegraph instance and Go to Definition and Find References should work on cross-repository symbols _given that both repositories are indexed at the exact commit imported_.
 
-At this point, the indexer may be generally considered **ready**. Some languages and ecosystems may require some of the additional following milestones to be considered ready due to a bad out-of-the-box developer experience or absence of a critical language features. For example, lsif-java is nearly useless without built-in support for build systems such as gradle, and some customers may reject lsif-clang if it has no support for a language feature introduced in C++ 14.
+At this point, the indexer may be generally considered **ready**. Some languages and ecosystems may require some of the additional following milestones to be considered ready due to a bad out-of-the-box developer experience or absence of a critical language features. For example, scip-java is nearly useless without built-in support for build systems such as gradle, and some customers may reject lsif-clang if it has no support for a language feature introduced in C++ 14.
 
 ### Common build tool integration
 
-The next milestone integrates the indexer with a common build tool or framework for the language and surrounding ecosystem. The priority and applicability of this milestone will vary wildly by languages. For example, lsif-go uses the standard library and the language has a built-in dependency manager; all of our customers use Gradle, making lsif-java effectively unusable without native Gradle support.
+The next milestone integrates the indexer with a common build tool or framework for the language and surrounding ecosystem. The priority and applicability of this milestone will vary wildly by languages. For example, lsif-go uses the standard library and the language has a built-in dependency manager; all of our customers use Gradle, making scip-java effectively unusable without native Gradle support.
 
 The indexer integrates natively with common mainstream build tools. We should aim to cover _at least_ the majority of build tools used by existing enterprise customers.
 

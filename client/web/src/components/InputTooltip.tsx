@@ -17,7 +17,12 @@ export interface InputTooltipProps extends ButtonAndInputElementProps {
  *
  * All other props are passed to the `input` element.
  */
-export const InputTooltip: React.FunctionComponent<InputTooltipProps> = ({ disabled, tooltip, type, ...props }) => (
+export const InputTooltip: React.FunctionComponent<React.PropsWithChildren<InputTooltipProps>> = ({
+    disabled,
+    tooltip,
+    type,
+    ...props
+}) => (
     <div className={styles.container}>
         {disabled ? <div className={styles.disabledTooltip} data-tooltip={tooltip} /> : null}
         <Button

@@ -21,7 +21,9 @@ export interface DashboardsContentPageProps extends TelemetryProps {
     dashboardID?: string
 }
 
-export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPageProps> = props => {
+export const DashboardsContentPage: React.FunctionComponent<
+    React.PropsWithChildren<DashboardsContentPageProps>
+> = props => {
     const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 

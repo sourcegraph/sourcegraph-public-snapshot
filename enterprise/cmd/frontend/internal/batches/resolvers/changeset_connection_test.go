@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -23,15 +25,16 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-connection-test", newGitHubExternalService(t, esStore))
 	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, esStore))
@@ -109,7 +112,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	addChangeset(t, ctx, cstore, changeset3, batchChange.ID)
 	addChangeset(t, ctx, cstore, changeset4, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +161,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
+			input := map[string]any{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
 				input["reviewState"] = btypes.ChangesetReviewStatePending
 			}
@@ -187,7 +190,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	var endCursor *string
 	for i := range nodes {
-		input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": 1}
+		input := map[string]any{"batchChange": batchChangeAPIID, "first": 1}
 		if endCursor != nil {
 			input["after"] = *endCursor
 		}

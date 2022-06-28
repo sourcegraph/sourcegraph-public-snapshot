@@ -10,7 +10,7 @@ interface Props extends ButtonProps {
     alwaysShowLabel: boolean
 }
 
-export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
+export const LoaderButton: React.FunctionComponent<React.PropsWithChildren<Partial<Props>>> = ({
     loading,
     label,
     alwaysShowLabel,

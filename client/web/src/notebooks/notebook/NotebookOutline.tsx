@@ -31,7 +31,7 @@ function getHeadingStyle(depth: number): string {
     return ''
 }
 
-export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
+export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<NotebookOutlineProps>> = React.memo(
     ({ notebookElement, outlineContainerElement, blocks }) => {
         const scrollableContainer = useRef<HTMLUListElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
@@ -146,7 +146,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             className={styles.toggleOutlineButton}
                             aria-label="Open Outline panel"
                         >
-                            <Icon as={ChevronRightIcon} size="sm" />
+                            <Icon aria-hidden={true} as={ChevronRightIcon} size="sm" />
                         </Button>
                     </div>
                 </nav>,
@@ -162,7 +162,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                         className={styles.toggleOutlineButton}
                         aria-label="Close Outline panel"
                     >
-                        <Icon as={ChevronLeftIcon} size="sm" />
+                        <Icon aria-hidden={true} as={ChevronLeftIcon} size="sm" />
                     </Button>
                     <span>Outline</span>
                 </div>

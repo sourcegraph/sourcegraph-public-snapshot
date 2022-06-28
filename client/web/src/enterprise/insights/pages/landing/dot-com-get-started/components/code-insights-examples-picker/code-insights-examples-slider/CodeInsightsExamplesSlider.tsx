@@ -4,16 +4,18 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Button, ForwardReferenceComponent, H3 } from '@sourcegraph/wildcard'
 
-import { CodeInsightExample } from '../../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
+import { CodeInsightExampleCard } from '../../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 import { EXAMPLES } from '../examples'
 
 import styles from './CodeInsightsExamplesSlider.module.scss'
 
 interface CodeInsightsExamplesSliderProps extends TelemetryProps {}
 
-export const CodeInsightsExamplesSlider: React.FunctionComponent<CodeInsightsExamplesSliderProps> = props => {
+export const CodeInsightsExamplesSlider: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsExamplesSliderProps>
+> = props => {
     const { telemetryService } = props
     const itemElementReferences = useRef<Map<number, HTMLElement | null>>(new Map())
     const [activeExampleIndex, setActiveExampleIndex] = useState<number>(0)
@@ -56,7 +58,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<CodeInsightsExa
                     <ArrowIcon side="left" />
                 </Button>
 
-                <h3 className={styles.headerTitle}>{activeExample.content.title}</h3>
+                <H3 className={styles.headerTitle}>{activeExample.content.title}</H3>
 
                 <Button
                     variant="icon"
@@ -77,7 +79,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<CodeInsightsExa
                         className={styles.sliderItem}
                         onFullIntersection={() => setActiveExampleIndex(index)}
                     >
-                        <CodeInsightExample
+                        <CodeInsightExampleCard
                             {...example}
                             className={styles.sliderChart}
                             telemetryService={telemetryService}
@@ -142,7 +144,7 @@ interface ArrowIconProps {
     side: 'right' | 'left'
 }
 
-const ArrowIcon: React.FunctionComponent<ArrowIconProps> = props => {
+const ArrowIcon: React.FunctionComponent<React.PropsWithChildren<ArrowIconProps>> = props => {
     const { side } = props
     const rotate = `rotate(${side === 'left' ? 180 : 0}deg)`
 

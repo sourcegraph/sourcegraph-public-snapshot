@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { CopyableText } from '../CopyableText'
@@ -9,17 +9,19 @@ interface Props {
     externalService: Pick<ExternalServiceFields, 'kind' | 'webhookURL'>
 }
 
-export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externalService: { kind, webhookURL } }) => {
+export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    externalService: { kind, webhookURL },
+}) => {
     if (!webhookURL) {
         return <></>
     }
 
-    let description = <p />
+    let description = <Text />
 
     switch (kind) {
         case ExternalServiceKind.BITBUCKETSERVER:
             description = (
-                <p>
+                <Text>
                     <Link
                         to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks"
                         target="_blank"
@@ -39,7 +41,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
                     .
                     <br />
                     To set up another webhook manually, use the following URL:
-                </p>
+                </Text>
             )
             break
 
@@ -54,10 +56,10 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
 
     return (
         <Alert variant="info">
-            <h3>Batch changes webhooks</h3>
+            <H3>Batch changes webhooks</H3>
             {description}
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />
-            <p className="mb-0">
+            <Text className="mb-0">
                 Note that only{' '}
                 <Link to="https://docs.sourcegraph.com/user/batch_changes" target="_blank" rel="noopener noreferrer">
                     batch changes
@@ -67,14 +69,14 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
                     see the docs on how to use them
                 </Link>
                 .
-            </p>
+            </Text>
         </Alert>
     )
 }
 
 function commonDescription(url: string): JSX.Element {
     return (
-        <p>
+        <Text>
             Point{' '}
             <Link
                 to={`https://docs.sourcegraph.com/admin/external_service/${url}#webhooks`}
@@ -84,6 +86,6 @@ function commonDescription(url: string): JSX.Element {
                 webhooks
             </Link>{' '}
             for this code host connection at the following URL:
-        </p>
+        </Text>
     )
 }

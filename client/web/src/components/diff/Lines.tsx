@@ -6,7 +6,7 @@ import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sour
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { createLinkUrl, RouterLink } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
@@ -55,14 +55,14 @@ const lineType = (kind: DiffHunkLineType): LineType => {
     }
 }
 
-export const EmptyLine: React.FunctionComponent = () => (
+export const EmptyLine: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <td data-hunk-num={true} className={classNames(diffHunkStyles.numEmpty, diffHunkStyles.num)} />
         <td data-hunk-content-empty={true} className={diffHunkStyles.contentEmpty} />
     </>
 )
 
-export const Line: React.FunctionComponent<Line> = ({
+export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
     persistLines,
     kind,
     lineNumber,
@@ -89,7 +89,7 @@ export const Line: React.FunctionComponent<Line> = ({
                     data-hunk-num=" "
                 >
                     {persistLines && (
-                        <RouterLink className={diffHunkStyles.numLine} to={{ hash: anchor }}>
+                        <RouterLink className={diffHunkStyles.numLine} to={createLinkUrl({ hash: anchor })}>
                             {lineNumber}
                         </RouterLink>
                     )}

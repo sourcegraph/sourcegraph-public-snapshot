@@ -13,8 +13,8 @@ func matcherByName(name string) OverrideMatcher {
 }
 
 type OverrideProperty struct {
-	ID    string      `json:"id"`
-	Value interface{} `json:"value"`
+	ID    string `json:"id"`
+	Value any    `json:"value"`
 }
 
 func propertyWidth(width float32) OverrideProperty {

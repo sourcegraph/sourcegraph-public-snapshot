@@ -15,6 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -30,40 +32,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client("Test", apiURL, auth, cli)
-}
-
-func TestNewRepoCache(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
-	t.Run("GitHub.com", func(t *testing.T) {
-		url, _ := url.Parse("https://www.github.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// github.com caches should:
-		// (1) use githubProxyURL for the prefix hash rather than the given url
-		// (2) have a TTL of 10 minutes
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("GitHub Enterprise", func(t *testing.T) {
-		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// GitHub Enterprise caches should:
-		// (1) use the given URL for the prefix hash
-		// (2) have a TTL of 30 seconds
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
+	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -288,7 +257,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, err := cli.GetAuthenticatedUserOrgs(ctx)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -625,7 +594,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -715,6 +684,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 
 	old := &V3Client{
+		log:    logtest.Scoped(t),
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
@@ -793,7 +763,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, vcrToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -810,62 +780,32 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, gheToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }
 
 func TestClient_ListRepositoriesForSearch(t *testing.T) {
-	mock := mockHTTPResponseBody{
-		responseBody: `
-{
-  "total_count": 2,
-  "incomplete_results": false,
-  "items": [
-    {
-      "node_id": "i",
-      "full_name": "o/r",
-      "description": "d",
-      "html_url": "https://github.example.com/o/r",
-      "fork": true
-    },
-    {
-      "node_id": "j",
-      "full_name": "a/b",
-      "description": "c",
-      "html_url": "https://github.example.com/a/b",
-      "fork": false
-    }
-  ]
-}
-`,
-	}
-	c := newTestClient(t, &mock)
+	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")
+	defer save()
 
-	wantRepos := []*Repository{
-		{
-			ID:            "i",
-			NameWithOwner: "o/r",
-			Description:   "d",
-			URL:           "https://github.example.com/o/r",
-			IsFork:        true,
-		},
-		{
-			ID:            "j",
-			NameWithOwner: "a/b",
-			Description:   "c",
-			URL:           "https://github.example.com/a/b",
-			IsFork:        false,
-		},
-	}
+	rcache.SetupForTest(t)
+	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
 
-	reposPage, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !repoListsAreEqual(reposPage.Repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(reposPage.Repos), stringForRepoList(wantRepos))
+
+	if reposPage.Repos == nil {
+		t.Fatal("expected repos but got nil")
 	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListRepositoriesForSearch",
+		update("ListRepositoriesForSearch"),
+		reposPage.Repos,
+	)
+
 }
 
 func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
@@ -902,56 +842,5 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 
 	if have, want := err, ErrIncompleteResults; want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)
-	}
-}
-
-func TestClient_ListOrgRepositories(t *testing.T) {
-	mock := mockHTTPResponseBody{
-		responseBody: `[
-  {
-    "node_id": "i",
-    "full_name": "o/r",
-    "description": "d",
-    "html_url": "https://github.example.com/o/r",
-    "fork": true
-  },
-  {
-    "node_id": "j",
-    "full_name": "o/b",
-    "description": "c",
-    "html_url": "https://github.example.com/o/b",
-    "fork": false
-  }
-]
-`,
-	}
-
-	c := newTestClient(t, &mock)
-	wantRepos := []*Repository{
-		{
-			ID:            "i",
-			NameWithOwner: "o/r",
-			Description:   "d",
-			URL:           "https://github.example.com/o/r",
-			IsFork:        true,
-		},
-		{
-			ID:            "j",
-			NameWithOwner: "o/b",
-			Description:   "c",
-			URL:           "https://github.example.com/o/b",
-			IsFork:        false,
-		},
-	}
-
-	repos, hasNextPage, _, err := c.ListOrgRepositories(context.Background(), "o", 1, "all")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !repoListsAreEqual(repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
-	}
-	if !hasNextPage {
-		t.Errorf("got hasNextPage: false want: true")
 	}
 }

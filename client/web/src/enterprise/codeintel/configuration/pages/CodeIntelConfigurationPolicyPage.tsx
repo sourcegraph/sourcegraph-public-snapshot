@@ -16,6 +16,7 @@ import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-o
 import { BranchTargetSettings } from '../components/BranchTargetSettings'
 import { FlashMessage } from '../components/FlashMessage'
 import { IndexingSettings } from '../components/IndexSettings'
+import { LockfileIndexingSettings } from '../components/LockfileIndexSettings'
 import { RetentionSettings } from '../components/RetentionSettings'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
 import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationById'
@@ -28,9 +29,12 @@ export interface CodeIntelConfigurationPolicyPageProps
     repo?: { id: string }
     indexingEnabled?: boolean
     history: H.History
+    lockfileIndexingEnabled?: boolean
 }
 
-export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
+export const CodeIntelConfigurationPolicyPage: FunctionComponent<
+    React.PropsWithChildren<CodeIntelConfigurationPolicyPageProps>
+> = ({
     match: {
         params: { id },
     },
@@ -38,6 +42,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     history,
     telemetryService,
+    lockfileIndexingEnabled = window.context?.codeIntelLockfileIndexingEnabled,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
 
@@ -142,12 +147,16 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             disabled={isSaving || isDeleting}
                             onClick={() => handleDelete(policy.id, policy.name)}
                             data-tooltip={`Deleting this policy may immediate affect data retention${
-                                indexingEnabled ? ' and auto-indexing' : ''
+                                indexingEnabled
+                                    ? ' and auto-indexing'
+                                    : lockfileIndexingEnabled
+                                    ? ' and lockfile-indexing'
+                                    : ''
                             }.`}
                         >
                             {!isDeleting && (
                                 <>
-                                    <Icon as={DeleteIcon} /> Delete policy
+                                    <Icon aria-hidden={true} as={DeleteIcon} /> Delete policy
                                 </>
                             )}
                             {isDeleting && (
@@ -171,6 +180,9 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 <RetentionSettings policy={policy} setPolicy={setPolicy} />
 
                 {indexingEnabled && <IndexingSettings repo={repo} policy={policy} setPolicy={setPolicy} />}
+                {lockfileIndexingEnabled && (
+                    <LockfileIndexingSettings repo={repo} policy={policy} setPolicy={setPolicy} />
+                )}
             </Container>
 
             <div className="mb-3">
@@ -244,6 +256,7 @@ function comparePolicies(
         a.indexCommitMaxAgeHours === b.indexCommitMaxAgeHours,
         a.indexIntermediateCommits === b.indexIntermediateCommits,
         comparePatterns(a.repositoryPatterns, b.repositoryPatterns),
+        a.lockfileIndexingEnabled === b.lockfileIndexingEnabled,
     ]
 
     return equalityConditions.every(isEqual => isEqual)

@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -20,6 +20,7 @@ import (
 // vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
 // of different types.
 type vcsDependenciesSyncer struct {
+	logger log.Logger
 	typ    string
 	scheme string
 
@@ -107,7 +108,11 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 	for _, version := range versions {
 		if d, err := s.source.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
-				log15.Warn("skipping missing dependency", "dep", depName, "version", version, "type", s.typ)
+				s.logger.Warn("skipping missing dependency",
+					log.String("dep", depName),
+					log.String("version", version),
+					log.String("type", s.typ),
+				)
 			} else {
 				errs = errors.Append(errs, err)
 			}
@@ -145,7 +150,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
+			return errors.Wrapf(err, "error pushing dependency %q", dependency)
 		}
 	}
 
@@ -172,7 +177,10 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
 			if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
-				log15.Error("failed to delete git tag", "error", err, "tag", tag)
+				s.logger.Error("failed to delete git tag",
+					log.Error(err),
+					log.String("tag", tag),
+				)
 				continue
 			}
 		}
@@ -180,9 +188,8 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 
 	if len(cloneable) == 0 {
 		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "-D", "latest")
-		if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
-			return err
-		}
+		// Best-effort branch deletion since we don't know if this branch has been created yet.
+		_, _ = runCommandInDirectory(ctx, cmd, string(dir), s.placeholder)
 	}
 
 	return nil
@@ -202,7 +209,14 @@ func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGi
 	defer os.RemoveAll(workDir)
 
 	err = s.source.Download(ctx, workDir, dep)
-	if err != nil {
+	// We should not return err when dependency is not found
+	if err != nil && errcode.IsNotFound(err) {
+		s.logger.With(
+			log.String("dependency", dep.PackageManagerSyntax()),
+			log.String("error", err.Error()),
+		).Warn("Error during dependency download")
+		return nil
+	} else if err != nil {
 		return err
 	}
 
@@ -248,7 +262,7 @@ func (s *vcsDependenciesSyncer) versions(ctx context.Context, packageName string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseDependency(d)
 		if err != nil {
-			log15.Warn("skipping malformed dependency", "dep", d, "error", err)
+			s.logger.Warn("skipping malformed dependency", log.String("dep", d), log.Error(err))
 			continue
 		}
 

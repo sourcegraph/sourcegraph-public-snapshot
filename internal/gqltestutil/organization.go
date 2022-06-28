@@ -18,7 +18,7 @@ query Organization($name: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"name": name,
 	}
 	var resp struct {
@@ -56,7 +56,7 @@ query OrganizationMembers($id: ID!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id": id,
 	}
 	var resp struct {
@@ -94,7 +94,7 @@ mutation InviteUserToOrganization($organization: ID!, $username: String, $email:
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"organization": orgID,
 		"username":     username,
 		"email":        email,
@@ -120,7 +120,7 @@ func (c *Client) AddUserToOrganization(orgID, username string) error {
 		}
 	}`
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"organization": orgID,
 		"username":     username,
 	}
@@ -142,7 +142,7 @@ mutation CreateOrganization($name: String!, $displayName: String) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"name":        name,
 		"displayName": displayName,
 	}
@@ -169,7 +169,7 @@ mutation UpdateOrganization($id: ID!, $displayName: String) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id":          id,
 		"displayName": displayName,
 	}
@@ -192,7 +192,7 @@ mutation DeleteOrganization($organization: ID!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"organization": id,
 	}
 	err := c.GraphQL("", query, variables, nil)
@@ -211,7 +211,7 @@ mutation RemoveUserFromOrganization($user: ID!, $organization: ID!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"user":         userID,
 		"organization": orgID,
 	}

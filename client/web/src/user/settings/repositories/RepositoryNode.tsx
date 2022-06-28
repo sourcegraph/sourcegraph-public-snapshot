@@ -10,7 +10,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge, LoadingSpinner, Link, Icon } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -38,7 +38,7 @@ interface StatusIconProps {
     }
 }
 
-const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) => {
+const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProps>> = ({ mirrorInfo }) => {
     if (mirrorInfo === undefined) {
         return null
     }
@@ -54,14 +54,15 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
             <small
                 className="mr-2 text-muted"
                 data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                aria-label="Visit the repository to clone it. See its mirroring settings for diagnostics."
             >
-                <Icon as={CloudOutlineIcon} />
+                <Icon as={CloudOutlineIcon} aria-hidden={true} />
             </small>
         )
     }
     return (
         <small className="mr-2">
-            <Icon className={styles.check} as={TickIcon} />
+            <Icon className={styles.check} as={TickIcon} aria-label="Success" />
         </small>
     )
 }
@@ -70,36 +71,36 @@ interface CodeHostIconProps {
     hostType: string
 }
 
-const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) => {
+const CodeHostIcon: React.FunctionComponent<React.PropsWithChildren<CodeHostIconProps>> = ({ hostType }) => {
     switch (hostType) {
         case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <Icon className={styles.github} as={GithubIcon} />
+                    <Icon className={styles.github} as={GithubIcon} aria-hidden={true} />
                 </small>
             )
         case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <Icon className={styles.gitlab} as={GitlabIcon} />
+                    <Icon className={styles.gitlab} as={GitlabIcon} aria-hidden={true} />
                 </small>
             )
         case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <Icon as={BitbucketIcon} />
+                    <Icon as={BitbucketIcon} aria-hidden={true} />
                 </small>
             )
         default:
             return (
                 <small className="mr-2">
-                    <Icon as={SourceRepositoryIcon} />
+                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
                 </small>
             )
     }
 }
 
-export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
     name,
     mirrorInfo,
     url,
@@ -138,7 +139,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                                 Private
                             </Badge>
                         )}
-                        <Icon className="ml-2 text-primary" as={ChevronRightIcon} />
+                        <Icon className="ml-2 text-primary" as={ChevronRightIcon} aria-hidden={true} />
                     </div>
                 </Link>
             </td>
@@ -158,7 +159,7 @@ interface CheckboxRepositoryNodeProps {
     isPrivate: boolean
 }
 
-export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryNodeProps> = ({
+export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChildren<CheckboxRepositoryNodeProps>> = ({
     name,
     mirrorInfo,
     onClick,
@@ -183,22 +184,25 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                 className="p-2 w-100 d-flex justify-content-between"
                 onClick={onClick}
             >
-                <div className="d-flex align-items-center">
-                    <input
+                <div className="d-flex">
+                    <Checkbox
                         className="mr-3"
-                        type="checkbox"
                         aria-label={`select ${name} repository`}
                         onChange={onClick}
                         checked={checked}
-                    />
-                    <StatusIcon mirrorInfo={mirrorInfo} />
-                    <CodeHostIcon hostType={serviceType} />
-                    <RepoLink
-                        className="text-muted"
-                        repoClassName="text-body"
-                        repoName={name}
-                        to={null}
-                        onClick={handleOnClick}
+                        label={
+                            <>
+                                <StatusIcon mirrorInfo={mirrorInfo} />
+                                <CodeHostIcon hostType={serviceType} />
+                                <RepoLink
+                                    className="text-muted"
+                                    repoClassName="text-body"
+                                    repoName={name}
+                                    to={null}
+                                    onClick={handleOnClick}
+                                />
+                            </>
+                        }
                     />
                 </div>
                 <div>

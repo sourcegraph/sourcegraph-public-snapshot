@@ -8,9 +8,11 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { CardBody, Icon } from '@sourcegraph/wildcard'
 
-export const ProductSubscriptionHistory: React.FunctionComponent<{
-    productSubscription: Pick<GQL.IProductSubscription, 'events'>
-}> = ({ productSubscription }) =>
+export const ProductSubscriptionHistory: React.FunctionComponent<
+    React.PropsWithChildren<{
+        productSubscription: Pick<GQL.IProductSubscription, 'events'>
+    }>
+> = ({ productSubscription }) =>
     productSubscription.events.length > 0 ? (
         <table className="table mb-0">
             <thead>
@@ -30,7 +32,7 @@ export const ProductSubscriptionHistory: React.FunctionComponent<{
                         <td className="w-100">
                             <LinkOrSpan to={event.url} target="_blank" rel="noopener noreferrer">
                                 {event.title}
-                                {event.url && <Icon className="ml-1" as={ExternalLinkIcon} />}
+                                {event.url && <Icon aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />}
                             </LinkOrSpan>
                             {event.description && <small className="d-block text-muted">{event.description}</small>}
                         </td>

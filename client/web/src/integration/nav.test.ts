@@ -17,22 +17,13 @@ import {
     createFileExternalLinksResult,
     createBlobContentResult,
     createTreeEntriesResult,
+    createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
-    FileNames: () => ({
-        repository: {
-            id: 'repo-123',
-            __typename: 'Repository',
-            commit: {
-                id: 'c0ff33',
-                __typename: 'GitCommit',
-                fileNames: ['README.md'],
-            },
-        },
-    }),
+    FileNames: () => createFileNamesResult(),
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FileExternalLinks: ({ filePath, repoName, revision }) =>
@@ -43,12 +34,11 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
         ),
     TreeEntries: () => createTreeEntriesResult('/github.com/sourcegraph/sourcegraph', ['README.md']),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
-    ListNotebooks: () => ({
-        notebooks: {
-            totalCount: 1,
-            nodes: [notebookFixture('id', 'Title', [])],
-            pageInfo: { endCursor: null, hasNextPage: false },
-        },
+    FetchNotebook: ({ id }) => ({
+        node: notebookFixture(id, 'Notebook Title', [
+            { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
+            { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
+        ]),
     }),
 }
 
@@ -124,8 +114,8 @@ describe('GlobalNavbar', () => {
             expect(active).toEqual('true')
         })
 
-        test('is not highlighted on batch changes page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
+        test('is not highlighted on notebook page', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/id')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')

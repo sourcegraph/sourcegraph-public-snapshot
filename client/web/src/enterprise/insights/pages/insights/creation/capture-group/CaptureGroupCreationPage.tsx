@@ -7,7 +7,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { MinimalCaptureGroupInsightData } from '../../../../core/backend/code-insights-backend-types'
+import { MinimalCaptureGroupInsightData } from '../../../../core'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
@@ -21,7 +21,9 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
+export const CaptureGroupCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationPageProps>
+> = props => {
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()

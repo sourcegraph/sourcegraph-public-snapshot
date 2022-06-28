@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type refsArgs struct {
@@ -35,11 +35,11 @@ func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefC
 }
 
 func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	var branches []*git.Branch
+	var branches []*gitdomain.Branch
 	db := r.db
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = git.ListBranches(ctx, db, r.RepoName(), git.BranchesOptions{
+		branches, err = gitserver.NewClient(db).ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
@@ -103,10 +103,10 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		}
 	}
 
-	var tags []*git.Tag
+	var tags []*gitdomain.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = git.ListTags(ctx, db, r.RepoName())
+		tags, err = gitserver.NewClient(r.db).ListTags(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName, interactive bool, branches []*git.Branch) (ok bool, err error) {
+func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {
@@ -161,7 +161,7 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = git.GetCommit(ctx, db, repo, branch.Head, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserver.NewClient(db).GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout

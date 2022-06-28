@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	sglog "github.com/sourcegraph/log"
 )
 
 // Inserter allows for bulk updates to a single Postgres table.
@@ -20,7 +22,7 @@ type Inserter struct {
 	db                   dbutil.DB
 	numColumns           int
 	maxBatchSize         int
-	batch                []interface{}
+	batch                []any
 	cumulativeValueSizes []int
 	queryPrefix          string
 	querySuffix          string
@@ -37,7 +39,7 @@ type ReturningScanner func(rows dbutil.Scanner) error
 // column names, then reads from the given channel as if they specify values for a single row.
 // The inserter will be flushed and any error that occurred during insertion or flush will be
 // returned.
-func InsertValues(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames []string, values <-chan []interface{}) error {
+func InsertValues(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames []string, values <-chan []any) error {
 	return WithInserter(ctx, db, tableName, maxNumParameters, columnNames, func(inserter *Inserter) error {
 	outer:
 		for {
@@ -135,19 +137,20 @@ func NewInserterWithReturn(
 	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
 	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
+	logger := sglog.Scoped("Inserter", "")
 
 	return &Inserter{
 		db:                   db,
 		numColumns:           numColumns,
 		maxBatchSize:         maxBatchSize,
-		batch:                make([]interface{}, 0, maxBatchSize),
+		batch:                make([]any, 0, maxBatchSize),
 		cumulativeValueSizes: make([]int, 0, maxBatchSize),
 		queryPrefix:          queryPrefix,
 		querySuffix:          querySuffix,
 		onConflictSuffix:     onConflictSuffix,
 		returningSuffix:      returningSuffix,
 		returningScanner:     returningScanner,
-		operations:           getOperations(),
+		operations:           getOperations(logger),
 		commonLogFields: []log.Field{
 			log.String("tableName", tableName),
 			log.String("columnNames", strings.Join(columnNames, ",")),
@@ -158,7 +161,7 @@ func NewInserterWithReturn(
 }
 
 // Insert submits a single row of values to be inserted on the next flush.
-func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
+func (i *Inserter) Insert(ctx context.Context, values ...any) error {
 	i.checkInvariants()
 	defer i.checkInvariants()
 
@@ -245,7 +248,7 @@ func (i *Inserter) checkInvariants() {
 // pop removes and returns as many values from the current batch that can be attached to a single
 // insert statement. The returned values are the oldest values submitted to the batch (in order).
 // This method additionally returns the total (approximate) size of the batch being inserted.
-func (i *Inserter) pop() (batch []interface{}, payloadSize int) {
+func (i *Inserter) pop() (batch []any, payloadSize int) {
 	if len(i.batch) == 0 {
 		return nil, 0
 	}

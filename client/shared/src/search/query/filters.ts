@@ -37,6 +37,7 @@ export enum FilterType {
 /* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     f = 'file',
+    path = 'file',
     g = 'repogroup',
     l = 'lang',
     language = 'lang',
@@ -52,6 +53,7 @@ export enum AliasedFilterType {
 export const ALIASES: Record<string, string> = {
     r: 'repo',
     g: 'repogroup',
+    path: 'file',
     f: 'file',
     l: 'lang',
     language: 'language',
@@ -79,8 +81,10 @@ export enum NegatedFilters {
     content = '-content',
     f = '-f',
     file = '-file',
+    path = '-path',
     l = '-l',
     lang = '-lang',
+    language = '-language',
     message = '-message',
     r = '-r',
     repo = '-repo',
@@ -113,8 +117,10 @@ const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
     '-content': FilterType.content,
     '-f': FilterType.file,
     '-file': FilterType.file,
+    '-path': FilterType.file,
     '-l': FilterType.lang,
     '-lang': FilterType.lang,
+    '-language': FilterType.lang,
     '-message': FilterType.message,
     '-r': FilterType.repo,
     '-repo': FilterType.repo,
@@ -182,6 +188,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
+        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
         singular: true,
     },
     [FilterType.author]: {
@@ -222,7 +229,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'f',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from files matching the given search pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
         suggestions: 'path',
     },
     [FilterType.fork]: {

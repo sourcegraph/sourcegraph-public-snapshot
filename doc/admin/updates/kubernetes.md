@@ -5,10 +5,32 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, to upgrade your instance refer to either:
-    * [Kubernetes with Helm upgrade guide](../install/kubernetes/helm.md#upgrading-sourcegraph)
-    * [Kubernetes without Helm upgrade guide](../install/kubernetes/update.md)
+    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
+    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## Unreleased
+
+## 3.40 -> 3.41
+
+- The Postgres DBs `frontend` and `codeintel-db` are now given 1 hour to begin accepting connections before Kubernetes restarts the containers. [#4136](https://github.com/sourcegraph/deploy-sourcegraph/pull/4136)
+
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+
+## 3.39 -> 3.40.2
+
+- `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. This is disabled by default in `non-privileged` overlay. [#4126](https://github.com/sourcegraph/deploy-sourcegraph/pull/4126)
+- Updated the Nginx ingress controller to v1.2.0. Previously this image originated from quay.io, now it is pulled from the official k8s repository. A redeployment of the ingress
+ controller may be necessary if your deployment used the manifests provided in `configure/ingress-nginx`. [#4128](https://github.com/sourcegraph/deploy-sourcegraph/pull/4128)
+- The alpine-3.12 docker images used as init containers for some deployments have been replaced with images based on alpine-3.14. [#4129](https://github.com/sourcegraph/deploy-sourcegraph/pull/4129)
+
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
+
 
 ## 3.38 -> 3.39
 
@@ -17,28 +39,22 @@ The`codeinsights-db` container no longer uses TimescaleDB and is now based on th
 **CAUTION** If you use a custom Code Insights postgres config, you must update the `shared_preload_libraries` list to remove timescaledb. The [above PR](https://github.com/sourcegraph/deploy-sourcegraph/pull/4103/files#diff-e5f8d6e46f8c9335c489c0d8e9ae9be4f4655f878f3ac569c73ebb3865b0eeeeL695-R688) demonstrates this change.
 
 To upgrade your deployment follow either:
-  * [Kubernetes with Helm upgrade guide](../install/kubernetes/helm.md#upgrading-sourcegraph)
-  * [Kubernetes without Helm upgrade guide](../install/kubernetes/update.md) to upgrade your instance.
+  * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
+  * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md) to upgrade your instance.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
-## 3.38.0 -> 3.38.1
-
-Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38).*
-
 ## 3.37 -> 3.38
 
-Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
 ## 3.36 -> 3.37
 
-This release adds a new `migrator` initContainer to the frontend deployment to run database migrations. Confirm the environment variables on this new container match your database settings. [Docs](https://docs.sourcegraph.com/admin/install/kubernetes/update#database-migrations)
+This release adds a new `migrator` initContainer to the frontend deployment to run database migrations. Confirm the environment variables on this new container match your database settings. [Docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/update#database-migrations)
 
-Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.36).*
 
@@ -46,7 +62,7 @@ Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgr
 
 The `backend` service has been removed, so if you deploy with a method other than `kubectl-apply-all.sh`, a manual removal of the service may be necessary.
 
-Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
 
@@ -55,7 +71,7 @@ Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgr
 **Due to issues related to Code Insights on the 3.35.0 release, Users are advised to upgrade directly to 3.35.1.**
 
 The query-runner deployment has been removed, so if you deploy with a method other than the `kubectl-apply-all.sh`, a manual removal of the deployment may be necessary.
-Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
 
@@ -63,19 +79,19 @@ There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migr
 
 ## 3.33 -> 3.34
 
-No manual migration is required - follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
 
 ## 3.32 -> 3.33
 
-No manual migration is required - follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
 
 ## 3.31 -> 3.32
 
-No manual migration is required - follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
 
@@ -104,7 +120,7 @@ All users that use our bundled (built-in) database instances **must** read throu
 This upgrade removes the `non-root` overlay, in favor of using only the `non-privileged` overlay for deploying Sourcegraph in secure environments. If you were
 previously deploying using the `non-root` overlay, you should now generate overlays using the `non-privileged` overlay.
 
-No other manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your
+No other manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your
 deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
@@ -136,14 +152,14 @@ images.
 
 > Warning: ⚠️ We have updated the default replicas for `sourcegraph-frontend` and `precise-code-intel-worker` to `2`. If you use a custom value, make sure you do not merge the replica change.
 
-Afterwards, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+Afterwards, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling
 out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.26).*
 
 ## 3.25 -> 3.26
 
-No manual migration required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your
+No manual migration required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your
 deployment.
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
@@ -160,19 +176,19 @@ deployment.
 
 ## 3.23 -> 3.24
 
-No manual migration required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.23).*
 
 ## 3.22 -> 3.23
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.22).*
 
 ## 3.21 -> 3.22
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
 
@@ -182,7 +198,7 @@ This upgrade also adds a MinIO container that doesn't require any custom configu
 
 ## 3.20 -> 3.21
 
-Follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+Follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
@@ -201,13 +217,13 @@ If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a backgroun
 
 ## 3.20
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.20).*
 
 ## 3.19
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 > Warning: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base
 to your `kustomization.yaml` file. Otherwise the PVCs could be pruned if `kubectl apply -prune` is used.
@@ -216,19 +232,19 @@ to your `kustomization.yaml` file. Otherwise the PVCs could be pruned if `kubect
 
 ## 3.18
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.18).*
 
 ## 3.17
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.17).*
 
 ## 3.16
 
-No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 Note: The following deployments have had their `strategy` changed from `rolling` to `recreate`:
 
@@ -355,7 +371,7 @@ kubectl apply -f base/indexed-search/indexed-search.StatefulSet.yaml
 
 ## 3.8
 
-If you're deploying Sourcegraph into a non-default namespace, refer to ["Use non-default namespace" in docs/configure.md](../install/kubernetes/configure.md#use-non-default-namespace) for further configuration instructions.
+If you're deploying Sourcegraph into a non-default namespace, refer to ["Use non-default namespace" in docs/configure.md](../deploy/kubernetes/configure.md#use-non-default-namespace) for further configuration instructions.
 
 ## 3.7.2
 
@@ -391,7 +407,7 @@ Sourcegraph 3.0 removed lsp-proxy and automatic language server deployment in fa
 
 ### HTTPS / TLS
 
-Sourcegraph 3.0 removed HTTPS / TLS features from Sourcegraph in favor of relying on [Kubernetes Ingress Resources](https://kubernetes.io/docs/concepts/services-networking/ingress/). As a consequence, Sourcegraph 3.0 does not expose TLS as the NodePort 30433. Instead you need to ensure you have setup and configured either an ingress controller (recommended) or an explicit NGINX service. See [ingress controller documentation](../install/kubernetes/configure.md#ingress-controller-recommended), [NGINX service documentation](../install/kubernetes/configure.md#nginx-service), and [configure TLS/SSL documentation](../install/kubernetes/configure.md#configure-tlsssl).
+Sourcegraph 3.0 removed HTTPS / TLS features from Sourcegraph in favor of relying on [Kubernetes Ingress Resources](https://kubernetes.io/docs/concepts/services-networking/ingress/). As a consequence, Sourcegraph 3.0 does not expose TLS as the NodePort 30433. Instead you need to ensure you have setup and configured either an ingress controller (recommended) or an explicit NGINX service. See [ingress controller documentation](../deploy/kubernetes/configure.md#ingress-controller-recommended), [NGINX service documentation](../deploy/kubernetes/configure.md#nginx-service), and [configure TLS/SSL documentation](../deploy/kubernetes/configure.md#configure-tlsssl).
 
 If you previously configured `TLS_KEY` and `TLS_CERT` environment variables, you can remove them from [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml)
 
@@ -401,4 +417,4 @@ Sourcegraph 3.0 ships with Postgres 11.1. The upgrade procedure is mostly automa
 
 ## 2.12
 
-Beginning in version 2.12.0, Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing). Follow the steps in [docs/configure.md](../install/kubernetes/configure.md#add-a-license-key).
+Beginning in version 2.12.0, Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing). Follow the steps in [docs/configure.md](../deploy/kubernetes/configure.md#add-a-license-key).

@@ -6,7 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -22,6 +22,8 @@ import otherExternalServiceSchemaJSON from '../../../../schema/other_external_se
 import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
+import pythonPackagesSchemaJSON from '../../../../schema/python-packages.schema.json'
+import rustPackagesSchemaJSON from '../../../../schema/rust-packages.schema.json'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -49,6 +51,8 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     GOMODULES: goModulesSchemaJSON,
     JVMPACKAGES: jvmPackagesSchemaJSON,
     NPMPACKAGES: npmPackagesSchemaJSON,
+    PYTHONPACKAGES: pythonPackagesSchemaJSON,
+    RUSTPACKAGES: rustPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
@@ -104,15 +108,19 @@ const allConfigSchema = {
 
 interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
 
-export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, telemetryService, history }) => {
+export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    isLightTheme,
+    telemetryService,
+    history,
+}) => {
     const monitoringDaysBack = 7
     const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
             <PageTitle title="Report a bug - Admin" />
-            <h2>Report a bug</h2>
-            <p>
+            <H2>Report a bug</H2>
+            <Text>
                 <Link
                     target="_blank"
                     rel="noopener noreferrer"
@@ -126,7 +134,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     support@sourcegraph.com
                 </Link>{' '}
                 instead.
-            </p>
+            </Text>
             <Alert variant="warning">
                 <div>
                     Please redact any secrets before sharing, whether on the public issue tracker or with

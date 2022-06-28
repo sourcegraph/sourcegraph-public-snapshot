@@ -53,7 +53,7 @@ func TestParseRateUnit(t *testing.T) {
 
 func TestParseRate(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for name, in := range map[string]interface{}{
+		for name, in := range map[string]any{
 			"nil":                                nil,
 			"non-zero int":                       1,
 			"empty string":                       "",
@@ -76,7 +76,7 @@ func TestParseRate(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		for name, tc := range map[string]struct {
-			in   interface{}
+			in   any
 			want rate
 		}{
 			"zero": {

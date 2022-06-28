@@ -1,10 +1,8 @@
 package db
 
 import (
-	"database/sql"
-
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 )
 
@@ -16,6 +14,6 @@ type ExecutorStore struct {
 }
 
 // New instantiates and returns a new ExecutorStore with prepared statements.
-func New(db dbutil.DB) *ExecutorStore {
-	return &ExecutorStore{db: basestore.NewWithDB(db, sql.TxOptions{})}
+func New(db database.DB) *ExecutorStore {
+	return &ExecutorStore{db: basestore.NewWithHandle(db.Handle())}
 }

@@ -22,13 +22,18 @@ export interface PreviewActionsProps {
     className?: string
 }
 
-export const PreviewActions: React.FunctionComponent<PreviewActionsProps> = ({ node, className }) => (
+export const PreviewActions: React.FunctionComponent<React.PropsWithChildren<PreviewActionsProps>> = ({
+    node,
+    className,
+}) => (
     <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
         <PreviewActionsContent node={node} />
     </div>
 )
 
-const PreviewActionsContent: React.FunctionComponent<Pick<PreviewActionsProps, 'node'>> = ({ node }) => {
+const PreviewActionsContent: React.FunctionComponent<React.PropsWithChildren<Pick<PreviewActionsProps, 'node'>>> = ({
+    node,
+}) => {
     if (node.__typename === 'HiddenChangesetApplyPreview') {
         return <PreviewActionNoAction reason={NoActionReasonStrings[NoActionReason.NO_ACCESS]} />
     }
@@ -55,7 +60,11 @@ interface PreviewActionProps {
     className?: string
 }
 
-const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ operation, operations, className }) => {
+const PreviewAction: React.FunctionComponent<React.PropsWithChildren<PreviewActionProps>> = ({
+    operation,
+    operations,
+    className,
+}) => {
     switch (operation) {
         case ChangesetSpecOperation.IMPORT:
             return <PreviewActionImport className={className} />
@@ -88,153 +97,173 @@ const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ operation,
 
 const iconClassNames = 'm-0 text-nowrap'
 
-export const PreviewActionPublish: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Publish',
-    className,
-}) => (
+export const PreviewActionPublish: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Publish', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon className="mr-1" data-tooltip="This changeset will be published to its code host" as={UploadIcon} />
+        <Icon
+            className="mr-1"
+            data-tooltip="This changeset will be published to its code host"
+            as={UploadIcon}
+            aria-hidden={true}
+        />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionPublishDraft: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Publish draft',
-    className,
-}) => (
+
+export const PreviewActionPublishDraft: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Publish draft', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be published as a draft to its code host"
             as={UploadIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionImport: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Import',
-    className,
-}) => (
+
+export const PreviewActionImport: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Import', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be imported and tracked in this batch change"
             as={ImportIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionClose: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Close',
-    className,
-}) => (
+
+export const PreviewActionClose: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Close', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="text-danger mr-1"
             data-tooltip="This changeset will be closed on the code host"
             as={CloseCircleOutlineIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionDetach: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Detach',
-    className,
-}) => (
+
+export const PreviewActionDetach: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Detach', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="text-danger mr-1"
             data-tooltip="This changeset will be removed from the batch change"
             as={TrashIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionReopen: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Reopen',
-    className,
-}) => (
+
+export const PreviewActionReopen: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Reopen', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="text-success mr-1"
             data-tooltip="This changeset will be reopened on the code host"
             as={SourceBranchRefreshIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionUndraft: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Undraft',
-    className,
-}) => (
+
+export const PreviewActionUndraft: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Undraft', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="text-success mr-1"
             data-tooltip="This changeset will be marked as ready for review on the code host"
             as={SourceBranchCheckIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionUpdate: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Update',
-    className,
-}) => (
+
+export const PreviewActionUpdate: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Update', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be updated on the code host"
             as={SourceBranchSyncIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionPush: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Push',
-    className,
-}) => (
+
+export const PreviewActionPush: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Push', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon className="mr-1" data-tooltip="A new commit will be pushed to the code host" as={UploadNetworkIcon} />
+        <Icon
+            className="mr-1"
+            data-tooltip="A new commit will be pushed to the code host"
+            as={UploadNetworkIcon}
+            aria-hidden={true}
+        />
         <span>{label}</span>
     </div>
 )
-export const PreviewActionUnknown: React.FunctionComponent<{ className?: string; operations: string }> = ({
-    operations,
-    className,
-}) => (
+
+export const PreviewActionUnknown: React.FunctionComponent<
+    React.PropsWithChildren<{ className?: string; operations: string }>
+> = ({ operations, className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="mr-1"
             data-tooltip={`The operation ${operations} can't yet be displayed.`}
             as={BeakerQuestionIcon}
+            aria-hidden={true}
         />
         <span>Unknown</span>
     </div>
 )
-export const PreviewActionArchive: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Archive',
-    className,
-}) => (
+
+export const PreviewActionArchive: React.FunctionComponent<
+    React.PropsWithChildren<{ label?: string; className?: string }>
+> = ({ label = 'Archive', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be kept and marked as archived in this batch change"
             as={ArchiveIcon}
+            aria-hidden={true}
         />
         <span>{label}</span>
     </div>
 )
+
 export enum NoActionReason {
     NO_ACCESS = 'no-access',
 }
+
 export const NoActionReasonStrings: Record<NoActionReason, string> = {
     [NoActionReason.NO_ACCESS]: "You don't have access to the repository this changeset spec targets.",
 }
-export const PreviewActionNoAction: React.FunctionComponent<{ className?: string; reason?: string }> = ({
-    className,
-    reason,
-}) => (
+
+export const PreviewActionNoAction: React.FunctionComponent<
+    React.PropsWithChildren<{ className?: string; reason?: string }>
+> = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} />
+        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} aria-hidden={true} />
         <span>No action</span>
     </div>
 )

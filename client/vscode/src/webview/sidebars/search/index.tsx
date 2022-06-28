@@ -10,7 +10,14 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    setLinkComponent,
+    useObservable,
+    WildcardThemeContext,
+    // eslint-disable-next-line no-restricted-imports
+    DeprecatedTooltip,
+} from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../../contract'
 import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
@@ -41,7 +48,7 @@ setLinkComponent(AnchorLink)
 
 const themes = adaptSourcegraphThemeToEditorTheme()
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     // Debt: make sure we only rerender on necessary changes
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 
@@ -122,7 +129,7 @@ render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />
-            <Tooltip key={1} className="sourcegraph-tooltip" />
+            <DeprecatedTooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>,
     document.querySelector('#root')

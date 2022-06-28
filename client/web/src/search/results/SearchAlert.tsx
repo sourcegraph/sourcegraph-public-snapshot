@@ -4,7 +4,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H3, H4 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -16,7 +16,7 @@ interface SearchAlertProps {
     children?: ReactNode[]
 }
 
-export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
+export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<SearchAlertProps>> = ({
     alert,
     patternType,
     caseSensitive,
@@ -24,13 +24,13 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     children,
 }) => (
     <Alert className="my-2 mr-3" data-testid="alert-container" variant="info">
-        <h3>{alert.title}</h3>
+        <H3>{alert.title}</H3>
 
         {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}
 
         {alert.proposedQueries && (
             <>
-                <h4>Did you mean:</h4>
+                <H4>Did you mean:</H4>
                 <ul className="list-unstyled">
                     {alert.proposedQueries.map(proposedQuery => (
                         <li key={proposedQuery.query}>

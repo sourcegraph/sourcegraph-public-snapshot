@@ -6,11 +6,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type WorkerMetrics struct {
+	// logger is the root logger provided for observability. Prefer to use a more granular
+	// logger provided by operations where relevant.
+	logger log.Logger
+
 	operations *operations
 	numJobs    Gauge
 }
@@ -81,6 +87,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, opts ...
 	)
 
 	return WorkerMetrics{
+		logger:     observationContext.Logger,
 		operations: newOperations(observationContext, prefix, keys, values, options.durationBuckets),
 		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second*5),
 	}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -91,11 +91,10 @@ func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload 
 	}
 
 	return AdjustedCodeIntelligenceRange{
-		Range:               adjustedRange,
-		Definitions:         adjustedDefinitions,
-		References:          adjustedReferences,
-		Implementations:     adjustedImplementations,
-		HoverText:           rn.HoverText,
-		DocumentationPathID: rn.DocumentationPathID,
+		Range:           adjustedRange,
+		Definitions:     adjustedDefinitions,
+		References:      adjustedReferences,
+		Implementations: adjustedImplementations,
+		HoverText:       rn.HoverText,
 	}, true, nil
 }

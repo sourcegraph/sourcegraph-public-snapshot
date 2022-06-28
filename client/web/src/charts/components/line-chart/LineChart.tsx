@@ -1,6 +1,6 @@
-import { ReactElement, useMemo, useState, SVGProps } from 'react'
+import { ReactElement, useMemo, useState, SVGProps, CSSProperties } from 'react'
 
-import { curveLinear } from '@visx/curve'
+import { AxisScale, TickFormatter } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
@@ -8,9 +8,10 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
+import { AxisLeft, AxisBottom } from '../../core'
 import { SeriesLikeChart } from '../../types'
 
-import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
+import { Tooltip, TooltipContent, PointGlyph } from './components'
 import { StackedArea } from './components/stacked-area/StackedArea'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
@@ -22,32 +23,65 @@ import {
     generatePointsField,
     getChartContentSizes,
     getMinMaxBoundaries,
+    SeriesWithData,
+    formatXTick,
 } from './utils'
 
 import styles from './LineChart.module.scss'
 
-export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
+interface GetLineGroupStyleOptions {
+    /** Whether this series contains the active point */
+    id: string
+
+    /** The id of the series */
+    hasActivePoint: boolean
+
+    /** Whether the chart has some active point */
+    isActive: boolean
+}
+
+export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
+    /** The width of the chart */
     width: number
+
+    /** The height of the chart */
     height: number
+
+    /** Whether to start Y axis at zero */
     zeroYAxisMin?: boolean
+
+    /** Function to style a given line group */
+    getLineGroupStyle?: (options: GetLineGroupStyleOptions) => CSSProperties
+
+    /**
+     * If provided, uses this to render lines on the chart instead of `series`
+     *
+     * @param dataSeries a SeriesWithData array containing the data to render
+     * @returns a SeriesWithData array that has been filtered
+     */
+    getActiveSeries?: <D>(dataSeries: SeriesWithData<D>[]) => SeriesWithData<D>[]
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
     dataKey === activeDataKey ? 1 : -1
 
+const identity = <T,>(argument: T): T => argument
+
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
  * voronoi area distribution.
  */
-export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | null {
+export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     const {
         width: outerWidth,
         height: outerHeight,
         series,
         stacked = false,
         zeroYAxisMin = false,
-        onDatumClick = noop,
         className,
+        getLineGroupStyle,
+        getActiveSeries = identity,
+        onDatumClick = noop,
         ...attributes
     } = props
 
@@ -55,23 +89,22 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
 
-    const { width, height, margin } = useMemo(
+    const content = useMemo(
         () =>
             getChartContentSizes({
                 width: outerWidth,
                 height: outerHeight,
                 margin: {
-                    top: 10,
-                    right: 20,
-                    left: yAxisElement?.getBoundingClientRect().width,
-                    bottom: xAxisReference?.getBoundingClientRect().height,
+                    top: 16,
+                    right: 16,
+                    left: yAxisElement?.getBBox().width,
+                    bottom: xAxisReference?.getBBox().height,
                 },
             }),
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
     )
 
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
-
     const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
         dataSeries,
         zeroYAxisMin,
@@ -81,35 +114,44 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         () =>
             scaleTime({
                 domain: [minX, maxX],
-                range: [margin.left, outerWidth - margin.right],
+                range: [0, content.width],
                 nice: true,
                 clamp: true,
             }),
-        [minX, maxX, margin.left, margin.right, outerWidth]
+        [minX, maxX, content]
     )
 
     const yScale = useMemo(
         () =>
             scaleLinear({
                 domain: [minY, maxY],
-                range: [height, margin.top],
+                range: [content.height, 0],
                 nice: true,
                 clamp: true,
             }),
-        [minY, maxY, margin.top, height]
+        [minY, maxY, content]
     )
 
-    const points = useMemo(() => generatePointsField({ dataSeries, yScale, xScale }), [dataSeries, yScale, xScale])
+    const activeSeries = useMemo(() => getActiveSeries(dataSeries), [getActiveSeries, dataSeries])
+    const points = useMemo(
+        () =>
+            generatePointsField({
+                dataSeries: activeSeries,
+                yScale,
+                xScale,
+            }),
+        [activeSeries, yScale, xScale]
+    )
 
     const voronoiLayout = useMemo(
         () =>
             voronoi<Point<D>>({
                 x: point => point.x,
                 y: point => point.y,
-                width,
-                height,
-            })(points),
-        [width, height, points]
+                width: outerWidth,
+                height: outerHeight,
+            })(Object.values(points).flat()),
+        [outerWidth, outerHeight, points]
     )
 
     const handlers = useChartEventHandlers({
@@ -129,6 +171,17 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         },
     })
 
+    const sortedSeries = useMemo(
+        () =>
+            [...activeSeries]
+                // resorts array based on hover state
+                // this is to make sure the hovered series is always rendered on top
+                // since SVGs do not support z-index, we have to render the hovered
+                // series last
+                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || '')),
+        [activeSeries, activePoint]
+    )
+
     return (
         <svg
             width={outerWidth}
@@ -140,53 +193,62 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <AxisLeft
                 ref={setYAxisElement}
                 scale={yScale}
-                width={width}
-                height={height}
-                top={margin.top}
-                left={margin.left}
+                width={content.width}
+                height={content.height}
+                top={content.top}
+                left={content.left}
             />
 
-            <AxisBottom ref={setXAxisElement} scale={xScale} top={margin.top + height} width={width} />
+            <AxisBottom
+                ref={setXAxisElement}
+                scale={xScale}
+                width={content.width}
+                top={content.bottom}
+                left={content.left}
+                tickFormat={(formatXTick as unknown) as TickFormatter<AxisScale>}
+            />
 
-            <Group top={margin.top}>
-                {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
+            <Group top={content.top} left={content.left}>
+                {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
-                {[...dataSeries]
-                    .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
-                    .map(line => (
+                {sortedSeries.map(line => (
+                    <Group
+                        key={line.id}
+                        style={getLineGroupStyle?.({
+                            id: `${line.id}`,
+                            hasActivePoint: !!activePoint,
+                            isActive: activePoint?.seriesId === line.id,
+                        })}
+                    >
                         <LinePath
-                            key={line.id}
                             data={line.data as SeriesDatum<D>[]}
                             defined={isDatumWithValidNumber}
                             x={data => xScale(data.x)}
                             y={data => yScale(getDatumValue(data))}
                             stroke={line.color}
-                            curve={curveLinear}
                             strokeLinecap="round"
                             strokeWidth={2}
                         />
-                    ))}
-
-                {[...points]
-                    .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
-                    .map(point => (
-                        <PointGlyph
-                            key={point.id}
-                            left={point.x}
-                            top={point.y}
-                            active={activePoint?.id === point.id}
-                            color={point.color}
-                            linkURL={point.linkUrl}
-                            onClick={onDatumClick}
-                            onFocus={event => setActivePoint({ ...point, element: event.target })}
-                            onBlur={() => setActivePoint(undefined)}
-                        />
-                    ))}
+                        {points[line.id].map(point => (
+                            <PointGlyph
+                                key={point.id}
+                                left={point.x}
+                                top={point.y}
+                                active={activePoint?.id === point.id}
+                                color={point.color}
+                                linkURL={point.linkUrl}
+                                onClick={onDatumClick}
+                                onFocus={event => setActivePoint({ ...point, element: event.target })}
+                                onBlur={() => setActivePoint(undefined)}
+                            />
+                        ))}
+                    </Group>
+                ))}
             </Group>
 
             {activePoint && (
                 <Tooltip>
-                    <TooltipContent series={series} activePoint={activePoint} stacked={stacked} />
+                    <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
         </svg>

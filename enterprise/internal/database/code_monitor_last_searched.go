@@ -11,6 +11,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (s *codeMonitorStore) HasAnyLastSearched(ctx context.Context, monitorID int64) (bool, error) {
+	rawQuery := `
+	SELECT COUNT(*) > 0
+	FROM cm_last_searched
+	WHERE monitor_id = %s
+	`
+
+	q := sqlf.Sprintf(rawQuery, monitorID)
+	var hasLastSearched bool
+	return hasLastSearched, s.QueryRow(ctx, q).Scan(&hasLastSearched)
+}
+
 func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID, commitOIDs []string) error {
 	rawQuery := `
 	INSERT INTO cm_last_searched (monitor_id, repo_id, commit_oids)

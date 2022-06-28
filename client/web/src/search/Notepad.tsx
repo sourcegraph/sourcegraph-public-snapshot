@@ -11,7 +11,7 @@ import React, {
 } from 'react'
 
 import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
+import type { LocationDescriptorObject } from 'history'
 import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
@@ -28,7 +28,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -81,14 +81,19 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
     return previous !== undefined && previous < entries.length
 }
 
-export const NotepadIcon: React.FunctionComponent = () => <Icon as={BookPlusOutlineIcon} />
+export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <Icon as={BookPlusOutlineIcon} aria-hidden={true} />
+)
 
 export interface NotepadContainerProps {
     initialOpen?: boolean
     onCreateNotebook: (blocks: BlockInput[]) => void
 }
 
-export const NotepadContainer: React.FunctionComponent<NotepadContainerProps> = ({ initialOpen, onCreateNotebook }) => {
+export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<NotepadContainerProps>> = ({
+    initialOpen,
+    onCreateNotebook,
+}) => {
     const newEntry = useNotepadState(state => state.addableEntry)
     const entries = useNotepadState(state => state.entries)
     const canRestore = useNotepadState(state => state.canRestoreSession)
@@ -126,7 +131,7 @@ export interface NotepadProps {
     selectable?: boolean
 }
 
-export const Notepad: React.FunctionComponent<NotepadProps> = ({
+export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadProps>> = ({
     className,
     initialOpen = false,
     onCreateNotebook,
@@ -332,26 +337,26 @@ export const Notepad: React.FunctionComponent<NotepadProps> = ({
             >
                 <span>
                     <NotepadIcon />
-                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <H2 className="px-1 d-inline">Notepad</H2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon as={ChevronUpIcon} />
+                    <Icon aria-hidden={true} as={ChevronUpIcon} />
                 </span>
             </Button>
             {open && (
                 <>
                     {newEntry && (
                         <div className={classNames(styles.newNote, 'p-2')}>
-                            <h3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <H3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</H3>
                             <AddEntryButton entry={newEntry} addEntry={addEntry} />
                         </div>
                     )}
-                    <h3 className="p-2">
+                    <H3 className="p-2">
                         Notes <small>({reversedEntries.length})</small>
-                    </h3>
+                    </H3>
                     <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
                         {reversedEntries.map((entry, index) => {
                             const selected = selectedEntries.includes(index)
@@ -383,7 +388,7 @@ export const Notepad: React.FunctionComponent<NotepadProps> = ({
                     </ul>
                     {confirmRemoveAll && (
                         <div className="p-2">
-                            <p>Are you sure you want to delete all entries?</p>
+                            <Text>Are you sure you want to delete all entries?</Text>
                             <div className="d-flex justify-content-between">
                                 <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
                                     Cancel
@@ -429,7 +434,7 @@ export const Notepad: React.FunctionComponent<NotepadProps> = ({
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
                         >
-                            <Icon as={DeleteIcon} />
+                            <Icon aria-hidden={true} as={DeleteIcon} />
                         </Button>
                     </div>
                 </>
@@ -443,7 +448,7 @@ interface AddEntryButtonProps {
     addEntry: typeof addNotepadEntry
 }
 
-const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, addEntry }) => {
+const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryButtonProps>> = ({ entry, addEntry }) => {
     let button: React.ReactElement
     switch (entry.type) {
         case 'search':
@@ -459,7 +464,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, a
                         addEntry(entry)
                     }}
                 >
-                    <Icon as={SearchIcon} /> Add search
+                    <Icon aria-hidden={true} as={SearchIcon} /> Add search
                 </Button>
             )
             break
@@ -477,7 +482,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, a
                             addEntry(entry, 'file')
                         }}
                     >
-                        <Icon as={FileDocumentOutlineIcon} /> Add as file
+                        <Icon aria-hidden={true} as={FileDocumentOutlineIcon} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -491,7 +496,8 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, a
                                 addEntry(entry, 'range')
                             }}
                         >
-                            <Icon as={CodeBracketsIcon} /> Add as range {formatLineRange(entry.lineRange)}
+                            <Icon aria-hidden={true} as={CodeBracketsIcon} /> Add as range{' '}
+                            {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
                 </span>
@@ -522,7 +528,7 @@ interface NotepadEntryComponentProps {
     onDelete: (entry: NotepadEntry) => void
 }
 
-const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps> = ({
+const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<NotepadEntryComponentProps>> = ({
     entry,
     focus = false,
     selected,
@@ -558,7 +564,10 @@ const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps>
             <div className="d-flex">
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
-                    <Link to={location} className="p-0">
+                    <Link
+                        to={typeof location === 'string' ? location : createLinkUrl(location)}
+                        className="text-monospace search-query-link"
+                    >
                         {title}
                     </Link>
                 </span>
@@ -573,7 +582,7 @@ const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps>
                             toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
-                        <Icon as={TextBoxIcon} />
+                        <Icon aria-hidden={true} as={TextBoxIcon} />
                     </Button>
                     <Button
                         aria-label={deletionLabel}
@@ -585,7 +594,7 @@ const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps>
                             onDelete(entry)
                         }}
                     >
-                        <Icon as={DeleteIcon} />
+                        <Icon aria-hidden={true} as={DeleteIcon} />
                     </Button>
                 </span>
             </div>
@@ -618,11 +627,16 @@ const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps>
 
 function getUIComponentsForEntry(
     entry: NotepadEntry | NotepadEntryInput
-): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptor; body?: React.ReactElement } {
+): {
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptorObject | string
+    body?: React.ReactElement
+} {
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon as={SearchIcon} />,
+                icon: <Icon aria-label="Search" as={SearchIcon} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -636,7 +650,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: <Icon aria-label="File" as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}

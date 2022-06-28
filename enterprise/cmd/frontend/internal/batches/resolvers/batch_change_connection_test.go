@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -20,18 +22,19 @@ import (
 )
 
 func TestBatchChangeConnectionResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-change-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -76,7 +79,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +107,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"first": int64(tc.firstParam)}
+			input := map[string]any{"first": int64(tc.firstParam)}
 			var response struct{ BatchChanges apitest.BatchChangeConnection }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchChangesConnection)
 
@@ -127,7 +130,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	t.Run("Cursor based pagination", func(t *testing.T) {
 		var endCursor *string
 		for i := range nodes {
-			input := map[string]interface{}{"first": 1}
+			input := map[string]any{"first": 1}
 			if endCursor != nil {
 				input["after"] = *endCursor
 			}
@@ -172,12 +175,13 @@ query($first: Int, $after: String) {
 `
 
 func TestBatchChangesListing(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
@@ -187,7 +191,7 @@ func TestBatchChangesListing(t *testing.T) {
 	store := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +229,7 @@ func TestBatchChangesListing(t *testing.T) {
 		createBatchChange(t, batchChange)
 
 		userAPIID := string(graphqlbackend.MarshalUserID(userID))
-		input := map[string]interface{}{"node": userAPIID}
+		input := map[string]any{"node": userAPIID}
 
 		var response struct{ Node apitest.User }
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -309,7 +313,7 @@ func TestBatchChangesListing(t *testing.T) {
 		createBatchChange(t, batchChange)
 
 		orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
-		input := map[string]interface{}{"node": orgAPIID}
+		input := map[string]any{"node": orgAPIID}
 
 		var response struct{ Node apitest.Org }
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)

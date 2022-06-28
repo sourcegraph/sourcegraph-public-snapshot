@@ -24,7 +24,7 @@ type Pipeline struct {
 	Notify []slackNotifier   `json:"notify,omitempty"`
 
 	// Steps are *Step or *Pipeline with Group set.
-	Steps []interface{} `json:"steps"`
+	Steps []any `json:"steps"`
 
 	// Group, if provided, indicates this Pipeline is actually a group of steps.
 	// See: https://buildkite.com/docs/pipelines/group-step
@@ -43,24 +43,24 @@ var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // EnsureUniqueKeys validates generated pipeline have unique keys, and provides a key
 // based on the label if not available.
-func (p *Pipeline) EnsureUniqueKeys(occurences map[string]int) error {
+func (p *Pipeline) EnsureUniqueKeys(occurrences map[string]int) error {
 	for _, step := range p.Steps {
 		if s, ok := step.(*Step); ok {
 			if s.Key == "" {
 				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
 			}
-			occurences[s.Key] += 1
+			occurrences[s.Key] += 1
 		}
 		if p, ok := step.(*Pipeline); ok {
 			if p.Group.Key == "" || p.Group.Group == "" {
 				return errors.Newf("group %+v must have key and group name", p)
 			}
-			if err := p.EnsureUniqueKeys(occurences); err != nil {
+			if err := p.EnsureUniqueKeys(occurrences); err != nil {
 				return err
 			}
 		}
 	}
-	for k, count := range occurences {
+	for k, count := range occurrences {
 		if count > 1 {
 			return errors.Newf("non unique key on step with key %q", k)
 		}
@@ -74,11 +74,11 @@ type Group struct {
 }
 
 type BuildOptions struct {
-	Message  string                 `json:"message,omitempty"`
-	Commit   string                 `json:"commit,omitempty"`
-	Branch   string                 `json:"branch,omitempty"`
-	MetaData map[string]interface{} `json:"meta_data,omitempty"`
-	Env      map[string]string      `json:"env,omitempty"`
+	Message  string            `json:"message,omitempty"`
+	Commit   string            `json:"commit,omitempty"`
+	Branch   string            `json:"branch,omitempty"`
+	MetaData map[string]any    `json:"meta_data,omitempty"`
+	Env      map[string]string `json:"env,omitempty"`
 }
 
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {
@@ -112,26 +112,26 @@ func (bo BuildOptions) MarshalYAML() ([]byte, error) {
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
-	Label                  string                   `json:"label"`
-	Key                    string                   `json:"key,omitempty"`
-	Command                []string                 `json:"command,omitempty"`
-	DependsOn              []string                 `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                     `json:"allow_dependency_failure,omitempty"`
-	TimeoutInMinutes       string                   `json:"timeout_in_minutes,omitempty"`
-	Trigger                string                   `json:"trigger,omitempty"`
-	Async                  bool                     `json:"async,omitempty"`
-	Build                  *BuildOptions            `json:"build,omitempty"`
-	Env                    map[string]string        `json:"env,omitempty"`
-	Plugins                []map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths          string                   `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup       string                   `json:"concurrency_group,omitempty"`
-	Concurrency            int                      `json:"concurrency,omitempty"`
-	Parallelism            int                      `json:"parallelism,omitempty"`
-	Skip                   string                   `json:"skip,omitempty"`
-	SoftFail               []softFailExitStatus     `json:"soft_fail,omitempty"`
-	Retry                  *RetryOptions            `json:"retry,omitempty"`
-	Agents                 map[string]string        `json:"agents,omitempty"`
-	If                     string                   `json:"if,omitempty"`
+	Label                  string               `json:"label"`
+	Key                    string               `json:"key,omitempty"`
+	Command                []string             `json:"command,omitempty"`
+	DependsOn              []string             `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                 `json:"allow_dependency_failure,omitempty"`
+	TimeoutInMinutes       string               `json:"timeout_in_minutes,omitempty"`
+	Trigger                string               `json:"trigger,omitempty"`
+	Async                  bool                 `json:"async,omitempty"`
+	Build                  *BuildOptions        `json:"build,omitempty"`
+	Env                    map[string]string    `json:"env,omitempty"`
+	Plugins                []map[string]any     `json:"plugins,omitempty"`
+	ArtifactPaths          string               `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string               `json:"concurrency_group,omitempty"`
+	Concurrency            int                  `json:"concurrency,omitempty"`
+	Parallelism            int                  `json:"parallelism,omitempty"`
+	Skip                   string               `json:"skip,omitempty"`
+	SoftFail               []softFailExitStatus `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions        `json:"retry,omitempty"`
+	Agents                 map[string]string    `json:"agents,omitempty"`
+	If                     string               `json:"if,omitempty"`
 }
 
 type RetryOptions struct {
@@ -140,8 +140,8 @@ type RetryOptions struct {
 }
 
 type AutomaticRetryOptions struct {
-	Limit      int         `json:"limit,omitempty"`
-	ExitStatus interface{} `json:"exit_status,omitempty"`
+	Limit      int `json:"limit,omitempty"`
+	ExitStatus any `json:"exit_status,omitempty"`
 }
 
 type ManualRetryOptions struct {
@@ -154,7 +154,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make([]map[string]interface{}, 0),
+		Plugins: make([]map[string]any, 0),
 	}
 	for _, opt := range p.BeforeEveryStepOpts {
 		opt(step)
@@ -517,9 +517,9 @@ func Key(key string) StepOpt {
 	}
 }
 
-func Plugin(name string, plugin interface{}) StepOpt {
+func Plugin(name string, plugin any) StepOpt {
 	return func(step *Step) {
-		wrapper := map[string]interface{}{}
+		wrapper := map[string]any{}
 		wrapper[name] = plugin
 		step.Plugins = append(step.Plugins, wrapper)
 	}
@@ -532,9 +532,15 @@ func DependsOn(dependency ...string) StepOpt {
 }
 
 // IfReadyForReview causes this step to only be added if this build is associated with a
-// pull request that is also ready for review.
-func IfReadyForReview() StepOpt {
+// pull request that is also ready for review. To add the step regardless of the review status
+// pass in true for force.
+func IfReadyForReview(forceReady bool) StepOpt {
 	return func(step *Step) {
+		if forceReady {
+			// we don't care whether the PR is a draft or not, as long it is a PR
+			step.If = "build.pull_request.id != null"
+			return
+		}
 		step.If = "build.pull_request.id != null && !build.pull_request.draft"
 	}
 }

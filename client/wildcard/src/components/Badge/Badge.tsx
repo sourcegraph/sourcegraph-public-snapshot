@@ -9,11 +9,13 @@ import { BADGE_VARIANTS } from './constants'
 
 import styles from './Badge.module.scss'
 
+export type BadgeVariantType = typeof BADGE_VARIANTS[number]
+
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     /**
      * The variant style of the badge.
      */
-    variant?: typeof BADGE_VARIANTS[number]
+    variant?: BadgeVariantType
     /**
      * Allows modifying the size of the badge. Supports a smaller variant.
      */
@@ -40,7 +42,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 /**
  * An abstract UI component which renders a small "badge" with specific styles to help annotate content.
  */
-export const Badge: React.FunctionComponent<BadgeProps> = ({
+export const Badge: React.FunctionComponent<React.PropsWithChildren<BadgeProps>> = ({
     children,
     variant,
     small,

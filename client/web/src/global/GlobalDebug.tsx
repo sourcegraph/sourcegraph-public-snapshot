@@ -18,7 +18,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 
 const SHOW_DEBUG = localStorage.getItem('debug') !== null
 
-const ExtensionLink: React.FunctionComponent<{ id: string }> = props => (
+const ExtensionLink: React.FunctionComponent<React.PropsWithChildren<{ id: string }>> = props => (
     <Link to={`/extensions/${props.id}`}>{props.id}</Link>
 )
 
@@ -29,7 +29,7 @@ const ExtensionDevelopmentToolsError = (error: Error): JSX.Element => (
 /**
  * A global debug toolbar shown in the bottom right of the window.
  */
-export const GlobalDebug: React.FunctionComponent<Props> = props =>
+export const GlobalDebug: React.FunctionComponent<React.PropsWithChildren<Props>> = props =>
     SHOW_DEBUG ? (
         <ul className={classNames('nav', styles.globalDebug)}>
             <li className="nav-item">

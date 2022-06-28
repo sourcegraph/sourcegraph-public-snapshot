@@ -1,0 +1,8 @@
+.dropdown-header {
+    display: block;
+    padding: var(--dropdown-item-padding);
+    margin-bottom: 0; // for use with heading elements
+    font-size: var(--dropdown-header-font-size);
+    color: var(--dropdown-header-color);
+    white-space: nowrap; // as with > li > a
+}

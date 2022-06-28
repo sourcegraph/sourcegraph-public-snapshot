@@ -1,10 +1,11 @@
 import React from 'react'
 
+import classNames from 'classnames'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 
 import { isDefined } from '@sourcegraph/common'
-import { Badge, Link } from '@sourcegraph/wildcard'
+import { Badge, Text } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
@@ -14,12 +15,15 @@ import {
     LSIFUploadState,
     LSIFIndexState,
 } from '../../../../graphql-operations'
+import { TelemetricLink } from '../../../../tracking/TelemetricLink'
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery as defaultUseRequestLanguageSupportQuery,
 } from '../hooks/useCodeIntelStatus'
 
 import { RequestLink } from './RequestLink'
+
+import styles from './IndexerSummary.module.scss'
 
 export interface IndexerSummaryProps {
     repoName: string
@@ -30,55 +34,63 @@ export interface IndexerSummaryProps {
         indexer?: CodeIntelIndexerFields
     }
     className?: string
+    now?: () => Date
     useRequestedLanguageSupportQuery: typeof defaultUseRequestedLanguageSupportQuery
     useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
-    now?: () => Date
 }
 
-export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
+export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<IndexerSummaryProps>> = ({
     repoName,
     summary,
     className,
+    now,
     useRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery,
-    now,
 }) => {
     const failedUploads = summary.uploads.filter(upload => upload.state === LSIFUploadState.ERRORED)
     const failedIndexes = summary.indexes.filter(index => index.state === LSIFIndexState.ERRORED)
     const finishedAtTimes = summary.uploads.map(upload => upload.finishedAt || undefined).filter(isDefined)
     const lastUpdated = finishedAtTimes.length === 0 ? undefined : finishedAtTimes.sort().reverse()[0]
 
+    const telemetricRedirectClassName = classNames('m-0 p-0', styles.telemetricRedirect)
+
     return (
-        <div className="px-2 py-1">
+        <div className={classNames('px-2 py-1', styles.badgeWrapper)}>
             <div className="d-flex align-items-center">
                 <div className="px-2 py-1 text-uppercase">
                     {summary.uploads.length + summary.indexes.length > 0 ? (
-                        <Badge variant="success" className={className}>
+                        <Badge variant="success" small={true} className={className}>
                             Enabled
                         </Badge>
                     ) : summary.indexer?.url ? (
-                        <Badge variant="secondary" className={className}>
+                        <Badge variant="secondary" small={true} className={className}>
                             Configurable
                         </Badge>
                     ) : (
-                        <Badge variant="outlineSecondary" className={className}>
+                        <Badge variant="outlineSecondary" small={true} className={className}>
                             Unavailable
                         </Badge>
                     )}
                 </div>
 
                 <div className="px-2 py-1">
-                    <p className="mb-1">{summary.indexer?.name || summary.name} precise intelligence</p>
+                    <Text className="mb-1">{summary.indexer?.name || summary.name} precise intelligence</Text>
 
                     {lastUpdated && (
-                        <p className="mb-1 text-muted">
+                        <Text className="mb-1 text-muted">
                             Last updated: <Timestamp date={lastUpdated} now={now} />
-                        </p>
+                        </Text>
                     )}
 
                     {summary.uploads.length + summary.indexes.length === 0 ? (
                         summary.indexer?.url ? (
-                            <Link to={summary.indexer?.url}>Set up for this repository</Link>
+                            <TelemetricLink
+                                to={summary.indexer.url}
+                                label="Set up for this repository"
+                                alwaysShowLabel={true}
+                                eventName="CodeIntelligenceIndexerSetupInvestigated"
+                                className={telemetricRedirectClassName}
+                            />
                         ) : (
                             <RequestLink
                                 indexerName={summary.name}
@@ -89,27 +101,35 @@ export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
                     ) : (
                         <>
                             {failedUploads.length === 0 && failedIndexes.length === 0 && (
-                                <p className="mb-1 text-muted">
+                                <Text className="mb-1 text-muted">
                                     <CheckIcon size={16} className="text-success" /> Looks good!
-                                </p>
+                                </Text>
                             )}
                             {failedUploads.length > 0 && (
-                                <p className="mb-1 text-muted">
+                                <Text className="mb-1 text-muted">
                                     <AlertIcon size={16} className="text-danger" />{' '}
-                                    <Link to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}>
-                                        Latest upload processing
-                                    </Link>{' '}
+                                    <TelemetricLink
+                                        to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}
+                                        label="Latest upload processing"
+                                        alwaysShowLabel={true}
+                                        eventName="CodeIntelligenceUploadErrorInvestigated"
+                                        className={telemetricRedirectClassName}
+                                    />{' '}
                                     failed
-                                </p>
+                                </Text>
                             )}
                             {failedIndexes.length > 0 && (
-                                <p className="mb-1 text-muted">
+                                <Text className="mb-1 text-muted">
                                     <AlertIcon size={16} className="text-danger" />{' '}
-                                    <Link to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}>
-                                        Latest indexing
-                                    </Link>{' '}
+                                    <TelemetricLink
+                                        to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}
+                                        label="Latest indexing"
+                                        alwaysShowLabel={true}
+                                        eventName="CodeIntelligenceIndexErrorInvestigated"
+                                        className={telemetricRedirectClassName}
+                                    />{' '}
                                     failed
-                                </p>
+                                </Text>
                             )}
                         </>
                     )}

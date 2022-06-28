@@ -17,7 +17,7 @@ type slackMessage struct {
 	Blocks []slackBlock `json:"blocks"`
 }
 
-type slackBlock map[string]interface{}
+type slackBlock map[string]any
 
 const slackTextMarkdown = "mrkdwn"
 

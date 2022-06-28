@@ -7,14 +7,19 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetFirstServiceVersion(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 
@@ -40,7 +45,9 @@ func TestGetFirstServiceVersion(t *testing.T) {
 func TestUpdateServiceVersion(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	for _, tc := range []struct {
@@ -74,8 +81,8 @@ func TestUpdateServiceVersion(t *testing.T) {
 		have := UpdateServiceVersion(ctx, db, "service", tc.version)
 		want := tc.err
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
+		if !errors.Is(have, want) {
+			t.Fatal(cmp.Diff(have, want))
 		}
 
 		t.Logf("version = %q", tc.version)

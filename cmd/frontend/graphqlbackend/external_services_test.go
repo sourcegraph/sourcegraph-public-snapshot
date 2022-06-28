@@ -1146,7 +1146,7 @@ func TestExternalServices(t *testing.T) {
 		`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"externalServices"},
+					Path:          []any{"externalServices"},
 					Message:       backend.ErrNoAccessExternalService.Error(),
 					ResolverError: backend.ErrNoAccessExternalService,
 				},
@@ -1285,7 +1285,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 				return 2, nil
 			},
-			wantPageInfo: graphqlutil.NextPageCursor(string(marshalExternalServiceID(1))),
+			wantPageInfo: graphqlutil.NextPageCursor(string(MarshalExternalServiceID(1))),
 		},
 	}
 	for _, test := range tests {

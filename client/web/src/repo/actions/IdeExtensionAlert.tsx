@@ -13,7 +13,11 @@ interface Props {
     onAlertDismissed: () => void
 }
 
-export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
+export const IDEExtensionAlert: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    className,
+    page,
+    onAlertDismissed,
+}) => {
     const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
         eventLogger.log('InstallIDEExtensionCTAShown', args, args)

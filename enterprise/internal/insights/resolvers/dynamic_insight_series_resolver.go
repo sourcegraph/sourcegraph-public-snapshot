@@ -26,7 +26,7 @@ func (d *dynamicInsightSeriesResolver) Label() string {
 	return d.generated.Label
 }
 
-func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var resolvers []graphqlbackend.InsightsDataPointResolver
 	for _, point := range d.generated.Points {
 		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{

@@ -14,7 +14,7 @@ type LogEvent struct {
 	Timestamp time.Time `json:"timestamp"`
 
 	Status   LogEventStatus `json:"status"`
-	Metadata interface{}    `json:"metadata,omitempty"`
+	Metadata any            `json:"metadata,omitempty"`
 }
 
 type logEventJSON struct {
@@ -63,10 +63,6 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(ExecutingTaskMetadata)
 	case LogEventOperationTaskBuildChangesetSpecs:
 		l.Metadata = new(TaskBuildChangesetSpecsMetadata)
-	case LogEventOperationTaskDownloadingArchive:
-		l.Metadata = new(TaskDownloadingArchiveMetadata)
-	case LogEventOperationTaskInitializingWorkspace:
-		l.Metadata = new(TaskInitializingWorkspaceMetadata)
 	case LogEventOperationTaskSkippingSteps:
 		l.Metadata = new(TaskSkippingStepsMetadata)
 	case LogEventOperationTaskStepSkipped:
@@ -75,10 +71,6 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(TaskPreparingStepMetadata)
 	case LogEventOperationTaskStep:
 		l.Metadata = new(TaskStepMetadata)
-	case LogEventOperationTaskCalculatingDiff:
-		l.Metadata = new(TaskCalculatingDiffMetadata)
-	case LogEventOperationCacheResult:
-		l.Metadata = new(CacheResultMetadata)
 	case LogEventOperationCacheAfterStepResult:
 		l.Metadata = new(CacheAfterStepResultMetadata)
 	default:
@@ -86,7 +78,7 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 	}
 
 	wrapper := struct {
-		Metadata interface{} `json:"metadata"`
+		Metadata any `json:"metadata"`
 	}{
 		Metadata: l.Metadata,
 	}
@@ -97,30 +89,26 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 type LogEventOperation string
 
 const (
-	LogEventOperationParsingBatchSpec          LogEventOperation = "PARSING_BATCH_SPEC"
-	LogEventOperationResolvingNamespace        LogEventOperation = "RESOLVING_NAMESPACE"
-	LogEventOperationPreparingDockerImages     LogEventOperation = "PREPARING_DOCKER_IMAGES"
-	LogEventOperationDeterminingWorkspaceType  LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
-	LogEventOperationResolvingRepositories     LogEventOperation = "RESOLVING_REPOSITORIES"
-	LogEventOperationDeterminingWorkspaces     LogEventOperation = "DETERMINING_WORKSPACES"
-	LogEventOperationCheckingCache             LogEventOperation = "CHECKING_CACHE"
-	LogEventOperationExecutingTasks            LogEventOperation = "EXECUTING_TASKS"
-	LogEventOperationLogFileKept               LogEventOperation = "LOG_FILE_KEPT"
-	LogEventOperationUploadingChangesetSpecs   LogEventOperation = "UPLOADING_CHANGESET_SPECS"
-	LogEventOperationCreatingBatchSpec         LogEventOperation = "CREATING_BATCH_SPEC"
-	LogEventOperationApplyingBatchSpec         LogEventOperation = "APPLYING_BATCH_SPEC"
-	LogEventOperationBatchSpecExecution        LogEventOperation = "BATCH_SPEC_EXECUTION"
-	LogEventOperationExecutingTask             LogEventOperation = "EXECUTING_TASK"
-	LogEventOperationTaskBuildChangesetSpecs   LogEventOperation = "TASK_BUILD_CHANGESET_SPECS"
-	LogEventOperationTaskDownloadingArchive    LogEventOperation = "TASK_DOWNLOADING_ARCHIVE"
-	LogEventOperationTaskInitializingWorkspace LogEventOperation = "TASK_INITIALIZING_WORKSPACE"
-	LogEventOperationTaskSkippingSteps         LogEventOperation = "TASK_SKIPPING_STEPS"
-	LogEventOperationTaskStepSkipped           LogEventOperation = "TASK_STEP_SKIPPED"
-	LogEventOperationTaskPreparingStep         LogEventOperation = "TASK_PREPARING_STEP"
-	LogEventOperationTaskStep                  LogEventOperation = "TASK_STEP"
-	LogEventOperationTaskCalculatingDiff       LogEventOperation = "TASK_CALCULATING_DIFF"
-	LogEventOperationCacheResult               LogEventOperation = "CACHE_RESULT"
-	LogEventOperationCacheAfterStepResult      LogEventOperation = "CACHE_AFTER_STEP_RESULT"
+	LogEventOperationParsingBatchSpec         LogEventOperation = "PARSING_BATCH_SPEC"
+	LogEventOperationResolvingNamespace       LogEventOperation = "RESOLVING_NAMESPACE"
+	LogEventOperationPreparingDockerImages    LogEventOperation = "PREPARING_DOCKER_IMAGES"
+	LogEventOperationDeterminingWorkspaceType LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
+	LogEventOperationResolvingRepositories    LogEventOperation = "RESOLVING_REPOSITORIES"
+	LogEventOperationDeterminingWorkspaces    LogEventOperation = "DETERMINING_WORKSPACES"
+	LogEventOperationCheckingCache            LogEventOperation = "CHECKING_CACHE"
+	LogEventOperationExecutingTasks           LogEventOperation = "EXECUTING_TASKS"
+	LogEventOperationLogFileKept              LogEventOperation = "LOG_FILE_KEPT"
+	LogEventOperationUploadingChangesetSpecs  LogEventOperation = "UPLOADING_CHANGESET_SPECS"
+	LogEventOperationCreatingBatchSpec        LogEventOperation = "CREATING_BATCH_SPEC"
+	LogEventOperationApplyingBatchSpec        LogEventOperation = "APPLYING_BATCH_SPEC"
+	LogEventOperationBatchSpecExecution       LogEventOperation = "BATCH_SPEC_EXECUTION"
+	LogEventOperationExecutingTask            LogEventOperation = "EXECUTING_TASK"
+	LogEventOperationTaskBuildChangesetSpecs  LogEventOperation = "TASK_BUILD_CHANGESET_SPECS"
+	LogEventOperationTaskSkippingSteps        LogEventOperation = "TASK_SKIPPING_STEPS"
+	LogEventOperationTaskStepSkipped          LogEventOperation = "TASK_STEP_SKIPPED"
+	LogEventOperationTaskPreparingStep        LogEventOperation = "TASK_PREPARING_STEP"
+	LogEventOperationTaskStep                 LogEventOperation = "TASK_STEP"
+	LogEventOperationCacheAfterStepResult     LogEventOperation = "CACHE_AFTER_STEP_RESULT"
 )
 
 type LogEventStatus string
@@ -211,15 +199,6 @@ type TaskBuildChangesetSpecsMetadata struct {
 	TaskID string `json:"taskID,omitempty"`
 }
 
-type TaskDownloadingArchiveMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
-	Error  string `json:"error,omitempty"`
-}
-
-type TaskInitializingWorkspaceMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
-}
-
 type TaskSkippingStepsMetadata struct {
 	TaskID    string `json:"taskID,omitempty"`
 	StartStep int    `json:"startStep,omitempty"`
@@ -245,20 +224,11 @@ type TaskStepMetadata struct {
 
 	Out string `json:"out,omitempty"`
 
-	Diff    string                 `json:"diff,omitempty"`
-	Outputs map[string]interface{} `json:"outputs,omitempty"`
+	Diff    string         `json:"diff,omitempty"`
+	Outputs map[string]any `json:"outputs,omitempty"`
 
 	ExitCode int    `json:"exitCode,omitempty"`
 	Error    string `json:"error,omitempty"`
-}
-
-type TaskCalculatingDiffMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
-}
-
-type CacheResultMetadata struct {
-	Key   string           `json:"key,omitempty"`
-	Value execution.Result `json:"value,omitempty"`
 }
 
 type CacheAfterStepResultMetadata struct {

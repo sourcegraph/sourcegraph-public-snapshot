@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon, H3, Text, Input } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -23,7 +23,6 @@ import styles from './FuzzyModal.module.scss'
 // - case-insensitive search is almost unusable in the chromium/chromium repo (360k files)
 const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80000
 
-const FUZZY_MODAL_TITLE = 'fuzzy-modal-title'
 const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
@@ -52,7 +51,7 @@ export interface FuzzyModalProps {
  *
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
-export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
+export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyModalProps>> = props => {
     // NOTE: the query is cached in local storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
     // Preserve Input" is enabled).
@@ -123,7 +122,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
             }
             const links = fuzzyResult.links
             if (links.length === 0) {
-                setFuzzyResultElement(<p>No files matching '{query}'</p>)
+                setFuzzyResultElement(<Text>No files matching '{query}'</Text>)
                 setResultsCount(0)
                 setTotalFileCount(search.totalFileCount)
                 return setIsComplete(fuzzyResult.isComplete)
@@ -157,11 +156,11 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
         }
 
         if (props.isLoading) {
-            return empty(<p>Downloading...</p>)
+            return empty(<Text>Downloading...</Text>)
         }
 
         if (props.isError) {
-            return empty(<p>Error: {JSON.stringify(props.isError)}</p>)
+            return empty(<Text>Error: {JSON.stringify(props.isError)}</Text>)
         }
 
         switch (props.fsm.key) {
@@ -169,9 +168,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 handleEmpty(props)
                 return empty(<></>)
             case 'downloading':
-                return empty(<p>Downloading...</p>)
+                return empty(<Text>Downloading...</Text>)
             case 'failed':
-                return empty(<p>Error: {props.fsm.errorMessage}</p>)
+                return empty(<Text>Error: {props.fsm.errorMessage}</Text>)
             case 'indexing': {
                 const loader = props.fsm.indexing
                 later()
@@ -183,7 +182,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
             case 'ready':
                 return renderFiles(props.fsm.fuzzy)
             default:
-                return empty(<p>ERROR</p>)
+                return empty(<Text>ERROR</Text>)
         }
     }, [props, focusIndex, maxResults, query])
 
@@ -234,18 +233,16 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
             position="center"
             className={styles.modal}
             onDismiss={() => props.onClose()}
-            aria-labelledby={FUZZY_MODAL_TITLE}
+            aria-label="Fuzzy finder: Find file"
         >
             <div className={styles.content}>
                 <div className={styles.header}>
-                    <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
-                        Find file
-                    </h3>
+                    <H3 className="mb-0">Find file</H3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
-                        <Icon className={styles.closeIcon} as={CloseIcon} />
+                        <Icon className={styles.closeIcon} as={CloseIcon} aria-hidden={true} />
                     </Button>
                 </div>
-                <input
+                <Input
                     autoComplete="off"
                     spellCheck="false"
                     role="combobox"
@@ -256,14 +253,13 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     aria-expanded={props.fsm.key !== 'downloading'}
                     aria-activedescendant={fuzzyResultId(focusIndex)}
                     id="fuzzy-modal-input"
-                    className={classNames('form-control py-1', styles.input)}
+                    className={styles.input}
                     placeholder="Enter a partial file path or name"
                     value={query}
                     onChange={({ target: { value } }) => {
                         setQuery(value)
                         setFocusIndex(0)
                     }}
-                    type="text"
                     onKeyDown={onInputKeyDown}
                 />
                 <div className={styles.summary}>
@@ -299,7 +295,7 @@ interface FuzzyResultsSummaryProps {
     totalFileCount: number
 }
 
-const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({
+const FuzzyResultsSummary: React.FunctionComponent<React.PropsWithChildren<FuzzyResultsSummaryProps>> = ({
     fsm,
     resultsCount,
     isComplete,

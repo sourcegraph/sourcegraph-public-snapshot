@@ -25,7 +25,7 @@ func TestGet(t *testing.T) {
 
 	{
 		origFatalln := fatalln
-		fatalln = func(v ...interface{}) { panic(v) }
+		fatalln = func(v ...any) { panic(v) }
 		defer func() { fatalln = origFatalln }()
 	}
 

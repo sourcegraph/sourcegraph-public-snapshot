@@ -4,6 +4,7 @@ import { CardSubtitle, CardText, CardTitle, CardBody, Card } from '@sourcegraph/
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
 import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../../shared/components/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from '../../shared/components/CodeIntelUploadOrIndexLastActivity'
@@ -14,7 +15,10 @@ export interface CodeIntelIndexMetaProps {
     now?: () => Date
 }
 
-export const CodeIntelIndexMeta: FunctionComponent<CodeIntelIndexMetaProps> = ({ node, now }) => (
+export const CodeIntelIndexMeta: FunctionComponent<React.PropsWithChildren<CodeIntelIndexMetaProps>> = ({
+    node,
+    now,
+}) => (
     <Card>
         <CardBody>
             <CardTitle>
@@ -28,6 +32,8 @@ export const CodeIntelIndexMeta: FunctionComponent<CodeIntelIndexMetaProps> = ({
             <CardText>
                 Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                 <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                {', '}
+                <CodeIntelUploadOrIndexCommitTags tags={node.tags} />{' '}
             </CardText>
         </CardBody>
     </Card>

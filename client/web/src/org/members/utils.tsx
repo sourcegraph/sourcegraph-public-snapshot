@@ -52,7 +52,7 @@ interface MembersNotificationProps {
     className?: string
 }
 
-export const OrgMemberNotification: React.FunctionComponent<MembersNotificationProps> = ({
+export const OrgMemberNotification: React.FunctionComponent<React.PropsWithChildren<MembersNotificationProps>> = ({
     className,
     message,
     onDismiss,
@@ -60,7 +60,7 @@ export const OrgMemberNotification: React.FunctionComponent<MembersNotificationP
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>{message}</div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+            <Icon as={CloseIcon} aria-hidden={true} />
         </Button>
     </Alert>
 )

@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
+import { mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 
 import {
     Button,
@@ -29,7 +29,7 @@ import styles from './index.module.scss'
 export interface ExtensionsDevelopmentToolsProps
     extends ExtensionsControllerProps,
         PlatformContextProps<'sideloadedExtensionURL' | 'settings'> {
-    link: React.ComponentType<{ id: string }>
+    link: React.ComponentType<React.PropsWithChildren<{ id: string }>>
 }
 
 const LAST_TAB_STORAGE_KEY = 'ExtensionDevTools.lastTab'
@@ -39,14 +39,16 @@ type ExtensionDevelopmentToolsTabID = 'activeExtensions' | 'loggers'
 interface ExtensionDevelopmentToolsTab {
     id: ExtensionDevelopmentToolsTabID
     label: string
-    component: React.ComponentType<ExtensionsDevelopmentToolsProps>
+    component: React.ComponentType<React.PropsWithChildren<ExtensionsDevelopmentToolsProps>>
 }
 
 const TABS: ExtensionDevelopmentToolsTab[] = [
     { id: 'activeExtensions', label: 'Active extensions', component: ActiveExtensionsPanel },
 ]
 
-const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
+const ExtensionDevelopmentTools: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsDevelopmentToolsProps>
+> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
@@ -79,8 +81,13 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <Popover>
-        <PopoverTrigger as={Button} className="text-decoration-none px-2" variant="link">
-            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} />
+        <PopoverTrigger
+            as={Button}
+            className="text-decoration-none px-2"
+            variant="link"
+            aria-label="Open extensions developer tools"
+        >
+            <span className="text-muted">Ext</span> <Icon aria-hidden={true} svgPath={mdiMenuUp} />
         </PopoverTrigger>
         <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />

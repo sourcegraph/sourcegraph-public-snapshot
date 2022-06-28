@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -30,7 +30,7 @@ const (
 
 type migrator struct {
 	insightsDB dbutil.DB
-	postgresDB dbutil.DB
+	postgresDB database.DB
 
 	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
 	settingsStore              database.SettingsStore
@@ -40,16 +40,16 @@ type migrator struct {
 	workerBaseStore            *basestore.Store
 }
 
-func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
+func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
 		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
-		settingsStore:              database.Settings(postgresDB),
+		settingsStore:              postgresDB.Settings(),
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
-		orgStore:                   database.Orgs(postgresDB),
-		workerBaseStore:            basestore.NewWithDB(postgresDB, sql.TxOptions{}),
+		orgStore:                   postgresDB.Orgs(),
+		workerBaseStore:            basestore.NewWithHandle(postgresDB.Handle()),
 	}
 }
 
@@ -138,7 +138,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	var subject api.SettingsSubject
 	var migrationContext migrationContext
 	var subjectName string
-	orgStore := database.Orgs(m.postgresDB)
+	orgStore := m.postgresDB.Orgs()
 
 	defer func() {
 		jobStoreTx.UpdateRuns(ctx, job.UserId, job.OrgId, job.Runs+1)
@@ -161,7 +161,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		userStore := database.Users(m.postgresDB)
+		userStore := m.postgresDB.Users()
 		user, err := userStore.GetByID(ctx, userId)
 		if err != nil {
 			// If the user doesn't exist, just mark the job complete.
@@ -416,7 +416,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	return nil
 }
 
-func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, newId string) (int, error) {
+func updateTimeSeriesReferences(handle edb.InsightsDB, ctx context.Context, oldId, newId string) (int, error) {
 	q := sqlf.Sprintf(`
 		WITH updated AS (
 			UPDATE series_points sp
@@ -426,7 +426,7 @@ func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, ne
 		)
 		SELECT count(*) FROM updated;
 	`, newId, oldId)
-	tempStore := basestore.NewWithDB(handle, sql.TxOptions{})
+	tempStore := basestore.NewWithHandle(handle.Handle())
 	count, _, err := basestore.ScanFirstInt(tempStore.Query(ctx, q))
 	if err != nil {
 		return 0, errors.Wrap(err, "updateTimeSeriesReferences")

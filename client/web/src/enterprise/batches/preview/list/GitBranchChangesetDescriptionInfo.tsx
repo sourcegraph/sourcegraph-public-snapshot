@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { H3 } from '@sourcegraph/wildcard'
+
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
@@ -10,7 +12,9 @@ interface Props {
     node: VisibleChangesetApplyPreviewFields
 }
 
-export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> = ({ node }) => {
+export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    node,
+}) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return <></>
     }
@@ -51,7 +55,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                         </DeletedEntry>
                         <div className="text-muted">
                             <DeletedEntry deleted={node.delta.commitMessageChanged}>
-                                <h3 className="text-muted">{previousCommit.subject}</h3>
+                                <H3 className="text-muted">{previousCommit.subject}</H3>
                             </DeletedEntry>
                             {previousCommit.body && (
                                 <DeletedEntry deleted={node.delta.commitMessageChanged}>
@@ -71,18 +75,16 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                 <PersonLink person={commit.author} className="font-weight-bold text-nowrap" />
             </div>
             <div>
-                <h3>{commit.subject}</h3>
+                <H3>{commit.subject}</H3>
                 {commit.body && <pre className="text-wrap">{commit.body}</pre>}
             </div>
         </div>
     )
 }
 
-const DeletedEntry: React.FunctionComponent<{ children: React.ReactNode; deleted: boolean; className?: string }> = ({
-    children,
-    deleted,
-    className,
-}) => {
+const DeletedEntry: React.FunctionComponent<
+    React.PropsWithChildren<{ children: React.ReactNode; deleted: boolean; className?: string }>
+> = ({ children, deleted, className }) => {
     if (deleted) {
         return <del className={className}>{children}</del>
     }

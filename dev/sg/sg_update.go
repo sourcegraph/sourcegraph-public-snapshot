@@ -1,19 +1,17 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,16 +20,14 @@ var updateCommand = &cli.Command{
 	Usage: "Update local sg installation",
 	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
-  sg version changelog -next
-
-Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
+    sg version changelog -next`,
 	Category: CategoryUtil,
 	Action: func(cmd *cli.Context) error {
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
 			return err
 		}
-		writeSuccessLinef("sg has been updated!")
-		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		std.Out.WriteSuccessf("sg has been updated!")
+		std.Out.Write("To see what's new, run 'sg version changelog'.")
 		return nil
 	},
 }
@@ -57,40 +53,12 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	location = strings.ReplaceAll(location, "/tag/", "/download/")
 	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
 
-	tmpDir, err := os.MkdirTemp("", "sg")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
-
-	resp, err = http.Get(downloadURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
-	}
-
 	currentExecPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-
-	content := &bytes.Buffer{}
-	content.ReadFrom(resp.Body)
-
-	ok, err := fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
-	if err != nil {
+	if err := download.Executable(ctx, downloadURL, currentExecPath); err != nil {
 		return "", err
 	}
-	if !ok {
-		return currentExecPath, nil
-	}
-
-	err = exec.Command("chmod", "+x", currentExecPath).Run()
-	return currentExecPath, err
+	return currentExecPath, nil
 }

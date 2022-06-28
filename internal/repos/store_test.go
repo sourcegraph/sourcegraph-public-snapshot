@@ -12,6 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,12 +25,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
+func testSyncRateLimiters(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 		ctx := context.Background()
-		transact(ctx, store, func(t testing.TB, tx *repos.Store) {
+		transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			toCreate := 501 // Larger than default page size in order to test pagination
 			services := make([]*types.ExternalService, 0, toCreate)
 			for i := 0; i < toCreate; i++ {
@@ -55,12 +57,12 @@ func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
 				services = append(services, svc)
 			}
 
-			if err := tx.ExternalServiceStore.Upsert(ctx, services...); err != nil {
+			if err := tx.ExternalServiceStore().Upsert(ctx, services...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
 			}
 
 			registry := ratelimit.NewRegistry()
-			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore, repos.RateLimitSyncerOpts{})
+			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore(), repos.RateLimitSyncerOpts{})
 			err := syncer.SyncRateLimiters(ctx)
 			if err != nil {
 				t.Fatal(err)
@@ -73,7 +75,7 @@ func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
+func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -145,13 +147,14 @@ func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				t.Cleanup(func() {
-					if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")); err != nil {
+					q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
+					if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 						t.Fatal(err)
 					}
 				})
 				stored := tc.stored.Clone()
 
-				if err := store.ExternalServiceStore.Upsert(ctx, stored...); err != nil {
+				if err := store.ExternalServiceStore().Upsert(ctx, stored...); err != nil {
 					t.Fatalf("failed to setup store: %v", err)
 				}
 
@@ -186,14 +189,16 @@ func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
+func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
 		ctx := context.Background()
 		t.Cleanup(func() {
-			if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")); err != nil {
+			q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -209,7 +214,7 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &service)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &service)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,7 +222,8 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 		assertCount := func(t *testing.T, want int) {
 			t.Helper()
 			var count int
-			if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")).Scan(&count); err != nil {
+			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 				t.Fatal(err)
 			}
 			if count != want {
@@ -240,7 +246,8 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 		assertCount(t, 1)
 
 		// If we change status to processing it should not add a new row
-		if err := store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")); err != nil {
+		q := sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 		err = store.EnqueueSingleSyncJob(ctx, service.ID)
@@ -250,7 +257,8 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 		assertCount(t, 1)
 
 		// If we change status to completed we should be able to enqueue another one
-		if err = store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")); err != nil {
+		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 		err = store.EnqueueSingleSyncJob(ctx, service.ID)
@@ -260,12 +268,13 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 		assertCount(t, 2)
 
 		// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
-		if err = store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")); err != nil {
+		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
 		service.CloudDefault = true
-		err = store.ExternalServiceStore.Upsert(ctx, &service)
+		err = store.ExternalServiceStore().Upsert(ctx, &service)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -277,7 +286,8 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 		assertCount(t, 2)
 
 		// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
-		if err = store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs")); err != nil {
+		q = sqlf.Sprintf("DELETE FROM external_service_sync_jobs")
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -289,8 +299,9 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreListExternalServiceUserIDsByRepoID(store *repos.Store) func(*testing.T) {
+func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -299,7 +310,7 @@ DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -319,7 +330,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -340,7 +351,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 		`, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -357,8 +368,9 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 	}
 }
 
-func testStoreListExternalServicePrivateRepoIDsByUserID(store *repos.Store) func(*testing.T) {
+func testStoreListExternalServicePrivateRepoIDsByUserID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -367,7 +379,7 @@ DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -387,7 +399,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -410,7 +422,7 @@ VALUES
 		`, svc.ID, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -457,14 +469,14 @@ func generateExternalServices(n int, base ...*types.ExternalService) types.Exter
 	return es
 }
 
-func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.Store)) func(*testing.T) {
+func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.Store)) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
 		var err error
 		txStore := s
 
-		if !s.InTransaction() {
+		if !s.Handle().InTransaction() {
 			txStore, err = s.Transact(ctx)
 			if err != nil {
 				t.Fatalf("failed to start transaction: %v", err)
@@ -476,7 +488,7 @@ func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.
 	}
 }
 
-func createExternalServices(t *testing.T, store *repos.Store, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
+func createExternalServices(t *testing.T, store repos.Store, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -488,11 +500,11 @@ func createExternalServices(t *testing.T, store *repos.Store, opts ...func(*type
 	}
 
 	// create a few external services
-	if err := store.ExternalServiceStore.Upsert(context.Background(), svcs...); err != nil {
+	if err := store.ExternalServiceStore().Upsert(context.Background(), svcs...); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	services, err := store.ExternalServiceStore.List(context.Background(), database.ExternalServicesListOptions{})
+	services, err := store.ExternalServiceStore().List(context.Background(), database.ExternalServicesListOptions{})
 	if err != nil {
 		t.Fatal("failed to list external services")
 	}

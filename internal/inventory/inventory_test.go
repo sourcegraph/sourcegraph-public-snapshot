@@ -108,8 +108,8 @@ func (f fi) ModTime() time.Time {
 	return time.Now()
 }
 
-func (f fi) Sys() interface{} {
-	return interface{}(nil)
+func (f fi) Sys() any {
+	return any(nil)
 }
 
 func TestGet_readFile(t *testing.T) {

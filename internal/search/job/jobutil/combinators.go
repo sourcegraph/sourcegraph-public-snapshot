@@ -2,109 +2,81 @@ package jobutil
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// NewPriorityJob creates a combinator job from a required job and an
-// optional job. When run, PriorityJob runs the required job and the
-// optional job in parallel, waits for the required job to complete, then gives
-// the optional job a short additional amount of time (currently 100ms) before
-// canceling the optional job.
-func NewPriorityJob(required job.Job, optional job.Job) job.Job {
-	if _, ok := optional.(*noopJob); ok {
-		return required
-	}
-	return &PriorityJob{
-		required: required,
-		optional: optional,
-	}
-}
-
-type PriorityJob struct {
-	required job.Job
-	optional job.Job
-}
-
-func (r *PriorityJob) Name() string {
-	return "PriorityJob"
-}
-
-func (r *PriorityJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, r)
-	defer func() { finish(alert, err) }()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	start := time.Now()
-
-	var (
-		maxAlerter    search.MaxAlerter
-		optionalGroup errors.Group
-		requiredGroup errors.Group
-	)
-	requiredGroup.Go(func() error {
-		alert, err := r.required.Run(ctx, clients, s)
-		maxAlerter.Add(alert)
-		return err
-	})
-	optionalGroup.Go(func() error {
-		alert, err := r.optional.Run(ctx, clients, s)
-		maxAlerter.Add(alert)
-		return err
-	})
-
-	var errs error
-	if err := requiredGroup.Wait(); err != nil {
-		errs = errors.Append(errs, err)
-	}
-	tr.LazyPrintf("required group completed")
-
-	// Give optional searches some minimum budget in case required searches return quickly.
-	// Cancel all remaining searches after this minimum budget.
-	budget := 100 * time.Millisecond
-	elapsed := time.Since(start)
-	time.AfterFunc(budget-elapsed, cancel)
-
-	if err := optionalGroup.Wait(); err != nil {
-		errs = errors.Append(errs, err)
-	}
-	tr.LazyPrintf("optional group completed")
-
-	return maxAlerter.Alert, errs
-}
 
 // NewSequentialJob will create a job that sequentially runs a list of jobs.
 // This is used to implement logic where we might like to order independent
 // search operations, favoring results returns by jobs earlier in the list to
 // those appearing later in the list. If this job sees a cancellation for a
-// child job, it stops executing additional jobs and returns.
-func NewSequentialJob(children ...job.Job) job.Job {
+// child job, it stops executing additional jobs and returns. If ensureUnique is
+// true, this job ensures only unique results among all children are sent (if
+// two or more jobs send the same result, only the first unique result is sent,
+// subsequent similar results are ignored).
+func NewSequentialJob(ensureUnique bool, children ...job.Job) job.Job {
 	if len(children) == 0 {
-		return &noopJob{}
+		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
 	}
-	return &SequentialJob{children: children}
+	return &SequentialJob{children: children, ensureUnique: ensureUnique}
 }
 
 type SequentialJob struct {
-	children []job.Job
+	ensureUnique bool
+	children     []job.Job
 }
 
 func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
-func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SequentialJob) Tags() []log.Field {
+	return []log.Field{
+		log.Bool("ensureUnique", s.ensureUnique),
+	}
+}
+
+func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, s)
+	defer func() { finish(alert, err) }()
+
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
+
+	stream := parentStream
+	if s.ensureUnique {
+		var mux sync.Mutex
+		dedup := result.NewDeduper()
+
+		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
+			mux.Lock()
+
+			results := event.Results[:0]
+			for _, match := range event.Results {
+				seen := dedup.Seen(match)
+				if seen {
+					continue
+				}
+				dedup.Add(match)
+				results = append(results, match)
+			}
+			event.Results = results
+			mux.Unlock()
+			parentStream.Send(event)
+		})
+	}
 
 	for _, child := range s.children {
 		alert, err := child.Run(ctx, clients, stream)
@@ -123,7 +95,7 @@ func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, str
 // if any of the child jobs failed.
 func NewParallelJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
-		return &noopJob{}
+		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
@@ -137,6 +109,10 @@ type ParallelJob struct {
 
 func (p *ParallelJob) Name() string {
 	return "ParallelJob"
+}
+
+func (p *ParallelJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
@@ -161,7 +137,7 @@ func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 // NewTimeoutJob creates a new job that is canceled after the
 // timeout is hit. The timer starts with `Run()` is called.
 func NewTimeoutJob(timeout time.Duration, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &TimeoutJob{
@@ -189,12 +165,18 @@ func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
 }
 
+func (t *TimeoutJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("timeout", t.timeout),
+	}
+}
+
 // NewLimitJob creates a new job that is canceled after the result limit
 // is hit. Whenever an event is sent down the stream, the result count
 // is incremented by the number of results in that event, and if it reaches
 // the limit, the context is canceled.
 func NewLimitJob(limit int, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &LimitJob{
@@ -228,14 +210,24 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func NewNoopJob() *noopJob {
-	return &noopJob{}
+func (l *LimitJob) Tags() []log.Field {
+	return []log.Field{
+		log.Int("limit", l.limit),
+	}
 }
 
-type noopJob struct{}
+func NewNoopJob() *NoopJob {
+	return &NoopJob{}
+}
 
-func (e *noopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
+type NoopJob struct{}
+
+func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 	return nil, nil
 }
 
-func (e *noopJob) Name() string { return "NoopJob" }
+func (e *NoopJob) Name() string { return "NoopJob" }
+
+func (e *NoopJob) Tags() []log.Field {
+	return []log.Field{}
+}

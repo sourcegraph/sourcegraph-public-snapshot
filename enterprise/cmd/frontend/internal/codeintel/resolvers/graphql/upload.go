@@ -10,16 +10,15 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type UploadResolver struct {
 	db               database.DB
-	gitserver        policies.GitserverClient
+	gitserver        GitserverClient
 	resolver         resolvers.Resolver
 	upload           dbstore.Upload
 	prefetcher       *Prefetcher
@@ -27,7 +26,7 @@ type UploadResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, upload dbstore.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) gql.LSIFUploadResolver {
+func NewUploadResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, upload dbstore.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) gql.LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -57,6 +56,17 @@ func (r *UploadResolver) StartedAt() *gql.DateTime  { return gql.DateTimeOrNil(r
 func (r *UploadResolver) FinishedAt() *gql.DateTime { return gql.DateTimeOrNil(r.upload.FinishedAt) }
 func (r *UploadResolver) InputIndexer() string      { return r.upload.Indexer }
 func (r *UploadResolver) PlaceInQueue() *int32      { return toInt32(r.upload.Rank) }
+
+func (r *UploadResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
+	tags, err := r.gitserver.ListTags(ctx, api.RepoName(r.upload.RepositoryName), r.upload.Commit)
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range tags {
+		tagsNames = append(tagsNames, tag.Name)
+	}
+	return
+}
 
 func (r *UploadResolver) State() string {
 	state := strings.ToUpper(r.upload.State)
@@ -125,4 +135,34 @@ func (r *UploadResolver) Indexer() gql.CodeIntelIndexerResolver {
 	}
 
 	return &codeIntelIndexerResolver{name: r.upload.Indexer}
+}
+
+func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUploadDocumentPathsQueryArgs) (gql.LSIFUploadDocumentPathsConnectionResolver, error) {
+	pattern := "%%"
+	if args.Pattern != "" {
+		pattern = args.Pattern
+	}
+	documents, totalCount, err := r.resolver.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	return &uploadDocumentPathsConnectionResolver{
+		totalCount: totalCount,
+		documents:  documents,
+	}, nil
+}
+
+func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]gql.LSIFUploadsAuditLogsResolver, error) {
+	logs, err := r.resolver.AuditLogsForUpload(ctx, r.upload.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]gql.LSIFUploadsAuditLogsResolver, 0, len(logs))
+	for _, log := range logs {
+		resolvers = append(resolvers, &lsifUploadsAuditLogResolver{log})
+	}
+
+	return &resolvers, nil
 }

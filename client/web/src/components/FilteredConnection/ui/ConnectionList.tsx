@@ -6,7 +6,7 @@ import styles from './ConnectionList.module.scss'
 
 interface ConnectionListProps extends AriaAttributes {
     /** list HTML element type. Default is <ul>. */
-    as?: 'ul' | 'table' | 'div'
+    as?: 'ul' | 'table' | 'div' | 'ol'
 
     /** CSS class name for the list element (<ul>, <table>, or <div>). */
     className?: string
@@ -18,7 +18,7 @@ interface ConnectionListProps extends AriaAttributes {
  * Render a list of FilteredConnection nodes.
  * Can be configured to render as different elements to support alternative representations of data such as through the <table> element.
  */
-export const ConnectionList: React.FunctionComponent<ConnectionListProps> = ({
+export const ConnectionList: React.FunctionComponent<React.PropsWithChildren<ConnectionListProps>> = ({
     as: ListComponent = 'ul',
     className,
     children,

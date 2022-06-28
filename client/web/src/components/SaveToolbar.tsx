@@ -32,16 +32,9 @@ export type SaveToolbarPropsGenerator<T extends object> = (
     props: Readonly<React.PropsWithChildren<SaveToolbarProps>>
 ) => React.PropsWithChildren<SaveToolbarProps> & T
 
-export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps>> = ({
-    dirty,
-    saving,
-    error,
-    onSave,
-    onDiscard,
-    children,
-    willShowError,
-    saveDiscardDisabled,
-}) => {
+export const SaveToolbar: React.FunctionComponent<
+    React.PropsWithChildren<React.PropsWithChildren<SaveToolbarProps>>
+> = ({ dirty, saving, error, onSave, onDiscard, children, willShowError, saveDiscardDisabled }) => {
     const disabled = saveDiscardDisabled ? saveDiscardDisabled() : saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {
@@ -57,8 +50,8 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
     return (
         <>
             {error && willShowError() && (
-                <div className={styles.error}>
-                    <Icon className={styles.errorIcon} as={AlertCircleIcon} />
+                <div className={styles.error} role="alert">
+                    <Icon className={styles.errorIcon} as={AlertCircleIcon} aria-hidden={true} />
                     {error.message}
                 </div>
             )}
@@ -71,7 +64,7 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                     variant="success"
                     size="sm"
                 >
-                    <Icon style={{ marginRight: '0.1em' }} as={CheckIcon} /> Save changes
+                    <Icon style={{ marginRight: '0.1em' }} as={CheckIcon} aria-hidden={true} /> Save changes
                 </Button>
                 <Button
                     disabled={disabled}
@@ -81,7 +74,7 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                     variant="secondary"
                     size="sm"
                 >
-                    <Icon as={CloseIcon} /> Discard
+                    <Icon as={CloseIcon} aria-hidden={true} /> Discard
                 </Button>
                 {children}
                 {saving && (

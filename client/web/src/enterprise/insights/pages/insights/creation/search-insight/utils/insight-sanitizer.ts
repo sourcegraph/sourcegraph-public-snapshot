@@ -32,25 +32,32 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
     if (rawInsight.allRepos) {
         return {
             executionType: InsightExecutionType.Backend,
+            repositories: [],
             type: InsightType.SearchBased,
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
             step: { [rawInsight.step]: +rawInsight.stepValue },
+            dashboards: [],
             filters: {
                 excludeRepoRegexp: '',
                 includeRepoRegexp: '',
-                contexts: [],
-                repositories: [],
+                context: '',
             },
         }
     }
 
     return {
-        executionType: InsightExecutionType.Runtime,
+        executionType: InsightExecutionType.Backend,
         type: InsightType.SearchBased,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
+        dashboards: [],
+        filters: {
+            excludeRepoRegexp: '',
+            includeRepoRegexp: '',
+            context: '',
+        },
     }
 }

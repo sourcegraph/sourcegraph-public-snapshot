@@ -45,7 +45,9 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
     }
 }
 
-export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = props => {
+export const SearchContextsListPage: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextsListPageProps>
+> = props => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(getSelectedTabFromLocation(props.location.search))
 
     const setTab = useCallback(
@@ -68,19 +70,9 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
         <div data-testid="search-contexts-list-page" className="w-100">
             <Page>
                 <PageHeader
-                    path={[
-                        {
-                            icon: MagnifyIcon,
-                            to: '/search',
-                            ariaLabel: 'Code Search',
-                        },
-                        {
-                            text: 'Contexts',
-                        },
-                    ]}
                     actions={
                         <Button to="/contexts/new" variant="primary" as={Link}>
-                            <Icon as={PlusIcon} />
+                            <Icon aria-hidden={true} as={PlusIcon} />
                             Create search context
                         </Button>
                     }
@@ -97,14 +89,21 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         </span>
                     }
                     className="mb-3"
-                />
+                >
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                        <PageHeader.Breadcrumb>Contexts</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 <div className="mb-4">
-                    <div className="nav nav-tabs">
+                    <div id="search-context-tabs-list" className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <Link
                                 to=""
-                                role="button"
+                                role="tab"
+                                aria-selected={selectedTab === 'list'}
+                                aria-controls="search-context-tabs-list"
                                 onClick={onSelectSearchContextsList}
                                 className={classNames('nav-link', selectedTab === 'list' && 'active')}
                             >

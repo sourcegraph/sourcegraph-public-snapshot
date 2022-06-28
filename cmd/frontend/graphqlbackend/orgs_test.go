@@ -82,7 +82,7 @@ func TestListOrgsForCloud(t *testing.T) {
 			ExpectedErrors: []*errors.QueryError{
 				{
 					Message: "listing organizations is not allowed",
-					Path:    []interface{}{string("organizations"), string("nodes")},
+					Path:    []any{string("organizations"), string("nodes")},
 				},
 			},
 		},

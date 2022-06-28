@@ -38,8 +38,8 @@ Therefore, it makes no sense to have the central SSO redirect users directly bac
 
 Set the env var `INSECURE_OAUTH2_LOG_TRACES=1` to log all OAuth2 requests and responses on:
 
-* [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
-* [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+* [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): the `sourcegraph-frontend` deployment
+* [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 ### Make sure the client ID and client secret are actually correct
 

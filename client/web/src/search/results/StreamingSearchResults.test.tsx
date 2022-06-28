@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
 import { BrowserRouter } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -22,7 +23,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
@@ -52,7 +52,6 @@ describe('StreamingSearchResults', () => {
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
-        featureFlags: EMPTY_FEATURE_FLAGS,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
     }
@@ -62,11 +61,13 @@ describe('StreamingSearchResults', () => {
     function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
         return render(
             <BrowserRouter>
-                <MockedTestProvider mocks={revisionsMockResponses}>
-                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                        {component}
-                    </SearchQueryStateStoreProvider>
-                </MockedTestProvider>
+                <CompatRouter>
+                    <MockedTestProvider mocks={revisionsMockResponses}>
+                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                            {component}
+                        </SearchQueryStateStoreProvider>
+                    </MockedTestProvider>
+                </CompatRouter>
             </BrowserRouter>
         )
     }
@@ -270,7 +271,7 @@ describe('StreamingSearchResults', () => {
             renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
 
             userEvent.click(await screen.findByText(/some results excluded/i))
-            const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')
+            const allChecks = await screen.findAllByTestId(/^streaming-progress-skipped-suggest-check/)
 
             for (const check of allChecks) {
                 userEvent.click(check, undefined, { skipPointerEventsCheck: true })

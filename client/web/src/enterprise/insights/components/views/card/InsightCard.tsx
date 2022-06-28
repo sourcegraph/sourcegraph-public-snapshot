@@ -23,8 +23,8 @@ const InsightCard = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'section'>
 
 export interface InsightCardTitleProps {
-    title: string
-    subtitle?: string
+    title: ReactNode
+    subtitle?: ReactNode
 
     /**
      * It's primarily conceived as a slot for card actions (like filter buttons) that render
@@ -39,7 +39,12 @@ const InsightCardHeader = forwardRef((props, reference) => {
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
-                <H4 as={H2} title={title} className={styles.title}>
+                <H4
+                    // We have to cast this element to H2 because having h4 without h3 and h2
+                    // higher in the hierarchy violates a11y rules about headings structure.
+                    as={H2}
+                    className={styles.title}
+                >
                     {title}
                 </H4>
 
@@ -63,14 +68,14 @@ const InsightCardHeader = forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'header', InsightCardTitleProps>
 
-const InsightCardLoading: React.FunctionComponent = props => (
+const InsightCardLoading: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
     <InsightCardBanner>
         <LoadingSpinner />
         {props.children}
     </InsightCardBanner>
 )
 
-const InsightCardBanner: React.FunctionComponent<HTMLAttributes<HTMLDivElement>> = props => (
+const InsightCardBanner: React.FunctionComponent<React.PropsWithChildren<HTMLAttributes<HTMLDivElement>>> = props => (
     <div {...props} className={classNames(styles.loadingContent, props.className)}>
         {props.children}
     </div>
@@ -80,7 +85,7 @@ interface InsightCardLegendProps extends React.HTMLAttributes<HTMLUListElement> 
     series: Series<any>[]
 }
 
-const InsightCardLegend: React.FunctionComponent<InsightCardLegendProps> = props => {
+const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<InsightCardLegendProps>> = props => {
     const { series, ...attributes } = props
 
     return (

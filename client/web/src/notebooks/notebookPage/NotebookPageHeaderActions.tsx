@@ -54,7 +54,9 @@ export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-export const NotebookPageHeaderActions: React.FunctionComponent<NotebookPageHeaderActionsProps> = ({
+export const NotebookPageHeaderActions: React.FunctionComponent<
+    React.PropsWithChildren<NotebookPageHeaderActionsProps>
+> = ({
     isSourcegraphDotCom,
     authenticatedUser,
     notebookId,
@@ -148,7 +150,7 @@ interface NotebookSettingsDropdownProps extends TelemetryProps {
     deleteNotebook: typeof _deleteNotebook
 }
 
-const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdownProps> = ({
+const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<NotebookSettingsDropdownProps>> = ({
     notebookId,
     deleteNotebook,
     telemetryService,
@@ -195,7 +197,7 @@ interface NotebookStarsButtonProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = ({
+const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<NotebookStarsButtonProps>> = ({
     notebookId,
     disabled,
     starsCount: initialStarsCount,
@@ -248,11 +250,16 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
             outline={true}
             disabled={disabled}
             onClick={() => onStarToggle(viewerHasStarred)}
+            aria-label={viewerHasStarred ? 'Unstar notebook' : 'Star notebook'}
         >
             {viewerHasStarred ? (
-                <Icon className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)} as={StarIcon} />
+                <Icon
+                    aria-hidden={true}
+                    className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
+                    as={StarIcon}
+                />
             ) : (
-                <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                <Icon aria-hidden={true} className={styles.notebookStarIcon} as={StarOutlineIcon} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

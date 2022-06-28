@@ -38,9 +38,12 @@ export interface GitReferenceNodeProps {
     icon?: React.ComponentType<{ className?: string }>
 
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
+    nodeLinkClassName?: string
+
+    ariaLabel?: string
 }
 
-export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
+export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
     node,
     url,
     ancestorIsLink,
@@ -48,6 +51,8 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     className,
     onClick,
     icon: ReferenceIcon,
+    nodeLinkClassName,
+    ariaLabel,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -58,30 +63,39 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan
-            key={node.id}
-            className={classNames('list-group-item', styles.gitRefNode, className)}
-            to={!ancestorIsLink ? url : undefined}
-            onClick={onClick}
-            data-testid="git-ref-node"
-        >
-            <span className="d-flex align-items-center">
-                {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} />}
-                <Badge as="code">{node.displayName}</Badge>
-                {mostRecentSig && (
-                    <small className="pl-2">
-                        Updated <Timestamp date={mostRecentSig.date} />{' '}
-                        {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
+        <li key={node.id} className={classNames('d-block list-group-item', styles.gitRefNode, className)}>
+            <LinkOrSpan
+                className={classNames(styles.gitRefNodeLink, nodeLinkClassName)}
+                to={!ancestorIsLink ? url : undefined}
+                onClick={onClick}
+                data-testid="git-ref-node"
+                aria-label={ariaLabel}
+            >
+                <span className="d-flex align-items-center">
+                    {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} aria-hidden={true} />}
+                    {/*
+                    a11y-ignore
+                    Rule: "color-contrast" (Elements must have sufficient color contrast)
+                    GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                */}
+                    <Badge className="a11y-ignore" as="code">
+                        {node.displayName}
+                    </Badge>
+                    {mostRecentSig && (
+                        <small className="pl-2">
+                            Updated <Timestamp date={mostRecentSig.date} />{' '}
+                            {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
+                        </small>
+                    )}
+                </span>
+                {behindAhead && (
+                    <small>
+                        {numberWithCommas(behindAhead.behind)} behind, {numberWithCommas(behindAhead.ahead)} ahead
                     </small>
                 )}
-            </span>
-            {behindAhead && (
-                <small>
-                    {numberWithCommas(behindAhead.behind)} behind, {numberWithCommas(behindAhead.ahead)} ahead
-                </small>
-            )}
-            {children}
-        </LinkOrSpan>
+                {children}
+            </LinkOrSpan>
+        </li>
     )
 }
 

@@ -9,7 +9,7 @@
 | `-commit` | The 40-character hash of the commit. Defaults to the currently checked-out commit. |  |
 | `-file` | The path to the LSIF dump file. | `./dump.lsif` |
 | `-github-token` | A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository. |  |
-| `-gitlab-token` | A Gitlab access token with read and write repository scope that Sourcegraph uses to verify you have access to the repository. |  |
+| `-gitlab-token` | A GitLab access token with 'read_api' scope that Sourcegraph uses to verify you have access to the repository. |  |
 | `-ignore-upload-failure` | Exit with status code zero on upload failure. | `false` |
 | `-indexer` | The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message). |  |
 | `-indexerVersion` | The version of the indexer that generated the dump. This will override the 'toolInfo.version' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message). |  |
@@ -37,7 +37,7 @@ Usage of 'src lsif upload':
   -github-token string
     	A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.
   -gitlab-token string
-    	A Gitlab access token with read and write repository scope that Sourcegraph uses to verify you have access to the repository.      
+    	A GitLab access token with 'read_api' scope that Sourcegraph uses to verify you have access to the repository.
   -ignore-upload-failure
     	Exit with status code zero on upload failure.
   -indexer string
@@ -65,23 +65,25 @@ Usage of 'src lsif upload':
 
 Examples:
 
-  Upload an LSIF dump with explicit repo, commit, and upload files:
+  Upload a SCIP index with explicit repo, commit, and upload files:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif
+    	$ src code-intel upload -repo=FOO -commit=BAR -file=index.scip
 
-  Upload an LSIF dump for a subproject:
+  Upload a SCIP index for a subproject:
 
-    	$ src lsif upload -root=cmd/
+    	$ src code-intel upload -root=cmd/
 
-  Upload an LSIF dump when lsifEnforceAuth is enabled:
-  
-      $ src lsif upload -github-token=BAZ   // for Github Code Host
+  Upload a SCIP index when lsifEnforceAuth is enabled:
 
-      $ src lsif upload -gitlab-token=BAZ  // for Gitlab Code Host
+    	$ src code-intel upload -github-token=BAZ, or
+    	$ src code-intel upload -gitlab-token=BAZ
 
-  Upload an LSIF dump when the LSIF indexer does not not declare a tool name.
+  Upload an LSIF index when the LSIF indexer does not not declare a tool name.
 
-    	$ src lsif upload -indexer=lsif-elixir
+    	$ src code-intel upload -indexer=lsif-elixir
+
+  For any of these commands, an LSIF index (default name: dump.lsif) can be
+  used instead of a SCIP index (default name: index.scip).
 
 
 ```

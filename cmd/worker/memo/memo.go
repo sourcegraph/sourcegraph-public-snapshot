@@ -6,21 +6,21 @@ import "sync"
 // and memoizes its result. Multiple calls to Init will result in the
 // underlying constructor being called once. All callers will receive
 // the same return values.
-type MemoizedConstructor struct {
-	ctor  func() (interface{}, error)
-	value interface{}
+type MemoizedConstructor[T any] struct {
+	ctor  func() (T, error)
+	value T
 	err   error
 	once  sync.Once
 }
 
 // NewMemoizedConstructor memoizes the given constructor
-func NewMemoizedConstructor(ctor func() (interface{}, error)) *MemoizedConstructor {
-	return &MemoizedConstructor{ctor: ctor}
+func NewMemoizedConstructor[T any](ctor func() (T, error)) *MemoizedConstructor[T] {
+	return &MemoizedConstructor[T]{ctor: ctor}
 }
 
 // Init ensures that the given constructor has been called exactly
 // once, then returns the constructor's result value and error.
-func (m *MemoizedConstructor) Init() (interface{}, error) {
+func (m *MemoizedConstructor[T]) Init() (T, error) {
 	m.once.Do(func() { m.value, m.err = m.ctor() })
 	return m.value, m.err
 }

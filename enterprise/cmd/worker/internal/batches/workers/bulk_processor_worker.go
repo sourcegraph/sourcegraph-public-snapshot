@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/processor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -45,7 +47,7 @@ type bulkProcessorWorker struct {
 }
 
 func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.ChangesetJob)
 
 		tx, err := b.store.Transact(ctx)

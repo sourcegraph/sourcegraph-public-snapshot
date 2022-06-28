@@ -153,7 +153,7 @@ func scanTemplate(buf []byte) *Template {
 	return &t
 }
 
-func toJSON(atom Atom) interface{} {
+func toJSON(atom Atom) any {
 	switch a := atom.(type) {
 	case Constant:
 		return struct {
@@ -174,7 +174,7 @@ func toJSON(atom Atom) interface{} {
 }
 
 func toJSONString(template *Template) string {
-	var jsons []interface{}
+	var jsons []any
 	for _, atom := range *template {
 		jsons = append(jsons, toJSON(atom))
 	}
@@ -265,6 +265,19 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Author:  m.Commit.Author.Name,
 			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
 			Email:   m.Commit.Author.Email,
+			Content: content,
+		}
+	case *result.CommitDiffMatch:
+		path := m.Path()
+		lang, _ := enry.GetLanguageByExtension(path)
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.Commit.ID),
+			Author:  m.Commit.Author.Name,
+			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Email:   m.Commit.Author.Email,
+			Path:    path,
+			Lang:    lang,
 			Content: content,
 		}
 	}

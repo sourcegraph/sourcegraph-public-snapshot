@@ -16,8 +16,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -39,10 +39,10 @@ func TestServeConfiguration(t *testing.T) {
 		},
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID("!" + spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 
 	data := url.Values{
 		"repoID": []string{"1", "5", "6"},

@@ -26,7 +26,7 @@ interface UnlockAccountPageProps extends RouteComponentProps<{ token: string }> 
     >
 }
 
-export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> = props => {
+export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<UnlockAccountPageProps>> = props => {
     const [error, setError] = useState<Error | null>(null)
     const [loading, setLoading] = useState(true)
     const { token } = props.match.params

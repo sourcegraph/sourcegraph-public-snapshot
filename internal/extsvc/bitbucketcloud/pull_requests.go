@@ -88,7 +88,7 @@ func (c *client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultS
 		return nil, errors.Wrap(err, "parsing URL")
 	}
 
-	return NewPaginatedResultSet(u, func(ctx context.Context, req *http.Request) (*PageToken, []interface{}, error) {
+	return NewPaginatedResultSet(u, func(ctx context.Context, req *http.Request) (*PageToken, []any, error) {
 		var page struct {
 			*PageToken
 			Values []*PullRequestStatus `json:"values"`
@@ -98,7 +98,7 @@ func (c *client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultS
 			return nil, nil, err
 		}
 
-		values := []interface{}{}
+		values := []any{}
 		for _, value := range page.Values {
 			values = append(values, value)
 		}

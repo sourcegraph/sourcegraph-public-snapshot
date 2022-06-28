@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,8 +41,8 @@ func (GitObjectID) ImplementsGraphQLType(name string) bool {
 	return name == "GitObjectID"
 }
 
-func (id *GitObjectID) UnmarshalGraphQL(input interface{}) error {
-	if input, ok := input.(string); ok && git.IsAbsoluteRevision(input) {
+func (id *GitObjectID) UnmarshalGraphQL(input any) error {
+	if input, ok := input.(string); ok && gitserver.IsAbsoluteRevision(input) {
 		*id = GitObjectID(input)
 		return nil
 	}

@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const syncInterval = 24 * time.Hour
@@ -45,9 +46,9 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 	}
 
 	cf := httpcli.ExternalClientFactory
-	sourcer := repos.NewSourcer(database.NewDB(db), cf)
+	sourcer := repos.NewSourcer(database.NewDB(logger, db), cf)
 
-	store := database.NewDB(db).ExternalServices()
+	store := database.NewDB(logger, db).ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
 		versions, err := loadVersions(ctx, logger, store, sourcer)
 		if err != nil {
@@ -86,7 +87,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	}
 
 	for _, svc := range unique {
-		src, err := sourcer(svc)
+		src, err := sourcer(ctx, svc)
 		if err != nil {
 			return versions, err
 		}

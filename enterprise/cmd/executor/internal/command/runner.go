@@ -67,10 +67,16 @@ type ResourceOptions struct {
 
 	// DiskSpace is the maximum amount of disk a container or VM can use.
 	DiskSpace string
+
+	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
+	// volume mounts of Docker containers. This option is used when running privilegled
+	// executors in k8s or docker-compose without requiring the host and node paths to
+	// be identical.
+	DockerHostMountPath string
 }
 
 // NewRunner creates a new runner with the given options.
-func NewRunner(dir string, logger *Logger, options Options, operations *Operations) Runner {
+func NewRunner(dir string, logger Logger, options Options, operations *Operations) Runner {
 	if !options.FirecrackerOptions.Enabled {
 		return &dockerRunner{dir: dir, logger: logger, options: options}
 	}
@@ -86,7 +92,7 @@ func NewRunner(dir string, logger *Logger, options Options, operations *Operatio
 
 type dockerRunner struct {
 	dir     string
-	logger  *Logger
+	logger  Logger
 	options Options
 }
 
@@ -107,7 +113,7 @@ func (r *dockerRunner) Run(ctx context.Context, command CommandSpec) error {
 type firecrackerRunner struct {
 	name       string
 	dir        string
-	logger     *Logger
+	logger     Logger
 	options    Options
 	operations *Operations
 }
@@ -130,6 +136,6 @@ type runnerWrapper struct{}
 
 var defaultRunner = &runnerWrapper{}
 
-func (runnerWrapper) RunCommand(ctx context.Context, command command, logger *Logger) error {
+func (runnerWrapper) RunCommand(ctx context.Context, command command, logger Logger) error {
 	return runCommand(ctx, command, logger)
 }

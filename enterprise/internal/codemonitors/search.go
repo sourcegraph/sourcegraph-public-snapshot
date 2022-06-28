@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"sort"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -55,7 +57,7 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 		span.Finish()
 	}()
 
-	reqBody, err := json.Marshal(map[string]interface{}{"query": gqlSettingsQuery})
+	reqBody, err := json.Marshal(map[string]any{"query": gqlSettingsQuery})
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal request body")
 	}
@@ -109,28 +111,53 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
-		return nil, err
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
 	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
-		return nil, err
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, plan)
 	if err != nil {
-		return nil, err
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
 			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
 		}
+		{
+			// This block is a transitional block that can be removed in a
+			// future version. We need this block to exist when we transition
+			// from timestamp-based code monitors to commit-hash-based
+			// (repo-aware) code monitors.
+			//
+			// When we flip the switch to repo-aware, all existing code
+			// monitors will start executing as repo-aware code monitors.
+			// Without this block, this  would mean all repos would be detected
+			// as "unsearched" and we would start searching from the beginning
+			// of the repo's history, flooding every code monitor user with a
+			// notification with many results.
+			//
+			// Instead, this detects if this monitor has ever been run as a
+			// repo-aware monitor before and snapshots the current state of the
+			// searched repos rather than searching them.
+			hasAnyLastSearched, err := edb.NewEnterpriseDB(db).CodeMonitors().HasAnyLastSearched(ctx, monitorID)
+			if err != nil {
+				return nil, err
+			} else if !hasAnyLastSearched {
+				hook = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+					return snapshotHook(ctx, db, gs, args, monitorID, repoID)
+				}
+			}
+		}
 		planJob, err = addCodeMonitorHook(planJob, hook)
 		if err != nil {
-			return nil, err
+			return nil, errcode.MakeNonRetryable(err)
 		}
 	}
 
@@ -169,7 +196,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, plan)
 	if err != nil {
 		return err
 	}
@@ -177,10 +204,16 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
 		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
+
 	planJob, err = addCodeMonitorHook(planJob, hook)
 	if err != nil {
 		return err
 	}
+
+	// HACK(camdencheek): limit the concurrency of the commit search job
+	// because the db passed into this function might actually be a transaction
+	// and transactions cannot be used concurrently.
+	planJob = limitConcurrency(planJob)
 
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
@@ -188,23 +221,40 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
 
+func limitConcurrency(in job.Job) job.Job {
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
+		switch typedAtom := atom.(type) {
+		case *commit.SearchJob:
+			jobCopy := *typedAtom
+			jobCopy.Concurrency = 1
+			return &jobCopy
+		default:
+			return atom
+		}
+	})
+
+}
+
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0
 	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
-		case *commit.CommitSearch:
+		case *commit.SearchJob:
 			commitSearchJobCount++
-			if commitSearchJobCount > 1 {
-				err = errors.Append(err, ErrInvalidMonitorQuery)
+			if commitSearchJobCount > 1 && err == nil {
+				err = ErrInvalidMonitorQuery
 			}
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
-		case *repos.ComputeExcludedRepos:
-			// ComputeExcludedRepos is fine for code monitor jobs
-			return atom
+		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
+			// ComputeExcludedJob is fine for code monitor jobs, but should be
+			// removed since it's not used
+			return jobutil.NewNoopJob()
 		default:
-			err = errors.Append(err, errors.Errorf("found invalid atom job type %T for code monitor search", atom))
+			if err == nil {
+				err = errors.Errorf("found invalid atom job type %T for code monitor search", atom)
+			}
 			return atom
 		}
 	}), err
@@ -232,6 +282,10 @@ func hookWithID(
 	if err != nil {
 		return err
 	}
+	if stringsEqual(commitHashes, lastSearched) {
+		// Early return if the repo hasn't changed since last search
+		return nil
+	}
 
 	// Merge requested hashes and excluded hashes
 	newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
@@ -248,6 +302,8 @@ func hookWithID(
 
 	// Execute the search
 	err = doSearch(&argsCopy)
+	// ignore any errors from early cancellation
+	err = errors.Ignore(err, errors.IsContextError)
 	if err != nil {
 		return err
 	}
@@ -284,4 +340,20 @@ func gqlURL(queryName string) (string, error) {
 	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
+}
+
+func stringsEqual(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	sort.Strings(left)
+	sort.Strings(right)
+
+	for i := range left {
+		if right[i] != left[i] {
+			return false
+		}
+	}
+	return true
 }

@@ -46,7 +46,9 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
+export const LangStatsInsightCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<LangStatsInsightCreationPageProps>
+> = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(

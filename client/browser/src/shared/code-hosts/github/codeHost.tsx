@@ -1,11 +1,12 @@
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import { render } from 'react-dom'
-import { defer, of } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { defer, fromEvent, of } from 'rxjs'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { LineOrPositionOrRange } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -509,6 +510,24 @@ const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
     return element
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    const matches = hash.match(/(L\d+)/g)
+
+    if (!matches || matches.length > 2) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = matches.map(string => string.slice(1))
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 /**
  * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
@@ -725,6 +744,7 @@ export const githubCodeHost: GithubCodeHost = {
         className: 'Box',
         actionItemClassName: 'btn btn-sm btn-secondary',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
@@ -786,5 +806,9 @@ export const githubCodeHost: GithubCodeHost = {
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
     codeViewsRequireTokenization: true,
 }

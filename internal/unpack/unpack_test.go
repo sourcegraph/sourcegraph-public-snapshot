@@ -357,4 +357,4 @@ func (f *fileInfo) Size() int64 {
 func (f *fileInfo) Mode() fs.FileMode  { return f.mode }
 func (f *fileInfo) ModTime() time.Time { return f.modtime }
 func (f *fileInfo) IsDir() bool        { return f.mode.IsDir() }
-func (f *fileInfo) Sys() interface{}   { return nil }
+func (f *fileInfo) Sys() any           { return nil }

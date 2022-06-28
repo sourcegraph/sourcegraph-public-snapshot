@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
@@ -58,10 +58,13 @@ func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient
 		return apiclient.Job{}, false, nil
 	}
 
+	logger := log.Scoped("dequeue", "Select a job record from the database.")
 	job, err := h.RecordTransformer(ctx, record)
 	if err != nil {
 		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
-			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
+			logger.Error("Failed to mark record as failed",
+				log.Int("recordID", record.RecordID()),
+				log.Error(err))
 		}
 
 		return apiclient.Job{}, false, errors.Wrap(err, "RecordTransformer")
@@ -155,9 +158,12 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 
 // heartbeat calls Heartbeat for the given jobs.
 func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
+
+	logger := log.Scoped("heartbeat", "Write this heartbeat to the database")
+
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
-		log15.Error("Failed to upsert executor heartbeat", "err", err)
+		logger.Error("Failed to upsert executor heartbeat", log.Error(err))
 	}
 
 	knownIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{

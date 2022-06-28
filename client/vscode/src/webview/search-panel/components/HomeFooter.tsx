@@ -24,7 +24,7 @@ interface SearchExamplesProps extends TelemetryProps {
     setQuery: (newState: QueryState) => void
 }
 
-const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
+const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExamplesProps>> = ({
     title,
     subtitle,
     examples,
@@ -70,7 +70,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
     )
 }
 
-export const HomeFooter: React.FunctionComponent<HomeFooterProps> = props => (
+export const HomeFooter: React.FunctionComponent<React.PropsWithChildren<HomeFooterProps>> = props => (
     <>
         <div className={styles.footerContainer}>
             <div className={styles.helpContent}>

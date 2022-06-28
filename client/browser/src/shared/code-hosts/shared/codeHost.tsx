@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import { render as reactDOMRender, Renderer } from 'react-dom'
 import {
     asyncScheduler,
@@ -55,12 +56,14 @@ import {
     property,
     registerHighlightContributions,
     isExternalLink,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import {
@@ -136,10 +139,7 @@ import styles from './codeHost.module.scss'
 
 registerHighlightContributions()
 
-export interface OverlayPosition {
-    top: number
-    left: number
-}
+export type OverlayPosition = { left: number } & ({ top: number } | { bottom: number })
 
 export type ObserveMutations = (
     target: Node,
@@ -275,6 +275,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         context: URLToFileContext
     ) => string
 
+    observeLineSelection?: Observable<LineOrPositionOrRange>
+
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 
     /**
@@ -385,8 +387,6 @@ function initCodeIntelligence({
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
 
-    const relativeElement = document.body
-
     const containerComponentUpdates = new Subject<void>()
 
     subscription.add(
@@ -407,7 +407,7 @@ function initCodeIntelligence({
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
-            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+            map(([, hoverOverlayElement]) => ({ hoverOverlayElement })),
             filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
@@ -517,8 +517,8 @@ function initCodeIntelligence({
                                 return EMPTY
                             }
 
-                            const def = urlForClientCommandOpen(action.action, window.location.hash)
-                            if (!def) {
+                            const defer = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!defer) {
                                 return EMPTY
                             }
 
@@ -534,7 +534,7 @@ function initCodeIntelligence({
 
                                     const actionType = action === definitionAction ? 'definition' : 'reference'
                                     telemetryService.log(`${actionType}CodeHost.click`)
-                                    window.location.href = def
+                                    window.location.href = defer
                                 }),
                                 finalize(() => (token.style.cursor = oldCursor))
                             )
@@ -1240,6 +1240,29 @@ export async function handleCodeHost({
                         addRootReference(rootURI, fileInfo.revision),
                     ])
 
+                    if (codeHost.observeLineSelection) {
+                        codeViewEvent.subscriptions.add(
+                            codeHost.observeLineSelection
+                                .pipe(
+                                    map(lprToSelectionsZeroIndexed),
+                                    distinctUntilChanged(isEqual),
+                                    tap(selections => {
+                                        extensionHostAPI
+                                            .setEditorSelections(viewerId, selections)
+                                            .catch(error =>
+                                                console.error(
+                                                    'Error updating editor selections on extension host',
+                                                    error
+                                                )
+                                            )
+                                    })
+                                )
+
+                                // eslint-disable-next-line rxjs/no-nested-subscribe
+                                .subscribe()
+                        )
+                    }
+
                     // Subscribe for removal
                     codeViewEvent.subscriptions.add(() => {
                         Promise.all([deleteRootReference(rootURI), extensionHostAPI.removeViewer(viewerId)]).catch(
@@ -1373,7 +1396,9 @@ export async function handleCodeHost({
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
+                            .subscribe(([decorations, isLightTheme]) =>
+                                update(flattenDecorations(decorations), isLightTheme)
+                            )
                     )
                 }
 

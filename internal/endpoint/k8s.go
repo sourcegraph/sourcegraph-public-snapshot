@@ -61,7 +61,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 			informer = factory.Core().V1().Endpoints().Informer()
 		}
 
-		handle := func(obj interface{}) {
+		handle := func(obj any) {
 			eps := k8sEndpoints(u, obj)
 
 			log15.Info(
@@ -77,7 +77,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc:    handle,
-			UpdateFunc: func(_, obj interface{}) { handle(obj) },
+			UpdateFunc: func(_, obj any) { handle(obj) },
 		})
 
 		stop := make(chan struct{})
@@ -89,7 +89,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 
 // k8sEndpoints constructs a list of endpoint addresses for u based on the
 // kubernetes resource object obj.
-func k8sEndpoints(u *k8sURL, obj interface{}) []string {
+func k8sEndpoints(u *k8sURL, obj any) []string {
 	var eps []string
 
 	switch o := (obj).(type) {

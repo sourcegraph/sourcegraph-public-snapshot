@@ -15,8 +15,8 @@ Feature | Supported?
 
 There are two ways to sync JVM dependency repositories.
 
-* **LSIF** (recommended): run [`lsif-java`](https://sourcegraph.github.io/lsif-java/) against your JVM codebase and upload the generated index to Sourcegraph using the  [src-cli](https://github.com/sourcegraph/src-cli) command `src lsif upload`. Sourcegraph automatically synchronizes JVM dependency repositories based on the dependencies that are discovered by `lsif-java`.
-* **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the JVM dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to upload LSIF.
+* **Indexing** (recommended): run [`scip-java`](https://sourcegraph.github.io/scip-java/) against your JVM codebase and upload the generated index to Sourcegraph using the [src-cli](https://github.com/sourcegraph/src-cli) command `src code-intel upload`. This is usually setup to run in a CI pipeline. Sourcegraph automatically synchronizes JVM dependency repositories based on the dependencies that are discovered by `scip-java`.
+* **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the JVM dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to upload an index.
 
 ## Credentials
 

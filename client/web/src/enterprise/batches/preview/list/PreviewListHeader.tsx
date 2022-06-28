@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { H5, H3 } from '@sourcegraph/wildcard'
+import { H3, H5 } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 
@@ -9,7 +9,7 @@ export interface PreviewListHeaderProps {
     toggleSelectAll?: () => void
 }
 
-export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = ({
+export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<PreviewListHeaderProps>> = ({
     allSelected,
     toggleSelectAll,
 }) => (

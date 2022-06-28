@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
@@ -41,7 +41,9 @@ interface CaptureGroupCreationFormProps {
     onFormReset: () => void
 }
 
-export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreationFormProps> = props => {
+export const CaptureGroupCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationFormProps>
+> = props => {
     const {
         form,
         title,
@@ -97,27 +99,26 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     className="mb-0 d-flex flex-column"
                 />
 
-                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
-                    <input
-                        type="checkbox"
-                        {...allReposMode.input}
-                        value="all-repos-mode"
-                        checked={allReposMode.input.value}
-                    />
+                <Checkbox
+                    {...allReposMode.input}
+                    wrapperClassName="mb-1 mt-3 font-weight-normal"
+                    id="RunInsightsOnAllRepoInput"
+                    type="checkbox"
+                    value="all-repos-mode"
+                    checked={allReposMode.input.value}
+                    label="Run your insight over all your repositories"
+                />
 
-                    <span className="pl-2">Run your insight over all your repositories</span>
-
-                    <small className="w-100 mt-2 text-muted">
-                        This feature is actively in development. Read about the{' '}
-                        <Link
-                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            limitations here.
-                        </Link>
-                    </small>
-                </label>
+                <small className="w-100 mt-2 text-muted">
+                    This feature is actively in development. Read about the{' '}
+                    <Link
+                        to="/help/code_insights/explanations/current_limitations_of_code_insights"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        limitations here.
+                    </Link>
+                </small>
             </FormGroup>
 
             <hr className="my-4 w-100" />
@@ -229,7 +230,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     type="submit"
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"
@@ -254,7 +255,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     )
 }
 
-const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
+const QueryFieldSubtitle: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
         <Link

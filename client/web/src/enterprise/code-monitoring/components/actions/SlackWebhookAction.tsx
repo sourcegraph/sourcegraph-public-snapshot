@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -18,7 +18,7 @@ export const SEND_TEST_SLACK_WEBHOOK = gql`
     }
 `
 
-export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
+export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,
@@ -102,8 +102,8 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     return (
         <ActionEditor
             title={
-                <div className="d-flex align-items-center">
-                    Send Slack message to channel <ProductStatusBadge className="ml-1" status="experimental" />{' '}
+                <div>
+                    Send Slack message to channel <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
             label="Send Slack message to channel"
@@ -128,19 +128,19 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             onTest={onSendTestMessage}
             _testStartOpen={_testStartOpen}
         >
-            <Alert variant="info" className="mt-4">
+            <Alert aria-live="off" variant="info" className="mt-4">
                 Go to{' '}
                 <Link to="https://api.slack.com/apps" target="_blank" rel="noopener">
                     Slack
                 </Link>{' '}
                 to create a webhook URL.
                 <br />
-                <Link to="https://docs.sourcegraph.com/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
+                <Link to="/help/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
                     Read more about how to set up Slack webhooks in the docs.
                 </Link>
             </Alert>
             <div className="form-group">
-                <label htmlFor="code-monitor-slack-webhook-url">Webhook URL</label>
+                <Label htmlFor="code-monitor-slack-webhook-url">Slack webhook URL</Label>
                 <Input
                     id="code-monitor-slack-webhook-url"
                     type="url"

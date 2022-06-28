@@ -1,12 +1,16 @@
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect, useMemo } from 'react'
 
-import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
+import { BrowserRouter, Route, RouteComponentProps, Switch, useHistory } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
+import { GlobalContributions } from '../../contributions'
+import { createPlatformContext } from '../../platform/context'
 import { ThemePreference } from '../../stores/themeState'
 import { useTheme } from '../../theme'
 
@@ -30,7 +34,7 @@ const EmbeddedNotebookPage = lazyComponent(
 
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
-export const EmbeddedWebApp: React.FunctionComponent = () => {
+export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const { enhancedThemePreference, setThemePreference } = useTheme()
     const isLightTheme = enhancedThemePreference === ThemePreference.Light
 
@@ -47,6 +51,10 @@ export const EmbeddedWebApp: React.FunctionComponent = () => {
         document.documentElement.classList.toggle('theme-dark', !isLightTheme)
     }, [isLightTheme])
 
+    const platformContext = useMemo(() => createPlatformContext(), [])
+    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
+    const history = useHistory()
+
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.
     // It is crucial not to embed any components that an attacker could hijack and use to leak personal information (e.g., the sign-in page).
@@ -55,42 +63,51 @@ export const EmbeddedWebApp: React.FunctionComponent = () => {
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
         <BrowserRouter>
-            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                <div className={styles.body}>
-                    <Suspense
-                        fallback={
-                            <div className="d-flex justify-content-center p-3">
-                                <LoadingSpinner />
-                            </div>
-                        }
-                    >
-                        <Switch>
-                            <Route
-                                path="/embed/notebooks/:notebookId"
-                                render={(props: RouteComponentProps<{ notebookId: string }>) => (
-                                    <EmbeddedNotebookPage
-                                        notebookId={props.match.params.notebookId}
-                                        searchContextsEnabled={true}
-                                        showSearchContext={true}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        authenticatedUser={null}
-                                        isLightTheme={isLightTheme}
-                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                    />
-                                )}
-                            />
-                            <Route
-                                path="*"
-                                render={() => (
-                                    <Alert variant="danger">
-                                        Invalid embedding route, please check the embedding URL.
-                                    </Alert>
-                                )}
-                            />
-                        </Switch>
-                    </Suspense>
-                </div>
-            </WildcardThemeContext.Provider>
+            <CompatRouter>
+                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                    <div className={styles.body}>
+                        <Suspense
+                            fallback={
+                                <div className="d-flex justify-content-center p-3">
+                                    <LoadingSpinner />
+                                </div>
+                            }
+                        >
+                            <Switch>
+                                <Route
+                                    path="/embed/notebooks/:notebookId"
+                                    render={(props: RouteComponentProps<{ notebookId: string }>) => (
+                                        <EmbeddedNotebookPage
+                                            notebookId={props.match.params.notebookId}
+                                            searchContextsEnabled={true}
+                                            showSearchContext={true}
+                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                            authenticatedUser={null}
+                                            isLightTheme={isLightTheme}
+                                            settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                            platformContext={platformContext}
+                                            extensionsController={extensionsController}
+                                        />
+                                    )}
+                                />
+                                <Route
+                                    path="*"
+                                    render={() => (
+                                        <Alert variant="danger">
+                                            Invalid embedding route, please check the embedding URL.
+                                        </Alert>
+                                    )}
+                                />
+                            </Switch>
+                        </Suspense>
+                        <GlobalContributions
+                            extensionsController={extensionsController}
+                            platformContext={platformContext}
+                            history={history}
+                        />
+                    </div>
+                </WildcardThemeContext.Provider>
+            </CompatRouter>
         </BrowserRouter>
     )
 }

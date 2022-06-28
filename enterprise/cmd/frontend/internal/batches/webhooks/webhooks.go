@@ -74,6 +74,8 @@ func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 		serviceID = c.Url
 	case *schema.GitLabConnection:
 		serviceID = c.Url
+	case *schema.BitbucketCloudConnection:
+		serviceID = c.Url
 	}
 	if serviceID == "" {
 		return "", errors.New("could not determine service id")
@@ -189,7 +191,7 @@ func (e httpError) Error() string {
 	return fmt.Sprintf("HTTP %d: %s", e.code, http.StatusText(e.code))
 }
 
-func respond(w http.ResponseWriter, code int, v interface{}) {
+func respond(w http.ResponseWriter, code int, v any) {
 	switch val := v.(type) {
 	case nil:
 		w.WriteHeader(code)

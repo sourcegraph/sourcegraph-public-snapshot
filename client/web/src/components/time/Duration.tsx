@@ -1,19 +1,33 @@
 import React, { useEffect, useReducer } from 'react'
 
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 
-export interface DurationProps {
+import styles from './Duration.module.scss'
+
+export interface DurationProps extends React.HTMLAttributes<HTMLDivElement> {
     /** The start time. */
     start: Date | string
     /** The end time. If not set, new Date() is used. Leave unset for timers. */
     end?: Date | string
+    /**
+     * If true, will ensure the duration is rendered at a stable width, even if the time
+     * is changing (e.g. for a timer). Default is true.
+     */
+    stableWidth?: boolean
 }
 
 /**
  * Prints a duration between two given timestamps or one given one and now.
  * Formats as hh:mm:ss.
  */
-export const Duration: React.FunctionComponent<DurationProps> = ({ start, end }) => {
+export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationProps>> = React.memo(function Duration({
+    start,
+    end,
+    className,
+    stableWidth = true,
+    ...props
+}) {
     // Parse the start date.
     const startDate = typeof start === 'string' ? parseISO(start) : start
     // Parse the end date.
@@ -43,11 +57,21 @@ export const Duration: React.FunctionComponent<DurationProps> = ({ start, end })
     }, [end])
 
     return (
-        <>
-            {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
-        </>
+        <div className={classNames({ [styles.stableWidth]: stableWidth, className })} {...props}>
+            {stableWidth && (
+                // Set the width of the parent with a filler block of full-width digits,
+                // to prevent layout shift if the time changes.
+                // NOTE: This would not be a problem if we used a monospace font instead.
+                <span className={styles.filler} aria-hidden={true}>
+                    00:00:00
+                </span>
+            )}
+            <span className={styles.duration}>
+                {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
+            </span>
+        </div>
     )
-}
+})
 
 /**
  * Returns the number as a string, with a leading 0 if it has only 1 digit.

@@ -74,7 +74,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func mustMarshalJSONString(v interface{}) string {
+func mustMarshalJSONString(v any) string {
 	str, err := jsoniter.MarshalToString(v)
 	if err != nil {
 		panic(err)

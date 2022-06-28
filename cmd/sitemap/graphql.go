@@ -26,8 +26,8 @@ var (
 
 // graphQLQuery describes a general GraphQL query and its variables.
 type graphQLQuery struct {
-	Query     string      `json:"query"`
-	Variables interface{} `json:"variables"`
+	Query     string `json:"query"`
+	Variables any    `json:"variables"`
 }
 
 type graphQLClient struct {
@@ -40,7 +40,7 @@ type graphQLClient struct {
 // requestGraphQL performs a GraphQL request with the given query and variables.
 // search executes the given search query. The queryName is used as the source of the request.
 // The result will be decoded into the given pointer.
-func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, query string, variables interface{}) ([]byte, error) {
+func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, query string, variables any) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     query,
@@ -95,7 +95,7 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 	}
 
 	var errs struct {
-		Errors []interface{}
+		Errors []any
 	}
 	if err := json.Unmarshal(data, &errs); err != nil {
 		return nil, errors.Wrap(err, "Unmarshal errors")

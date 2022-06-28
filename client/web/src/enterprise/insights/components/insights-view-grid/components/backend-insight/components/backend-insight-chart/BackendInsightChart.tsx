@@ -6,8 +6,8 @@ import useResizeObserver from 'use-resize-observer'
 
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList } from '../../../../../../../../charts'
-import { ScrollBox } from '../../../../../../../../views/components/view/content/chart-view-content/charts/line/components/scroll-box/ScrollBox'
+import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
+import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
@@ -41,13 +41,24 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
+    zeroYAxisMin: boolean
     className?: string
     onDatumClick: () => void
+    seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
+    const {
+        locked,
+        isFetchingHistoricalData,
+        content,
+        zeroYAxisMin,
+        className,
+        onDatumClick,
+        seriesToggleState,
+    } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
+    const { setHoveredId, isSeriesSelected, isSeriesHovered } = seriesToggleState
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
@@ -55,7 +66,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
 
     return (
-        <div ref={ref} className={classNames(className, styles.chart, { [styles.chartHorizontal]: isHorizontalMode })}>
+        <div ref={ref} className={classNames(className, styles.root, { [styles.rootHorizontal]: isHorizontalMode })}>
             {width && (
                 <>
                     <ParentSize
@@ -76,21 +87,34 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     width={parent.width}
                                     height={parent.height}
                                     locked={locked}
+                                    className={styles.chart}
                                     onDatumClick={onDatumClick}
+                                    zeroYAxisMin={zeroYAxisMin}
+                                    seriesToggleState={seriesToggleState}
                                     {...content}
                                 />
                             </>
                         )}
                     </ParentSize>
 
-                    <ScrollBox className={styles.legendListContainer}>
+                    <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
                         <LegendList className={styles.legendList}>
                             {content.series.map(series => (
                                 <LegendItem
                                     key={series.id as string}
                                     color={getLineColor(series)}
                                     name={series.name}
-                                    className={styles.legendListItem}
+                                    selected={isSeriesSelected(`${series.id}`)}
+                                    hovered={isSeriesHovered(`${series.id}`)}
+                                    className={classNames(styles.legendListItem, {
+                                        [styles.clickable]: content.series.length > 1,
+                                    })}
+                                    onClick={() =>
+                                        seriesToggleState.toggle(`${series.id}`, mapSeriesIds(content.series))
+                                    }
+                                    onMouseEnter={() => setHoveredId(`${series.id}`)}
+                                    // prevent accidental dragging events
+                                    onMouseDown={event => event.stopPropagation()}
                                 />
                             ))}
                         </LegendList>
@@ -100,3 +124,5 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
         </div>
     )
 }
+
+const mapSeriesIds = <D,>(series: Series<D>[]): string[] => series.map(series => `${series.id}`)

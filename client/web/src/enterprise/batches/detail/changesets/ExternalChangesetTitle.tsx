@@ -11,7 +11,7 @@ interface Props extends Pick<ExternalChangesetFields, 'externalID' | 'externalUR
     className?: string
 }
 
-export const ExternalChangesetTitle: React.FunctionComponent<Props> = ({
+export const ExternalChangesetTitle: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     externalID,
     externalURL,

@@ -37,6 +37,26 @@ export function registerWebviews({
     // TODO if remote files are open from previous session, we need
     // to focus search sidebar to activate code intel (load extension host)
 
+    // Register URI Handler to resolve data sending back from Browser
+    const handleUri = async (uri: vscode.Uri): Promise<void> => {
+        const token = new URLSearchParams(uri.query).get('code')
+        // const returnedNonce = new URLSearchParams(uri.query).get('nonce')
+        // TODO: Decrypt token
+        // TODO: Match returnedNonce to stored nonce
+        if (token && token.length > 8) {
+            await vscode.workspace
+                .getConfiguration('sourcegraph')
+                .update('accessToken', token, vscode.ConfigurationTarget.Global)
+            await vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+        }
+    }
+
+    context.subscriptions.push(
+        vscode.window.registerUriHandler({
+            handleUri,
+        })
+    )
+
     // Open Sourcegraph search tab on `sourcegraph.search` command.
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.search', async () => {

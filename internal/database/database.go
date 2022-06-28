@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -19,6 +21,7 @@ type DB interface {
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
+	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
@@ -54,29 +57,30 @@ var _ DB = (*db)(nil)
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
-func NewDB(inner dbutil.DB) DB {
-	return &db{basestore.NewWithDB(inner, sql.TxOptions{})}
+func NewDB(logger log.Logger, inner *sql.DB) DB {
+	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
 }
 
-func NewDBWith(other basestore.ShareableStore) DB {
-	return &db{basestore.NewWithHandle(other.Handle())}
+func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
+	return &db{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 type db struct {
 	*basestore.Store
+	logger log.Logger
 }
 
-func (d *db) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
-	return d.Handle().DB().QueryContext(ctx, q, args...)
+func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
+	return d.Handle().QueryContext(ctx, q, args...)
 }
 
-func (d *db) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
-	return d.Handle().DB().ExecContext(ctx, q, args...)
+func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
+	return d.Handle().ExecContext(ctx, q, args...)
 
 }
 
-func (d *db) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
-	return d.Handle().DB().QueryRowContext(ctx, q, args...)
+func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
+	return d.Handle().QueryRowContext(ctx, q, args...)
 }
 
 func (d *db) Transact(ctx context.Context) (DB, error) {
@@ -84,7 +88,7 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &db{tx}, nil
+	return &db{logger: d.logger, Store: tx}, nil
 }
 
 func (d *db) Done(err error) error {
@@ -93,6 +97,10 @@ func (d *db) Done(err error) error {
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokensWith(d.Store)
+}
+
+func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
+	return BitbucketProjectPermissionsStoreWith(d.Store)
 }
 
 func (d *db) Authz() AuthzStore {
@@ -112,7 +120,7 @@ func (d *db) SecurityEventLogs() SecurityEventLogsStore {
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
-	return ExternalServicesWith(d.Store)
+	return ExternalServicesWith(d.logger, d.Store)
 }
 
 func (d *db) FeatureFlags() FeatureFlagStore {
@@ -120,15 +128,15 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 }
 
 func (d *db) GitserverRepos() GitserverRepoStore {
-	return NewGitserverReposWith(d.Store)
+	return GitserverReposWith(d.Store)
 }
 
 func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
-	return NewGitserverLocalCloneStoreWith(d.Store)
+	return GitserverLocalCloneStoreWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {
-	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
+	return GlobalStateWith(d.Store)
 }
 
 func (d *db) Namespaces() NamespaceStore {
@@ -156,7 +164,7 @@ func (d *db) Phabricator() PhabricatorStore {
 }
 
 func (d *db) Repos() RepoStore {
-	return ReposWith(d.Store)
+	return ReposWith(d.logger, d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
@@ -164,7 +172,7 @@ func (d *db) SavedSearches() SavedSearchStore {
 }
 
 func (d *db) SearchContexts() SearchContextsStore {
-	return SearchContextsWith(d.Store)
+	return SearchContextsWith(d.logger, d.Store)
 }
 
 func (d *db) Settings() SettingsStore {
@@ -176,7 +184,7 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
-	return &temporarySettingsStore{Store: basestore.NewWithHandle(d.Store.Handle())}
+	return TemporarySettingsWith(d.Store)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
@@ -188,7 +196,7 @@ func (d *db) UserEmails() UserEmailsStore {
 }
 
 func (d *db) UserExternalAccounts() UserExternalAccountsStore {
-	return ExternalAccountsWith(d.Store)
+	return ExternalAccountsWith(d.logger, d.Store)
 }
 
 func (d *db) UserPublicRepos() UserPublicRepoStore {
@@ -196,17 +204,9 @@ func (d *db) UserPublicRepos() UserPublicRepoStore {
 }
 
 func (d *db) Users() UserStore {
-	return UsersWith(d.Store)
+	return UsersWith(d.logger, d.Store)
 }
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
-}
-
-func (d *db) Unwrap() dbutil.DB {
-	// Recursively unwrap in case we ever call `database.NewDB()` with a `database.DB`
-	if unwrapper, ok := d.Handle().DB().(dbutil.Unwrapper); ok {
-		return unwrapper.Unwrap()
-	}
-	return d.Handle().DB()
 }

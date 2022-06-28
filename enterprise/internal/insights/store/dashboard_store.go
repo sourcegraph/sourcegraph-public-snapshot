@@ -9,9 +9,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,13 +22,9 @@ type DBDashboardStore struct {
 }
 
 // NewDashboardStore returns a new DBDashboardStore backed by the given Postgres db.
-func NewDashboardStore(db dbutil.DB) *DBDashboardStore {
-	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+func NewDashboardStore(db edb.InsightsDB) *DBDashboardStore {
+	return &DBDashboardStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *DBDashboardStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new DBDashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
@@ -50,12 +46,13 @@ const (
 )
 
 type DashboardQueryArgs struct {
-	UserID  []int
-	OrgID   []int
-	ID      []int
-	Deleted bool
-	Limit   int
-	After   int
+	UserID           []int
+	OrgID            []int
+	ID               []int
+	WithViewUniqueID *string
+	Deleted          bool
+	Limit            int
+	After            int
 
 	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
 	// and not to return dashboards to users.
@@ -78,6 +75,9 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	}
 	if args.After > 0 {
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
+	}
+	if args.WithViewUniqueID != nil {
+		preds = append(preds, sqlf.Sprintf("%s = ANY(t.uuid_array)", *args.WithViewUniqueID))
 	}
 
 	if !args.WithoutAuthorization {
@@ -352,7 +352,7 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	return nil
 }
 
-func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (int, error) {
+func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err

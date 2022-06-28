@@ -44,7 +44,7 @@ interface Props {
 /**
  * Shows language statistics about the results for a search query.
  */
-export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, stats }) => {
+export const SearchStatsLanguages: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ query, stats }) => {
     const chartData = summarizeSearchResultsStatsLanguages(stats.languages, 0.02).map((language, index) => ({
         ...language,
         name: language.name || UNKNOWN_LANGUAGE,

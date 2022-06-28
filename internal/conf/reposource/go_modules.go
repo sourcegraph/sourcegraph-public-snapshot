@@ -84,6 +84,8 @@ func (d *GoDependency) RepoName() api.RepoName {
 	return api.RepoName("go/" + d.Module.Path)
 }
 
+func (d *GoDependency) Description() string { return "" }
+
 func (d *GoDependency) GitTagFromVersion() string {
 	return d.Module.Version
 }
