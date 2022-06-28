@@ -1,6 +1,6 @@
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -25,14 +25,20 @@ import {
 
 import { BatchChangeClosePage } from './BatchChangeClosePage'
 
-const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/close/BatchChangeClosePage',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const now = new Date()
 
@@ -245,7 +251,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-add('Overview', () => {
+export const Overview: Story = () => {
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
     const batchChange: BatchChangeFields = useMemo(
         () => ({
@@ -272,9 +278,9 @@ add('Overview', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('No open changesets', () => {
+export const NoOpenChangesets: Story = () => {
     const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     const queryEmptyChangesets = useCallback(
@@ -307,4 +313,6 @@ add('No open changesets', () => {
             )}
         </WebStory>
     )
-})
+}
+
+NoOpenChangesets.storyName = 'No open changesets'

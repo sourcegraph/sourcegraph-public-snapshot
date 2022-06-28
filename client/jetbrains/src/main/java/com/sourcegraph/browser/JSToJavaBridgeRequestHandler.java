@@ -14,6 +14,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
@@ -31,11 +34,7 @@ public class JSToJavaBridgeRequestHandler {
         try {
             switch (action) {
                 case "getConfig":
-                    JsonObject configAsJson = new JsonObject();
-                    configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
-                    configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(this.project));
-                    configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(this.project));
-                    return createSuccessResponse(configAsJson);
+                    return createSuccessResponse(ConfigUtil.getConfigAsJson(project));
                 case "getTheme":
                     JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                     return createSuccessResponse(currentThemeAsJson);
@@ -65,19 +64,27 @@ public class JSToJavaBridgeRequestHandler {
                     lastSearchAsJson.addProperty("patternType", lastSearch.getPatternType());
                     lastSearchAsJson.addProperty("selectedSearchContextSpec", lastSearch.getSelectedSearchContextSpec());
                     return createSuccessResponse(lastSearchAsJson);
+                case "previewLoading":
+                    arguments = request.getAsJsonObject("arguments");
+                    // Wait a bit to avoid flickering in case of a fast network
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException ignored) {
+                        }
+                        ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateLoadingIfInTime(Date.from(
+                            Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
+                    }).start();
+                    return createSuccessResponse(null);
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        findPopupPanel.setPreviewContent(previewContent);
-                        findPopupPanel.setSelectionMetadataLabel(previewContent);
-                    });
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.setPreviewContentIfInTime(previewContent));
                     return createSuccessResponse(null);
                 case "clearPreview":
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        findPopupPanel.clearPreviewContent();
-                        findPopupPanel.clearSelectionMetadataLabel();
-                    });
+                    arguments = request.getAsJsonObject("arguments");
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.clearPreviewContentIfInTime(Date.from(
+                        Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
@@ -100,6 +107,10 @@ public class JSToJavaBridgeRequestHandler {
     }
 
     @NotNull
+    public Project getProject() {
+        return project;
+    }
+
     public JBCefJSQuery.Response handleInvalidRequest(@NotNull Exception e) {
         return createErrorResponse("Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage(), convertStackTraceToString(e));
     }

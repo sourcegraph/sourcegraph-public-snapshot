@@ -1,8 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -49,7 +48,11 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
             >
-                <Icon aria-hidden={true} className="test-search-help-dropdown-button-icon" as={HelpCircleOutlineIcon} />
+                <Icon
+                    aria-hidden={true}
+                    className="test-search-help-dropdown-button-icon"
+                    svgPath={mdiHelpCircleOutline}
+                />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
                 <MenuHeader>
@@ -125,7 +128,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                     to={`${documentationUrlPrefix}/code_search/reference/queries`}
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <Icon aria-hidden={true} className="small" as={ExternalLinkIcon} /> All search keywords
+                    <Icon aria-hidden={true} className="small" svgPath={mdiOpenInNew} /> All search keywords
                 </MenuText>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">

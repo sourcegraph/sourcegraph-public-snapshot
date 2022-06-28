@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1373,3 +1375,189 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		}
 	})
 }
+
+func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
+	t.Run("disabled on dotcom", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.BitbucketProjectPermissionJobs(ctx, nil)
+
+		require.ErrorIs(t, err, errDisabledSourcegraphDotCom)
+		require.Nil(t, result)
+
+		// Reset the env var for other tests.
+		envvar.MockSourcegraphDotComMode(false)
+	})
+
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.BitbucketProjectPermissionJobs(ctx, nil)
+
+		require.ErrorIs(t, err, backend.ErrMustBeSiteAdmin)
+		require.Nil(t, result)
+	})
+
+	t.Run("incorrect job status", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		test := &graphqlbackend.Test{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+query {
+  bitbucketProjectPermissionJobs(status:"queueueueud") {
+    totalCount,
+    nodes {
+      InternalJobID,
+      State,
+      Unrestricted,
+      Permissions{
+        bindID,
+        permission
+      }
+    }
+  }
+}
+					`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "Please provide one of the following job statuses: queued, processing, completed, canceled, errored, failed",
+					Path:    []any{"bitbucketProjectPermissionJobs"},
+				},
+			},
+		}
+
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{test})
+	})
+
+	t.Run("all job fields successfully returned", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
+		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
+			{
+				ID:                1,
+				State:             "queued",
+				FailureMessage:    stringPtr("failure massage"),
+				QueuedAt:          mustParseTime("2020-01-01"),
+				StartedAt:         timePtr(mustParseTime("2020-01-01")),
+				FinishedAt:        timePtr(mustParseTime("2020-01-01")),
+				ProcessAfter:      timePtr(mustParseTime("2020-01-01")),
+				NumResets:         1,
+				NumFailures:       2,
+				LastHeartbeatAt:   mustParseTime("2020-01-05"),
+				ExecutionLogs:     []workerutil.ExecutionLogEntry{{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}},
+				WorkerHostname:    "worker-hostname",
+				ProjectKey:        "project-key",
+				ExternalServiceID: 1,
+				Permissions:       []types.UserPermission{{Permission: "read", BindID: "ayy@lmao.com"}},
+				Unrestricted:      false,
+			},
+		}, nil)
+		db.BitbucketProjectPermissionsFunc.SetDefaultReturn(bbProjects)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		test := &graphqlbackend.Test{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+query {
+  bitbucketProjectPermissionJobs(count:1) {
+    totalCount,
+    nodes {
+      InternalJobID,
+      State,
+      StartedAt,
+      FailureMessage,
+      QueuedAt,
+      StartedAt,
+      FinishedAt,
+      ProcessAfter,
+      NumResets,
+      NumFailures,
+      ProjectKey,
+      ExternalServiceID,
+      Unrestricted,
+      Permissions{
+        bindID,
+        permission
+      }
+    }
+  }
+}
+					`,
+			ExpectedResult: `
+{
+  "bitbucketProjectPermissionJobs": {
+    "totalCount": 1,
+    "nodes": [
+	  {
+	    "InternalJobID": 1,
+	    "State": "queued",
+	    "StartedAt": "2020-01-01T00:00:00Z",
+	    "FailureMessage": "failure massage",
+	    "QueuedAt": "2020-01-01T00:00:00Z",
+	    "FinishedAt": "2020-01-01T00:00:00Z",
+	    "ProcessAfter": "2020-01-01T00:00:00Z",
+	    "NumResets": 1,
+	    "NumFailures": 2,
+	    "ProjectKey": "project-key",
+	    "ExternalServiceID": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+	    "Unrestricted": false,
+	    "Permissions": [
+		  {
+		    "bindID": "ayy@lmao.com",
+		    "permission": "READ"
+		  }
+	    ]
+	  }
+    ]
+  }
+}
+`,
+		}
+
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{test})
+	})
+}
+
+func mustParseTime(v string) time.Time {
+	t, err := time.Parse("2006-01-02", v)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func intPtr(v int) *int              { return &v }
+func timePtr(v time.Time) *time.Time { return &v }
+func stringPtr(v string) *string     { return &v }

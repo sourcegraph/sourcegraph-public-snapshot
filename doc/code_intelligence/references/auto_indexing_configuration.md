@@ -153,7 +153,7 @@ indexer_args:
   - lsif-clang
   - compile_commands.json
 
-# Ensure lsif-clang generates the file expected by src lsif upload.
+# Ensure lsif-clang generates the file expected by src code-intel upload.
 outfile: dump.lsif
 ```
 

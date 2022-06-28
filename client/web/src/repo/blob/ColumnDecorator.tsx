@@ -13,7 +13,6 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ColumnDecorator.module.scss'
 
@@ -90,11 +89,17 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                             wrapper.classList.add(styles.wrapper)
                             cell.append(wrapper)
 
-                            // add extra spacers to first and last rows
-                            if (index === 0 || index === table.rows.length - 1) {
+                            // add extra spacers to first and last rows (if table has only one row add both spacers)
+                            if (index === 0) {
                                 const spacer = document.createElement('div')
-                                spacer.classList.add(index === 0 ? 'top-spacer' : 'bottom-spacer')
-                                cell[index === 0 ? 'prepend' : 'append'](spacer)
+                                spacer.classList.add('top-spacer')
+                                cell.prepend(spacer)
+                            }
+
+                            if (index === table.rows.length - 1) {
+                                const spacer = document.createElement('div')
+                                spacer.classList.add('bottom-spacer')
+                                cell.append(spacer)
                             }
                         }
 
@@ -131,38 +136,34 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                 const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
                                 return (
-                                    <Tooltip
+                                    <LinkOrSpan
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
-                                        content={attachment.hoverMessage || null}
-                                        placement="top"
+                                        className={styles.item}
+                                        // eslint-disable-next-line react/forbid-dom-props
+                                        style={{ color: style.color }}
+                                        to={attachment.linkURL}
+                                        // Use target to open external URLs
+                                        target={
+                                            attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
+                                                ? '_blank'
+                                                : undefined
+                                        }
+                                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                                        rel="noreferrer noopener"
+                                        data-tooltip={attachment.hoverMessage || null}
+                                        onMouseEnter={selectRow}
+                                        onMouseLeave={deselectRow}
+                                        onFocus={selectRow}
+                                        onBlur={deselectRow}
                                     >
-                                        <LinkOrSpan
-                                            className={styles.item}
-                                            // eslint-disable-next-line react/forbid-dom-props
-                                            style={{ color: style.color }}
-                                            to={attachment.linkURL}
-                                            // Use target to open external URLs
-                                            target={
-                                                attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
-                                                    ? '_blank'
-                                                    : undefined
-                                            }
-                                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                                            rel="noreferrer noopener"
-                                            onMouseEnter={selectRow}
-                                            onMouseLeave={deselectRow}
-                                            onFocus={selectRow}
-                                            onBlur={deselectRow}
-                                        >
-                                            <span
-                                                className={styles.contents}
-                                                data-line-decoration-attachment-content={true}
-                                                data-contents={attachment.contentText || ''}
-                                            />
-                                        </LinkOrSpan>
-                                    </Tooltip>
+                                        <span
+                                            className={styles.contents}
+                                            data-line-decoration-attachment-content={true}
+                                            data-contents={attachment.contentText || ''}
+                                        />
+                                    </LinkOrSpan>
                                 )
                             }),
                             portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement

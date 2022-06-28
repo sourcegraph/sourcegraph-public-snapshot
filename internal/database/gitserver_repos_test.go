@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -26,7 +28,8 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	repos := types.Repos{
@@ -114,7 +117,8 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 
 func TestIteratePurgeableRepos(t *testing.T) {
 	ctx := context.Background()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	normalRepo := &types.Repo{
 		Name: "normal",
@@ -287,7 +291,8 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			db := NewDB(dbtest.NewDB(t))
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(logger, t))
 			now := time.Now()
 
 			cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
@@ -374,7 +379,8 @@ func TestGitserverReposGetByID(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -402,7 +408,8 @@ func TestGitserverReposGetByName(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -430,7 +437,8 @@ func TestGitserverReposGetByNames(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	type testCase struct {
@@ -501,7 +509,8 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -577,7 +586,8 @@ func TestSetLastError(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -658,7 +668,8 @@ func TestSetRepoSize(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -733,7 +744,8 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -768,7 +780,8 @@ func TestGitserverRepoUpsert(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -834,7 +847,8 @@ func TestGitserverRepoUpsertMany(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create two test repos
@@ -903,7 +917,8 @@ func TestGitserverRepoListReposWithoutSize(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -966,7 +981,8 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{

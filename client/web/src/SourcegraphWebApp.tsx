@@ -7,6 +7,7 @@ import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -391,80 +392,88 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
                                             <ScrollManager history={history}>
                                                 <Router history={history} key={0}>
-                                                    <Route
-                                                        path="/"
-                                                        render={routeComponentProps => (
-                                                            <CodeHostScopeProvider
-                                                                authenticatedUser={authenticatedUser}
-                                                            >
-                                                                <LayoutWithActivation
-                                                                    {...props}
-                                                                    {...routeComponentProps}
+                                                    <CompatRouter>
+                                                        <Route
+                                                            path="/"
+                                                            render={routeComponentProps => (
+                                                                <CodeHostScopeProvider
                                                                     authenticatedUser={authenticatedUser}
-                                                                    viewerSubject={this.state.viewerSubject}
-                                                                    settingsCascade={this.state.settingsCascade}
-                                                                    batchChangesEnabled={this.props.batchChangesEnabled}
-                                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                                        this.state.settingsCascade
-                                                                    )}
-                                                                    batchChangesWebhookLogsEnabled={
-                                                                        window.context.batchChangesWebhookLogsEnabled
-                                                                    }
-                                                                    // Search query
-                                                                    fetchHighlightedFileLineRanges={
-                                                                        this.fetchHighlightedFileLineRanges
-                                                                    }
-                                                                    // Extensions
-                                                                    platformContext={this.platformContext}
-                                                                    extensionsController={this.extensionsController}
-                                                                    telemetryService={eventLogger}
-                                                                    isSourcegraphDotCom={
-                                                                        window.context.sourcegraphDotComMode
-                                                                    }
-                                                                    searchContextsEnabled={
-                                                                        this.props.searchContextsEnabled
-                                                                    }
-                                                                    hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                                    hasUserAddedExternalServices={
-                                                                        this.state.hasUserAddedExternalServices
-                                                                    }
-                                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                                    setSelectedSearchContextSpec={
-                                                                        this.setSelectedSearchContextSpec
-                                                                    }
-                                                                    getUserSearchContextNamespaces={
-                                                                        getUserSearchContextNamespaces
-                                                                    }
-                                                                    fetchAutoDefinedSearchContexts={
-                                                                        fetchAutoDefinedSearchContexts
-                                                                    }
-                                                                    fetchSearchContexts={fetchSearchContexts}
-                                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                                    fetchSearchContext={fetchSearchContext}
-                                                                    createSearchContext={createSearchContext}
-                                                                    updateSearchContext={updateSearchContext}
-                                                                    deleteSearchContext={deleteSearchContext}
-                                                                    isSearchContextSpecAvailable={
-                                                                        isSearchContextSpecAvailable
-                                                                    }
-                                                                    defaultSearchContextSpec={
-                                                                        this.state.defaultSearchContextSpec
-                                                                    }
-                                                                    globbing={this.state.globbing}
-                                                                    streamSearch={aggregateStreamingSearch}
-                                                                    onUserExternalServicesOrRepositoriesUpdate={
-                                                                        this.onUserExternalServicesOrRepositoriesUpdate
-                                                                    }
-                                                                    onSyncedPublicRepositoriesUpdate={
-                                                                        this.onSyncedPublicRepositoriesUpdate
-                                                                    }
-                                                                />
-                                                            </CodeHostScopeProvider>
-                                                        )}
-                                                    />
-                                                    <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
-                                                    <IdeExtensionTracker />
-                                                    <BrowserExtensionTracker />
+                                                                >
+                                                                    <LayoutWithActivation
+                                                                        {...props}
+                                                                        {...routeComponentProps}
+                                                                        authenticatedUser={authenticatedUser}
+                                                                        viewerSubject={this.state.viewerSubject}
+                                                                        settingsCascade={this.state.settingsCascade}
+                                                                        batchChangesEnabled={
+                                                                            this.props.batchChangesEnabled
+                                                                        }
+                                                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                                            this.state.settingsCascade
+                                                                        )}
+                                                                        batchChangesWebhookLogsEnabled={
+                                                                            window.context
+                                                                                .batchChangesWebhookLogsEnabled
+                                                                        }
+                                                                        // Search query
+                                                                        fetchHighlightedFileLineRanges={
+                                                                            this.fetchHighlightedFileLineRanges
+                                                                        }
+                                                                        // Extensions
+                                                                        platformContext={this.platformContext}
+                                                                        extensionsController={this.extensionsController}
+                                                                        telemetryService={eventLogger}
+                                                                        isSourcegraphDotCom={
+                                                                            window.context.sourcegraphDotComMode
+                                                                        }
+                                                                        searchContextsEnabled={
+                                                                            this.props.searchContextsEnabled
+                                                                        }
+                                                                        hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                                                        hasUserAddedExternalServices={
+                                                                            this.state.hasUserAddedExternalServices
+                                                                        }
+                                                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                                        setSelectedSearchContextSpec={
+                                                                            this.setSelectedSearchContextSpec
+                                                                        }
+                                                                        getUserSearchContextNamespaces={
+                                                                            getUserSearchContextNamespaces
+                                                                        }
+                                                                        fetchAutoDefinedSearchContexts={
+                                                                            fetchAutoDefinedSearchContexts
+                                                                        }
+                                                                        fetchSearchContexts={fetchSearchContexts}
+                                                                        fetchSearchContextBySpec={
+                                                                            fetchSearchContextBySpec
+                                                                        }
+                                                                        fetchSearchContext={fetchSearchContext}
+                                                                        createSearchContext={createSearchContext}
+                                                                        updateSearchContext={updateSearchContext}
+                                                                        deleteSearchContext={deleteSearchContext}
+                                                                        isSearchContextSpecAvailable={
+                                                                            isSearchContextSpecAvailable
+                                                                        }
+                                                                        defaultSearchContextSpec={
+                                                                            this.state.defaultSearchContextSpec
+                                                                        }
+                                                                        globbing={this.state.globbing}
+                                                                        streamSearch={aggregateStreamingSearch}
+                                                                        onUserExternalServicesOrRepositoriesUpdate={
+                                                                            this
+                                                                                .onUserExternalServicesOrRepositoriesUpdate
+                                                                        }
+                                                                        onSyncedPublicRepositoriesUpdate={
+                                                                            this.onSyncedPublicRepositoriesUpdate
+                                                                        }
+                                                                    />
+                                                                </CodeHostScopeProvider>
+                                                            )}
+                                                        />
+                                                        <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
+                                                        <IdeExtensionTracker />
+                                                        <BrowserExtensionTracker />
+                                                    </CompatRouter>
                                                 </Router>
                                             </ScrollManager>
                                             <DeprecatedTooltip key={1} />

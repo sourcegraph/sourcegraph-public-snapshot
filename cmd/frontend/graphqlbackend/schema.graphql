@@ -1422,6 +1422,11 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
+    Retrieve a feature flag
+    """
+    featureFlag(name: String!): FeatureFlag!
+
+    """
     Evaluates a feature flag for the current user
     Returns null if feature flag does not exist
     """
@@ -1855,6 +1860,7 @@ enum SearchVersion {
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
@@ -2124,6 +2130,10 @@ type SearchAlert {
     The description.
     """
     description: String
+    """
+    An identifier indicating the kind of alert
+    """
+    kind: String
     """
     "Did you mean: ____" query proposals
     """
@@ -2650,7 +2660,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """
@@ -2932,6 +2942,24 @@ type RepositoryTextSearchIndexedRef {
     indexed is false, this field's value is null.
     """
     indexedCommit: GitObject
+    """
+    EXPERIMENTAL: Information about the files that were not indexed.
+    """
+    skippedIndexed: SkippedIndexed
+}
+
+"""
+EXPERIMENTAL: Information about the files that were not indexed.
+"""
+type SkippedIndexed {
+    """
+    The count of files that were not indexed.
+    """
+    count: BigInt!
+    """
+    The query to retrieve the list of files that were not indexed.
+    """
+    query: String!
 }
 
 """

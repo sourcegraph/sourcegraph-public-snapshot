@@ -17,7 +17,7 @@ import (
 
 func categoryCloneRepositories() category {
 	return category{
-		Name:      "Clone repositories",
+		Name:      depsCloneRepo,
 		DependsOn: []string{depsBaseUtilities},
 		Checks: []*dependency{
 			{
@@ -94,7 +94,18 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 					}
 					return errors.New("could not find dev-private repository either in current directory or one above")
 				},
-				Fix: cmdFix(`git clone git@github.com:sourcegraph/dev-private.git`),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					rootDir, err := root.RepositoryRoot()
+					if err != nil {
+						return errors.Wrap(err, "sourcegraph/sourcegraph should be cloned first")
+					}
+
+					return run.Cmd(ctx, `git clone git@github.com:sourcegraph/dev-private.git`).
+						// Clone to parent
+						Dir(filepath.Join(rootDir, "..")).
+						Run().
+						StreamLines(cio.Verbose)
+				},
 			},
 		},
 	}
@@ -215,5 +226,35 @@ func dependencyGcloud() *dependency {
 
 			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
+	}
+}
+
+func opLoginFix() check.FixAction[CheckArgs] {
+	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		if cio.Input == nil {
+			return errors.New("interactive input required")
+		}
+
+		key, err := cio.Output.PromptPasswordf(cio.Input, "Enter secret key:")
+		if err != nil {
+			return err
+		}
+
+		email, err := cio.Output.PromptPasswordf(cio.Input, "Enter account email:")
+		if err != nil {
+			return err
+		}
+
+		password, err := cio.Output.PromptPasswordf(cio.Input, "Enter account password:")
+		if err != nil {
+			return err
+		}
+
+		return usershell.Command(ctx,
+			"op account add --signin --address team-sourcegraph.1password.com --email", email).
+			Env(map[string]string{"OP_SECRET_KEY": key}).
+			Input(strings.NewReader(password)).
+			Run().
+			StreamLines(cio.Verbose)
 	}
 }

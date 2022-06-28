@@ -7,6 +7,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
@@ -17,8 +19,9 @@ import (
 
 // extensionDBResolver implements the GraphQL type RegistryExtension.
 type extensionDBResolver struct {
-	db database.DB
-	v  *stores.Extension
+	logger log.Logger
+	db     database.DB
+	v      *stores.Extension
 
 	// Supplied as part of list endpoints, but
 	// calculated as part of single-extension endpoints

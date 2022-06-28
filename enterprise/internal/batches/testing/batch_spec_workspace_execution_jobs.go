@@ -91,7 +91,6 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"batch_spec_workspace_execution_jobs.id",
 			"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
 			"batch_spec_workspace_execution_jobs.user_id",
-			"batch_spec_workspace_execution_jobs.access_token_id",
 			"batch_spec_workspace_execution_jobs.state",
 			"batch_spec_workspace_execution_jobs.failure_message",
 			"batch_spec_workspace_execution_jobs.started_at",

@@ -1764,19 +1764,6 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "access_token_id",
-          "Index": 16,
-          "TypeName": "bigint",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "batch_spec_workspace_id",
           "Index": 2,
           "TypeName": "integer",
@@ -2030,22 +2017,22 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "batch_spec_workspace_execution_jobs_last_dequeue",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "batch_spec_workspace_execution_jobs_state",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "batch_spec_workspace_execution_jobs_user_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -2057,13 +2044,6 @@
           "RefTableName": "batch_spec_workspaces",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "batch_spec_workspace_execution_jobs_access_token_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "access_tokens",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -2299,6 +2279,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspaces_id_batch_spec_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -5582,6 +5572,19 @@
           "Comment": "The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance."
         },
         {
+          "Name": "depends_on",
+          "Index": 10,
+          "TypeName": "integer[]",
+          "IsNullable": true,
+          "Default": "'{}'::integer[]",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`."
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -5673,6 +5676,45 @@
           "Comment": "Encodes `reposource.PackageDependency.RepoName`. A name that is \"globally unique\" for a Sourcegraph instance. Used in `repo:...` queries."
         },
         {
+          "Name": "resolution_commit_bytea",
+          "Index": 13,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`."
+        },
+        {
+          "Name": "resolution_lockfile",
+          "Index": 11,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`."
+        },
+        {
+          "Name": "resolution_repository_id",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`."
+        },
+        {
           "Name": "revspec",
           "Index": 3,
           "TypeName": "text",
@@ -5698,12 +5740,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_lockfile_references_repository_name_revspec_package",
+          "Name": "codeintel_lockfile_references_repository_name_revspec_package_r",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -5724,6 +5766,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_lockfiles_references_depends_on",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -5775,6 +5827,19 @@
           "Comment": ""
         },
         {
+          "Name": "lockfile",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Relative path of a lockfile in the given repository and the given commit."
+        },
+        {
           "Name": "repository_id",
           "Index": 2,
           "TypeName": "integer",
@@ -5800,12 +5865,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_lockfiles_repository_id_commit_bytea",
+          "Name": "codeintel_lockfiles_repository_id_commit_bytea_lockfile",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea ON codeintel_lockfiles USING btree (repository_id, commit_bytea)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -9076,6 +9141,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "finished_at_insights_query_runner_jobs_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "insights_query_runner_jobs_cost_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -9106,12 +9181,32 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "insights_query_runner_jobs_series_id_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner_jobs USING btree (series_id, state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "insights_query_runner_jobs_state_btree",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "process_after_insights_query_runner_jobs_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -9462,6 +9557,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "lockfile_indexing_enabled",
+          "Index": 15,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Whether to index the lockfiles in the repositories matched by this policy"
         },
         {
           "Name": "name",
@@ -17465,7 +17573,7 @@
   "Views": [
     {
       "Name": "batch_spec_workspace_execution_jobs_with_rank",
-      "Definition": " SELECT j.id,\n    j.batch_spec_workspace_id,\n    j.state,\n    j.failure_message,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.execution_logs,\n    j.worker_hostname,\n    j.last_heartbeat_at,\n    j.created_at,\n    j.updated_at,\n    j.cancel,\n    j.access_token_id,\n    j.queued_at,\n    j.user_id,\n    q.place_in_global_queue,\n    q.place_in_user_queue\n   FROM (batch_spec_workspace_execution_jobs j\n     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));"
+      "Definition": " SELECT j.id,\n    j.batch_spec_workspace_id,\n    j.state,\n    j.failure_message,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.execution_logs,\n    j.worker_hostname,\n    j.last_heartbeat_at,\n    j.created_at,\n    j.updated_at,\n    j.cancel,\n    j.queued_at,\n    j.user_id,\n    q.place_in_global_queue,\n    q.place_in_user_queue\n   FROM (batch_spec_workspace_execution_jobs j\n     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));"
     },
     {
       "Name": "batch_spec_workspace_execution_queue",

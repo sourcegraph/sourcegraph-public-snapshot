@@ -30,6 +30,7 @@ export interface SearchContextDropdownProps
     className?: string
     onEscapeMenuClose?: () => void
     isExternalServicesUserModeAll?: boolean
+    menuClassName?: string
 }
 
 export const SearchContextDropdown: React.FunctionComponent<
@@ -51,6 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<
         onEscapeMenuClose,
         showSearchContextManagement,
         isExternalServicesUserModeAll,
+        menuClassName,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -115,7 +117,7 @@ export const SearchContextDropdown: React.FunctionComponent<
             a11y={false} /* Override default keyboard events in reactstrap */
             className={className}
         >
-            <Tooltip content={disabledTooltipText} data-testid="dropdown-tooltip">
+            <Tooltip content={disabledTooltipText}>
                 <DropdownToggle
                     className={classNames(
                         styles.button,
@@ -124,6 +126,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                         isOpen && styles.buttonOpen
                     )}
                     data-testid="dropdown-toggle"
+                    data-test-tooltip-content={disabledTooltipText}
                     color="link"
                     disabled={isContextFilterInQuery}
                 >
@@ -159,6 +162,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}
                     closeMenu={onCloseMenu}
+                    className={menuClassName}
                 />
                 {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
                     <SearchContextCtaPrompt

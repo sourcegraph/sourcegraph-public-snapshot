@@ -18,6 +18,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	sentrylib "github.com/getsentry/sentry-go"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -79,7 +81,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
 	defer liblog.Sync()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
@@ -109,7 +112,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	if err != nil {
 		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	// Generally we'll mark the service as ready sometime after the database has been
 	// connected; migrations may take a while and we don't want to start accepting
@@ -188,7 +191,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	go syncScheduler(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
-		rateLimiter := rate.NewLimiter(.05, 1)
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 
@@ -521,7 +524,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
 func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
-	baseRepoStore := database.ReposWith(store)
+	baseRepoStore := database.ReposWith(logger, store)
 
 	doSync := func() {
 		// Don't modify the scheduler if we're not performing auto updates

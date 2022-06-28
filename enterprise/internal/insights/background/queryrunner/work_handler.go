@@ -8,9 +8,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -37,7 +37,7 @@ type workHandler struct {
 	insightsStore   *store.Store
 	repoStore       discovery.RepoStore
 	metadadataStore *store.InsightStore
-	limiter         *rate.Limiter
+	limiter         *ratelimit.InstrumentedLimiter
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
@@ -182,7 +182,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 		return nil, err
 	}
 	if len(streamResults.Errors) > 0 {
-		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
+		return nil, classifiedError(streamResults.Errors, types.SearchCompute)
 	}
 	if len(streamResults.Alerts) > 0 {
 		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
@@ -306,7 +306,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		return nil, StreamingError{Messages: tr.Errors}
+		return nil, classifiedError(tr.Errors, types.Search)
 	}
 	if len(tr.Alerts) > 0 {
 		return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
@@ -384,6 +384,8 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		}
 	}
 
+	// Newly queued queries should be scoped to correct repos however leaving filtering
+	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
 	filteredRecordings, err := filterRecordingsBySeriesRepos(ctx, r.repoStore, series, recordings)
 	if err != nil {
 		return errors.Wrap(err, "filterRecordingsBySeriesRepos")

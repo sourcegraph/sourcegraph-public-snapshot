@@ -62,6 +62,7 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string }
     indexingEnabled?: boolean
+    lockfileIndexingEnabled?: boolean
     isLightTheme: boolean
     telemetryService: TelemetryService
 }
@@ -73,6 +74,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
     queryPolicies = defaultQueryPolicies,
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
+    lockfileIndexingEnabled = window.context?.codeIntelLockfileIndexingEnabled,
     telemetryService,
     ...props
 }) => {
@@ -138,11 +140,13 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 export interface PoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
+    lockfileIndexingEnabled?: boolean
 }
 
 export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
+    lockfileIndexingEnabled = false,
 }) => (
     <>
         <span className={styles.separator} />

@@ -213,7 +213,19 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
-	return conn.Ping(ctx)
+	for {
+		err := conn.Ping(ctx)
+		if err != nil {
+			// If database is starting up we keep waiting
+			if strings.Contains(err.Error(), "database system is starting up") {
+				time.Sleep(5 * time.Millisecond)
+				continue
+			}
+			return errors.Wrapf(err, "failed to ping Sourcegraph Postgres database at %s", dsn)
+		} else {
+			return nil
+		}
+	}
 }
 
 func checkRedisConnection(context.Context) error {
@@ -239,14 +251,14 @@ func checkRedisConnection(context.Context) error {
 
 func checkGitVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		out, err := usershell.CombinedExec(ctx, "git version")
+		out, err := usershell.Command(ctx, "git version").StdOut().Run().String()
 		if err != nil {
 			return errors.Wrapf(err, "failed to run 'git version'")
 		}
 
-		elems := strings.Split(string(out), " ")
+		elems := strings.Split(out, " ")
 		if len(elems) != 3 {
-			return errors.Newf("unexpected output from git server: %s", out)
+			return errors.Newf("unexpected output from git: %s", out)
 		}
 
 		trimmed := strings.TrimSpace(elems[2])
@@ -257,7 +269,7 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
 	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Read .tool-versions")
 	}
 	var version string
 	for _, t := range tools {
@@ -284,7 +296,7 @@ func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error 
 	}
 
 	cmd := "go version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
@@ -307,7 +319,7 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "yarn --version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
@@ -330,11 +342,11 @@ func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "node --version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Run(ctx, cmd).Lines()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
-	trimmed := strings.TrimSpace(data)
+	trimmed := strings.TrimSpace(data[len(data)-1])
 	if len(trimmed) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
@@ -353,7 +365,7 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	cmd := "cargo --version"
-	data, err := usershell.Run(ctx, cmd).String()
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
 	}
@@ -377,5 +389,5 @@ func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error
 	if err != nil && strings.Contains(err.Error(), "already added") {
 		return nil
 	}
-	return err
+	return errors.Wrap(err, "asdf plugin-add")
 }

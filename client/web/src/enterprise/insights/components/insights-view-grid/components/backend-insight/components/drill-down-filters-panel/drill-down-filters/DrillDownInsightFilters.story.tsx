@@ -108,7 +108,6 @@ export const DrillDownFiltersShowcase: Story = () => (
             initialValues={FILTERS}
             originalValues={ORIGINAL_FILTERS}
             visualMode={FilterSectionVisualMode.CollapseSections}
-            showSeriesDisplayOptions={true}
             onFiltersChange={console.log}
             onFilterSave={console.log}
             onCreateInsightRequest={console.log}
@@ -131,7 +130,6 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
                 onFiltersChange={console.log}
                 onFilterSave={console.log}
                 onCreateInsightRequest={console.log}
-                showSeriesDisplayOptions={false}
                 onSeriesDisplayOptionsChange={console.log}
                 originalSeriesDisplayOptions={{
                     limit: 20,

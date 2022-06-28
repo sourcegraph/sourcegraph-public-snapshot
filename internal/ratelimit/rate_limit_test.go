@@ -20,7 +20,7 @@ func TestDefaultRateLimiter(t *testing.T) {
 
 	r := NewRegistry()
 	got := r.Get("unknown")
-	want := &InstrumentedLimiter{urn: "unknown", Limiter: rate.NewLimiter(rate.Limit(2), defaultBurst)}
+	want := NewInstrumentedLimiter("unknown", rate.NewLimiter(rate.Limit(2), defaultBurst))
 	assert.Equal(t, want, got)
 }
 
@@ -28,14 +28,14 @@ func TestRegistry(t *testing.T) {
 	r := NewRegistry()
 
 	got := r.Get("404")
-	want := &InstrumentedLimiter{urn: "404", Limiter: rate.NewLimiter(rate.Inf, defaultBurst)}
+	want := NewInstrumentedLimiter("404", rate.NewLimiter(rate.Inf, defaultBurst))
 	assert.Equal(t, want, got)
 
-	rl := &InstrumentedLimiter{urn: "extsvc:github:1", Limiter: rate.NewLimiter(10, 10)}
+	rl := NewInstrumentedLimiter("extsvc:github:1", rate.NewLimiter(10, 10))
 	got = r.getOrSet("extsvc:github:1", rl)
 	assert.Equal(t, rl, got)
 
-	got = r.getOrSet("extsvc:github:1", &InstrumentedLimiter{urn: "extsvc:githu:1", Limiter: rate.NewLimiter(1000, 10)})
+	got = r.getOrSet("extsvc:github:1", NewInstrumentedLimiter("extsvc:githu:1", rate.NewLimiter(1000, 10)))
 	assert.Equal(t, rl, got)
 
 	assert.Equal(t, 2, r.Count())
@@ -43,8 +43,8 @@ func TestRegistry(t *testing.T) {
 
 func TestLimitInfo(t *testing.T) {
 	r := NewRegistry()
-	r.getOrSet("extsvc:github:1", &InstrumentedLimiter{urn: "extsvc:github:1", Limiter: rate.NewLimiter(rate.Inf, 1)})
-	r.getOrSet("extsvc:github:2", &InstrumentedLimiter{urn: "extsvc:github:2", Limiter: rate.NewLimiter(10, 1)})
+	r.getOrSet("extsvc:github:1", NewInstrumentedLimiter("extsvc:github:1", rate.NewLimiter(rate.Inf, 1)))
+	r.getOrSet("extsvc:github:2", NewInstrumentedLimiter("extsvc:github:2", rate.NewLimiter(10, 1)))
 
 	info := r.LimitInfo()
 

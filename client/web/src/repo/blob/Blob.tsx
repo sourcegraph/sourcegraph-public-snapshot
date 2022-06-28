@@ -70,6 +70,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import {
     AbsoluteRepoFile,
     FileSpec,
@@ -762,7 +763,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
 
-                if (!firstRow.querySelector('.top-spacer')) {
+                if (firstRow && !firstRow.querySelector('.top-spacer')) {
                     for (const cell of firstRow.cells) {
                         const spacer = document.createElement('div')
                         spacer.classList.add('top-spacer')
@@ -770,7 +771,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     }
                 }
 
-                if (!lastRow.querySelector('.bottom-spacer')) {
+                if (lastRow && !lastRow.querySelector('.bottom-spacer')) {
                     for (const cell of lastRow.cells) {
                         const spacer = document.createElement('div')
                         spacer.classList.add('bottom-spacer')
@@ -785,12 +786,17 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
+    const logEventOnCopy = useCallback(() => {
+        props.telemetryService.log(...codeCopiedEvent('blob'))
+    }, [props.telemetryService])
+
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
+                    onCopy={logEventOnCopy}
                     dangerouslySetInnerHTML={{
                         __html: blobInfo.html,
                     }}

@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -24,8 +26,9 @@ func TestReconcilerWorkerView(t *testing.T) {
 	}
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -69,7 +72,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	})
 	t.Run("In batch change with deleted user namespace", func(t *testing.T) {
 		deletedUser := ct.CreateTestUser(t, db, true)
-		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
+		if err := database.UsersWith(logger, cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
 		userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
@@ -109,7 +112,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	})
 	t.Run("In batch change with deleted namespace but another batch change with an existing one", func(t *testing.T) {
 		deletedUser := ct.CreateTestUser(t, db, true)
-		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
+		if err := database.UsersWith(logger, cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
 		userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
