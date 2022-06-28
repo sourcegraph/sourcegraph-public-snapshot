@@ -73,9 +73,11 @@ func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers [
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
 
+	r.uploadCacheMutex.Lock()
 	for i := range uploads {
 		r.uploadCache[uploads[i].ID] = uploads[i]
 	}
+	r.uploadCacheMutex.Unlock()
 
 	return filterUploadsWithCommits(ctx, r.cachedCommitChecker, uploads)
 }
@@ -167,7 +169,11 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifsto
 		a = actor.FromContext(ctx)
 	}
 	for _, location := range locations {
-		adjustedLocation, err := r.adjustLocation(ctx, r.uploadCache[location.DumpID], location)
+		r.uploadCacheMutex.RLock()
+		upload := r.uploadCache[location.DumpID]
+		r.uploadCacheMutex.RUnlock()
+
+		adjustedLocation, err := r.adjustLocation(ctx, upload, location)
 		if err != nil {
 			return nil, err
 		}
