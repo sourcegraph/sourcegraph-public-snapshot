@@ -46,6 +46,8 @@
 
 Updating the form below will recalculate an estimate for the resources you can use to configure your Sourcegraph deployment.
 
+The output is estimated based on existing data we collected from current running deployments.
+
 <form id="root"></form>
 
 ## Additional information
