@@ -69,7 +69,7 @@ export function renderReactApp(): void {
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
-            initialAuthenticatedUser={initialAuthenticatedUser}
+            authenticatedUser={initialAuthenticatedUser}
             telemetryService={telemetryService}
         />,
         node
