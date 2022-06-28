@@ -249,7 +249,6 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 	reposStore.ListExternalServicePrivateRepoIDsByUserIDFunc.SetDefaultReturn([]api.RepoID{2, 3, 4}, nil)
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	var touchUserPermsCalled bool
 	perms := edb.NewMockPermsStore()
 	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
 		wantIDs := []int32{1, 2, 3, 4, 5}
@@ -258,7 +257,6 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 	})
 	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 	perms.TouchUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32) error {
-		touchUserPermsCalled = true
 		return nil
 	})
 
@@ -276,13 +274,10 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected an error")
 		}
-		if !touchUserPermsCalled {
-			t.Fatal("TouchUserPermissions should have been called")
-		}
+		mockrequire.CalledN(t, perms.TouchUserPermissionsFunc, 1)
 	})
 
 	// Setup for fetchUserPermsViaExternalServices
-	touchUserPermsCalled = false
 	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{}, nil
 	})
@@ -296,9 +291,7 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected an error")
 		}
-		if !touchUserPermsCalled {
-			t.Fatal("TouchUserPermissions should have been called")
-		}
+		mockrequire.CalledN(t, perms.TouchUserPermissionsFunc, 2)
 	})
 }
 
