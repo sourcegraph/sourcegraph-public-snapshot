@@ -16,7 +16,7 @@ To install Sourcegraph on Google Kubernetes Engine, you must deploy onto a suppo
 helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
-## Hardware and Service Requirements
+## Hardware & service requirements
 
 Before beginning the deployment we recommend reviewing the required hardware and service resource requirements.
 
@@ -24,7 +24,7 @@ Use the [resource estimator](../resource_estimator.md) to determine the resource
 
 ## Steps {#gke-steps}
 
-### Create Override File & Add Deployment Configurations
+### Create override file & add deployment configurations
 
 Create your override file and add in any configuration override settings you need - see [configuration](./helm/#configuration) documentation for more information on override files and the options for custom configurations.
 
@@ -86,7 +86,7 @@ It will take some time for the load balancer to be fully ready. Use the followin
 kubectl describe ingress sourcegraph-frontend
 ```
 
-### Create a DNS Record
+### Create a DNS record
 
 Once you have obtained the allocated address of the load balancer, you should create a DNS A record for the `sourcegraph.company.com` domain. It is recommended to enable TLS and we recommend using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE.
 
@@ -106,6 +106,7 @@ frontend:
 If you prefer to use your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
 1. Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
+
 ```yaml
 apiVersion: v1
 kind: Secret

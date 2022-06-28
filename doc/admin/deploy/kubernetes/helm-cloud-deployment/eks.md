@@ -18,7 +18,7 @@ To install Sourcegraph on AWS Elastic Kubernetes Service, you must deploy onto a
 helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
-## Hardware and Service Requirements
+## Hardware & service requirements
 
 Before beginning the deployment we recommend reviewing the required hardware and service resource requirements.
 
@@ -26,7 +26,7 @@ Use the [resource estimator](../resource_estimator.md) to determine the resource
 
 ## Steps {#eks-steps}
 
-### Create Override File & Add Deployment Configurations
+### Create override file & add deployment configurations
 
 Create an override file and add any configuration override settings you need. See the [configuration](./helm/#configuration) documentation for more information on override files and the options for custom configurations.
 
@@ -71,7 +71,7 @@ It will take some time for the load balancer to be fully ready. Use the followin
 kubectl describe ingress sourcegraph-frontend
 ```
 
-### Create a DNS Record
+### Create a DNS record
 
 Once you have obtained the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
 
@@ -86,13 +86,13 @@ frontend:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```
 
-### Validate the Deployment
+### Validate the deployment
 
 Sourcegraph should now be available via the address set.
 
 Navigate to the URL in your browser to ensure you now have access to the Sourcegraph UI to create the initial administrator account.
 
-### Sourcegraph Configuration
+### Sourcegraph configuration
 
 At this stage the deployment is considered to be complete. You are now ready to configure your Sourcegraph instance (site configuration, code host configuration, search configuration etc). Please see our [Configuring Sourcegraph](../../config/index.md) documentation for guidance.
 

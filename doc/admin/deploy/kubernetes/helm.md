@@ -8,7 +8,7 @@
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
-> WARNING: Sourcegraph currently does not support migration from an existing Kubernetes Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. This guide is recommended for new installations of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
+> ⚠️ WARNING: Sourcegraph currently does not support migration from an existing Kubernetes Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. This guide is recommended for new installations of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
 
 ## Why Helm?
 
@@ -26,13 +26,13 @@ To deploy Sourcegraph with Kubernetes and Helm you will typically follow these s
 
 Deploying Sourcegraph with Kubernetes with Helm has the following requirements:
 
-- You must have a [Sourcegraph Enterprise license](configure.md#add-license-key) if your instance will have more than 10 users.
-- You must have a basic understanding of [Helm charts and how to create them.](https://helm.sh/)
-- You must have a running Kubernetes cluster ***[TODO link to docs]***
-- You must be using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) 
-- You must have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
-- You must have the [Helm 3 CLI](https://helm.sh/docs/intro/install/) installed
-- You have a cloud account (EKS, AKS, GKE etc.) or access to a bare metal instance with ability to launch instances and persistent volumes (SSDs recommended).
+- A [Sourcegraph Enterprise license](configure.md#add-license-key) if your instance will have more than 10 users.
+- A basic understanding of [Helm charts and how to create them.](https://helm.sh/)
+- Access to a running Kubernetes cluster
+  - Using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/)
+  - Have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
+- Have the [Helm 3 CLI](https://helm.sh/docs/intro/install/) installed
+- A cloud account (EKS, AKS, GKE etc.) or access to a bare metal instance with ability to launch instances and persistent volumes (SSDs recommended).
 
 ## Quickstart
 
@@ -63,10 +63,10 @@ This section provides high-level guidance on deploying Sourcegraph via Kubernete
 
 You can install Sourcegraph on the supported virtualization platform of your choice. Follow these links for cloud-specific guides on preparing the environment and installing Sourcegraph:
 
-- [Deploy Sourcegraph with Kubernetes on Amazon Elastic Kubernetes Service (EKS)](./cloud-deployment-guides/eks.md)
-- [Deploy Sourcegraph with Kubernetes on Google Kubernetes Engine (GKE)](./cloud-deployment-guides/gke.md)
-- [Deploy Sourcegraph with Kubernetes on Azure Managed Kubernetes Service (AKS)](./cloud-deployment-guides/aks.md)
-- [Deploy Sourcegraph with Kubernetes on other Cloud providers or on-prem](./cloud-deployment-guides/other-cloud.md)
+- [Deploy Sourcegraph with Kubernetes on Amazon Elastic Kubernetes Service (EKS)](./helm-cloud-deployment-guides/eks.md)
+- [Deploy Sourcegraph with Kubernetes on Google Kubernetes Engine (GKE)](./helm-cloud-deployment-guides/gke.md)
+- [Deploy Sourcegraph with Kubernetes on Azure Managed Kubernetes Service (AKS)](./helm-cloud-deployment-guides/aks.md)
+- [Deploy Sourcegraph with Kubernetes on other Cloud providers or on-prem](./helm-cloud-deployment-guides/other-cloud.md)
 
 ## Configuration
 
@@ -91,7 +91,7 @@ helm upgrade --install --values ./override.yaml --version 3.41.0 sourcegraph sou
 
 For more information our common Helm chart configurations see our [Examples](./helm-examples.md).
 
-### Advanced Helm Chart Configurations
+### Advanced Helm chart configurations
 
 Sourcegraph's Helm chart is new and our defaults in our `values.yaml` and customizations available via an override file may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
 
@@ -122,7 +122,7 @@ An example of a subchart can be found in the [examples/subchart](https://github.
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 
-> WARNING: Skipping minor version upgrades of Sourcegraph is not supported. You must upgrade one minor version at a time - e.g. v3.26 –> v3.27 –> v3.28.
+> ⚠️ WARNING: Skipping minor version upgrades of Sourcegraph is not supported. You must upgrade one minor version at a time - e.g. v3.26 –> v3.27 –> v3.28.
 
 ### Upgrading
 
@@ -162,7 +162,7 @@ You can revert to a previous version with the following command:
 
 Sourcegraph only supports rolling back one minor version, due to database compatibility guarantees.
 
-### Database Migrations
+### Database migrations
 
 By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
@@ -170,11 +170,11 @@ In some situations, administrators may wish to migrate their databases before up
 
 To execute the database migrations independently, you can use the [Sourcegraph Migrator] helm chart.
 
-## Reviewing Changes
+## Reviewing changes
 
 When configuring an override file or performing an upgrade, we recommend reviewing the changes before applying them.
 
-### Using helm template
+### Using `helm template`
 
 The helm template command can be used to render manifests for review and comparison. This is particularly useful to confirm the effect of changes to your override file. This approach does not require access to the Kubernetes server.
 
@@ -200,7 +200,7 @@ For example:
       diff original_manifests new_manifests
    ```
 
-### Using helm upgrade --dry-run
+### Using `helm upgrade --dry-run`
 
 Similar to `helm template`, the `helm upgrade --dry-run` command can be used to render manifests for review and comparison. This requires access to the Kubernetes server but has the benefit of validating the Kubernetes manifests.
 
@@ -220,7 +220,7 @@ If you are having difficulty tracking down the cause of an issue, add the `--deb
 
 The `--debug` flag will enable verbose logging and additional context, including the computed values used by the chart. This is useful when confirming your overrides have been interpreted correctly.
 
-### Using Helm Diff plugin
+### Using `helm diff` plugin
 
 The [Helm Diff] plugin can provide a diff against a deployed chart. It is similar to the `helm upgrade --dry-run` option but can run against the live deployment. This requires access to the Kubernetes server.
 

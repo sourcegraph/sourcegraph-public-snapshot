@@ -1,11 +1,12 @@
 # Configure Sourcegraph with Kubernetes
 
-> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration). 
-> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our [Helm guide](helm.md) for more information.
+**TODO: confirm these steps are required for Helm or non-helm correct ie. ingress, storage class etc. AFAIK this isn't listed on the other Helm docs**
 
-Configuring a [Sourcegraph Kubernetes cluster](./index.md) without Helm is done by applying manifest files and with simple
-`kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements
-of your deployment environment.
+> ⚠️ WARNING: This guide applies exclusively to a Kubernetes deployment **without Helm**. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration).
+>
+> If you have not initiated your Sourcegraph deployment, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies our upgrade process. See our [Helm guide](helm.md) for more information.
+
+Configuring a [Sourcegraph Kubernetes cluster](./index.md) without Helm is done by applying manifest files and with simple `kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements of your deployment environment.
 
 ## Featured guides
 
@@ -17,7 +18,7 @@ of your deployment environment.
   </a>
 
   <a href="./kustomize#overlays" class="btn" alt="Overlays">
-   <span>Overlays</span>
+   <span>Kustomize Overlays</span>
    </br>
    Learn about Kustomize, how to use our provided overlays, and how to create your own.
   </a>
@@ -31,95 +32,95 @@ of your deployment environment.
 
 ## Getting started
 
-We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference repository](./index.md#reference-repository) to track your configuration changes in Git.
-**This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
+We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference repository](./index.md#reference-repository) to track your configuration changes in Git. **This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 
-    > WARNING: Forks of public repos are also public. If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should duplicate the reference repository and make your copy private.
+Forks of public repos are also public. If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should duplicate the reference repository and make your copy private.
 
-    <span class="virtual-br"></span>
+> ℹ️ We do not recommend storing secrets in the repository itself - instead we highly recommend leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
 
-    > NOTE: We do not recommend storing secrets in the repository itself - instead, consider leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
-
-- Create a fork or private duplicate
+### Create a fork or private duplicate
   
-  [Create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
+[Create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
 
-  Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository as follows:
+Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository as follows:
 
-  Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository. 
+> ⚠️ WARNING: Some of the following steps require cluster access. Ensure you can [access your Kubernetes cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl` before proceeding.
 
-    ```bash
-  git clone --bare https://github.com/sourcegraph/deploy-sourcegraph/
-  ```
+**TODO: None of these steps require kubectl commands is this supposed to be somewhere else?**
+
+1. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository.
+
+```sh
+git clone --bare https://github.com/sourcegraph/deploy-sourcegraph/
+```
   
-  Navigate to the bare clone and mirror push it to your private repository.
+2. Navigate to the bare clone and mirror push it to your private repository.
 
-    ```bash
+```sh
   cd deploy-sourcegraph.git
   git push --mirror https://github.com/<you/private-repository>.git
-  ```
+```
 
-  Remove your local bare clone. 
-    ```bash
+3. Remove your local bare clone.
+
+```sh
   cd ..
   rm -rf deploy-sourcegraph.git
-  ```
+```
 
-- Clone your fork using the repository's URL.
+4. Clone your fork using the repository's URL. The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must clone the entire repository onto your server.
 
-    > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+```sh
+git clone https://github.com/<you/private-repository>.git
+```
 
-  ```bash
-  git clone https://github.com/<you/private-repository>.git
-  ```
+5. Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](update.md).
 
-- Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](update.md).
+```sh
+git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
+```
 
-  ```bash
-  git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
-  ```
+6. Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
-- Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
-
-  ```bash
-  export SOURCEGRAPH_VERSION="v3.41.0"
-  git checkout $SOURCEGRAPH_VERSION -b release
-  ```
-
-Some of the following instructions require cluster access. Ensure you can [access your Kubernetes cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
+```sh
+export SOURCEGRAPH_VERSION="v3.41.0"
+git checkout $SOURCEGRAPH_VERSION -b release
+```
 
 ### Customizations
 
 To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](kustomize.md).
 
+**TODO: Should we be recommending that we have two options here: Kustomize and Helm?**
+
 This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](./operations.md#applying-manifests).
+
+**TODO: Is there a reason we have a separate Ops page for K8 w/o Helm?Is this info generalizable? Should it be linked in the main Sourcegraph with Kubernetes page?**
 
 ## Configure a storage class
 
 Sourcegraph by default requires a storage class for all persisent volumes claims. By default this storage class is called `sourcegraph`. This storage class must be configured before applying the base configuration to your cluster.
 
-- Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
+1. Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
 
-- The sourcegraph StorageClass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
+2. The sourcegraph StorageClass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
 
-- The sourcegraph StorageClass also allows the persistent volumes to expand their storage capacity by increasing the
+3. The sourcegraph StorageClass also allows the persistent volumes to expand their storage capacity by increasing the
  size of the related persistent volume claim.
 
-- This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
+4. This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
 
-```bash
+```sh
 kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ```
 
-See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
+[Learn more](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) about patching persistent volumes with Kubernetes. 
 
 ### Google Cloud Platform (GCP)
 
-#### Kubernetes 1.19 and higher
+To configure the Storage Class on GCP:
 
-1. Please read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
-
-
+1. Read read and follow the [official GCP documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 2. Add the following Kubernetes manifest to the `base` directory of your fork:
 
 ```yaml
@@ -138,16 +139,14 @@ allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
 ```
 
-[Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
+[Learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) about GCP's persistent disk CSI driver.
 
 ### Amazon Web Services (AWS)
 
-#### Kubernetes 1.19 and higher
+To configure the Storage Class on GCP:
 
-1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
-
-1. Add the following Kubernetes manifest to the `base` directory of your fork:
-
+1. Follow the [official AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
+2. Add the following Kubernetes manifest to the `base` directory of your fork:
 
 ```yaml
 # base/sourcegraph.StorageClass.yaml
@@ -165,18 +164,16 @@ volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 ```
 
-[Additional documentation](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
+[Learn more](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) about Amazon Elastic Block Store CSI.
 
 ### Azure
 
-#### Kubernetes 1.19 and higher
+> ⚠️ WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for [CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact
 
-> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
+To configure the Storage Class on Azure:
 
-1. Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
-
+1. Follow the [official documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the Container Storage Interface (CSI) driver on Azure Kubernetes Service (AKS).
 2. Add the following Kubernetes manifest to the `base` directory of your fork:
-
 
 ```yaml
 # base/sourcegraph.StorageClass.yaml
@@ -194,9 +191,7 @@ volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 ```
 
-
-[Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
-
+[Learn more](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) about CSI Storage Drivers on Azure.
 
 ### Other cloud providers
 
@@ -218,23 +213,23 @@ allowVolumeExpansion: true
 
 ## Configure network access
 
-You need to make the main web server accessible over the network to external users.
+You need to make the main web server accessible over the network to external users. To do so, we recommend using an ingress controller.
 
-There are a few approaches, but using an ingress controller is recommended.
+### Ingress controller
 
-### Ingress controller (recommended)
-
-For production environments, we recommend using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/).
+For production environments, we recommend using [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) to configure [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/).
 
 - As part of our base configuration, we install an ingress for [sourcegraph-frontend](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml). It installs rules for the default ingress, see comments to restrict it to a specific host.
 
 - In addition to the sourcegraph-frontend ingress, you'll need to install the NGINX ingress controller (ingress-nginx).
 
-- Follow the instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to create the ingress controller.
+- Follow the official [Kubernetes documentation](https://kubernetes.github.io/ingress-nginx/deploy/) to create the ingress controller.
 
 - Add the files to [configure/ingress-nginx](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx), including an [install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) file which applies the relevant manifests.
 
-- We include sample generic-cloud manifests as part of this repository, but please follow the official instructions for your cloud provider.
+- We include [sample generic-cloud](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/cloud-generic.yaml) manifests as part of this repository, but please follow the official instructions for your cloud provider.
+
+**TODO: is that link correct for sample generic cloud manifests**
 
 - Add the [configure/ingress-nginx/install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) command to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) and commit the change:
 
@@ -242,9 +237,7 @@ For production environments, we recommend using the [ingress-nginx](https://kube
 echo ./configure/ingress-nginx/install.sh >> create-new-cluster.sh
 ```
 
-- Once the ingress has acquired an external address, you should be able to access Sourcegraph using that.
-
-- You can check the external address by running the following command and looking for the `LoadBalancer` entry:
+- Once the ingress has acquired an external address, you should be able to access Sourcegraph using that. You can check the external address by running the following command and looking for the `LoadBalancer` entry:
 
 ```bash
 kubectl -n ingress-nginx get svc
@@ -267,10 +260,8 @@ sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 
 ### NGINX service
 
-In cases where ingress controllers cannot be created, creating an explicit NGINX service is a viable
-alternative. See the files in the [configure/nginx-svc](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc) folder for an
-example of how to do this via a NodePort service (any other type of Kubernetes service will also
-work):
+In cases where ingress controllers cannot be created, creating an explicit NGINX service is a viable alternative. See the files in the [configure/nginx-svc](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc) folder for an
+example of how to do this via a NodePort service (any other type of Kubernetes service will also work):
 
 - Modify [configure/nginx-svc/nginx.ConfigMap.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml) to
    contain the TLS certificate and key for your domain.
@@ -285,7 +276,9 @@ work):
 
 ### Network rule
 
-> NOTE: this setup path does not support TLS.
+**TODO: is this a subheader under NGINX server? Is this a subheader under ingress controller? This is a confusing section**
+
+> ⚠️ WARNING: This setup path does not support TLS.
 
 Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least one node.
 
@@ -329,6 +322,8 @@ kubectl get node $NODE -o wide
 ```
 
 #### [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
+
+**TODO: is this a subheader under NGINX server? Is this a subheader under ingress controller? This is a confusing section**
 
 Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL_ADDR` is the address of _any_ node in the cluster.
 

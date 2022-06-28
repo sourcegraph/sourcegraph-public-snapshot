@@ -4,7 +4,7 @@
 Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code intelligence.
 </p>
 
-> NOTE: Sourcegraph recommends [using Helm to deploy Sourcegraph](helm.md).
+> ℹ️ Sourcegraph recommends [using Helm to deploy Sourcegraph](helm.md).
 > This page covers a Kubernetes manual deployment, using `kubectl` to deploy manifests. This is only recommended if Helm cannot be used in your Kubernetes enviroment. See the Helm guide for more information on why Helm is preferable.
 
 <div class="cta-group">
@@ -18,9 +18,11 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 
 Our Kubernetes support has the following requirements:
 
-- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
-- Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later (check kubectl docs for backward and forward compatibility with Kubernetes versions)
-- Support for Persistent Volumes (SSDs recommended)
+- A [Sourcegraph Enterprise license](configure.md#add-license-key) if your instance will have more than 10 users.
+- Access to a running Kubernetes cluster
+  - Using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/)
+  - Have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
+- 
 
 We also recommend some familiarity with the following Kubernetes concepts before proceeding:
 
@@ -42,7 +44,7 @@ Before starting, we recommend reading the [configuration guide](configure.md#get
 - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
-> WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
+> ⚠️ WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
 Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
 
@@ -83,7 +85,7 @@ Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegr
 
 ### Cloud installation
 
-> WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
+> ⚠️ WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
 > necessary ports via an
 > [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
@@ -105,14 +107,12 @@ table.
 
 <span class="virtual-br"></span>
 
-> NOTE: Sourcegraph can run on any Kubernetes cluster, so if your infrastructure provider is not
-> listed, see the "Other" row. Pull requests to add rows for more infrastructure providers are
-> welcome!
+> NOTE: Sourcegraph can run on any Kubernetes cluster, so if your infrastructure provider is not listed, see the "Other" row.
 
 <span class="virtual-br"></span>
 
-> WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
+> ⚠️ WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
 ### ARM / ARM64 support
 
-> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+> ⚠️ WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
