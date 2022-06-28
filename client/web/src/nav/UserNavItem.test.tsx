@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { MemoryRouter } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
@@ -53,16 +54,18 @@ describe('UserNavItem', () => {
         expect(
             render(
                 <MemoryRouter>
-                    <UserNavItem
-                        showRepositorySection={true}
-                        isLightTheme={true}
-                        onThemePreferenceChange={() => undefined}
-                        themePreference={ThemePreference.Light}
-                        authenticatedUser={USER}
-                        showDotComMarketing={true}
-                        isExtensionAlertAnimating={false}
-                        codeHostIntegrationMessaging="browser-extension"
-                    />
+                    <CompatRouter>
+                        <UserNavItem
+                            showRepositorySection={true}
+                            isLightTheme={true}
+                            onThemePreferenceChange={() => undefined}
+                            themePreference={ThemePreference.Light}
+                            authenticatedUser={USER}
+                            showDotComMarketing={true}
+                            isExtensionAlertAnimating={false}
+                            codeHostIntegrationMessaging="browser-extension"
+                        />
+                    </CompatRouter>
                 </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot()

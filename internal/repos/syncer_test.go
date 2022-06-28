@@ -16,6 +16,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1850,6 +1851,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -1863,7 +1865,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 		}
 
 		// create fake user
-		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+		user, err := database.UsersWith(logger, store).Create(ctx, database.NewUser{
 			Email:                 "Email",
 			Username:              "Username",
 			DisplayName:           "DisplayName",
@@ -1966,6 +1968,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 
 func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -1979,7 +1982,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 		}
 
 		// create fake user
-		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+		user, err := database.UsersWith(logger, store).Create(ctx, database.NewUser{
 			Email:                 "Email",
 			Username:              "Username",
 			DisplayName:           "DisplayName",
@@ -2058,7 +2061,6 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 
 		repoIdx := 0
 
-		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
@@ -2143,7 +2145,7 @@ func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 				}
 
 				// Run the syncer, which should find the repo with non-empty last_error and delete it
-				err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
+				err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(200, 1)))
 				if err != nil {
 					t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
 				}
@@ -2185,7 +2187,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		// Run the syncer, which should return an error due to hitting the rate limit
-		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(1, 1))
+		err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(1, 1)))
 		if err == nil {
 			t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
 		}

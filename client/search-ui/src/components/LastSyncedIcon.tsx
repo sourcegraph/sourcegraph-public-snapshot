@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { mdiWeatherCloudyClock } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
-import WeatherCloudyClockIcon from 'mdi-react/WeatherCloudyClockIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -20,9 +20,9 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
         <Icon
             tabIndex={0}
             className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
-            as={WeatherCloudyClockIcon}
             aria-label={`Last synced: ${formattedTime}`}
             data-tooltip={`Last synced: ${formattedTime}`}
+            svgPath={mdiWeatherCloudyClock}
         />
     )
 }

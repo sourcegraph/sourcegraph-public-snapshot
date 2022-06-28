@@ -19,10 +19,8 @@ type operations struct {
 	deleteIndexesWithoutRepository              *observation.Operation
 	deleteOldAuditLogs                          *observation.Operation
 	deleteOverlappingDumps                      *observation.Operation
-	deleteSourcedCommits                        *observation.Operation
 	deleteUploadByID                            *observation.Operation
 	deleteUploadsStuckUploading                 *observation.Operation
-	deleteUploadsWithoutRepository              *observation.Operation
 	dequeue                                     *observation.Operation
 	dequeueIndex                                *observation.Operation
 	dirtyRepositories                           *observation.Operation
@@ -74,8 +72,8 @@ type operations struct {
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
 	selectRepositoriesForIndexScan              *observation.Operation
 	selectRepositoriesForRetentionScan          *observation.Operation
+	selectRepositoriesForLockfileIndexScan      *observation.Operation
 	softDeleteExpiredUploads                    *observation.Operation
-	staleSourcedCommits                         *observation.Operation
 	updateCommitedAt                            *observation.Operation
 	updateConfigurationPolicy                   *observation.Operation
 	updateIndexConfigurationByRepositoryID      *observation.Operation
@@ -83,7 +81,6 @@ type operations struct {
 	updatePackages                              *observation.Operation
 	updateReferenceCounts                       *observation.Operation
 	updateReposMatchingPatterns                 *observation.Operation
-	updateSourcedCommits                        *observation.Operation
 	updateUploadRetention                       *observation.Operation
 
 	persistNearestUploads      *observation.Operation
@@ -125,10 +122,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		deleteIndexesWithoutRepository:       op("DeleteIndexesWithoutRepository"),
 		deleteOldAuditLogs:                   op("DeleteOldAuditLogs"),
 		deleteOverlappingDumps:               op("DeleteOverlappingDumps"),
-		deleteSourcedCommits:                 op("DeleteSourcedCommits"),
 		deleteUploadByID:                     op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
-		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
 		dequeue:                              op("Dequeue"),
 		dequeueIndex:                         op("DequeueIndex"),
 		dirtyRepositories:                    op("DirtyRepositories"),
@@ -181,8 +176,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),
+		selectRepositoriesForLockfileIndexScan:      op("SelectRepositoriesForLockfileIndexScan"),
 		softDeleteExpiredUploads:                    op("SoftDeleteExpiredUploads"),
-		staleSourcedCommits:                         op("StaleSourcedCommits"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),
 		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),
 		updateReferenceCounts:                       op("UpdateReferenceCounts"),
@@ -191,7 +186,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
 		updateReposMatchingPatterns:            op("UpdateReposMatchingPatterns"),
-		updateSourcedCommits:                   op("UpdateSourcedCommits"),
 		updateUploadRetention:                  op("UpdateUploadRetention"),
 
 		persistNearestUploads:      subOp("persistNearestUploads"),

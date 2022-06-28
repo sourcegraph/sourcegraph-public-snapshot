@@ -66,6 +66,8 @@ interface DrillDownInsightFilters {
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
+    onFilterValuesChange?: (values: DrillDownFiltersFormValues) => void
+
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues, displayOptions: SeriesDisplayOptionsInput) => SubmissionResult
 
@@ -85,14 +87,15 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalValues,
         className,
         visualMode,
-        showSeriesDisplayOptions,
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
         originalSeriesDisplayOptions,
         onSeriesDisplayOptionsChange,
         onVisualModeChange = noop,
+        showSeriesDisplayOptions,
         seriesCount,
+        onFilterValuesChange = noop,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
@@ -101,6 +104,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
         onChange: onFiltersChange,
+        onPureValueChange: onFilterValuesChange,
         onSubmit: values => onFilterSave(values, seriesDisplayOptions),
     })
 
@@ -155,7 +159,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     if (isPreviewMode) {
         return (
             <header className={classNames(className, styles.header)}>
-                <H4 className={styles.heading}>Filter repositories</H4>
+                <H4 className={styles.heading}>Filters</H4>
 
                 <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
@@ -176,7 +180,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filter repositories</H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
                     disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}

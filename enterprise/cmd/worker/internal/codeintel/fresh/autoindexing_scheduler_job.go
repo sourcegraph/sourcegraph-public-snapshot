@@ -49,7 +49,7 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 	}
 
 	repoUpdater := codeintel.InitRepoUpdaterClient()
-	autoindexingService := autoindexing.GetService(database.NewDB(db), &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdater)
+	autoindexingService := autoindexing.GetService(database.NewDB(logger, db), &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdater)
 
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 

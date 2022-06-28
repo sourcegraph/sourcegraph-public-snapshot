@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,11 +18,12 @@ import (
 func TestResolver_Insights(t *testing.T) {
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
-	postgres := database.NewDB(dbtest.NewDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	resolver := newWithClock(insightsDB, postgres, clock)
 
 	insightsConnection, err := resolver.Insights(ctx, nil)

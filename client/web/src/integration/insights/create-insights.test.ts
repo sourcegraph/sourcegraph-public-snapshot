@@ -133,7 +133,7 @@ describe('Code insight create insight page', () => {
         })
     })
 
-    it('should run a proper GQL mutation if search-based insight has been created', async () => {
+    it.skip('should run a proper GQL mutation if search-based insight has been created', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021

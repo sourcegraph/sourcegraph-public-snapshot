@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -9,20 +9,25 @@ import { FormTriggerArea } from './FormTriggerArea'
 
 import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({
-    design: {
-        type: 'Figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=3891%3A41568',
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/FormTrigerArea',
+    parameters: {
+        design: {
+            type: 'Figma',
+            url:
+                'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=3891%3A41568',
+        },
+        chromatic: {
+            delay: 600, // Delay screenshot for input validation debouncing
+            viewports: [720],
+            disableSnapshot: false,
+        },
     },
-    chromatic: {
-        delay: 600, // Delay screenshot for input validation debouncing
-        viewports: [720],
-        disableSnapshot: false,
-    },
-})
+}
 
-add('FormTrigerArea', () => (
+export default config
+
+export const FormTrigerArea: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -92,4 +97,6 @@ add('FormTrigerArea', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+FormTrigerArea.storyName = 'FormTrigerArea'

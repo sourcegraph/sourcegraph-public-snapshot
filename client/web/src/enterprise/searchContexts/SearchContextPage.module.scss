@@ -1,6 +1,12 @@
 .search-context-page {
+    &__title-spec {
+        word-break: break-all;
+    }
+
     &__private-badge {
         font-size: 0.625rem;
+        position: relative;
+        bottom: 0.25rem;
     }
 
     &__repo-revs-row {

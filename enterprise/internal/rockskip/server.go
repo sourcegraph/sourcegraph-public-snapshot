@@ -7,6 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,6 +26,7 @@ type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err err
 const NULL CommitId = 0
 
 type Service struct {
+	logger               log.Logger
 	db                   *sql.DB
 	git                  Git
 	createParser         func() (ParseSymbolsFunc, error)
@@ -54,7 +57,10 @@ func NewService(
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
+	logger := log.Scoped("service", "")
+
 	service := &Service{
+		logger:               logger,
 		db:                   db,
 		git:                  git,
 		createParser:         createParser,
@@ -72,7 +78,7 @@ func NewService(
 	go service.startCleanupLoop()
 
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		go service.startIndexingLoop(database.NewDB(service.db), service.indexRequestQueues[i])
+		go service.startIndexingLoop(database.NewDB(logger, service.db), service.indexRequestQueues[i])
 	}
 
 	return service, nil

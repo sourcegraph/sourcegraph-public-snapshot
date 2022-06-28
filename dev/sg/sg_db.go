@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -92,6 +94,7 @@ sg db add-user -name=foo
 
 func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
+	logger := log.Scoped("dbAddUserAction", "")
 
 	// Read the configuration.
 	conf, _ := sgconf.Get(configFile, configOverwriteFile)
@@ -104,7 +107,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(conn)
+	db := database.NewDB(logger, conn)
 
 	username := cmd.String("username")
 	password := cmd.String("password")
@@ -225,7 +228,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNs(dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(log.Scoped("dbResetPGExec", ""), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}

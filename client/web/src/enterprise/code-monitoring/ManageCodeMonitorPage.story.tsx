@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import { fake } from 'sinon'
 
@@ -7,16 +7,13 @@ import { WebStory } from '../../components/WebStory'
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockUser } from './testing/util'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/ManageCodeMonitorPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
-    },
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/ManageCodeMonitorPage',
+}
 
-add('ManageCodeMonitorPage', () => (
+export default config
+
+export const ManageCodeMonitorPageStory: Story = () => (
     <WebStory>
         {props => (
             <ManageCodeMonitorPage
@@ -29,4 +26,14 @@ add('ManageCodeMonitorPage', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ManageCodeMonitorPageStory.storyName = 'ManageCodeMonitorPage'
+ManageCodeMonitorPageStory.parameters = {
+    design: {
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+    },
+    chromatic: { disableSnapshot: false },
+}

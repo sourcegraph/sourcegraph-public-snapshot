@@ -1337,6 +1337,8 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
+		t.Skip("TODO: Re-enable with lockfile indexing added")
+
 		// We are adding another GitHub external service here to make sure we don't
 		// pollute the other integration tests running earlier.
 		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
