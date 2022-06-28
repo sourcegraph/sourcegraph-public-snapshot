@@ -755,13 +755,23 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external service repo IDs by user ID")
 	}
 
+	// We call this when there are errors communicating with external services so
+	// that we don't have the same user stuck at the front of the queue.
+	tryTouchUserPerms := func() {
+		if err := s.permsStore.TouchUserPermissions(ctx, userID); err != nil {
+			logger.Warn("touching user permissions", log.Int32("userID", userID), log.Error(err))
+		}
+	}
+
 	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	if err != nil {
+		tryTouchUserPerms()
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
 
 	externalServicesRepoIDs, err := s.fetchUserPermsViaExternalServices(ctx, user.ID, fetchOpts)
 	if err != nil {
+		tryTouchUserPerms()
 		return errors.Wrap(err, "fetch user permissions via external services")
 	}
 
