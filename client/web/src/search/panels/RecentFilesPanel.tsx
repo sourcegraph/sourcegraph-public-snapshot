@@ -19,8 +19,6 @@ import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
-import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
-
 
 interface Props extends TelemetryProps {
     className?: string
@@ -100,11 +98,10 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         const newItemsToLoad = itemsToLoad + RECENT_FILES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
-        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentFiles: newItemsToLoad,
         })
-        setIsLoadingMore(false)
+
         if (data === undefined) {
             return
         }
@@ -112,7 +109,6 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         if (node === null || node.__typename !== 'User') {
             return
         }
-
         setRecentFiles(node.recentFilesLogs)
     }
 
