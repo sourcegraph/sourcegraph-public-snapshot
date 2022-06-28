@@ -1,4 +1,4 @@
-# Helm Chart Configurations Examples
+# Helm Chart Configuration Examples
 
 This section outlines a few common scenarios for creating custom configurations. For an exhaustive list of configuration options please see our [Sourcegraph Helm Chart README.md in Github.](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/README.md)
 
