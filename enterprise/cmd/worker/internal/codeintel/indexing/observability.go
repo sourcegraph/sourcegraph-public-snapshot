@@ -33,10 +33,6 @@ func newOperations(observationContext *observation.Context) *dependencyReposOper
 			})
 		}
 
-		schedulerOps = &schedulerOperations{
-			HandleIndexScheduler: op("indexing", "HandleIndexSchedule"),
-		}
-
 		m = metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"codeintel_dependency_repos",
