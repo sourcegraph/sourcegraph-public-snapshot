@@ -165,9 +165,7 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 	if *cursorAdjustedUploads != nil {
 		adjustedUploads := make([]adjustedUpload, 0, len(*cursorAdjustedUploads))
 		for _, u := range *cursorAdjustedUploads {
-			r.uploadCacheMutex.RLock()
-			upload, ok := r.uploadCache[u.DumpID]
-			r.uploadCacheMutex.RUnlock()
+			upload, ok := r.uploadFromCache(u.DumpID)
 			if !ok {
 				return nil, ErrConcurrentModification
 			}
@@ -453,10 +451,7 @@ func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]store.Du
 	existingUploads := make([]store.Dump, 0, len(ids))
 
 	for _, id := range ids {
-		r.uploadCacheMutex.RLock()
-		upload, ok := r.uploadCache[id]
-		r.uploadCacheMutex.RUnlock()
-		if ok {
+		if upload, ok := r.uploadFromCache(id); ok {
 			existingUploads = append(existingUploads, upload)
 		} else {
 			missingIDs = append(missingIDs, id)
@@ -473,11 +468,7 @@ func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]store.Du
 		return nil, nil
 	}
 
-	r.uploadCacheMutex.Lock()
-	for i := range newUploads {
-		r.uploadCache[newUploads[i].ID] = newUploads[i]
-	}
-	r.uploadCacheMutex.Unlock()
+	r.updateUploadCache(newUploads)
 
 	return append(existingUploads, newUploads...), nil
 }
