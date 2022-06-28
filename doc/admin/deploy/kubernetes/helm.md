@@ -2,8 +2,8 @@
 
 
 <div class="cta-group">
-<a class="btn" href="#prerequisites">Prerequisites</a>
-<a class="btn btn-primary" href="#installing-sourcegraph-with-kubernetes">Installation</a>
+<a class="btn btn-primary" href="#prerequisites">Prerequisites</a>
+<a class="btn" href="#installing-sourcegraph-with-kubernetes">Installation</a>
 <a class="btn" href="#configuration">Configuration</a>
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
@@ -63,10 +63,10 @@ This section provides high-level guidance on deploying Sourcegraph via Kubernete
 
 You can install Sourcegraph on the supported virtualization platform of your choice. Follow these links for cloud-specific guides on preparing the environment and installing Sourcegraph:
 
-- [Deploy Sourcegraph with Kubernetes on Amazon Elastic Kubernetes Service (EKS)](./cloud-deployment-guides/k8-eks.md)
-- [Deploy Sourcegraph with Kubernetes on Google Kubernetes Engine (GKE)](./cloud-deployment-guides/k8-gke.md)
-- [Deploy Sourcegraph with Kubernetes on Azure Managed Kubernetes Service (AKS)](./cloud-deployment-guides/k8-aks.md)
-- [Deploy Sourcegraph with Kubernetes on other Cloud providers or on-prem](./cloud-deployment-guides/k8-other-cloud.md)
+- [Deploy Sourcegraph with Kubernetes on Amazon Elastic Kubernetes Service (EKS)](./cloud-deployment-guides/eks.md)
+- [Deploy Sourcegraph with Kubernetes on Google Kubernetes Engine (GKE)](./cloud-deployment-guides/gke.md)
+- [Deploy Sourcegraph with Kubernetes on Azure Managed Kubernetes Service (AKS)](./cloud-deployment-guides/aks.md)
+- [Deploy Sourcegraph with Kubernetes on other Cloud providers or on-prem](./cloud-deployment-guides/other-cloud.md)
 
 ## Configuration
 
