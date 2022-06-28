@@ -430,7 +430,6 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 			return errors.Wrap(err, "RecordSeriesPoints Zero Value")
 		}
 		for _, job := range jobs {
-			j := *job
 			err := h.enqueueQueryRunnerJob(ctx, job)
 			if err != nil {
 				multi = errors.Append(multi, err)
