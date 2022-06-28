@@ -87,7 +87,7 @@ func runJobs(ctx context.Context, jobs []*searchRepos) error {
 }
 
 // streamStructuralSearch runs structural search jobs and streams the results.
-func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
+func streamStructuralSearch(ctx context.Context, logger sglog.Logger, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
 	jobs := []*searchRepos{}
 	for _, repoSet := range repos {
 		searcherArgs := &search.SearcherParameters{
@@ -96,20 +96,20 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 			Features:        args.Features,
 		}
 
-		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
+		jobs = append(jobs, &searchRepos{clients: clients, log: logger, args: searcherArgs, stream: stream, repoSet: repoSet})
 	}
 	return runJobs(ctx, jobs)
 }
 
 // retryStructuralSearch runs a structural search with a higher limit file match
 // limit so that Zoekt resolves more potential file matches.
-func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
+func retryStructuralSearch(ctx context.Context, logger sglog.Logger, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	patternCopy := *(args.PatternInfo)
 	patternCopy.FileMatchLimit = 1000
 	argsCopy := *args
 	argsCopy.PatternInfo = &patternCopy
 	args = &argsCopy
-	return streamStructuralSearch(ctx, clients, args, repos, stream)
+	return streamStructuralSearch(ctx, logger, clients, args, repos, stream)
 }
 
 func runStructuralSearch(ctx context.Context, logger sglog.Logger, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
@@ -117,18 +117,18 @@ func runStructuralSearch(ctx context.Context, logger sglog.Logger, clients job.R
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
 		// serviced with streaming.
-		return streamStructuralSearch(ctx, clients, args, repos, stream)
+		return streamStructuralSearch(ctx, logger, clients, args, repos, stream)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 	agg := streaming.NewAggregatingStream()
-	err := streamStructuralSearch(ctx, clients, args, repos, agg)
+	err := streamStructuralSearch(ctx, logger, clients, args, repos, agg)
 
 	event := agg.SearchEvent
 	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		agg := streaming.NewAggregatingStream()
-		err := retryStructuralSearch(ctx, clients, args, repos, agg)
+		err := retryStructuralSearch(ctx, logger, clients, args, repos, agg)
 		if err != nil {
 			return err
 		}
