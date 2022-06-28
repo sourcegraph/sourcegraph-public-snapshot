@@ -1264,6 +1264,11 @@ type ObservabilityLogging struct {
 	Datadog *Datadog `json:"datadog,omitempty"`
 }
 
+// ObservabilityOpentelemetry description: Configuration for OpenTelemetry
+type ObservabilityOpentelemetry struct {
+	CollectorURL string `json:"collectorURL"`
+}
+
 // ObservabilityTracing description: Controls the settings for distributed tracing.
 type ObservabilityTracing struct {
 	// Debug description: Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.
@@ -1967,6 +1972,8 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
 	// ObservabilityLogging description: Configuration for logging to external services.
 	ObservabilityLogging *ObservabilityLogging `json:"observability.logging,omitempty"`
+	// ObservabilityOpentelemetry description: Configuration for OpenTelemetry
+	ObservabilityOpentelemetry *ObservabilityOpentelemetry `json:"observability.opentelemetry,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.

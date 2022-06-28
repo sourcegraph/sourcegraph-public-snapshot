@@ -1095,6 +1095,17 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "observability.opentelemetry": {
+      "description": "Configuration for OpenTelemetry",
+      "type": "object",
+      "required": ["collectorURL"],
+      "properties": {
+        "collectorURL": {
+          "type": "string",
+          "examples": ["https://COLLECTOR_ENDPOINT:443/v1/traces"]
+        }
+      }
+    },
     "observability.logging": {
       "description": "Configuration for logging to external services.",
       "type": "object",

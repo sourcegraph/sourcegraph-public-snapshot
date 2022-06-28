@@ -56,13 +56,14 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	Datadog       schema.RUM `json:"datadog,omitempty"`
-	SentryDSN     *string    `json:"sentryDSN"`
-	SiteID        string     `json:"siteID"`
-	SiteGQLID     string     `json:"siteGQLID"`
-	Debug         bool       `json:"debug"`
-	NeedsSiteInit bool       `json:"needsSiteInit"`
-	EmailEnabled  bool       `json:"emailEnabled"`
+	Datadog                   schema.RUM `json:"datadog,omitempty"`
+	SentryDSN                 *string    `json:"sentryDSN"`
+	OpentelemetryCollectorURL *string    `json:"opentelemetryCollectorURL"`
+	SiteID                    string     `json:"siteID"`
+	SiteGQLID                 string     `json:"siteGQLID"`
+	Debug                     bool       `json:"debug"`
+	NeedsSiteInit             bool       `json:"needsSiteInit"`
+	EmailEnabled              bool       `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -156,6 +157,12 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		datadogRUM = *siteConfig.ObservabilityLogging.Datadog.RUM
 	}
 
+	var opentelemetryCollectorURL *string
+
+	if siteConfig.ObservabilityOpentelemetry != nil {
+		opentelemetryCollectorURL = &siteConfig.ObservabilityOpentelemetry.CollectorURL
+	}
+
 	var githubAppCloudSlug string
 	var githubAppCloudClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
@@ -177,6 +184,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		IsAuthenticatedUser:        actor.IsAuthenticated(),
 		Datadog:                    datadogRUM,
 		SentryDSN:                  sentryDSN,
+		OpentelemetryCollectorURL:  opentelemetryCollectorURL,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
 		Debug:                      env.InsecureDev,
 		SiteID:                     siteID,

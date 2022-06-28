@@ -24,6 +24,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     readonly sentryDSN: string | null
 
+    readonly opentelemetryCollectorURL: string | null
+
     /** Configuration required for Datadog RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup). */
     readonly datadog?: {
         clientToken: string
