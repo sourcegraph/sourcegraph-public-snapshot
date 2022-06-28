@@ -19,12 +19,8 @@ export type MenuLinkProps = ReachMenuLinkProps
  *
  * @see — Docs https://reach.tech/menu-button#menulink
  */
-export const MenuLink = React.forwardRef(({ className, disabled, children, ...props }, reference) => {
+export const MenuLink = React.forwardRef(({ className, disabled, ...props }, reference) => {
     const Component = disabled ? MenuDisabledLink : ReachMenuLink
 
-    return (
-        <Component ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
-            {children}
-        </Component>
-    )
+    return <Component ref={reference} {...props} className={classNames(styles.dropdownItem, className)} />
 }) as ForwardReferenceComponent<'a', MenuLinkProps>
