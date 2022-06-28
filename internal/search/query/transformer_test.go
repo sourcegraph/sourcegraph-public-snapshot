@@ -201,7 +201,7 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 func TestSubstituteConcat(t *testing.T) {
 	cases := []struct {
 		input  string
-		concat func([]Pattern) Pattern
+		concat func([]Pattern) []Node
 		want   string
 	}{
 		{
