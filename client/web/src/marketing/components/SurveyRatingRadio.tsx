@@ -35,7 +35,6 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
         }
     }
 
-    console.log(props.score)
     return (
         <fieldset
             aria-labelledby={props.ariaLabelledby}
