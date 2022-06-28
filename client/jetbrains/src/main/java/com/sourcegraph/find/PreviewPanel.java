@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.editor.impl.ContextMenuPopupHandler;
@@ -136,16 +137,27 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
     private ActionGroup createActionGroup() {
         DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new SimpleEditorAction("Open on Sourcegraph", new OpenFile(), editor));
-        group.add(new SimpleEditorAction("Copy Sourcegraph File Link", new Copy(), editor));
+        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
+        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
+        group.add(new AnAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                try {
+                    getPreviewContent().openInEditorOrBrowser();
+                } catch (Exception ex) {
+                    Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
+                    logger.error("Error opening file in editor: " + ex.getMessage());
+                }
+            }
+        });
         return group;
     }
 
-    class SimpleEditorAction extends AnAction {
+    class SimpleEditorFileAction extends AnAction {
         FileAction action;
         Editor editor;
 
-        SimpleEditorAction(String text, FileAction action, Editor editor) {
+        SimpleEditorFileAction(String text, FileAction action, Editor editor) {
             super(text, text, Icons.Logo);
             this.action = action;
             this.editor = editor;
