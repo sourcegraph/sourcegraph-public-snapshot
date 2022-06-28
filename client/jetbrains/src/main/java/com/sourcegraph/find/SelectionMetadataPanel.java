@@ -1,12 +1,10 @@
 package com.sourcegraph.find;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.keymap.KeymapUtil;
-import com.intellij.openapi.project.DumbAwareAction;
-import com.intellij.ui.components.AnActionLink;
+import com.intellij.ui.components.labels.LinkLabel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -16,7 +14,7 @@ import java.awt.event.KeyEvent;
 import java.util.Objects;
 
 public class SelectionMetadataPanel extends JPanel {
-    private final AnActionLink selectionMetadataLabel;
+    private LinkLabel selectionMetadataLabel = null;
     private final JLabel externalLinkLabel;
     private final JLabel openShortcutLabel;
     private PreviewContent previewContent;
@@ -24,19 +22,17 @@ public class SelectionMetadataPanel extends JPanel {
     public SelectionMetadataPanel() {
         super(new FlowLayout(FlowLayout.LEFT, 0, 8));
 
-        selectionMetadataLabel = new AnActionLink("", new DumbAwareAction() {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                if (previewContent != null) {
-                    try {
-                        previewContent.openInEditorOrBrowser();
-                    } catch (Exception e) {
-                        Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
-                        logger.error("Error opening file in editor: \"" + selectionMetadataLabel.getText() + "\"", e);
-                    }
+        selectionMetadataLabel = new LinkLabel("", null, (aSource, aLinkData) -> {
+            if (previewContent != null) {
+                try {
+                    previewContent.openInEditorOrBrowser();
+                } catch (Exception e) {
+                    Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
+                    logger.error("Error opening file in editor: \"" + selectionMetadataLabel.getText() + "\"", e);
                 }
             }
         });
+
         selectionMetadataLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
         externalLinkLabel = new JLabel("", AllIcons.Ide.External_link_arrow, SwingConstants.LEFT);
         externalLinkLabel.setVisible(false);
