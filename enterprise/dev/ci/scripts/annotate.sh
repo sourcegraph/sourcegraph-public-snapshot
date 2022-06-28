@@ -83,5 +83,5 @@ fi
 if [ "$MARKDOWN" = true ]; then
   printf "%s\n" "$BODY" | tee -a "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 else
-  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | tee "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | tee -a "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
