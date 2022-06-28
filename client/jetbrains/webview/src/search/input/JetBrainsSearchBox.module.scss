@@ -142,4 +142,10 @@
             float: right;
         }
     }
+
+    :global(.cm-editor) :global(.cm-tooltip-autocomplete) > ul > li {
+        padding: 0;
+        align-items: center;
+        font-size: var(--code-font-size);
+    }
 }
