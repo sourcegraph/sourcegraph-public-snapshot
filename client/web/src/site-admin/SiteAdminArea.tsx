@@ -113,42 +113,42 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
 export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsSearchPage'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsSearchPage'),
         exact: true,
     },
     {
         path: '/analytics',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
     {
         path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
     {
         path: '/analytics/users',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
     {
         path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
     {
         path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
     {
         path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
     {
         path: '/analytics/extensions',
-        render: lazyComponent(() => import('./advanced-statistics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
         exact: true,
     },
 ]

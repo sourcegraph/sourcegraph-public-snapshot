@@ -17,7 +17,6 @@ import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { AdvancedStatisticsPage } from './advanced-statistics'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 
 import styles from './SiteAdminUsageStatisticsPage.module.scss'
