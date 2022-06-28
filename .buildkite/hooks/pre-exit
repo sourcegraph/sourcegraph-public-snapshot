@@ -32,7 +32,7 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   ./enterprise/dev/ci/scripts/upload-build-logs.sh
 fi
 
-# upload annotations if they are available
+# upload raw annotations as artifacts if they are available for easier access
 if [ -d "./annotations" ]; then
     buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" --content-type "text/plain" "./annotations/*-annotation.md"
 fi

@@ -692,7 +692,6 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 		}
 		if elapsed > 0 {
 			block.WriteLine(output.Styledf(style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
-
 		} else {
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
 		}
