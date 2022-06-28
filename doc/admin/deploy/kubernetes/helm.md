@@ -2,32 +2,25 @@
 
 
 <div class="cta-group">
-<!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
 <a class="btn" href="#prerequisites">Prerequisites</a>
+<a class="btn btn-primary" href="#installing-sourcegraph-with-kubernetes">Installation</a>
 <a class="btn" href="#configuration">Configuration</a>
-<a class="btn" href="#configure-sourcegraph-on-google-kubernetes-engine-gke">Google GKE</a>
-<a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">AWS EKS</a>
-<a class="btn" href="#configure-sourcegraph-on-azure-managed-kubernetes-service-aks">Azure AKS</a>
-<a class="btn" href="#configure-sourcegraph-on-other-cloud-providers-or-on-prem">Other or on-prem</a>
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
-> WARNING: Sourcegraph currently does not support migration from an existing Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. This guide is recommended for new installations of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
+> WARNING: Sourcegraph currently does not support migration from an existing Kubernetes Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. This guide is recommended for new installations of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
 
 ## Why use Helm
 
-Helm charts make it simple to package and deploy applications on Kubernetes. Sourcegraph's Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades.
+Sourcegraph's Helm chart is the recommended way to install and configure Sourcegraph on Kubernetes. Helm charts make it simple to package and deploy applications on Kubernetes. Our Helm chart offers a lot of defaults in the `values.yaml` which makes customizations much easier than using Kustomize or manually editing Sourcegraph's manifest files. When using Helm chart override files to make customizations, you _never_ have to deal with merge conflicts during upgrades.
 
 To deploy Sourcegraph with Kubernetes and Helm you will typically follow these steps:
 
-1. Add the Sourcegraph Helm repository and install the chart
-2. Prepare any additional required customizations. Sourcegraph offers out of the box defaults but most environments will likely to need to implement their own customizations. For additional guidance see the [Configuration](#configuration) section below.
-3. Review the changes. We offer guidance on [three mechanisms](#reviewing-changes) that can be used to review customizations. This is an optional step, but may be useful the first time you deploy Sourcegraph.
-4. Select your deployment method and follow the guidance:
-   - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
-   - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
-   - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
-   - [Other cloud providers or on-prem](#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
+1. Configure a cloud or bare metal instance and ensure you have access to launch persistent volumes.
+2. Add the Sourcegraph Helm repository.
+3. Prepare any additional required customizations. Sourcegraph offers out of the box defaults but most environments will likely to need to implement their own customizations. For additional guidance see the [Configuration](#configuration) section below.
+4. Review the changes. We offer guidance on [three mechanisms](#reviewing-changes) that can be used to review customizations. This is an optional step, but may be useful the first time you deploy Sourcegraph.
+5. Install the Helm chart
 
 ## Prerequisites
 
@@ -35,44 +28,38 @@ Deploying Sourcegraph with Kubernetes with Helm has the following requirements:
 
 - You must have a [Sourcegraph Enterprise license](configure.md#add-license-key) if your instance will have more than 10 users.
 - You must have a basic understanding of [Helm charts and how to create them.](https://helm.sh/)
-- You must have a Kubernetes cluster running ***[TODO link to docs]***
+- You must have a running Kubernetes cluster ***[TODO link to docs]***
 - You must be using a minimum Kubernetes version of [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) 
 - You must have the [kubectl command line](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and are using v1.19 or later
 - You must have the [Helm 3 CLI](https://helm.sh/docs/intro/install/) installed
-- You have XYZ cloud account ***[TODO link to docs]*** with ability to launch instances and persistent volumes (SSDs recommended).
+- You have a cloud account (EKS, AKS, GKE etc.) or access to a bare metal instance with ability to launch instances and persistent volumes (SSDs recommended).
 
 ## Quickstart
 
-> ℹ️ This quickstart guide should be used by those already familiar with Helm, have a good understanding of how to use Helm in the environment they want to deploy into, and who want to quickly deploy Sourcegraph with Helm with the default configuration.
+> ℹ️ The quickstart guide should be used by those already familiar with Helm and who want to quickly deploy Sourcegraph with Helm with the default configuration. If the default configuration settings do not fit your needs, read more about applying customizations in [Configuring Sourcegraph](../../config/index.md) below before installing the Helm chart.
 
-To use the Helm chart, add the Sourcegraph helm repository on the machine used to interact with your cluster:
-
- ***[TODO do we want to provide additional guidance here?]***
+To use the Helm chart, add the Sourcegraph Helm chart repository on the machine used to interact with your cluster:
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
-Install the Sourcegraph chart using default values:
+Install the latest release of the Sourcegraph Helm chart using default values:
 
 ```sh
 helm install --version 3.41.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-Sourcegraph should now be available via the address set. Navigating to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
-
- ***[TODO is it obvious to admins on what the address set is? Do we want to provide additional guidance here?]***
-
-If our default configuration settings do not fit your needs, read more about applying customizations in [Configuring Sourcegraph](../../config/index.md) below.
+Sourcegraph should now be available via the address set. Navigating to the URL will provide access to the Sourcegraph UI to create the initial administrator account.
 
 ## Installing Sourcegraph with Kubernetes
 
 This section provides high-level guidance on deploying Sourcegraph via Kubernetes with Helm on major Cloud providers. In general, you need the following to get started:
 
 - A working Kubernetes cluster, v1.19 or higher
-- The ability to provision persistent volumes, e.g. have Block Storage [CSI storage driver](https://kubernetes-csi.github.io/docs/drivers.html) installed
-- An Ingress Controller installed, e.g. platform native ingress controller, [NGINX Ingress Controller].
-- The ability to create DNS records for Sourcegraph, e.g. `sourcegraph.company.com`
+- The ability to provision persistent volumes (e.g. have Block Storage [CSI storage driver](https://kubernetes-csi.github.io/docs/drivers.html) installed)
+- An Ingress Controller installed (e.g. platform native ingress controller, [NGINX Ingress Controller])
+- The ability to create DNS records for Sourcegraph (e.g. `sourcegraph.company.com`)
 
 You can install Sourcegraph on the supported virtualization platform of your choice. Follow these links for cloud-specific guides on preparing the environment and installing Sourcegraph:
 
