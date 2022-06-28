@@ -1,6 +1,6 @@
 <!-- Plugin description -->
 
-# Sourcegraph for JetBrains IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
+# Sourcegraph for JetBrains IDEs
 
 - Instantly search in all open source repos and your private code.
 - Peek into any remote repo in the IDE, without checking it out.
@@ -9,7 +9,7 @@
 
 <!-- Plugin description end -->
 
-## Supported IDEs
+## Supported IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
 
 The plugin works with all JetBrains IDEs, including:
 
@@ -35,11 +35,14 @@ The plugin works with all JetBrains IDEs, including:
 - Click `Plugins` in the left-hand pane, then the `Marketplace` tab at the top
 - Search for `Sourcegraph`, then click the `Install` button
 - Restart your IDE if needed
-- To try the plugin, press <kbd>Alt+A</kbd> (<kbd>⌥A</kbd> on Mac) then select some code and choose `Sourcegraph` in the right-click context menu to see actions and keyboard shortcuts.
+- To try the plugin, press <kbd>Alt+A</kbd> (<kbd>⌥A</kbd> on Mac) then select some code and choose `Sourcegraph` in the
+  right-click context menu to see actions and keyboard shortcuts.
 
 ## Configuring for use with a private Sourcegraph instance
 
-The plugin is configurable _globally_ by creating a `.sourcegraph-jetbrains.properties` (or `sourcegraph-jetbrains.properties` pre-v1.2.2) in your home directory. For example, modify the following URL to match your on-premises Sourcegraph instance URL:
+The plugin is configurable _globally_ by creating a `.sourcegraph-jetbrains.properties` (
+or `sourcegraph-jetbrains.properties` pre-v1.2.2) in your home directory. For example, modify the following URL to match
+your on-premises Sourcegraph instance URL:
 
 ```
 url = https://sourcegraph.example.com
@@ -60,11 +63,15 @@ You may also choose to configure it _per project_ using a `.idea/sourcegraph.xml
 </project>
 ```
 
-By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by the name of `sourcegraph`, and it will take priority.
+By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds
+to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by
+the name of `sourcegraph`, and it will take priority.
 
 ## Questions & Feedback
 
-If you have any questions, feedback, or bug report, we appreciate if you [open an issue on GitHub](https://github.com/sourcegraph/sourcegraph/issues/new?title=JetBrains:+&labels=jetbrains-ide).
+If you have any questions, feedback, or bug report, we appreciate if
+you [open an issue on GitHub](https://github.com/sourcegraph/sourcegraph/issues/new?title=JetBrains:+&labels=jetbrains-ide)
+.
 
 ## Uninstallation
 
@@ -80,22 +87,30 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
 - Run `yarn install` in the root directory to get all dependencies
 - Run `yarn generate` in the root directory to generate graphql files
 - Go to `client/jetbrains/` and run `yarn build` to generate the JS files
-- You can test the “Find on Sourcegraph” window by running `yarn standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
-- Run the plugin in a sandboxed IDE by running `./gradlew runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
+- You can test the “Find on Sourcegraph” window by running `yarn standalone` in the `client/jetbrains/` directory and
+  opening [http://localhost:3000/](http://localhost:3000/) in your browser.
+- Run the plugin in a sandboxed IDE by running `./gradlew runIde`. This will start the platform with the versions
+  defined in `gradle.properties`
+  , [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
   - Note: 2021.3 or later is required for Macs with Apple Silicon chips.
-- Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Sourcegraph.zip`.
+- Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file
+  is `build/distributions/Sourcegraph.zip`.
 
 ## Publishing a new version
 
-The publishing process is based on the [intellij-platform-plugin-template](https://github.com/JetBrains/intellij-platform-plugin-template).
+The publishing process is based on
+the [intellij-platform-plugin-template](https://github.com/JetBrains/intellij-platform-plugin-template).
 
 1. Update `pluginVersion` in `gradle.properties`.
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md`.
 3. **TODO: The following steps are obsolete now that we merged the project in the monorepo. Figure out a new process!**
 4. ~~Create a [new release](https://github.com/sourcegraph/sourcegraph/releases/new) on GitHub.~~
 5. ~~Pick the new version number as the git tag (e.g. `v1.2.3`).~~
-6. ~~Copy/paste the `[Unreleased]` section of [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/CHANGELOG.md) into the GitHub release text.~~
-7. ~~Once published, a GitHub action is triggered that will publish the release automatically and create a PR to update the changelog and version text. You may need to manually fix the content.~~
+6. ~~Copy/paste the `[Unreleased]` section
+   of [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/CHANGELOG.md) into the
+   GitHub release text.~~
+7. ~~Once published, a GitHub action is triggered that will publish the release automatically and create a PR to update
+   the changelog and version text. You may need to manually fix the content.~~
 
 ## Version History
 
@@ -103,7 +118,8 @@ See [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client
 
 ## Enable web view debugging
 
-Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/intellij/jcef.html) web view features built into the JetBrains platform. To enable debugging tools for this view, please follow these steps:
+Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/intellij/jcef.html) web view features
+built into the JetBrains platform. To enable debugging tools for this view, please follow these steps:
 
 1. [Enable JetBrains internal mode](https://plugins.jetbrains.com/docs/intellij/enabling-internal.html)
 2. Open Search Everywhere and the "Actions" tab: (On macOS via `cmd+shift+a`)
@@ -112,4 +128,5 @@ Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/in
 5. Change the default value to an open port (e.g. `9222`)
 6. After this, a restart of the IDE may be required
 7. Open the Sourcegraph search inside JetBrains `alt+a`
-8. Now, you can switch to a browser window, navigate to [`localhost:9222`](http://localhost:9222), and select the Sourcegraph window.
+8. Now, you can switch to a browser window, navigate to [`localhost:9222`](http://localhost:9222), and select the
+   Sourcegraph window.
