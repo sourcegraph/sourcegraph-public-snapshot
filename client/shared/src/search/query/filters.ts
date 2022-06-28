@@ -188,6 +188,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
+        discreteValues: () => ['yes', 'only'].map(value => ({ label: value })),
         singular: true,
     },
     [FilterType.author]: {
