@@ -26,11 +26,11 @@ type Group interface {
 	// until the goroutine has started.
 	Go(func())
 
-	// Wait waits for all goroutines started with Go to complete.
+	// Wait blocks until all goroutines started with Go() have completed
 	Wait()
 
 	// Configuration methods. See interface definitions for details.
-	Contextable[ContextGroup]
+	Contextable[ContextErrorGroup]
 	Errorable[ErrorGroup]
 	Limitable[Group]
 }
@@ -38,38 +38,71 @@ type Group interface {
 // ErrorGroup is a group that handles functions that might return errors.
 // Any non-nil errors will be collected and returned by the Wait() method.
 type ErrorGroup interface {
+	// Go starts a background goroutine, collecting any returned errors.
+	// It will not return until the goroutine has started.
 	Go(func() error)
+
+	// Wait blocks until all goroutines started with Go() have completed,
+	// returning a combined error with any non-nil errors returned from
+	// the submitted functions.
 	Wait() error
 
+	// Configuration methods. See interface definitions for details.
 	Contextable[ContextErrorGroup]
 	Limitable[ErrorGroup]
 }
 
-type ContextGroup interface {
-	Go(func(context.Context))
-	Wait()
-
-	Errorable[ContextErrorGroup]
-	Limitable[ContextGroup]
-}
-
 type ContextErrorGroup interface {
+	// Go starts a background goroutine, calling the provided function with the
+	// group's context and collecting any returned errors. It will not return
+	// until the goroutine has started.
 	Go(func(context.Context) error)
+
+	// Wait blocks until all goroutines started with Go() have completed,
+	// returning a combined error with any non-nil errors returned from
+	// the submitted functions.
 	Wait() error
 
-	WithCancelOnError() ContextErrorGroup
+	// Configuration methods. See interfaces for details.
 	Limitable[ContextErrorGroup]
+
+	// WithCancelOnError will cancel the group's context whenever any of the
+	// functions started with Go() return an error. All further errors will
+	// be ignored.
+	WithCancelOnError() ContextErrorGroup
+
+	// WithFirstError will configure the group to only retain the first error,
+	// ignoring any subsequent errors.
+	WithFirstError() ContextErrorGroup
 }
 
+// Limitable is a group that can be configured to limit the number of live
+// goroutines. By default, groups can start an unlimited number of concurrent
+// goroutines. Its type parameter is the return type after limiting.
 type Limitable[T any] interface {
+	// WithLimit will set the maximum number concurrent goroutines running
+	// as part of this group.
 	WithLimit(int) T
+
+	// WithLimiter will set the limiter of this group. This is useful if
+	// you want to share a limiter between multiple groups.
 	WithLimiter(Limiter) T
 }
 
+// Contextable is a group that can be configured to operate with a context.
+// By default, groups are not context-aware. Its type parameter is the return
+// type after configuring a group with a context.
 type Contextable[T any] interface {
+	// WithContext creates a new group with the given context. Note
+	// that WithContext implies WithErrors because it is difficult to
+	// use a context group correctly without error support.
 	WithContext(context.Context) T
 }
 
+// Errorable is a group that can be configured to run functions that return
+// errors. By default, groups are not error-aware. Its type parameter
+// is the return type after configuring a group to use error-returning
+// functions.
 type Errorable[T any] interface {
 	WithErrors() T
 }
@@ -80,15 +113,16 @@ type group struct {
 }
 
 func (g *group) Go(f func()) {
-	// g.go will never error if the context is not canceled
-	_ = g.go_(context.Background(), f)
+	// g.goCtx will never error if the context is not canceled
+	_ = g.goCtx(context.Background(), f)
 }
 
-func (g *group) go_(ctx context.Context, f func()) error {
-	// this will block until available, but should never error
+// goCtx starts a goroutine, using the provided context to
+// wait for the limiter.
+func (g *group) goCtx(ctx context.Context, f func()) error {
 	_, release, err := g.limiter.Acquire(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "acquire limiter")
 	}
 
 	g.wg.Add(1)
@@ -120,63 +154,54 @@ func (g *group) WithErrors() ErrorGroup {
 	return &errorGroup{group: g}
 }
 
-func (g *group) WithContext(ctx context.Context) ContextGroup {
-	return &contextGroup{ctx: ctx, group: g}
-}
-
-type contextGroup struct {
-	ctx context.Context
-	*group
-}
-
-func (g *contextGroup) Go(f func(context.Context)) {
-	// ignore error, just cancel
-	g.group.go_(g.ctx, func() {
-		f(g.ctx)
-	})
-}
-
-func (g *contextGroup) WithLimit(limit int) ContextGroup {
-	g.group.limiter = newBasicLimiter(limit)
-	return g
-}
-
-func (g *contextGroup) WithLimiter(limiter Limiter) ContextGroup {
-	g.group.limiter = limiter
-	return g
-}
-
-func (g *contextGroup) WithErrors() ContextErrorGroup {
+func (g *group) WithContext(ctx context.Context) ContextErrorGroup {
 	return &contextErrorGroup{
-		group: g.group,
-		ctx:   g.ctx,
+		ctx: ctx,
+		errorGroup: &errorGroup{
+			group: g,
+		},
 	}
 }
 
 type errorGroup struct {
 	*group
 
+	onlyFirst bool // if true, only keep the first error
+
 	mu   sync.Mutex
 	errs error
 }
 
 func (g *errorGroup) Go(f func() error) {
-	g.group.Go(func() {
-		err := f()
-		if err != nil {
-			g.mu.Lock()
-			g.errs = errors.Append(g.errs, err)
-			g.mu.Unlock()
-		}
-	})
+	g.goCtx(context.Background(), f)
 }
 
-func (g *errorGroup) Wait() (err error) {
+// goCtx starts the goroutine, capturing any errors from the limiter
+// in the set of errors.
+func (g *errorGroup) goCtx(ctx context.Context, f func() error) {
+	err := g.group.goCtx(ctx, func() {
+		g.addErr(f())
+	})
+	g.addErr(err)
+}
+
+func (g *errorGroup) addErr(err error) {
+	if err != nil {
+		g.mu.Lock()
+		if g.onlyFirst {
+			if g.errs != nil {
+				g.errs = err
+			}
+		} else {
+			g.errs = errors.Append(g.errs, err)
+		}
+		g.mu.Unlock()
+	}
+}
+
+func (g *errorGroup) Wait() error {
 	g.group.Wait()
-	g.mu.Lock()
-	err = g.errs
-	g.mu.Unlock()
-	return err
+	return g.errs
 }
 
 func (g *errorGroup) WithLimit(limit int) ErrorGroup {
@@ -191,52 +216,31 @@ func (g *errorGroup) WithLimiter(limiter Limiter) ErrorGroup {
 
 func (g *errorGroup) WithContext(ctx context.Context) ContextErrorGroup {
 	return &contextErrorGroup{
-		group: g.group,
-		ctx:   ctx,
+		ctx:        ctx,
+		errorGroup: g,
 	}
+}
+
+func (g *errorGroup) WithFirstError() ErrorGroup {
+	g.onlyFirst = true
+	return g
 }
 
 type contextErrorGroup struct {
-	*group
+	*errorGroup
 
 	ctx    context.Context
-	cancel context.CancelFunc
-
-	mu   sync.Mutex
-	errs error
+	cancel context.CancelFunc // nil unless WithCancelOnError
 }
 
 func (g *contextErrorGroup) Go(f func(context.Context) error) {
-	err := g.group.go_(g.ctx, func() {
+	g.errorGroup.goCtx(g.ctx, func() error {
 		err := f(g.ctx)
-		if err != nil {
-			g.mu.Lock()
-			if g.cancel != nil {
-				// The presence of cancel indicates that that we only want the
-				// first error (the error caused the cancel).
-				if g.errs != nil {
-					g.errs = err
-				}
-				g.cancel()
-			} else {
-				g.errs = errors.Append(g.errs, err)
-			}
-			g.mu.Unlock()
+		if err != nil && g.cancel != nil {
+			g.cancel()
 		}
+		return err
 	})
-	if err != nil {
-		g.mu.Lock()
-		g.errs = errors.Append(g.errs, errors.Wrap(err, "acquire limiter"))
-		g.mu.Unlock()
-	}
-}
-
-func (g *contextErrorGroup) Wait() (err error) {
-	g.group.Wait()
-	g.mu.Lock()
-	err = g.errs
-	g.mu.Unlock()
-	return err
 }
 
 func (g *contextErrorGroup) WithCancelOnError() ContextErrorGroup {
@@ -245,11 +249,16 @@ func (g *contextErrorGroup) WithCancelOnError() ContextErrorGroup {
 }
 
 func (g *contextErrorGroup) WithLimit(limit int) ContextErrorGroup {
-	g.group.limiter = make(basicLimiter, limit)
+	g.limiter = newBasicLimiter(limit)
 	return g
 }
 
 func (g *contextErrorGroup) WithLimiter(limiter Limiter) ContextErrorGroup {
-	g.group.limiter = limiter
+	g.limiter = limiter
+	return g
+}
+
+func (g *contextErrorGroup) WithFirstError() ContextErrorGroup {
+	g.onlyFirst = true
 	return g
 }

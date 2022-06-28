@@ -6,7 +6,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -88,7 +87,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	}
 	textSearchLimiter.SetLimit(len(eps) * 32)
 
-	g := group.New().WithLimiter(textSearchLimiter).WithContext(ctx).WithErrors()
+	g := group.New().WithLimiter(textSearchLimiter).WithContext(ctx)
 	defer func() { err = errors.Append(err, g.Wait()) }()
 
 	for _, repoAllRevs := range s.Repos {

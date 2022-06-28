@@ -122,7 +122,6 @@ func TestBatchingStream(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			g.Go(func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
-				wg.Done()
 			})
 		}
 		g.Wait()
