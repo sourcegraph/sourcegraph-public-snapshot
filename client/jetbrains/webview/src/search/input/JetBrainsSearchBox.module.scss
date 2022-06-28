@@ -88,6 +88,18 @@
     &__context-menu {
         // On JetBrains, the menu always appears under the context button with a top positon of 40px
         max-height: calc(100vh - 40px);
+
+        button {
+            &[data-selected],
+            &:hover,
+            &:focus {
+                background-color: var(--dropdown-link-active-bg);
+
+                > small {
+                    color: var(--light-text) !important;
+                }
+            }
+        }
     }
 
     &__separator {
