@@ -349,6 +349,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             )}
                         </>
                     )}
+                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
@@ -389,7 +390,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                 />
                             </NavAction>
                         )}
-                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>
