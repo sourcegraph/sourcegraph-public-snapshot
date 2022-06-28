@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -125,7 +126,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		Limit:        inputs.MaxResults(),
 		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 		DisplayLimit: displayLimit,
-		RepoNamer:    repoNamer(ctx, h.db),
+		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
 	var wgLogLatency sync.WaitGroup

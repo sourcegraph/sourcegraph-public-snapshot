@@ -2,21 +2,17 @@ package streaming
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -63,7 +59,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	progress := progressAggregator{
-		RepoNamer: repoNamer(ctx, h.db),
+		RepoNamer: streamclient.RepoNamer(ctx, h.db),
 	}
 
 	sendProgress := func() {
@@ -253,43 +249,5 @@ func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
 			fields = append(fields, otlog.Error(stat.Error))
 		}
 		log(fields...)
-	}
-}
-
-func repoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
-	cache := map[api.RepoID]api.RepoName{}
-
-	return func(ids []api.RepoID) []api.RepoName {
-		// Strategy is to populate from cache. So we first populate the cache
-		// with IDs not already in the cache.
-		var missing []api.RepoID
-		for _, id := range ids {
-			if _, ok := cache[id]; !ok {
-				missing = append(missing, id)
-			}
-		}
-
-		if len(missing) > 0 {
-			err := db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
-				IDs: missing,
-			}, func(repo *types.MinimalRepo) {
-				cache[repo.ID] = repo.Name
-			})
-			if err != nil {
-				// repoNamer is best-effort, so we just log the error.
-				log15.Warn("streaming search repoNamer failed to list names", "error", err)
-			}
-		}
-
-		names := make([]api.RepoName, 0, len(ids))
-		for _, id := range ids {
-			if name, ok := cache[id]; ok {
-				names = append(names, name)
-			} else {
-				names = append(names, api.RepoName(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
-			}
-		}
-
-		return names
 	}
 }
