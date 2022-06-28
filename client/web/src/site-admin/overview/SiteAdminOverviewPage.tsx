@@ -11,7 +11,7 @@ import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/compone
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, Icon, H2, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
@@ -259,16 +259,17 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                             showLegend={false}
                                             header={
                                                 <div className="site-admin-overview-page__detail-header">
-                                                    <h2>Weekly unique users</h2>
-                                                    <h3>
+                                                    <H2>Weekly unique users</H2>
+                                                    <H3>
                                                         <Button
                                                             to="/site-admin/usage-statistics"
                                                             variant="secondary"
                                                             as={Link}
                                                         >
-                                                            View all usage statistics <Icon as={OpenInNewIcon} />
+                                                            View all usage statistics{' '}
+                                                            <Icon as={OpenInNewIcon} aria-hidden={true} />
                                                         </Button>
-                                                    </h3>
+                                                    </H3>
                                                 </div>
                                             }
                                         />

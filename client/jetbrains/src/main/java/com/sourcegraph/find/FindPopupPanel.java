@@ -1,52 +1,69 @@
 package com.sourcegraph.find;
 
-import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.editor.*;
-import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.PopupBorder;
 import com.intellij.ui.components.JBPanel;
-import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.components.BorderLayoutPanel;
+import com.sourcegraph.browser.BrowserAndLoadingPanel;
+import com.sourcegraph.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.browser.SourcegraphJBCefBrowser;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.Date;
 
 /**
  * Inspired by <a href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
 public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
     private final SourcegraphJBCefBrowser browser;
+    private final PreviewPanel previewPanel;
+    private final BrowserAndLoadingPanel browserAndLoadingPanel;
+    private final SelectionMetadataPanel selectionMetadataPanel;
+    private Date lastPreviewUpdate;
 
-    public FindPopupPanel(Project project) {
+    public FindPopupPanel(@NotNull Project project) {
         super(new BorderLayout());
 
         setPreferredSize(JBUI.size(1200, 800));
         setBorder(PopupBorder.Factory.create(true, true));
         setFocusCycleRoot(true);
 
-        // Create splitter
         Splitter splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
         add(splitter, BorderLayout.CENTER);
 
-        JBPanel<JBPanelWithEmptyText> jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser() : null;
+        selectionMetadataPanel = new SelectionMetadataPanel();
+        previewPanel = new PreviewPanel(project);
+
+        BorderLayoutPanel bottomPanel = new BorderLayoutPanel();
+        bottomPanel.add(selectionMetadataPanel, BorderLayout.NORTH);
+        bottomPanel.add(previewPanel, BorderLayout.CENTER);
+
+        browserAndLoadingPanel = new BrowserAndLoadingPanel();
+        JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this);
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
         if (browser != null) {
-            jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
+            browserAndLoadingPanel.setBrowser(browser);
         }
 
-        JBPanel<JBPanelWithEmptyText> previewPanel = createPreviewPanel(project);
+        // The border is needed because without it, window and splitter resize don't work because the JCEF
+        // doesn't properly pass the mouse events to Swing.
+        // 4px is the minimum amount to make it work for the window resize, and 5px for the splitter.
+        BorderLayoutPanel topPanel = new BorderLayoutPanel();
+        topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+        topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
+        topPanel.setMinimumSize(JBUI.size(750, 200));
 
-        splitter.setFirstComponent(jcefPanel);
-        splitter.setSecondComponent(previewPanel);
+        splitter.setFirstComponent(topPanel);
+        splitter.setSecondComponent(bottomPanel);
+
+        lastPreviewUpdate = new Date();
     }
 
     @Nullable
@@ -54,38 +71,37 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return browser;
     }
 
-    @NotNull
-    private JBPanel<JBPanelWithEmptyText> createPreviewPanel(Project project) {
-        EditorFactory editorFactory = EditorFactory.getInstance();
+    @Nullable
+    public PreviewPanel getPreviewPanel() {
+        return previewPanel;
+    }
 
-        String contentTs = "let message: string = 'Hello, TypeScript!';\n" +
-            "\n" +
-            "let heading = document.createElement('h1');\n" +
-            "heading.textContent = message;\n" +
-            "\n" +
-            "document.body.appendChild(heading);";
-        VirtualFile virtualFile = new LightVirtualFile("helloWorld.ts", contentTs);
-        Document document = editorFactory.createDocument(contentTs);
+    public void setBrowserVisible(boolean visible) {
+        browserAndLoadingPanel.setBrowserVisible(visible);
+    }
 
-        Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+    public void indicateLoadingIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setLoading(true);
+            previewPanel.clearContent();
+        }
+    }
 
-        EditorSettings settings = editor.getSettings();
-        settings.setLineMarkerAreaShown(true);
-        settings.setFoldingOutlineShown(false);
-        settings.setAdditionalColumnsCount(0);
-        settings.setAdditionalLinesCount(0);
-        settings.setAnimatedScrolling(false);
-        settings.setAutoCodeFoldingEnabled(false);
+    public void setPreviewContentIfInTime(@NotNull PreviewContent previewContent) {
+        if (lastPreviewUpdate.before(previewContent.getReceivedDateTime())) {
+            this.lastPreviewUpdate = previewContent.getReceivedDateTime();
+            selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
+            previewPanel.setContent(previewContent);
+        }
+    }
 
-        HighlightManager highlightManager = HighlightManager.getInstance(project);
-        highlightManager.addOccurrenceHighlight(editor, 23, 41, EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
-
-        JBPanel<JBPanelWithEmptyText> editorPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Type search query to find on Sourcegraph");
-        editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
-        editorPanel.invalidate();
-        editorPanel.validate();
-
-        return editorPanel;
+    public void clearPreviewContentIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setContent(null);
+        }
     }
 
     @Override
@@ -93,5 +109,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         if (browser != null) {
             browser.dispose();
         }
+
+        previewPanel.dispose();
     }
 }

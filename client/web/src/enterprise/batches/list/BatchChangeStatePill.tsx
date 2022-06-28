@@ -19,13 +19,14 @@ const actionableBatchSpecStates = [
 type ActionableBatchSpecState = typeof actionableBatchSpecStates[number]
 
 const isLatestExecutionActionable = (executionState: BatchSpecState): executionState is ActionableBatchSpecState =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     actionableBatchSpecStates.includes(executionState as any)
 
 export interface BatchChangeStatePillProps {
     className?: string
     state: BatchChangeState
     latestExecutionState?: BatchSpecState
-    currentSpecID: Scalars['ID']
+    currentSpecID?: Scalars['ID']
     latestSpecID?: Scalars['ID']
 }
 

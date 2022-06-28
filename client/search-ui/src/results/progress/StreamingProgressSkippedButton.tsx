@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import { mdiAlertCircle, mdiChevronDown } from '@mdi/js'
 
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
@@ -40,9 +39,13 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         data-testid="streaming-progress-skipped"
                         as={Button}
                         aria-expanded={isOpen}
+                        aria-label="Open excluded results"
                     >
-                        {skippedWithWarningOrError ? <Icon className="mr-2" as={AlertCircleIcon} /> : null}
-                        Some results excluded <Icon data-caret={true} className="mr-0" as={ChevronDownIcon} />
+                        {skippedWithWarningOrError ? (
+                            <Icon aria-hidden={true} className="mr-2" svgPath={mdiAlertCircle} />
+                        ) : null}
+                        Some results excluded{' '}
+                        <Icon aria-hidden={true} data-caret={true} className="mr-0" svgPath={mdiChevronDown} />
                     </PopoverTrigger>
                     <PopoverContent
                         position={Position.bottomStart}

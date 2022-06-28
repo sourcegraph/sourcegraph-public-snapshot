@@ -4,14 +4,16 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,6 +30,7 @@ type CachedLocationResolver struct {
 	sync.RWMutex
 	children map[api.RepoID]*cachedRepositoryResolver
 	db       database.DB
+	logger   log.Logger
 }
 
 type cachedRepositoryResolver struct {
@@ -45,6 +48,7 @@ type cachedCommitResolver struct {
 // NewCachedLocationResolver creates a location resolver with an empty cache.
 func NewCachedLocationResolver(db database.DB) *CachedLocationResolver {
 	return &CachedLocationResolver{
+		logger:   log.Scoped("CachedLocationResolver", ""),
 		db:       db,
 		children: map[api.RepoID]*cachedRepositoryResolver{},
 	}
@@ -201,7 +205,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.db).Get(ctx, id)
+	repo, err := backend.NewRepos(r.logger, r.db).Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -221,7 +225,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	commitID, err := git.ResolveRevision(ctx, r.db, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := gitserver.NewClient(r.db).ResolveRevision(ctx, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil

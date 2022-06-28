@@ -3,11 +3,13 @@ package rockskip
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -94,7 +96,26 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "This is the symbols service status page.")
 	fmt.Fprintln(w, "")
 
-	fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
+	if os.Getenv("ROCKSKIP_REPOS") == "" {
+		fmt.Fprintln(w, "⚠️ Rockskip is not enabled for any repositories. Remember to set the ROCKSKIP_REPOS environment variable and restart the symbols service.")
+		fmt.Fprintln(w, "")
+	} else {
+		fmt.Fprintln(w, "Rockskip is enabled for these repositories:")
+		for _, repo := range strings.Split(os.Getenv("ROCKSKIP_REPOS"), ",") {
+			fmt.Fprintln(w, "  "+repo)
+		}
+		fmt.Fprintln(w, "")
+
+		if repositoryCount == 0 {
+			fmt.Fprintln(w, "⚠️ None of the enabled repositories have been indexed yet!")
+			fmt.Fprintln(w, "⚠️ Open the symbols sidebar on a repository with Rockskip enabled to trigger indexing.")
+			fmt.Fprintln(w, "⚠️ Check the logs for errors if requests fail or if there are no in-flight requests below.")
+			fmt.Fprintln(w, "⚠️ Docs: https://docs.sourcegraph.com/code_intelligence/explanations/rockskip")
+			fmt.Fprintln(w, "")
+		}
+	}
+
+	fmt.Fprintf(w, "Number of rows in rockskip_repos: %d\n", repositoryCount)
 	fmt.Fprintf(w, "Size of symbols table: %s\n", symbolsSize)
 	fmt.Fprintln(w, "")
 
@@ -124,16 +145,12 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 
 	for _, id := range ids {
 		status := s.status.threadIdToThreadStatus[id]
+		remaining := status.Remaining()
 		status.WithLock(func() {
 			fmt.Fprintf(w, "%s\n", status.Name)
 			if status.Total > 0 {
 				progress := float64(status.Indexed) / float64(status.Total)
-				remaining := "unknown"
-				if progress != 0 {
-					total := status.Tasklog.TotalDuration()
-					remaining = fmt.Sprint(time.Duration(total.Seconds()/progress)*time.Second - total)
-				}
-				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits), %s remaining\n", progress*100, status.Indexed, status.Total, remaining)
+				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits), estimated completion: %s\n", progress*100, status.Indexed, status.Total, remaining)
 			}
 			fmt.Fprintf(w, "    %s\n", status.Tasklog)
 			locks := []string{}
@@ -189,6 +206,20 @@ func (s *ThreadStatus) End() {
 		defer s.mu.Unlock()
 		s.onEnd()
 	}
+}
+
+func (s *ThreadStatus) Remaining() string {
+	remaining := "unknown"
+	s.WithLock(func() {
+		if s.Total > 0 {
+			progress := float64(s.Indexed) / float64(s.Total)
+			if progress != 0 {
+				total := s.Tasklog.TotalDuration()
+				remaining = humanize.Time(time.Now().Add(time.Duration(total.Seconds()/progress)*time.Second - total))
+			}
+		}
+	})
+	return remaining
 }
 
 type TaskLog struct {

@@ -7,9 +7,12 @@ import (
 
 	"github.com/neelance/parallel"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -17,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,7 +29,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, matches)
+	langs, err := searchResultsStatsLanguages(ctx, srs.logger, srs.sr.db, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +48,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 			srs.err = err
 			return
 		}
-		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(srs.sr.SearchInputs, b)
 		if err != nil {
 			srs.err = err
 			return
@@ -62,7 +64,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 	return srs.results, srs.err
 }
 
-func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
+func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
 		repo     api.RepoID
@@ -111,12 +113,12 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 				filesMap[key] = &fileStatsWork{}
 			}
 
-			if len(fileMatch.LineMatches) > 0 {
+			if len(fileMatch.ChunkMatches) > 0 {
 				// Only count matching lines. TODO(sqs): bytes are not counted for these files
 				if filesMap[key].partialFiles == nil {
 					filesMap[key].partialFiles = map[string]uint64{}
 				}
-				filesMap[key].partialFiles[fileMatch.Path] += uint64(len(fileMatch.LineMatches))
+				filesMap[key].partialFiles[fileMatch.Path] += uint64(fileMatch.ChunkMatches.MatchCount())
 			} else {
 				// Count entire file.
 				filesMap[key].fullEntries = append(filesMap[key].fullEntries, &fileInfo{
@@ -131,12 +133,12 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := git.GetDefaultBranch(ctx, db, repoName.Name)
+				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name)
 				if err != nil {
 					run.Error(err)
 					return
 				}
-				inv, err := backend.NewRepos(db).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return

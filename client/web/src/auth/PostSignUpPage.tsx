@@ -6,7 +6,7 @@ import { useLocation, useHistory } from 'react-router'
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -143,8 +143,8 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <h2>Get started with Sourcegraph</h2>
-                                <p className="text-muted pb-3">Follow these steps to set up your account</p>
+                                <H2>Get started with Sourcegraph</H2>
+                                <Text className="text-muted pb-3">Follow these steps to set up your account</Text>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
                                 <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={3}>
@@ -172,8 +172,8 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-3', styles.container)}>
-                                                <h3>Add repositories</h3>
-                                                <p className="text-muted mb-4">
+                                                <H3>Add repositories</H3>
+                                                <Text className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code
                                                     all in one place.
@@ -185,7 +185,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                                         {' '}
                                                         Learn more
                                                     </Link>
-                                                </p>
+                                                </Text>
                                                 <SelectAffiliatedRepos
                                                     authenticatedUser={user}
                                                     onRepoSelectionModeChange={setRepoSelectionMode}

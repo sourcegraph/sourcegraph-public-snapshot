@@ -8,7 +8,7 @@ import { RouteComponentProps } from 'react-router'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -76,17 +76,18 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                 <PageTitle title={`Manifest of ${this.props.extension.id}`} />
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
-                        <h3 className="mb-0 mr-1">Manifest</h3>
+                        <H3 className="mb-0 mr-1">Manifest</H3>
                         <Icon
                             className="text-muted"
                             data-tooltip="The published JSON description of how to run or access the extension"
                             as={InformationOutlineIcon}
+                            aria-label="The published JSON description of how to run or access the extension"
                         />
                     </div>
                     <div>
                         {this.props.extension.manifest && (
                             <Button onClick={this.onViewModeButtonClick} variant="secondary">
-                                <Icon as={EyeIcon} /> Use{' '}
+                                <Icon as={EyeIcon} aria-hidden={true} /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </Button>
                         )}{' '}
@@ -117,7 +118,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                         />
                     ) : (
                         <pre className={classNames('form-control', styles.plainViewer)}>
-                            <code>{this.props.extension.rawManifest}</code>
+                            <Code>{this.props.extension.rawManifest}</Code>
                         </pre>
                     )}
                 </div>

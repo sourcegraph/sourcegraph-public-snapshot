@@ -1,60 +1,85 @@
-import { render, RenderResult, cleanup, fireEvent, waitFor, screen } from '@testing-library/react'
+import { render, RenderResult, cleanup, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { Tooltip } from './Tooltip'
 
 const TooltipTest = () => (
     <>
-        <Tooltip />
-        <div>
-            Hover on{' '}
-            <strong data-testid="hoverable-1" data-tooltip="Tooltip 1">
-                me
-            </strong>
-            , or{' '}
-            <strong data-testid="hoverable-2" data-tooltip="Tooltip 2">
-                me
-            </strong>
-        </div>
+        Hover on{' '}
+        <Tooltip content="Tooltip 1">
+            <strong data-testid="trigger-1">me</strong>
+        </Tooltip>
+        , or{' '}
+        <Tooltip content="Tooltip 2">
+            <strong data-testid="trigger-2">me</strong>
+        </Tooltip>
     </>
 )
 
 describe('Tooltip', () => {
-    let queries: RenderResult
+    let rendered: RenderResult
 
     afterEach(cleanup)
 
-    describe('Hoverable Tooltip', () => {
-        beforeEach(() => {
-            queries = render(<TooltipTest />)
+    beforeEach(() => {
+        rendered = render(<TooltipTest />)
+    })
+
+    it('displays content when the trigger is hovered', async () => {
+        userEvent.hover(rendered.getByTestId('trigger-1'))
+
+        await waitFor(() => {
+            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', 'radix-0')
+            expect(rendered.getByTestId('trigger-2')).not.toHaveAttribute('aria-describedby')
+
+            // Should be one tooltip for visual users, and a second for use with aria-describedby
+            const tooltips = rendered.getAllByRole('tooltip')
+            expect(tooltips).toHaveLength(2)
+            expect(tooltips[0]).toHaveTextContent('Tooltip 1')
+            expect(tooltips[1]).toHaveTextContent('Tooltip 1')
+            expect(tooltips[1]).toHaveAttribute('id', 'radix-0')
         })
 
-        it('Shows tooltip properly on hover', async () => {
-            fireEvent.mouseOver(queries.getByTestId('hoverable-1'))
+        userEvent.hover(rendered.getByTestId('trigger-2'))
 
-            await waitFor(() => {
-                expect(screen.getByRole('tooltip')).toHaveTextContent('Tooltip 1')
-                expect(screen.getByRole('tooltip').closest('.show.fade')).toBeInTheDocument()
-            })
+        await waitFor(() => {
+            expect(rendered.getByTestId('trigger-1')).not.toHaveAttribute('aria-describedby')
+            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', 'radix-1')
 
-            expect(document.body).toMatchSnapshot()
+            // Should be one tooltip for visual users, and a second for use with aria-describedby
+            const tooltips = rendered.getAllByRole('tooltip')
+            expect(tooltips).toHaveLength(2)
+            expect(tooltips[0]).toHaveTextContent('Tooltip 2')
+            expect(tooltips[1]).toHaveTextContent('Tooltip 2')
+            expect(tooltips[1]).toHaveAttribute('id', 'radix-1')
+        })
+    })
+
+    it('hides content when the ESC key is pressed', async () => {
+        userEvent.hover(rendered.getByTestId('trigger-1'))
+
+        await waitFor(() => {
+            expect(rendered.getAllByRole('tooltip')).toHaveLength(2)
         })
 
-        it('Handles multiple tooltips properly', async () => {
-            fireEvent.mouseOver(queries.getByTestId('hoverable-1'))
+        userEvent.type(rendered.getByTestId('trigger-1'), '{esc}')
 
-            await waitFor(() => {
-                expect(screen.getByRole('tooltip')).toHaveTextContent('Tooltip 1')
-                expect(screen.getByRole('tooltip').closest('.show.fade')).toBeInTheDocument()
-            })
+        await waitFor(() => {
+            expect(rendered.queryByRole('tooltip')).not.toBeInTheDocument()
+        })
+    })
 
-            fireEvent.mouseOver(queries.getByTestId('hoverable-2'))
+    it('does not hide content when the trigger is clicked', async () => {
+        userEvent.hover(rendered.getByTestId('trigger-1'))
 
-            await waitFor(() => {
-                expect(screen.getByRole('tooltip')).toHaveTextContent('Tooltip 2')
-                expect(screen.getByRole('tooltip').closest('.show.fade')).toBeInTheDocument()
-            })
+        await waitFor(() => {
+            expect(rendered.getAllByRole('tooltip')).toHaveLength(2)
+        })
 
-            expect(document.body).toMatchSnapshot()
+        userEvent.click(rendered.getByTestId('trigger-1'))
+
+        await waitFor(() => {
+            expect(rendered.getAllByRole('tooltip')).toHaveLength(2)
         })
     })
 })

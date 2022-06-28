@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
-import { Button, Modal, Select } from '@sourcegraph/wildcard'
+import { Button, Modal, Select, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -59,7 +59,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                     data-testid="saved-search-modal"
                 >
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
-                        <h3 id={MODAL_LABEL_ID}>Save search query to: </h3>
+                        <H3 id={MODAL_LABEL_ID}>Save search query to: </H3>
 
                         <Select aria-label="" onChange={this.onLocationChange} selectClassName={styles.select}>
                             <option value={UserOrOrg.User}>User</option>

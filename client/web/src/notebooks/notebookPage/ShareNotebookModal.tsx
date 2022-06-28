@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Modal, Button, Checkbox } from '@sourcegraph/wildcard'
+import { Modal, Button, Checkbox, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -61,7 +61,7 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
 
     return (
         <Modal isOpen={isOpen} position="top-third" onDismiss={toggleModal} aria-labelledby={shareLabelId}>
-            <h3 id={shareLabelId}>Share Notebook</h3>
+            <H3 id={shareLabelId}>Share Notebook</H3>
             <div className={classNames('mb-2', styles.body)}>
                 <NotebookShareOptionsDropdown
                     isSourcegraphDotCom={isSourcegraphDotCom}

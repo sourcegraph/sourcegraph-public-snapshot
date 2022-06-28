@@ -115,13 +115,25 @@ interface RevisionsPopoverCommitsProps {
     currentCommitID?: string
 
     onSelect?: (node: GitCommitAncestorFields) => void
+
+    tabLabel: string
 }
 
 const BATCH_COUNT = 15
 
 export const RevisionsPopoverCommits: React.FunctionComponent<
     React.PropsWithChildren<RevisionsPopoverCommitsProps>
-> = ({ repo, defaultBranch, getPathFromRevision, currentRev, noun, pluralNoun, currentCommitID, onSelect }) => {
+> = ({
+    repo,
+    defaultBranch,
+    getPathFromRevision,
+    currentRev,
+    noun,
+    pluralNoun,
+    currentCommitID,
+    onSelect,
+    tabLabel,
+}) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
@@ -183,6 +195,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
             summary={summary}
             inputValue={searchValue}
             onInputChange={setSearchValue}
+            inputAriaLabel={tabLabel}
         >
             {response.connection?.nodes?.map((node, index) => (
                 <GitCommitNode

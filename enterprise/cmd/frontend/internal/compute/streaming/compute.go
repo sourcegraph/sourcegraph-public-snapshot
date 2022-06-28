@@ -11,45 +11,70 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
-	for _, m := range matches {
-		result, err := cmd.Run(ctx, db, m)
-		if err != nil {
-			return err
+func toComputeResult(ctx context.Context, db database.DB, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
+	if v, ok := match.(*result.CommitMatch); ok && v.DiffPreview != nil {
+		for _, diffMatch := range v.CommitToDiffMatches() {
+			result, err := cmd.Run(ctx, db, diffMatch)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, result)
 		}
-		f(result)
+	} else {
+		result, err := cmd.Run(ctx, db, match)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, result)
 	}
-	return nil
+	return out, nil
 }
 
-func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() error) {
+func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
 	computeQuery, err := compute.Parse(query)
 	if err != nil {
-		return nil, func() error { return err }
+		return nil, func() (*search.Alert, error) { return nil, err }
 	}
 
 	searchQuery, err := computeQuery.ToSearchQuery()
 	if err != nil {
-		return nil, func() error { return err }
+		return nil, func() (*search.Alert, error) { return nil, err }
 	}
 
-	eventsC := make(chan Event)
-	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		if len(event.Results) > 0 {
-			callback := func(result compute.Result) {
-				eventsC <- Event{Results: []compute.Result{result}}
+	eventsC := make(chan Event, 8)
+	errorC := make(chan error, 1)
+	type groupEvent struct {
+		results []compute.Result
+		err     error
+	}
+	g := group.NewParallelOrdered(8, func(e groupEvent) {
+		if e.err != nil {
+			select {
+			case errorC <- e.err:
+			default:
 			}
-			_ = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
-			// TODO(rvantonder): compute err is currently ignored. Process it and send alerts/errors as needed.
+		} else {
+			eventsC <- Event{Results: e.results}
+		}
+	})
+	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+		for _, match := range event.Results {
+			match := match
+			g.Submit(func() groupEvent {
+				results, err := toComputeResult(ctx, db, computeQuery.Command, match)
+				return groupEvent{results, err}
+			})
 		}
 	})
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
 		close(eventsC)
-		return eventsC, func() error { return err }
+		close(errorC)
+		return eventsC, func() (*search.Alert, error) { return nil, err }
 	}
 
 	patternType := "regexp"
@@ -57,23 +82,32 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
-		return eventsC, func() error { return err }
+		close(errorC)
+
+		return eventsC, func() (*search.Alert, error) { return nil, err }
 	}
 
 	type finalResult struct {
-		err error
+		alert *search.Alert
+		err   error
 	}
 	final := make(chan finalResult, 1)
 	go func() {
 		defer close(final)
 		defer close(eventsC)
+		defer close(errorC)
+		defer g.Done()
 
-		_, err := searchClient.Execute(ctx, stream, inputs)
-		final <- finalResult{err: err}
+		alert, err := searchClient.Execute(ctx, stream, inputs)
+		final <- finalResult{alert: alert, err: err}
 	}()
 
-	return eventsC, func() error {
+	return eventsC, func() (*search.Alert, error) {
+		computeErr := <-errorC
+		if computeErr != nil {
+			return nil, computeErr
+		}
 		f := <-final
-		return f.err
+		return f.alert, f.err
 	}
 }

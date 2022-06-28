@@ -49,7 +49,7 @@ type p4Execer interface {
 // NewProvider returns a new Perforce authorization provider that uses the given
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
-// with emails of Perforce Server users. It uses our default gitserver client.
+// with emails of Perforce Server users.
 func NewProvider(urn, host, user, password string, depots []extsvc.RepoID, db database.DB) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{

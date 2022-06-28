@@ -30,7 +30,7 @@ sequenceDiagram
   end
 
   loop len(locations) < limit and cursor.RemotePhase
-    QueryResolver -->>+ DB store: ReferenceIDsAndFilters
+    QueryResolver -->>+ DB store: ReferenceIDs
     DB store      -->>- QueryResolver: references
     QueryResolver -->>+ DB store: GetDumpsByIDs
     DB store      -->>- QueryResolver: dumps

@@ -3,13 +3,12 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, H2, H3, Link } from '@sourcegraph/wildcard'
+import { Button, Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
-import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -25,7 +24,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<
     React.PropsWithChildren<{ authenticatedUser: AuthenticatedUser | null }>
 > = ({ authenticatedUser }) => (
     <div className="text-center">
-        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
+        <H2 className="text-muted mb-2">No code monitors have been created.</H2>
         {!authenticatedUser && (
             <CodeMonitorSignUpLink
                 className="my-3"
@@ -85,10 +84,9 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                     </Button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
-                    <CodeMonitorInfo />
-                    <h3 className="mb-2">
+                    <H3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
-                    </h3>
+                    </H3>
                     <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,

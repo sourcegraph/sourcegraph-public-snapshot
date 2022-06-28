@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -37,7 +37,23 @@ var (
 		Name:      "start",
 		ArgsUsage: "[commandset]",
 		Usage:     "🌟 Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment",
-		Category:  CategoryDev,
+		UsageText: `
+# Run default environment, Sourcegraph enterprise:
+sg start
+
+# List available environments (defined under 'commandSets' in 'sg.config.yaml'):
+sg start -help
+
+# Run the enterprise environment with code-intel enabled:
+sg start enterprise-codeintel
+
+# Run the environment for Batch Changes development:
+sg start batches
+
+# Override the logger levels for specific services
+sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+		`,
+		Category: CategoryDev,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:        "debug",
@@ -80,56 +96,51 @@ var (
 			}
 			return
 		}),
-		Action: execAdapter(startExec),
+		Action: startExec,
 	}
 )
 
 func constructStartCmdLongHelp() string {
 	var out strings.Builder
 
-	fmt.Fprintf(&out, `Runs the given commandset.
-
-If no commandset is specified, it starts the commandset with the name 'default'.
-
-Use this to start your Sourcegraph environment!
-`)
+	fmt.Fprintf(&out, `Use this to start your Sourcegraph environment!`)
 
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		std.NewOutput(&out, false).WriteWarningf(err.Error())
 		return out.String()
 	}
 
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+	fmt.Fprintf(&out, "\n\n")
+	fmt.Fprintf(&out, "Available comamndsets in `%s`:\n", configFile)
 
 	var names []string
 	for name := range config.Commandsets {
 		switch name {
 		case "enterprise-codeintel":
-			names = append(names, fmt.Sprintf("  %s 🧠", name))
+			names = append(names, fmt.Sprintf("%s 🧠", name))
 		case "batches":
-			names = append(names, fmt.Sprintf("  %s 🦡", name))
+			names = append(names, fmt.Sprintf("%s 🦡", name))
 		default:
-			names = append(names, fmt.Sprintf("  %s", name))
+			names = append(names, fmt.Sprintf("%s", name))
 		}
 	}
 	sort.Strings(names)
-	fmt.Fprint(&out, strings.Join(names, "\n"))
+	fmt.Fprint(&out, "\n* "+strings.Join(names, "\n* "))
 
 	return out.String()
 }
 
-func startExec(ctx context.Context, args []string) error {
+func startExec(ctx *cli.Context) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
-		writeWarningLinef(err.Error())
-		os.Exit(1)
+		return err
 	}
 
+	args := ctx.Args().Slice()
 	if len(args) > 2 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -137,14 +148,14 @@ func startExec(ctx context.Context, args []string) error {
 		if config.DefaultCommandset != "" {
 			args = append(args, config.DefaultCommandset)
 		} else {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
 			return flag.ErrHelp
 		}
 	}
 
 	set, ok := config.Commandsets[args[0]]
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 
@@ -153,37 +164,37 @@ func startExec(ctx context.Context, args []string) error {
 	if set.RequiresDevPrivate {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err))
-			os.Exit(1)
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
+			return NewEmptyExitErr(1)
 		}
 
 		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
 		exists, err := pathExists(devPrivatePath)
 		if err != nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
-			os.Exit(1)
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
+			return NewEmptyExitErr(1)
 		}
 		if !exists {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: dev-private repository not found!"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
-			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
 
-			stdout.Out.Write("")
+			std.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "If you know what you're doing and want disable the check, add the following to %s:", overwritePath))
-			stdout.Out.Write("")
-			stdout.Out.Write(fmt.Sprintf(`  commandsets:
+			std.Out.WriteLine(output.Styledf(output.StylePending, "If you know what you're doing and want disable the check, add the following to %s:", overwritePath))
+			std.Out.Write("")
+			std.Out.Write(fmt.Sprintf(`  commandsets:
     %s:
       requiresDevPrivate: false
 `, set.Name))
-			stdout.Out.Write("")
+			std.Out.Write("")
 
-			os.Exit(1)
+			return NewEmptyExitErr(1)
 		}
 	}
 
-	return startCommandSet(ctx, set, config)
+	return startCommandSet(ctx.Context, set, config)
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
@@ -202,7 +213,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	}
 
 	if len(cmds) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: no commands to run"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
 
@@ -222,11 +233,11 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
-	levelServices["debug"] = parseCsvs(debugStartServices.Value())
-	levelServices["info"] = parseCsvs(infoStartServices.Value())
-	levelServices["warn"] = parseCsvs(warnStartServices.Value())
-	levelServices["error"] = parseCsvs(errorStartServices.Value())
-	levelServices["crit"] = parseCsvs(critStartServices.Value())
+	levelServices["debug"] = debugStartServices.Value()
+	levelServices["info"] = infoStartServices.Value()
+	levelServices["warn"] = warnStartServices.Value()
+	levelServices["error"] = errorStartServices.Value()
+	levelServices["crit"] = critStartServices.Value()
 
 	overrides := make(map[string]string)
 	for level, services := range levelServices {
@@ -243,7 +254,7 @@ func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
 	logLevelVariable := "SRC_LOG_LEVEL"
 
 	if level, ok := overrides[cmd.Name]; ok {
-		stdout.Out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
+		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
 		if cmd.Env == nil {
 			cmd.Env = make(map[string]string, 1)
 			cmd.Env[logLevelVariable] = level
@@ -261,23 +272,4 @@ func pathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
-}
-
-func parseCsvs(inputs []string) []string {
-	var allValues []string
-	for _, i := range inputs {
-		values := parseCsv(i)
-		allValues = append(allValues, values...)
-	}
-	return allValues
-}
-
-// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
-func parseCsv(input string) []string {
-	tokens := strings.Split(input, ",")
-	results := make([]string, 0, len(tokens))
-	for _, token := range tokens {
-		results = append(results, strings.TrimSpace(token))
-	}
-	return results
 }

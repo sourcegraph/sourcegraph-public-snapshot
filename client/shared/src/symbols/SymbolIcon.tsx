@@ -115,5 +115,6 @@ export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolI
         className={classNames(getSymbolIconClassName(kind), className)}
         data-tooltip={kind.toLowerCase()}
         as={getSymbolIconComponent(kind)}
+        aria-label={`Symbol kind ${kind.toLowerCase()}`}
     />
 )

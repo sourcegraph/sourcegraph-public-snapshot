@@ -1,0 +1,113 @@
+- filename: cmd/frontend/internal/auth/userpasswd/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
+  interfaces:
+    - LockoutStore
+- filename: dev/team/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/dev/team
+  interfaces:
+    - TeammateResolver
+- filename: docker-images/prometheus/cmd/prom-wrapper/mocks/mocks_temp.go
+  path: github.com/prometheus/client_golang/api/prometheus/v1
+  interfaces:
+    - API
+- filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
+  interfaces:
+    - QueryResolver
+    - Resolver
+- filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
+  interfaces:
+    - ExtensionStore
+    - ReleaseStore
+- filename: enterprise/internal/database/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
+  interfaces:
+    - CodeMonitorStore
+    - EnterpriseDB
+    - PermsStore
+- filename: enterprise/internal/insights/background/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
+  interfaces:
+    - RepoStore
+- filename: enterprise/internal/insights/compression/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression
+  interfaces:
+    - CommitStore
+- filename: enterprise/internal/insights/discovery/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
+  interfaces:
+    - IndexableReposLister
+    - RepoStore
+    - SettingStore
+- filename: enterprise/internal/insights/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
+  interfaces:
+    - DataSeriesStore
+    - InsightMetadataStore
+    - Interface
+- filename: internal/authz/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz
+  interfaces:
+    - SubRepoPermissionChecker
+    - SubRepoPermissionsGetter
+- filename: internal/database/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/database
+  interfaces:
+    - AccessTokenStore
+    - AuthzStore
+    - BitbucketProjectPermissionsStore
+    - ConfStore
+    - DB
+    - EventLogStore
+    - ExternalServiceStore
+    - FeatureFlagStore
+    - GitserverLocalCloneStore
+    - GitserverRepoStore
+    - GlobalStateStore
+    - NamespaceStore
+    - OrgInvitationStore
+    - OrgMemberStore
+    - OrgStore
+    - PhabricatorStore
+    - RepoStore
+    - SavedSearchStore
+    - SearchContextsStore
+    - SecurityEventLogsStore
+    - SettingsStore
+    - SubRepoPermsStore
+    - TemporarySettingsStore
+    - UserCredentialsStore
+    - UserEmailsStore
+    - UserExternalAccountsStore
+    - UserPublicRepoStore
+    - UserStore
+    - WebhookLogStore
+- filename: internal/gitserver/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/gitserver
+  interfaces:
+    - Client
+- filename: internal/insights/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights
+  interfaces:
+    - Loader
+- filename: internal/repos/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/repos
+  interfaces:
+    - Store
+- filename: internal/search/client/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/search/client
+  interfaces:
+    - SearchClient
+- filename: internal/search/job/mockjob/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/search/job
+  interfaces:
+    - Job
+- filename: internal/uploadstore/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/uploadstore
+  interfaces:
+    - Store
+- filename: internal/workerutil/dbworker/store/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
+  interfaces:
+    - Store

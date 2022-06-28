@@ -81,7 +81,7 @@ func (r *siteResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := database.Settings(r.db).GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}

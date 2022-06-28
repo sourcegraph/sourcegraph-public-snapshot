@@ -10,8 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,15 +27,15 @@ func TestIdentifyError(t *testing.T) {
 }
 
 func TestDeserialize(t *testing.T) {
-	original := new(lsiftyped.Document)
-	original.Occurrences = append(original.Occurrences, &lsiftyped.Occurrence{
-		SyntaxKind: lsiftyped.SyntaxKind_IdentifierAttribute,
+	original := new(scip.Document)
+	original.Occurrences = append(original.Occurrences, &scip.Occurrence{
+		SyntaxKind: scip.SyntaxKind_IdentifierAttribute,
 	})
 
 	marshaled, _ := proto.Marshal(original)
 	data, _ := base64.StdEncoding.DecodeString(base64.StdEncoding.EncodeToString(marshaled))
 
-	roundtrip := new(lsiftyped.Document)
+	roundtrip := new(scip.Document)
 	err := proto.Unmarshal(data, roundtrip)
 
 	if err != nil {

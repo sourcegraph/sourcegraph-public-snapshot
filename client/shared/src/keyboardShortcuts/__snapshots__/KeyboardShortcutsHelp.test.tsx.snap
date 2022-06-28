@@ -36,6 +36,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
               class="modalHeader"
             >
               <h4
+                class="h4"
                 id="keyboard-shortcuts-help-modal-title"
               >
                 Keyboard shortcuts
@@ -46,9 +47,11 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                 type="button"
               >
                 <svg
-                  class="mdi-icon iconInline"
+                  aria-hidden="true"
+                  class="iconInline"
                   fill="currentColor"
                   height="24"
+                  role="img"
                   viewBox="0 0 24 24"
                   width="24"
                 >

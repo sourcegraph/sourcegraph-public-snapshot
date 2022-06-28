@@ -19,6 +19,7 @@ import {
     MenuItem,
     Position,
     PageSelector,
+    H3,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -376,7 +377,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChild
                 {authenticatedUser && data && data.pendingInvitations.length === 0 && (
                     <Container>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <h3>No invites pending</h3>
+                            <H3>No invites pending</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}

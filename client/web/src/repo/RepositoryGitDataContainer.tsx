@@ -13,7 +13,8 @@ import {
     isRevisionNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { Code } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 
@@ -29,7 +30,7 @@ export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName
         title={displayRepoName(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
-        detail={<code>{progress}</code>}
+        detail={<Code>{progress}</Code>}
         body={<DirectImportRepoAlert className="mt-3" />}
     />
 )

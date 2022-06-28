@@ -74,7 +74,12 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.Index,
-        render: () => <Redirect to={PageRoutes.Search} />,
+        render: props =>
+            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
+                <Redirect to="https://about.sourcegraph.com" />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
         exact: true,
     },
     {
@@ -85,13 +90,9 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SearchConsole,
         render: props => {
-            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+            const { showMultilineSearchConsole } = getExperimentalFeatures()
 
-            return showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+            return showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
         exact: true,
     },
@@ -230,7 +231,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
+        render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
     {
         path: PageRoutes.Extensions,

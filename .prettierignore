@@ -1,12 +1,11 @@
 .bin/
 *.bundle.*
-lib/codeintel/lsiftyped
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
 **/coverage
-internal/database/schema.md
-internal/database/schema.*.md
+internal/database/schema*.md
+internal/database/schema*.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
@@ -27,6 +26,7 @@ doc/
 GH2SG.bookmarklet.js
 docker-images/grafana/config/provisioning/dashboards/sourcegraph/
 docker-images/syntax-highlighter/crates/
+docker-images/syntax-highlighter/target/
 storybook-static/
 browser/code-intel-extensions/
 .buildkite-cache/

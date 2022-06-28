@@ -12,11 +12,12 @@ import (
 	"time"
 
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -75,7 +76,7 @@ type RepoStore interface {
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
-	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
+	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
@@ -88,27 +89,26 @@ var _ RepoStore = (*repoStore)(nil)
 
 // repoStore handles access to the repo table
 type repoStore struct {
+	logger log.Logger
 	*basestore.Store
-}
-
-// Repos instantiates and returns a new RepoStore with prepared statements.
-func Repos(db dbutil.DB) RepoStore {
-	return &repoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
-func ReposWith(other basestore.ShareableStore) RepoStore {
-	return &repoStore{Store: basestore.NewWithHandle(other.Handle())}
+func ReposWith(logger log.Logger, other basestore.ShareableStore) RepoStore {
+	return &repoStore{
+		logger: logger,
+		Store:  basestore.NewWithHandle(other.Handle()),
+	}
 }
 
 func (s *repoStore) With(other basestore.ShareableStore) RepoStore {
-	return &repoStore{Store: s.Store.With(other)}
+	return &repoStore{logger: s.logger, Store: s.Store.With(other)}
 }
 
 func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &repoStore{Store: txBase}, err
+	return &repoStore{logger: s.logger, Store: txBase}, err
 }
 
 // Get finds and returns the repo with the given repository ID from the database.
@@ -143,7 +143,7 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "metric to measure the impact of logging access granted to private repos",
 })
 
-func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.RepoID) {
+func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
 		return
 	}
@@ -176,7 +176,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 		event.AnonymousUserID = "internal"
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -262,6 +262,11 @@ func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types
 		tr.Finish()
 	}()
 
+	// listRepos will return a list of all repos if we pass in an empty ID list,
+	// so it is better to just return here rather than leak repo info.
+	if len(ids) == 0 {
+		return []*types.Repo{}, nil
+	}
 	return s.listRepos(ctx, tr, ReposListOptions{IDs: ids})
 }
 
@@ -408,7 +413,7 @@ var repoColumns = []string{
 	"repo.blocked",
 }
 
-func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
+func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
@@ -466,7 +471,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
-		log15.Warn("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
+		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
 		return nil
 	}
 	switch typ {
@@ -500,8 +505,10 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:
 		r.Metadata = &struct{}{}
+	case extsvc.TypeRustPackages:
+		r.Metadata = &struct{}{}
 	default:
-		log15.Warn("scanRepo - unknown service type", "type", typ)
+		logger.Warn("unknown service type", log.String("type", typ))
 		return nil
 	}
 
@@ -762,7 +769,7 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
+		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
 	return nil
@@ -779,7 +786,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	var privateIDs []api.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
-		if err := scanRepo(rows, &r); err != nil {
+		if err := scanRepo(s.logger, rows, &r); err != nil {
 			return err
 		}
 
@@ -793,7 +800,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
+		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
 	return rs, err
@@ -905,8 +912,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if opt.OnlyArchived {
 		where = append(where, sqlf.Sprintf("archived"))
 	}
+	// Since https://github.com/sourcegraph/sourcegraph/pull/35633 there is no need to do an anti-join
+	// with gitserver_repos table (checking for such repos that are present in repo but absent in gitserver_repos
+	// table) because repo table is strictly consistent with gitserver_repos table.
 	if opt.NoCloned {
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR gr.clone_status IS NULL)"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status IN ('not_cloned', 'cloning'))"))
 	}
 	if opt.OnlyCloned {
 		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
@@ -991,7 +1001,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
 	baseConds := sqlf.Sprintf("TRUE")
@@ -1030,7 +1040,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}
@@ -1470,7 +1480,7 @@ AND repo.id = repo_ids.id::int
 `
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `
--- source:internal/database/repos.go:GetFirstRepoNamesByCloneURL
+-- source:internal/database/repos.go:GetFirstRepoNameByCloneURL
 SELECT
 	name
 FROM
@@ -1484,10 +1494,10 @@ ORDER BY
 LIMIT 1
 `
 
-// GetFirstRepoNamesByCloneURL returns the first repo name in our database that
+// GetFirstRepoNameByCloneURL returns the first repo name in our database that
 // match the given clone url. If not repo is found, an empty string and nil error
 // are returned.
-func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
+func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err

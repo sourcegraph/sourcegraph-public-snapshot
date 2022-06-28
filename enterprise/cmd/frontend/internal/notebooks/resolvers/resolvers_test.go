@@ -2,13 +2,14 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -179,12 +180,12 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 }
 
 func TestSingleNotebookCRUD(t *testing.T) {
+	logger := logtest.Scoped(t)
 	internalCtx := actor.WithInternalActor(context.Background())
-	testdb := dbtest.NewDB(t)
-	db := database.NewDB(testdb)
-	u := database.Users(db)
-	o := database.Orgs(db)
-	om := database.OrgMembers(db)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
+	o := db.Orgs()
+	om := db.OrgMembers()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -521,7 +522,7 @@ func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 	}
 }
 
-func createNotebooks(t *testing.T, db *sql.DB, notebooksToCreate []*notebooks.Notebook) []*notebooks.Notebook {
+func createNotebooks(t *testing.T, db database.DB, notebooksToCreate []*notebooks.Notebook) []*notebooks.Notebook {
 	t.Helper()
 	n := notebooks.Notebooks(db)
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -536,7 +537,7 @@ func createNotebooks(t *testing.T, db *sql.DB, notebooksToCreate []*notebooks.No
 	return createdNotebooks
 }
 
-func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...int32) {
+func createNotebookStars(t *testing.T, db database.DB, notebookID int64, userIDs ...int32) {
 	t.Helper()
 	n := notebooks.Notebooks(db)
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -549,11 +550,12 @@ func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...
 }
 
 func TestListNotebooks(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
-	o := database.Orgs(db)
-	om := database.OrgMembers(db)
+	u := db.Users()
+	o := db.Orgs()
+	om := db.OrgMembers()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -598,8 +600,7 @@ func TestListNotebooks(t *testing.T) {
 		return ids
 	}
 
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

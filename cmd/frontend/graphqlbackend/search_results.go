@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -249,15 +250,15 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	}()
 
 	// Blame the first line match.
-	if len(fm.LineMatches) == 0 {
+	if len(fm.ChunkMatches) == 0 {
 		// No line match
 		return time.Time{}, nil
 	}
-	lm := fm.LineMatches[0]
-	hunks, err := git.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &git.BlameOptions{
+	hm := fm.ChunkMatches[0]
+	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    int(lm.LineNumber),
-		EndLine:      int(lm.LineNumber),
+		StartLine:    hm.Ranges[0].Start.Line,
+		EndLine:      hm.Ranges[0].Start.Line,
 	}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return time.Time{}, err
@@ -359,7 +360,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -373,12 +374,16 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			types = append(types, "file")
 		case "file":
 			switch {
+			case si.PatternType == query.SearchTypeStandard:
+				types = append(types, "standard")
 			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteralDefault:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
+			case si.PatternType == query.SearchTypeLucky:
+				types = append(types, "lucky")
 			}
 		}
 	}
@@ -426,15 +431,10 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			featureFlags := featureflag.FromContext(ctx)
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
-				if err != nil {
-					log15.Warn("Could not log search latency", "err", err)
-				}
-			}()
+			err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
+			if err != nil {
+				log15.Warn("Could not log search latency", "err", err)
+			}
 		}
 	}
 }
@@ -466,8 +466,12 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 
 func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInputs, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
-	LogSearchLatency(ctx, db, &wg, searchInputs, srr.ElapsedMilliseconds())
 	defer wg.Wait()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		LogSearchLatency(ctx, db, searchInputs, srr.ElapsedMilliseconds())
+	}()
 
 	var status, alertType string
 	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
@@ -498,7 +502,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 		_ = ev.Send()
 
 		if isSlow {
-			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+			log15.Warn("slow search request", "query", searchInputs.OriginalQuery, "type", requestName, "source", requestSource, "status", status, "alertType", alertType, "durationMs", srr.elapsed.Milliseconds(), "resultSize", n, "error", err)
 		}
 	}
 }
@@ -542,6 +546,7 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 }
 
 type searchResultsStats struct {
+	logger                  log.Logger
 	JApproximateResultCount string
 	JSparkline              []int32
 
@@ -599,7 +604,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.ToSearchJob(r.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}

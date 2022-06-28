@@ -7,6 +7,7 @@ import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { render } from 'react-dom'
 import { MemoryRouter } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
@@ -15,8 +16,7 @@ import {
     useObservable,
     WildcardThemeContext,
     // This is the root Tooltip usage
-    // eslint-disable-next-line no-restricted-imports
-    Tooltip,
+    DeprecatedTooltip,
 } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
@@ -122,9 +122,11 @@ render(
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             {/* Required for shared components that depend on `location`. */}
             <MemoryRouter>
-                <Main />
+                <CompatRouter>
+                    <Main />
+                </CompatRouter>
             </MemoryRouter>
-            <Tooltip key={1} className="sourcegraph-tooltip" />
+            <DeprecatedTooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>,
     document.querySelector('#root')

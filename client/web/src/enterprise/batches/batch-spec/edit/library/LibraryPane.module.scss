@@ -1,0 +1,53 @@
+.list-container {
+    margin: 0;
+    padding: 0;
+    // Match this to the `CONTENT_WIDTH` value in JS
+    width: 14rem;
+}
+
+.collapse-button {
+    // Match this to the value in JS
+    width: 1.25rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    height: 1rem;
+    overflow: visible;
+}
+
+.library-item {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 0;
+}
+
+// Unset Button-y styles
+.library-item-button {
+    font-weight: unset;
+    letter-spacing: unset;
+    font-size: unset;
+    line-height: unset;
+    user-select: unset;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+// Should mostly match WorkspacesPreview header and Editor header
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.last-item {
+    margin-top: 1rem;
+    // Match this to the `CONTENT_WIDTH` value in JS
+    width: 14rem;
+}

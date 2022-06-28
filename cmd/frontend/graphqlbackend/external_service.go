@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,6 +22,7 @@ import (
 )
 
 type externalServiceResolver struct {
+	logger          log.Logger
 	db              database.DB
 	externalService *types.ExternalService
 	warning         string
@@ -49,7 +52,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 	return &externalServiceResolver{db: db, externalService: es}, nil
 }
 
-func marshalExternalServiceID(id int64) graphql.ID {
+func MarshalExternalServiceID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)
 }
 
@@ -63,7 +66,7 @@ func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err err
 }
 
 func (r *externalServiceResolver) ID() graphql.ID {
-	return marshalExternalServiceID(r.externalService.ID)
+	return MarshalExternalServiceID(r.externalService.ID)
 }
 
 func (r *externalServiceResolver) Kind() string {
@@ -109,8 +112,19 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 			r.webhookErr = errors.Wrap(err, "parsing external service config")
 			return
 		}
-		u := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, conf.ExternalURL())
+		u, err := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, parsed, conf.ExternalURL())
+		if err != nil {
+			r.webhookErr = errors.Wrap(err, "building webhook URL")
+		}
+		// If no webhook URL can be built for the kind, we bail out and don't throw an error.
+		if u == "" {
+			return
+		}
 		switch c := parsed.(type) {
+		case *schema.BitbucketCloudConnection:
+			if c.WebhookSecret != "" {
+				r.webhookURL = u
+			}
 		case *schema.BitbucketServerConnection:
 			if c.Webhooks != nil {
 				r.webhookURL = u

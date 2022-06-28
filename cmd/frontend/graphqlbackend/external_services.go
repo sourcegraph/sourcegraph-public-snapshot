@@ -187,6 +187,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 type deleteExternalServiceArgs struct {
 	ExternalService graphql.ID
+	Async           bool
 }
 
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
@@ -214,8 +215,25 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	if err = r.db.ExternalServices().Delete(ctx, id); err != nil {
-		return nil, err
+	if args.Async {
+		// run deletion in the background and return right away
+		go func() {
+			if err := r.deleteExternalService(context.Background(), id, es); err != nil {
+				log15.Error("Background external service deletion failed", "err", err)
+			}
+		}()
+	} else {
+		if err = r.deleteExternalService(ctx, id, es); err != nil {
+			return nil, err
+		}
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es *types.ExternalService) error {
+	if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
+		return err
 	}
 	now := time.Now()
 	es.DeletedAt = now
@@ -228,7 +246,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}()
 
-	return &EmptyResponse{}, nil
+	return nil
 }
 
 type ExternalServicesArgs struct {
@@ -343,7 +361,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 	if count > len(externalServices) {
 		endCursorID := externalServices[len(externalServices)-1].ID
-		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
+		return graphqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
 }

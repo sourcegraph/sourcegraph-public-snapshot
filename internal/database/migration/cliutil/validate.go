@@ -1,57 +1,43 @@
 package cliutil
 
 import (
-	"flag"
-	"sort"
-	"strings"
+	"context"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Validate(commandName string, factory RunnerFactory, out *output.Output) *cli.Command {
-	flags := []cli.Flag{
-		&cli.StringFlag{
-			Name:  "db",
-			Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
-			Value: "all",
-		},
+func Validate(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
+	schemaNamesFlag := &cli.StringSliceFlag{
+		Name:  "db",
+		Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
+		Value: cli.NewStringSlice("all"),
 	}
 
-	action := func(cmd *cli.Context) error {
-		if cmd.NArg() != 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
-			return flag.ErrHelp
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		schemaNames, err := sanitizeSchemaNames(schemaNamesFlag.Get(cmd))
+		if err != nil {
+			return err
 		}
-
-		var schemaNameFlag = cmd.String("db")
-
-		schemaNames := strings.Split(schemaNameFlag, ",")
 		if len(schemaNames) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
+			return flagHelp(out, "supply a schema via -db")
 		}
-		if len(schemaNames) == 1 && schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		sort.Strings(schemaNames)
-
-		ctx := cmd.Context
-		r, err := factory(ctx, schemaNames)
+		r, err := setupRunner(ctx, factory, schemaNames...)
 		if err != nil {
 			return err
 		}
 
 		return r.Validate(ctx, schemaNames...)
-	}
+	})
 
 	return &cli.Command{
 		Name:        "validate",
 		Usage:       "Validate the current schema",
 		Description: ConstructLongHelp(),
-		Flags:       flags,
 		Action:      action,
+		Flags: []cli.Flag{
+			schemaNamesFlag,
+		},
 	}
 }

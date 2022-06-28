@@ -8,7 +8,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, H2 } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -141,7 +141,7 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
             ) : (
                 <PageTitle title="External service" />
             )}
-            <h2>Update synced repositories</h2>
+            <H2>Update synced repositories</H2>
             {externalServiceOrError === undefined && <LoadingSpinner />}
             {isErrorLike(externalServiceOrError) && <ErrorAlert className="mb-3" error={externalServiceOrError} />}
             {externalServiceCategory && (

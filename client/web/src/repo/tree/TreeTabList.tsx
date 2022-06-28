@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -32,7 +31,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Home',
                 isActive: selectedTab === 'home',
                 logName: 'RepoHomeTab',
-                icon: <Icon as={FileDocumentIcon} />,
+                icon: <Icon as={FileDocumentIcon} aria-hidden={true} />,
                 url: `${tree.url}/`,
             },
             {
@@ -40,7 +39,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Commits',
                 isActive: selectedTab === 'commits',
                 logName: 'RepoCommitsTab',
-                icon: <Icon as={SourceCommitIcon} />,
+                icon: <Icon as={SourceCommitIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/commits/tab`,
             },
             {
@@ -48,7 +47,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Branches',
                 isActive: selectedTab === 'branch',
                 logName: 'RepoBranchesTab',
-                icon: <Icon as={SourceBranchIcon} />,
+                icon: <Icon as={SourceBranchIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/branch/tab`,
             },
             {
@@ -56,7 +55,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Tags',
                 isActive: selectedTab === 'tags',
                 logName: 'RepoTagsTab',
-                icon: <Icon as={TagIcon} />,
+                icon: <Icon as={TagIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/tag/tab`,
             },
             {
@@ -64,7 +63,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Compare',
                 isActive: selectedTab === 'compare',
                 logName: 'RepoCompareTab',
-                icon: <Icon as={HistoryIcon} />,
+                icon: <Icon as={HistoryIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/compare/tab`,
             },
             {
@@ -72,16 +71,8 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Contributors',
                 isActive: selectedTab === 'contributors',
                 logName: 'RepoContributorsTab',
-                icon: <Icon as={AccountIcon} />,
+                icon: <Icon as={AccountIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/contributors/tab`,
-            },
-            {
-                tab: 'docs',
-                title: 'API docs',
-                isActive: selectedTab === 'docs',
-                logName: 'RepoAPIDocsTab',
-                icon: <Icon as={BookOpenBlankVariantIcon} />,
-                url: `${tree.url}/-/docs/tab`,
             },
         ],
         [selectedTab, tree.url]

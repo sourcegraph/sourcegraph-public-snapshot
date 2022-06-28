@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"reflect"
 	"sort"
 	"strings"
@@ -14,11 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/rand"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -44,7 +44,7 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 	return names
 }
 
-func createRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo) {
+func createRepo(ctx context.Context, t *testing.T, db DB, repo *types.Repo) {
 	t.Helper()
 
 	op := InsertRepoOp{
@@ -61,7 +61,7 @@ func createRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo)
 	}
 }
 
-func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo) []*types.Repo {
+func mustCreate(ctx context.Context, t *testing.T, db DB, repo *types.Repo) []*types.Repo {
 	t.Helper()
 
 	return mustCreateGitserverRepo(ctx, t, db, repo, types.GitserverRepo{
@@ -69,12 +69,12 @@ func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo)
 	})
 }
 
-func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo, gitserver types.GitserverRepo) []*types.Repo {
+func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db DB, repo *types.Repo, gitserver types.GitserverRepo) []*types.Repo {
 	t.Helper()
 
 	var createdRepos []*types.Repo
 	createRepo(ctx, t, db, repo)
-	repo, err := Repos(db).GetByName(ctx, repo.Name)
+	repo, err := db.Repos().GetByName(ctx, repo.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db *sql.DB, repo
 	}
 
 	// Add a row in gitserver_repos
-	if err := GitserverRepos(db).Upsert(ctx, &gitserver); err != nil {
+	if err := db.GitserverRepos().Upsert(ctx, &gitserver); err != nil {
 		t.Fatal(err)
 	}
 
@@ -171,8 +171,8 @@ INSERT INTO repo (
 
 // upsertRepo updates the repository if it already exists (keyed on name) and
 // inserts it if it does not.
-func upsertRepo(ctx context.Context, db dbutil.DB, op InsertRepoOp) error {
-	s := Repos(db)
+func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
+	s := db.Repos()
 	insert := false
 
 	// We optimistically assume the repo is already in the table, so first
@@ -196,7 +196,7 @@ func upsertRepo(ctx context.Context, db dbutil.DB, op InsertRepoOp) error {
 		return nil
 	}
 
-	_, err = s.Handle().DB().ExecContext(
+	_, err = s.Handle().ExecContext(
 		ctx,
 		upsertSQL,
 		op.Name,
@@ -222,7 +222,8 @@ func TestRepos_Get(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -240,7 +241,7 @@ func TestRepos_Get(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices(db).Create(ctx, confGet, &service)
+	err := db.ExternalServices().Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +269,7 @@ func TestRepos_Get(t *testing.T) {
 		},
 	})
 
-	repo, err := Repos(db).Get(ctx, want[0].ID)
+	repo, err := db.Repos().Get(ctx, want[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +284,8 @@ func TestRepos_GetByIDs(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	want := mustCreate(ctx, t, db, &types.Repo{
@@ -295,7 +297,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 		},
 	})
 
-	repos, err := Repos(db).GetByIDs(ctx, want[0].ID, 404)
+	repos, err := db.Repos().GetByIDs(ctx, want[0].ID, 404)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,13 +310,34 @@ func TestRepos_GetByIDs(t *testing.T) {
 	}
 }
 
+func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	repos, err := db.Repos().GetByIDs(ctx, []api.RepoID{}...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 0 {
+		t.Fatalf("got %d repos, but want 0", len(repos))
+	}
+
+}
+
 func TestRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -332,7 +355,7 @@ func TestRepos_List(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices(db).Create(ctx, confGet, &service)
+	err := db.ExternalServices().Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +383,7 @@ func TestRepos_List(t *testing.T) {
 		},
 	})
 
-	repos, err := Repos(db).List(ctx, ReposListOptions{})
+	repos, err := db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,11 +398,12 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a user
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -393,8 +417,8 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 
 	now := time.Now()
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	externalServices := ExternalServices(db)
-	repos := Repos(db)
+	externalServices := db.ExternalServices()
+	repos := db.Repos()
 
 	// Create a user-owned external service and its repository
 	userExternalService := types.ExternalService{
@@ -484,18 +508,19 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create an org
 	displayName := "Acme Corp"
-	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
 	require.NoError(t, err)
 
 	now := time.Now()
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	externalServices := ExternalServices(db)
-	repos := Repos(db)
+	externalServices := db.ExternalServices()
+	repos := db.Repos()
 
 	// Create an org-owned external service and its repository
 	orgExternalService := types.ExternalService{
@@ -585,35 +610,36 @@ func TestRepos_List_fork(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false})
 	yours := mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true})
 
 	{
-		repos, err := Repos(db).List(ctx, ReposListOptions{OnlyForks: true})
+		repos, err := db.Repos().List(ctx, ReposListOptions{OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, yours, repos)
 	}
 	{
-		repos, err := Repos(db).List(ctx, ReposListOptions{NoForks: true})
+		repos, err := db.Repos().List(ctx, ReposListOptions{NoForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, mine, repos)
 	}
 	{
-		repos, err := Repos(db).List(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
+		repos, err := db.Repos().List(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, nil, repos)
 	}
 	{
-		repos, err := Repos(db).List(ctx, ReposListOptions{})
+		repos, err := db.Repos().List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -627,13 +653,14 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	created := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "repo1"}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 	assertCount := func(t *testing.T, opts ReposListOptions, want int) {
 		t.Helper()
-		count, err := Repos(db).Count(ctx, opts)
+		count, err := db.Repos().Count(ctx, opts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -645,7 +672,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	assertCount(t, ReposListOptions{FailedFetch: true}, 0)
 
 	repo := created[0]
-	if err := GitserverRepos(db).SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
+	if err := db.GitserverRepos().SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
 		t.Fatal(err)
 	}
 	assertCount(t, ReposListOptions{}, 1)
@@ -657,7 +684,8 @@ func TestRepos_List_cloned(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "a/r"}, types.GitserverRepo{CloneStatus: types.CloneStatusNotCloned})
@@ -676,7 +704,7 @@ func TestRepos_List_cloned(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).List(ctx, test.opt)
+			repos, err := db.Repos().List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -691,10 +719,11 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	repos := Repos(db)
+	repos := db.Repos()
 
 	// Insert a repo which should never be returned since we always specify
 	// OnlyCloned.
@@ -713,7 +742,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	})
 
 	// Our test helpers don't do updated_at, so manually doing it.
-	_, err := db.Exec("update repo set updated_at = $1", now.Add(-24*time.Hour))
+	_, err := db.Handle().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -723,7 +752,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now.Add(-24 * time.Hour),
 	})
-	_, err = db.Exec("update repo set updated_at = $1 where name = 'newMeta'", now)
+	_, err = db.Handle().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -747,13 +776,13 @@ func TestRepos_List_LastChanged(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = SearchContexts(db).CreateSearchContextWithRepositoryRevisions(ctx, &types.SearchContext{Name: name}, revs)
+			_, err = db.SearchContexts().CreateSearchContextWithRepositoryRevisions(ctx, &types.SearchContext{Name: name}, revs)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 		mkSearchContext("old", ReposListOptions{})
-		_, err = db.Exec("update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
+		_, err = db.Handle().ExecContext(ctx, "update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -808,7 +837,8 @@ func TestRepos_List_ids(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos(mustCreate(ctx, t, db, typestest.MakeGithubRepo()))
@@ -829,7 +859,7 @@ func TestRepos_List_ids(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).List(ctx, test.opt)
+			repos, err := db.Repos().List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -844,7 +874,8 @@ func TestRepos_List_pagination(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -873,7 +904,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).List(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := db.Repos().List(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -892,7 +923,8 @@ func TestRepos_List_query1(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -914,7 +946,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).List(ctx, ReposListOptions{Query: test.query})
+		repos, err := db.Repos().List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -931,7 +963,8 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -956,7 +989,7 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).List(ctx, ReposListOptions{Query: test.query})
+		repos, err := db.Repos().List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -973,7 +1006,8 @@ func TestRepos_List_sort(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1025,7 +1059,7 @@ func TestRepos_List_sort(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
+		repos, err := db.Repos().List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1043,7 +1077,8 @@ func TestRepos_List_patterns(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1090,7 +1125,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).List(ctx, ReposListOptions{
+		repos, err := db.Repos().List(ctx, ReposListOptions{
 			IncludePatterns:       test.includePatterns,
 			ExcludePattern:        test.excludePattern,
 			CaseSensitivePatterns: test.caseSensitive,
@@ -1109,17 +1144,18 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos(db).List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
+		_, err := db.Repos().List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos(db).List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
+		_, err := db.Repos().List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
@@ -1132,7 +1168,8 @@ func TestRepos_createRepo(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
@@ -1141,7 +1178,7 @@ func TestRepos_createRepo(t *testing.T) {
 		Description: "test",
 	})
 
-	repo, err := Repos(db).GetByName(ctx, "a/b")
+	repo, err := db.Repos().GetByName(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1160,7 +1197,8 @@ func TestRepos_List_useOr(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
@@ -1186,7 +1224,7 @@ func TestRepos_List_useOr(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).List(ctx, test.opt)
+			repos, err := db.Repos().List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1201,7 +1239,8 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1211,20 +1250,20 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
-	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
-	if err := ExternalServices(db).Create(ctx, confGet, service2); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, service2); err != nil {
 		t.Fatal(err)
 	}
 
 	mine := types.Repos{typestest.MakeGithubRepo(service1)}
-	if err := Repos(db).Create(ctx, mine...); err != nil {
+	if err := db.Repos().Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
 	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
-	if err := Repos(db).Create(ctx, yours...); err != nil {
+	if err := db.Repos().Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1240,7 +1279,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).List(ctx, test.opt)
+			repos, err := db.Repos().List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1255,7 +1294,8 @@ func TestRepos_ListMinimalRepos(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -1273,7 +1313,7 @@ func TestRepos_ListMinimalRepos(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices(db).Create(ctx, confGet, &service)
+	err := db.ExternalServices().Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1283,7 +1323,7 @@ func TestRepos_ListMinimalRepos(t *testing.T) {
 	})
 	want := []types.MinimalRepo{{ID: repo[0].ID, Name: repo[0].Name}}
 
-	repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{})
+	repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1298,35 +1338,36 @@ func TestRepos_ListMinimalRepos_fork(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false}))
 	yours := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true}))
 
 	{
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{OnlyForks: true})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, yours, repos)
 	}
 	{
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{NoForks: true})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{NoForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, mine, repos)
 	}
 	{
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, nil, repos)
 	}
 	{
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1340,7 +1381,8 @@ func TestRepos_ListMinimalRepos_cloned(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r"}))
@@ -1359,7 +1401,7 @@ func TestRepos_ListMinimalRepos_cloned(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
+			repos, err := db.Repos().ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1374,7 +1416,8 @@ func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos(mustCreate(ctx, t, db, typestest.MakeGithubRepo()))
@@ -1395,7 +1438,7 @@ func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
+			repos, err := db.Repos().ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1410,7 +1453,8 @@ func TestRepos_ListMinimalRepos_pagination(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1439,7 +1483,7 @@ func TestRepos_ListMinimalRepos_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1458,7 +1502,8 @@ func TestRepos_ListMinimalRepos_correctFiltering(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1480,7 +1525,7 @@ func TestRepos_ListMinimalRepos_correctFiltering(t *testing.T) {
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: test.query})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1497,7 +1542,8 @@ func TestRepos_ListMinimalRepos_query2(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1522,7 +1568,7 @@ func TestRepos_ListMinimalRepos_query2(t *testing.T) {
 		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: test.query})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1539,7 +1585,8 @@ func TestRepos_ListMinimalRepos_sort(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1591,7 +1638,7 @@ func TestRepos_ListMinimalRepos_sort(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1609,7 +1656,8 @@ func TestRepos_ListMinimalRepos_patterns(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1645,7 +1693,7 @@ func TestRepos_ListMinimalRepos_patterns(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{
 			IncludePatterns: test.includePatterns,
 			ExcludePattern:  test.excludePattern,
 		})
@@ -1663,16 +1711,17 @@ func TestRepos_ListMinimalRepos_queryAndPatternsMutuallyExclusive(t *testing.T) 
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
+		_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
+		_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
@@ -1684,8 +1733,9 @@ func TestRepos_ListMinimalRepos_UserIDAndExternalServiceIDsMutuallyExclusive(t *
 	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	_, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
 	if err == nil || !strings.Contains(err.Error(), wantErr) {
 		t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 	}
@@ -1697,7 +1747,8 @@ func TestRepos_ListMinimalRepos_useOr(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
@@ -1723,7 +1774,7 @@ func TestRepos_ListMinimalRepos_useOr(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
+			repos, err := db.Repos().ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1738,7 +1789,8 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1748,20 +1800,20 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
-	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
-	if err := ExternalServices(db).Create(ctx, confGet, service2); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, service2); err != nil {
 		t.Fatal(err)
 	}
 
 	mine := types.Repos{typestest.MakeGithubRepo(service1)}
-	if err := Repos(db).Create(ctx, mine...); err != nil {
+	if err := db.Repos().Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
 	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
-	if err := Repos(db).Create(ctx, yours...); err != nil {
+	if err := db.Repos().Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1777,7 +1829,7 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
+			repos, err := db.Repos().ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1794,7 +1846,8 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1806,7 +1859,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 		DisplayName: "Perforce - Test",
 		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "depots": [], "repositoryPathPattern": "perforce/{depot}"}`,
 	}
-	if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1872,7 +1925,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 			},
 		}
 	)
-	if err := Repos(db).Create(ctx,
+	if err := db.Repos().Create(ctx,
 		perforceMarketing,
 		perforceEngineering,
 		perforceEngineeringFrontend,
@@ -2104,7 +2157,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
+			repos, err := db.Repos().ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2119,7 +2172,8 @@ func TestRepos_createRepo_dupe(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
@@ -2135,7 +2189,8 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	user, repo := initUserAndRepo(t, ctx, db)
@@ -2143,7 +2198,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	_, otherRepo := initUserAndRepo(t, ctx, db)
 
 	// register our interest in the other user's repo
-	err := UserPublicRepos(db).SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
+	err := db.UserPublicRepos().SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2152,7 +2207,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 		{ID: repo.ID, Name: repo.Name},
 	}
 
-	have, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
+	have, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2166,7 +2221,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 		{ID: otherRepo.ID, Name: otherRepo.Name},
 	}
 
-	have, err = Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
+	have, err = db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2181,7 +2236,8 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -2190,12 +2246,12 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 
 	services := typestest.MakeExternalServices()
 	service1 := services[0]
-	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
 
 	repo1 := typestest.MakeGithubRepo(service1)
-	if err := Repos(db).Create(ctx, repo1); err != nil {
+	if err := db.Repos().Create(ctx, repo1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2204,7 +2260,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, err := Repos(db).GetFirstRepoNamesByCloneURL(ctx, "https://github.com/foo/bar")
+	name, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, "https://github.com/foo/bar")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2213,9 +2269,9 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 	}
 }
 
-func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
+func initUserAndRepo(t *testing.T, ctx context.Context, db DB) (*types.User, *types.Repo) {
 	id := rand.String(8)
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,
 		Password:              "p",
@@ -2242,7 +2298,7 @@ func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.Us
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	err = ExternalServices(db).Create(ctx, confGet, &service)
+	err = db.ExternalServices().Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2267,7 +2323,7 @@ func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.Us
 			},
 		},
 	}
-	err = Repos(db).Create(ctx, repo)
+	err = db.Repos().Create(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}

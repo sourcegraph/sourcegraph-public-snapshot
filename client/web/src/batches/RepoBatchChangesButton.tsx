@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react'
 
-import { encodeURIPathComponent } from '@sourcegraph/common'
+import { encodeURIPathComponent, pluralize } from '@sourcegraph/common'
 import { Badge, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
@@ -36,10 +36,10 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             outline={true}
             as={Link}
         >
-            <Icon as={BatchChangesIcon} /> Batch Changes
+            <Icon as={BatchChangesIcon} aria-hidden={true} /> Batch Changes
             {open > 0 && (
                 <Badge
-                    tooltip={`${open} open batch changesets`}
+                    tooltip={`${open} open ${pluralize('batch changeset', open)}`}
                     variant="success"
                     className="d-inline-block batch-change-badge ml-2"
                 >
@@ -48,7 +48,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             )}
             {merged > 0 && (
                 <Badge
-                    tooltip={`${merged} merged batch changesets`}
+                    tooltip={`${merged} merged ${pluralize('batch changeset', merged)}`}
                     variant="merged"
                     className="d-inline-block batch-change-badge ml-2"
                 >

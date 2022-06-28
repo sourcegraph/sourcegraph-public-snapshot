@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import {
     EMPTY_SETTINGS_CASCADE,
@@ -10,19 +10,40 @@ import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
-const { add } = storiesOf('web/batches/CreateBatchChangePage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <div className="p-3" style={{ height: '95vh', width: '100%' }}>
+        {story()}
+    </div>
+)
+
+const config: Meta = {
+    title: 'web/batches/create/CreateBatchChangePage',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             disableSnapshot: false,
         },
-    })
+    },
+}
 
-add('experimental execution disabled', () => (
+export default config
+
+export const ExperimentalExecutionDisabled: Story = () => (
     <WebStory>
-        {props => <CreateBatchChangePage headingElement="h1" {...props} settingsCascade={EMPTY_SETTINGS_CASCADE} />}
+        {props => (
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: { experimentalFeatures: { batchChangesExecution: false } },
+                }}
+            />
+        )}
     </WebStory>
-))
+)
+
+ExperimentalExecutionDisabled.storyName = 'Experimental execution disabled'
 
 const FIXTURE_ORG: SettingsOrgSubject = {
     __typename: 'Org',
@@ -40,25 +61,70 @@ const FIXTURE_USER: SettingsUserSubject = {
     viewerCanAdminister: true,
 }
 
-add('experimental execution enabled', () => (
+export const ExperimentalExecutionEnabled: Story = () => (
     <WebStory>
         {props => (
-            <div style={{ height: '95vh', width: '100%' }}>
-                <CreateBatchChangePage
-                    headingElement="h1"
-                    {...props}
-                    settingsCascade={{
-                        ...EMPTY_SETTINGS_CASCADE,
-                        final: {
-                            experimentalFeatures: { batchChangesExecution: true },
-                        },
-                        subjects: [
-                            { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-                            { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-                        ],
-                    }}
-                />
-            </div>
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    subjects: [
+                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                    ],
+                }}
+            />
         )}
     </WebStory>
-))
+)
+
+ExperimentalExecutionEnabled.storyName = 'Experimental execution enabled'
+
+export const ExperimentalExecutionEnabledFromOrgNamespace: Story = () => (
+    <WebStory>
+        {props => (
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                initialNamespaceID="a"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                    subjects: [
+                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                    ],
+                }}
+            />
+        )}
+    </WebStory>
+)
+
+ExperimentalExecutionEnabledFromOrgNamespace.storyName = 'Experimental execution enabled from org namespace'
+
+export const ExperimentalExecutionEnabledFromUserNamespace: Story = () => (
+    <WebStory>
+        {props => (
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                initialNamespaceID="b"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                    subjects: [
+                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                    ],
+                }}
+            />
+        )}
+    </WebStory>
+)
+
+ExperimentalExecutionEnabledFromUserNamespace.storyName = 'Experimental execution enabled from user namespace'

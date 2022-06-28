@@ -2,34 +2,35 @@ package migrators
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExternalServiceWebhookMigrator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := context.Background()
 
-	createExternalServices := func(t *testing.T, ctx context.Context, db dbutil.DB) []*types.ExternalService {
+	createExternalServices := func(t *testing.T, ctx context.Context, db database.DB) []*types.ExternalService {
 		t.Helper()
 		var svcs []*types.ExternalService
 
-		es := database.ExternalServices(db)
-		basestore := basestore.NewWithDB(db, sql.TxOptions{})
+		es := db.ExternalServices()
+		basestore := basestore.NewWithHandle(db.Handle())
 
 		// Create a trivial external service of each kind, as well as duplicate
 		// services for the external service kinds that support webhooks.
@@ -149,10 +150,10 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		return svcs
 	}
 
-	clearHasWebhooks := func(t *testing.T, ctx context.Context, db dbutil.DB) {
+	clearHasWebhooks := func(t *testing.T, ctx context.Context, db database.DB) {
 		t.Helper()
 
-		basestore := basestore.NewWithDB(db, sql.TxOptions{})
+		basestore := basestore.NewWithHandle(db.Handle())
 		if err := basestore.Exec(
 			ctx,
 			sqlf.Sprintf("UPDATE external_services SET has_webhooks = NULL"),
@@ -162,7 +163,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 
 	t.Run("Progress", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		createExternalServices(t, ctx, db)
 
 		m := NewExternalServiceWebhookMigratorWithDB(db)
@@ -181,9 +182,9 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	})
 
 	t.Run("Up", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		initSvcs := createExternalServices(t, ctx, db)
-		es := database.ExternalServices(db)
+		es := db.ExternalServices()
 
 		m := NewExternalServiceWebhookMigratorWithDB(db)
 		// Ensure that we have to run two Ups.

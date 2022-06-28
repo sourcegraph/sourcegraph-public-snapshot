@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { H3 } from '@sourcegraph/wildcard'
+
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
@@ -53,7 +55,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.Pr
                         </DeletedEntry>
                         <div className="text-muted">
                             <DeletedEntry deleted={node.delta.commitMessageChanged}>
-                                <h3 className="text-muted">{previousCommit.subject}</h3>
+                                <H3 className="text-muted">{previousCommit.subject}</H3>
                             </DeletedEntry>
                             {previousCommit.body && (
                                 <DeletedEntry deleted={node.delta.commitMessageChanged}>
@@ -73,7 +75,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.Pr
                 <PersonLink person={commit.author} className="font-weight-bold text-nowrap" />
             </div>
             <div>
-                <h3>{commit.subject}</h3>
+                <H3>{commit.subject}</H3>
                 {commit.body && <pre className="text-wrap">{commit.body}</pre>}
             </div>
         </div>

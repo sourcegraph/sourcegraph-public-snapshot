@@ -16,7 +16,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
@@ -41,8 +40,7 @@ export interface SearchPageProps
         >,
         SearchContextInputProps,
         HomePanelsProps,
-        CodeInsightsProps,
-        FeatureFlagProps {
+        CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

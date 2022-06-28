@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,26 +18,27 @@ import (
 const indexableReposMaxAge = time.Minute
 
 type cachedRepos struct {
-	repos   []types.MinimalRepo
-	fetched time.Time
+	minimalRepos []types.MinimalRepo
+	fetched      time.Time
 }
 
-// Repos returns the current cached repos and boolean value indicating
+// repos returns the current cached repos and boolean value indicating
 // whether an update is required
-func (c *cachedRepos) Repos() ([]types.MinimalRepo, bool) {
+func (c *cachedRepos) repos() ([]types.MinimalRepo, bool) {
 	if c == nil {
 		return nil, true
 	}
-	if c.repos == nil {
+	if c.minimalRepos == nil {
 		return nil, true
 	}
-	return append([]types.MinimalRepo{}, c.repos...), time.Since(c.fetched) > indexableReposMaxAge
+	return append([]types.MinimalRepo{}, c.minimalRepos...), time.Since(c.fetched) > indexableReposMaxAge
 }
 
 var globalReposCache = reposCache{}
 
-func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
+func NewIndexableReposLister(logger log.Logger, store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
+		logger:     logger,
 		store:      store,
 		reposCache: &globalReposCache,
 	}
@@ -52,7 +53,8 @@ type reposCache struct {
 // IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
-	store database.RepoStore
+	logger log.Logger
+	store  database.RepoStore
 	*reposCache
 }
 
@@ -78,7 +80,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 	}
 
 	cached, _ := cache.Load().(*cachedRepos)
-	repos, needsUpdate := cached.Repos()
+	repos, needsUpdate := cached.repos()
 	if !needsUpdate {
 		return repos, nil
 	}
@@ -95,7 +97,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 
 		_, err := s.refreshCache(newCtx, onlyPublic)
 		if err != nil {
-			log15.Error("Refreshing indexable repos cache", "error", err)
+			s.logger.Error("Refreshing indexable repos cache", log.Error(err))
 		}
 	}()
 	return repos, nil
@@ -112,7 +114,7 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool
 
 	// Check whether another routine already did the work
 	cached, _ := cache.Load().(*cachedRepos)
-	repos, needsUpdate := cached.Repos()
+	repos, needsUpdate := cached.repos()
 	if !needsUpdate {
 		return repos, nil
 	}
@@ -128,8 +130,8 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool
 
 	cache.Store(&cachedRepos{
 		// Copy since repos will be mutated by the caller
-		repos:   append([]types.MinimalRepo{}, repos...),
-		fetched: time.Now(),
+		minimalRepos: append([]types.MinimalRepo{}, repos...),
+		fetched:      time.Now(),
 	})
 
 	return repos, nil

@@ -46,10 +46,12 @@ var extToLang = func() map[string]string {
 
 // Info about a language.
 type LangSpec struct {
+	name         string
 	language     *sitter.Language
 	commentStyle CommentStyle
 	// localsQuery is a tree-sitter localsQuery that finds scopes and defs.
-	localsQuery string
+	localsQuery          string
+	topLevelSymbolsQuery string
 }
 
 // Info about comments in a language.
@@ -67,6 +69,7 @@ var javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
 // Mapping from language name to language specification.
 var langToLangSpec = map[string]LangSpec{
 	"java": {
+		name:     "java",
 		language: java.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -91,8 +94,14 @@ var langToLangSpec = map[string]LangSpec{
 (lambda_expression          parameters: (identifier) @definition)                             ; x -> ...
 (enhanced_for_statement     name:       (identifier) @definition)                             ; for (var item : items) ...
 `,
+		topLevelSymbolsQuery: `
+(program (class_declaration     name: (identifier) @symbol))
+(program (enum_declaration      name: (identifier) @symbol))
+(program (interface_declaration name: (identifier) @symbol))
+`,
 	},
 	"go": {
+		name:     "go",
 		language: golang.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -118,6 +127,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"csharp": {
+		name:     "csharp",
 		language: csharp.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -142,6 +152,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"python": {
+		name:     "python",
 		language: python.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -168,6 +179,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"javascript": {
+		name:     "javascript",
 		language: javascript.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -201,6 +213,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"typescript": {
+		name:     "typescript",
 		language: tsx.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -234,6 +247,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"cpp": {
+		name:     "cpp",
 		language: cpp.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -258,6 +272,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"ruby": {
+		name:     "ruby",
 		language: ruby.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},

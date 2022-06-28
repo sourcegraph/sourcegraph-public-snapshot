@@ -1,24 +1,24 @@
 package search
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"context"
-	"io"
+	"path/filepath"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -121,19 +121,16 @@ const defaultMaxSearchResults = 30
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, c chan<- zoektSearchStreamEvent, repo api.RepoName, sender matchSender) (err error) {
 	defer func() {
 		if c != nil {
 			c <- zoektSearchStreamEvent{
-				fm:       fm,
-				limitHit: limitHit,
-				partial:  partial,
-				err:      err,
+				err: err,
 			}
 		}
 	}()
 	if len(branchRepos) == 0 {
-		return nil, false, nil, nil
+		return nil
 	}
 
 	numRepos := 0
@@ -148,81 +145,56 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	filePathPatterns, err := handleFilePathPatterns(args)
 	if err != nil {
-		return nil, false, nil, err
+		return err
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(args, branchRepos, filePathPatterns, true)
+	q, err := buildQuery(args, branchRepos, filePathPatterns, false)
 	if err != nil {
-		return nil, false, nil, err
+		return err
 	}
 
-	client := getZoektClient(endpoints)
-	resp, err := client.Search(ctx, q, &searchOpts)
-	if err != nil {
-		return nil, false, nil, err
-	}
-	if since(t0) >= searchOpts.MaxWallTime {
-		return nil, false, nil, errNoResultsInTimeout
+	tarInputEventC := make(chan comby.TarInputEvent)
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
+
+	var extensionHint string
+	if len(args.IncludePatterns) > 0 {
+		// Remove anchor that's added by autocomplete
+		extensionHint = strings.TrimSuffix(filepath.Ext(args.IncludePatterns[0]), "$")
 	}
 
-	// We always return approximate results (limitHit true) unless we run the branch to perform a more complete search.
-	limitHit = true
-	// If the previous indexed search did not return a substantial number of matching file candidates or count was
-	// manually specified, run a more complete and expensive search.
-	if resp.FileCount < 10 || args.FileMatchLimit != defaultMaxSearchResults {
-		q, err = buildQuery(args, branchRepos, filePathPatterns, false)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
 		if err != nil {
-			return nil, false, nil, err
+			log.NamedError("structural search error", err)
 		}
-		resp, err = client.Search(ctx, q, &searchOpts)
-		if err != nil {
-			return nil, false, nil, err
-		}
-		if since(t0) >= searchOpts.MaxWallTime {
-			return nil, false, nil, errNoResultsInTimeout
-		}
-		// This is the only place limitHit can be set false, meaning we covered everything.
-		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
-	}
-
-	if len(resp.Files) == 0 {
-		return nil, false, nil, nil
-	}
-
-	maxLineMatches := 25 + k
-	for _, file := range resp.Files {
-		if len(file.LineMatches) > maxLineMatches {
-			file.LineMatches = file.LineMatches[:maxLineMatches]
-			limitHit = true
-		}
-	}
-
-	return resp.Files, limitHit, partial, nil
-}
-
-func writeZip(ctx context.Context, w io.Writer, fileMatches []zoekt.FileMatch) (err error) {
-	bytesWritten := 0
-	span, _ := ot.StartSpanFromContext(ctx, "WriteZip")
-	defer func() {
-		span.LogFields(log.Int("bytes_written", bytesWritten))
-		span.Finish()
 	}()
 
-	zw := zip.NewWriter(w)
-	defer zw.Close()
-
-	for _, match := range fileMatches {
-		mw, err := zw.Create(match.FileName)
-		if err != nil {
-			return err
+	client := getZoektClient(endpoints)
+	err = client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		for _, file := range event.Files {
+			hdr := tar.Header{
+				Name: file.FileName,
+				Mode: 0600,
+				Size: int64(len(file.Content)),
+			}
+			tarInput := comby.TarInputEvent{
+				Header:  hdr,
+				Content: file.Content,
+			}
+			tarInputEventC <- tarInput
 		}
+	}))
+	close(tarInputEventC)
 
-		n, err := mw.Write(match.Content)
-		if err != nil {
-			return err
-		}
-		bytesWritten += n
+	if err != nil {
+		return err
+	}
+	if since(t0) >= searchOpts.MaxWallTime {
+		return errNoResultsInTimeout
 	}
 
 	return nil

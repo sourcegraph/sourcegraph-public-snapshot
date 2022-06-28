@@ -65,7 +65,7 @@ type SelectTextMethod = 'selectall' | 'keyboard'
  */
 type EnterTextMethod = 'type' | 'paste'
 
-interface PageFnOptions {
+interface PageFuncOptions {
     timeout?: number
 }
 
@@ -88,7 +88,7 @@ interface FindElementOptions {
     /**
      * Specifies whether to wait (and how long) for the element to appear.
      */
-    wait?: PageFnOptions | boolean
+    wait?: PageFuncOptions | boolean
 }
 
 function findElementRegexpStrings(
@@ -725,7 +725,7 @@ export class Driver {
         )
     }
 
-    public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
+    public async waitUntilURL(url: string, options: PageFuncOptions = {}): Promise<void> {
         await this.page.waitForFunction((url: string) => document.location.href === url, options, url)
     }
 }
@@ -779,7 +779,16 @@ interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLau
 }
 
 export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
-    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+    const config = getConfig(
+        'sourcegraphBaseUrl',
+        'headless',
+        'slowMo',
+        'keepBrowser',
+        'browser',
+        'devtools',
+        'windowWidth',
+        'windowHeight'
+    )
 
     // Apply defaults
     const resolvedOptions: typeof config & typeof options = {
@@ -830,7 +839,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         }
     } else {
         // Chrome
-        args.push('--window-size=1280,1024')
+        args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
         if (process.getuid() === 0) {
             // TODO don't run as root in CI
             console.warn('Running as root, disabling sandbox')

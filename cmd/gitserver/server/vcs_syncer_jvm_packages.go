@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
@@ -43,6 +45,7 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 	}
 
 	return &vcsDependenciesSyncer{
+		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
 		typ:         "jvm_packages",
 		scheme:      dependencies.JVMPackagesScheme,
 		placeholder: placeholder,
@@ -82,13 +85,13 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	mavenDep := dep.(*reposource.MavenDependency)
 	sourceCodeJarPath, err := s.fetch(ctx, s.config, mavenDep)
 	if err != nil {
-		return errors.Wrap(err, "fetch jar")
+		return notFoundError{errors.Errorf("%s not found", dep)}
 	}
 
 	// commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 	// A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
 	if err := unzipJarFile(sourceCodeJarPath, dir); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dep.PackageManagerSyntax(), sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dep, sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(dir, "lsif-java.json"))
@@ -129,8 +132,7 @@ func unzipJarFile(jarPath, destination string) (err error) {
 	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	for _, file := range reader.File {
-		cleanedOutputPath, isPotentiallyMalicious :=
-			isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
+		cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
 		if isPotentiallyMalicious {
 			continue
 		}
@@ -155,10 +157,10 @@ func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
 		}
 	}()
 
-	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
+	if err = os.MkdirAll(path.Dir(outputPath), 0o700); err != nil {
 		return err
 	}
-	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
@@ -176,7 +178,8 @@ func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
 func (s *jvmPackagesSyncer) inferJVMVersionFromByteCode(ctx context.Context,
-	dependency *reposource.MavenDependency) (string, error) {
+	dependency *reposource.MavenDependency,
+) (string, error) {
 	if dependency.IsJDK() {
 		return dependency.Version, nil
 	}
@@ -223,9 +226,8 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	if javaVersion <= 11 {
 		return 11
 	}
-	// TODO: bump this up to 17 once Java 17 LTS has been released, see https://github.com/sourcegraph/lsif-java/issues/263
-	if javaVersion <= 16 {
-		return 16
+	if javaVersion <= 17 {
+		return 17
 	}
 	// Version from the future, do not round up to the next stable release.
 	return javaVersion
@@ -241,7 +243,7 @@ type lsifJavaJSON struct {
 // inside the given jar file. For example, a jar file for a Java 8 library has
 // the major version 52.
 func classFileMajorVersion(byteCodeJarPath string) (string, error) {
-	file, err := os.OpenFile(byteCodeJarPath, os.O_RDONLY, 0644)
+	file, err := os.OpenFile(byteCodeJarPath, os.O_RDONLY, 0o644)
 	if err != nil {
 		return "", err
 	}

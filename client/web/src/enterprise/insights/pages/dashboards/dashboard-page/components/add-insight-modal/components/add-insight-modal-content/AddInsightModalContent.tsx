@@ -1,10 +1,9 @@
 import React from 'react'
 
-import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Checkbox, Input, Link } from '@sourcegraph/wildcard'
+import { Button, Input, Link, Label, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { TruncatedText } from '../../../../../../../components'
@@ -66,20 +65,21 @@ export const AddInsightModalContent: React.FunctionComponent<
                 {...searchInput.input}
             />
 
-            <fieldset className={classNames('mt-2', styles.insightsContainer)}>
+            <fieldset className={styles.insightsContainer}>
                 {filteredInsights.map(insight => (
-                    <Checkbox
-                        key={insight.id}
-                        id={insight.id}
-                        name="insightIds"
-                        checked={isChecked(insight.id)}
-                        value={insight.id}
-                        onChange={onChange}
-                        onBlur={onBlur}
-                        wrapperClassName={styles.insightItem}
-                        className="mr-2"
-                        label={<TruncatedText>{insight.title}</TruncatedText>}
-                    />
+                    <Label key={insight.id} weight="medium" className={styles.insightItem}>
+                        <Checkbox
+                            name="insightIds"
+                            value={insight.id}
+                            checked={isChecked(insight.id)}
+                            onChange={onChange}
+                            onBlur={onBlur}
+                            aria-labelledby={insight.id}
+                            className={styles.checkbox}
+                            wrapperClassName={styles.checkboxWrapper}
+                        />
+                        <TruncatedText id={insight.id}>{insight.title}</TruncatedText>
+                    </Label>
                 ))}
             </fieldset>
 

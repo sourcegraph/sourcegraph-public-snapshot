@@ -7,26 +7,21 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type operations struct {
-	definitions               *observation.Operation
-	diagnostics               *observation.Operation
-	documentation             *observation.Operation
-	documentationIDsToPathIDs *observation.Operation
-	documentationPage         *observation.Operation
-	documentationPathInfo     *observation.Operation
-	documentationReferences   *observation.Operation
-	documentationSearch       *observation.Operation
-	hover                     *observation.Operation
-	queryResolver             *observation.Operation
-	ranges                    *observation.Operation
-	references                *observation.Operation
-	implementations           *observation.Operation
-	stencil                   *observation.Operation
+	definitions     *observation.Operation
+	diagnostics     *observation.Operation
+	hover           *observation.Operation
+	queryResolver   *observation.Operation
+	ranges          *observation.Operation
+	references      *observation.Operation
+	implementations *observation.Operation
+	stencil         *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -45,7 +40,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
+				return observation.EmitForDefault
 			},
 		})
 	}
@@ -60,20 +55,14 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		definitions:               op("Definitions"),
-		diagnostics:               op("Diagnostics"),
-		documentation:             op("Documentation"),
-		documentationIDsToPathIDs: op("DocumentationIDsToPathIDs"),
-		documentationPage:         op("DocumentationPage"),
-		documentationPathInfo:     op("DocumentationPathInfo"),
-		documentationReferences:   op("DocumentationReferences"),
-		documentationSearch:       op("DocumentationSearch"),
-		hover:                     op("Hover"),
-		implementations:           op("Implementations"),
-		ranges:                    op("Ranges"),
-		references:                op("References"),
-		stencil:                   op("Stencil"),
-		queryResolver:             op("QueryResolver"),
+		definitions:     op("Definitions"),
+		diagnostics:     op("Diagnostics"),
+		hover:           op("Hover"),
+		implementations: op("Implementations"),
+		ranges:          op("Ranges"),
+		references:      op("References"),
+		stencil:         op("Stencil"),
+		queryResolver:   op("QueryResolver"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}

@@ -24,6 +24,11 @@ You can read more about Sourcegraph on our [website](https://about.sourcegraph.c
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
 2. Search for `Sourcegraph` -> `Install` and `Reload`.
 
+### From Gitpod VS Code Workspaces:
+
+1. Open the `Extensions view` by clicking on the Extensions icon in the [Activity Bar](https://code.visualstudio.com/api/ux-guidelines/overview#activity-bar) on the side of your Gitpod VS Code workspace
+2. Search for [Sourcegraph](https://open-vsx.org/extension/sourcegraph/sourcegraph) -> `Install` and `Reload`.
+
 ## Using the Sourcegraph extension
 
 To get started and open the Sourcegraph extension, simply click the Sourcegraph (Wildcard) icon in the VS Code Activity Bar.
@@ -65,7 +70,7 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 2. Once you have generated a token, navigate back to the Sourcegraph extension. In the sidebar, under `Create an account`, click `Have an account?`.
 3. Copy and paste the generated token from step 4 into the input field in the sidebar.
 4. Alternatively, you can copy and paste the generated token from step 4 in this format: `“sourcegraph.accessToken": "e4234234123112312”` into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
-5. The Editor will be reloaded automatically to use the newly added token.
+5. The Editor will be re loaded automatically to use the newly added token.
 
 ### Connecting to a private Sourcegraph instance
 
@@ -74,6 +79,22 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 3.  Navigate to `Code preferences`, then click `Settings`.
 4.  Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL.
 5.  Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
+
+### Adding it to your workspace's recommended extensions
+
+1. Create a `.vscode` folder (if not already present) in the root of your repository
+2. Inside that folder, create a new file named `extensions.json` (if it doesn't already exist) with the following structure.
+
+```
+{
+	"recommendations": ["sourcegraph.sourcegraph"]
+}
+```
+
+3. If the file does exist, append `"sourcegraph.sourcegraph"` to the `"recommendations"` array.
+4. Push the changes to your repository for your other colleagues to share.
+
+Alternatively you can use the `Extensions: Configure Recommended Extensions (Workspace Folder)` command from within VS Code.
 
 ## Keyboard Shortcuts:
 
@@ -100,7 +121,7 @@ This extension contributes the following settings:
 
 Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension.
 
-New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
+Feedback and feature requests can be submitted to our [VS Code Extension Feedback Discussion Board](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
 
 ## Uninstallation
 

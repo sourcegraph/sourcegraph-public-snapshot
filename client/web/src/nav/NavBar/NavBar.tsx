@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, forwardRef } from 'react'
 
 import classNames from 'classnames'
 import H from 'history'
@@ -7,7 +7,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 
@@ -34,9 +34,10 @@ interface NavActionsProps {
     children: React.ReactNode
 }
 
-interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
+export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
     external?: boolean
     className?: string
+    variant?: 'compact'
 }
 
 const useOutsideClickDetector = (
@@ -59,17 +60,19 @@ const useOutsideClickDetector = (
     return [outsideClick, setOutsideClick]
 }
 
-export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
-    <nav aria-label="Main Menu" className={navBarStyles.navbar}>
-        <h1 className={navBarStyles.logo}>
-            <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
-                {logo}
-            </RouterLink>
-        </h1>
-        <hr className={navBarStyles.divider} aria-hidden={true} />
-        {children}
-    </nav>
-)
+export const NavBar = forwardRef(
+    ({ children, logo }, reference): JSX.Element => (
+        <nav aria-label="Main Menu" className={navBarStyles.navbar} ref={reference}>
+            <H1 className={navBarStyles.logo}>
+                <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                    {logo}
+                </RouterLink>
+            </H1>
+            <hr className={navBarStyles.divider} aria-hidden={true} />
+            {children}
+        </nav>
+    )
+) as ForwardReferenceComponent<'div', NavBarProps>
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     const menuReference = useRef<HTMLDivElement>(null)
@@ -78,8 +81,8 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon as={MenuIcon} />
-                <Icon as={open ? ChevronUpIcon : ChevronDownIcon} />
+                <Icon as={MenuIcon} aria-hidden={true} />
+                <Icon as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
@@ -123,14 +126,16 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
     children,
     to,
     external,
+    variant,
     className,
 }) => {
     const content = (
         <span className={classNames(navItemStyles.linkContent, className)}>
-            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} /> : null}
+            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,
+                    [navItemStyles.isCompact]: variant === 'compact',
                 })}
             >
                 {children}

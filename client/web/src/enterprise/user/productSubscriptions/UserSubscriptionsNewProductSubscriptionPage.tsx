@@ -10,7 +10,7 @@ import { asError, createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable, Link } from '@sourcegraph/wildcard'
+import { useEventObservable, Link, H2 } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
@@ -79,7 +79,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
         <div className="user-subscriptions-new-product-subscription-page">
             <PageTitle title="New product subscription" />
             {user && <BackToAllSubscriptionsLink user={user} />}
-            <h2>New subscription</h2>
+            <H2>New subscription</H2>
             <ProductSubscriptionForm
                 accountID={user ? user.id : null}
                 subscriptionID={null}

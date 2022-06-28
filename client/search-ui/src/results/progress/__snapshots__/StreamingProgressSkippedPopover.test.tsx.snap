@@ -12,12 +12,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon iconInline icon flex-shrink-0"
+          aria-label="Alert"
+          class="iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -31,9 +33,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           Error loading results
         </span>
         <svg
-          class="mdi-icon iconInline flex-shrink-0 chevron"
+          aria-hidden="true"
+          class="iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -70,12 +74,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon iconInline icon flex-shrink-0"
+          aria-label="Alert"
+          class="iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -89,9 +95,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           Search timed out
         </span>
         <svg
-          class="mdi-icon iconInline flex-shrink-0 chevron"
+          aria-hidden="true"
+          class="iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -128,12 +136,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon iconInline icon flex-shrink-0"
+          aria-label="Information"
+          class="iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -147,9 +157,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           10k forked repositories excluded
         </span>
         <svg
-          class="mdi-icon iconInline flex-shrink-0 chevron"
+          aria-hidden="true"
+          class="iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -186,12 +198,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon iconInline icon flex-shrink-0"
+          aria-label="Information"
+          class="iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -205,9 +219,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           60k archived repositories excluded
         </span>
         <svg
-          class="mdi-icon iconInline flex-shrink-0 chevron"
+          aria-hidden="true"
+          class="iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -244,12 +260,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon iconInline icon flex-shrink-0"
+          aria-label="Information"
+          class="iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -263,9 +281,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           1 archived
         </span>
         <svg
-          class="mdi-icon iconInline flex-shrink-0 chevron"
+          aria-hidden="true"
+          class="iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -313,15 +333,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-1"
+          id="streaming-progress-skipped-suggest-check-1"
           label="[object Object]"
           type="checkbox"
           value="timeout:2m"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-1"
         >
           timeout:2m (
           <span
@@ -347,15 +367,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-2"
+          id="streaming-progress-skipped-suggest-check-2"
           label="[object Object]"
           type="checkbox"
           value="forked:yes"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-2"
         >
           forked:yes (
           <span
@@ -371,15 +391,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-3"
+          id="streaming-progress-skipped-suggest-check-3"
           label="[object Object]"
           type="checkbox"
           value="archived:yes"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-3"
         >
           archived:yes (
           <span
@@ -405,15 +425,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-4"
+          id="streaming-progress-skipped-suggest-check-4"
           label="[object Object]"
           type="checkbox"
           value="archived:yes"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-4"
         >
           include archived (
           <span
@@ -442,9 +462,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="submit"
     >
       <svg
-        class="mdi-icon iconInline mr-1"
+        aria-hidden="true"
+        class="iconInline mr-1"
         fill="currentColor"
         height="24"
+        role="img"
         viewBox="0 0 24 24"
         width="24"
       >

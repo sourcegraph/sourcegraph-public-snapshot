@@ -13,7 +13,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -152,7 +152,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <Icon as={SettingsIcon} /> Settings
+                                    <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                                 </Button>
                             ) &&
                             ' '}
@@ -205,8 +205,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 data-tooltip="Delete user"
                                 variant="danger"
                                 size="sm"
+                                aria-label="Delete User"
                             >
-                                <Icon as={DeleteIcon} />
+                                <Icon as={DeleteIcon} aria-hidden={true} />
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -217,8 +218,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 data-tooltip="Nuke user (click for more information)"
                                 variant="danger"
                                 size="sm"
+                                aria-label="Nuke user (click for more information)"
                             >
-                                <Icon as={RadioactiveIcon} />
+                                <Icon as={RadioactiveIcon} aria-hidden={true} />
                             </Button>
                         )}
                     </div>
@@ -226,10 +228,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
                 {this.state.resetPasswordURL && (
                     <Alert className="mt-2" variant="success">
-                        <p>
+                        <Text>
                             Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
-                        </p>
+                        </Text>
                         <CopyableText text={this.state.resetPasswordURL} size={40} />
                     </Alert>
                 )}
@@ -415,10 +417,10 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
             <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mb-0">Users</h2>
+                    <H2 className="mb-0">Users</H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <Icon as={AddIcon} /> Create user account
+                            <Icon as={AddIcon} aria-hidden={true} /> Create user account
                         </Button>
                     </div>
                 </div>

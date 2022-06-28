@@ -8,11 +8,11 @@ import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Link, LoadingSpinner, PageHeader, Badge } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge, H3 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
     GetStartedPageDataResult,
     GetStartedPageDataVariables,
@@ -117,7 +117,7 @@ export const showGetStartPage = (
     return firstStepsPending || searchStatusPending
 }
 
-interface Props extends RouteComponentProps, FeatureFlagProps {
+interface Props extends RouteComponentProps {
     authenticatedUser: AuthenticatedUser
     org: OrgAreaOrganizationFields
     isSourcegraphDotCom: boolean
@@ -154,14 +154,14 @@ const Step: React.FunctionComponent<
                 {complete && <CheckCircleIcon className="text-success" size={14} />}
                 {!complete && <div className={styles.emptyCircle} />}
             </div>
-            <h3
+            <H3
                 className={classNames({
                     [`${styles.stepText}`]: true,
                     'text-muted': textMuted,
                 })}
             >
                 {label}
-            </h3>
+            </H3>
             {to && (
                 <div className={styles.linkContainer}>
                     <ArrowRightIcon />
@@ -219,12 +219,12 @@ const setSearchStep = (orgName: string, status: 'complete' | 'incomplete'): void
 export const OpenBetaGetStartedPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     org,
-    featureFlags,
     history,
     isSourcegraphDotCom,
 }) => {
     const emitter = useEventBus()
-    const openBetaEnabled = !!featureFlags.get('open-beta-enabled')
+
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
     const { data, loading, error } = useQuery<GetStartedPageDataResult, GetStartedPageDataVariables>(
         GET_STARTED_INFO_QUERY,
         {
@@ -243,8 +243,8 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<React.PropsWithChil
     const otherMembers =
         membersResult.length > 1 ? membersResult.filter(user => user.username !== authenticatedUser.username) : []
     const shouldRedirect =
-        !openBetaEnabled ||
-        (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled, isSourcegraphDotCom))
+        !isOpenBetaEnabled ||
+        (queryResult && !showGetStartPage(queryResult, org.name, isOpenBetaEnabled, isSourcegraphDotCom))
 
     useEffect(() => {
         eventLogger.logPageView('OrganizationGetStarted', { organizationId: org.id })

@@ -6,6 +6,7 @@ import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/previ
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1 } from '../..'
 import { Grid } from '../../Grid'
 
 import { TextArea } from './TextArea'
@@ -44,7 +45,7 @@ export const TextAreaExamples: React.FunctionComponent<React.PropsWithChildren<u
 
     return (
         <>
-            <h1>TextArea</h1>
+            <H1>TextArea</H1>
             <Grid columnCount={4}>
                 <div>
                     <TextArea

@@ -4,10 +4,11 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList, H2 } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ParentSize, Series } from '../../../../../charts'
 import { WebStory } from '../../../../../components/WebStory'
+import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import { SeriesChart } from '../chart'
 import { SeriesBasedChartTypes } from '../types'
 
@@ -21,14 +22,14 @@ export default {
 export const InsightCardShowcase: Story = () => (
     <main style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
         <section>
-            <h2>Empty view</h2>
+            <H2>Empty view</H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Empty card" />
             </Card.Root>
         </section>
 
         <section>
-            <h2>View with loading content</h2>
+            <H2>View with loading content</H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Loading insight card" subtitle="View with loading content example" />
                 <Card.Loading>Loading insight</Card.Loading>
@@ -36,7 +37,7 @@ export const InsightCardShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>View with error-like content</h2>
+            <H2>View with error-like content</H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Loading insight card" subtitle="View with errored content example" />
                 <ErrorAlert error={new Error("We couldn't find code insight")} />
@@ -44,7 +45,7 @@ export const InsightCardShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>Card with banner content (resizing state)</h2>
+            <H2>Card with banner content (resizing state)</H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Resizing insight card" subtitle="Resizing insight card" />
                 <Card.Banner>Resizing</Card.Banner>
@@ -52,12 +53,12 @@ export const InsightCardShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>Card with insight chart</h2>
+            <H2>Card with insight chart</H2>
             <InsightCardWithChart />
         </section>
 
         <section>
-            <h2>View with context action item</h2>
+            <H2>View with context action item</H2>
             <Card.Root style={{ width: 400, height: 400 }}>
                 <Card.Header
                     title="Chart view and looooooong loooooooooooooooong name of insight card block"
@@ -136,6 +137,8 @@ const SERIES: Series<StandardDatum>[] = [
 ]
 
 function InsightCardWithChart() {
+    const seriesToggleState = useSeriesToggle()
+
     return (
         <Card.Root style={{ width: '400px', height: '400px' }}>
             <Card.Header title="Insight with chart" subtitle="CSS migration insight chart">
@@ -160,6 +163,7 @@ function InsightCardWithChart() {
                         series={SERIES}
                         width={parent.width}
                         height={parent.height}
+                        seriesToggleState={seriesToggleState}
                     />
                 )}
             </ParentSize>

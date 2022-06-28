@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Badge, Icon } from '@sourcegraph/wildcard'
+import { Button, Badge, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -130,20 +130,28 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
             )}
             <div className="align-self-center">
                 {serviceConfig.pending ? (
-                    <Icon className="mb-0 mr-2 text-info" as={AlertCircleIcon} />
+                    <Icon className="mb-0 mr-2 text-info" as={AlertCircleIcon} aria-label="Pending" />
                 ) : service?.warning || service?.lastSyncError ? (
-                    <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
+                    <Icon
+                        className="mb-0 mr-2 text-warning"
+                        as={AlertCircleIcon}
+                        aria-label="Warning or last sync error"
+                    />
                 ) : service?.id ? (
-                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} />
+                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} aria-label="Success" />
                 ) : (
-                    <Icon className={classNames('mb-0 mr-2', styles.iconDashed)} as={CircleDashedIcon} />
+                    <Icon
+                        className={classNames('mb-0 mr-2', styles.iconDashed)}
+                        as={CircleDashedIcon}
+                        aria-hidden={true}
+                    />
                 )}
-                <Icon className="mb-0 mr-1" as={ItemIcon} />
+                <Icon className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
             </div>
             <div className="flex-1 align-self-center">
-                <h3 className="m-0">
+                <H3 className="m-0">
                     {name} {serviceConfig.pending ? <Badge color="secondary">Pending</Badge> : null}
-                </h3>
+                </H3>
             </div>
             <div className="align-self-center">
                 {/* Show one of: update, updating, connect, connecting buttons */}

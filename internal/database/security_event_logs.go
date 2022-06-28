@@ -2,16 +2,13 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -68,19 +65,15 @@ type SecurityEventLogsStore interface {
 }
 
 type securityEventLogsStore struct {
+	logger log.Logger
 	*basestore.Store
-}
-
-// SecurityEventLogs instantiates and returns a new SecurityEventLogsStore with
-// prepared statements.
-func SecurityEventLogs(db dbutil.DB) SecurityEventLogsStore {
-	return &securityEventLogsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
 // using the other store handle.
 func SecurityEventLogsWith(other basestore.ShareableStore) SecurityEventLogsStore {
-	return &securityEventLogsStore{Store: basestore.NewWithHandle(other.Handle())}
+	logger := log.Scoped("SecurityEvents", "Security events store")
+	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (s *securityEventLogsStore) Insert(ctx context.Context, e *SecurityEvent) error {
@@ -89,7 +82,7 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, e *SecurityEvent) e
 		argument = []byte(`{}`)
 	}
 
-	_, err := s.Handle().DB().ExecContext(
+	_, err := s.Handle().ExecContext(
 		ctx,
 		"INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
 		e.Name,
@@ -116,9 +109,6 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "error", err)
-		// We want to capture in sentry as it includes a stack trace which will allow us
-		// to track down the root cause.
-		sentry.CaptureError(err, map[string]string{})
+		trace.Logger(ctx, s.logger).Error(string(e.Name), log.String("event", string(j)), log.Error(err))
 	}
 }

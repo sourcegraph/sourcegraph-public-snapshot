@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -40,9 +40,9 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
         <div className="site-admin-product-subscriptions-page">
             <PageTitle title="Product subscriptions" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Product subscriptions</h2>
+                <H2 className="mb-0">Product subscriptions</H2>
                 <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
-                    <Icon as={AddIcon} />
+                    <Icon aria-hidden={true} as={AddIcon} />
                     Create product subscription
                 </Button>
             </div>

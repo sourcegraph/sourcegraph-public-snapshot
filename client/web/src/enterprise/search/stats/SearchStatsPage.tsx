@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Code, H2, Input } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -55,18 +55,18 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
     return (
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
-                <h2 className="d-flex align-items-center mb-0">
-                    <Icon className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
+                <H2 className="d-flex align-items-center mb-0">
+                    <Icon aria-hidden={true} className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
                     <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>
-                </h2>
+                </H2>
             </header>
             <Form onSubmit={onSubmit} className="form">
-                <div className="form-group d-flex align-items-stretch">
-                    <input
+                <div className="form-group d-flex">
+                    <Input
                         id="stats-page__query"
-                        className="form-control flex-1 test-stats-query"
+                        className="mb-0 w-100"
                         type="search"
                         placeholder="Enter a Sourcegraph search query"
                         value={uncommittedQuery}
@@ -77,7 +77,7 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <Button type="submit" className="ml-2 test-stats-query-update" variant="primary">
+                        <Button type="submit" className="ml-2" variant="primary">
                             Update
                         </Button>
                     )}
@@ -90,7 +90,7 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 <Alert variant="danger">{stats.message}</Alert>
             ) : stats.limitHit ? (
                 <Alert variant="warning">
-                    Limit hit. Add <code>count:{DEFAULT_COUNT * 5}</code> (or an even larger number) to your query to
+                    Limit hit. Add <Code>count:{DEFAULT_COUNT * 5}</Code> (or an even larger number) to your query to
                     retry with a higher limit.
                 </Alert>
             ) : (

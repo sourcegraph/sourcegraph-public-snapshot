@@ -8,6 +8,7 @@ exports[`Notices shows notices for location 1`] = `
     class="notices"
   >
     <div
+      aria-live="polite"
       class="alert bg transparent border p-2"
       data-testid="notice-alert"
       role="alert"
@@ -23,6 +24,7 @@ exports[`Notices shows notices for location 1`] = `
       </div>
     </div>
     <div
+      aria-live="polite"
       class="alert container bg transparent border p-2"
       role="alert"
     >
@@ -45,9 +47,11 @@ exports[`Notices shows notices for location 1`] = `
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

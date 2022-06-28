@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { Badge, useObservable } from '@sourcegraph/wildcard'
+import { Badge, H2, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -57,11 +57,11 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
 
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
-            <h2 className="m-0 align-self-center">
+            <H2 className="m-0 align-self-center">
                 <Badge variant="info" className="text-uppercase mb-0">
                     Preview
                 </Badge>
-            </h2>
+            </H2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
             <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />
             <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
@@ -71,6 +71,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                     styles.batchChangePreviewStatsBarMetrics,
                     'flex-grow-1 d-flex justify-content-end'
                 )}
+                aria-label="Preview Stats"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />

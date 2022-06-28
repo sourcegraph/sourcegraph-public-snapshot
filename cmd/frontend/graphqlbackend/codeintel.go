@@ -24,7 +24,6 @@ type CodeIntelResolver interface {
 
 	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
-	DocumentationSearch(ctx context.Context, args *DocumentationSearchArgs) (DocumentationSearchResultsResolver, error)
 
 	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
 	RequestedLanguageSupport(ctx context.Context) ([]string, error)
@@ -91,6 +90,7 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
@@ -105,6 +105,7 @@ type LSIFUploadResolver interface {
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
+	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -122,6 +123,26 @@ type LSIFUploadDocumentPathsConnectionResolver interface {
 	TotalCount(ctx context.Context) (*int32, error)
 }
 
+type LSIFUploadsAuditLogsResolver interface {
+	LogTimestamp() DateTime
+	UploadDeletedAt() *DateTime
+	Reason() *string
+	ChangedColumns() []AuditLogColumnChange
+	UploadID() graphql.ID
+	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
+	UploadedAt() DateTime
+	Operation() string
+	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+}
+
+type AuditLogColumnChange interface {
+	Column() string
+	Old() *string
+	New() *string
+}
+
 type LSIFIndexesQueryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
@@ -137,6 +158,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 type LSIFIndexResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	InputIndexer() string
 	Indexer() CodeIntelIndexerResolver
@@ -187,10 +209,6 @@ type QueueAutoIndexJobsForRepoArgs struct {
 type GitTreeLSIFDataResolver interface {
 	LSIFUploads(ctx context.Context) ([]LSIFUploadResolver, error)
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
-	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
-	DocumentationPathInfo(ctx context.Context, args *LSIFDocumentationPathInfoArgs) (JSONValue, error)
-	DocumentationDefinitions(ctx context.Context, args *LSIFQueryDocumentationArgs) (LocationConnectionResolver, error)
-	DocumentationReferences(ctx context.Context, args *LSIFPagedQueryDocumentationArgs) (LocationConnectionResolver, error)
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -209,7 +227,6 @@ type GitBlobLSIFDataResolver interface {
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
-	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {
@@ -238,16 +255,6 @@ type LSIFPagedQueryPositionArgs struct {
 	Filter *string
 }
 
-type LSIFQueryDocumentationArgs struct {
-	PathID string
-}
-
-type LSIFPagedQueryDocumentationArgs struct {
-	PathID string
-	graphqlutil.ConnectionArgs
-	After *string
-}
-
 type LSIFDiagnosticsArgs struct {
 	graphqlutil.ConnectionArgs
 }
@@ -262,7 +269,6 @@ type CodeIntelligenceRangeResolver interface {
 	References(ctx context.Context) (LocationConnectionResolver, error)
 	Implementations(ctx context.Context) (LocationConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
-	Documentation(ctx context.Context) (DocumentationResolver, error)
 }
 
 type LocationConnectionResolver interface {
@@ -273,10 +279,6 @@ type LocationConnectionResolver interface {
 type HoverResolver interface {
 	Markdown() Markdown
 	Range() RangeResolver
-}
-
-type DocumentationResolver interface {
-	PathID() string
 }
 
 type DiagnosticConnectionResolver interface {
@@ -305,6 +307,7 @@ type CodeIntelConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
+	LockfileIndexingEnabled   bool
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
@@ -404,6 +407,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
+	LockfileIndexingEnabled() bool
 }
 
 type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {

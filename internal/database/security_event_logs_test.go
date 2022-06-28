@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -15,7 +17,8 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -61,7 +64,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := SecurityEventLogs(db).Insert(ctx, tc.event)
+			err := db.SecurityEventLogs().Insert(ctx, tc.event)
 			got := fmt.Sprintf("%v", err)
 			assert.Equal(t, tc.err, got)
 		})

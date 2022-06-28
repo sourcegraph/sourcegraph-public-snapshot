@@ -11,7 +11,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
-import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -19,8 +18,7 @@ interface Props
         ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps,
-        SettingsCascadeProps,
-        FeatureFlagProps {
+        SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }

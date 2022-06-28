@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { H5, H3 } from '@sourcegraph/wildcard'
+import { H3, H5 } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 

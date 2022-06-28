@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -28,12 +30,13 @@ func createSearchContexts(ctx context.Context, store SearchContextsStore, search
 }
 
 func TestSearchContexts_Get(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	o := Orgs(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	o := db.Orgs()
+	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -80,12 +83,13 @@ func TestSearchContexts_Get(t *testing.T) {
 }
 
 func TestSearchContexts_Update(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	o := Orgs(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	o := db.Orgs()
+	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -152,11 +156,12 @@ func TestSearchContexts_Update(t *testing.T) {
 }
 
 func TestSearchContexts_List(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -199,12 +204,13 @@ func TestSearchContexts_List(t *testing.T) {
 }
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	o := Orgs(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	o := db.Orgs()
+	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -297,12 +303,13 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 }
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	o := Orgs(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	o := db.Orgs()
+	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -358,11 +365,12 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 }
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	sc := SearchContexts(db)
-	r := Repos(db)
+	sc := db.SearchContexts()
+	r := db.Repos()
 
 	err := r.Create(ctx, &types.Repo{Name: "testA", URI: "https://example.com/a"}, &types.Repo{Name: "testB", URI: "https://example.com/b"})
 	if err != nil {
@@ -420,13 +428,14 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 }
 
 func TestSearchContexts_Permissions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	o := Orgs(db)
-	om := OrgMembers(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	o := db.Orgs()
+	om := db.OrgMembers()
+	sc := db.SearchContexts()
 
 	user1, err := u.Create(internalCtx, NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -623,10 +632,11 @@ func TestSearchContexts_Permissions(t *testing.T) {
 }
 
 func TestSearchContexts_Delete(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	ctx := context.Background()
-	sc := SearchContexts(db)
+	sc := db.SearchContexts()
 
 	initialSearchContexts, err := createSearchContexts(ctx, sc, []*types.SearchContext{
 		{Name: "ctx", Public: true},
@@ -673,13 +683,14 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 }
 
 func TestSearchContexts_OrderBy(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := Users(db)
-	o := Orgs(db)
-	om := OrgMembers(db)
-	sc := SearchContexts(db)
+	u := db.Users()
+	o := db.Orgs()
+	om := db.OrgMembers()
+	sc := db.SearchContexts()
 
 	user1, err := u.Create(internalCtx, NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -785,12 +796,13 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 }
 
 func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	t.Parallel()
 	// Required for this DB query.
 	internalCtx := actor.WithInternalActor(context.Background())
-	sc := SearchContexts(db)
-	r := Repos(db)
+	sc := db.SearchContexts()
+	r := db.Repos()
 
 	repos := []*types.Repo{
 		{Name: "testA", URI: "https://example.com/a"},

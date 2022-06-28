@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import { BehaviorSubject, of } from 'rxjs'
 
@@ -17,16 +17,23 @@ import webStyles from '../../SourcegraphWebApp.scss'
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
-const { add } = storiesOf('web/extensions/StatusBar', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
         <AppRouterContainer>
             <div className="container mt-3">{story()}</div>
         </AppRouterContainer>
     </>
-))
+)
 
-add('two items', () => {
+const config: Meta = {
+    title: 'web/extensions/StatusBar',
+    decorators: [decorator],
+}
+
+export default config
+
+export const TwoItems: Story = () => {
     const getStatusBarItems = useCallback(
         () =>
             new BehaviorSubject<StatusBarItemWithKey[]>([
@@ -49,6 +56,8 @@ add('two items', () => {
             location={LOCATION}
         />
     )
-})
+}
+
+TwoItems.storyName = 'two items'
 
 // TODO(tj): Carousel

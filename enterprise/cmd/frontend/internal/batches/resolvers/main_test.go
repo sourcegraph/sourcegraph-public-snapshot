@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -188,13 +187,13 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != baseRev && spec != headRev {
-			t.Fatalf("git.Mocks.ResolveRevision received unknown spec: %s", spec)
+			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.GetCommit = nil })
+	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
@@ -208,13 +207,13 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
 	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {
@@ -228,12 +227,12 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 
 func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
-	creds, _, err := database.UserCredentials(db, key).List(context.Background(), database.UserCredentialsListOpts{})
+	creds, _, err := db.UserCredentials(key).List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := database.UserCredentials(db, key).Delete(context.Background(), c.ID); err != nil {
+		if err := db.UserCredentials(key).Delete(context.Background(), c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

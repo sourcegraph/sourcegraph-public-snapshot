@@ -6,15 +6,9 @@ import sinon from 'sinon'
 import { ISiteUsagePeriod } from '@sourcegraph/shared/src/schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
-import { PageTitle } from '../../components/PageTitle'
-
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 
 describe('SiteAdminOverviewPage', () => {
-    afterEach(() => {
-        PageTitle.titleSet = false
-    })
-
     const baseProps = {
         history: H.createMemoryHistory(),
         isLightTheme: true,

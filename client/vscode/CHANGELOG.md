@@ -2,7 +2,52 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release - 2.2.3
+### Future Plans
+
+- Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
+
+## Unreleased
+
+### Changes
+
+-
+
+### Fixes
+
+-
+
+## 2.2.5
+
+### Changes
+
+- Update Sourcegraph logo in sidebar [issues/37710](https://github.com/sourcegraph/sourcegraph/issues/37710)
+- Sourcegraph extension is now listed in [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph) [issues/36477](https://github.com/sourcegraph/sourcegraph/issues/36477)
+- Sourcegraph extension is now available for installation in all Gitpod VS Code Workspaces [issues/37760](https://github.com/sourcegraph/sourcegraph/issues/37760)
+
+## 2.2.4
+
+### Changes
+
+- Optimize package size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+
+### Fixes
+
+- Check if default branch exists when opening files [issues/36743](https://github.com/sourcegraph/sourcegraph/issues/36743)
+
+## 2.2.3
+
+### Changes
+
+- Update Access Token headers setting method --thanks @ptxmac for the contribution! [issues/34338](https://github.com/sourcegraph/sourcegraph/issues/34338)
+- Add options to choose between main branch or current branch when copy/open file. Always use default branch if set [issues/34591](https://github.com/sourcegraph/sourcegraph/issues/34591)
+- CTA for adding Sourcegraph extension to Workspace Recommendations [issues/34829](https://github.com/sourcegraph/sourcegraph/issues/34829)
+
+### Fixes
+
+- Windows file path issue [issues/34788](https://github.com/sourcegraph/sourcegraph/issues/34788)
+- Sourcegraph icon in help sidebar now shows on light theme [issues/35672](https://github.com/sourcegraph/sourcegraph/issues/35672)
+- Highlight background color for VS Code Light & Light+ Theme [issues/35767](https://github.com/sourcegraph/sourcegraph/issues/35767)
+- Display reload button when instance URL is updated [issues/35980](https://github.com/sourcegraph/sourcegraph/issues/35980)
 
 ## 2.2.2
 

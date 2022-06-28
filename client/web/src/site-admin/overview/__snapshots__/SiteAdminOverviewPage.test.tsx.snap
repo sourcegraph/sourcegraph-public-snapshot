@@ -98,10 +98,11 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             type="button"
           >
             <svg
-              aria-label="Close section"
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -115,19 +116,25 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           <div
             class="site-admin-overview-page__detail-header"
           >
-            <h2>
+            <h2
+              class="h2"
+            >
               Weekly unique users
             </h2>
-            <h3>
+            <h3
+              class="h3"
+            >
               <a
                 class="anchorLink btn btnSecondary"
                 href="/site-admin/usage-statistics"
               >
                 View all usage statistics 
                 <svg
+                  aria-hidden="true"
                   class="mdi-icon iconInline"
                   fill="currentColor"
                   height="24"
+                  role="img"
                   viewBox="0 0 24 24"
                   width="24"
                 >
@@ -319,10 +326,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
             type="button"
           >
             <svg
-              aria-label="Close section"
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -358,12 +366,14 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                     class="d-flex align-items-center"
                   >
                     <span
-                      class="iconInline iconContainer iconDown"
+                      class="iconContainer"
                     >
                       <svg
-                        class="mdi-icon icon"
+                        aria-hidden="true"
+                        class="iconInline icon iconDown"
                         fill="currentColor"
                         height="24"
+                        role="img"
                         viewBox="0 0 24 24"
                         width="24"
                       >
@@ -371,14 +381,12 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                           d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                         />
                       </svg>
-                    </span>
-                    <span
-                      class="iconInline iconContainer iconRight"
-                    >
                       <svg
-                        class="mdi-icon icon"
+                        aria-hidden="true"
+                        class="iconInline icon iconRight"
                         fill="currentColor"
                         height="24"
+                        role="img"
                         viewBox="0 0 24 24"
                         width="24"
                       >
@@ -393,9 +401,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   </div>
                   <div>
                     <svg
-                      class="mdi-icon iconInline text-muted"
+                      aria-label="Not completed"
+                      class="iconInline text-muted"
                       fill="currentColor"
                       height="24"
+                      role="img"
                       viewBox="0 0 24 24"
                       width="24"
                     >

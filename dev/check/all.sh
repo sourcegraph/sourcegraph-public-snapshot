@@ -7,7 +7,7 @@ echo "!!!!!!!!!!!!!!!!!!"
 echo "!!! DEPRECATED !!!"
 echo "!!!!!!!!!!!!!!!!!!"
 echo "This script is deprecated!"
-echo "Add your checks to 'dev/sg/internal/lint/linters' instead."
+echo "Add your checks to 'dev/sg/linters' instead."
 
 parallel_run() {
   ../ci/parallel_run.sh "$@"
@@ -21,7 +21,6 @@ CHECKS=(
   ./template-inlines.sh
   ./go-enterprise-import.sh
   ./go-dbconn-import.sh
-  ./go-generate.sh
   ./go-lint.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh

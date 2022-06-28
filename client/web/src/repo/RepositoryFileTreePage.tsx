@@ -8,7 +8,6 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
@@ -20,8 +19,7 @@ import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
 
 export interface RepositoryFileTreePageProps
-    extends FeatureFlagProps,
-        RepoRevisionContainerContext,
+    extends RepoRevisionContainerContext,
         RouteComponentProps<{
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
@@ -41,7 +39,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         resolvedRev: { commitID, defaultBranch },
         match,
         globbing,
-        featureFlags,
         onExtensionAlertDismissed,
         ...context
     } = props
@@ -107,7 +104,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
                 defaultBranch={defaultBranch || 'HEAD'}
-                featureFlags={featureFlags}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the

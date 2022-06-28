@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ReactDOM from 'react-dom'
@@ -18,18 +18,9 @@ interface TourAgentProps extends TelemetryProps {
     onStepComplete: (step: TourTaskStepType) => void
 }
 
-export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> | undefined {
+export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> {
     const location = useLocation()
-    const [data, setData] = useState<ReturnType<typeof parseURIMarkers> | undefined>()
-    useEffect(() => {
-        const { isTour, stepId } = parseURIMarkers(location.search)
-        if (!isTour || !stepId) {
-            return
-        }
-        setData({ isTour, stepId })
-    }, [location])
-
-    return data
+    return useMemo(() => parseURIMarkers(location.search), [location])
 }
 
 /**
@@ -54,27 +45,29 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
         const tourQueryParameters = useTourQueryParameters()
 
         useEffect(() => {
-            const info = tasks.flatMap(task => task.steps).find(step => tourQueryParameters?.stepId === step.id)?.info
+            const info = tasks.flatMap(task => task.steps).find(step => tourQueryParameters.stepId === step.id)?.info
+            setInfo(info)
+        }, [tasks, tourQueryParameters.stepId])
+
+        const infoContainerReference = useRef(document.querySelector('#' + GETTING_STARTED_TOUR_MARKER))
+        useEffect(() => {
             if (info) {
-                setInfo(info)
+                infoContainerReference.current?.classList.remove('d-none')
+            } else {
+                infoContainerReference.current?.classList.add('d-none')
             }
-        }, [tasks, tourQueryParameters?.stepId])
+        }, [info])
 
-        if (!info) {
-            return null
-        }
-
-        const domNode = document.querySelector('.' + GETTING_STARTED_TOUR_MARKER)
-        if (!domNode) {
+        if (!info || !infoContainerReference.current) {
             return null
         }
 
         return ReactDOM.createPortal(
             <div className={styles.infoPanel}>
-                <Icon as={CheckCircleIcon} className={styles.infoIcon} />
+                <Icon as={CheckCircleIcon} className={styles.infoIcon} aria-hidden={true} />
                 <span>{info}</span>
             </div>,
-            domNode
+            infoContainerReference.current
         )
     }
 )

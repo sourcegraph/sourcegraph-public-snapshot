@@ -1,11 +1,8 @@
 import * as React from 'react'
 
+import { mdiChevronDown, mdiChevronRight, mdiCheckCircle, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
 import classNames from 'classnames'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -26,19 +23,25 @@ export const ActivationChecklistItem: React.FunctionComponent<
 > = ({ className = '', ...props }: ActivationChecklistItemProps) => (
     <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
-            <Icon className={classNames(styles.iconContainer, styles.iconDown)} as="span">
-                <ChevronDownIcon className={styles.icon} />
-            </Icon>
-            <Icon className={classNames(styles.iconContainer, styles.iconRight)} as="span">
-                <ChevronRightIcon className={styles.icon} />
-            </Icon>
+            <span className={styles.iconContainer}>
+                <Icon
+                    className={classNames(styles.icon, styles.iconDown)}
+                    aria-hidden={true}
+                    svgPath={mdiChevronDown}
+                />
+                <Icon
+                    className={classNames(styles.icon, styles.iconRight)}
+                    aria-hidden={true}
+                    svgPath={mdiChevronRight}
+                />
+            </span>
             <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
-                <Icon className="text-success" as={CheckCircleIcon} />
+                <Icon className="text-success" aria-label="Completed" svgPath={mdiCheckCircle} />
             ) : (
-                <Icon className="text-muted" as={CheckboxBlankCircleOutlineIcon} />
+                <Icon className="text-muted" aria-label="Not completed" svgPath={mdiCheckboxBlankCircleOutline} />
             )}
         </div>
     </div>

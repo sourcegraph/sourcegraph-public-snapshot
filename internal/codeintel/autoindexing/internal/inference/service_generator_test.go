@@ -21,8 +21,113 @@ func TestEmptyGenerators(t *testing.T) {
 	)
 }
 
+func TestOverrideGenerators(t *testing.T) {
+	testGenerators(t,
+		generatorTestCase{
+			description: "override",
+			overrideScript: `
+				local path = require("path")
+				local patterns = require("sg.patterns")
+				local recognizers = require("sg.recognizers")
+
+				local custom_recognizer = recognizers.path_recognizer {
+					patterns = { patterns.path_basename("sg-test") },
+
+					-- Invoked when go.mod files exist
+					generate = function(_, paths)
+						local jobs = {}
+						for i = 1, #paths do
+							table.insert(jobs, {
+								steps = {},
+								root = path.dirname(paths[i]),
+								indexer = "test-override",
+								indexer_args = {},
+								outfile = "",
+							})
+						end
+
+						return jobs
+					end,
+				}
+
+				local recognizers = {}
+				recognizers["custom.test"] = custom_recognizer
+				return recognizers
+			`,
+			repositoryContents: map[string]string{
+				"sg-test":     "",
+				"foo/sg-test": "",
+				"bar/sg-test": "",
+				"baz/sg-test": "",
+			},
+			expected: []config.IndexJob{
+				// sg.test -> emits jobs with `test` indexer
+				{Indexer: "test", Root: ""},
+				{Indexer: "test", Root: "bar"},
+				{Indexer: "test", Root: "baz"},
+				{Indexer: "test", Root: "foo"},
+				// mycompany.test -> emits jobs with `text-override` indexer
+				{Indexer: "test-override", Root: ""},
+				{Indexer: "test-override", Root: "bar"},
+				{Indexer: "test-override", Root: "baz"},
+				{Indexer: "test-override", Root: "foo"},
+			},
+		},
+		generatorTestCase{
+			description: "disable default",
+			overrideScript: `
+				local path = require("path")
+				local patterns = require("sg.patterns")
+				local recognizers = require("sg.recognizers")
+
+				local custom_recognizer = recognizers.path_recognizer {
+					patterns = { patterns.path_basename("sg-test") },
+
+					-- Invoked when go.mod files exist
+					generate = function(_, paths)
+						local jobs = {}
+						for i = 1, #paths do
+							table.insert(jobs, {
+								steps = {},
+								root = path.dirname(paths[i]),
+								indexer = "test-override",
+								indexer_args = {},
+								outfile = "",
+							})
+						end
+
+						return jobs
+					end,
+				}
+
+				local recognizers = {}
+				recognizers["sg.test"] = false -- Disable builtin recognizer
+				recognizers["mycompany.test"] = custom_recognizer
+				return recognizers
+			`,
+			repositoryContents: map[string]string{
+				"sg-test":     "",
+				"foo/sg-test": "",
+				"bar/sg-test": "",
+				"baz/sg-test": "",
+			},
+			expected: []config.IndexJob{
+				// sg.test -> emits jobs with `test` indexer
+				// No jobs should have been generated
+
+				// mycompany.test -> emits jobs with `text-override` indexer
+				{Indexer: "test-override", Root: ""},
+				{Indexer: "test-override", Root: "bar"},
+				{Indexer: "test-override", Root: "baz"},
+				{Indexer: "test-override", Root: "foo"},
+			},
+		},
+	)
+}
+
 type generatorTestCase struct {
 	description        string
+	overrideScript     string
 	repositoryContents map[string]string
 	expected           []config.IndexJob
 }
@@ -41,8 +146,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 			context.Background(),
 			api.RepoName("github.com/test/test"),
 			"HEAD",
-			// To be implemented in // See https://github.com/sourcegraph/sourcegraph/issues/33046
-			"",
+			testCase.overrideScript,
 		)
 		if err != nil {
 			t.Fatalf("unexpected error inferring jobs: %s", err)

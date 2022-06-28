@@ -6,9 +6,13 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { SearchSidebar, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import {
+    SearchSidebar,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -27,7 +31,6 @@ import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
 import { CodeInsightsProps } from '../../insights/types'
@@ -46,8 +49,9 @@ import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
+import { DidYouMean } from '../suggestion/DidYouMean'
+import { LuckySearch } from '../suggestion/LuckySearch'
 
-import { DidYouMean } from './DidYouMean'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
@@ -64,8 +68,7 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
         TelemetryProps,
         ThemeProps,
-        CodeInsightsProps,
-        FeatureFlagProps {
+        CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -118,7 +121,7 @@ function useCtaAlert(
         if (!areResultsFound) {
             return
         }
-        if (tourQueryParameters?.isTour) {
+        if (tourQueryParameters.isTour) {
             return
         }
 
@@ -366,7 +369,6 @@ export const StreamingSearchResults: React.FunctionComponent<
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         telemetryService={props.telemetryService}
                         isAuthenticated={!!props.authenticatedUser}
-                        featureFlags={props.featureFlags}
                     />
                 }
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
@@ -403,6 +405,8 @@ export const StreamingSearchResults: React.FunctionComponent<
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 
+            {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
+
             <div className={styles.streamingSearchResultsContainer}>
                 <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
                 {showSavedSearchModal && (
@@ -414,7 +418,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                         onDidCancel={onSaveQueryModalClose}
                     />
                 )}
-                {results?.alert && (
+                {results?.alert && !results?.alert.kind && (
                     <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
                         <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
                     </div>

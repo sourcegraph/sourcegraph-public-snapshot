@@ -12,7 +12,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { createLinkUrl, Link } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -73,10 +73,16 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                     .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
                 return (
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast) for all changes in this file
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
                     <tr
                         key={index}
                         data-hunk-line-kind={line.kind}
                         className={classNames(
+                            'a11y-ignore',
                             line.kind === DiffHunkLineType.UNCHANGED && styles.lineBoth,
                             line.kind === DiffHunkLineType.DELETED && styles.lineDeletion,
                             line.kind === DiffHunkLineType.ADDED && styles.lineAddition,
@@ -96,7 +102,7 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={{ hash: oldAnchor }}>
+                                            <Link className={styles.numLine} to={createLinkUrl({ hash: oldAnchor })}>
                                                 {oldLine - 1}
                                             </Link>
                                         )}
@@ -114,7 +120,7 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={{ hash: newAnchor }}>
+                                            <Link className={styles.numLine} to={createLinkUrl({ hash: newAnchor })}>
                                                 {newLine - 1}
                                             </Link>
                                         )}

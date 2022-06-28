@@ -11,7 +11,7 @@ import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegr
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, H2, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -156,7 +156,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         <div className="w-100">No commits in this tree.</div>
     ) : (
         <div className="test-tree-page-no-recent-commits w-100">
-            <p className="mb-2">No commits in this tree in the past year.</p>
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
             <div className="float-right">
                 <Button onClick={onShowOlderCommitsClicked} variant="link" size="sm" className="float-right p-0">
                     Show older commits
@@ -175,9 +175,9 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                 </>
             ) : (
                 <>
-                    <p className="mb-2">
+                    <Text className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
+                    </Text>
                     <div className="float-right">
                         <Button
                             onClick={onShowOlderCommitsClicked}
@@ -199,7 +199,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
     const RecentCommits: React.FunctionComponent<React.PropsWithChildren<RecentCommitsProps>> = ({ isSidebar }) => (
         <div className="mb-3">
-            <h2>Recent commits</h2>
+            <H2>Recent commits</H2>
             <FilteredConnection<
                 GitCommitFields,
                 Pick<
@@ -246,7 +246,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
             {!richHTML && richHTML !== 'loading' && (
                 <div className="text-center mt-5">
                     <img src="https://i.ibb.co/tztztYB/eric.png" alt="winner" className="mb-3 w-25" />
-                    <h2>No README available :)</h2>
+                    <H2>No README available :)</H2>
                 </div>
             )}
             {blobInfoOrError && richHTML && aborted && (
@@ -267,7 +267,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         return (
             <div className="container mw-100">
                 <RecentCommits isSidebar={false} />
-                <h2 className="mt-5">README.md</h2>
+                <H2 className="mt-5">README.md</H2>
                 <READMEFile />
             </div>
         )
@@ -286,7 +286,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         <RecentCommits isSidebar={true} />
                         {/* CODE-INTEL */}
                         <div className="mb-3">
-                            <h2>Code intel</h2>
+                            <H2>Code intel</H2>
                             {CodeIntelligenceBadge && (
                                 <CodeIntelligenceBadge
                                     repoName={repo.name}
@@ -298,7 +298,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">
-                            <h2>Batch changes</h2>
+                            <H2>Batch changes</H2>
                             {batchChangesEnabled ? (
                                 <HomeTabBatchChangeBadge repoName={repo.name} />
                             ) : (
@@ -400,7 +400,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<
             const summaryTexts = summaries.map(({ value, name }) => `${value} ${name}`)
 
             return (
-                <div className={styles.item} key={id}>
+                <li className={styles.item} key={id}>
                     <Badge variant="success" className={badgeClassNames}>
                         OPEN
                     </Badge>
@@ -410,13 +410,13 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<
                         </Link>
                         <div>{summaryTexts.join(', ')}</div>
                     </div>
-                </div>
+                </li>
             )
         }
     )
     return (
         <>
-            {items}
+            <ul className={styles.list}>{items}</ul>
             {allBatchChanges}
         </>
     )

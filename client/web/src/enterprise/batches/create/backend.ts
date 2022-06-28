@@ -1,5 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
+import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
+
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {
@@ -18,12 +20,16 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             ... on User {
                 username
                 displayName
+                namespaceName
                 viewerCanAdminister
+                url
             }
             ... on Org {
                 name
                 displayName
+                namespaceName
                 viewerCanAdminister
+                url
             }
         }
         description
@@ -34,6 +40,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             id
             originalInput
             createdAt
+            startedAt
+            state
+            applyURL
         }
 
         batchSpecs(first: 1) {
@@ -41,6 +50,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
                 id
                 originalInput
                 createdAt
+                startedAt
+                state
+                applyURL
             }
         }
 
@@ -51,15 +63,11 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
 export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
-            id
-            description {
-                name
-            }
-            namespace {
-                url
-            }
+            ...BatchSpecExecutionFields
         }
     }
+
+    ${batchSpecExecutionFieldsFragment}
 `
 
 // This mutation is used to create a new batch change. It creates the batch change and an
@@ -144,6 +152,7 @@ export const WORKSPACES = gql`
         ignored
         unsupported
         cachedResultFound
+        stepCacheResultCount
     }
 
     fragment PreviewVisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
@@ -219,5 +228,11 @@ export const IMPORTING_CHANGESETS = gql`
     fragment PreviewBatchSpecImportingHiddenChangesetFields on HiddenChangesetSpec {
         __typename
         id
+    }
+`
+
+export const EXECUTORS = gql`
+    query CheckExecutorsAccessToken {
+        areExecutorsConfigured
     }
 `

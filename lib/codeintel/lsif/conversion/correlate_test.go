@@ -187,14 +187,6 @@ func TestCorrelate(t *testing.T) {
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2: datastructures.IDSetWith(49),
 		}),
-
-		// TODO(slimsag): Documentation extension tests
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -237,14 +229,6 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
-
-		// TODO(slimsag): Documentation extension tests
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -287,14 +271,6 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
-
-		// TODO(slimsag): Documentation extension tests
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {

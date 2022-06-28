@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -11,13 +11,19 @@ import { queryWebhookLogs, SelectedExternalService } from './backend'
 import { BODY_JSON, BODY_PLAIN, buildHeaderMock, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'
 import { WebhookLogPage } from './WebhookLogPage'
 
-const { add } = storiesOf('web/site-admin/webhooks/WebhookLogPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/site-admin/webhooks/WebhookLogPage',
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 const buildQueryWebhookLogs: (logs: WebhookLogFields[]) => typeof queryWebhookLogs = logs => (
     { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
@@ -98,7 +104,7 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
     return logs
 }
 
-add('no logs', () => (
+export const NoLogs: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
@@ -106,9 +112,11 @@ add('no logs', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('one page of logs', () => (
+NoLogs.storyName = 'no logs'
+
+export const OnePageOfLogs: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
@@ -116,9 +124,11 @@ add('one page of logs', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('two pages of logs', () => (
+OnePageOfLogs.storyName = 'one page of logs'
+
+export const TwoPagesOfLogs: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
@@ -126,4 +136,6 @@ add('two pages of logs', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+TwoPagesOfLogs.storyName = 'two pages of logs'

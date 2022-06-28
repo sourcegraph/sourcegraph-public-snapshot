@@ -16,12 +16,12 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
       />
       <div>
         <h2
-          class="font-weight-normal mb-1"
+          class="h2 font-weight-normal mb-1"
         >
           P
         </h2>
         <h3
-          class="text-muted font-weight-normal"
+          class="h3 text-muted font-weight-normal"
         >
           123-user license, 
           <span>
@@ -50,7 +50,9 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
           type="button"
         >
           <keyicon
+            aria-hidden="true"
             class="iconInline"
+            role="img"
           />
            Reveal license key
         </button>
@@ -82,12 +84,12 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
       />
       <div>
         <h2
-          class="font-weight-normal mb-1"
+          class="h2 font-weight-normal mb-1"
         >
           P
         </h2>
         <h3
-          class="text-muted font-weight-normal"
+          class="h3 text-muted font-weight-normal"
         >
           123-user license, 
           <span>
@@ -116,7 +118,9 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
           type="button"
         >
           <keyicon
+            aria-hidden="true"
             class="iconInline"
+            role="img"
           />
            Hide license key
         </button>
@@ -130,7 +134,9 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
       <div
         class="cardFooter"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           License key
         </h3>
         <copyabletext
@@ -141,15 +147,17 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
           class="mt-2 d-flex align-items-center"
         >
           <informationicon
+            aria-hidden="true"
             class="iconInline mr-1"
+            role="img"
           />
            
           <span>
             Use this license key as the 
-            <code>
-              <strong>
-                licenseKey
-              </strong>
+            <code
+              class="code fontWeightBold"
+            >
+              licenseKey
             </code>
              property value in Sourcegraph site configuration.
           </span>

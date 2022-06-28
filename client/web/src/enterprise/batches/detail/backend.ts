@@ -103,6 +103,7 @@ const batchChangeFragment = gql`
         url
         name
         namespace {
+            id
             namespaceName
             url
         }
@@ -146,6 +147,7 @@ const batchChangeFragment = gql`
         currentSpec {
             id
             originalInput
+            source
             supersedingBatchSpec {
                 createdAt
                 applyURL

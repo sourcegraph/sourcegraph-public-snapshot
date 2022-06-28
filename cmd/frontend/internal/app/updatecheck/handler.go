@@ -33,17 +33,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.39.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.41.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.39.1")
+	latestReleaseKubernetesBuild = newBuild("3.41.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.39.1")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.41.0")
 )
 
 func getLatestRelease(deployType string) build {
@@ -194,6 +194,7 @@ type pingRequest struct {
 	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
+	NotebooksUsage                json.RawMessage `json:"notebooksUsage"`
 	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
@@ -306,6 +307,7 @@ type pingPayload struct {
 	CodeInsightsUsage             json.RawMessage `json:"code_insights_usage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"code_insights_critical_telemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"code_monitoring_usage"`
+	NotebooksUsage                json.RawMessage `json:"notebooks_usage"`
 	CodeHostVersions              json.RawMessage `json:"code_host_versions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
@@ -394,6 +396,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeInsightsUsage:             pr.CodeInsightsUsage,
 		CodeInsightsCriticalTelemetry: pr.CodeInsightsCriticalTelemetry,
 		CodeMonitoringUsage:           pr.CodeMonitoringUsage,
+		NotebooksUsage:                pr.NotebooksUsage,
 		CodeHostVersions:              pr.CodeHostVersions,
 		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
 		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
@@ -500,6 +503,7 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		NumRepositoriesWithIndexConfigurationRecords: codeIntelUsage.NumRepositoriesWithAutoIndexConfigurationRecords,
 		CountsByLanguage:                             countsByLanguage,
 		SettingsPageViewCount:                        codeIntelUsage.SettingsPageViewCount,
+		UsersWithRefPanelRedesignEnabled:             codeIntelUsage.UsersWithRefPanelRedesignEnabled,
 		LanguageRequests:                             languageRequests,
 		InvestigationEvents:                          investigationEvents,
 	})
@@ -559,6 +563,7 @@ type jsonCodeIntelUsage struct {
 	NumRepositoriesWithIndexConfigurationRecords *int32                                    `json:"num_repositories_with_index_configuration_records"`
 	CountsByLanguage                             []jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
 	SettingsPageViewCount                        *int32                                    `json:"settings_page_view_count"`
+	UsersWithRefPanelRedesignEnabled             *int32                                    `json:"users_with_ref_panel_redesign_enabled"`
 	LanguageRequests                             []jsonLanguageRequest                     `json:"language_requests"`
 	InvestigationEvents                          []jsonCodeIntelInvestigationEvent         `json:"investigation_events"`
 }

@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { PopoverTrigger } from '../..'
+import { PopoverTrigger, H1 } from '../..'
 import { Button } from '../../Button'
 
 import { FeedbackPrompt } from '.'
@@ -50,7 +50,7 @@ const handleErrorSubmit = () =>
 
 export const FeedbackPromptWithSuccessResponse = () => (
     <>
-        <h1>This is a feedbackPrompt with success response</h1>
+        <H1>This is a feedbackPrompt with success response</H1>
         <FeedbackPrompt onSubmit={handleSuccessSubmit}>
             <PopoverTrigger
                 className={styles.feedbackPrompt}
@@ -68,7 +68,7 @@ export const FeedbackPromptWithSuccessResponse = () => (
 
 export const FeedbackPromptWithErrorResponse: Story = () => (
     <>
-        <h1>This is a feedbackPrompt with error response</h1>
+        <H1>This is a feedbackPrompt with error response</H1>
         <FeedbackPrompt onSubmit={handleErrorSubmit}>
             <PopoverTrigger
                 className={styles.feedbackPrompt}
@@ -86,7 +86,7 @@ export const FeedbackPromptWithErrorResponse: Story = () => (
 
 export const FeedbackPromptWithInModal: Story = () => (
     <>
-        <h1>This is a feedbackPrompt in modal</h1>
+        <H1>This is a feedbackPrompt in modal</H1>
         <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true}>
             {({ onClick }) => (
                 <Button onClick={onClick} aria-label="Feedback" variant="secondary" outline={true} size="sm">

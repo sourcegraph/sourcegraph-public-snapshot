@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -60,17 +61,19 @@ describe('DiffHunk', () => {
         expect(
             render(
                 <Router history={history}>
-                    <table>
-                        <tbody>
-                            <DiffHunk
-                                hunk={hunk}
-                                decorations={{ head: new Map(), base: new Map() }}
-                                lineNumbers={true}
-                                isLightTheme={true}
-                                fileDiffAnchor="anchor_"
-                            />
-                        </tbody>
-                    </table>
+                    <CompatRouter>
+                        <table>
+                            <tbody>
+                                <DiffHunk
+                                    hunk={hunk}
+                                    decorations={{ head: new Map(), base: new Map() }}
+                                    lineNumbers={true}
+                                    isLightTheme={true}
+                                    fileDiffAnchor="anchor_"
+                                />
+                            </tbody>
+                        </table>
+                    </CompatRouter>
                 </Router>
             ).asFragment()
         ).toMatchSnapshot()
@@ -119,17 +122,19 @@ describe('DiffHunk', () => {
         expect(
             render(
                 <Router history={history}>
-                    <table>
-                        <tbody>
-                            <DiffHunk
-                                hunk={hunk}
-                                decorations={decorations}
-                                lineNumbers={true}
-                                isLightTheme={true}
-                                fileDiffAnchor="anchor_"
-                            />
-                        </tbody>
-                    </table>
+                    <CompatRouter>
+                        <table>
+                            <tbody>
+                                <DiffHunk
+                                    hunk={hunk}
+                                    decorations={decorations}
+                                    lineNumbers={true}
+                                    isLightTheme={true}
+                                    fileDiffAnchor="anchor_"
+                                />
+                            </tbody>
+                        </table>
+                    </CompatRouter>
                 </Router>
             ).asFragment()
         ).toMatchSnapshot()
@@ -139,17 +144,19 @@ describe('DiffHunk', () => {
         expect(
             render(
                 <Router history={history}>
-                    <table>
-                        <tbody>
-                            <DiffHunk
-                                hunk={hunk}
-                                decorations={decorations}
-                                lineNumbers={true}
-                                isLightTheme={false}
-                                fileDiffAnchor="anchor_"
-                            />
-                        </tbody>
-                    </table>
+                    <CompatRouter>
+                        <table>
+                            <tbody>
+                                <DiffHunk
+                                    hunk={hunk}
+                                    decorations={decorations}
+                                    lineNumbers={true}
+                                    isLightTheme={false}
+                                    fileDiffAnchor="anchor_"
+                                />
+                            </tbody>
+                        </table>
+                    </CompatRouter>
                 </Router>
             ).asFragment()
         ).toMatchSnapshot()

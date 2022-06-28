@@ -3,14 +3,14 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
+FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05
 
-RUN apk --no-cache add pcre sqlite-libs
+RUN apk --no-cache add pcre sqlite-libs libev
 
 # The comby/comby image is a small binary-only distribution. See the bin and src directories
 # here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:1.8.0@sha256:0d3e3e81ca93e013c96a89b6dd8d423b027e3638a1fdcff32d5bbda1786e7946 /usr/local/bin/comby /usr/local/bin/comby
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

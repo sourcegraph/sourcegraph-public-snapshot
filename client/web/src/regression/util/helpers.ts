@@ -219,8 +219,8 @@ export async function editGlobalSettings(
 ): Promise<{ destroy: ResourceDestructor; result: string }> {
     const { subjectID, settingsID, contents: origContents } = await getGlobalSettings(gqlClient)
     let newContents = origContents
-    for (const editFn of edits) {
-        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    for (const editFunc of edits) {
+        newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
     return {
@@ -238,8 +238,8 @@ export async function editSiteConfig(
 ): Promise<{ destroy: ResourceDestructor; result: boolean }> {
     const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     let newContents = origConfig.configuration.effectiveContents
-    for (const editFn of edits) {
-        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    for (const editFunc of edits) {
+        newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     return {
         result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),

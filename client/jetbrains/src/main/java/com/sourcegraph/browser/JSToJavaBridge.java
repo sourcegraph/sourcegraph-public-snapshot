@@ -2,7 +2,6 @@ package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import com.intellij.openapi.Disposable;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
@@ -22,8 +21,8 @@ public class JSToJavaBridge implements Disposable {
             try {
                 JsonObject requestAsJson = JsonParser.parseString(requestAsString).getAsJsonObject();
                 return requestHandler.handle(requestAsJson);
-            } catch (JsonSyntaxException e) {
-                return requestHandler.handleInvalidRequest();
+            } catch (Exception e) {
+                return requestHandler.handleInvalidRequest(e);
             }
         });
 

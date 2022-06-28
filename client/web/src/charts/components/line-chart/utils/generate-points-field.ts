@@ -12,13 +12,14 @@ interface PointsFieldInput<Datum> {
     yScale: ScaleLinear<number, number>
 }
 
-export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): Point<Datum>[] {
+export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): { [seriesId: string]: Point<Datum>[] } {
     const { dataSeries, xScale, yScale } = input
+    const starter: { [key: string]: Point<Datum>[] } = {}
 
-    return dataSeries.flatMap(series => {
+    return dataSeries.reduce((previous, series) => {
         const { id, data, getLinkURL = NULL_LINK } = series
 
-        return (data as SeriesDatum<Datum>[]).filter(isDatumWithValidNumber).map((datum, index) => {
+        previous[id] = (data as SeriesDatum<Datum>[]).filter(isDatumWithValidNumber).map((datum, index) => {
             const datumValue = getDatumValue(datum)
 
             return {
@@ -32,5 +33,7 @@ export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): Poin
                 linkUrl: getLinkURL(datum.datum, index),
             }
         })
-    })
+
+        return previous
+    }, starter)
 }

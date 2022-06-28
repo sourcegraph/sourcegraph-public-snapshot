@@ -18,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -462,6 +464,7 @@ func NewSchema(
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
+	logger sglog.Logger
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
@@ -644,7 +647,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.NewRepos(r.db).GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.logger, r.db).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -667,7 +670,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := r.db.Phabricator().GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -738,5 +741,5 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 		}
 		ids[i] = id
 	}
-	return database.ExternalServices(r.db).SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
+	return r.db.ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
 }

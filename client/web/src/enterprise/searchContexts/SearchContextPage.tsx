@@ -15,7 +15,18 @@ import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-oper
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    Alert,
+    H3,
+    Input,
+} from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
@@ -88,17 +99,16 @@ const SearchContextRepositories: React.FunctionComponent<
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 {filteredRepositories.length > 0 && (
-                    <h3>
+                    <H3>
                         <span>
                             {filteredRepositories.length}{' '}
                             {pluralize('repository', filteredRepositories.length, 'repositories')}
                         </span>
-                    </h3>
+                    </H3>
                 )}
                 {repositories.length > 0 && (
-                    <input
-                        type="text"
-                        className="form-control form-control-md w-50"
+                    <Input
+                        className="w-50"
                         placeholder="Search repositories and revisions"
                         onChange={event => debouncedSetFilterQuery(event.target.value)}
                     />
@@ -145,7 +155,7 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
                             <LoadingSpinner inline={false} />
@@ -156,37 +166,6 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                             <PageTitle title={searchContextOrError.spec} />
                             <PageHeader
                                 className="mb-2"
-                                path={[
-                                    {
-                                        icon: MagnifyIcon,
-                                        to: '/search',
-                                        ariaLabel: 'Code Search',
-                                    },
-                                    {
-                                        to: '/contexts',
-                                        text: 'Contexts',
-                                    },
-                                    {
-                                        text: (
-                                            <div className="d-flex align-items-center">
-                                                <span>{searchContextOrError.spec}</span>
-                                                {!searchContextOrError.public && (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        pill={true}
-                                                        className={classNames(
-                                                            'ml-2',
-                                                            styles.searchContextPagePrivateBadge
-                                                        )}
-                                                        as="div"
-                                                    >
-                                                        Private
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        ),
-                                    },
-                                ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
                                         <Button
@@ -199,7 +178,34 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                         </Button>
                                     )
                                 }
-                            />
+                            >
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                                    <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
+                                    <PageHeader.Breadcrumb>
+                                        <div>
+                                            <span
+                                                className={classNames(
+                                                    !searchContextOrError.public && 'mr-2',
+                                                    styles.searchContextPageTitleSpec
+                                                )}
+                                            >
+                                                {searchContextOrError.spec}
+                                            </span>
+                                            {!searchContextOrError.public && (
+                                                <Badge
+                                                    variant="secondary"
+                                                    pill={true}
+                                                    className={styles.searchContextPagePrivateBadge}
+                                                    as="div"
+                                                >
+                                                    Private
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
                             {!searchContextOrError.autoDefined && (
                                 <div className="text-muted">
                                     <span className="ml-1">

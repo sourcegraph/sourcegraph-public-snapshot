@@ -25,7 +25,6 @@ import {
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
@@ -33,7 +32,7 @@ import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps, FeatureFlagProps {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -82,8 +81,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                 className={classNames('position-absolute border-top border-bottom border-right mt-4', styles.toggle)}
                 onClick={() => handleSidebarToggle(true)}
                 data-tooltip="Show sidebar"
+                aria-label="Show sidebar"
             >
-                <Icon as={ChevronDoubleRightIcon} />
+                <Icon as={ChevronDoubleRightIcon} aria-hidden={true} />
             </Button>
         )
     }
@@ -95,7 +95,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                     className="mr-3"
                     telemetryService={props.telemetryService}
                     isAuthenticated={!!props.authenticatedUser}
-                    featureFlags={props.featureFlags}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
                 <Tabs
@@ -112,8 +111,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                                 title="Hide sidebar"
                                 data-tooltip="Hide sidebar"
                                 data-placement="right"
+                                aria-label="Hide sidebar"
                             >
-                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} />
+                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} aria-hidden={true} />
                             </Button>
                         }
                     >

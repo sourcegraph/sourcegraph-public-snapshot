@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -20,7 +21,9 @@ import (
 )
 
 func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	cs := make([]*btypes.BatchChange, 0, 4)
+	cs := make([]*btypes.BatchChange, 0, 5)
+
+	logger := logtest.Scoped(t)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
@@ -39,10 +42,20 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			}
 
 			if i != 0 {
-				// The very first batch change is a draft, the rest are not
+				// The very first batch change is a draft, the rest are not.
 				c.CreatorID = int32(i) + 50
 				c.LastAppliedAt = clock.Now()
 				c.LastApplierID = int32(i) + 99
+			}
+
+			// the fifth batch change is a closed batch change that wasn't applied.
+			// it shouldn't show up in the draft batch change list, it should instead
+			// show up in the closed batch change list.
+			if i == 5 {
+				c.ClosedAt = clock.Now()
+				c.LastAppliedAt = time.Time{}
+				c.LastApplierID = 0
+				c.CreatorID = 0
 			}
 
 			if i%2 == 0 {
@@ -112,8 +125,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(s)
-			esStore := database.ExternalServicesWith(s)
+			repoStore := database.ReposWith(logger, s)
+			esStore := database.ExternalServicesWith(logger, s)
 
 			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -268,8 +281,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("By RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(s)
-			esStore := database.ExternalServicesWith(s)
+			repoStore := database.ReposWith(logger, s)
+			esStore := database.ExternalServicesWith(logger, s)
 
 			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -442,7 +455,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		draftAndClosed := []*btypes.BatchChange{}
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:2]...)
+		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:3]...)
 		draftAndClosed = append(draftAndClosed, reversedBatchChanges[len(reversedBatchChanges)-1:]...)
 
 		multiFilterTests := []struct {
@@ -683,8 +696,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	t.Run("GetBatchChangeDiffStat", func(t *testing.T) {
 		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
+		repoStore := database.ReposWith(logger, s)
+		esStore := database.ExternalServicesWith(logger, s)
 		repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo.Private = true
 		if err := repoStore.Create(ctx, repo); err != nil {
@@ -741,8 +754,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	t.Run("GetRepoDiffStat", func(t *testing.T) {
 		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
+		repoStore := database.ReposWith(logger, s)
+		esStore := database.ExternalServicesWith(logger, s)
 		repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -869,6 +882,8 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 	orgID := ct.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
+	logger := logtest.Scoped(t)
+
 	t.Run("User delete", func(t *testing.T) {
 		// Set up two batch changes and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
@@ -914,7 +929,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		// Now we soft-delete the user.
-		if err := database.UsersWith(s).Delete(ctx, user.ID); err != nil {
+		if err := database.UsersWith(logger, s).Delete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -949,7 +964,9 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 
 			// Both batch specs should still be in place, at least until we add
 			// a foreign key constraint to batch_specs.namespace_user_id.
-			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{})
+			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -961,7 +978,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		testBatchChangeIsGone()
 
 		// Now we hard-delete the user.
-		if err := database.UsersWith(s).HardDelete(ctx, user.ID); err != nil {
+		if err := database.UsersWith(logger, s).HardDelete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 

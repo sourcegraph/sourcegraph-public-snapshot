@@ -1,0 +1,44 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    // Default of min-height: auto when this element is display: flex allows children to
+    // set its height. We want to keep this fixed and have children overflow: auto
+    // instead.
+    min-height: 0;
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+// Constrain the width of the video player at different viewpoint sizes to prevent layout
+// shift as the video loads.
+.video-container {
+    // stylelint-disable declaration-property-unit-allowed-list
+    margin: 2rem auto 0 auto;
+    width: 700px;
+    height: 408.33px;
+
+    @media (--lg-breakpoint-down) {
+        width: 500px;
+        height: 291.66px;
+    }
+
+    @media (--md-breakpoint-down) {
+        width: 300px;
+        height: 175px;
+    }
+    // stylelint-enable declaration-property-unit-allowed-list
+}
+
+.errors {
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+}
+
+.inner {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}

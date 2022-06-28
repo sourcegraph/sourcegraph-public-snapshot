@@ -7,7 +7,11 @@ Dependencies search is a code search feature that lets you search through the de
 
 ### Setup
 
-Configure a package host connection for each kind of dependency you want to search over.
+1. Configure a package host connection for each kind of dependency you want to search over.
+1. Add `"codeIntelLockfileIndexing.enabled": true` to your [site configuration](../../admin/config/site_config.md) to enable the lockfile-indexing feature.
+1. Add `"codeIntelAutoIndexing.allowGlobalPolicies": true` to your [site configuration](../../admin/config/site_config.md) to allow a lockfile-indexing policy to match multiple repositories.
+1. Go to **Site admin > Code intelligence > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lock-file index all repositories matching the name `go-*` and `go/`.
+1. Wait until lockfile indexing has finished and then run a dependency search.
 
 ### Use cases
 
@@ -29,20 +33,29 @@ Search only Go dependencies:
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^go fmt.Println
 ```
 
+Search only Python dependencies:
+
+```sgquery
+r:deps(^github\.com/firecracker-microvm/firecracker$) r:^python
+```
+
 ### Compatibility
 
 The following table outlines the kinds of dependency repositories that dependency search supports and how it finds those dependencies in your repositories.
 
-Kind                            | How                       | Direct | Transitive
-------------------------------- |-------------------------- |------- | ----------
-[npm](../../integration/npm.md) | `package-lock.json`       | ✅     | ✅
-[npm](../../integration/npm.md) | lsif-typescript uploads   | ✅     | ✅
-[npm](../../integration/npm.md) | `yarn.lock`               | ✅     | ✅
-[Go](../../integration/go.md)   | `go.mod`                  | ✅     | ✅ with Go >= 1.17 go.mod files
-[Go](../../integration/go.md)   | lsif-go uploads           | ❌     | ❌
-[JVM](../../integration/jvm.md) | `gradle.lockfile`         | ❌     | ❌
-[JVM](../../integration/jvm.md) | `pom.xml`                 | ❌     | ❌
-Python                          | `poetry.lock`             | ❌     | ❌
+Kind                                  | How                       | Direct | Transitive
+-------------------------------       |-------------------------- |------- | ----------
+[npm](../../integration/npm.md)       | scip-typescript uploads   | ❌     | ❌
+[npm](../../integration/npm.md)       | `package-lock.json`       | ✅     | ✅
+[npm](../../integration/npm.md)       | `yarn.lock`               | ✅     | ✅
+[Python](../../integration/python.md) | scip-python uploads       | ❌     | ❌
+[Python](../../integration/python.md) | `poetry.lock`             | ✅     | ✅
+[Python](../../integration/python.md) | `Pipfile.lock`            | ✅     | ✅
+[Go](../../integration/go.md)         | lsif-go uploads           | ❌     | ❌
+[Go](../../integration/go.md)         | `go.mod`                  | ✅     | ✅ with Go >= 1.17 go.mod files
+[JVM](../../integration/jvm.md)       | scip-java uploads         | ❌     | ❌
+[JVM](../../integration/jvm.md)       | `gradle.lockfile`         | ❌     | ❌
+[JVM](../../integration/jvm.md)       | `pom.xml`                 | ❌     | ❌
 
 ### Reference
 

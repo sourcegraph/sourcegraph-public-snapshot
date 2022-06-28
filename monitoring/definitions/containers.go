@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Containers() *monitoring.Container {
+func Containers() *monitoring.Dashboard {
 	var (
 		// HACK:
 		// Image names are defined in enterprise package
@@ -26,7 +26,7 @@ func Containers() *monitoring.Container {
 		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger)")
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "containers",
 		Title:                    "Global Containers Resource Usage",
 		Description:              "Container usage and provisioning indicators of all services.",

@@ -123,16 +123,30 @@ func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
 	return
 }
 
-// RecognizersFromUserDataMap decodes a keyed map of recognizers from the given Lua value.
-func RecognizersFromUserDataMap(value lua.LValue) (recognizers []*Recognizer, err error) {
+// NamedRecognizersFromUserDataMap decodes a keyed map of recognizers from the given Lua value.
+// If allowFalseAsNil is true, then a `false` value for a recognizer will be interpreted as a
+// nil recognizer value in Go. This is to allow the user to disable the built-in recognizers.
+func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (recognizers map[string]*Recognizer, err error) {
+	recognizers = map[string]*Recognizer{}
+
 	err = util.ForEach(value, func(key, value lua.LValue) error {
-		return util.UnwrapLuaUserData(value, func(value any) error {
-			if recognizer, ok := value.(*Recognizer); ok {
-				recognizers = append(recognizers, recognizer)
+		name := key.String()
+
+		if value.Type() == lua.LTBool && !lua.LVAsBool(value) {
+			if allowFalseAsNil {
+				recognizers[name] = nil
 				return nil
 			}
+		}
 
-			return util.NewTypeError("*Recognizer", value)
+		return util.UnwrapLuaUserData(value, func(value any) error {
+			recognizer, ok := value.(*Recognizer)
+			if !ok {
+				return util.NewTypeError("*Recognizer", value)
+			}
+
+			recognizers[name] = recognizer
+			return nil
 		})
 	})
 

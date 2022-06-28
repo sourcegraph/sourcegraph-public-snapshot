@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { H3, Label } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
@@ -47,7 +48,7 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
 
     return (
         <div className="form-group">
-            <h3>Retention</h3>
+            <H3>Retention</H3>
 
             <div className="form-group">
                 <RadioButtons
@@ -58,9 +59,9 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
                     className={styles.radioButtons}
                 />
 
-                <label className="ml-4" htmlFor="retention-duration">
+                <Label className="ml-4" htmlFor="retention-duration">
                     Duration
-                </label>
+                </Label>
                 <DurationSelect
                     id="retention-duration"
                     value={policy.retentionDurationHours ? `${policy.retentionDurationHours}` : null}
@@ -79,9 +80,9 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
                         onToggle={retainIntermediateCommits => updatePolicy({ retainIntermediateCommits })}
                         disabled={policy.protected || !policy.retentionEnabled}
                     />
-                    <label htmlFor="retain-intermediate-commits" className="ml-2">
+                    <Label htmlFor="retain-intermediate-commits" className="ml-2">
                         Retain intermediate commits
-                    </label>
+                    </Label>
                 </div>
             )}
         </div>

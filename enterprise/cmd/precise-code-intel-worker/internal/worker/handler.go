@@ -12,9 +12,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {
@@ -100,8 +101,8 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-	db := database.NewDBWith(h.workerStore)
-	repo, err := backend.NewRepos(db).Get(ctx, api.RepoID(upload.RepositoryID))
+	db := database.NewDBWith(logger, h.workerStore)
+	repo, err := backend.NewRepos(logger, db).Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
@@ -237,7 +238,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := backend.NewRepos(db).ResolveRev(ctx, repo, upload.Commit)
+	_, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
 		return false, nil
@@ -299,13 +300,6 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
 func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
-	// Upsert values used for documentation search that have high contention. We do this with the raw LSIF store
-	// instead of in the transaction below because the rows being upserted tend to have heavy contention.
-	repositoryNameID, languageNameID, err := lsifStore.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationSearchPrework")
-	}
-
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -344,24 +338,6 @@ func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, re
 		return errors.Wrap(err, "store.WriteImplementations")
 	}
 	trace.Log(otlog.Uint32("numImplementations", count))
-
-	count, err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages, repositoryNameID, languageNameID)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationPages")
-	}
-	trace.Log(otlog.Uint32("numDocPages", count))
-
-	count, err = tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
-	}
-	trace.Log(otlog.Uint32("numDocPathInfo", count))
-
-	count, err = tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationMappings")
-	}
-	trace.Log(otlog.Uint32("numDocMappings", count))
 
 	return nil
 }

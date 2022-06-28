@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -78,7 +80,8 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	depsSvc := livedependencies.TestService(db, nil)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
@@ -167,6 +170,9 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 	src.SetDependenciesService(depsSvc)
 
 	repos, err := listAll(ctx, src)
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

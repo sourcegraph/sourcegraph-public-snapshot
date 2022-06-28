@@ -4,7 +4,7 @@ import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopo
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Input } from '@sourcegraph/wildcard'
+import { Input, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CodeInsightsBackendContext,
@@ -20,6 +20,15 @@ import {
 import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
 import styles from './DashboardSelect.module.scss'
+
+const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+    // ReachUI intercepts the space key to use for selecting menu items
+    // This prevents that from happening if the search input is focused
+    // so that the user can enter a space character in the search input
+    if (document.activeElement === event.currentTarget && event.code === 'Space') {
+        event.stopPropagation()
+    }
+}
 
 export interface DashboardSelectProps {
     value: string | undefined
@@ -76,13 +85,17 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                 <MenuButton dashboards={rawDashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
-                    <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
+                    <ListboxList
+                        id="insights-dashboard-select-content"
+                        className={classNames(styles.list, 'dropdown-menu')}
+                    >
                         <Input
                             name="filter"
                             value={filter}
                             placeholder="Find dashboard..."
                             className="mx-1"
                             onChange={handleFilter}
+                            onKeyDown={handleKeyDown}
                         />
                         {dashboards.filter(isVirtualDashboard).map(dashboard => (
                             <SelectOption
@@ -150,8 +163,8 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                                 <hr />
 
                                 <div className={classNames(styles.limitedAccess)}>
-                                    <h3>Limited access</h3>
-                                    <p>Unlock for unlimited custom dashboards.</p>
+                                    <H3>Limited access</H3>
+                                    <Text>Unlock for unlimited custom dashboards.</Text>
                                 </div>
                             </ListboxGroup>
                         )}

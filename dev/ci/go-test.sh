@@ -15,6 +15,17 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 EOF
 }
 
+# https://github.com/sourcegraph/sourcegraph/issues/28469
+function go-junit-report() {
+  go run github.com/jstemmer/go-junit-report@latest
+}
+
+# Set up richgo for better output
+function richgo() {
+  # This fork gives us the `anyStyle` configuration required to hide log lines
+  go run github.com/jhchabran/richgo@installable "$@"
+}
+
 function go_test() {
   local test_packages
   test_packages="$1"
@@ -37,6 +48,7 @@ function go_test() {
     $test_packages | tee "$tmpfile" | richgo testfilter
   # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
+  echo "--- Tests complete with status $test_exit_code"
   set -eo pipefail # resume being strict about errors
 
   mkdir -p './test-reports'
@@ -44,7 +56,6 @@ function go_test() {
 
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then
-    set -x
     echo "~~~ Creating test failures anotation"
     RICHGO_CONFIG="./.richstyle.yml"
     cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
@@ -72,16 +83,6 @@ fi
 if [ -n "$FILTER_ACTION" ]; then
   echo -e "--- :information_source: \033[0;34mFiltering go tests: $FILTER_ACTION $FILTER_TARGETS\033[0m"
 fi
-
-echo "--- install tools"
-# https://github.com/sourcegraph/sourcegraph/issues/28469
-# TODO is that the best way to handle this?
-go install github.com/jstemmer/go-junit-report@latest
-# Install richgo for better output
-# This fork gives us the `anyStyle` configuration required to hide log lines
-go install github.com/jhchabran/richgo@installable
-# Reshim so that the above tools are available
-asdf reshim golang
 
 # For searcher
 echo "--- comby install"

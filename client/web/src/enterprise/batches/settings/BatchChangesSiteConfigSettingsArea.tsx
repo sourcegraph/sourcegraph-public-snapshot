@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { PageHeader, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, Alert, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 
@@ -18,7 +18,7 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
         <GlobalCodeHostConnections
             headerLine={
                 <>
-                    <p>Add access tokens to enable Batch Changes changeset creation for all users.</p>
+                    <Text>Add access tokens to enable Batch Changes changeset creation for all users.</Text>
                     <Alert variant="info">
                         You are configuring <strong>global credentials</strong> for Batch Changes. The credentials on
                         this page can be used by all users of this Sourcegraph instance to create and sync changesets.

@@ -1221,93 +1221,484 @@ describe('Repository', () => {
         })
     })
 
-    describe('Contributors', () => {
+    describe('Accessibility', () => {
         const shortRepositoryName = 'sourcegraph/sourcegraph'
         const repositoryName = `github.com/${shortRepositoryName}`
-        const repositorySourcegraphUrl = `/${repositoryName}/-/stats/contributors`
 
-        it('Should render correctly all contributors', async () => {
-            testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
-                RepositoryContributors: (): RepositoryContributorsResult => ({
-                    node: {
-                        contributors: {
-                            nodes: [
-                                {
-                                    person: {
-                                        name: 'alice',
-                                        displayName: 'alice',
-                                        email: 'alice@sourcegraph.test',
-                                        avatarURL: null,
-                                        user: null,
+        describe('Contributors page', () => {
+            const repositorySourcegraphUrl = `/${repositoryName}/-/stats/contributors`
+
+            it('Should render correctly all contributors', async () => {
+                testContext.overrideGraphQL({
+                    ...commonWebGraphQlResults,
+                    ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
+                    RepositoryContributors: (): RepositoryContributorsResult => ({
+                        node: {
+                            contributors: {
+                                nodes: [
+                                    {
+                                        person: {
+                                            name: 'alice',
+                                            displayName: 'alice',
+                                            email: 'alice@sourcegraph.test',
+                                            avatarURL: null,
+                                            user: null,
+                                            __typename: 'Person',
+                                        },
+                                        count: 1,
+                                        commits: {
+                                            nodes: [
+                                                {
+                                                    oid: '1'.repeat(40),
+                                                    abbreviatedOID: '1'.repeat(7),
+                                                    url: `/${repositoryName}/-/commit/${'1'.repeat(40)}`,
+                                                    subject: 'Commit message 1',
+                                                    author: { date: subDays(new Date(), 1).toISOString() },
+                                                    __typename: 'GitCommit',
+                                                },
+                                            ],
+                                            __typename: 'GitCommitConnection',
+                                        },
+                                        __typename: 'RepositoryContributor',
                                     },
-                                    count: 1,
-                                    commits: {
-                                        nodes: [
-                                            {
-                                                oid: '1'.repeat(40),
-                                                abbreviatedOID: '1'.repeat(7),
-                                                url: `/${repositoryName}/-/commit/${'1'.repeat(40)}`,
-                                                subject: 'Commit message 1',
-                                                author: { date: subDays(new Date(), 1).toISOString() },
-                                            },
-                                        ],
+                                    {
+                                        person: {
+                                            name: 'jack',
+                                            displayName: 'jack',
+                                            email: 'jack@sourcegraph.test',
+                                            avatarURL: null,
+                                            user: null,
+                                            __typename: 'Person',
+                                        },
+                                        count: 1,
+                                        commits: {
+                                            nodes: [
+                                                {
+                                                    oid: '2'.repeat(40),
+                                                    abbreviatedOID: '2'.repeat(7),
+                                                    url: `/${repositoryName}/-/commit/${'2'.repeat(40)}`,
+                                                    subject: 'Commit message 2',
+                                                    author: { date: subDays(new Date(), 2).toISOString() },
+                                                    __typename: 'GitCommit',
+                                                },
+                                            ],
+                                            __typename: 'GitCommitConnection',
+                                        },
+                                        __typename: 'RepositoryContributor',
                                     },
-                                },
-                                {
-                                    person: {
-                                        name: 'jack',
-                                        displayName: 'jack',
-                                        email: 'jack@sourcegraph.test',
-                                        avatarURL: null,
-                                        user: null,
+                                    {
+                                        person: {
+                                            name: 'jill',
+                                            displayName: 'jill',
+                                            email: 'jill@sourcegraph.test',
+                                            avatarURL: null,
+                                            user: null,
+                                            __typename: 'Person',
+                                        },
+                                        count: 1,
+                                        commits: {
+                                            nodes: [
+                                                {
+                                                    oid: '3'.repeat(40),
+                                                    abbreviatedOID: '3'.repeat(7),
+                                                    url: `/${repositoryName}/-/commit/${'3'.repeat(40)}`,
+                                                    subject: 'Commit message 3',
+                                                    author: { date: subDays(new Date(), 3).toISOString() },
+                                                    __typename: 'GitCommit',
+                                                },
+                                            ],
+                                            __typename: 'GitCommitConnection',
+                                        },
+                                        __typename: 'RepositoryContributor',
                                     },
-                                    count: 1,
-                                    commits: {
-                                        nodes: [
-                                            {
-                                                oid: '2'.repeat(40),
-                                                abbreviatedOID: '2'.repeat(7),
-                                                url: `/${repositoryName}/-/commit/${'2'.repeat(40)}`,
-                                                subject: 'Commit message 2',
-                                                author: { date: subDays(new Date(), 2).toISOString() },
-                                            },
-                                        ],
-                                    },
-                                },
-                                {
-                                    person: {
-                                        name: 'jill',
-                                        displayName: 'jill',
-                                        email: 'jill@sourcegraph.test',
-                                        avatarURL: null,
-                                        user: null,
-                                    },
-                                    count: 1,
-                                    commits: {
-                                        nodes: [
-                                            {
-                                                oid: '3'.repeat(40),
-                                                abbreviatedOID: '3'.repeat(7),
-                                                url: `/${repositoryName}/-/commit/${'3'.repeat(40)}`,
-                                                subject: 'Commit message 3',
-                                                author: { date: subDays(new Date(), 3).toISOString() },
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                            totalCount: 3,
-                            pageInfo: { hasNextPage: false },
+                                ],
+                                totalCount: 3,
+                                pageInfo: { hasNextPage: false },
+                                __typename: 'RepositoryContributorConnection',
+                            },
+                            __typename: 'Repository',
                         },
-                    },
-                }),
+                    }),
+                })
+                await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+                await driver.page.waitForSelector('.test-filtered-contributors-connection')
+                await percySnapshotWithVariants(driver.page, 'Contributor list')
+                await accessibilityAudit(driver.page)
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
-            await driver.page.waitForSelector('.test-filtered-contributors-connection')
-            await percySnapshotWithVariants(driver.page, 'Contributor list')
-            await accessibilityAudit(driver.page)
+        })
+
+        describe('Branches page', () => {
+            it('should render correctly branches', async () => {
+                const repositorySourcegraphUrl = `/${repositoryName}/-/branches`
+                testContext.overrideGraphQL({
+                    ...commonWebGraphQlResults,
+                    ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
+                    RepositoryGitBranchesOverview: () => ({
+                        node: {
+                            defaultBranch: {
+                                id: 'QmV3b2Q=',
+                                displayName: 'main',
+                                name: 'refs/heads/main',
+                                abbrevName: 'main',
+                                url: `/${repositoryName}/-/branches/${'1'.repeat(40)}`,
+                                target: {
+                                    commit: {
+                                        author: {
+                                            __typename: 'Signature',
+                                            person: {
+                                                displayName: 'John Doe',
+                                                user: {
+                                                    username: 'johndoe',
+                                                },
+                                            },
+                                            date: subDays(new Date(), 3).toISOString(),
+                                        },
+                                        committer: {
+                                            __typename: 'Signature',
+                                            person: {
+                                                displayName: 'John Doe',
+                                                user: null,
+                                            },
+                                            date: subDays(new Date(), 1).toISOString(),
+                                        },
+                                        behindAhead: {
+                                            behind: 0,
+                                            ahead: 0,
+                                        },
+                                    },
+                                },
+                            },
+                            gitRefs: {
+                                pageInfo: { hasNextPage: false },
+                                nodes: [
+                                    {
+                                        id: 'BranchId1',
+                                        displayName: 'integration-tests-trigramming',
+                                        name: 'refs/heads/integration-tests-trigramming',
+                                        abbrevName: 'integration-tests-trigramming',
+                                        url: `/${repositoryName}/-/branches/${'1'.repeat(40)}`,
+                                        target: {
+                                            commit: {
+                                                author: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'John Doe',
+                                                        user: {
+                                                            username: 'johndoe',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                committer: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'John Doe',
+                                                        user: {
+                                                            username: 'johndoe',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                behindAhead: {
+                                                    behind: 12633,
+                                                    ahead: 1,
+                                                },
+                                            },
+                                        },
+                                    },
+                                    {
+                                        id: 'BranchId2',
+                                        displayName: 'integration-tests-quadgramming',
+                                        name: 'refs/heads/integration-tests-quadgramming',
+                                        abbrevName: 'integration-tests-quadgramming',
+                                        url: `/${repositoryName}/-/branches/${'1'.repeat(40)}`,
+                                        target: {
+                                            commit: {
+                                                author: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'Alice',
+                                                        user: {
+                                                            username: 'alice',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                committer: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'Alice',
+                                                        user: {
+                                                            username: 'alice',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                behindAhead: {
+                                                    behind: 12633,
+                                                    ahead: 1,
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    }),
+                })
+
+                await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+                await driver.page.waitForSelector('[data-testid="active-branches-list"]')
+                await percySnapshotWithVariants(driver.page, 'Repository branches page')
+                await accessibilityAudit(driver.page)
+            })
+        })
+
+        describe('Tags page', () => {
+            const repositorySourcegraphUrl = `/${repositoryName}/-/tags`
+            it('should render correctly tags list page', async () => {
+                testContext.overrideGraphQL({
+                    ...commonWebGraphQlResults,
+                    ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
+                    RepositoryGitRefs: () => ({
+                        node: {
+                            __typename: 'Repository',
+                            gitRefs: {
+                                __typename: 'GitRefConnection',
+                                nodes: [
+                                    {
+                                        __typename: 'GitRef',
+                                        name: 'refs/heads/main',
+                                        abbrevName: 'v3.39.1',
+                                        displayName: 'v3.39.1',
+                                        id: 'GitRef:refs/heads/main',
+                                        url: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                        target: {
+                                            commit: {
+                                                author: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'John Doe',
+                                                        user: {
+                                                            username: 'johndoe',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                committer: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'John Doe',
+                                                        user: {
+                                                            username: 'johndoe',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                behindAhead: {
+                                                    __typename: 'BehindAheadCounts',
+                                                    ahead: 0,
+                                                    behind: 0,
+                                                },
+                                            },
+                                        },
+                                    },
+                                    {
+                                        __typename: 'GitRef',
+                                        name: 'refs/heads/mai2n',
+                                        abbrevName: 'v3.39.2',
+                                        displayName: 'v3.39.2',
+                                        id: 'GitRef:refs/heads/main2',
+                                        url: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                        target: {
+                                            commit: {
+                                                author: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'Alice',
+                                                        user: {
+                                                            username: 'alice',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                committer: {
+                                                    __typename: 'Signature',
+                                                    person: {
+                                                        displayName: 'Alice',
+                                                        user: {
+                                                            username: 'alice',
+                                                        },
+                                                    },
+                                                    date: subDays(new Date(), 1).toISOString(),
+                                                },
+                                                behindAhead: {
+                                                    __typename: 'BehindAheadCounts',
+                                                    ahead: 0,
+                                                    behind: 0,
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                                totalCount: 2,
+                                pageInfo: {
+                                    hasNextPage: false,
+                                },
+                            },
+                        },
+                    }),
+                })
+                await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+                await driver.page.waitForSelector('.test-filtered-tags-connection')
+                await percySnapshotWithVariants(driver.page, 'Repository tags page')
+                await accessibilityAudit(driver.page)
+            })
+        })
+
+        describe('Compare page', () => {
+            const repositorySourcegraphUrl = `/${repositoryName}/-/compare/main...bl/readme?visible=1`
+            it('should render correctly compare page, including diff view', async () => {
+                testContext.overrideGraphQL({
+                    ...commonWebGraphQlResults,
+                    ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
+                    RepositoryComparison: () => ({
+                        node: {
+                            comparison: {
+                                range: {
+                                    expr: 'main...bl/readme',
+                                    baseRevSpec: { object: { oid: '1'.repeat(40) } },
+                                    headRevSpec: { object: { oid: '2'.repeat(40) } },
+                                },
+                            },
+                        },
+                    }),
+                    RepositoryComparisonCommits: () => ({
+                        node: {
+                            comparison: {
+                                commits: {
+                                    nodes: [
+                                        {
+                                            id: '1'.repeat(70),
+                                            oid: '1'.repeat(40),
+                                            abbreviatedOID: '1'.repeat(7),
+                                            message: 'update README',
+                                            subject: 'update README',
+                                            body: null,
+                                            author: {
+                                                person: {
+                                                    avatarURL: null,
+                                                    name: 'alice',
+                                                    email: 'alice@sourcegraph.com',
+                                                    displayName: 'alice',
+                                                    user: {
+                                                        id: '1'.repeat(70),
+                                                        username: 'alice',
+                                                        url: '/users/alice',
+                                                        displayName: 'alice',
+                                                    },
+                                                },
+                                                date: subDays(new Date(), 1).toISOString(),
+                                            },
+                                            committer: {
+                                                person: {
+                                                    avatarURL: null,
+                                                    name: 'alice',
+                                                    email: 'alice@sourcegraph.com',
+                                                    displayName: 'alice',
+                                                    user: {
+                                                        id: '1'.repeat(70),
+                                                        username: 'alice',
+                                                        url: '/users/alice',
+                                                        displayName: 'alice',
+                                                    },
+                                                },
+                                                date: subDays(new Date(), 1).toISOString(),
+                                            },
+                                            parents: [
+                                                {
+                                                    oid: '2'.repeat(40),
+                                                    abbreviatedOID: '2'.repeat(7),
+                                                    url: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                                },
+                                            ],
+                                            url: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                            canonicalURL: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                            externalURLs: [
+                                                {
+                                                    url: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                                    serviceKind: ExternalServiceKind.GITHUB,
+                                                },
+                                            ],
+                                            tree: {
+                                                canonicalURL: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
+                                            },
+                                        },
+                                    ],
+                                    pageInfo: { hasNextPage: false },
+                                },
+                            },
+                        },
+                    }),
+                    RepositoryComparisonDiff: () => ({
+                        node: {
+                            comparison: {
+                                fileDiffs: {
+                                    nodes: [
+                                        {
+                                            oldPath: 'README.md',
+                                            oldFile: { __typename: 'GitBlob', binary: false, byteSize: 2262 },
+                                            newFile: { __typename: 'GitBlob', binary: false, byteSize: 3083 },
+                                            newPath: 'README.md',
+                                            mostRelevantFile: {
+                                                __typename: 'GitBlob',
+                                                url: `/${repositoryName}/-/commit/${'1'.repeat(40)}`,
+                                            },
+                                            hunks: [
+                                                {
+                                                    oldRange: { startLine: 3, lines: 47 },
+                                                    oldNoNewlineAt: false,
+                                                    newRange: { startLine: 3, lines: 64 },
+                                                    section: null,
+                                                    highlight: {
+                                                        aborted: false,
+                                                        lines: [
+                                                            {
+                                                                kind: DiffHunkLineType.UNCHANGED,
+                                                                html:
+                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                            },
+                                                            {
+                                                                kind: DiffHunkLineType.DELETED,
+                                                                html:
+                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                            },
+                                                            {
+                                                                kind: DiffHunkLineType.ADDED,
+                                                                html:
+                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                            },
+                                                        ],
+                                                    },
+                                                },
+                                            ],
+                                            stat: { added: 31, changed: 13, deleted: 14 },
+                                            internalID: '1'.repeat(70),
+                                        },
+                                    ],
+                                    totalCount: 1,
+                                    pageInfo: { endCursor: null, hasNextPage: false },
+                                    diffStat: { __typename: 'DiffStat', added: 1, changed: 1, deleted: 1 },
+                                },
+                            },
+                        },
+                    }),
+                })
+                await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+                await driver.page.waitForSelector('.test-file-diff-connection')
+                await percySnapshotWithVariants(driver.page, 'Repository compare page')
+                await accessibilityAudit(driver.page)
+            })
         })
     })
 })

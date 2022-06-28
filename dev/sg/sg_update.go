@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,16 +20,14 @@ var updateCommand = &cli.Command{
 	Usage: "Update local sg installation",
 	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
-  sg version changelog -next
-
-Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
+    sg version changelog -next`,
 	Category: CategoryUtil,
 	Action: func(cmd *cli.Context) error {
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
 			return err
 		}
-		writeSuccessLinef("sg has been updated!")
-		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		std.Out.WriteSuccessf("sg has been updated!")
+		std.Out.Write("To see what's new, run 'sg version changelog'.")
 		return nil
 	},
 }
@@ -59,7 +57,7 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := download.Exeuctable(downloadURL, currentExecPath); err != nil {
+	if err := download.Executable(ctx, downloadURL, currentExecPath); err != nil {
 		return "", err
 	}
 	return currentExecPath, nil

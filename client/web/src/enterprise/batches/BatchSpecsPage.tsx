@@ -4,7 +4,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -86,6 +86,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             const passedArguments = {
                 first: args.first ?? null,
                 after: args.after ?? null,
+                includeLocallyExecutedSpecs: false,
             }
             return queryBatchSpecs(passedArguments)
         },
@@ -116,9 +117,9 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</h5>
-        <h5 className="d-none d-md-block text-uppercase text-center text-nowrap">Execution time</h5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</H5>
+        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Execution time</H5>
     </>
 )
 

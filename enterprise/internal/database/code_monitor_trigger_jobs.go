@@ -83,18 +83,6 @@ func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, trig
 	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, resultsJSON, triggerJobID))
 }
 
-const deleteObsoleteJobLogsFmtStr = `
-DELETE FROM cm_trigger_jobs
-WHERE jsonb_array_length(search_results) = 0
-AND state = 'completed'
-`
-
-// DeleteObsoleteTriggerJobs deletes all runs which are marked as completed and did
-// not return results.
-func (s *codeMonitorStore) DeleteObsoleteTriggerJobs(ctx context.Context) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
-}
-
 const deleteOldJobLogsFmtStr = `
 DELETE FROM cm_trigger_jobs
 WHERE finished_at < (NOW() - (%s * '1 day'::interval));
@@ -133,8 +121,7 @@ func (o ListTriggerJobsOpts) Limit() *sqlf.Query {
 const getEventsForQueryIDInt64FmtStr = `
 SELECT %s
 FROM cm_trigger_jobs
-WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
-AND %s
+WHERE %s
 ORDER BY id DESC
 LIMIT %s;
 `

@@ -3,9 +3,8 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
+import { SyntaxHighlightedSearchQuery, CodeHostIcon } from '@sourcegraph/search-ui'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -18,6 +17,7 @@ import styles from './SearchSidebarSection.module.scss'
 
 export interface FilterLinkProps {
     label: string
+    ariaLabel?: string
     value: string
     count?: number
     limitHit?: boolean
@@ -27,38 +27,43 @@ export interface FilterLinkProps {
 
 export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterLinkProps>> = ({
     label,
+    ariaLabel,
     value,
     count,
     limitHit,
     labelConverter = label => (label === value ? <SyntaxHighlightedSearchQuery query={label} /> : label),
     onFilterChosen,
-}) => (
-    <Button
-        className={styles.sidebarSectionListItem}
-        onClick={() => onFilterChosen(value)}
-        data-testid="filter-link"
-        value={value}
-        variant="link"
-    >
-        <span className="flex-grow-1">{labelConverter(label)}</span>
-        {count && (
-            <span
-                className="pl-2 flex-shrink-0"
-                title={`At least ${count} ${pluralize('result matches', count, 'results match')} this filter.`}
-            >
-                {count}
-                {limitHit ? '+' : ''}
-            </span>
-        )}
-    </Button>
-)
+}) => {
+    const countTooltip = count
+        ? `At least ${count} ${pluralize('result matches', count, 'results match')} this filter.`
+        : ''
+
+    return (
+        <Button
+            className={styles.sidebarSectionListItem}
+            onClick={() => onFilterChosen(value)}
+            data-testid="filter-link"
+            value={value}
+            variant="link"
+            aria-label={`${ariaLabel ?? label}${countTooltip ? `, ${countTooltip}` : ''}`}
+        >
+            <span className="flex-grow-1">{labelConverter(label)}</span>
+            {count && (
+                <span className="pl-2 flex-shrink-0" data-tooltip={countTooltip}>
+                    {count}
+                    {limitHit ? '+' : ''}
+                </span>
+            )}
+        </Button>
+    )
+}
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
     onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
-        const Icon = RepoIcon({
+        const Icon = CodeHostIcon({
             repoName: label,
             className: classNames('text-muted', styles.sidebarSectionIcon),
         })
@@ -84,6 +89,7 @@ export const getRepoFilterLinks = (
             key={`${filter.label}-${filter.value}`}
             labelConverter={repoLabelConverter}
             onFilterChosen={onFilterChosen}
+            ariaLabel={`Search in repository ${filter.label}`}
         />
     ))
 }
@@ -95,7 +101,12 @@ export const getDynamicFilterLinks = (
     (filters || [])
         .filter(filter => filter.kind !== 'repo')
         .map(filter => (
-            <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
+            <FilterLink
+                {...filter}
+                key={`${filter.label}-${filter.value}`}
+                onFilterChosen={onFilterChosen}
+                ariaLabel={`Filter by ${filter.label}`}
+            />
         ))
 
 export const getSearchSnippetLinks = (
@@ -109,6 +120,7 @@ export const getSearchSnippetLinks = (
             value={snippet.value}
             key={`${snippet.name}-${snippet.value}`}
             onFilterChosen={onFilterChosen}
+            ariaLabel={`Use search snippet: ${snippet.name}`}
         />
     ))
 }

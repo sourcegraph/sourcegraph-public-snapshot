@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -71,9 +72,9 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
         <div className="site-admin-customers-page">
             <PageTitle title="Customers" />
             <div className="d-flex justify-content-between align-items-center mb-1">
-                <h2 className="mb-0">Customers</h2>
+                <H2 className="mb-0">Customers</H2>
             </div>
-            <p>User accounts may be linked to a customer on the billing system.</p>
+            <Text>User accounts may be linked to a customer on the billing system.</Text>
             <FilteredSiteAdminCustomerConnection
                 className="list-group list-group-flush mt-3"
                 noun="customer"

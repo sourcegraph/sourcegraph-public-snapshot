@@ -14,80 +14,6 @@ type matchSender interface {
 	LimitHit() bool
 }
 
-type limitedStreamCollector struct {
-	mux       sync.Mutex
-	collected []protocol.FileMatch
-	sentCount int
-	remaining int
-	limitHit  bool
-	cancel    context.CancelFunc
-}
-
-func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context, context.CancelFunc, *limitedStreamCollector) {
-	ctx, cancel := context.WithCancel(ctx)
-	s := &limitedStreamCollector{
-		cancel:    cancel,
-		remaining: limit,
-	}
-	return ctx, cancel, s
-}
-
-func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
-	m.mux.Lock()
-	if match.MatchCount <= m.remaining {
-		m.collected = append(m.collected, match)
-		m.remaining -= match.MatchCount
-		m.sentCount += match.MatchCount
-		m.mux.Unlock()
-		return
-	}
-
-	m.limitHit = true
-	m.cancel()
-
-	// Can't truncate a path match
-	if len(match.LineMatches) == 0 {
-		m.mux.Unlock()
-		return
-	}
-
-	// NOTE: this isn't strictly correct for structural search matches
-	// since a single match can be multiple lines. However, by the time we
-	// convert a structural search to a protocol.FileMatch, we lose the
-	// information required to properly limit. However, multiline matches
-	// are also not limited correctly in the frontend, so doing it correctly
-	// here won't fix that.
-	match.LineMatches = match.LineMatches[:m.remaining]
-	match.LimitHit = true
-	match.MatchCount = m.remaining
-	m.sentCount += m.remaining
-	m.remaining = 0
-	m.collected = append(m.collected, match)
-	m.mux.Unlock()
-}
-
-func (m *limitedStreamCollector) SentCount() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return len(m.collected)
-}
-
-func (m *limitedStreamCollector) Collected() []protocol.FileMatch {
-	return m.collected
-}
-
-func (m *limitedStreamCollector) Remaining() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.remaining
-}
-
-func (m *limitedStreamCollector) LimitHit() bool {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.limitHit
-}
-
 type limitedStream struct {
 	cb        func(protocol.FileMatch)
 	mux       sync.Mutex
@@ -113,9 +39,10 @@ func newLimitedStream(ctx context.Context, limit int, cb func(protocol.FileMatch
 
 func (m *limitedStream) Send(match protocol.FileMatch) {
 	m.mux.Lock()
-	if match.MatchCount <= m.remaining {
-		m.remaining -= match.MatchCount
-		m.sentCount += match.MatchCount
+	matchCount := match.MatchCount()
+	if matchCount <= m.remaining {
+		m.remaining -= matchCount
+		m.sentCount += matchCount
 		m.cb(match)
 		m.mux.Unlock()
 		return
@@ -125,20 +52,21 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	m.cancel()
 
 	// Can't truncate a path match
-	if len(match.LineMatches) == 0 {
+	if len(match.ChunkMatches) == 0 {
 		m.mux.Unlock()
 		return
 	}
 
-	// NOTE: this isn't strictly correct for structural search matches
-	// since a single match can be multiple lines. However, by the time we
-	// convert a structural search to a protocol.FileMatch, we lose the
-	// information required to properly limit. However, multiline matches
-	// are also not limited correctly in the frontend, so doing it correctly
-	// here won't fix that.
-	match.LineMatches = match.LineMatches[:m.remaining]
+	for i, cm := range match.ChunkMatches {
+		if l := len(cm.Ranges); l >= m.remaining {
+			match.ChunkMatches[i].Ranges = cm.Ranges[:m.remaining]
+			match.ChunkMatches = match.ChunkMatches[:i+1]
+			break
+		} else {
+			m.remaining -= l
+		}
+	}
 	match.LimitHit = true
-	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
 	m.cb(match)
@@ -161,4 +89,18 @@ func (m *limitedStream) LimitHit() bool {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	return m.limitHit
+}
+
+type limitedStreamCollector struct {
+	collected []protocol.FileMatch
+	*limitedStream
+}
+
+func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context, context.CancelFunc, *limitedStreamCollector) {
+	s := &limitedStreamCollector{}
+	ctx, cancel, ls := newLimitedStream(ctx, limit, func(fm protocol.FileMatch) {
+		s.collected = append(s.collected, fm)
+	})
+	s.limitedStream = ls
+	return ctx, cancel, s
 }

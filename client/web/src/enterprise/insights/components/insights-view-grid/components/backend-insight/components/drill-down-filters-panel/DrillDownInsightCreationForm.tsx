@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input } from '@sourcegraph/wildcard'
+import { Button, Input, H3 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { getDefaultInputProps } from '../../../../../form/getDefaultInputProps'
@@ -48,7 +48,7 @@ export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCre
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={className}>
-            <h3 className="mb-3">Save as new view</h3>
+            <H3 className="mb-3">Save as new view</H3>
 
             <Input
                 label="Name"

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Button, CardBody, Card, H3, H2 } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -47,7 +47,7 @@ const InsightCardBody: React.FunctionComponent<React.PropsWithChildren<InsightCa
             <H3 as={H2} className={styles.cardTitle}>
                 {title}
             </H3>
-            <p className="d-flex flex-column text-muted m-0">{children}</p>
+            <Text className="d-flex flex-column text-muted m-0">{children}</Text>
         </CardBody>
     )
 }

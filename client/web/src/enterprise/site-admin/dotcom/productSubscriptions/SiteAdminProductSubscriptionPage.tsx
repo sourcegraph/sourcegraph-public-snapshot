@@ -21,6 +21,7 @@ import {
     CardBody,
     Card,
     Icon,
+    H2,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -144,7 +145,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
             <PageTitle title="Product subscription" />
             <div className="mb-2">
                 <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <Icon as={ArrowLeftIcon} /> All subscriptions
+                    <Icon aria-hidden={true} as={ArrowLeftIcon} /> All subscriptions
                 </Button>
             </div>
             {productSubscription === LOADING ? (
@@ -153,7 +154,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <h2>Product subscription {productSubscription.name}</h2>
+                    <H2>Product subscription {productSubscription.name}</H2>
                     <div className="mb-3">
                         <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
                             Archive
@@ -217,7 +218,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 </Button>
                             ) : (
                                 <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <Icon as={AddIcon} /> Generate new license manually
+                                    <Icon aria-hidden={true} as={AddIcon} /> Generate new license manually
                                 </Button>
                             )}
                         </CardHeader>

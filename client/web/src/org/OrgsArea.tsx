@@ -14,7 +14,7 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
@@ -36,7 +36,6 @@ export interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
-        FeatureFlagProps,
         ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
@@ -52,37 +51,40 @@ export interface Props
 /**
  * Renders a layout of a sidebar and a content area to display organization-related pages.
  */
-const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
-    <Switch>
-        {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
-            <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-        )}
-        {props.featureFlags.get('open-beta-enabled') && (
+const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    return (
+        <Switch>
+            {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
+                <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+            )}
+            {isOpenBetaEnabled && (
+                <Route
+                    path={`${props.match.url}/joinopenbeta`}
+                    exact={true}
+                    render={routeComponentProps => <JoinOpenBetaPage {...props} {...routeComponentProps} />}
+                />
+            )}
+            {isOpenBetaEnabled && (
+                <Route
+                    path={`${props.match.url}/joinopenbeta/neworg/:openBetaId`}
+                    exact={true}
+                    render={routeComponentProps => <NewOrgOpenBetaPage {...props} {...routeComponentProps} />}
+                />
+            )}
             <Route
-                path={`${props.match.url}/joinopenbeta`}
+                path={`${props.match.url}/invitation/:token`}
                 exact={true}
-                render={routeComponentProps => <JoinOpenBetaPage {...props} {...routeComponentProps} />}
+                render={routeComponentProps => <OrgInvitationPage {...props} {...routeComponentProps} />}
             />
-        )}
-        {props.featureFlags.get('open-beta-enabled') && (
             <Route
-                path={`${props.match.url}/joinopenbeta/neworg/:openBetaId`}
-                exact={true}
-                render={routeComponentProps => <NewOrgOpenBetaPage {...props} {...routeComponentProps} />}
+                path={`${props.match.url}/:name`}
+                render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
             />
-        )}
-        <Route
-            path={`${props.match.url}/invitation/:token`}
-            exact={true}
-            render={routeComponentProps => <OrgInvitationPage {...props} {...routeComponentProps} />}
-        />
-        <Route
-            path={`${props.match.url}/:name`}
-            render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
-        />
 
-        <Route component={NotFoundPage} />
-    </Switch>
-)
+            <Route component={NotFoundPage} />
+        </Switch>
+    )
+}
 
 export const OrgsArea = withAuthenticatedUser(AuthenticatedOrgsArea)

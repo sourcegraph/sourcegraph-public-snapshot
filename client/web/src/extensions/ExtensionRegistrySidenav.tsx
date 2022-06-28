@@ -82,7 +82,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
             <Menu>
                 <MenuButton size="sm" variant="secondary" outline={true}>
-                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} />
+                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} aria-hidden={true} />
                 </MenuButton>
                 <MenuList>
                     <MenuItem onSelect={showAll} disabled={enablementFilter === 'all'}>
@@ -97,22 +97,12 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
                     <MenuDivider />
 
-                    <MenuItem
-                        // Hack: clicking <label> inside <MenuItem> doesn't affect checked state,
-                        // so use a <span> for which click events are handled by <MenuItem>.
-                        onSelect={toggleExperimentalExtensions}
-                    >
-                        <div className="d-flex align-items-center">
-                            <Checkbox
-                                checked={showExperimentalExtensions}
-                                onChange={toggleExperimentalExtensions}
-                                className=""
-                                aria-labelledby="show-experimental-extensions"
-                            />
-                            <span className="m-0 pl-2" id="show-experimental-extensions">
-                                Show experimental extensions
-                            </span>
-                        </div>
+                    <MenuItem onSelect={toggleExperimentalExtensions}>
+                        <Checkbox
+                            id="show-experimental-extensions"
+                            checked={showExperimentalExtensions}
+                            label="Show experimental extensions"
+                        />
                     </MenuItem>
                 </MenuList>
             </Menu>

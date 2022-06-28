@@ -49,7 +49,11 @@ const TreeEntry: React.FunctionComponent<
             )}
         >
             <span>
-                <Icon className="mr-1" as={isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon} />
+                <Icon
+                    className="mr-1"
+                    as={isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
+                    aria-hidden={true}
+                />
                 {name}
                 {isDirectory && '/'}
             </span>

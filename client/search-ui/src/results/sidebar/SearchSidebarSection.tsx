@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, H2, H5, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -104,42 +104,44 @@ export const SearchSidebarSection: React.FunctionComponent<
         )
 
         return visible ? (
-            <div className={classNames(styles.sidebarSection, className)}>
+            <article
+                aria-labelledby={`search-sidebar-section-header-${sectionId}`}
+                className={classNames(styles.sidebarSection, className)}
+            >
                 <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                     <CollapseHeader
                         as={Button}
                         className={styles.sidebarSectionCollapseButton}
-                        aria-label={isOpened ? 'Collapse' : 'Expand'}
+                        aria-label={`${isOpened ? 'Collapse' : 'Expand'} ${header}`}
                         outline={true}
                         variant="secondary"
                     >
-                        <H5 as={H2} className="flex-grow-1">
+                        <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
                             {header}
                         </H5>
-                        <Icon className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        <Icon aria-hidden={true} className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                     </CollapseHeader>
 
                     <CollapsePanel>
                         <div className={classNames('pb-4', !searchVisible && 'border-top')}>
                             {searchVisible && (
-                                <input
+                                <Input
                                     type="search"
                                     placeholder="Find..."
                                     aria-label="Find filters"
                                     value={filter}
                                     onChange={event => setFilter(event.currentTarget.value)}
                                     data-testid="sidebar-section-search-box"
-                                    className={classNames(
-                                        'form-control form-control-sm',
-                                        styles.sidebarSectionSearchBox
-                                    )}
+                                    inputClassName={styles.sidebarSectionSearchBox}
+                                    variant="small"
                                 />
                             )}
                             {body}
                         </div>
                     </CollapsePanel>
                 </Collapse>
-            </div>
+            </article>
         ) : null
     }
 )
+SearchSidebarSection.displayName = 'SearchSidebarSection'

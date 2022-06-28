@@ -11,7 +11,7 @@ import React, {
 } from 'react'
 
 import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
+import type { LocationDescriptorObject } from 'history'
 import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
@@ -28,7 +28,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -82,7 +82,7 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
 }
 
 export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Icon as={BookPlusOutlineIcon} />
+    <Icon as={BookPlusOutlineIcon} aria-hidden={true} />
 )
 
 export interface NotepadContainerProps {
@@ -337,26 +337,26 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
             >
                 <span>
                     <NotepadIcon />
-                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <H2 className="px-1 d-inline">Notepad</H2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon as={ChevronUpIcon} />
+                    <Icon aria-hidden={true} as={ChevronUpIcon} />
                 </span>
             </Button>
             {open && (
                 <>
                     {newEntry && (
                         <div className={classNames(styles.newNote, 'p-2')}>
-                            <h3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <H3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</H3>
                             <AddEntryButton entry={newEntry} addEntry={addEntry} />
                         </div>
                     )}
-                    <h3 className="p-2">
+                    <H3 className="p-2">
                         Notes <small>({reversedEntries.length})</small>
-                    </h3>
+                    </H3>
                     <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
                         {reversedEntries.map((entry, index) => {
                             const selected = selectedEntries.includes(index)
@@ -388,7 +388,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     </ul>
                     {confirmRemoveAll && (
                         <div className="p-2">
-                            <p>Are you sure you want to delete all entries?</p>
+                            <Text>Are you sure you want to delete all entries?</Text>
                             <div className="d-flex justify-content-between">
                                 <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
                                     Cancel
@@ -434,7 +434,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
                         >
-                            <Icon as={DeleteIcon} />
+                            <Icon aria-hidden={true} as={DeleteIcon} />
                         </Button>
                     </div>
                 </>
@@ -464,7 +464,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                         addEntry(entry)
                     }}
                 >
-                    <Icon as={SearchIcon} /> Add search
+                    <Icon aria-hidden={true} as={SearchIcon} /> Add search
                 </Button>
             )
             break
@@ -482,7 +482,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                             addEntry(entry, 'file')
                         }}
                     >
-                        <Icon as={FileDocumentOutlineIcon} /> Add as file
+                        <Icon aria-hidden={true} as={FileDocumentOutlineIcon} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -496,7 +496,8 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                                 addEntry(entry, 'range')
                             }}
                         >
-                            <Icon as={CodeBracketsIcon} /> Add as range {formatLineRange(entry.lineRange)}
+                            <Icon aria-hidden={true} as={CodeBracketsIcon} /> Add as range{' '}
+                            {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
                 </span>
@@ -563,7 +564,10 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
             <div className="d-flex">
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
-                    <Link to={location} className="p-0">
+                    <Link
+                        to={typeof location === 'string' ? location : createLinkUrl(location)}
+                        className="text-monospace search-query-link"
+                    >
                         {title}
                     </Link>
                 </span>
@@ -578,7 +582,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
-                        <Icon as={TextBoxIcon} />
+                        <Icon aria-hidden={true} as={TextBoxIcon} />
                     </Button>
                     <Button
                         aria-label={deletionLabel}
@@ -590,7 +594,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             onDelete(entry)
                         }}
                     >
-                        <Icon as={DeleteIcon} />
+                        <Icon aria-hidden={true} as={DeleteIcon} />
                     </Button>
                 </span>
             </div>
@@ -623,11 +627,16 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
 
 function getUIComponentsForEntry(
     entry: NotepadEntry | NotepadEntryInput
-): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptor; body?: React.ReactElement } {
+): {
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptorObject | string
+    body?: React.ReactElement
+} {
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon as={SearchIcon} />,
+                icon: <Icon aria-label="Search" as={SearchIcon} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -641,7 +650,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: <Icon aria-label="File" as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}

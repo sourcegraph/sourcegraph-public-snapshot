@@ -113,7 +113,7 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 	}, nil
 }
 
-func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (_ graphqlbackend.MonitorResolver, err error) {
 	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
 		if err != nil {
 			return nil, err
@@ -528,7 +528,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
 		if err != nil {
 			return nil, err

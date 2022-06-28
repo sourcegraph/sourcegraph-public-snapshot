@@ -7,7 +7,7 @@ import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Modal } from '@sourcegraph/wildcard'
+import { Button, Input, Modal, H3 } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -75,7 +75,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<
             {modalOpened && (
                 <Modal className={styles.modal} onDismiss={onCloseAddUserModal} position="center" aria-label={title}>
                     <div className="d-flex flex-row align-items-end">
-                        <h3>{title}</h3>
+                        <H3>{title}</H3>
                         <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
                             <VisuallyHidden>Close</VisuallyHidden>
                             <CloseIcon />

@@ -1,5 +1,5 @@
 import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../WebStory'
 
@@ -11,25 +11,39 @@ const getSharedKnobs = () => ({
     deleted: number('Deleted', 8),
 })
 
-const { add } = storiesOf('web/diffs/DiffStat', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('Collapsed counts', () => {
+const config: Meta = {
+    title: 'web/diffs/DiffStat',
+    decorators: [decorator],
+}
+
+export default config
+
+export const CollapsedCounts: Story = () => {
     const stats = getSharedKnobs()
     return <WebStory>{() => <DiffStat {...stats} />}</WebStory>
-})
+}
 
-add('Expanded counts', () => {
+CollapsedCounts.storyName = 'Collapsed counts'
+
+export const ExpandedCounts: Story = () => {
     const stats = getSharedKnobs()
     return <WebStory>{() => <DiffStat {...stats} expandedCounts={true} />}</WebStory>
-})
+}
 
-add('DiffStatSquares', () => {
+ExpandedCounts.storyName = 'Expanded counts'
+
+export const DiffStatSquaresStory: Story = () => {
     const stats = getSharedKnobs()
     return <WebStory>{() => <DiffStatSquares {...stats} />}</WebStory>
-})
-add('DiffStatStack', () => {
+}
+
+DiffStatSquaresStory.storyName = 'DiffStatSquares'
+
+export const DiffStatStackStory: Story = () => {
     const stats = getSharedKnobs()
     return <WebStory>{() => <DiffStatStack {...stats} />}</WebStory>
-})
+}
+
+DiffStatStackStory.storyName = 'DiffStatStack'

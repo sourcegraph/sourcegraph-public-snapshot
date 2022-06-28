@@ -18,7 +18,6 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
@@ -77,7 +76,6 @@ interface UserAreaProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
-        FeatureFlagProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -107,7 +105,6 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
-        FeatureFlagProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string

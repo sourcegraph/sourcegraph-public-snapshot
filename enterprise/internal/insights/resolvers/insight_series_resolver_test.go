@@ -5,13 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -21,9 +24,10 @@ func TestResolver_InsightSeries(t *testing.T) {
 		// Setup the GraphQL resolver.
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+		logger := logtest.Scoped(t)
 		clock := func() time.Time { return now }
-		insightsDB := dbtest.NewInsightsDB(t)
-		postgres := dbtest.NewDB(t)
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()

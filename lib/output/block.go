@@ -25,7 +25,6 @@ func newBlock(indent int, o *Output) *Block {
 		Output: &Output{
 			w:    w,
 			caps: o.caps,
-			opts: o.opts,
 		},
 		indent:    bytes.Repeat([]byte(" "), indent),
 		unwrapped: o,

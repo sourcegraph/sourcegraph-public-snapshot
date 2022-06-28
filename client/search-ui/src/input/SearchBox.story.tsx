@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
@@ -9,13 +9,19 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
-const { add } = storiesOf('search-ui/input/SearchBox', module).addParameters({
-    chromatic: { viewports: [575, 700], disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'search-ui/input/SearchBox',
+    parameters: {
+        chromatic: { viewports: [575, 700], disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -49,7 +55,7 @@ const defaultProps: SearchBoxProps = {
     editorComponent: 'monaco',
 }
 
-add('SearchBox', () => (
+export const SearchBoxStory: Story = () => (
     <BrandedStory>
         {props => (
             <>
@@ -58,13 +64,13 @@ add('SearchBox', () => (
 
                     return (
                         <div key={editorComponent}>
-                            <h1>{editorComponent}</h1>
-                            <h2>Default</h2>
+                            <H1>{editorComponent}</H1>
+                            <H2>Default</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <h2>Regexp enabled</h2>
+                            <H2>Regexp enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -73,7 +79,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>Structural enabled</h2>
+                            <H2>Structural enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -82,12 +88,12 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>Case sensitivity enabled</h2>
+                            <H2>Case sensitivity enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} caseSensitive={true} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <h2>With search contexts</h2>
+                            <H2>With search contexts</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -97,7 +103,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>With search contexts, user context selected</h2>
+                            <H2>With search contexts, user context selected</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -107,7 +113,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>With search contexts, disabled based on query</h2>
+                            <H2>With search contexts, disabled based on query</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -123,4 +129,6 @@ add('SearchBox', () => (
             </>
         )}
     </BrandedStory>
-))
+)
+
+SearchBoxStory.storyName = 'SearchBox'

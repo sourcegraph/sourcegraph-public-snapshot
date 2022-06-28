@@ -32,6 +32,22 @@
             padding: 0;
         }
 
+        :global(.cm-placeholder) {
+            // CodeMirror uses display: inline-block by default, but that causes
+            // Chrome to render a larger cursor if the placeholder holder spans
+            // multiple lines. Firefox doesn't have this problem (but
+            // setting display: inline doesn't seem to have a negative effect
+            // either)
+            display: inline;
+            // Once again, Chrome renders the placeholder differently than
+            // Firefox. CodeMirror sets 'word-break: break-word' (which is
+            // deprecated) and 'overflow-wrap: anywhere' but they don't seem to
+            // have an effect in Chrome (at least not in this instance).
+            // Setting 'word-break: break-all' explicitly makes appearances a
+            // bit better for example queries with long tokens.
+            word-break: break-all;
+        }
+
         :global(.cm-tooltip) {
             padding: 0.25rem;
             color: var(--search-query-text-color);
@@ -73,30 +89,71 @@
             color: var(--search-query-text-color);
             background-color: var(--color-bg-1);
 
-            > ul > li {
-                padding-top: 0.25rem;
-                padding-bottom: 0.25rem;
+            > ul {
+                font-family: var(--code-font-family);
 
-                &[aria-selected] {
-                    color: var(--search-query-text-color);
-                    background-color: var(--color-bg-2);
+                > li {
+                    box-sizing: content-box;
+                    padding-top: 0.25rem;
+                    padding-bottom: 0.25rem;
+                    display: flex;
+                    height: 1.25rem;
 
-                    :global(.theme-dark) & {
-                        background-color: var(--color-bg-3);
+                    svg {
+                        flex-shrink: 0;
+
+                        path {
+                            fill: var(--search-query-text-color);
+                        }
                     }
-                }
 
-                :global(.cm-completionDetail) {
-                    padding-left: 0.25rem;
-                    color: var(--gray-06);
-                }
+                    :global(.cm-completionLabel) {
+                        flex-shrink: 0;
+                    }
 
-                :global(.cm-completionMatchedText) {
-                    // Reset
-                    text-decoration: none;
+                    :global(.cm-completionDetail) {
+                        padding-left: 0.25rem;
+                        color: var(--gray-06);
+                        flex: 1;
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
 
-                    // Our style
-                    background-color: var(--mark-bg);
+                    :global(.cm-completionMatchedText) {
+                        // Reset
+                        text-decoration: none;
+
+                        // Our style
+                        color: var(--search-filter-keyword-color);
+                        font-weight: bold;
+                    }
+
+                    .tabStyle {
+                        border: 1px solid var(--text-muted);
+                        border-radius: 0.25rem;
+                        height: 1.25rem;
+                        font-size: 0.65rem;
+                        line-height: 1;
+                        padding: 0.25rem 0.375rem;
+                        margin-left: auto;
+                        color: var(--text-muted);
+                        opacity: 0.75;
+                        display: none;
+                    }
+
+                    &[aria-selected] {
+                        color: var(--search-query-text-color);
+                        background-color: var(--color-bg-2);
+
+                        :global(.theme-dark) & {
+                            background-color: var(--color-bg-3);
+                        }
+
+                        .tabStyle {
+                            display: inline-block;
+                        }
+                    }
                 }
             }
         }
@@ -114,74 +171,171 @@
 }
 
 .focusedFilter {
-    background-color: var(--color-bg-2);
+    background-color: var(--gray-02);
 
     :global(.theme-dark) & {
-        background-color: var(--color-bg-3);
+        background-color: var(--gray-08);
     }
 }
 
-.identifier,
-.metaStructuralVariable,
-.metaRevisionCommitHash,
-.metaRevisionLabel,
-.metaRevisionReferencePath {
+// Search query syntax highlighting
+
+// Base language tokens
+.identifier {
     color: var(--search-query-text-color);
 }
-
-.metaRevisionWildcard {
-    color: var(--oc-cyan-7);
-}
-
-.field,
-.metaRepoRevisionSeparator,
-.metaPredicateDot {
+.field {
     color: var(--search-filter-keyword-color);
 }
-
 .keyword,
 .openingParen,
-.closingParen,
+.closingParen {
+    color: var(--search-keyword-color);
+}
+.comment {
+    color: var(--oc-orange-9);
+}
+
+// Decorated language tokens
+.metaFilterSeparator {
+    color: var(--oc-gray-6);
+}
+.metaRepoRevisionSeparator {
+    color: var(--search-filter-keyword-color);
+}
 .metaContextPrefix,
 .metaPredicateNameAccess {
     color: var(--search-keyword-color);
 }
+.metaPredicateDot {
+    color: var(--search-query-text-color);
+}
+.metaPredicateParenthesis {
+    color: var(--oc-orange-9);
+}
 
+// Regexp pattern
 .metaRegexp {
+    &Delimited,
+    &Assertion,
+    &LazyQualifier {
+        color: var(--oc-red-9);
+    }
+
+    &EscapedCharacter {
+        color: var(--oc-orange-9);
+    }
+
     &CharacterSet,
     &CharacterClass,
     &CharacterClassRangeHyphen {
         color: var(--search-keyword-color);
     }
 
+    &CharacterClassMember,
+    &CharacterClassRange {
+        color: var(--search-query-text-color);
+    }
+
     &Alternative,
     &RangeQuantifier {
         color: var(--oc-cyan-7);
     }
+}
 
-    &Delimited,
-    &Assertion,
-    &LazyQualifier {
+// Structural pattern highlighting
+.metaStructural {
+    &Hole,
+    &RegexpHole {
         color: var(--oc-red-9);
+    }
+
+    &Variable {
+        color: var(--search-query-text-color);
+    }
+
+    &RegexpSeparator {
+        color: var(--oc-orange-9);
     }
 }
 
-.comment,
-.metaPredicateParenthesis,
-.metaRegexpEscapedCharacter,
-.metaStructuralRegexpSeparator,
-.metaRevisionSeparator {
-    color: var(--oc-orange-9);
+// Revision highlighting
+.metaRevision {
+    &Separator {
+        color: var(--oc-orange-9);
+    }
+
+    &IncludeGlobMarker,
+    &ExcludeGlobaMarker {
+        color: var(--oc-red-9);
+    }
+
+    &CommitHash,
+    &Label,
+    &ReferencePath {
+        color: var(--search-query-text-color);
+    }
+
+    &Wildcard {
+        color: var(--oc-cyan-7);
+    }
 }
 
-.metaFilterSeparator,
+// Path-like highlighting
 .metaPathSeparator {
     color: var(--oc-gray-6);
 }
 
-.metaStructuralHole,
-.metaStructuralRegexpHole,
-.metaRevisionIncludeGlobMarker,
-.metaRevisionExcludeGlobMarker {
-    color: var(--oc-red-9);
+:global(.theme-dark) {
+    .comment,
+    .metaPredicateParenthesis {
+        color: var(--oc-orange-4);
+    }
+
+    .metaRegexp {
+        &Delimited,
+        &Assertion,
+        &LazyQualifier {
+            color: var(--oc-red-5);
+        }
+
+        &EscapedCharacter {
+            color: var(--oc-red-3);
+        }
+
+        &CharacterClass {
+            color: var(--oc-grape-4);
+        }
+
+        &Alternative,
+        &RangeQuantifier {
+            color: var(--oc-cyan-4);
+        }
+    }
+
+    .metaStructural {
+        &Hole,
+        &RegexpHole {
+            color: var(--oc-red-5);
+        }
+
+        &RegexpSeparator {
+            color: var(--oc-orange-4);
+        }
+    }
+
+    .metaRevision {
+        &Separator {
+            color: var(--oc-orange-4);
+        }
+
+        &IncludeGlobMarker,
+        &ExcludeGlobaMarker {
+            color: var(--oc-red-5);
+        }
+
+        &Wildcard {
+            color: var(--oc-cyan-4);
+        }
+    }
 }

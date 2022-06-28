@@ -7,11 +7,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -53,9 +52,10 @@ type Resolver interface {
 	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
-	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 	RetentionPolicyOverview(ctx context.Context, upload store.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
+
+	AuditLogsForUpload(ctx context.Context, id int) ([]store.UploadLog, error)
 
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver

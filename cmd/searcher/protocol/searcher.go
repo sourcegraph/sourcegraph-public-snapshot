@@ -52,6 +52,11 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+
+	// FeatHybrid is a feature flag which enables hybrid search. Hybrid search
+	// will only search what has changed since Zoekt has indexed as well as
+	// including Zoekt results.
+	FeatHybrid bool `json:"feat_hybrid,omitempty"`
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields
@@ -192,28 +197,52 @@ type Response struct {
 
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
-	Path        string
-	LineMatches []LineMatch
+	Path string
 
-	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
-	// lines may correspond to one logical match when doing a structural search
-	MatchCount int
+	ChunkMatches []ChunkMatch
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
 	LimitHit bool
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line.
-type LineMatch struct {
-	// Preview is the matched line.
-	Preview string
+func (fm FileMatch) MatchCount() int {
+	if len(fm.ChunkMatches) == 0 {
+		return 1 // path match is still one match
+	}
+	count := 0
+	for _, cm := range fm.ChunkMatches {
+		count += len(cm.Ranges)
+	}
+	return count
+}
 
-	// LineNumber is the 0-based line number. Note: Our editors present
-	// 1-based line numbers, but internally vscode uses 0-based.
-	LineNumber int
+type ChunkMatch struct {
+	Content      string
+	ContentStart Location
+	Ranges       []Range
+}
 
-	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
-	// representing each match on a line.
-	// Offsets and lengths are measured in characters, not bytes.
-	OffsetAndLengths [][2]int
+func (cm ChunkMatch) MatchedContent() []string {
+	res := make([]string, 0, len(cm.Ranges))
+	for _, rr := range cm.Ranges {
+		res = append(res, cm.Content[rr.Start.Offset-cm.ContentStart.Offset:rr.End.Offset-cm.ContentStart.Offset])
+	}
+	return res
+}
+
+type Range struct {
+	Start Location
+	End   Location
+}
+
+type Location struct {
+	// The byte offset from the beginning of the file.
+	Offset int32
+
+	// Line is the count of newlines before the offset in the file.
+	// Line is 0-based.
+	Line int32
+
+	// Column is the rune offset from the beginning of the last line.
+	Column int32
 }

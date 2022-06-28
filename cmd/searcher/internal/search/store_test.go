@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,8 +15,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -138,6 +143,7 @@ func TestIngoreSizeMax(t *testing.T) {
 		"foo_*",
 		"*.foo",
 		"bar.baz",
+		"**/*.bam",
 	}
 	tests := []struct {
 		name    string
@@ -149,10 +155,14 @@ func TestIngoreSizeMax(t *testing.T) {
 		{"foo_bar", true},
 		{"bar.baz", true},
 		{"bar.foo", true},
+		{"hello.bam", true},
+		{"sub/dir/hello.bam", true},
+		{"/sub/dir/hello.bam", true},
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
 		{"baz.baz", false},
+		{"sub/dir/bar.foo", false},
 	}
 
 	for _, test := range tests {
@@ -262,6 +272,12 @@ func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
 		Path: d,
+		Log:  logtest.Scoped(t),
+
+		ObservationContext: &observation.Context{
+			Registerer: metrics.TestRegisterer,
+			Logger:     logtest.Scoped(t),
+		},
 	}
 }
 
@@ -273,4 +289,13 @@ func emptyTar(t *testing.T) io.ReadCloser {
 		t.Fatal(err)
 	}
 	return io.NopCloser(bytes.NewReader(buf.Bytes()))
+}
+
+func TestIsNetOpError(t *testing.T) {
+	if !isNetOpError(&net.OpError{}) {
+		t.Fatal("should be net.OpError")
+	}
+	if isNetOpError(errors.New("hi")) {
+		t.Fatal("should not be net.OpError")
+	}
 }

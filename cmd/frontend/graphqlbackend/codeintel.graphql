@@ -24,6 +24,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        lockfileIndexingEnabled: Boolean!
     ): CodeIntelligenceConfigurationPolicy!
 
     """
@@ -41,6 +42,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        lockfileIndexingEnabled: Boolean!
     ): EmptyResponse
 
     """
@@ -233,21 +235,6 @@ extend type Query {
     ): RepositoryFilterPreview!
 
     """
-    Search over documentation
-    """
-    documentationSearch(
-        """
-        The search query.
-        """
-        query: String!
-
-        """
-        A list of names of repositories to limit the search to (all by default)
-        """
-        repos: [String!]
-    ): DocumentationSearchResults!
-
-    """
     Return the languages that this user has requested support for.
     """
     requestedLanguageSupport: [String!]!
@@ -378,6 +365,11 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     only consider the tip of the branch.
     """
     indexIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects lockfile-indexing schedules.
+    """
+    lockfileIndexingEnabled: Boolean!
 }
 
 """
@@ -580,6 +572,88 @@ extend type GitBlob {
     Experimental: This API is likely to change in the future.
     """
     localCodeIntel: JSONValue
+
+    """
+    A wrapper around syntactic hover and definition query methods.
+
+    Experimental: This API is likely to change in the future.
+    """
+    symbolInfo(line: Int!, character: Int!): SymbolInfo
+}
+
+"""
+SymbolInfo contains hover and definition methods. It's returned by GitBlob.symbolInfo(line, character).
+"""
+type SymbolInfo {
+    """
+    The definition of the symbol.
+    """
+    definition: SymbolLocation
+
+    """
+    The hover for the symbol.
+    """
+    hover: String
+}
+
+"""
+SymbolLocation is a single-line range within a repository. It's returned by SymbolInfo.definition.
+"""
+type SymbolLocation {
+    """
+    The repo.
+    """
+    repo: String!
+
+    """
+    The commit.
+    """
+    commit: String!
+
+    """
+    The path.
+    """
+    path: String!
+
+    """
+    The range.
+    """
+    range: LineRange
+
+    """
+    The line.
+    """
+    line: Int! @deprecated(reason: "use range.line instead")
+
+    """
+    The character.
+    """
+    character: Int! @deprecated(reason: "use range.character instead")
+
+    """
+    The length.
+    """
+    length: Int! @deprecated(reason: "use range.length instead")
+}
+
+"""
+LineRange is a span within a line.
+"""
+type LineRange {
+    """
+    The line.
+    """
+    line: Int!
+
+    """
+    The character.
+    """
+    character: Int!
+
+    """
+    The length.
+    """
+    length: Int!
 }
 
 """
@@ -681,85 +755,6 @@ interface TreeEntryLSIFData {
     The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
     """
     lsifUploads: [LSIFUpload!]!
-
-    """
-    Returns the documentation page corresponding to the given path ID, where the empty string "/"
-    refers to the current tree entry and can be used to walk all documentation below this tree entry.
-
-    Currently this method is only supported on the root tree entry of a repository.
-
-    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
-    with a slash, starting at the slug corresponding to this tree entry filepath. A pathID and filepath may
-    sometimes look similar, but are not equal. Some examples include:
-
-    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
-    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
-
-    In other words, a path ID is said to be the path to the page, relative to the tree entry
-    filepath.
-
-    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
-    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
-    may choose to create new pages if an API surface exceeds some threshold size.
-    """
-    documentationPage(pathID: String!): DocumentationPage!
-
-    """
-    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
-    refers to the current tree entry and can be used to walk all documentation below this tree entry.
-
-    Currently this method is only supported on the root tree entry of a repository.
-
-    See @documentationPage for information about what a pathID refers to.
-
-    This method is optimal for e.g. walking the entire documentation path structure of a repository,
-    whereas documentationPage would require you to fetch the content for all pages you walk (not true
-    of path info.)
-
-    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
-    is one (immediate child pages only.)
-
-    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
-    them) will not qualify as a page in relation to the maxDepth property: index pages will be
-    recursively followed and included until a page with actual content is found, and only then will
-    the depth be considered to increment. Default is false.
-
-    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
-
-    The exact structure of the return value is documented here:
-    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
-    """
-    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
-
-    """
-    A list of definitions of the symbol described by the given documentation path ID, if any.
-    """
-    documentationDefinitions(pathID: String!): LocationConnection!
-
-    """
-    A list of references of the symbol under the given document position.
-    """
-    documentationReferences(
-        """
-        The documentation path ID, e.g. from the documentationPage return value.
-        """
-        pathID: String!
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'LocationConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-    ): LocationConnection!
 }
 
 """
@@ -776,85 +771,6 @@ type GitTreeLSIFData implements TreeEntryLSIFData {
     The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
     """
     lsifUploads: [LSIFUpload!]!
-
-    """
-    Returns the documentation page corresponding to the given path ID, where the empty string "/"
-    refers to the current tree entry and can be used to walk all documentation below this tree entry.
-
-    Currently this method is only supported on the root tree entry of a repository.
-
-    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
-    with a slash, starting at the slug corresponding to this tree entry filepath. A pathID and filepath may
-    sometimes look similar, but are not equal. Some examples include:
-
-    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
-    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
-
-    In other words, a path ID is said to be the path to the page, relative to the tree entry
-    filepath.
-
-    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
-    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
-    may choose to create new pages if an API surface exceeds some threshold size.
-    """
-    documentationPage(pathID: String!): DocumentationPage!
-
-    """
-    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
-    refers to the current tree entry and can be used to walk all documentation below this tree entry.
-
-    Currently this method is only supported on the root tree entry of a repository.
-
-    See @documentationPage for information about what a pathID refers to.
-
-    This method is optimal for e.g. walking the entire documentation path structure of a repository,
-    whereas documentationPage would require you to fetch the content for all pages you walk (not true
-    of path info.)
-
-    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
-    is one (immediate child pages only.)
-
-    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
-    them) will not qualify as a page in relation to the maxDepth property: index pages will be
-    recursively followed and included until a page with actual content is found, and only then will
-    the depth be considered to increment. Default is false.
-
-    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
-
-    The exact structure of the return value is documented here:
-    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
-    """
-    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
-
-    """
-    A list of definitions of the symbol described by the given documentation path ID, if any.
-    """
-    documentationDefinitions(pathID: String!): LocationConnection!
-
-    """
-    A list of references of the symbol under the given document position.
-    """
-    documentationReferences(
-        """
-        The documentation path ID, e.g. from the documentationPage return value.
-        """
-        pathID: String!
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'LocationConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-    ): LocationConnection!
 }
 
 """
@@ -983,21 +899,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): Hover
 
     """
-    The documentation of the symbol under the given document position, if any.
-    """
-    documentation(
-        """
-        The line on which the symbol occurs (zero-based, inclusive).
-        """
-        line: Int!
-
-        """
-        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
-        """
-        character: Int!
-    ): Documentation
-
-    """
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
@@ -1006,151 +907,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     The list of LSIF uploads that may be used to service code-intel requests for this GitBlob.
     """
     lsifUploads: [LSIFUpload!]!
-
-    """
-    Returns the documentation page corresponding to the given path ID, where the path ID "/"
-    refers to the current git blob and can be used to walk all documentation below this git blob.
-
-    Currently this method is only supported on the root git blob of a repository.
-
-    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
-    with a slash, starting at the slug corresponding to this git blob filepath. A pathID and filepath may
-    sometimes look similar, but are not equal. Some examples include:
-
-    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
-    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
-
-    In other words, a path ID is said to be the path to the page, relative to the git blob
-    filepath.
-
-    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
-    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
-    may choose to create new pages if an API surface exceeds some threshold size.
-    """
-    documentationPage(pathID: String!): DocumentationPage!
-
-    """
-    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
-    refers to the current tree entry and can be used to walk all documentation below this tree entry.
-
-    Currently this method is only supported on the root tree entry of a repository.
-
-    See @documentationPage for information about what a pathID refers to.
-
-    This method is optimal for e.g. walking the entire documentation path structure of a repository,
-    whereas documentationPage would require you to fetch the content for all pages you walk (not true
-    of path info.)
-
-    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
-    is one (immediate child pages only.)
-
-    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
-    them) will not qualify as a page in relation to the maxDepth property: index pages will be
-    recursively followed and included until a page with actual content is found, and only then will
-    the depth be considered to increment. Default is false.
-
-    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
-
-    The exact structure of the return value is documented here:
-    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
-    """
-    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
-
-    """
-    A list of definitions of the symbol described by the given documentation path ID, if any.
-    """
-    documentationDefinitions(pathID: String!): LocationConnection!
-
-    """
-    A list of references of the symbol under the given document position.
-    """
-    documentationReferences(
-        """
-        The documentation path ID, e.g. from the documentationPage return value.
-        """
-        pathID: String!
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'LocationConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-    ): LocationConnection!
-}
-
-"""
-Describes a single page of documentation.
-"""
-type DocumentationPage {
-    """
-    The tree of documentation nodes describing this page's hierarchy. It is a JSON value because
-    GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
-
-    The exact structure of this value is documented here:
-    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal&case=yes
-    """
-    tree: JSONValue!
-}
-
-"""
-Search results over documentation.
-"""
-type DocumentationSearchResults {
-    """
-    The results.
-    """
-    results: [DocumentationSearchResult!]!
-}
-
-"""
-A documentation search result.
-"""
-type DocumentationSearchResult {
-    """
-    The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
-    """
-    language: String!
-
-    """
-    RepoName is the name of the repository containing this search key.
-    """
-    repoName: String!
-
-    """
-    The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific,
-    and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
-    """
-    searchKey: String!
-
-    """
-    The fully qualified documentation page path ID, e.g. including "#section". See the documentationPage
-    type for what this is.
-    """
-    pathID: String!
-
-    """
-    Markdown label string, e.g. a one-line function signature. See protocol/documentation.go:Documentation
-    """
-    label: String!
-
-    """
-    Markdown detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
-    """
-    detail: String!
-
-    """
-    Tags for the documentation node. See protocol/documentation.go:Documentation
-    """
-    tags: [String!]!
 }
 
 """
@@ -1210,6 +966,11 @@ type LSIFUpload implements Node {
     The original 40-character commit commit supplied at upload time.
     """
     inputCommit: String!
+
+    """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
 
     """
     The original root supplied at upload time.
@@ -1302,6 +1063,11 @@ type LSIFUpload implements Node {
     pattern. Pattern type is subject to change.
     """
     documentPaths(pattern: String!): LSIFUploadDocumentPathsConnection!
+
+    """
+    Audit logs representing each state change of the upload in order from earliest to latest.
+    """
+    auditLogs: [LSIFUploadAuditLog!]
 }
 
 """
@@ -1337,6 +1103,95 @@ type LSIFUploadDocumentPathsConnection {
     The total number of docuemnt paths.
     """
     totalCount: Int
+}
+
+"""
+Contains the metadata and upload data for a single state change of an upload.
+"""
+type LSIFUploadAuditLog {
+    """
+    The timestamp the log was emitted at.
+    """
+    logTimestamp: DateTime!
+
+    """
+    The timestamp when the associated upload was deleted at.
+    """
+    uploadDeletedAt: DateTime
+
+    """
+    The reason for this change in data.
+    """
+    reason: String
+
+    """
+    A list of changed columns in the format {"column": "<colname>", "new": "<newval>", "old": "<oldval>"}
+    """
+    changedColumns: [AuditLogColumnChange!]!
+
+    """
+    The ID of the upload.
+    """
+    uploadId: ID!
+
+    """
+    The original 40-character commit commit supplied at upload time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at upload time.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at upload time.
+    """
+    inputIndexer: String!
+
+    """
+    The time the upload was uploaded.
+    """
+    uploadedAt: DateTime!
+
+    """
+    The operation denoted by this log.
+    """
+    operation: AuditLogOperation!
+}
+
+"""
+Represents a state transition of a single column.
+"""
+type AuditLogColumnChange {
+    """
+    The column that is changing.
+    """
+    column: String!
+
+    """
+    The previous value of the column.
+    """
+    old: String
+
+    """
+    The new value of the column
+    """
+    new: String
+}
+
+"""
+Denotes the type of operation of a given log entry.
+"""
+enum AuditLogOperation {
+    """
+    Denotes this log entry represents an INSERT query.
+    """
+    CREATE
+    """
+    Denotes this log entry represents an UPDATE query.
+    """
+    MODIFY
 }
 
 """
@@ -1382,6 +1237,11 @@ type LSIFIndex implements Node {
     The original 40-character commit commit supplied at index time.
     """
     inputCommit: String!
+
+    """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
 
     """
     The original root supplied at index schedule time.

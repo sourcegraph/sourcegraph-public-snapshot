@@ -54,14 +54,15 @@ const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProp
             <small
                 className="mr-2 text-muted"
                 data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                aria-label="Visit the repository to clone it. See its mirroring settings for diagnostics."
             >
-                <Icon as={CloudOutlineIcon} />
+                <Icon as={CloudOutlineIcon} aria-hidden={true} />
             </small>
         )
     }
     return (
         <small className="mr-2">
-            <Icon className={styles.check} as={TickIcon} />
+            <Icon className={styles.check} as={TickIcon} aria-label="Success" />
         </small>
     )
 }
@@ -75,25 +76,25 @@ const CodeHostIcon: React.FunctionComponent<React.PropsWithChildren<CodeHostIcon
         case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <Icon className={styles.github} as={GithubIcon} />
+                    <Icon className={styles.github} as={GithubIcon} aria-hidden={true} />
                 </small>
             )
         case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <Icon className={styles.gitlab} as={GitlabIcon} />
+                    <Icon className={styles.gitlab} as={GitlabIcon} aria-hidden={true} />
                 </small>
             )
         case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <Icon as={BitbucketIcon} />
+                    <Icon as={BitbucketIcon} aria-hidden={true} />
                 </small>
             )
         default:
             return (
                 <small className="mr-2">
-                    <Icon as={SourceRepositoryIcon} />
+                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
                 </small>
             )
     }
@@ -138,7 +139,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 Private
                             </Badge>
                         )}
-                        <Icon className="ml-2 text-primary" as={ChevronRightIcon} />
+                        <Icon className="ml-2 text-primary" as={ChevronRightIcon} aria-hidden={true} />
                     </div>
                 </Link>
             </td>
@@ -183,21 +184,25 @@ export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChil
                 className="p-2 w-100 d-flex justify-content-between"
                 onClick={onClick}
             >
-                <div className="d-flex align-items-center">
+                <div className="d-flex">
                     <Checkbox
                         className="mr-3"
                         aria-label={`select ${name} repository`}
                         onChange={onClick}
                         checked={checked}
-                    />
-                    <StatusIcon mirrorInfo={mirrorInfo} />
-                    <CodeHostIcon hostType={serviceType} />
-                    <RepoLink
-                        className="text-muted"
-                        repoClassName="text-body"
-                        repoName={name}
-                        to={null}
-                        onClick={handleOnClick}
+                        label={
+                            <>
+                                <StatusIcon mirrorInfo={mirrorInfo} />
+                                <CodeHostIcon hostType={serviceType} />
+                                <RepoLink
+                                    className="text-muted"
+                                    repoClassName="text-body"
+                                    repoName={name}
+                                    to={null}
+                                    onClick={handleOnClick}
+                                />
+                            </>
+                        }
                     />
                 </div>
                 <div>

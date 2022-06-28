@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 )
 
 func TestPrefetcherUploads(t *testing.T) {

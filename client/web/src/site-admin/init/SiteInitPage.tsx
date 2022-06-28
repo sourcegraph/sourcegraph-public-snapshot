@@ -3,12 +3,11 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 import { PageRoutes } from '../../routes.constants'
@@ -47,7 +46,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends ThemeProps, FeatureFlagProps {
+interface Props extends ThemeProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -67,7 +66,6 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
     context,
-    featureFlags,
 }) => {
     if (!needsSiteInit) {
         return <Redirect to={PageRoutes.Search} />
@@ -82,20 +80,19 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified
                         // the site_config DB table.
-                        <p>
+                        <Text>
                             You're signed in as <strong>{authenticatedUser.username}</strong>. A site admin must
                             initialize Sourcegraph before you can continue.
-                        </p>
+                        </Text>
                     ) : (
                         <>
-                            <h2 className="site-init-page__header">Welcome</h2>
-                            <p>Create an admin account to start using Sourcegraph.</p>
+                            <H2 className="site-init-page__header">Welcome</H2>
+                            <Text>Create an admin account to start using Sourcegraph.</Text>
                             <SignUpForm
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 onSignUp={initSite}
                                 context={context}
-                                featureFlags={featureFlags}
                             />
                         </>
                     )}

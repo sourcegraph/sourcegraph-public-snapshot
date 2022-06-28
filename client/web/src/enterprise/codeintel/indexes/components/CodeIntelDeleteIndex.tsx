@@ -22,6 +22,6 @@ export const CodeIntelDeleteIndex: FunctionComponent<React.PropsWithChildren<Cod
         aria-describedby="upload-delete-button-help"
         data-tooltip="Deleting this index will remove it from the index queue."
     >
-        <Icon as={DeleteIcon} /> Delete index
+        <Icon aria-hidden={true} as={DeleteIcon} /> Delete index
     </Button>
 )

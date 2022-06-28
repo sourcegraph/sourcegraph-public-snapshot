@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,12 +20,12 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var schemeToExternalService = map[string]string{
-	dependencies.JVMPackagesScheme: extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme: extsvc.KindNpmPackages,
+	dependencies.JVMPackagesScheme:  extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:  extsvc.KindNpmPackages,
+	dependencies.RustPackagesScheme: extsvc.KindRustPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -33,7 +35,12 @@ func NewDependencySyncScheduler(
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
+	// Init metrics here now after we've moved the autoindexing scheduler
+	// into the autoindexing service
+	newOperations(observationContext)
+
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	handler := &dependencySyncSchedulerHandler{
@@ -205,7 +212,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
-// were indexed via lsif-go, lsif-java and lsif-tsc.
+// were indexed via lsif-go, scip-java, lsif-tsc and scip-typescript.
 func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
@@ -213,9 +220,12 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 	}
 
 	return upload.Indexer == "lsif-go" ||
+		upload.Indexer == "scip-java" ||
 		upload.Indexer == "lsif-java" ||
 		upload.Indexer == "lsif-tsc" ||
-		upload.Indexer == "lsif-typescript", nil
+		upload.Indexer == "scip-typescript" ||
+		upload.Indexer == "lsif-typescript" ||
+		upload.Indexer == "rust-analyzer", nil
 }
 
 func kindsToArray(k map[string]struct{}) (s []string) {

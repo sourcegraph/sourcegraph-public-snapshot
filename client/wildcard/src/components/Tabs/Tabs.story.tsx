@@ -3,6 +3,8 @@ import { Meta, Story } from '@storybook/react'
 import brandedStyles from '@sourcegraph/branded/src/global-styles/index.scss'
 import { usePrependStyles } from '@sourcegraph/storybook'
 
+import { H1, H2 } from '..'
+
 import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
 
 export const TabsStory: Story<TabsProps & { actions: boolean }> = args => {
@@ -10,7 +12,7 @@ export const TabsStory: Story<TabsProps & { actions: boolean }> = args => {
 
     return (
         <>
-            <h1>Tabs</h1>
+            <H1>Tabs</H1>
             <Container title="Standard">
                 <TabsVariant {...args} />
             </Container>
@@ -94,7 +96,7 @@ const TabsVariant: Story<TabsProps & { actions: boolean }> = args => {
 
 const Container: React.FunctionComponent<{ title: string; width?: number }> = ({ title, width, children }) => (
     <>
-        <h2 style={{ margin: '30px 0 10px 0' }}>{title}</h2>
+        <H2 style={{ margin: '30px 0 10px 0' }}>{title}</H2>
         <div style={{ width: width ? `${width}px` : undefined }}>{children}</div>
     </>
 )

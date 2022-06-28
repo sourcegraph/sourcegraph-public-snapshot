@@ -16,7 +16,7 @@ func slackMention(slackUserID string) string {
 	return fmt.Sprintf("<@%s>", slackUserID)
 }
 
-func slackSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
+func generateBranchEventSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
 	branchStr := fmt.Sprintf("`%s`", branch)
 	if !locked {
 		return fmt.Sprintf(":white_check_mark: Pipeline healthy - %s unlocked!", branchStr)
@@ -45,12 +45,26 @@ The authors of the following failed commits who are Sourcegraph teammates have b
 
 The branch will automatically be unlocked once a green build has run on %s.
 Please head over to %s for relevant discussion about this branch lock.
-Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
+:bulb: First time being mentioned by this bot? :point_right: <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci/#build-has-failed-on-the-main-branch|Follow this step by step guide!>.
 
-If unable to resolve the issue, please start an incident with the '/incident' Slack command.
+For more, refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 
-cc: @dev-experience-support`, branchStr, discussionChannel)
+If unable to resolve the issue, please start an incident with the '/incident' Slack command.`, branchStr, discussionChannel)
 	return message
+}
+
+func generateWeeklySummary(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
+	return fmt.Sprintf(`:bar_chart: Welcome to the weekly CI report for period *%s* to *%s*!
+
+• Total builds: *%d*
+• Total flakes: *%d*
+• Average %% of build flakes: *%v%%*
+• Total incident duration: *%v*
+
+For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
+
+For a high-level overview, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OkayHQ>.
+`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }
 
 // postSlackUpdate attempts to send the given summary to at each of the provided webhooks.

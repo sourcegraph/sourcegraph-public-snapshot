@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
@@ -21,12 +23,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
+
+	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 
 	user := insertTestUser(t, db, "cm-user1", true)
 
@@ -40,28 +46,30 @@ func TestCreateCodeMonitor(t *testing.T) {
 		Enabled:     true,
 		UserID:      user.ID,
 	}
-
-	// Create a monitor.
 	ctx = actor.WithActor(ctx, actor.FromUser(user.ID))
-	got, err := r.insertTestMonitorWithOpts(ctx, t)
-	require.NoError(t, err)
-	castGot := got.(*monitor).Monitor
-	castGot.CreatedAt, castGot.ChangedAt = want.CreatedAt, want.ChangedAt // overwrite after comparing with time equality
-	require.EqualValues(t, want, castGot)
 
-	// Toggle field enabled from true to false.
-	got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
-		Id:      relay.MarshalID(MonitorKind, got.(*monitor).Monitor.ID),
-		Enabled: false,
+	t.Run("create monitor", func(t *testing.T) {
+		got, err := r.insertTestMonitorWithOpts(ctx, t)
+		require.NoError(t, err)
+		castGot := got.(*monitor).Monitor
+		castGot.CreatedAt, castGot.ChangedAt = want.CreatedAt, want.ChangedAt // overwrite after comparing with time equality
+		require.EqualValues(t, want, castGot)
+
+		// Toggle field enabled from true to false.
+		got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
+			Id:      relay.MarshalID(MonitorKind, got.(*monitor).Monitor.ID),
+			Enabled: false,
+		})
+		require.NoError(t, err)
+		require.False(t, got.(*monitor).Monitor.Enabled)
+
+		// Delete code monitor.
+		_, err = r.DeleteCodeMonitor(ctx, &graphqlbackend.DeleteCodeMonitorArgs{Id: got.ID()})
+		require.NoError(t, err)
+		_, err = r.db.CodeMonitors().GetMonitor(ctx, got.(*monitor).Monitor.ID)
+		require.Error(t, err, "monitor should have been deleted")
+
 	})
-	require.NoError(t, err)
-	require.False(t, got.(*monitor).Monitor.Enabled)
-
-	// Delete code monitor.
-	_, err = r.DeleteCodeMonitor(ctx, &graphqlbackend.DeleteCodeMonitorArgs{Id: got.ID()})
-	require.NoError(t, err)
-	_, err = r.db.CodeMonitors().GetMonitor(ctx, got.(*monitor).Monitor.ID)
-	require.Error(t, err, "monitor should have been deleted")
 
 	t.Run("invalid slack webhook", func(t *testing.T) {
 		namespace := relay.MarshalID("User", user.ID)
@@ -76,11 +84,29 @@ func TestCreateCodeMonitor(t *testing.T) {
 		})
 		require.Error(t, err)
 	})
+
+	t.Run("invalid query", func(t *testing.T) {
+		namespace := relay.MarshalID("User", user.ID)
+		_, err := r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
+			Monitor: &graphqlbackend.CreateMonitorArgs{Namespace: namespace},
+			Trigger: &graphqlbackend.CreateTriggerArgs{Query: "type:commit (repo:a b) or (repo:c d)"}, // invalid query
+			Actions: []*graphqlbackend.CreateActionArgs{{
+				SlackWebhook: &graphqlbackend.CreateActionSlackWebhookArgs{
+					URL: "https://internal:3443",
+				},
+			}},
+		})
+		require.Error(t, err)
+		monitors, err := r.Monitors(ctx, user.ID, &graphqlbackend.ListMonitorsArgs{First: 10})
+		require.NoError(t, err)
+		require.Len(t, monitors.Nodes(), 0) // the transaction should have been rolled back
+	})
 }
 
 func TestListCodeMonitors(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
 
 	user := insertTestUser(t, db, "cm-user1", true)
@@ -125,7 +151,8 @@ func TestListCodeMonitors(t *testing.T) {
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -185,7 +212,8 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -193,7 +221,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	siteAdmin := insertTestUser(t, db, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin.ID))
-	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
+	org, err := db.Orgs().Create(admContext, "cm-test-org", nil)
 	require.NoError(t, err)
 	addUserToOrg(t, db, member.ID, org.ID)
 
@@ -253,8 +281,10 @@ func graphqlUserID(id int32) graphql.ID {
 func TestQueryMonitor(t *testing.T) {
 	t.Skip("Flake: https://github.com/sourcegraph/sourcegraph/issues/30477")
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -630,8 +660,10 @@ query($userName: String!, $actionCursor: String!){
 func TestEditCodeMonitor(t *testing.T) {
 	t.Skip("Flake: https://github.com/sourcegraph/sourcegraph/issues/30477")
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -734,80 +766,80 @@ func TestEditCodeMonitor(t *testing.T) {
 
 const editMonitor = `
 fragment u on User {
-  id
-  username
+	id
+	username
 }
 
 fragment o on Org {
-  id
-  name
+	id
+	name
 }
 
 mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user2ID: ID!, $webhookID: ID!) {
-  updateCodeMonitor(
-    monitor: {id: $monitorID, update: {description: "updated test monitor", enabled: false, namespace: $user1ID}},
-	trigger: {id: $triggerID, update: {query: "repo:bar"}},
-	actions: [
-	  {email: {id: $actionID, update: {enabled: false, priority: CRITICAL, recipients: [$user2ID], header: "updated header action 1"}}}
-	  {webhook: {id: $webhookID, update: {enabled: true, url: "https://generic.webhook.com"}}}
-	  {slackWebhook: {update: {enabled: true, url: "https://slack.webhook.com"}}}
-    ]
-  )
-  {
-	id
-	description
-	enabled
-	owner {
-	  ... on User {
-		...u
-	  }
-	  ... on Org {
-		...o
-	  }
-	}
-	createdBy {
-	  ...u
-	}
-	createdAt
-	trigger {
-	  ... on MonitorQuery {
-		  __typename
+	updateCodeMonitor(
+		monitor: {id: $monitorID, update: {description: "updated test monitor", enabled: false, namespace: $user1ID}},
+		trigger: {id: $triggerID, update: {query: "repo:bar"}},
+		actions: [
+		{email: {id: $actionID, update: {enabled: false, priority: CRITICAL, recipients: [$user2ID], header: "updated header action 1"}}}
+		{webhook: {id: $webhookID, update: {enabled: true, url: "https://generic.webhook.com"}}}
+		{slackWebhook: {update: {enabled: true, url: "https://slack.webhook.com"}}}
+		]
+	)
+	{
 		id
-		query
-	  }
-	}
-	actions {
-	  nodes {
-		... on MonitorEmail {
-			__typename
-		  id
-		  enabled
-		  priority
-		  header
-		  recipients {
-			nodes {
-			  ... on User {
-				username
-			  }
-			  ... on Org {
-				name
-			  }
+		description
+		enabled
+		owner {
+			... on User {
+				...u
 			}
-		  }
+			... on Org {
+				...o
+			}
 		}
-		... on MonitorWebhook {
-			__typename
-		  enabled
-		  url
+		createdBy {
+			...u
 		}
-		... on MonitorSlackWebhook {
-			__typename
-		  enabled
-		  url
+		createdAt
+		trigger {
+			... on MonitorQuery {
+				__typename
+				id
+				query
+			}
 		}
-	  }
+		actions {
+			nodes {
+				... on MonitorEmail {
+					__typename
+					id
+					enabled
+					priority
+					header
+					recipients {
+						nodes {
+							... on User {
+								username
+							}
+							... on Org {
+								name
+							}
+						}
+					}
+				}
+				... on MonitorWebhook {
+					__typename
+					enabled
+					url
+				}
+				... on MonitorSlackWebhook {
+					__typename
+					enabled
+					url
+				}
+			}
+		}
 	}
-  }
 }
 `
 
@@ -960,68 +992,68 @@ fragment u on User { id, username }
 fragment o on Org { id, name }
 
 query ($id: ID!) {
-  node(id: $id) {
-    ... on Monitor {
-		__typename
-      id
-      description
-      enabled
-      owner {
-        ... on User {
-          ...u
-        }
-        ... on Org {
-          ...o
-        }
-      }
-      createdBy {
-        ...u
-      }
-      createdAt
-      trigger {
-        ... on MonitorQuery {
+	node(id: $id) {
+		... on Monitor {
 			__typename
-          id
-          query
-        }
-      }
-      actions {
-        totalCount
-        nodes {
-          ... on MonitorEmail {
-			  __typename
-            id
-            priority
-            header
-            enabled
-            recipients {
-              totalCount
-              nodes {
-                ... on User {
-                  ...u
-                }
-                ... on Org {
-                  ...o
-                }
-              }
-            }
-          }
-		  ... on MonitorWebhook {
-			  __typename
-			  id
-			  enabled
-			  url
-		  }
-		  ... on MonitorSlackWebhook {
-			  __typename
-			  id
-			  enabled
-			  url
-		  }
-        }
-      }
-    }
-  }
+			id
+			description
+			enabled
+			owner {
+				... on User {
+					...u
+				}
+				... on Org {
+					...o
+				}
+			}
+			createdBy {
+				...u
+			}
+			createdAt
+			trigger {
+				... on MonitorQuery {
+					__typename
+					id
+					query
+				}
+			}
+			actions {
+				totalCount
+				nodes {
+					... on MonitorEmail {
+						__typename
+						id
+						priority
+						header
+						enabled
+						recipients {
+							totalCount
+							nodes {
+								... on User {
+									...u
+								}
+								... on Org {
+									...o
+								}
+							}
+						}
+					}
+					... on MonitorWebhook {
+						__typename
+						id
+						enabled
+						url
+					}
+					... on MonitorSlackWebhook {
+						__typename
+						id
+						enabled
+						url
+					}
+				}
+			}
+		}
+	}
 }
 `
 
@@ -1151,7 +1183,7 @@ query($userName: String!, $triggerEventCursor: String!){
 						events(first:1, after:$triggerEventCursor) {
 							totalCount
 							nodes {
-									id
+								id
 							}
 						}
 					}
@@ -1234,6 +1266,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	got := background.TemplateDataNewSearchResults{}
 	background.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *background.TemplateDataNewSearchResults) error {
 		got = *data
@@ -1241,7 +1275,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	r := newTestResolver(t, nil)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	r := newTestResolver(t, db)
 
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 

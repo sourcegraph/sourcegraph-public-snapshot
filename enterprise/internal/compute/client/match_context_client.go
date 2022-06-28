@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewMatchContextRequest returns an http.Request against the streaming API for query.
-func NewMatchContextRequest(baseURL string, query string) (*stdhttp.Request, error) {
+// NewComputeStreamRequest returns an http.Request against the streaming API for query.
+func NewComputeStreamRequest(baseURL string, query string) (*stdhttp.Request, error) {
 	u := baseURL + "/compute/stream?q=" + url.QueryEscape(query)
 	req, err := stdhttp.NewRequest("GET", u, nil)
 	if err != nil {
@@ -25,6 +25,8 @@ func NewMatchContextRequest(baseURL string, query string) (*stdhttp.Request, err
 
 type ComputeMatchContextStreamDecoder struct {
 	OnResult  func(results []compute.MatchContext)
+	OnAlert   func(*http.EventAlert)
+	OnError   func(*http.EventError)
 	OnUnknown func(event, data []byte)
 }
 
@@ -44,6 +46,26 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 				return errors.Errorf("failed to decode compute match context payload: %w", err)
 			}
 			rr.OnResult(d)
+		} else if bytes.Equal(event, []byte("alert")) {
+			// This decoder can handle alerts, but at the moment the only alert that is returned by
+			// the compute stream is if a query times out after 60 seconds.
+			if rr.OnAlert == nil {
+				continue
+			}
+			var d http.EventAlert
+			if err := json.Unmarshal(data, &d); err != nil {
+				return errors.Errorf("failed to decode alert payload: %w", err)
+			}
+			rr.OnAlert(&d)
+		} else if bytes.Equal(event, []byte("error")) {
+			if rr.OnError == nil {
+				continue
+			}
+			var d http.EventError
+			if err := json.Unmarshal(data, &d); err != nil {
+				return errors.Errorf("failed to decode error payload: %w", err)
+			}
+			rr.OnError(&d)
 		} else if bytes.Equal(event, []byte("done")) {
 			// Always the last event
 			break

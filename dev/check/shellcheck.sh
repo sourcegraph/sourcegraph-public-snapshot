@@ -23,6 +23,7 @@ set -e
 echo -e "$OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
+  mkdir -p ./annotations
   echo -e "$OUT" >./annotations/shellcheck
   echo "^^^ +++"
 fi

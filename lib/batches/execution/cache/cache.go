@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -39,6 +40,15 @@ type ExecutionKey struct {
 	Steps              []batches.Step
 
 	BatchChangeAttributes *template.BatchChangeAttributes
+
+	// Ignore from serialization.
+	MetadataRetriever MetadataRetriever `json:"-"`
+}
+
+// MetadataRetriever retrieves mount metadata.
+type MetadataRetriever interface {
+	// Get returns the mount metadata from the provided steps.
+	Get([]batches.Step) ([]MountMetadata, error)
 }
 
 // Key converts the key into a string form that can be used to uniquely identify
@@ -48,8 +58,19 @@ func (key *ExecutionKey) Key() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	metadata, err := key.mountsMetadata()
+	if err != nil {
+		return "", err
+	}
 
-	return marshalAndHash(key, envs)
+	return marshalAndHash(key, envs, metadata)
+}
+
+func (key ExecutionKey) mountsMetadata() ([]MountMetadata, error) {
+	if key.MetadataRetriever != nil {
+		return key.MetadataRetriever.Get(key.Steps)
+	}
+	return nil, nil
 }
 
 func (key ExecutionKey) Slug() string {
@@ -76,8 +97,12 @@ func (key *ExecutionKeyWithGlobalEnv) Key() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	metadata, err := key.mountsMetadata()
+	if err != nil {
+		return "", err
+	}
 
-	return marshalAndHash(key.ExecutionKey, envs)
+	return marshalAndHash(key.ExecutionKey, envs, metadata)
 }
 
 func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[string]string, error) {
@@ -100,13 +125,16 @@ func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[st
 	return envs, nil
 }
 
-func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error) {
+func marshalAndHash(key *ExecutionKey, envs []map[string]string, metadata []MountMetadata) (string, error) {
 	raw, err := json.Marshal(struct {
 		*ExecutionKey
 		Environments []map[string]string
+		// Omit if empty to be backwards compatible
+		MountsMetadata []MountMetadata `json:"MountsMetadata,omitempty"`
 	}{
-		ExecutionKey: key,
-		Environments: envs,
+		ExecutionKey:   key,
+		Environments:   envs,
+		MountsMetadata: metadata,
 	})
 	if err != nil {
 		return "", err
@@ -114,6 +142,13 @@ func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error)
 
 	hash := sha256.Sum256(raw)
 	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
+}
+
+// MountMetadata is the metadata of a file that is mounted by a Step.
+type MountMetadata struct {
+	Path     string
+	Size     int64
+	Modified time.Time
 }
 
 // StepsCacheKey implements the Keyer interface for a batch spec execution in a
@@ -134,7 +169,7 @@ func (key StepsCacheKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-// ExecutionKeyWithGlobalEnv implements the Keyer interface by embedding
+// StepsCacheKeyWithGlobalEnv implements the Keyer interface by embedding
 // StepsCacheKey but adding a global environment in which the steps could be
 // resolved.
 type StepsCacheKeyWithGlobalEnv struct {
@@ -162,8 +197,12 @@ func marshalAndHashStepsCacheKey(key StepsCacheKey, globalEnv []string) (string,
 	if err != nil {
 		return "", err
 	}
+	metadata, err := key.mountsMetadata()
+	if err != nil {
+		return "", err
+	}
 
-	hash, err := marshalAndHash(clone, envs)
+	hash, err := marshalAndHash(clone, envs, metadata)
 	if err != nil {
 		return "", err
 	}

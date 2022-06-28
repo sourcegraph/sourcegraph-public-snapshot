@@ -19,7 +19,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position, Icon, H4, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
@@ -135,13 +135,13 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <div key={props.message} className={styles.entry}>
-            <h4 className="d-flex align-items-center mb-0">
+            <H4 className="d-flex align-items-center mb-0">
                 {entryIcon(props.entryType)}
                 {props.title ? props.title : 'Your repositories'}
-            </h4>
+            </H4>
             {props.entryType === 'not-active' ? (
                 <div className={classNames('status-messages-nav-item__entry-card border-0', styles.cardInactive)}>
-                    <p className={classNames('text-muted', styles.message)}>{props.message}</p>
+                    <Text className={classNames('text-muted', styles.message)}>{props.message}</Text>
                     <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
                         {props.linkText}
                     </Link>
@@ -154,7 +154,9 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildre
                         getBorderClassname(props.entryType)
                     )}
                 >
-                    <p className={classNames(styles.message, getMessageColor(props.entryType))}>{props.message}</p>
+                    <Text className={classNames(styles.message, getMessageColor(props.entryType))}>
+                        {props.message}
+                    </Text>
                     {props.messageHint && (
                         <>
                             <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
@@ -400,21 +402,28 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     private renderIcon(): JSX.Element | null {
         if (isErrorLike(this.state.messagesOrError)) {
-            return <Icon data-tooltip="Sorry, we couldn’t fetch notifications!" as={CloudAlertIconRefresh} size="md" />
+            return (
+                <Icon
+                    data-tooltip="Sorry, we couldn’t fetch notifications!"
+                    as={CloudAlertIconRefresh}
+                    size="md"
+                    aria-label="Sorry, we couldn’t fetch notifications!"
+                />
+            )
         }
 
+        let codeHostMessage = this.state.isOpen
+            ? undefined
+            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
+            ? 'No code host connections'
+            : 'No repositories'
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Icon
-                    data-tooltip={
-                        this.state.isOpen
-                            ? undefined
-                            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
-                            ? 'No code host connections'
-                            : 'No repositories'
-                    }
+                    data-tooltip={codeHostMessage}
                     as={CloudOffOutlineIcon}
                     size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
@@ -422,28 +431,34 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (
             this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError' || type === 'SyncError')
         ) {
+            codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
                 <Icon
-                    data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
+                    data-tooltip={codeHostMessage}
                     as={CloudAlertIconRefresh}
                     size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
+            codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
                 <Icon
-                    data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
+                    data-tooltip={codeHostMessage}
                     as={CloudSyncIconRefresh}
                     size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
+        codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
             <Icon
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
+                data-tooltip={codeHostMessage}
                 as={CloudCheckIconRefresh}
                 size="md"
+                {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
             />
         )
     }

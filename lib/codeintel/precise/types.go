@@ -33,7 +33,6 @@ type RangeData struct {
 	ReferenceResultID      ID   // possibly empty
 	ImplementationResultID ID   // possibly empty
 	HoverResultID          ID   // possibly empty
-	DocumentationResultID  ID   // possibly empty
 	MonikerIDs             []ID // possibly empty
 }
 
@@ -214,7 +213,6 @@ type Package struct {
 // PackageReferences pairs a package name/version with a dump that depends on it.
 type PackageReference struct {
 	Package
-	Filter []byte // a bloom filter of identifiers imported by this dependent
 }
 
 // GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
@@ -223,17 +221,14 @@ type PackageReference struct {
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
-	Meta                  MetaData
-	Documents             chan KeyedDocumentData
-	ResultChunks          chan IndexedResultChunkData
-	Definitions           chan MonikerLocations
-	References            chan MonikerLocations
-	Implementations       chan MonikerLocations
-	Packages              []Package
-	PackageReferences     []PackageReference
-	DocumentationPages    chan *DocumentationPageData
-	DocumentationPathInfo chan *DocumentationPathInfoData
-	DocumentationMappings chan DocumentationMapping
+	Meta              MetaData
+	Documents         chan KeyedDocumentData
+	ResultChunks      chan IndexedResultChunkData
+	Definitions       chan MonikerLocations
+	References        chan MonikerLocations
+	Implementations   chan MonikerLocations
+	Packages          []Package
+	PackageReferences []PackageReference
 }
 
 type GroupedBundleDataMaps struct {

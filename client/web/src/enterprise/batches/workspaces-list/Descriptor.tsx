@@ -2,7 +2,7 @@ import { ReactElement } from 'react'
 
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, H4 } from '@sourcegraph/wildcard'
 
 import styles from './Descriptor.module.scss'
 
@@ -29,13 +29,13 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
     <div className="d-flex flex-1 align-items-center pt-3 pb-3 pl-2 pr-2">
         <div className={styles.status}>{statusIndicator}</div>
         <div className="flex-1">
-            <h4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</h4>
+            <H4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</H4>
             {workspace && workspace.path !== '' && workspace.path !== '/' ? (
                 <span className={styles.path}>{workspace?.path}</span>
             ) : null}
             {workspace && (
                 <div className="d-flex align-items-center text-muted text-monospace pt-1">
-                    <Icon className="mr-1" as={SourceBranchIcon} />
+                    <Icon aria-hidden={true} className="mr-1" as={SourceBranchIcon} />
                     <small>{workspace.branch.displayName}</small>
                 </div>
             )}

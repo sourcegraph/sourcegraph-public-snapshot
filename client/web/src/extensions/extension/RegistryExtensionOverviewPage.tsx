@@ -123,7 +123,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 {extension.registryExtension &&
                     (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
                         <div className={styles.sidebarSection}>
-                            <h3>Last updated</h3>
+                            <H3>Last updated</H3>
                             <small className="text-muted">
                                 <Timestamp
                                     date={maxDate(
@@ -137,7 +137,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                     )}
                 {/* Resources */}
                 <div className={styles.sidebarSection}>
-                    <h3>Resources</h3>
+                    <H3>Resources</H3>
                     <small>
                         {extension.registryExtension && (
                             <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block mb-1">
@@ -156,7 +156,9 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                         )}
                         {repositoryURL && (
                             <div className="d-flex">
-                                {repositoryURL.hostname === 'github.com' && <Icon className="mr-1" as={GithubIcon} />}
+                                {repositoryURL.hostname === 'github.com' && (
+                                    <Icon className="mr-1" as={GithubIcon} aria-hidden={true} />
+                                )}
                                 <Link
                                     to={repositoryURL.href}
                                     rel="nofollow noreferrer noopener"
@@ -171,13 +173,13 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 </div>
                 {/* Full extension ID */}
                 <div className={styles.sidebarSection}>
-                    <h3>Extension ID</h3>
+                    <H3>Extension ID</H3>
                     <small className="text-muted">{extension.id}</small>
                 </div>
                 {/* Categories */}
                 {categories && (
                     <div className={classNames('pb-0', styles.sidebarSection)}>
-                        <h3>Categories</h3>
+                        <H3>Categories</H3>
                         <ul className="list-inline" data-testid="test-registry-extension-categories">
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
@@ -201,7 +203,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                     extension.manifest.tags &&
                     extension.manifest.tags.length > 0 && (
                         <div className={classNames('pb-0', styles.sidebarSection)}>
-                            <h3>Tags</h3>
+                            <H3>Tags</H3>
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">

@@ -9,7 +9,7 @@ import { Subject } from 'rxjs'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -62,6 +62,7 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string }
     indexingEnabled?: boolean
+    lockfileIndexingEnabled?: boolean
     isLightTheme: boolean
     telemetryService: TelemetryService
 }
@@ -73,6 +74,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
     queryPolicies = defaultQueryPolicies,
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
+    lockfileIndexingEnabled = window.context?.codeIntelLockfileIndexingEnabled,
     telemetryService,
     ...props
 }) => {
@@ -138,18 +140,20 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 export interface PoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
+    lockfileIndexingEnabled?: boolean
 }
 
 export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
+    lockfileIndexingEnabled = false,
 }) => (
     <>
         <span className={styles.separator} />
 
         <div className={classNames(styles.name, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">{policy.name}</h3>
+                <H3 className="m-0 d-block d-md-inline">{policy.name}</H3>
             </div>
 
             <div>
@@ -186,16 +190,16 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
                 <div>
                     {indexingEnabled && !policy.retentionEnabled && !policy.indexingEnabled ? (
-                        <p className="text-muted mt-2">Data retention and auto-indexing disabled.</p>
+                        <Text className="text-muted mt-2">Data retention and auto-indexing disabled.</Text>
                     ) : (
                         <>
-                            <p className="mt-2">
+                            <Text className="mt-2">
                                 <RetentionPolicyDescription policy={policy} />
-                            </p>
+                            </Text>
                             {indexingEnabled && (
-                                <p className="mt-2">
+                                <Text className="mt-2">
                                     <IndexingPolicyDescription policy={policy} />
-                                </p>
+                                </Text>
                             )}
                         </>
                     )}

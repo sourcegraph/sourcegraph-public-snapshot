@@ -142,14 +142,8 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 		m["added_files"] = res.AddedFiles()
 		m["deleted_files"] = res.DeletedFiles()
 		m["renamed_files"] = res.RenamedFiles()
-
-		if res.Stdout != nil {
-			m["stdout"] = res.Stdout.String()
-		}
-
-		if res.Stderr != nil {
-			m["stderr"] = res.Stderr.String()
-		}
+		m["stdout"] = res.Stdout
+		m["stderr"] = res.Stderr
 
 		return m
 	}
@@ -242,6 +236,10 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 				"renamed_files":  res.RenamedFiles(),
 				"path":           tmplCtx.Steps.Path,
 			}
+		},
+		// Leave batch_change_link alone; it will be rendered during the reconciler phase instead.
+		"batch_change_link": func() string {
+			return "${{ batch_change_link }}"
 		},
 	}
 }

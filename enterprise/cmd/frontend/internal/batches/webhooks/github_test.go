@@ -3,7 +3,6 @@ package webhooks
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +36,7 @@ import (
 )
 
 // Run from integration_test.go
-func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now()
 		clock := func() time.Time { return now }
@@ -56,8 +55,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		if token == "" {
 			token = "no-GITHUB_TOKEN-set"
 		}
-		repoStore := database.Repos(db)
-		esStore := database.ExternalServices(db)
+		repoStore := db.Repos()
+		esStore := db.ExternalServices()
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
@@ -74,7 +73,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(database.NewDB(db).ExternalServices(), extSvc, cf)
+		githubSrc, err := repos.NewGithubSource(db.ExternalServices(), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -169,7 +168,10 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						}
 						hook.Register(&handler)
 
-						u := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
 
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {

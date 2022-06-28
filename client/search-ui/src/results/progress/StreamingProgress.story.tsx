@@ -1,25 +1,31 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { StreamingProgress } from './StreamingProgress'
 
-const { add } = storiesOf('search-ui/results/progress/StreamingProgress', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+const config: Meta = {
+    title: 'search-ui/results/progress/StreamingProgress',
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+        },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     },
-    chromatic: { viewports: [1200], disableSnapshot: false },
-})
+}
+
+export default config
 
 const onSearchAgain = sinon.spy()
 
-add('StreamingProgress', () => (
+export const StreamingProgressStory: Story = () => (
     <BrandedStory>
         {() => (
             <>
-                <h2>0 results, in progress</h2>
+                <H2>0 results, in progress</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -32,7 +38,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>0 results, in progress, traced</h2>
+                <H2>0 results, in progress, traced</H2>
                 <div className="d-flex align-items-center  my-2">
                     <StreamingProgress
                         progress={{
@@ -47,7 +53,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>1 result from 1 repository, in progress</h2>
+                <H2>1 result from 1 repository, in progress</H2>
                 <div className="d-flex align-items-center  my-2">
                     <StreamingProgress
                         progress={{
@@ -61,7 +67,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>Big numbers, done</h2>
+                <H2>Big numbers, done</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -75,7 +81,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>Big numbers, done, traced</h2>
+                <H2>Big numbers, done, traced</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -91,7 +97,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, complete, skipped with info</h2>
+                <H2>2 results from 2 repositories, complete, skipped with info</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -126,7 +132,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, loading, skipped with info</h2>
+                <H2>2 results from 2 repositories, loading, skipped with info</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -161,7 +167,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, complete, skipped with warning</h2>
+                <H2>2 results from 2 repositories, complete, skipped with warning</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -206,7 +212,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, loading, skipped with warning</h2>
+                <H2>2 results from 2 repositories, loading, skipped with warning</H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -253,4 +259,6 @@ add('StreamingProgress', () => (
             </>
         )}
     </BrandedStory>
-))
+)
+
+StreamingProgressStory.storyName = 'StreamingProgress'

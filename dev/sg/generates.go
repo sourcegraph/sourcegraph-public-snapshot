@@ -17,10 +17,10 @@ var allGenerateTargets = generateTargets{
 
 func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 	if verbose {
-		return golang.Generate(ctx, args, golang.VerboseOutput)
+		return golang.Generate(ctx, args, true, golang.VerboseOutput)
 	} else if generateQuiet {
-		return golang.Generate(ctx, args, golang.QuietOutput)
+		return golang.Generate(ctx, args, true, golang.QuietOutput)
 	} else {
-		return golang.Generate(ctx, args, golang.NormalOutput)
+		return golang.Generate(ctx, args, true, golang.NormalOutput)
 	}
 }

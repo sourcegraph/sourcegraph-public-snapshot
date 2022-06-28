@@ -10,6 +10,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -48,7 +50,8 @@ type ProviderOptions struct {
 func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
-		opts.GitHubClient = github.NewV3Client(urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
+			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)

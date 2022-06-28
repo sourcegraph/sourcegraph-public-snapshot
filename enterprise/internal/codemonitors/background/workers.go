@@ -8,6 +8,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -19,20 +21,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
-	eventRetentionInDays int = 7
+	eventRetentionInDays int = 30
 )
 
 func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
-		Name:              "code_monitors_trigger_jobs_worker",
-		NumHandlers:       1,
-		Interval:          5 * time.Second,
-		HeartbeatInterval: 15 * time.Second,
-		Metrics:           metrics.workerMetrics,
+		Name:                 "code_monitors_trigger_jobs_worker",
+		NumHandlers:          4,
+		Interval:             5 * time.Second,
+		HeartbeatInterval:    15 * time.Second,
+		Metrics:              metrics.workerMetrics,
+		MaximumRuntimePerJob: time.Minute,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
@@ -67,17 +69,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
-			// Delete logs without search results.
-			err := store.DeleteObsoleteTriggerJobs(ctx)
-			if err != nil {
-				return err
-			}
-			// Delete old logs, even if they have search results.
-			err = store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
-			if err != nil {
-				return err
-			}
-			return nil
+			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
@@ -179,7 +171,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	query := q.QueryString
-	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
@@ -190,6 +182,11 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
+	}
+
+	// After setting the next run, check the error value
+	if searchErr != nil {
+		return errors.Wrap(searchErr, "execute search")
 	}
 
 	// Log the actual query we ran and whether we got any new results.

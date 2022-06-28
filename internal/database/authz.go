@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -57,12 +56,9 @@ type AuthzStore interface {
 	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
 }
 
-// Authz instantiates and returns a new AuthzStore. In the OSS version, this is a no-op AuthzStore, but
-// this constructor is overridden in enterprise versions.
-var Authz = func(db dbutil.DB) AuthzStore {
-	return &authzStore{}
-}
-
+// AuthzWith instantiates and returns a new AuthzStore using the other store
+// handle. In the OSS version, this is a no-op AuthzStore, but this constructor
+// is overridden in enterprise versions.
 var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
 	return &authzStore{}
 }

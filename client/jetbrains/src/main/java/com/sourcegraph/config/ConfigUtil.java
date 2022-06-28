@@ -1,75 +1,104 @@
 package com.sourcegraph.config;
 
+import com.google.gson.JsonObject;
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
+import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.find.Search;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
-import java.util.Properties;
 
 public class ConfigUtil {
-    public static String getDefaultBranchNameSetting(Project project) {
-        String defaultBranch = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getDefaultBranch();
+    @NotNull
+    public static JsonObject getConfigAsJson(@NotNull Project project) {
+        JsonObject configAsJson = new JsonObject();
+        configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
+        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
+        configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
+        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
+        configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
+        return configAsJson;
+    }
+
+    @Nullable
+    public static String getDefaultBranchName(@NotNull Project project) {
+        String defaultBranch = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
         if (defaultBranch == null || defaultBranch.length() == 0) {
-            Properties props = readProps();
-            defaultBranch = props.getProperty("defaultBranch", null);
+            return UserLevelConfig.getDefaultBranchName();
         }
         return defaultBranch;
     }
 
-    public static String getRemoteUrlReplacements(Project project) {
-        String replacements = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getRemoteUrlReplacements();
+    @Nullable
+    public static String getRemoteUrlReplacements(@NotNull Project project) {
+        String replacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
         if (replacements == null || replacements.length() == 0) {
-            Properties props = readProps();
-            replacements = props.getProperty("remoteUrlReplacements", null);
+            return UserLevelConfig.getRemoteUrlReplacements();
         }
         return replacements;
     }
 
-    public static String getSourcegraphUrl(Project project) {
-        String url = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getUrl();
+    @NotNull
+    public static String getSourcegraphUrl(@NotNull Project project) {
+        String url = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
         if (url == null || url.length() == 0) {
-            Properties props = readProps();
-            url = props.getProperty("url", "https://sourcegraph.com/");
+            return UserLevelConfig.getSourcegraphUrl();
         }
         return url.endsWith("/") ? url : url + "/";
     }
 
-    public static String getVersion() {
-        return "v1.2.2";
+    @Nullable
+    public static String getAnonymousUserId() {
+        return SourcegraphApplicationService.getInstance().getAnonymousUserId();
     }
 
-    // readProps returns the first properties file it's able to parse from the following paths:
-    //   $HOME/.sourcegraph-jetbrains.properties
-    //   $HOME/sourcegraph-jetbrains.properties
-    private static Properties readProps() {
-        Path[] candidatePaths = {
-            Paths.get(System.getProperty("user.home"), ".sourcegraph-jetbrains.properties"),
-            Paths.get(System.getProperty("user.home"), "sourcegraph-jetbrains.properties"),
-        };
-
-        for (Path path : candidatePaths) {
-            try {
-                return readPropsFile(path.toFile());
-            } catch (IOException e) {
-                // no-op
-            }
-        }
-        // No files found/readable
-        return new Properties();
+    public static void setAnonymousUserId(@Nullable String anonymousUserId) {
+        SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
     }
 
-    private static Properties readPropsFile(File file) throws IOException {
-        Properties props = new Properties();
+    public static boolean isInstallEventLogged() {
+        return SourcegraphApplicationService.getInstance().isInstallEventLogged();
+    }
 
-        try (InputStream input = new FileInputStream(file)) {
-            props.load(input);
-        }
+    public static void setInstallEventLogged(boolean value) {
+        SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
+    }
 
-        return props;
+    @Nullable
+    public static Search getLastSearch(@NotNull Project project) {
+        return getProjectLevelConfig(project).getLastSearch();
+    }
+
+    public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
+        SourcegraphProjectService settings = getProjectLevelConfig(project);
+        settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
+        settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
+        settings.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
+        settings.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
+    }
+
+    public static boolean isGlobbingEnabled(@NotNull Project project) {
+        return getProjectLevelConfig(project).isGlobbingEnabled();
+    }
+
+    @Nullable
+    public static String getAccessToken(Project project) {
+        return getProjectLevelConfig(project).getAccessToken();
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public static String getPluginVersion() {
+        IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
+        return plugin != null ? plugin.getVersion() : "unknown";
+    }
+
+    @NotNull
+    private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
+        return Objects.requireNonNull(SourcegraphProjectService.getInstance(project));
     }
 }

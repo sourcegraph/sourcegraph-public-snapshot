@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -14,6 +16,7 @@ import (
 )
 
 func TestExternalServiceConfigMigrator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,7 +36,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	}
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 2
@@ -60,7 +63,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -111,7 +114,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/Encryption", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -122,7 +125,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -136,7 +139,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually encrypted?
-		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Handle().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -178,7 +181,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -190,7 +193,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -209,7 +212,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Handle().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -240,7 +243,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/InvalidKey", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -251,7 +254,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -271,7 +274,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -282,7 +285,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -301,7 +304,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Handle().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}

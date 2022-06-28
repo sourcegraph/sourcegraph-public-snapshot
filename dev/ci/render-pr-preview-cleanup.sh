@@ -66,7 +66,7 @@ ids=()
 for (( ; ; )); do
   # render.com API > List services: https://api-docs.render.com/reference/get-services
   service_list=$(curl -sSf --request GET \
-    --url "https://api.render.com/v1/services?type=web_service&updatedBefore=$(urlencode "$expiration_date_ISO")&suspended=not_suspended&ownerId=${render_owner_id}&limit=100&cursor=${cursor}" \
+    --url "https://api.render.com/v1/services?type=web_service&updatedBefore=$(urlencode "$expiration_date_ISO")&suspended=not_suspended&ownerId=${render_owner_id}&limit=100&cursor=$(urlencode "$cursor")" \
     --header 'Accept: application/json' \
     --header "Authorization: Bearer ${render_api_key}")
 

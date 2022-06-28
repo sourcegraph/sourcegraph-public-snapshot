@@ -5,7 +5,7 @@ import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/common'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, H4 } from '@sourcegraph/wildcard'
 
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'
 
@@ -60,7 +60,7 @@ const AlertOverlay: React.FunctionComponent<React.PropsWithChildren<AlertOverlay
         <div className={classNames(className, styles.alertContainer)}>
             <div className={styles.alertContent}>
                 {icon && <div className={styles.icon}>{icon}</div>}
-                <h4 className={styles.title}>{title}</h4>
+                <H4 className={styles.title}>{title}</H4>
                 <small className={styles.description}>{description}</small>
             </div>
         </div>

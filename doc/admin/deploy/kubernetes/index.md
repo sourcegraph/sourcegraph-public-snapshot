@@ -38,7 +38,7 @@ Before starting, we recommend reading the [configuration guide](configure.md#get
 - [Customization](./configure.md#customizations)
 - [Storage class](./configure.md#configure-a-storage-class)
 - [Network Access](./configure.md#configure-network-access)
-- [PostgreSQL Database](./configure.md#sourcegraph-databases)
+- [PostgreSQL Database](./configure.md#configure-external-databases)
 - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
@@ -101,7 +101,7 @@ table.
 |[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|  100 GB (SSD preferred) |
 |[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)|n1-standard-16|100 GB (default)|
 |[Azure](azure.md)|D16 v3|100 GB (SSD preferred)|
-|[Other](https://kubernetes.io/docs/setup/pick-right-solution/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|
+|[Other](https://kubernetes.io/docs/setup/production-environment/turnkey-solutions/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|
 
 <span class="virtual-br"></span>
 

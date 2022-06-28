@@ -30,13 +30,13 @@
       "group": "Search"
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
       "type": "array",
       "items": {
         "type": "string"
       },
       "group": "Search",
-      "examples": [["go.sum", "package-lock.json", "*.thrift"]]
+      "examples": [["go.sum", "package-lock.json", "**/*.thrift"]]
     },
     "debug.search.symbolsParallelism": {
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
@@ -45,7 +45,7 @@
       "examples": [["20"]]
     },
     "apidocs.search.index-size-limit-factor": {
-      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "description": "Deprecated.",
       "type": "number",
       "default": 1.0,
       "additionalProperties": false
@@ -59,6 +59,11 @@
       "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
       "type": "number",
       "default": -1
+    },
+    "RedirectUnsupportedBrowser": {
+      "description": "Prompts user to install new browser for non es5",
+      "type": "boolean",
+      "default": false
     },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
@@ -122,7 +127,7 @@
           }
         },
         "apidocs.search.indexing": {
-          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "description": "Deprecated.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -426,18 +431,6 @@
           "type": "boolean",
           "default": true
         },
-        "enableGitserverClientLookupTable": {
-          "description": "Enable getting repository location from the database. Works only on Cloud.",
-          "type": "boolean",
-          "default": false
-        },
-        "gitserverClientLookupTable.Rate": {
-          "description": "Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.",
-          "type": "integer",
-          "default": 0,
-          "minimum": 0,
-          "maximum": 100
-        },
         "gitServerPinnedRepos": {
           "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
           "type": "object",
@@ -575,6 +568,13 @@
     },
     "codeIntelAutoIndexing.allowGlobalPolicies": {
       "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelLockfileIndexing.enabled": {
+      "description": "Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -996,6 +996,11 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "executors.frontendURL": {
+      "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
+      "type": "string",
+      "examples": ["https://sourcegraph.example.com"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
@@ -1024,6 +1029,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "allowOnlySourcegraphAuthoredExtensions": {
+          "description": "Allow only Sourcegraph authored extensions from the default remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.",
+          "type": "boolean",
+          "default": false
         }
       },
       "default": {
@@ -1131,7 +1141,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
+          "description": "Determines what tracing provider to enable. Supports \"opentracing\" (\"datadog\" support is deprecated)",
           "type": "string",
           "enum": ["datadog", "opentracing"],
           "default": "opentracing"
@@ -1256,6 +1266,13 @@
     },
     "insights.compute.graphql": {
       "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "CodeInsights",
+      "default": false
+    },
+    "insights.search.graphql": {
+      "description": "Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "CodeInsights",
@@ -1723,6 +1740,19 @@
           "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
           "type": "boolean",
           "!go": { "pointer": true }
+        },
+        "allowGroups": {
+          "description": "Restrict login to members of these groups",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupsAttributeName": {
+          "description": "Name of the SAML assertion attribute that holds group membership for allowGroups setting",
+          "type": "string",
+          "default": "groups"
         }
       }
     },
@@ -1783,13 +1813,30 @@
           "type": "boolean"
         },
         "allowOrgs": {
-          "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
           "default": [],
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1
           }
+        },
+        "allowOrgsMap": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "orgName": ["team1"],
+              "anotherOrgName": ["team2", "team3"]
+            }
+          ]
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
@@ -1832,6 +1879,27 @@
           "description": "The OAuth API scope that should be used",
           "default": "api",
           "enum": ["api", "read_api"]
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
+          "default": true,
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "allowGroups": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+        },
+        "tokenRefreshWindowMinutes": {
+          "description": "Time in minutes before token expiry when we should attempt to refresh it",
+          "default": 10,
+          "type": "integer"
         }
       }
     },

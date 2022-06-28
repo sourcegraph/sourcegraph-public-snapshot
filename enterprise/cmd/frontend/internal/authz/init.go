@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -34,14 +33,11 @@ var clock = timeutil.Now
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
-	database.Authz = func(db dbutil.DB) database.AuthzStore {
-		return edb.NewAuthzStore(db, clock)
-	}
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
-		return edb.NewAuthzStore(db, clock)
+		return edb.NewAuthzStore(observationContext.Logger, db, clock)
 	}
 
-	extsvcStore := database.ExternalServices(db)
+	extsvcStore := db.ExternalServices()
 
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.

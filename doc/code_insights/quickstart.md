@@ -14,8 +14,9 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 - You are a Sourcegraph enterprise customer. (Want code insights but aren't enterprise? [Let us know](mailto:feedback@sourcegraph.com).)
 - Your Sourcegraph instance has at least 1 repository. (See "[Quickstart](../index.md#quick-install)" on how to setup a Sourcegraph instance.)
-- You are running Sourcegraph version 3.28 (May 2021 release) or later.
-    - Note: If you're on Sourcegraph version 3.24 or later, you can instead follow [this gist](https://gist.github.com/Joelkw/f0582b164578aabc3ac936dee43f23e0) to create an insight. Due to the early stage of the product, it's more likely you'll run into trouble, though, so we recommend that you either upgrade your Sourcegraph or reach out to your Sourcegraph reps for help.
+- Your Sourcegraph instance is deployed via [Docker Compose](../admin/deploy/docker-compose/index.md) or [Kubernetes](../admin/deploy/kubernetes/index.md). 
+- You are running Sourcegraph version 3.31.1 (August 2021 release) or later.
+    - Note: If you're on Sourcegraph version 3.24 to 3.28, you can instead follow [this gist](https://gist.github.com/Joelkw/f0582b164578aabc3ac936dee43f23e0) to create an insight. Due to the early stage of the product, it's more likely you'll run into trouble, though, so we recommend that you either upgrade your Sourcegraph or reach out to your Sourcegraph reps for help.
 
 ## Enable Code Insights
 
@@ -47,7 +48,7 @@ If you are more interested in creating a language-based insight to show you lang
 
 If you want an insight running over up to ~50-70 repositories, enter the repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
 
-If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you don't want to include fork or archived repositories, make sure to indicate `fork:no` and `archived:no` in your data series (step 5). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
+If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
 
 ### 5. Define a data series to track the incidence of `TODO`
 

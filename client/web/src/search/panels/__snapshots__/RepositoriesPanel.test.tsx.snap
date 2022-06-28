@@ -17,73 +17,79 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
     <div
       class="h-100 content"
     >
-      <div
-        class="mt-2"
+      <table
+        class="mt-2 resultsTable"
       >
-        <div
-          class="d-flex mb-1"
-        >
-          <small>
-            Search
-          </small>
-        </div>
-        <ul
-          class="list-group"
-        >
-          <li
-            class="text-monospace text-break mb-2"
+        <thead>
+          <tr
+            class="resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:sourcegraph"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="text-monospace text-break resultsTableRow"
+          >
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:sourcegraph"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  sourcegraph
-                </span>
-              </a>
-            </small>
-          </li>
-          <li
-            class="text-monospace text-break mb-2"
+                </a>
+              </small>
+            </td>
+          </tr>
+          <tr
+            class="text-monospace text-break resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:test"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:test"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    test
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  test
-                </span>
-              </a>
-            </small>
-          </li>
-        </ul>
-      </div>
+                </a>
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </DocumentFragment>
@@ -106,108 +112,116 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
     <div
       class="h-100 content"
     >
-      <div
-        class="mt-2"
+      <table
+        class="mt-2 resultsTable"
       >
-        <div
-          class="d-flex mb-1"
-        >
-          <small>
-            Search
-          </small>
-        </div>
-        <ul
-          class="list-group"
-        >
-          <li
-            class="text-monospace text-break mb-2"
+        <thead>
+          <tr
+            class="resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:test"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="text-monospace text-break resultsTableRow"
+          >
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:test"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    test
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  test
-                </span>
-              </a>
-            </small>
-          </li>
-          <li
-            class="text-monospace text-break mb-2"
+                </a>
+              </small>
+            </td>
+          </tr>
+          <tr
+            class="text-monospace text-break resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:sourcegraph"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:sourcegraph"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  sourcegraph
-                </span>
-              </a>
-            </small>
-          </li>
-          <li
-            class="text-monospace text-break mb-2"
+                </a>
+              </small>
+            </td>
+          </tr>
+          <tr
+            class="text-monospace text-break resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:test-two"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:test-two"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    test-two
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  test-two
-                </span>
-              </a>
-            </small>
-          </li>
-        </ul>
-        <div
-          class="text-center py-3"
+                </a>
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div
+        class="text-center py-3"
+      >
+        <button
+          class="btn btnLink test-repositories-panel-show-more"
+          type="button"
         >
-          <button
-            class="btn btnLink test-repositories-panel-show-more"
-            type="button"
-          >
-            Show more
-          </button>
-        </div>
+          Show more
+        </button>
       </div>
     </div>
   </div>
@@ -231,108 +245,122 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
     <div
       class="h-100 content"
     >
-      <div
-        class="mt-2"
+      <table
+        class="mt-2 resultsTable"
       >
-        <div
-          class="d-flex mb-1"
-        >
-          <small>
-            Search
-          </small>
-        </div>
-        <ul
-          class="list-group"
-        >
-          <li
-            class="text-monospace text-break mb-2"
+        <thead>
+          <tr
+            class="resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:test"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="text-monospace text-break resultsTableRow"
+          >
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:test"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    test
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  test
-                </span>
-              </a>
-            </small>
-          </li>
-          <li
-            class="text-monospace text-break mb-2"
+                </a>
+              </small>
+            </td>
+          </tr>
+          <tr
+            class="text-monospace text-break resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:sourcegraph"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:sourcegraph"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  sourcegraph
-                </span>
-              </a>
-            </small>
-          </li>
-          <li
-            class="text-monospace text-break mb-2"
+                </a>
+              </small>
+            </td>
+          </tr>
+          <tr
+            class="text-monospace text-break resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:test-two"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:test-two"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    test-two
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  test-two
-                </span>
-              </a>
-            </small>
-          </li>
-        </ul>
-        <div
-          class="text-center py-3"
+                </a>
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        Loading more repositories
+      </span>
+      <div
+        class="text-center py-3"
+      >
+        <button
+          class="btn btnLink test-repositories-panel-show-more"
+          type="button"
         >
-          <button
-            class="btn btnLink test-repositories-panel-show-more"
-            type="button"
-          >
-            Show more
-          </button>
-        </div>
+          Show more
+        </button>
       </div>
     </div>
   </div>
@@ -356,73 +384,79 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
     <div
       class="h-100 content"
     >
-      <div
-        class="mt-2"
+      <table
+        class="mt-2 resultsTable"
       >
-        <div
-          class="d-flex mb-1"
-        >
-          <small>
-            Search
-          </small>
-        </div>
-        <ul
-          class="list-group"
-        >
-          <li
-            class="text-monospace text-break mb-2"
+        <thead>
+          <tr
+            class="resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:test"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="text-monospace text-break resultsTableRow"
+          >
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:test"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    test
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  test
-                </span>
-              </a>
-            </small>
-          </li>
-          <li
-            class="text-monospace text-break mb-2"
+                </a>
+              </small>
+            </td>
+          </tr>
+          <tr
+            class="text-monospace text-break resultsTableRow"
           >
-            <small>
-              <a
-                class="anchorLink"
-                href="/search?q=repo:sourcegraph"
-              >
-                <span
-                  class="text-monospace search-query-link"
+            <td>
+              <small>
+                <a
+                  class="anchorLink"
+                  href="/search?q=repo:sourcegraph"
                 >
                   <span
-                    class="search-filter-keyword"
+                    class="text-monospace search-query-link"
                   >
-                    repo
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      repo
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
                   </span>
-                  <span
-                    class="search-filter-separator"
-                  >
-                    :
-                  </span>
-                  sourcegraph
-                </span>
-              </a>
-            </small>
-          </li>
-        </ul>
-      </div>
+                </a>
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </DocumentFragment>

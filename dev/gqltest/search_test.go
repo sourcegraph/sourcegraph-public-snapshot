@@ -102,7 +102,8 @@ func TestSearch(t *testing.T) {
 // based search API. It only supports the methods that streaming supports.
 type searchClient interface {
 	AddExternalService(input gqltestutil.AddExternalServiceInput) (string, error)
-	DeleteExternalService(id string) error
+	UpdateExternalService(input gqltestutil.UpdateExternalServiceInput) (string, error)
+	DeleteExternalService(id string, async bool) error
 
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
@@ -693,10 +694,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
+			skip       int
 		}{
 			{
 				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
+				skip:  skipStream & skipGraphQL,
 			},
 			{
 				name:  "Structural, index only, backcompat, nonzero result",
@@ -710,39 +713,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  `Structural search quotes are interpreted literally`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
 			},
-			{
-				name:       `Alert to activate structural search mode for :[...] syntax`,
-				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter`,
-				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "No results",
-					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
-					ProposedQueries: []gqltestutil.ProposedQuery{
-						{
-							Description: "Activate structural search",
-							Query:       `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter patternType:structural`,
-						},
-					},
-				},
-			},
-			{
-				name:       `Alert to activate structural search mode for ... syntax`,
-				query:      `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
-				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "No results",
-					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
-					ProposedQueries: []gqltestutil.ProposedQuery{
-						{
-							Description: "Activate structural search",
-							Query:       `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$ patternType:structural`,
-						},
-					},
-				},
-			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -771,6 +745,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
+			skip       int
 		}{
 			{
 				name:  `And operator, basic`,
@@ -851,6 +826,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Literals, not keyword and implicit and inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
+				skip:  skipStream & skipGraphQL,
 			},
 			{
 				name:  `Literals, not and and keyword inside group`,
@@ -950,6 +926,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -1359,6 +1337,8 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
+		t.Skip("TODO: Re-enable with lockfile indexing added")
+
 		// We are adding another GitHub external service here to make sure we don't
 		// pollute the other integration tests running earlier.
 		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
@@ -1373,7 +1353,9 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				URL:   "https://ghe.sgdev.org/",
 				Token: *githubToken,
 				Repos: []string{
+					"sgtest/pipenv-hw",
 					"sgtest/poetry-hw",
+					"sgtest/empty",
 				},
 				RepositoryPathPattern: "github.com/{nameWithOwner}",
 			}),
@@ -1445,7 +1427,9 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
 			"python/rich",
+			"github.com/sgtest/pipenv-hw",
 			"github.com/sgtest/poetry-hw",
+			"github.com/sgtest/empty",
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1459,42 +1443,69 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			{"stream", streamClient},
 		} {
 			tc := tc
-			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
-				began := time.Now()
 
-				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid) OR (r:deps(^github\.com/sgtest/poetry-hw$) r:pluggy|attrs) `
-
-				want := []string{
-					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
+			for _, listDepsTc := range []struct {
+				name  string
+				query string
+				want  []string
+			}{
+				{"repos-npm", `r:deps(^npm/urql$@v2.2.0)`, []string{
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
+				}},
+				{"repos-go", `r:deps(oklog/ulid)`, []string{
+					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
+				}},
+				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
+					"/python/atomicwrites@v1.4.0",
 					"/python/attrs@v21.4.0",
+					"/python/colorama@v0.4.4",
+					"/python/more-itertools@v8.13.0",
+					"/python/packaging@v21.3",
 					"/python/pluggy@v0.13.1",
-				}
+					"/python/py@v1.11.0",
+					"/python/pyparsing@v3.0.8",
+					"/python/pytest@v5.4.3",
+					"/python/tqdm@v4.64.0",
+					"/python/wcwidth@v0.2.5",
+				}},
+				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
+					"/python/certifi@v2021.10.8",
+					"/python/charset-normalizer@v2.0.12",
+					"/python/idna@v3.3",
+					"/python/requests@v2.27.1",
+					"/python/urllib3@v1.26.9",
+				}},
+				{"empty", `r:deps(^github\.com/sgtest/empty$)`, nil},
+			} {
+				listDepsTc := listDepsTc
 
-				for {
-					results, err := tc.client.SearchRepositories(query)
-					require.NoError(t, err)
+				t.Run(tc.name+"/"+listDepsTc.name, func(t *testing.T) {
+					began := time.Now()
+					for {
+						results, err := tc.client.SearchRepositories(listDepsTc.query)
+						require.NoError(t, err)
 
-					var have []string
-					for _, r := range results {
-						have = append(have, r.URL)
-					}
-
-					sort.Strings(have)
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						if time.Since(began) >= time.Minute {
-							t.Fatalf("missing repositories after 1m: %v", diff)
+						var have []string
+						for _, r := range results {
+							have = append(have, r.URL)
 						}
 
-						t.Logf("still missing repositories: %v", diff)
-						time.Sleep(time.Second)
-						continue
+						sort.Strings(have)
+
+						if diff := cmp.Diff(have, listDepsTc.want); diff != "" {
+							if time.Since(began) >= time.Minute {
+								t.Fatalf("missing repositories after 1m: %v", diff)
+							}
+
+							t.Logf("still missing repositories: %v", diff)
+							time.Sleep(time.Second)
+							continue
+						}
+						break
 					}
-					break
-				}
-			})
+				})
+			}
 
 			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
 				const query = `r:deps(^npm/urql$@v2.2.0) split`

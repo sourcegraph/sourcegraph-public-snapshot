@@ -62,7 +62,7 @@ export const queryLsifUploadsByRepository = (
     repository: string,
     client: ApolloClient<object>
 ): Observable<LsifUploadConnectionFields> => {
-    const vars: LsifUploadsVariables = {
+    const variables: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,
@@ -75,7 +75,7 @@ export const queryLsifUploadsByRepository = (
     return from(
         client.query<LsifUploadsForRepoResult, LsifUploadsForRepoVariables>({
             query: getDocumentNode(LSIF_UPLOAD_LIST_BY_REPO_ID),
-            variables: { ...vars, repository },
+            variables: { ...variables, repository },
         })
     ).pipe(
         map(({ data }) => data),

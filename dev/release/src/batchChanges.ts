@@ -71,6 +71,7 @@ export async function createBatchChange(
         externalIDs: [change.pullRequestNumber],
     }))
     // apply batch change
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await applyBatchChange(
         {
             name: options.name,

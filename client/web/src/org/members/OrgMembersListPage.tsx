@@ -19,6 +19,7 @@ import {
     MenuItem,
     Position,
     PageSelector,
+    H3,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -327,7 +328,7 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
                 {authenticatedUser && membersResult && showOnlyYou && isSelf(membersResult.members.nodes[0].id) && (
                     <Container className={styles.onlyYouContainer}>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <h3>Looks like it’s just you!</h3>
+                            <H3>Looks like it’s just you!</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}

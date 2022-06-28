@@ -18,9 +18,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -41,10 +42,6 @@ const (
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
-	// repoTTLSGM is how often we should re-clone a repository once it is reporting
-	// issues with sg maintenance. repoTTLSGM should be greater than sgmLogExpire,
-	// otherwise we will always re-clone before the log expires.
-	repoTTLSGM = time.Hour * 24 * 2
 	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 	// corrupt on disk.
 	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
@@ -69,16 +66,26 @@ var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "th
 var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack"))
 
 // A failed sg maintenance run will place a log file in the git directory.
-// Subsequent sg maintenance runs are skipped unless the log file is old. Based
-// on how https://github.com/git/git handles the gc.log file. sgmLogExpire should
-// be less than repoTLLSGM, otherwise we will always re-clone before the log
-// expires.
+// Subsequent sg maintenance runs are skipped unless the log file is old.
+//
+// Based on how https://github.com/git/git handles the gc.log file.
 var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, "the number of hours after which sg maintenance runs even if a log file is present")
+
+// Each failed sg maintenance run increments a counter in the sgmLog file.
+// We reclone the repository if the number of retries exceeds sgmRetries.
+// Setting SRC_SGM_RETRIES to -1 (default) disables the limit.
+//
+// We mention this ENV variable in the header message of the sgmLog files. Make
+// sure that changes here are reflected in sgmLogHeader, too.
+var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum number of times we retry sg maintenance before triggering a reclone."))
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 // SRC_ENABLE_SG_MAINTENANCE.
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
+
+// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
+var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -109,6 +116,11 @@ var (
 		Name: "src_gitserver_prune_status",
 		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
 	}, []string{"success", "skipped"})
+	janitorTimer = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_janitor_duration_seconds",
+		Help:    "Duration of gitserver janitor background job",
+		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
+	})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -126,9 +138,25 @@ const reposStatsName = "repos-stats.json"
 // 9. Perform sg-maintenance
 // 10. Git prune
 // 11. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos() {
+func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
+	janitorStart := time.Now()
+	defer func() {
+		janitorTimer.Observe(time.Since(janitorStart).Seconds())
+	}()
 	defer janitorRunning.Set(0)
+	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
+
+	isKnownGitServerShard := false
+	for _, addr := range gitServerAddrs {
+		if s.hostnameMatch(addr) {
+			isKnownGitServerShard = true
+			break
+		}
+	}
+	if !isKnownGitServerShard {
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+	}
 
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
@@ -138,10 +166,42 @@ func (s *Server) cleanupRepos() {
 	}
 
 	repoToSize := make(map[api.RepoName]int64)
-	computeStats := func(dir GitDir) (done bool, err error) {
+	var wrongShardRepoCount int64
+	var wrongShardRepoSize int64
+	defer func() {
+		// We want to set the gauge only at the end when we know the total
+		wrongShardReposTotal.Set(float64(wrongShardRepoCount))
+		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
+	}()
+
+	var wrongShardReposDeleted int64
+	defer func() {
+		// We want to set the gauge only when wrong shard clean-up is enabled
+		if wrongShardReposDeleteLimit > 0 {
+			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
+		}
+	}()
+
+	maybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
-		repoToSize[s.name(dir)] = size
+		name := s.name(dir)
+		repoToSize[name] = size
+
+		// Record the number and disk usage used of repos that should
+		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
+		addr := addrForKey(name, gitServerAddrs)
+		if !s.hostnameMatch(addr) {
+			wrongShardRepoCount++
+			wrongShardRepoSize += size
+			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+				if err := s.removeRepoDirectory(dir); err != nil {
+					return false, err
+				}
+				wrongShardReposDeleted++
+			}
+		}
 		return false, nil
 	}
 
@@ -170,7 +230,7 @@ func (s *Server) cleanupRepos() {
 			return false, nil
 		}
 
-		log15.Info("removing corrupt repo", "repo", dir, "reason", reason)
+		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
 		if err := s.removeRepoDirectory(dir); err != nil {
 			return true, err
 		}
@@ -217,9 +277,10 @@ func (s *Server) cleanupRepos() {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
-		if time.Since(recloneTime) > repoTTLSGM+jitterDuration(string(dir), repoTTLSGM/4) {
+
+		if (sgmRetries >= 0) && (bestEffortReadFailed(dir) > sgmRetries) {
 			if sgmLog, err := os.ReadFile(dir.Path(sgmLog)); err == nil && len(sgmLog) > 0 {
-				reason = fmt.Sprintf("sg maintenance %s", string(bytes.TrimSpace(sgmLog)))
+				reason = fmt.Sprintf("sg maintenance, too many retries: %s", string(bytes.TrimSpace(sgmLog)))
 			}
 		}
 
@@ -239,13 +300,19 @@ func (s *Server) cleanupRepos() {
 
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
-		log15.Info("re-cloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
+		subCleanupLogger := cleanupLogger.With(
+			log.String("repo", string(repo)),
+			log.Time("cloned", recloneTime),
+			log.String("reason", reason),
+		)
+
+		subCleanupLogger.Info("re-cloning expired repo")
 
 		// update the re-clone time so that we don't constantly re-clone if cloning fails.
 		// For example if a repo fails to clone due to being large, we will constantly be
 		// doing a clone which uses up lots of resources.
 		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			log15.Warn("setting backed off re-clone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
+			subCleanupLogger.Warn("setting backed off re-clone time failed", log.Error(err))
 		}
 
 		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
@@ -299,7 +366,7 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performSGMaintenance := func(dir GitDir) (done bool, err error) {
-		return false, sgMaintenance(dir)
+		return false, sgMaintenance(s.Logger, dir)
 	}
 
 	performGitPrune := func(dir GitDir) (done bool, err error) {
@@ -312,7 +379,7 @@ func (s *Server) cleanupRepos() {
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
-		{"compute statistics", computeStats},
+		{"compute stats and delete wrong shard repos", maybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// If git is interrupted it can leave lock files lying around. It does not clean
@@ -374,7 +441,7 @@ func (s *Server) cleanupRepos() {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
-				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
+				cleanupLogger.Error("error running cleanup command", log.String("name", cfn.Name), log.String("repo", string(gitDir)), log.Error(err))
 			}
 			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
@@ -384,13 +451,13 @@ func (s *Server) cleanupRepos() {
 		return filepath.SkipDir
 	})
 	if err != nil {
-		log15.Error("cleanup: error iterating over repositories", "error", err)
+		cleanupLogger.Error("error iterating over repositories", log.Error(err))
 	}
 
 	if b, err := json.Marshal(stats); err != nil {
-		log15.Error("cleanup: failed to marshal periodic stats", "error", err)
+		cleanupLogger.Error("failed to marshal periodic stats", log.Error(err))
 	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
-		log15.Error("cleanup: failed to write periodic stats", "error", err)
+		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
 	}
 
 	// Repo sizes are set only once during the first janitor run.
@@ -398,7 +465,7 @@ func (s *Server) cleanupRepos() {
 	s.setRepoSizesOnce.Do(func() {
 		err = s.setRepoSizes(context.Background(), repoToSize)
 		if err != nil {
-			log15.Error("cleanup: setting repo sizes", "error", err)
+			cleanupLogger.Error("setting repo sizes", log.Error(err))
 		}
 	})
 
@@ -407,20 +474,24 @@ func (s *Server) cleanupRepos() {
 	}
 	b, err := s.howManyBytesToFree()
 	if err != nil {
-		log15.Error("cleanup: ensuring free disk space", "error", err)
+		cleanupLogger.Error("ensuring free disk space", log.Error(err))
 	}
 	if err := s.freeUpSpace(b); err != nil {
-		log15.Error("cleanup: error freeing up space", "error", err)
+		cleanupLogger.Error("error freeing up space", log.Error(err))
 	}
 }
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
+	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
+
 	if len(repoToSize) == 0 {
-		log15.Info("cleanup: file system walk didn't yield any directory sizes")
+		logger.Info("file system walk didn't yield any directory sizes")
 		return nil
 	}
-	log15.Info(fmt.Sprintf("cleanup: %v directory sizes calculated during file system walk", len(repoToSize)))
+
+	logger.Info("directory sizes calculated during file system walk",
+		log.Int("repoToSize", len(repoToSize)))
 
 	db := s.DB
 	gitserverRepos := db.GitserverRepos()
@@ -430,7 +501,7 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		return err
 	}
 	if len(reposWithoutSize) == 0 {
-		log15.Info("cleanup: all repos in the DB have their sizes")
+		logger.Info("all repos in the DB have their sizes")
 		return nil
 	}
 
@@ -447,7 +518,9 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	if err != nil {
 		return err
 	}
-	log15.Info(fmt.Sprintf("cleanup: %v repos had their sizes updated", len(reposToUpdate)))
+	logger.Info("repos had their sizes updated",
+		log.Int("reposToUpdate", len(reposToUpdate)))
+
 	return nil
 }
 
@@ -476,10 +549,12 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 		howManyBytesToFree = 0
 	}
 	const G = float64(1024 * 1024 * 1024)
-	log15.Debug("cleanup",
-		"desired percent free", s.DesiredPercentFree,
-		"actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0,
-		"amount to free in GiB", float64(howManyBytesToFree)/G)
+
+	s.Logger.Debug("howManyBytesToFree",
+		log.Int("desired percent free", s.DesiredPercentFree),
+		log.Float64("actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
+		log.Float64("amount to free in GiB", float64(howManyBytesToFree)/G))
+
 	return howManyBytesToFree, nil
 }
 
@@ -509,6 +584,8 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if howManyBytesToFree <= 0 {
 		return nil
 	}
+
+	logger := s.Logger.Scoped("cleanup.freeUpSpace", "removes git directories under ReposDir")
 
 	// Get the git directories and their mod times.
 	gitDirs, err := s.findGitDirs()
@@ -552,14 +629,15 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			return errors.Wrap(err, "finding the amount of space free on disk")
 		}
 		G := float64(1024 * 1024 * 1024)
-		log15.Warn("cleanup: removed least recently used repo",
-			"repo", d,
-			"how old", time.Since(dirModTimes[d]),
-			"free space in GiB", float64(actualFreeBytes)/G,
-			"actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0,
-			"desired percent of disk space free", float64(s.DesiredPercentFree),
-			"space freed in GiB", float64(spaceFreed)/G,
-			"how much space to free in GiB", float64(howManyBytesToFree)/G)
+
+		logger.Warn("removed least recently used repo",
+			log.String("repo", string(d)),
+			log.Duration("how old", time.Since(dirModTimes[d])),
+			log.Float64("free space in GiB", float64(actualFreeBytes)/G),
+			log.Float64("actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
+			log.Float64("desired percent of disk space free", float64(s.DesiredPercentFree)),
+			log.Float64("space freed in GiB", float64(spaceFreed)/G),
+			log.Float64("how much space to free in GiB", float64(howManyBytesToFree)/G))
 	}
 
 	// Check.
@@ -624,6 +702,12 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	ctx := context.Background()
 	dir := string(gitDir)
 
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		// If directory doesn't exist we can avoid all the work below and treat it as if
+		// it was removed.
+		return nil
+	}
+
 	// Rename out of the location so we can atomically stop using the repo.
 	tmp, err := s.tempDir("delete-repo")
 	if err != nil {
@@ -646,7 +730,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	// new clone.
 	rootInfo, err := os.Stat(s.ReposDir)
 	if err != nil {
-		log15.Warn("Failed to stat ReposDir", "error", err)
+		s.Logger.Warn("Failed to stat ReposDir", log.Error(err))
 		return nil
 	}
 	current := dir
@@ -664,7 +748,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 			break
 		}
 		if err != nil {
-			log15.Warn("failed to stat parent directory", "dir", current, "error", err)
+			s.Logger.Warn("failed to stat parent directory", log.String("dir", current), log.Error(err))
 			return nil
 		}
 		if os.SameFile(rootInfo, info) {
@@ -681,7 +765,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	// Delete the atomically renamed dir. We do this last since if it fails we
 	// will rely on a janitor job to clean up for us.
 	if err := os.RemoveAll(filepath.Join(tmp, "repo")); err != nil {
-		log15.Warn("failed to cleanup after removing dir", "dir", dir, "error", err)
+		s.Logger.Warn("failed to cleanup after removing dir", log.String("dir", dir), log.Error(err))
 	}
 
 	return nil
@@ -711,13 +795,15 @@ func (s *Server) cleanTmpFiles(dir GitDir) {
 		return nil
 	})
 	if err != nil {
-		log15.Error("error removing tmp_pack_* files", "error", err)
+		s.Logger.Error("error removing tmp_pack_* files", log.Error(err))
 	}
 }
 
 // SetupAndClearTmp sets up the the tempdir for ReposDir as well as clearing it
 // out. It returns the temporary directory location.
 func (s *Server) SetupAndClearTmp() (string, error) {
+	logger := s.Logger.Scoped("cleanup.SetupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
+
 	// Additionally we create directories with the prefix .tmp-old which are
 	// asynchronously removed. We do not remove in place since it may be a
 	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
@@ -745,7 +831,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	// Asynchronously remove old temporary directories
 	files, err := os.ReadDir(s.ReposDir)
 	if err != nil {
-		log15.Error("failed to do tmp cleanup", "error", err)
+		logger.Error("failed to do tmp cleanup", log.Error(err))
 	} else {
 		for _, f := range files {
 			// Remove older .tmp directories as well as our older tmp-
@@ -756,7 +842,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 			}
 			go func(path string) {
 				if err := os.RemoveAll(path); err != nil {
-					log15.Error("cleanup: failed to remove old temporary directory", "path", path, "error", err)
+					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
 				}
 			}(filepath.Join(s.ReposDir, f.Name()))
 		}
@@ -833,14 +919,15 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	if !maybeCorruptStderrRe.MatchString(stderr) {
 		return
 	}
+	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
 
-	log15.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
+	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
 
 	// We set a flag in the config for the cleanup janitor job to fix. The janitor
 	// runs every minute.
 	err := gitConfigSet(dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
-		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
+		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
 }
 
@@ -871,11 +958,61 @@ func gitGC(dir GitDir) error {
 	return nil
 }
 
+const (
+	sgmLogPrefix = "failed="
+
+	sgmLogHeader = `DO NOT EDIT: generated by gitserver.
+This file records the number of failed runs of sg maintenance and the
+last error message. The number of failed attempts is compared to the
+number of allowed retries (see SRC_SGM_RETRIES) to decide whether a
+repository should be recloned.`
+)
+
+// writeSGMLog writes a log file with the format
+// 		<header>
+//
+// 		<sgmLogPrefix>=<int>
+//
+// 		<error message>
+//
+func writeSGMLog(dir GitDir, m []byte) error {
+	return os.WriteFile(
+		dir.Path(sgmLog),
+		[]byte(fmt.Sprintf("%s\n\n%s%d\n\n%s\n", sgmLogHeader, sgmLogPrefix, bestEffortReadFailed(dir)+1, m)),
+		0600,
+	)
+}
+
+func bestEffortReadFailed(dir GitDir) int {
+	b, err := os.ReadFile(dir.Path(sgmLog))
+	if err != nil {
+		return 0
+	}
+
+	return bestEffortParseFailed(b)
+}
+
+func bestEffortParseFailed(b []byte) int {
+	prefix := []byte(sgmLogPrefix)
+	from := bytes.Index(b, prefix)
+	if from < 0 {
+		return 0
+	}
+
+	b = b[from+len(prefix):]
+	if to := bytes.IndexByte(b, '\n'); to > 0 {
+		b = b[:to]
+	}
+
+	n, _ := strconv.Atoi(string(b))
+	return n
+}
+
 // sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
 // concurrently with git gc. sgMaintenance will check the state of the repository
 // to avoid running the cleanup tasks if possible. If a sgmLog file is present in
 // dir, sgMaintenance will not run unless the file is old.
-func sgMaintenance(dir GitDir) (err error) {
+func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 	// Don't run if sgmLog file is younger than sgmLogExpire hours. There is no need
 	// to report an error, because the error has already been logged in a previous
 	// run.
@@ -902,10 +1039,10 @@ func sgMaintenance(dir GitDir) (err error) {
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {
-		if err := os.WriteFile(dir.Path(sgmLog), b, 0666); err != nil {
-			log15.Debug("sg maintenance failed to write log file", "file", dir.Path(sgmLog), "err", err)
+		if err := writeSGMLog(dir, b); err != nil {
+			logger.Debug("sg maintenance failed to write log file", log.String("file", dir.Path(sgmLog)), log.Error(err))
 		}
-		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
+		logger.Debug("sg maintenance", log.String("dir", string(dir)), log.String("out", string(b)))
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	// Remove the log file after a successful run.
@@ -1139,7 +1276,9 @@ func removeFileOlderThan(path string, maxAge time.Duration) error {
 		return nil
 	}
 
-	log15.Debug("removing stale lock file", "path", path, "age", age)
+	logger := log.Scoped("removeFileOlderThan", "removes path if its mtime is older than maxAge.")
+
+	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
 	err = os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
 		return err

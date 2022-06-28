@@ -30,7 +30,6 @@ import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -70,8 +69,7 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         CodeInsightsProps,
-        ExtensionAlertProps,
-        FeatureFlagProps {
+        ExtensionAlertProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -102,7 +100,6 @@ interface RepoRevisionContainerProps
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
-        FeatureFlagProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
@@ -157,7 +154,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <Icon as={RepoRevisionChevronDownIcon} />
+                <Icon as={RepoRevisionChevronDownIcon} aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                 <RevisionsPopover

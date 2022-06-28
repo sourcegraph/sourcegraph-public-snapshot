@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, H2, H3 } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -46,7 +46,7 @@ interface UsageChartPageProps {
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
     <div>
-        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
+        {props.header ? props.header : <H3>{chartGeneratorOptions[props.chartID].label}</H3>}
         <BarChart
             showLabels={true}
             showLegend={props.showLegend === undefined ? true : props.showLegend}
@@ -145,14 +145,14 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     {this.props.node.usageStatistics?.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
-                        'never'
+                        'not available'
                     )}
                 </td>
                 <td className={styles.dateColumn}>
                     {this.props.node.usageStatistics?.lastActiveCodeHostIntegrationTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
-                        'never'
+                        'not available'
                     )}
                 </td>
             </tr>
@@ -247,7 +247,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div>
                 <PageTitle title="Usage statistics - Admin" />
-                <h2>Usage statistics</h2>
+                <H2>Usage statistics</H2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
                 <Button
@@ -257,7 +257,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                     variant="secondary"
                     as="a"
                 >
-                    <Icon as={FileDownloadIcon} /> Download usage stats archive
+                    <Icon as={FileDownloadIcon} aria-hidden={true} /> Download usage stats archive
                 </Button>
 
                 {this.state.stats && (
@@ -274,7 +274,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                         <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
                     </>
                 )}
-                <h3 className="mt-4">All registered users</h3>
+                <H3 className="mt-4">All registered users</H3>
                 {!this.state.error && (
                     <FilteredUserConnection
                         listComponent="table"

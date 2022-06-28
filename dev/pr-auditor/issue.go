@@ -10,7 +10,7 @@ const (
 	testPlanDocs = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
 )
 
-func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.IssueRequest {
+func generateExceptionIssue(payload *EventPayload, result *checkResult, additionalContext string) *github.IssueRequest {
 	// 🚨 SECURITY: Do not reference other potentially sensitive fields of pull requests
 	prTitle := payload.PullRequest.Title
 	if payload.Repository.Private {
@@ -30,6 +30,9 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 	if !result.HasTestPlan() {
 		exceptionLabels = append(exceptionLabels, "exception/test-plan")
 	}
+	if result.ProtectedBranch {
+		exceptionLabels = append(exceptionLabels, "exception/protected-branch")
+	}
 
 	if !result.Reviewed {
 		if result.HasTestPlan() {
@@ -43,6 +46,14 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 
 	if !result.HasTestPlan() {
 		issueBody += fmt.Sprintf("\n\nLearn more about test plans in our [testing guidelines](%s).", testPlanDocs)
+	}
+
+	if result.ProtectedBranch {
+		issueBody += fmt.Sprintf("\n\nThe base branch %q is protected and should not have direct pull requests to it.", payload.PullRequest.Base.Ref)
+	}
+
+	if additionalContext != "" {
+		issueBody += fmt.Sprintf("\n\n%s", additionalContext)
 	}
 
 	user := payload.PullRequest.MergedBy.Login

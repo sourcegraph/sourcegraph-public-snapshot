@@ -6,15 +6,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type updater struct{}
+type updater struct {
+	dbStore         DBStore
+	locker          Locker
+	gitserverClient GitserverClient
+	operations      *operations
+}
 
-var _ goroutine.Handler = &updater{}
-var _ goroutine.ErrorHandler = &updater{}
+var (
+	_ goroutine.Handler      = &updater{}
+	_ goroutine.ErrorHandler = &updater{}
+)
 
-func (r *updater) Handle(ctx context.Context) error {
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+func (u *updater) Handle(ctx context.Context) error {
+	if err := u.HandleUpdater(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (r *updater) HandleError(err error) {
-}
+func (u *updater) HandleError(err error) {}

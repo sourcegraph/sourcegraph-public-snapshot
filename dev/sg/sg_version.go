@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,7 +26,7 @@ var (
 	versionCommand = &cli.Command{
 		Name:     "version",
 		Usage:    "View details for this installation of sg",
-		Action:   execAdapter(versionExec),
+		Action:   versionExec,
 		Category: CategoryUtil,
 		Subcommands: []*cli.Command{
 			{
@@ -46,18 +46,18 @@ var (
 						Destination: &versionChangelogEntries,
 					},
 				},
-				Action: execAdapter(changelogExec),
+				Action: changelogExec,
 			},
 		},
 	}
 )
 
-func versionExec(ctx context.Context, args []string) error {
-	stdout.Out.Write(BuildCommit)
+func versionExec(ctx *cli.Context) error {
+	std.Out.Write(BuildCommit)
 	return nil
 }
 
-func changelogExec(ctx context.Context, args []string) error {
+func changelogExec(ctx *cli.Context) error {
 	if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
 		return errors.Newf("failed to update main: %s", err)
 	}
@@ -82,7 +82,7 @@ func changelogExec(ctx context.Context, args []string) error {
 			title = fmt.Sprintf("Changes in sg release %s", BuildCommit)
 		}
 	} else {
-		writeWarningLinef("Dev version detected - just showing recent changes.")
+		std.Out.WriteWarningf("Dev version detected - just showing recent changes.")
 		title = "Recent sg changes"
 	}
 
@@ -93,7 +93,7 @@ func changelogExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	block := stdout.Out.Block(output.Linef("", output.StyleSearchQuery, title))
+	block := std.Out.Block(output.Styled(output.StyleSearchQuery, title))
 	if len(out) == 0 {
 		block.Write("No changes found.")
 	} else {
@@ -101,7 +101,7 @@ func changelogExec(ctx context.Context, args []string) error {
 	}
 	block.Close()
 
-	stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion,
+	std.Out.WriteLine(output.Styledf(output.StyleSuggestion,
 		"Only showing %d entries - configure with 'sg version changelog -limit=50'", versionChangelogEntries))
 	return nil
 }
@@ -130,6 +130,9 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 			// user to eventually do a fetch
 			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
 		}
+
+		// Unexpected error occured
+		analytics.LogEvent(ctx, "auto_update", []string{"check_error"}, start)
 		return err
 	}
 
@@ -140,26 +143,32 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	}
 
 	if skipUpdate {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+
+		analytics.LogEvent(ctx, "auto_update", []string{"skipped"}, start)
 		return nil
 	}
 
-	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	std.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	newPath, err := updateToPrebuiltSG(ctx)
 	if err != nil {
 		analytics.LogEvent(ctx, "auto_update", []string{"failed"}, start)
 		return errors.Newf("failed to install update: %s", err)
 	}
-	writeSuccessLinef("sg has been updated!")
-	stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+	std.Out.WriteSuccessf("sg has been updated!")
+	std.Out.Write("To see what's new, run 'sg version changelog'.")
 
 	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, start)
+
+	// syscall.Exec will cause the current command's finalizer to not run, so we make a
+	// custom call to persist to make sure the auto_update event is tracked.
+	analytics.Persist(ctx, "sg", nil)
 
 	// Run command with new binary
 	return syscall.Exec(newPath, os.Args, os.Environ())

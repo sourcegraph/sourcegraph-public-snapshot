@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, H3 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { LsifIndexFields } from '../../../../graphql-operations'
@@ -29,10 +29,10 @@ export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildre
 
                     <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
-                            <h3 className="m-0 d-block d-md-inline">
-                                This job uploaded an index{' '}
+                            <H3 className="m-0 d-block d-md-inline">
+                                This job performed an upload{' '}
                                 <Timestamp date={node.associatedUpload.uploadedAt} now={now} />
-                            </h3>
+                            </H3>
                         </div>
 
                         <div>

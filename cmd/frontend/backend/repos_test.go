@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -151,7 +150,7 @@ func TestReposGetInventory(t *testing.T) {
 		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
+	gitserver.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -173,7 +172,7 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadDir " + name)
 		}
 	}
-	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+	gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -189,7 +188,7 @@ func TestReposGetInventory(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer func() {
-		git.ResetMocks()
+		gitserver.ResetMocks()
 		gitserver.Mocks.ReadDir = nil
 	}()
 

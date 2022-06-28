@@ -11,9 +11,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -43,12 +46,12 @@ var _ AffiliatedRepositorySource = &GitLabSource{}
 var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(svc, &c, cf)
+	return newGitLabSource(ctx, db, svc, &c, cf)
 }
 
 var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -61,7 +64,7 @@ var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -103,6 +106,11 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
 	case gitlab.TokenTypeOAuth:
+		refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc)
+		if err != nil {
+			return nil, errors.Wrap(err, "refreshing OAuth token")
+		}
+		c.Token = refreshed
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -387,4 +395,87 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		}
 	}
 	return out, nil
+}
+
+func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.DB, svc *types.ExternalService) (accessToken string, err error) {
+	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing external service config")
+	}
+
+	config, ok := parsed.(*schema.GitLabConnection)
+	if !ok {
+		return "", errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
+	}
+
+	// We may have old config without a refresh token
+	if config.TokenOauthRefresh == "" {
+		gitlab.TokenMissingRefreshCounter.Inc()
+		return config.Token, nil
+	}
+
+	var oauthConfig *oauth2.Config
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab == nil ||
+			strings.TrimSuffix(config.Url, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
+			continue
+		}
+		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
+		break
+	}
+
+	if oauthConfig == nil {
+		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
+			"externalServiceID", svc.ID,
+		)
+		return config.Token, nil
+	}
+
+	tok := &oauth2.Token{
+		AccessToken:  config.Token,
+		RefreshToken: config.TokenOauthRefresh,
+		Expiry:       time.Unix(int64(config.TokenOauthExpiry), 0),
+	}
+
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	if err != nil {
+		return "", errors.Wrap(err, "refresh token")
+	}
+
+	if refreshedToken.AccessToken != tok.AccessToken {
+		defer func() {
+			success := err == nil
+			gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
+		}()
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
+		if err != nil {
+			return "", errors.Wrap(err, "updating OAuth token")
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
+		if err != nil {
+			return "", errors.Wrap(err, "updating OAuth refresh token")
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
+		if err != nil {
+			return "", errors.Wrap(err, "updating OAuth token expiry")
+		}
+		svc.UpdatedAt = time.Now()
+		if err := db.ExternalServices().Upsert(ctx, svc); err != nil {
+			return "", errors.Wrap(err, "upserting external service")
+		}
+	}
+	return refreshedToken.AccessToken, nil
+}
+
+func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
+	url := strings.TrimSuffix(p.Url, "/")
+	return &oauth2.Config{
+		ClientID:     p.ClientID,
+		ClientSecret: p.ClientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  url + "/oauth/authorize",
+			TokenURL: url + "/oauth/token",
+		},
+		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
+	}
 }

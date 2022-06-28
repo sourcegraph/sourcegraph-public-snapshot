@@ -1,7 +1,7 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -10,7 +10,7 @@ import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
 import { isMacPlatform } from '@sourcegraph/common'
-import { QueryState } from '@sourcegraph/search'
+import { EditorHint, QueryState } from '@sourcegraph/search'
 import { MonacoQueryInputProps } from '@sourcegraph/search-ui'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -34,6 +34,8 @@ const tourOptions: Shepherd.Tour.TourOptions = {
         },
     },
 }
+
+const EMPTY_TOKENS: Token[] = []
 
 /**
  * generateStep creates the content for the search tour card. All steps that just contain
@@ -113,25 +115,6 @@ const TOUR_STEPS = ['filter-repository', 'filter-lang', 'add-query-term'] as Tou
 
 /**
  * Returns `true` if, while on the filter-(repository|lang) step,
- * the search query is a (repo|lang) filter with no value.
- */
-const shouldTriggerSuggestions = (currentTourStep: TourStepID | undefined, queryTokens: Token[]): boolean => {
-    if (queryTokens.length !== 1) {
-        return false
-    }
-    const filterToken = queryTokens[0]
-    if (filterToken.type !== 'filter' || filterToken.value !== undefined) {
-        return false
-    }
-    return currentTourStep === 'filter-repository'
-        ? filterToken.field.value === 'repo'
-        : currentTourStep === 'filter-lang'
-        ? filterToken.field.value === 'lang'
-        : false
-}
-
-/**
- * Returns `true` if, while on the filter-(repository|lang) step,
  * the search query is a valid (repo|lang) filter followed by whitespace.
  * -
  */
@@ -203,11 +186,11 @@ const useTourWithSteps = ({
                 text: generateStep1(
                     tour,
                     () => {
-                        setQueryState({ query: 'lang:' })
+                        setQueryState({ query: 'lang:', hint: EditorHint.ShowSuggestions })
                         tour.show('filter-lang')
                     },
                     () => {
-                        setQueryState({ query: 'repo:' })
+                        setQueryState({ query: 'repo:', hint: EditorHint.ShowSuggestions })
                         tour.show('filter-repository')
                     }
                 ),
@@ -342,7 +325,7 @@ interface UseSearchOnboardingTourOptions {
  * The subset of MonacoQueryInput props should be passed down to the input component.
  */
 interface UseSearchOnboardingTourReturnValue
-    extends Pick<MonacoQueryInputProps, 'onCompletionItemSelected' | 'onSuggestionsInitialized' | 'onFocus'> {
+    extends Pick<MonacoQueryInputProps, 'onCompletionItemSelected' | 'onEditorCreated' | 'onFocus'> {
     /**
      * Whether the query input should be focused by default
      * (`false` on the search homepage when the tour is active).
@@ -411,40 +394,43 @@ export const useSearchOnboardingTour = ({
         }
     }, [tour, shouldShowTour])
 
-    // A handle allowing to trigger display of the MonacoQueryInput suggestions widget.
-    const [suggestions, onSuggestionsInitialized] = useState<{ trigger: () => void }>()
-
     // On query or step changes, advance the Tour if appropriate.
     const currentStep = useCurrentStep(tour)
-    const queryTokens = useMemo((): Token[] => {
+    const currentStepRef = useRef<TourStepID | undefined>()
+    const queryTokens = useRef<Token[]>([])
+
+    currentStepRef.current = currentStep
+
+    useEffect(() => {
+        if (!tour.isActive()) {
+            queryTokens.current = EMPTY_TOKENS
+        }
         const scannedQuery = scanSearchQuery(queryState.query)
-        return scannedQuery.type === 'success' ? scannedQuery.term : []
-    }, [queryState.query])
+        queryTokens.current = scannedQuery.type === 'success' ? scannedQuery.term : EMPTY_TOKENS
+    }, [tour, queryState.query])
+
     useEffect(() => {
         if (!tour.isActive()) {
             return
         }
-        if (shouldTriggerSuggestions(currentStep, queryTokens)) {
-            suggestions?.trigger()
-        } else if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
+        if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens.current)) {
             tour.show('add-query-term')
-        } else if (shouldShowSubmitSearch(currentStep, queryTokens)) {
+        } else if (shouldShowSubmitSearch(currentStep, queryTokens.current)) {
             tour.show('submit-search')
         }
-    }, [suggestions, queryTokens, tour, currentStep])
+    }, [queryState.query, queryTokens, tour, currentStep])
 
     // When a completion item is selected,
     // advance the repo or lang step if appropriate.
     const onCompletionItemSelected = useCallback(() => {
-        if (shouldAdvanceLangOrRepoStep(currentStep, queryTokens)) {
+        if (shouldAdvanceLangOrRepoStep(currentStepRef.current, queryTokens.current)) {
             tour.show('add-query-term')
         }
-    }, [queryTokens, tour, currentStep])
+    }, [tour, currentStepRef, queryTokens])
 
     return {
         onCompletionItemSelected,
         onFocus,
-        onSuggestionsInitialized,
         shouldFocusQueryInput: !shouldShowTour,
     }
 }

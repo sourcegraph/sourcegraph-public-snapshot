@@ -5,7 +5,7 @@ import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { MaybeLink } from '../../../views/components/view/content/chart-view-content/charts/MaybeLink'
+import { MaybeLink } from '../../core'
 import { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'

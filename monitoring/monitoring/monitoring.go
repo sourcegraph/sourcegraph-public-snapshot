@@ -14,10 +14,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
-// Container describes a Docker container to be observed.
+// Dashboard usually describes a Service,
+// and a service may contain one or more containers to be observed.
+//
+// It may also be used to describe a collection of services that are highly correlated, and
+// it is useful to present them in a single dashboard.
+//
+// It may also (rarely) be used to describe aggregated infrastructure-wide metrics
+// to provide operator an unified view of the system health for easier troubleshooting.
 //
 // These correspond to dashboards in Grafana.
-type Container struct {
+type Dashboard struct {
 	// Name of the Docker container, e.g. "syntect-server".
 	Name string
 
@@ -43,7 +50,7 @@ type Container struct {
 	NoSourcegraphDebugServer bool
 }
 
-func (c *Container) validate() error {
+func (c *Dashboard) validate() error {
 	if !isValidGrafanaUID(c.Name) {
 		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
@@ -53,21 +60,23 @@ func (c *Container) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+
+	var errs error
 	for i, v := range c.Variables {
 		if err := v.validate(); err != nil {
-			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+			errs = errors.Append(errs, errors.Errorf("Variable %d %q: %v", i, c.Name, err))
 		}
 	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
-			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
+			errs = errors.Append(errs, errors.Errorf("Group %d %q: %v", i, g.Title, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // noAlertsDefined indicates if a dashboard no alerts defined.
-func (c *Container) noAlertsDefined() bool {
+func (c *Dashboard) noAlertsDefined() bool {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
@@ -81,7 +90,7 @@ func (c *Container) noAlertsDefined() bool {
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
-func (c *Container) renderDashboard() *sdk.Board {
+func (c *Dashboard) renderDashboard() *sdk.Board {
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = c.Name
@@ -250,7 +259,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 				if !o.NoAlert {
 					panel.Links = append(panel.Links, sdk.Link{
 						Title:       "Alerts reference",
-						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertSolutionsURL, observableDocAnchor(c, o))),
+						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
 						TargetBlank: boolPtr(true),
 					})
 				}
@@ -271,7 +280,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
+func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
 	if alert.isEmpty() {
 		return "", errors.New("cannot generate description for empty alert")
 	}
@@ -303,7 +312,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
 //
-func (c *Container) renderRules() (*promRulesFile, error) {
+func (c *Dashboard) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
@@ -534,12 +543,13 @@ func (g Group) validate() error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
 		return errors.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
 	}
+	var errs error
 	for i, r := range g.Rows {
 		if err := r.validate(); err != nil {
-			return errors.Errorf("Row %d: %v", i, err)
+			errs = errors.Append(errs, errors.Errorf("Row %d: %v", i, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // Row of observable metrics.
@@ -551,12 +561,14 @@ func (r Row) validate() error {
 	if len(r) < 1 || len(r) > 4 {
 		return errors.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
+
+	var errs error
 	for i, o := range r {
 		if err := o.validate(); err != nil {
-			return errors.Errorf("Observable %d %q: %v", i, o.Name, err)
+			errs = errors.Append(errs, errors.Errorf("Observable %d %q: %v", i, o.Name, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
@@ -691,32 +703,48 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this will not need to be set.
 	DataMustExist bool
 
-	// Warning and Critical alert definitions.
-	// Consider adding at least a Warning or Critical alert to each Observable to make it
-	// easy to identify when the target of this metric is misbehaving. If no alerts are
-	// provided, NoAlert must be set and Interpretation must be provided.
-	Warning, Critical *ObservableAlertDefinition
+	// Warning alerts indicate that something *could* be wrong with Sourcegraph. We
+	// suggest checking in on these periodically, or using a notification channel that
+	// will not bother anyone if it is spammed.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Warning *ObservableAlertDefinition
 
-	// NoAlerts must be set by Observables that do not have any alerts.
-	// This ensures the omission of alerts is intentional. If set to true, an Interpretation
-	// must be provided in place of PossibleSolutions.
+	// Critical alerts indicate that something is definitively wrong with Sourcegraph,
+	// in a way that is very likely to be noticeable to users. We suggest using a
+	// high-visibility notification channel, such as paging, for these alerts.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Critical *ObservableAlertDefinition
+
+	// NoAlerts must be set by Observables that do not have any alerts. This ensures the
+	// omission of alerts is intentional. If set to true, an Interpretation must be
+	// provided in place of NextSteps.
+	//
+	// Consider adding at least a Warning or Critical alert to each Observable to make it
+	// easy to identify when the target of this metric is misbehaving.
 	NoAlert bool
 
-	// PossibleSolutions is Markdown describing possible solutions in the event that the
-	// alert is firing. This field not required if no alerts are attached to this Observable.
-	// If there is no clear potential resolution or there is no alert configured, "none"
-	// must be explicitly stated.
+	// NextSteps is Markdown describing possible next steps in the event that the alert is
+	// firing. It does not have to indicate a definite solution, just the next steps that
+	// Sourcegraph administrators (both within Sourcegraph and at customers) can understand
+	// and leverage when get a notification for this alert.
+	//
+	// NextSteps should include debugging instructions, links to background information,
+	// and potential actions to take. Contacting support should NOT be mentioned as part
+	// of a possible solution, as it is already communicated elsewhere.
+	//
+	// This field is not required if no alerts are attached to this Observable. If there
+	// is no clear potential resolution "none" must be explicitly stated, though if a
+	// Critical alert is defined providing "none" is not allowed.
 	//
 	// Use the Interpretation field for additional guidance on understanding this Observable
 	// that isn't directly related to solving it.
 	//
-	// Contacting support should not be mentioned as part of a possible solution, as it is
-	// communicated elsewhere.
-	//
 	// To make writing the Markdown more friendly in Go, string literals like this:
 	//
 	// 	Observable{
-	// 		PossibleSolutions: `
+	// 		NextSteps: `
 	// 			- Foobar 'some code'
 	// 		`
 	// 	}
@@ -733,7 +761,8 @@ type Observable struct {
 	// 4. The last line (which is all indention) is removed.
 	// 5. Non-list items are converted to a list.
 	//
-	PossibleSolutions string
+	// The processed contents are rendered in https://docs.sourcegraph.com/admin/observability/alerts
+	NextSteps string
 
 	// Interpretation is Markdown that can serve as a reference for interpreting this
 	// observable. For example, Interpretation could provide guidance on what sort of
@@ -745,7 +774,9 @@ type Observable struct {
 	// explicitly stated.
 	//
 	// To make writing the Markdown more friendly in Go, string literal processing as
-	// PossibleSolutions is provided, though the output is not converted to a list.
+	// NextSteps is provided, though the output is not converted to a list.
+	//
+	// The processed contents are rendered in https://docs.sourcegraph.com/admin/observability/dashboards
 	Interpretation string
 
 	// Panel provides options for how to render the metric in the Grafana panel.
@@ -789,9 +820,9 @@ func (o Observable) validate() error {
 		} else if !allAlertsEmpty && o.NoAlert {
 			return errors.Errorf("An alert is set, but NoAlert is also true")
 		}
-		// PossibleSolutions if there are no alerts is redundant and likely an error
-		if o.PossibleSolutions != "" {
-			return errors.Errorf(`PossibleSolutions is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
+		// NextSteps if there are no alerts is redundant and likely an error
+		if o.NextSteps != "" {
+			return errors.Errorf(`NextSteps is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
 		}
 		// Interpretation must be provided and valid
 		if o.Interpretation == "" {
@@ -811,14 +842,23 @@ func (o Observable) validate() error {
 				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
-		// PossibleSolutions must be provided and valid
-		if o.PossibleSolutions == "" {
-			return errors.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
-		} else if o.PossibleSolutions != "none" {
-			if solutions, err := toMarkdown(o.PossibleSolutions, true); err != nil {
-				return errors.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
-			} else if l := strings.ToLower(solutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-				return errors.Errorf("PossibleSolutions should not include mentions of contacting support")
+
+		// NextSteps must be provided and valid
+		if o.NextSteps == "" {
+			return errors.Errorf(`NextSteps must list steps or an explicit "none"`)
+		}
+
+		// If a critical alert is set, NextSteps must be provided. Empty case
+		if !o.Critical.isEmpty() && o.NextSteps == "none" {
+			return errors.Newf(`NextSteps must be provided if a critical alert is set`)
+		}
+
+		// Check if provided NextSteps is valid
+		if o.NextSteps != "none" {
+			if nextSteps, err := toMarkdown(o.NextSteps, true); err != nil {
+				return errors.Errorf("NextSteps cannot be converted to Markdown: %w", err)
+			} else if l := strings.ToLower(nextSteps); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
+				return errors.Errorf("NextSteps should not include mentions of contacting support")
 			}
 		}
 	}

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Card } from '@sourcegraph/wildcard'
+import { Card, H2, Text } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -137,19 +137,19 @@ export const CodeMonitoringLogs: React.FunctionComponent<
 
     return (
         <div>
-            <h2>Code Monitoring Logs</h2>
-            <p>
+            <H2>Code Monitoring Logs</H2>
+            <Text>
                 {/* TODO: Text to change */}
                 You can use these logs to troubleshoot issues with code monitor notifications. Only the {
                     runPageSize
                 }{' '}
                 most recent runs are shown and old runs are deleted periodically.
-            </p>
+            </Text>
             <Card className="p-3">
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList className={classNames(styles.grid, 'mb-0')}>
-                        {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
+                    {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
+                    <ConnectionList className={classNames('mb-0')}>
                         {monitors.map(monitor => (
                             <MonitorLogNode key={monitor.id} monitor={monitor} now={now} startOpen={_testStartOpen} />
                         ))}

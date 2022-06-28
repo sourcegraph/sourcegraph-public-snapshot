@@ -1,8 +1,18 @@
-import { InsightDataNode } from '../../../graphql-operations'
+import { InsightDataNode, SeriesSortDirection, SeriesSortMode } from '../../../graphql-operations'
+
+const DEFAULT_SERIES_DISPLAY_OPTIONS = {
+    limit: 20,
+    sortOptions: {
+        direction: SeriesSortDirection.DESC,
+        mode: SeriesSortMode.RESULT_COUNT,
+    },
+}
 
 export const MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE: InsightDataNode = {
     __typename: 'InsightView',
     id: '001',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dataSeries: [
         {
             __typename: 'InsightsSeries',

@@ -338,6 +338,10 @@ func (r *batchChangeResolver) BatchSpecs(
 		NewestFirst: true,
 	}
 
+	if args.IncludeLocallyExecutedSpecs != nil {
+		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
+	}
+
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
 	}

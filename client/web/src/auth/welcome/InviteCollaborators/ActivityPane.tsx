@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Link, Alert, H3, H4, Code, Text } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../../routes.constants'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -76,35 +76,35 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
-                <h3>Fetching repositories...</h3>
-                <p className="text-muted mb-4">
+                <H3>Fetching repositories...</H3>
+                <Text className="text-muted mb-4">
                     We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
-                </p>
+                </Text>
             </div>
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-4 px-3 d-flex justify-content-between align-items-center">
-                        <h4 className="m-0">Activity log</h4>
+                        <H4 className="m-0">Activity log</H4>
                         <small className="m-0 text-muted">{statusSummary}</small>
                     </div>
                 </header>
                 <Terminal>
                     {!isDoneCloning && (
                         <TerminalLine>
-                            <code className={classNames('mb-2', styles.loading)}>Cloning Repositories</code>
+                            <Code className={classNames('mb-2', styles.loading)}>Cloning Repositories</Code>
                         </TerminalLine>
                     )}
                     {isLoading && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code className={classNames('mb-2', styles.loading)}>Loading</code>
+                                <Code className={classNames('mb-2', styles.loading)}>Loading</Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}
                     {fetchError && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code className="mb-2">Unexpected error</code>
+                                <Code className="mb-2">Unexpected error</Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}

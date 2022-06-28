@@ -62,9 +62,9 @@ error if the flag is still referenced somewhere.
 Example usage:
 
 ```typescript
-const evaluatedFeatureFlagValue = featureFlags.get('my-feature-flag') ?? false
+const [value, status, error] = useFeatureFlag('my-feature-flag')
 
-featureFlags.get('unknown-feature-flag') // compiler error
+const [value, status, error] = useFeatureFlag('unknown-feature-flag') // // compiler error
 ```
 
 ### Backend

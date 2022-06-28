@@ -9,6 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -182,6 +184,7 @@ type CountBatchSpecsOpts struct {
 	BatchChangeID int64
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -220,6 +223,10 @@ ON
 
 	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
+	}
+
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
 	}
 
 	if len(preds) == 0 {
@@ -375,6 +382,7 @@ type ListBatchSpecsOpts struct {
 	NewestFirst   bool
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -431,6 +439,10 @@ ON
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
 	if opts.NewestFirst {
 		order = sqlf.Sprintf("batch_specs.id DESC")
 		if opts.Cursor != 0 {
@@ -452,6 +464,56 @@ ON
 		order,
 	)
 }
+
+// ListBatchSpecRepoIDs lists the repo IDs associated with changeset specs
+// within the batch spec.
+//
+// 🚨 SECURITY: Repos that the current user (based on the context) does not have
+// access to will be filtered out.
+func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) (ids []api.RepoID, err error) {
+	ctx, _, endObservation := s.operations.listBatchSpecRepoIDs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int64("ID", id)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, errors.Wrap(err, "ListBatchSpecRepoIDs generating authz query conds")
+	}
+
+	q := sqlf.Sprintf(
+		listBatchSpecRepoIDsQueryFmtstr,
+		id,
+		authzConds,
+	)
+
+	ids = make([]api.RepoID, 0)
+	if err := s.query(ctx, q, func(s dbutil.Scanner) (err error) {
+		var id api.RepoID
+		if err := s.Scan(&id); err != nil {
+			return err
+		}
+
+		ids = append(ids, id)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+const listBatchSpecRepoIDsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecRepoIDs
+SELECT DISTINCT repo.id
+FROM repo
+LEFT JOIN changeset_specs ON repo.id = changeset_specs.repo_id
+LEFT JOIN batch_specs ON changeset_specs.batch_spec_id = batch_specs.id
+WHERE
+	repo.deleted_at IS NULL
+	AND batch_specs.id = %s
+	AND %s -- authz query conds
+`
 
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
@@ -481,6 +543,7 @@ func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[i
 			&s.ResolutionDone,
 			&s.Workspaces,
 			&s.SkippedWorkspaces,
+			&s.CachedWorkspaces,
 			&dbutil.NullTime{Time: &s.StartedAt},
 			&dbutil.NullTime{Time: &s.FinishedAt},
 			&s.Executions,
@@ -517,6 +580,7 @@ SELECT
 	COALESCE(res_job.state IN ('completed', 'failed'), FALSE) AS resolution_done,
 	COUNT(ws.id) AS workspaces,
 	COUNT(ws.id) FILTER (WHERE ws.skipped) AS skipped_workspaces,
+	COUNT(ws.id) FILTER (WHERE ws.cached_result_found) AS cached_workspaces,
 	MIN(jobs.started_at) AS started_at,
 	MAX(jobs.finished_at) AS finished_at,
 	COUNT(jobs.id) AS executions,
@@ -536,7 +600,7 @@ GROUP BY batch_specs.id, res_job.state
 `
 
 var deleteExpiredBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
+-- source: enterprise/internal/batches/store/batch_specs.go:DeleteExpiredBatchSpecs
 DELETE FROM
   batch_specs
 WHERE
@@ -549,6 +613,40 @@ AND NOT created_from_raw
 AND NOT EXISTS (
   SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
 )
+`
+
+// GetBatchSpecDiffStat calculates the total diff stat for the batch spec based
+// on the changeset spec columns. It respects the actor in the context for repo
+// permissions.
+func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, changed, deleted int64, err error) {
+	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return 0, 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
+	}
+
+	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id, authzConds)
+	row := s.QueryRow(ctx, q)
+	err = row.Scan(&added, &deleted, &changed)
+	return added, deleted, changed, err
+}
+
+const getTotalDiffStatQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
+SELECT
+	COALESCE(SUM(diff_stat_added), 0) AS added,
+	COALESCE(SUM(diff_stat_changed), 0) AS changed,
+	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
+FROM
+	changeset_specs
+INNER JOIN
+	repo ON repo.id = changeset_specs.repo_id
+WHERE
+	repo.deleted_at IS NULL
+	AND batch_spec_id = %s
+	AND (%s)
 `
 
 func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {

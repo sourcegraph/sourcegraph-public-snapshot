@@ -4,7 +4,9 @@ import classNames from 'classnames'
 
 import styles from './CodeInsightsBatchesIcon.module.scss'
 
-export const CodeInsightsBatchesIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const CodeInsightsBatchesIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+}) => (
     <svg
         width="40"
         height="40"

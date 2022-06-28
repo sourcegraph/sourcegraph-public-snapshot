@@ -129,7 +129,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 	i := -1
 	return batch.WithInserterWithReturn(
 		ctx,
-		s.Handle().DB(),
+		s.Handle(),
 		"batch_spec_workspaces",
 		batch.MaxNumPostgresParameters,
 		batchSpecWorkspaceInsertColumns,
@@ -200,10 +200,12 @@ type ListBatchSpecWorkspacesOpts struct {
 	BatchSpecID int64
 	IDs         []int64
 
-	State                 btypes.BatchSpecWorkspaceExecutionJobState
-	OnlyWithoutExecution  bool
-	OnlyCachedOrCompleted bool
-	TextSearch            []search.TextSearchTerm
+	State                            btypes.BatchSpecWorkspaceExecutionJobState
+	OnlyWithoutExecutionAndNotCached bool
+	OnlyCachedOrCompleted            bool
+	Cancel                           *bool
+	Skipped                          *bool
+	TextSearch                       []search.TextSearchTerm
 }
 
 func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db database.DB, forCount bool) (where *sqlf.Query, joinStatements *sqlf.Query, err error) {
@@ -238,14 +240,23 @@ func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db databas
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
 	}
 
-	if opts.OnlyWithoutExecution {
+	if opts.OnlyWithoutExecutionAndNotCached {
 		ensureJoinExecution()
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id IS NULL AND NOT batch_spec_workspaces.cached_result_found"))
 	}
 
 	if opts.OnlyCachedOrCompleted {
 		ensureJoinExecution()
 		preds = append(preds, sqlf.Sprintf("(batch_spec_workspaces.cached_result_found OR batch_spec_workspace_execution_jobs.state = %s)", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+	}
+
+	if opts.Cancel != nil {
+		ensureJoinExecution()
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+	}
+
+	if opts.Skipped != nil {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.skipped = %s", *opts.Skipped))
 	}
 
 	if len(opts.TextSearch) != 0 {

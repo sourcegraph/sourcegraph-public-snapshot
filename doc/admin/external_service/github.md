@@ -5,11 +5,24 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 To connect GitHub to Sourcegraph:
 
 1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
+    1. *Site admin*: Go to **Site admin > Manage code hosts**
     1. *User*: Go to **Settings > Manage repositories**.
 1. Select **GitHub**.
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
+
+In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
+
+```
+{
+  "url": "https://github.com",
+  "token": "<access token>",
+  "orgs": [],
+  "repos": [
+    "kubernetes/kubernetes"
+  ]
+}
+```
 
 > NOTE: Adding code hosts as a user is currently in private beta.
 
@@ -22,10 +35,10 @@ To connect GitHub to Sourcegraph:
 
 There are four fields for configuring which repositories are mirrored/synchronized:
 
-- [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
-- [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
-- [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
+- [`repos`](github.md#repos)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
+- [`orgs`](github.md#orgs)<br>A list of organizations (every repository belonging to the organization will be cloned).
+- [`repositoryQuery`](github.md#repositoryQuery)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`exclude`](github.md#exclude)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
 ### Private repositories
 

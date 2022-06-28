@@ -11,7 +11,7 @@ interface ErrorContext {
 }
 
 export function isDatadogRumAvailable(): boolean {
-    return typeof DD_RUM !== 'undefined'
+    return typeof DD_RUM !== 'undefined' && typeof DD_RUM.addError !== 'undefined'
 }
 
 export const DatadogClient = {

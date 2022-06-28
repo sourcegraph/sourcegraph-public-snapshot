@@ -1,11 +1,10 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Icon, Link } from '@sourcegraph/wildcard'
+import { Icon, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 
@@ -29,7 +28,7 @@ interface ExternalServiceCardProps {
 
     namespace?: ExternalServiceFields['namespace']
 
-    to?: H.LocationDescriptor
+    to?: string
     className?: string
 }
 
@@ -44,20 +43,20 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
 }) => {
     const children = (
         <div className={classNames('p-3 d-flex align-items-start border', className)}>
-            <Icon className="h3 mb-0 mr-3" as={CardIcon} />
+            <Icon className="h3 mb-0 mr-3" as={CardIcon} aria-hidden={true} />
             <div className="flex-1">
-                <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
+                <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
                     {title}
                     {namespace && (
                         <small>
                             {' '}
                             by
-                            <Icon as={AccountIcon} />
+                            <Icon as={AccountIcon} aria-hidden={true} />
                             <Link to={namespace.url}>{namespace.namespaceName}</Link>
                         </small>
                     )}
-                </h3>
-                {shortDescription && <p className="mb-0 text-muted">{shortDescription}</p>}
+                </H3>
+                {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
             {to && <ChevronRightIcon className="align-self-center" />}
         </div>

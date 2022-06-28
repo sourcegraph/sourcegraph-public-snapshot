@@ -15,6 +15,9 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
+    H2,
+    H3,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -241,7 +244,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
             <div className="mb-2">
-                <h3>Summary</h3>
+                <H3>Summary</H3>
                 <div className={styles.container}>
                     <SingleValueCard
                         className={styles.item}
@@ -291,16 +294,16 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
     return (
         <div className="site-admin-survey-responses-page">
             <PageTitle title="User feedback survey - Admin" />
-            <h2>User feedback survey</h2>
-            <p>
+            <H2>User feedback survey</H2>
+            <Text>
                 After using Sourcegraph for a few days, users are presented with a request to answer "How likely is it
                 that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some feedback.
                 Responses are visible below (and are also sent to Sourcegraph).
-            </p>
+            </Text>
 
             <SiteAdminSurveyResponsesSummary />
 
-            <h3>Responses</h3>
+            <H3>Responses</H3>
 
             <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                 <TabList>
