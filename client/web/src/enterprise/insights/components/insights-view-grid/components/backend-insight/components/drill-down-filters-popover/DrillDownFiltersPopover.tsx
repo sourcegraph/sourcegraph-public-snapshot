@@ -7,7 +7,7 @@ import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Posit
 
 import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
 import { Insight, InsightFilters } from '../../../../../../core'
-import { InsightType, SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
+import { SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -113,7 +113,6 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
                         visualMode={FilterSectionVisualMode.CollapseSections}
-                        showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         seriesCount={insight.seriesCount}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}

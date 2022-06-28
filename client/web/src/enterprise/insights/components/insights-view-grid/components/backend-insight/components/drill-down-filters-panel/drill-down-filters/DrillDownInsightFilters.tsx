@@ -59,8 +59,6 @@ interface DrillDownInsightFilters {
 
     className?: string
 
-    showSeriesDisplayOptions: boolean
-
     seriesCount: number
 
     /** Fires whenever the user changes filter value in any form input. */
@@ -93,7 +91,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalSeriesDisplayOptions,
         onSeriesDisplayOptionsChange,
         onVisualModeChange = noop,
-        showSeriesDisplayOptions,
         seriesCount,
         onFilterValuesChange = noop,
     } = props
@@ -205,25 +202,23 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             </header>
             <hr className={styles.headerSeparator} />
 
-            <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
-                {showSeriesDisplayOptions && (
-                    <FilterCollapseSection
-                        open={isHorizontalMode || activeSection === FilterSection.SortFilter}
-                        title="Sort & Limit"
-                        aria-label="sort and limit filter section"
-                        preview={getSortPreview(parseSeriesDisplayOptions(seriesCount, seriesDisplayOptions))}
-                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
-                        withSeparators={!isHorizontalMode}
-                        onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
-                    >
-                        <SortFilterSeriesPanel
-                            limit={seriesDisplayOptions.limit}
-                            selectedOption={seriesDisplayOptions.sortOptions}
-                            onChange={handleSeriesDisplayOptionsChange}
-                            seriesCount={seriesCount}
-                        />
-                    </FilterCollapseSection>
-                )}
+            <div className={classNames({ [styles.panelsHorizontalMode]: isHorizontalMode })}>
+                <FilterCollapseSection
+                    open={isHorizontalMode || activeSection === FilterSection.SortFilter}
+                    title="Sort & Limit"
+                    aria-label="sort and limit filter section"
+                    preview={getSortPreview(parseSeriesDisplayOptions(seriesCount, seriesDisplayOptions))}
+                    hasActiveFilter={hasSeriesDisplayOptionsChanged}
+                    withSeparators={!isHorizontalMode}
+                    onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
+                >
+                    <SortFilterSeriesPanel
+                        limit={seriesDisplayOptions.limit}
+                        selectedOption={seriesDisplayOptions.sortOptions}
+                        onChange={handleSeriesDisplayOptionsChange}
+                        seriesCount={seriesCount}
+                    />
+                </FilterCollapseSection>
 
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
