@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import { of } from 'rxjs'
@@ -22,7 +21,6 @@ import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
 import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
-import styles from './RecentSearchesPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -64,10 +62,8 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
-    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
-    const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
 
     // Only update processed results when results are valid to prevent
     // flashing loading screen when "Show more" button is clicked
