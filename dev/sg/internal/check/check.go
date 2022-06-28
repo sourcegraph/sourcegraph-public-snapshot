@@ -16,21 +16,12 @@ import (
 
 type CheckFunc func(context.Context) error
 
-type ErrNotInPath struct{ cmd string }
-
-func (e ErrNotInPath) Error() string { return fmt.Sprintf("executable %q not found in $PATH", e.cmd) }
-
-func (e ErrNotInPath) Is(target error) bool {
-	_, is := target.(ErrNotInPath)
-	return is
-}
-
 func InPath(cmd string) CheckFunc {
 	return func(ctx context.Context) error {
 		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
 		_, err := usershell.CombinedExec(ctx, hashCmd)
 		if err != nil {
-			return ErrNotInPath{cmd: cmd}
+			return errors.Newf("executable %q not found in $PATH", cmd)
 		}
 		return nil
 	}

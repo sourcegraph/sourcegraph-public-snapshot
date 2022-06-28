@@ -168,7 +168,7 @@ func categoryProgrammingLanguagesAndTools() category {
 					for _, c := range []check.CheckAction[CheckArgs]{
 						checkGoVersion, checkYarnVersion, checkNodeVersion, checkRustVersion,
 					} {
-						if err := c(ctx, out, args); errors.Is(err, check.ErrNotInPath{}) {
+						if err := c(ctx, out, args); err != nil {
 							return errors.Wrap(err, "we may need to regenerate asdf shims")
 						}
 					}

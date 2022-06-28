@@ -1,22 +1,10 @@
 package check
 
 import (
-	"context"
-	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
 )
-
-func TestCheckInPath(t *testing.T) {
-	err := InPath("definitely-is-not-a-real-command")(context.Background())
-	assert.NotNil(t, err)
-	assert.True(t, errors.Is(err, ErrNotInPath{}))
-
-	// Also sanity test that this works if err is nil
-	assert.False(t, errors.Is(nil, ErrNotInPath{}))
-}
 
 func TestCheckVersion(t *testing.T) {
 	tests := []struct {
