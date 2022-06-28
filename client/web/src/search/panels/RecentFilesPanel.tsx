@@ -18,8 +18,9 @@ import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import { ShowMoreButton } from './ShowMoreButton'
+import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
+import styles from './RecentSearchesPanel.module.scss'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
@@ -62,7 +63,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
 
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
-
+    const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
     // Only update processed results when results are valid to prevent
     // flashing loading screen when "Show more" button is clicked
     useEffect(() => {
@@ -113,29 +114,35 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     }
 
     const contentDisplay = (
-        <div>
-            <div className="mb-1 mt-2">
-                <small>Files</small>
-            </div>
-            {processedResults?.length && (
-                <ul className="list-group-flush list-group mb-2">
-                    {processedResults.map((recentFile, index) => (
-                        <li key={index} className="text-monospace mb-2 d-block">
-                            <small>
-                                <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
-                                    {recentFile.repoName} › {recentFile.filePath}
-                                </Link>
-                            </small>
-                        </li>
+        <>
+            <table className={classNames('mt-2', styles.resultsTable)}>
+                <thead>
+                    <tr className={styles.resultsTableRow}>
+                        <th>
+                            <small>File</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {processedResults?.map((recentFile, index) => (
+                        <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                            <td>
+                                <small>
+                                    <Link
+                                    to={recentFile.url}
+                                    ref={getItemRef(index)}
+                                    onClick={logFileClicked}
+                                    data-testid="recent-files-item"
+                                    >
+                                        {recentFile.repoName} › {recentFile.filePath}
+                                    </Link>
+                                </small>
+                            </td>
+                        </tr>
                     ))}
-                </ul>
-            )}
-            {recentFiles?.pageInfo.hasNextPage && (
-                <div>
-                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
-                </div>
-            )}
-        </div>
+                </tbody>
+            </table>
+        </>
     )
 
     const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
@@ -172,7 +179,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     const gitFilesDisplay = (
         <div>
             <div className="mb-1 mt-2">
-                <small>Files</small>
+                <small>File</small>
             </div>
             {gitSet.size > 0 && (
                 <ul className="list-group-flush list-group mb-2">
@@ -184,6 +191,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                                     onClick={logFileClicked}
                                     data-testid="recent-files-item"
                                 >
+                                    ›
                                     {file}
                                 </Link>
                             </small>
