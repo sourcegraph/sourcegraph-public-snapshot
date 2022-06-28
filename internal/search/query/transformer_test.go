@@ -256,6 +256,111 @@ func TestSubstituteConcat(t *testing.T) {
 	}
 }
 
+func TestStandardConcat(t *testing.T) {
+	test := func(input string) string {
+		query, _ := ParseSearchType(input, SearchTypeStandard)
+		json, _ := PrettyJSON(query)
+		return json
+	}
+
+	autogold.Want(
+		"01",
+		`[
+  {
+    "value": "alsace",
+    "negated": false,
+    "labels": [
+      "Regexp"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 8
+      }
+    }
+  },
+  {
+    "value": "bourgogne bordeaux",
+    "negated": false,
+    "labels": [
+      "Literal"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 9
+      },
+      "end": {
+        "line": 0,
+        "column": 18
+      }
+    }
+  }
+]`).
+		Equal(t, test(`/alsace/ bourgogne bordeaux`))
+
+	autogold.Want(
+		"02",
+		`[
+  {
+    "value": "alsace",
+    "negated": false,
+    "labels": [
+      "Literal"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 6
+      }
+    }
+  },
+  {
+    "value": "bourgogne",
+    "negated": false,
+    "labels": [
+      "Regexp"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 7
+      },
+      "end": {
+        "line": 0,
+        "column": 18
+      }
+    }
+  },
+  {
+    "value": "bordeaux",
+    "negated": false,
+    "labels": [
+      "Literal"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 19
+      },
+      "end": {
+        "line": 0,
+        "column": 27
+      }
+    }
+  }
+]`).
+		Equal(t, test(`alsace /bourgogne/ bordeaux`))
+}
+
 func TestEllipsesForHoles(t *testing.T) {
 	input := "if ... { ... }"
 	want := `"if :[_] { :[_] }"`

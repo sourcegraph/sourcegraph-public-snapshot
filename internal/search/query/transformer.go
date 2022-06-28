@@ -581,6 +581,80 @@ func fuzzyRegexp(patterns []Pattern) []Node {
 	}
 }
 
+// standard reduces a sequence of Patterns such that:
+//
+// - adjacent literal patterns are concattenated with space. I.e., contiguous
+// literal patterns are joined on space to create one literal pattern.
+//
+// - any patterns adjacent to regular expression patterns are AND-ed.
+//
+// Concrete examples of input strings and equivalent transformation:
+//
+// `/foo/ /bar/ baz` -> (/foo/ AND /bar/ AND content:"baz")
+// `/foo/ bar baz` -> (/foo/ AND content:"bar baz")
+// `/foo/ bar /baz/` -> (/foo/ AND content:"bar" AND /baz/)
+func standard(patterns []Pattern) []Node {
+	if len(patterns) == 1 {
+		return []Node{patterns[0]}
+	}
+
+	var literals []Pattern
+	var result []Node
+	if patterns[0].Annotation.Labels.IsSet(Regexp) {
+		result = append(result, patterns[0])
+	} else {
+		literals = append(literals, patterns[0])
+	}
+
+	for _, p := range patterns[1:] {
+		if p.Annotation.Labels.IsSet(Regexp) {
+			if len(literals) > 0 {
+				var ll []string
+
+				for _, p := range literals {
+					ll = append(ll, p.Value)
+				}
+
+				literalPattern := Pattern{
+					// Preserve annotation to flag this is a
+					// literal pattern. Does not update
+					// range!
+					Annotation: literals[0].Annotation,
+					Value:      strings.Join(ll, " "),
+				}
+
+				result = append(result, literalPattern)
+			}
+
+			result = append(result, p)
+			literals = []Pattern{}
+		} else {
+			// Assume literal.
+			literals = append(literals, p)
+		}
+	}
+
+	if len(literals) > 0 {
+		var ll []string
+
+		for _, p := range literals {
+			ll = append(ll, p.Value)
+		}
+
+		literalPattern := Pattern{
+			// Preserve annotation to flag this is a
+			// literal pattern. Does not update
+			// range!
+			Annotation: literals[0].Annotation,
+			Value:      strings.Join(ll, " "),
+		}
+
+		result = append(result, literalPattern)
+	}
+
+	return result
+}
+
 // fuzzyRegexp interpolates patterns with spaces and concatenates them.
 // Invariant: len(patterns) > 0.
 func space(patterns []Pattern) []Node {
