@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState } from 'react'
 
 import { mdiChartLineVariant, mdiChartTimelineVariantShimmer } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,6 +7,7 @@ import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
 import { upperFirst } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
+import { useQuery } from '@sourcegraph/http-client'
 import {
     H2,
     Card,
@@ -22,11 +23,10 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LineChart, ParentSize, Series } from '../../charts'
-import { AnalyticsDateRange } from '../../graphql-operations'
+import { AnalyticsDateRange, SearchStatisticsResult, SearchStatisticsVariables } from '../../graphql-operations'
 
-import * as api from './api'
 import { formatNumber } from './format-number'
-import { useFetch } from './use-fetch'
+import { SEARCH_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
@@ -92,11 +92,11 @@ interface ChatLegendItemProps {
 }
 
 const ChartLegendItem: React.FunctionComponent<ChatLegendItemProps> = ({ value, color, description }) => (
-    <div className="d-flex flex-column align-items-center mr-3">
+    <div className="d-flex flex-column align-items-center mr-3 justify-content-center">
         <span style={{ color }} className={styles.count}>
             {formatNumber(value)}
         </span>
-        {description}
+        <span className={classNames('text-center', styles.textWrap)}>{description}</span>
     </div>
 )
 
@@ -238,13 +238,16 @@ const Chart: React.FunctionComponent<ChartProps> = ({
 export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
     const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
-    const fetchSearches = useCallback(() => api.fetchSearchStatistics(dateRange).toPromise(), [dateRange])
-    const [data, isLoading, error] = useFetch(fetchSearches)
+    const { data, error, loading } = useQuery<SearchStatisticsResult, SearchStatisticsVariables>(SEARCH_STATISTICS, {
+        variables: {
+            dateRange,
+        },
+    })
     const [stats, timeSavedStats] = useMemo(() => {
         if (!data) {
             return []
         }
-        const { searches, fileViews, fileOpens } = data
+        const { searches, fileViews, fileOpens } = data.site.analytics.search
         const stats = [
             {
                 ...searches.summary,
@@ -279,7 +282,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         ]
         const timeSavedStats = [
             {
-                label: 'Searches &\nfile views',
+                label: 'Searches,\nfile views\n& file opens',
                 color: 'var(--purple)',
                 minPerItem: 5,
                 description:
@@ -294,7 +297,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         return <div>Something went wrong! :( Please, try again later. </div>
     }
 
-    if (isLoading) {
+    if (loading) {
         return <LoadingSpinner />
     }
 
@@ -352,6 +355,78 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 {timeSavedStats?.map(timeSavedStatItem => (
                     <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
                 ))}
+            </Card>
+        </>
+    )
+}
+
+export const AnalyticsOverview: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    return (
+        <>
+            <H2 className="my-4 d-flex align-items-center">
+                <Icon
+                    className="mr-1"
+                    color="var(--link-color)"
+                    svgPath={mdiChartLineVariant}
+                    size="sm"
+                    aria-label="Search Statistics"
+                />
+                Statistics / Overview
+            </H2>
+
+            <Card className="p-2 position-relative">
+                <div className="d-flex justify-content-end">
+                    <DateRangeSelector dateRange={dateRange} onDateRangeChange={setDateRange} />
+                </div>
+                <ChartLegendList
+                    className="mb-3 mx-auto"
+                    items={[
+                        {
+                            description: 'Active Users',
+                            color: 'var(--body-color)',
+                            value: 200,
+                        },
+                        {
+                            description: 'Events',
+                            color: 'var(--body-color)',
+                            value: 100000,
+                        },
+
+                        {
+                            description: 'Hours saved',
+                            color: 'var(--purple)',
+                            value: 1200,
+                        },
+                    ]}
+                />
+                {/* // TODO: event type table */}
+                <Grid columnCount={4} spacing={1} className="mx-6">
+                    <Text>EVENT TYPE</Text>
+                    <Text>COUNT</Text>
+                    <Text>AVG MIN PER</Text>
+                    <Text>HOURS</Text>
+
+                    <Text>Search</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+
+                    <Text>Code intel</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+
+                    <Text>Code insights</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+
+                    <Text>Batch changes</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+                </Grid>
             </Card>
         </>
     )
