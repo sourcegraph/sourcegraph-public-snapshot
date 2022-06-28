@@ -46,7 +46,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
         toastContentClassName="mt-0"
         cta={
             <SurveyUseCaseForm
-                title="You are using sourcegraph to..."
+                title="You are using Sourcegraph to..."
                 authenticatedUser={authenticatedUser}
                 useCases={useCases}
                 onChangeUseCases={onChangeUseCases}
