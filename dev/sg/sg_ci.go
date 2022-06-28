@@ -146,7 +146,6 @@ sg ci build --help
 				Aliases: []string{"v"},
 				Usage:   "Open build page in browser",
 			},
-			&ciBranchFlag,
 		},
 		Action: func(ctx *cli.Context) error {
 			client, err := bk.NewClient(ctx.Context, std.Out.Output)
