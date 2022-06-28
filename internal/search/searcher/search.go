@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A global limiter on number of concurrent searcher searches.
@@ -88,49 +87,51 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	textSearchLimiter.SetLimit(len(eps) * 32)
 
 	g, ctx := errgroup.WithContext(ctx)
-	defer func() { err = errors.Append(err, g.Wait()) }()
-
-	for _, repoAllRevs := range s.Repos {
-		repo := repoAllRevs.Repo // capture repo
-		if len(repoAllRevs.Revs) == 0 {
-			continue
-		}
-
-		revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, clients.DB)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, rev := range revSpecs {
-			rev := rev // capture rev
-			limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
-			if err != nil {
-				return nil, err
+	g.Go(func() error {
+		for _, repoAllRevs := range s.Repos {
+			repo := repoAllRevs.Repo // capture repo
+			if len(repoAllRevs.Revs) == 0 {
+				continue
 			}
 
-			g.Go(func() error {
-				ctx, done := limitCtx, limitDone
-				defer done()
-
-				repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
-				if err != nil {
-					tr.LogFields(log.String("repo", string(repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
-					log15.Warn("searchFilesInRepo failed", "error", err, "repo", repo.Name)
-				}
-				// non-diff search reports timeout through err, so pass false for timedOut
-				status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
-				stream.Send(streaming.SearchEvent{
-					Stats: streaming.Stats{
-						Status:     status,
-						IsLimitHit: limitHit,
-					},
-				})
+			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, clients.DB)
+			if err != nil {
 				return err
-			})
-		}
-	}
+			}
 
-	return nil, nil
+			for _, rev := range revSpecs {
+				rev := rev // capture rev
+				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
+				if err != nil {
+					return err
+				}
+
+				g.Go(func() error {
+					ctx, done := limitCtx, limitDone
+					defer done()
+
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					if err != nil {
+						tr.LogFields(log.String("repo", string(repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
+						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repo.Name)
+					}
+					// non-diff search reports timeout through err, so pass false for timedOut
+					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
+					stream.Send(streaming.SearchEvent{
+						Stats: streaming.Stats{
+							Status:     status,
+							IsLimitHit: limitHit,
+						},
+					})
+					return err
+				})
+			}
+		}
+
+		return nil
+	})
+
+	return nil, g.Wait()
 }
 
 func (s *TextSearchJob) Name() string {
