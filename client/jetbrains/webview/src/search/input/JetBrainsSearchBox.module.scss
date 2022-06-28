@@ -156,7 +156,9 @@
     }
 
     :global(.cm-editor) :global(.cm-tooltip-autocomplete) > ul > li {
-        &[aria-selected] {
+        &[aria-selected],
+        &:hover,
+        &:focus {
             background-color: var(--dropdown-link-active-bg);
 
             :global(.cm-completionMatchedText) {
