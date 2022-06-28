@@ -164,7 +164,11 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifsto
 		a = actor.FromContext(ctx)
 	}
 	for _, location := range locations {
-		upload, _ := r.uploadFromCache(location.DumpID)
+		upload, ok := r.uploadFromCache(location.DumpID)
+		if !ok {
+			continue
+		}
+
 		adjustedLocation, err := r.adjustLocation(ctx, upload, location)
 		if err != nil {
 			return nil, err
