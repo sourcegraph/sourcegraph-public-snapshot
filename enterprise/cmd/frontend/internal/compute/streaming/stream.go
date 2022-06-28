@@ -9,7 +9,9 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,17 +27,20 @@ func NewComputeStreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		flushTickerInternal: 100 * time.Millisecond,
+		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
 	db                  database.DB
 	flushTickerInternal time.Duration
+	pingTickerInterval  time.Duration
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 	defer cancel()
+	start := time.Now()
 
 	args, err := parseURLQuery(r.URL.Query())
 	if err != nil {
@@ -53,6 +58,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	progress := &streamclient.ProgressAggregator{
+		Start:     start,
+		RepoNamer: streamclient.RepoNamer(ctx, h.db),
+		Trace:     trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
+	}
+
+	sendProgress := func() {
+		_ = eventWriter.Event("progress", progress.Current())
 	}
 
 	// Always send a final done event so clients know the stream is shutting
@@ -76,12 +91,22 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
+
+		if progress.Dirty {
+			sendProgress()
+		}
 	}
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
+	pingTicker := time.NewTicker(h.pingTickerInterval)
+	defer pingTicker.Stop()
+
 	first := true
 	handleEvent := func(event Event) {
+		progress.Dirty = true
+		progress.Stats.Update(&event.Stats)
+
 		for _, result := range event.Results {
 			_ = matchesBuf.Append(result)
 		}
@@ -91,7 +116,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			first = false
 			matchesFlush()
 		}
-
 	}
 
 LOOP:
@@ -104,6 +128,8 @@ LOOP:
 			handleEvent(event)
 		case <-flushTicker.C:
 			matchesFlush()
+		case <-pingTicker.C:
+			sendProgress()
 		}
 	}
 
@@ -135,6 +161,8 @@ LOOP:
 			ProposedQueries: pqs,
 		})
 	}
+
+	_ = eventWriter.Event("progress", progress.Final())
 }
 
 type args struct {

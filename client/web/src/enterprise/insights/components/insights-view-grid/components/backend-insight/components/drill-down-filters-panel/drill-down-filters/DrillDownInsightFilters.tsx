@@ -64,8 +64,6 @@ interface DrillDownInsightFilters {
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
-    onFilterValuesChange?: (values: DrillDownFiltersFormValues) => void
-
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues, displayOptions: SeriesDisplayOptionsInput) => SubmissionResult
 
@@ -92,7 +90,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         onSeriesDisplayOptionsChange,
         onVisualModeChange = noop,
         seriesCount,
-        onFilterValuesChange = noop,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
@@ -101,7 +98,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
         onChange: onFiltersChange,
-        onPureValueChange: onFilterValuesChange,
         onSubmit: values => onFilterSave(values, seriesDisplayOptions),
     })
 
