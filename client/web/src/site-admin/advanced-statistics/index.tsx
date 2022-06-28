@@ -1,19 +1,15 @@
 /* eslint-disable react/forbid-dom-props */
 import { useMemo, useState, useCallback } from 'react'
 
-import { mdiChartLineVariant } from '@mdi/js'
+import { mdiChartLineVariant, mdiChartTimelineVariantShimmer } from '@mdi/js'
 import classNames from 'classnames'
 import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
+import { upperFirst } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import {
     H2,
     Card,
-    Tabs,
-    TabList,
-    Tab,
-    TabPanels,
-    TabPanel,
     Select,
     Input,
     H3,
@@ -26,7 +22,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LineChart, ParentSize, Series } from '../../charts'
-import { PageTitle } from '../../components/PageTitle'
 import { AnalyticsDateRange } from '../../graphql-operations'
 
 import * as api from './api'
@@ -240,7 +235,7 @@ const Chart: React.FunctionComponent<ChartProps> = ({
     )
 }
 
-const StatisticSearch: React.FunctionComponent = () => {
+export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
     const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
     const fetchSearches = useCallback(() => api.fetchSearchStatistics(dateRange).toPromise(), [dateRange])
@@ -305,7 +300,7 @@ const StatisticSearch: React.FunctionComponent = () => {
 
     return (
         <>
-            <H2 className="my-4 d-flex align-items-center">
+            <H2 className="mb-4 d-flex align-items-center">
                 <Icon
                     className="mr-1"
                     color="var(--link-color)"
@@ -313,7 +308,7 @@ const StatisticSearch: React.FunctionComponent = () => {
                     size="sm"
                     aria-label="Search Statistics"
                 />
-                Statistics / Search
+                Analytics / Search
             </H2>
 
             <Card className="p-2 position-relative">
@@ -362,25 +357,35 @@ const StatisticSearch: React.FunctionComponent = () => {
     )
 }
 
-export const AdvancedStatisticsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => (
-    <>
-        <PageTitle title="Admin analytics" />
-        <Tabs lazy={true} behavior="memoize" size="large">
-            <TabList>
-                <Tab>Search</Tab>
-                <Tab disabled={true}>Code intel</Tab>
-                <Tab disabled={true}>Users</Tab>
-                <Tab disabled={true}>Code insights</Tab>
-                <Tab disabled={true}>Batch changes</Tab>
-                <Tab disabled={true}>Notebooks</Tab>
-                <Tab disabled={true}>Extensions</Tab>
-                <Tab disabled={true}>Overview</Tab>
-            </TabList>
-            <TabPanels>
-                <TabPanel>
-                    <StatisticSearch />
-                </TabPanel>
-            </TabPanels>
-        </Tabs>
-    </>
-)
+export const AnalyticsComingSoon: React.FunctionComponent<RouteComponentProps<{}>> = props => {
+    const title = useMemo(() => {
+        // eslint-disable-next-line unicorn/prefer-array-find
+        const title = props.match.path.split('/').filter(Boolean)[2] ?? 'Overview'
+        return upperFirst(title.replace('-', ' '))
+    }, [props.match.path])
+    return (
+        <>
+            <H2 className="mb-4 d-flex align-items-center">
+                <Icon
+                    className="mr-1"
+                    color="var(--link-color)"
+                    svgPath={mdiChartLineVariant}
+                    size="sm"
+                    aria-label="Search Statistics"
+                />
+                Analytics / {title}
+            </H2>
+            <div className="d-flex flex-column justify-content-center align-items-center p-5">
+                <Icon
+                    svgPath={mdiChartTimelineVariantShimmer}
+                    aria-label="Home analytics icon"
+                    className={classNames(styles.largeIcon, 'm-3')}
+                />
+                <H3>Coming soon</H3>
+                <Text>We are working on making this live.</Text>
+            </div>
+        </>
+    )
+}
+
+// TODO: rename dir to admin-analytics
