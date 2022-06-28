@@ -392,7 +392,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 			//
 			// We aim a bit below the threshold to be safe.
 			bk.Env("GOMAXPROCS", "10"),
-			bk.Env("TESTDB_MAXOPENCONNS", "15")
+			bk.Env("TESTDB_MAXOPENCONNS", "15"),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
 				TestReports: &bk.TestReportOpts{
