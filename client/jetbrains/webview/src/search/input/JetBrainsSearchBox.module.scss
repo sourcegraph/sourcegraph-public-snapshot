@@ -159,7 +159,7 @@
         &[aria-selected],
         &:hover,
         &:focus {
-            background-color: var(--dropdown-link-active-bg);
+            background-color: var(--dropdown-link-active-bg) !important;
 
             :global(.cm-completionMatchedText) {
                 color: var(--light-text);
