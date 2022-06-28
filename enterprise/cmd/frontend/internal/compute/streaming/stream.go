@@ -9,6 +9,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -39,6 +40,7 @@ type streamHandler struct {
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 	defer cancel()
+	start := time.Now()
 
 	args, err := parseURLQuery(r.URL.Query())
 	if err != nil {
@@ -58,8 +60,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	progress := progressAggregator{
+	progress := &streamclient.ProgressAggregator{
+		Start:     start,
 		RepoNamer: streamclient.RepoNamer(ctx, h.db),
+		Trace:     trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 	}
 
 	sendProgress := func() {
