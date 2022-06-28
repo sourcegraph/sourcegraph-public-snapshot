@@ -100,8 +100,11 @@
                     height: 1.25rem;
 
                     svg {
-                        fill: var(--search-query-text-color);
                         flex-shrink: 0;
+
+                        path {
+                            fill: var(--search-query-text-color);
+                        }
                     }
 
                     :global(.cm-completionLabel) {
