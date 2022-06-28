@@ -60,6 +60,14 @@ public class ConfigUtil {
         SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
     }
 
+    public static boolean isInstallEventLogged() {
+        return SourcegraphApplicationService.getInstance().isInstallEventLogged();
+    }
+
+    public static void setInstallEventLogged(boolean value) {
+        SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
+    }
+
     @Nullable
     public static Search getLastSearch(@NotNull Project project) {
         return getProjectLevelConfig(project).getLastSearch();
