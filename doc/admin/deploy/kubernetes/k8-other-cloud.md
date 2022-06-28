@@ -1,25 +1,33 @@
-# Configure Sourcegraph on other Cloud providers or on-prem
+# Configure Sourcegraph on other Cloud Providers or On-Prem
 
 ## Prerequisites {#others-prerequisites}
 
-1. You need to have a Kubernetes cluster (>=1.19) with the following components installed:
-   - Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
-   - Block Storage CSI driver
-1. Your account should have sufficient access privileges, equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+- You need to have a Kubernetes cluster (>=1.19) with the following components installed:
+  - Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
+  - Block Storage CSI driver
+- You need to have an account with sufficient access equivalent to the `cluster-admin` ClusterRole.
+- Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running. You should see several `ready` nodes listed when you run: `kubectl get nodes`.
+- You need to have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository. This should be ran on the machine used to interact with your cluster:
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
+## Hardware and Service Requirements
+
+Before beginning the deployment we recommend reviewing the required hardware and service resource requirements.
+
+Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the override file in the steps below.
+
 ## Steps {#others-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+### Create Override File & Add Deployment Configurations
 
-Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
+Create your override file and add any configuration override settings you need. See the [configuration](./helm/#configuration) documentation for more information on override files and the options for custom configurations.
 
-The following will need to be included in your `override.yaml`, once adapted to your environment.
+Reference the [Kubernetes Storage Class](https://kubernetes.io/docs/concepts/storage/storage-classes/) documentation for guidance on how to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
+
+The following will need to be included in your `override.yaml`, once adapted the Storage Class to your environment.
 
 ```yaml
 frontend:
@@ -41,25 +49,29 @@ storageClass:
     key1: value1
 ```
 
-> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+> ℹ️ You can review the changes using one of the [three mechanisms](./helm#reviewing-changes) to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph.
 
-**2** – Install the chart
+### Install the Sourcegraph Helm chart
+
+Install the Sourcegraph Helm chart by running the following command:
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 3.41.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
+It will take some time for the your ingress to be fully ready. Depending on how your Ingress Controller is configured, you can use the following command to check on the status and obtain the load balancer IP address once available:
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
 ```
 
-**3** – You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
+### Create a DNS Record
 
-It is recommended to enable TLS and configure a certificate properly on your Ingress. You can utilize managed certificate solutions provided by Cloud providers, or your own method.
+Once you have obtained the allocated address of your ingress, you should create a DNS A record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
 
-Alternatively, you may consider configuring [cert-manager with Let's Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster and add the following override to Ingress.
+It is recommended to enable TLS and configure a certificate on your Ingress. You can utilize managed certificate solutions provided by Cloud providers, or your own method.
+
+We recommend configuring [cert-manager with Let's Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. You can do this by adding the following override to your Ingress:
 
 ```yaml
 frontend:
@@ -76,9 +88,10 @@ frontend:
     host: sourcegraph.company.com
 ```
 
-You also have the option to manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
+If you prefer to use your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
+1. Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -93,11 +106,13 @@ data:
     MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ...
 ```
 
+2. Apply the configuration by running:
+
 ```sh
 kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
 ```
 
-Add the following values to your override file.
+3. Add the following values to your override file:
 
 ```yaml
 frontend:
@@ -112,11 +127,12 @@ frontend:
     host: sourcegraph.company.com
 ```
 
-**4** – Validate the deployment
+### Validate the deployment
+
 Sourcegraph should now be available via the address set.
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
-**5** – Further configuration
+Navigate to the URL in your browser to ensure you now have access to the Sourcegraph UI to create the initial administrator account.
 
-Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config/index.md)
+### Sourcegraph Configuration
+
+At this stage the deployment is considered to be complete. You are now ready to configure your Sourcegraph instance (site configuration, code host configuration, search configuration etc). Please see our [Configuring Sourcegraph](../../config/index.md) documentation for guidance.

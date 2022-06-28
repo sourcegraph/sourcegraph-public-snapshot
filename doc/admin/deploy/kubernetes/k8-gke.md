@@ -126,7 +126,7 @@ data:
 kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
 ```
 
-3. Add the following values to your override file.
+3. Add the following values to your override file:
 
 ```yaml
 frontend:
