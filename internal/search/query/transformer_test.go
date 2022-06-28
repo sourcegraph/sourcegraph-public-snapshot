@@ -198,62 +198,36 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}
 }
 
-func TestSubstituteConcat(t *testing.T) {
-	cases := []struct {
-		input  string
-		concat func([]Pattern) []Node
-		want   string
-	}{
-		{
-			input:  "a b c d e f",
-			concat: space,
-			want:   `"a b c d e f"`,
-		},
-		{
-			input:  "a (b and c) d",
-			concat: space,
-			want:   `"a" (and "b" "c") "d"`,
-		},
-		{
-			input:  "a b (c and d) e f (g or h) (i j k)",
-			concat: space,
-			want:   `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
-		},
-		{
-			input:  "(((a b c))) and d",
-			concat: space,
-			want:   `(and "(((a b c)))" "d")`,
-		},
-		{
-			input:  `foo\d "bar*"`,
-			concat: fuzzyRegexp,
-			want:   `"(?:foo\\d).*?(?:bar\\*)"`,
-		},
-		{
-			input:  `"bar*" foo\d "bar*" foo\d`,
-			concat: fuzzyRegexp,
-			want:   `"(?:bar\\*).*?(?:foo\\d).*?(?:bar\\*).*?(?:foo\\d)"`,
-		},
-		{
-			input:  "a b (c and d) e f (g or h) (i j k)",
-			concat: fuzzyRegexp,
-			want:   `"(?:a).*?(?:b)" (and "c" "d") "(?:e).*?(?:f)" (or "g" "h") "(i j k)"`,
-		},
-		{
-			input:  "(a not b not c d)",
-			concat: space,
-			want:   `"a" (not "b") (not "c") "d"`,
-		},
+func TestConcat(t *testing.T) {
+	test := func(input string, searchType SearchType) string {
+		query, _ := ParseSearchType(input, searchType)
+		json, _ := PrettyJSON(query)
+		return json
 	}
-	for _, c := range cases {
-		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			got := toString(Map(query, substituteConcat(c.concat)))
-			if diff := cmp.Diff(c.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("a b c d e f", SearchTypeLiteral)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("(a not b not c d)", SearchTypeLiteral)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("(((a b c))) and d", SearchTypeLiteral)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`foo\d "bar*"`, SearchTypeRegex)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`"bar*" foo\d "bar*" foo\d`, SearchTypeRegex)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("a b (c and d) e f (g or h) (i j k)", SearchTypeRegex)))
+	})
 }
 
 func TestEllipsesForHoles(t *testing.T) {
