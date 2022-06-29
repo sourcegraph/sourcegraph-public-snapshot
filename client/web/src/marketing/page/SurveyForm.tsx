@@ -105,7 +105,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 className="my-2"
                 authenticatedUser={authenticatedUser}
                 formLabelClassName={styles.label}
-                title="You are using Sourcegraph to..."
+                title="You use Sourcegraph to..."
                 useCases={useCases}
                 onChangeUseCases={setUseCases}
                 otherUseCase={otherUseCase}

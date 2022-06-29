@@ -52,7 +52,7 @@ describe('SurveyPage', () => {
             const score10 = within(recommendRadioGroup).getByLabelText(mockVariables.score)
             fireEvent.click(score10)
 
-            const reasonInput = renderResult.getByLabelText('What can Sourcegraph do to provide a better product?')
+            const reasonInput = renderResult.getByLabelText('What would make Sourcegraph better?')
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 
@@ -63,7 +63,7 @@ describe('SurveyPage', () => {
             const otherUseCaseCheckbox = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseCheckbox)
 
-            const otherUseCaseInput = renderResult.getByLabelText('What else are you using Sourcegraph to do?')
+            const otherUseCaseInput = renderResult.getByLabelText('What else do you use Sourcegraph to do?')
             expect(otherUseCaseInput).toBeVisible()
 
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
