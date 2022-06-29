@@ -271,45 +271,6 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
 `
 
-// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
-func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
-	ctx, trace, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
-	}})
-	defer endObservation(1, observation.Args{})
-
-	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "stuck in uploading state")
-	defer unset(ctx)
-	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)))
-	if err != nil {
-		return 0, err
-	}
-	trace.Log(log.Int("count", count))
-
-	return count, nil
-}
-
-const deleteUploadsStuckUploadingQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsStuckUploading
-WITH
-candidates AS (
-	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.state = 'uploading' AND u.uploaded_at < %s
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
-	ORDER BY u.id FOR UPDATE
-),
-deleted AS (
-	UPDATE lsif_uploads u
-	SET state = 'deleted'
-	WHERE id IN (SELECT id FROM candidates)
-	RETURNING u.repository_id
-)
-SELECT count(*) FROM deleted
-`
-
 type GetUploadsOptions struct {
 	RepositoryID            int
 	State                   string

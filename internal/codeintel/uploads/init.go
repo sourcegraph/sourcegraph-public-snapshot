@@ -19,7 +19,7 @@ var (
 	svcOnce sync.Once
 )
 
-// GetService creates or returns an already-initialized uplopads service. If the service is
+// GetService creates or returns an already-initialized uploads service. If the service is
 // new, it will use the given database handle.
 func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {

@@ -23,7 +23,6 @@ type DBStore interface {
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
 	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 }
 

@@ -30,12 +30,12 @@ func TestStaleSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
-		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
-		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
-		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8)},
+		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
+		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
+		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
+		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8)},
 	)
 
 	sourcedCommits, err := store.StaleSourcedCommits(context.Background(), time.Minute, 5, now)
@@ -84,12 +84,12 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
-		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
-		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
-		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
+		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
+		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
+		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
+		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
 	)
 
 	uploadsUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
@@ -126,13 +126,13 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
-		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
-		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
-		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
-		Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
+		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
+		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
+		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
+		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
+		shared.Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
 	)
 
 	uploadsUpdated, uploadsDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour, now)
@@ -165,7 +165,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
+func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)

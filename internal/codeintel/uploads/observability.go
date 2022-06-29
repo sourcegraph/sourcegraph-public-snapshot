@@ -20,7 +20,9 @@ type operations struct {
 	updateSourcedCommits *observation.Operation
 	deleteSourcedCommits *observation.Operation
 
+	getUploads                     *observation.Operation
 	deleteUploadsWithoutRepository *observation.Operation
+	deleteUploadsStuckUploading    *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -52,6 +54,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateSourcedCommits: op("UpdateSourcedCommits"),
 		deleteSourcedCommits: op("DeleteSourcedCommits"),
 
+		getUploads:                     op("GetUploads"),
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
+		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
 	}
 }
