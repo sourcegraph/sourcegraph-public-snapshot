@@ -11,7 +11,6 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
-	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
@@ -19,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -255,16 +254,15 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit in
 // regexSearch concurrently searches files in zr looking for matches using rg.
 func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
-	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
-	ext.Component.Set(span, "regex_search")
+	span, ctx := trace.New(ctx, "RegexSearch", "regex_search")
+	span.SetTag("component", "regex_search")
 	if rg.re != nil {
 		span.SetTag("re", rg.re.String())
 	}
 	span.SetTag("path", rg.matchPath.String())
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 		}
 		span.Finish()
 	}()

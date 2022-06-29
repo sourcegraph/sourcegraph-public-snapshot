@@ -13,8 +13,7 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -131,11 +131,10 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
+	span, ctx := trace.New(ctx, "symbols.Client.Search", "")
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -200,11 +199,10 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel")
+	span, ctx := trace.New(ctx, "squirrel.Client.LocalCodeIntel", "")
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -236,11 +234,10 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 }
 
 func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.SymbolInfo")
+	span, ctx := trace.New(ctx, "squirrel.Client.SymbolInfo", "")
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -301,11 +298,10 @@ func (c *Client) httpPost(
 	repo api.RepoName,
 	payload any,
 ) (resp *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost")
+	span, ctx := trace.New(ctx, "symbols.Client.httpPost", "")
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -332,13 +328,13 @@ func (c *Client) httpPost(
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
-		span.LogKV("event", "Waiting on HTTP limiter")
+		span.LogFields(log.String("event", "Waiting on HTTP limiter"))
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
-		span.LogKV("event", "Acquired HTTP limiter")
+		span.LogFields(log.String("event", "Acquired HTTP limiter"))
 	}
 
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
 		nethttp.OperationName("Symbols Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

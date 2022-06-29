@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/neelance/parallel"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -87,11 +85,10 @@ func (s *SymbolSearchJob) Tags() []log.Field {
 }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
+	span, ctx := trace.New(ctx, "Search symbols in repo", "")
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()

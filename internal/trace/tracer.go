@@ -6,7 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	internalot "github.com/sourcegraph/sourcegraph/internal/trace/internal/ot"
 )
 
 // A Tracer for trace creation, parameterised over an
@@ -18,14 +18,14 @@ type Tracer struct {
 
 // New returns a new Trace with the specified family and title.
 func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
-	span, ctx := ot.StartSpanFromContextWithTracer(
+	span, ctx := internalot.StartSpanFromContextWithTracer(
 		ctx,
 		t.Tracer,
 		family,
 		tagsOpt{title: title, tags: tags},
 	)
 	tr := nettrace.New(family, title)
-	trace := &Trace{span: span, trace: tr, family: family}
+	trace := &Trace{otSpan: span, trace: tr, family: family}
 	if parent := TraceFromContext(ctx); parent != nil {
 		tr.LazyPrintf("parent: %s", parent.family)
 		trace.family = parent.family + " > " + family

@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	internalot "github.com/sourcegraph/sourcegraph/internal/trace/internal/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -151,7 +152,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		}
 
 		// start new span
-		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext))
+		span, ctx := internalot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext))
 		ext.HTTPUrl.Set(span, r.URL.String())
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))

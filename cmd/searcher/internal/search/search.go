@@ -21,11 +21,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/log"
 
@@ -34,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -133,11 +131,8 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
-	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
-	tr.LazyPrintf("%s", p.Pattern)
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Search")
-	ext.Component.Set(span, "service")
+	span, ctx := trace.New(ctx, "Search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	span.SetTag("component", "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("url", p.URL)
 	span.SetTag("commit", p.Commit)
@@ -162,10 +157,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			code = "canceled"
 			span.SetTag("err", err)
 		} else if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 			if errcode.IsBadRequest(err) {
 				code = "400"
 			} else if errcode.IsTemporary(err) {
@@ -174,8 +166,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
-		tr.Finish()
+
 		metricRequestTotal.WithLabelValues(code).Inc()
 		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
 		span.SetTag("limitHit", sender.LimitHit())
@@ -272,7 +263,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	nFiles := uint64(len(zf.Files))
 	bytes := int64(len(zf.Data))
-	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
 	span.LogFields(
 		otlog.Uint64("archive.files", nFiles),
 		otlog.Int64("archive.size", bytes))

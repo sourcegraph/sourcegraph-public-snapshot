@@ -18,7 +18,7 @@ const traceKey = traceContextKey("trace")
 // SpanContext. External callers should likely use CopyContext, as this properly propagates all
 // tracing context from one context to another.
 func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
-	ctx = opentracing.ContextWithSpan(ctx, tr.span)
+	ctx = opentracing.ContextWithSpan(ctx, tr.otSpan)
 	ctx = context.WithValue(ctx, traceKey, tr)
 	return ctx
 }
@@ -49,12 +49,12 @@ func ID(ctx context.Context) string {
 	if span == nil {
 		return ""
 	}
-	return IDFromSpan(span)
+	return IDFromSpan(&Trace{otSpan: span})
 }
 
 // IDFromSpan returns a trace ID, if any, found in the given span.
-func IDFromSpan(span opentracing.Span) string {
-	traceCtx := ContextFromSpan(span)
+func IDFromSpan(span *Trace) string {
+	traceCtx := ContextFromSpan(span.otSpan)
 	if traceCtx == nil {
 		return ""
 	}

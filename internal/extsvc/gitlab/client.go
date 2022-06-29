@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -235,7 +235,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	}
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
+	span, ctx := tracepkg.New(ctx, "GitLab", "")
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
