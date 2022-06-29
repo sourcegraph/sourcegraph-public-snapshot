@@ -52,7 +52,7 @@ window.initializeSourcegraph = async () => {
 
     renderReactApp()
 
-    await indicateFinishedLoading()
+    await indicateFinishedLoading(authenticatedUser.status === 'fulfilled' && !!authenticatedUser.value)
 }
 
 window.callJS = handleRequest
