@@ -81,9 +81,7 @@
             margin-bottom: 0.5rem;
         }
 
-        > button,
-        > button:hover,
-        > button:focus {
+        > button {
             background: var(--jb-button-bg);
 
             &:hover {
