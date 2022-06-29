@@ -37,6 +37,7 @@ type InsightViewSeries struct {
 	SeriesSortMode                *SeriesSortMode
 	SeriesSortDirection           *SeriesSortDirection
 	SeriesLimit                   *int32
+	GroupBy                       *string
 }
 
 type Insight struct {
@@ -100,6 +101,7 @@ type InsightSeries struct {
 	GeneratedFromCaptureGroups bool
 	JustInTime                 bool
 	GenerationMethod           GenerationMethod
+	GroupBy                    *string
 }
 
 type IntervalUnit string

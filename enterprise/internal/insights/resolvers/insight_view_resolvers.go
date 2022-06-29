@@ -393,8 +393,13 @@ func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Contex
 
 	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
 }
+
 func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups() (bool, error) {
 	return s.series.GeneratedFromCaptureGroups, nil
+}
+
+func (s *searchInsightDataSeriesDefinitionResolver) GroupBy() (*string, error) {
+	return s.series.GroupBy, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
@@ -1016,6 +1021,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
 			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
 			GenerateFromCaptureGroups: dynamic,
+			GroupBy:                   series.GroupBy,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "FindMatchingSeries")
@@ -1036,8 +1042,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
 			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
-			// JustInTime:       false,
-			GenerationMethod: searchGenerationMethod(series),
+			GenerationMethod:           searchGenerationMethod(series),
+			GroupBy:                    series.GroupBy,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
