@@ -181,12 +181,12 @@ func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) string {
 
 	if len(pieces) == 0 {
 		// Match anything.
-		return "(.|\\s)*?"
+		return "(?:.|\\s)*?"
 	}
 
 	if shortcircuit {
 		// As a shortcircuit, do not match across newlines of structural search pieces.
-		return "(" + strings.Join(pieces, ").*?(") + ")"
+		return "(?:" + strings.Join(pieces, ").*?(?:") + ")"
 	}
-	return "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
+	return "(?:" + strings.Join(pieces, ")(?:.|\\s)*?(?:") + ")"
 }

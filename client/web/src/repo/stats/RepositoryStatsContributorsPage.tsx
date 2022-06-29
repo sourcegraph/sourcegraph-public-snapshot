@@ -1,24 +1,35 @@
 import * as React from 'react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
-import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { createAggregateError, numberWithCommas, pluralize, memoizeObservable } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
-import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { numberWithCommas, pluralize } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
-import { FilteredConnection } from '../../components/FilteredConnection'
+import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionList,
+    ConnectionContainer,
+    ConnectionLoading,
+    ConnectionError,
+    SummaryContainer,
+    ConnectionSummary,
+    ShowMoreButton,
+} from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
+import {
+    RepositoryContributorNodeFields,
+    RepositoryContributorsResult,
+    RepositoryContributorsVariables,
+} from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -29,13 +40,13 @@ import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 import styles from './RepositoryStatsContributorsPage.module.scss'
 
 interface QuerySpec {
-    revisionRange: string | null
-    after: string | null
-    path: string | null
+    revisionRange: string
+    after: string
+    path: string
 }
 
 interface RepositoryContributorNodeProps extends QuerySpec {
-    node: GQL.IRepositoryContributor
+    node: RepositoryContributorNodeFields
     repoName: string
     globbing: boolean
 }
@@ -101,82 +112,61 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     )
 }
 
-const queryRepositoryContributors = memoizeObservable(
-    (args: {
-        repo: Scalars['ID']
-        first?: number
-        revisionRange?: string
-        after?: string
-        path?: string
-    }): Observable<GQL.IRepositoryContributorConnection> =>
-        queryGraphQL(
-            gql`
-                query RepositoryContributors(
-                    $repo: ID!
-                    $first: Int
-                    $revisionRange: String
-                    $after: String
-                    $path: String
-                ) {
-                    node(id: $repo) {
-                        ... on Repository {
-                            contributors(first: $first, revisionRange: $revisionRange, after: $after, path: $path) {
-                                nodes {
-                                    person {
-                                        name
-                                        displayName
-                                        email
-                                        avatarURL
-                                        user {
-                                            username
-                                            url
-                                        }
-                                    }
-                                    count
-                                    commits(first: 1) {
-                                        nodes {
-                                            oid
-                                            abbreviatedOID
-                                            url
-                                            subject
-                                            author {
-                                                date
-                                            }
-                                        }
-                                    }
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                }
-                            }
-                        }
-                    }
+const CONTRIBUTORS_QUERY = gql`
+    query RepositoryContributors($repo: ID!, $first: Int, $revisionRange: String, $afterDate: String, $path: String) {
+        node(id: $repo) {
+            ... on Repository {
+                contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
+                    ...RepositoryContributorConnectionFields
                 }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.node || !(data.node as GQL.IRepository).contributors || errors) {
-                    throw createAggregateError(errors)
-                }
-                return (data.node as GQL.IRepository).contributors
-            })
-        ),
-    args =>
-        `${args.repo}:${String(args.first)}:${String(args.revisionRange)}:${String(args.after)}:${String(args.path)}`
-)
+            }
+        }
+    }
 
-const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
+    fragment RepositoryContributorConnectionFields on RepositoryContributorConnection {
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+        nodes {
+            ...RepositoryContributorNodeFields
+        }
+    }
+
+    fragment RepositoryContributorNodeFields on RepositoryContributor {
+        person {
+            name
+            displayName
+            email
+            avatarURL
+            user {
+                username
+                url
+                displayName
+            }
+        }
+        count
+        commits(first: 1) {
+            nodes {
+                oid
+                abbreviatedOID
+                url
+                subject
+                author {
+                    date
+                }
+            }
+        }
+    }
+`
+
+const BATCH_COUNT = 20
+
+const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
 interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
     globbing: boolean
 }
-
-class FilteredContributorsConnection extends FilteredConnection<
-    GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'globbing'>
-> {}
 
 const contributorsPageInputIds: Record<string, string> = {
     REVISION_RANGE: 'repository-stats-contributors-page__revision-range',
@@ -185,7 +175,7 @@ const contributorsPageInputIds: Record<string, string> = {
 }
 
 // Get query params from spec
-const getUrlQuery = (spec: QuerySpec): string => {
+const getUrlQuery = (spec: Partial<QuerySpec>): string => {
     const search = new URLSearchParams()
     for (const [key, value] of Object.entries(spec)) {
         if (value) {
@@ -202,17 +192,44 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     repo,
     globbing,
 }) => {
-    const query = new URLSearchParams(location.search)
+    const queryParameters = new URLSearchParams(location.search)
     const spec: QuerySpec = {
-        revisionRange: query.get('revisionRange'),
-        after: query.get('after'),
-        path: query.get('path'),
+        revisionRange: queryParameters.get('revisionRange') ?? '',
+        after: queryParameters.get('after') ?? '',
+        path: queryParameters.get('path') ?? '',
     }
 
     const [revisionRange, setRevisionRange] = useState(spec.revisionRange)
     const [after, setAfter] = useState(spec.after)
     const [path, setPath] = useState(spec.path)
-    const specChanges = useRef<Subject<void>>(new Subject<void>())
+
+    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+        RepositoryContributorsResult,
+        RepositoryContributorsVariables,
+        RepositoryContributorNodeFields
+    >({
+        query: CONTRIBUTORS_QUERY,
+        variables: {
+            first: BATCH_COUNT,
+            repo: repo.id,
+            revisionRange: spec.revisionRange,
+            afterDate: spec.after,
+            path: spec.path,
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+            if (!node) {
+                throw new Error(`Node ${repo.id} not found`)
+            }
+            if (!('contributors' in node)) {
+                throw new Error('Failed to fetch contributors for this repo')
+            }
+            return node.contributors
+        },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
+    })
 
     // Log page view when initially rendered
     useEffect(() => {
@@ -224,7 +241,6 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         setRevisionRange(spec.revisionRange)
         setAfter(spec.after)
         setPath(spec.path)
-        specChanges.current.next()
         // We only want to run this effect when `location.search` is updated.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.search])
@@ -261,22 +277,8 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         setPath(spec.path)
     }
 
-    // Wrap the gql query with additional variables
-    const wrappedQueryRepositoryContributors = (args: {
-        first?: number
-    }): Observable<GQL.IRepositoryContributorConnection> => {
-        const { revisionRange, after, path } = spec
-        return queryRepositoryContributors({
-            ...args,
-            repo: repo.id,
-            revisionRange: revisionRange || undefined,
-            after: after || undefined,
-            path: path || undefined,
-        })
-    }
-
     // Push new query param to history, state change will follow via `useEffect` on `location.search`
-    const updateAfter = (after: string | null): void => {
+    const updateAfter = (after: string | undefined): void => {
         history.push({ search: getUrlQuery({ ...spec, after }) })
     }
 
@@ -287,11 +289,43 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         !equalOrEmpty(spec.after, after) ||
         !equalOrEmpty(spec.path, path)
 
+    const Contributors: React.FunctionComponent = () => (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection && connection.nodes.length > 0 && (
+                <ConnectionList className="list-group list-group-flush test-filtered-contributors-connection">
+                    {connection.nodes.map(node => (
+                        <RepositoryContributorNode
+                            key={`${node.person.displayName}:${node.count}`}
+                            node={node}
+                            repoName={repo.name}
+                            globbing={globbing}
+                            {...spec}
+                        />
+                    ))}
+                </ConnectionList>
+            )}
+            {loading && <ConnectionLoading />}
+            <SummaryContainer>
+                {connection && (
+                    <ConnectionSummary
+                        connection={connection}
+                        first={BATCH_COUNT}
+                        noun="contributor"
+                        pluralNoun="contributors"
+                        hasNextPage={hasNextPage}
+                    />
+                )}
+                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+            </SummaryContainer>
+        </ConnectionContainer>
+    )
+
     return (
-        <div>
+        <section>
             <PageTitle title="Contributors" />
             <Card className={styles.card}>
-                <CardHeader>Contributions filter</CardHeader>
+                <CardHeader as="header">Contributions filter</CardHeader>
                 <CardBody>
                     <Form onSubmit={onSubmit}>
                         <div className={classNames(styles.row, 'form-inline')}>
@@ -337,7 +371,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                                         </Button>
                                         <Button
                                             className={classNames(!spec.after && 'active')}
-                                            onClick={() => updateAfter(null)}
+                                            onClick={() => updateAfter(undefined)}
                                             variant="secondary"
                                         >
                                             All time
@@ -402,24 +436,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                     </Form>
                 </CardBody>
             </Card>
-            <FilteredContributorsConnection
-                listClassName="list-group list-group-flush test-filtered-contributors-connection"
-                noun="contributor"
-                pluralNoun="contributors"
-                queryConnection={wrappedQueryRepositoryContributors}
-                nodeComponent={RepositoryContributorNode}
-                nodeComponentProps={{
-                    repoName: repo.name,
-                    globbing,
-                    ...spec,
-                }}
-                defaultFirst={20}
-                hideSearch={true}
-                useURLQuery={false}
-                updates={specChanges.current}
-                history={history}
-                location={location}
-            />
-        </div>
+            <Contributors />
+        </section>
     )
 }

@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 // We need to import `create` to make a mock store just for this story.
 // eslint-disable-next-line no-restricted-imports
 import create from 'zustand'
@@ -19,13 +19,18 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
-const { add } = storiesOf('search-ui/results/sidebar/SearchSidebar', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
+const config: Meta = {
+    title: 'search-ui/results/sidebar/SearchSidebar',
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
+        },
+        chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
     },
-    chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
-})
+}
+
+export default config
 
 const mockUseQueryState = create<SearchQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
@@ -146,7 +151,7 @@ const filters: Filter[] = [
     })),
 ]
 
-add('empty sidebar', () => (
+export const EmptySidebar: Story = () => (
     <BrandedStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
@@ -154,9 +159,11 @@ add('empty sidebar', () => (
             </SearchQueryStateStoreProvider>
         )}
     </BrandedStory>
-))
+)
 
-add('with everything', () => (
+EmptySidebar.storyName = 'empty sidebar'
+
+export const WithEverything: Story = () => (
     <BrandedStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
@@ -168,4 +175,6 @@ add('with everything', () => (
             </SearchQueryStateStoreProvider>
         )}
     </BrandedStory>
-))
+)
+
+WithEverything.storyName = 'with everything'

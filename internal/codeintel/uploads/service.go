@@ -43,13 +43,6 @@ func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.T
 	return s.uploadsStore.DeleteUploadsWithoutRepository(ctx, now)
 }
 
-func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.uploadsStore.DeleteIndexesWithoutRepository(ctx, now)
-}
-
 func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err error) {
 	ctx, _, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -113,14 +106,14 @@ func (s *Service) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastC
 	return s.uploadsStore.StaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
 }
 
-func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
 	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.uploadsStore.UpdateSourcedCommits(ctx, repositoryID, commit, now)
 }
 
-func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, indexesDeleted int, err error) {
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error) {
 	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

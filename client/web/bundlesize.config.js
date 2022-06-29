@@ -5,7 +5,12 @@ const config = {
      */
     {
       path: '../../ui/assets/scripts/*.bundle.js.br',
-      maxSize: '400kb',
+      /**
+       * Note: Temporary increase from 400kb.
+       * Primary cause is due to multiple ongoing migrations that mean we are duplicating similar dependencies.
+       * Issue to track: https://github.com/sourcegraph/sourcegraph/issues/37845
+       */
+      maxSize: '425kb',
       compression: 'none',
     },
     /**

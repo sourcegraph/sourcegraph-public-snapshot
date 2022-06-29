@@ -15,6 +15,7 @@ import (
 	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -429,8 +430,6 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 			return errors.Wrap(err, "RecordSeriesPoints Zero Value")
 		}
 		for _, job := range jobs {
-			j := *job
-			fmt.Printf("job: %v", j)
 			err := h.enqueueQueryRunnerJob(ctx, job)
 			if err != nil {
 				multi = errors.Append(multi, err)

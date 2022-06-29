@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes } from 'date-fns'
 import { MemoryRouter } from 'react-router'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
@@ -35,17 +35,25 @@ import {
 import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/ExecuteBatchSpecPage', module)
-    .addDecorator(story => (
-        <div className="p-3" style={{ height: '95vh', width: '100%' }}>
-            {story()}
-        </div>
-    ))
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <div className="p-3" style={{ height: '95vh', width: '100%' }}>
+        {story()}
+    </div>
+)
+
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute/ExecuteBatchSpecPage',
+
+    decorators: [decorator],
+
+    parameters: {
         chromatic: {
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const FIXTURE_ORG: SettingsOrgSubject = {
     __typename: 'Org',
@@ -122,7 +130,7 @@ const EXECUTING_BATCH_SPEC_WITH_END_TIME = {
     finishedAt: addMinutes(Date.parse(EXECUTING_BATCH_SPEC.startedAt!), 15).toISOString(),
 }
 
-add('executing', () => (
+export const Executing: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(buildMocks({ ...EXECUTING_BATCH_SPEC_WITH_END_TIME }))}>
@@ -136,7 +144,7 @@ add('executing', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
 // A true processing workspace wouldn't have a finishedAt set, but we need to have one so
 // that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
@@ -156,7 +164,7 @@ const PROCESSING_WORKSPACE_WITH_END_TIMES = {
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
 
-add('executing, with a workspace selected', () => (
+export const ExecuteWithAWorkspaceSelected: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -196,11 +204,13 @@ add('executing, with a workspace selected', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ExecuteWithAWorkspaceSelected.storyName = 'executing, with a workspace selected'
 
 const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC, { state: BatchSpecWorkspaceState.COMPLETED })
 
-add('completed', () => (
+export const Completed: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(COMPLETED_MOCKS)}>
@@ -214,13 +224,13 @@ add('completed', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
 const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC, {
     state: BatchSpecWorkspaceState.COMPLETED,
 })
 
-add('completed with errors', () => (
+export const CompletedWithErrors: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(COMPLETED_WITH_ERRORS_MOCKS)}>
@@ -234,11 +244,13 @@ add('completed with errors', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+CompletedWithErrors.storyName = 'completed with errors'
 
 const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
 
-add('for a locally-executed spec', () => (
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
@@ -252,4 +264,6 @@ add('for a locally-executed spec', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

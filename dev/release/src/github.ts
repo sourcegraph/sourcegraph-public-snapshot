@@ -148,8 +148,8 @@ async function execTemplate(
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
         .replace(
-            /\$ONE_WORKING_DAY_BEFORE_RELEASE/g,
-            dateMarkdown(threeWorkingDaysBeforeRelease, `One working day before ${name} release`)
+            /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
+            dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
         )
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
         .replace(
