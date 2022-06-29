@@ -103,12 +103,14 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
         <div className="d-flex flex-column h-100 justify-content-between">
             <table className="w-100 mt-2">
                 <thead className="pb-1">
-                    <th>
-                        <small>Search</small>
-                    </th>
-                    <th className="text-right">
-                        <small>Edit</small>
-                    </th>
+                    <tr>
+                        <th>
+                            <small>Search</small>
+                        </th>
+                        <th className="text-right">
+                            <small>Edit</small>
+                        </th>
+                    </tr>
                 </thead>
                 <tbody>
                     {savedSearches

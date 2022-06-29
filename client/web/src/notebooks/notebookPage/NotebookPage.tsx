@@ -225,7 +225,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
-                                className="mt-2"
+                                className="mt-2 px-3"
                                 actions={
                                     <NotebookPageHeaderActions
                                         isSourcegraphDotCom={isSourcegraphDotCom}
@@ -260,7 +260,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     </PageHeader.Breadcrumb>
                                 </PageHeader.Heading>
                             </PageHeader>
-                            <small className="d-flex align-items-center mt-2">
+                            <small className="d-flex align-items-center mt-2 px-3">
                                 <div className="mr-2">
                                     Created{' '}
                                     {notebookOrError.creator && (
@@ -296,7 +296,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                 </div>
                             </small>
-                            <hr className="mt-2 mb-3" />
+                            <hr className="mt-2 mb-3 mx-3" />
                         </>
                     )}
                     {isNotebookLoaded(notebookOrError) && (

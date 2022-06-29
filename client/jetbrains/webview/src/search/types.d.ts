@@ -15,13 +15,14 @@ declare global {
 export interface Theme {
     isDarkTheme: boolean
     intelliJTheme: { [key: string]: string }
-    syntaxTheme: { [key: string]: string }
 }
 
 export interface PluginConfig {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
+    anonymousUserId: string
+    pluginVersion: string
 }
 
 export interface Search {

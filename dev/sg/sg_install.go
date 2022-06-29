@@ -94,7 +94,8 @@ func installAction(cmd *cli.Context) error {
 	// Do not prompt for installation if we are forcefully installing
 	if !cmd.Bool("force") {
 		std.Out.Write("")
-		std.Out.Writef("We are going to install %ssg%s to %s%s%s. Okay?", output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
+		std.Out.Promptf("We are going to install %ssg%s to %s%s%s. Okay?",
+			output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
 
 		locationOkay := getBool()
 		if !locationOkay {
@@ -210,4 +211,22 @@ func updateProfiles(homeDir, sgDir string) error {
 		std.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 	return nil
+}
+
+func getBool() bool {
+	var s string
+
+	fmt.Printf("(y/N): ")
+	_, err := fmt.Scan(&s)
+	if err != nil {
+		panic(err)
+	}
+
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+
+	if s == "y" || s == "yes" {
+		return true
+	}
+	return false
 }

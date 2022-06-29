@@ -93,16 +93,14 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 func For(searchType SearchType) step {
 	var processType step
 	switch searchType {
-	case SearchTypeStandard:
-		processType = succeeds(substituteConcat(space))
+	case SearchTypeStandard, SearchTypeLucky:
+		processType = succeeds(substituteConcat(standard))
 	case SearchTypeLiteral:
 		processType = succeeds(substituteConcat(space))
 	case SearchTypeRegex:
 		processType = succeeds(escapeParensHeuristic, substituteConcat(fuzzyRegexp))
 	case SearchTypeStructural:
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
-	case SearchTypeLucky:
-		processType = succeeds(substituteConcat(space))
 	}
 	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
 	return Sequence(normalize, processType)

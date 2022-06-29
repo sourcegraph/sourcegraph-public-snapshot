@@ -28,6 +28,16 @@ func Stringer(key string, v fmt.Stringer) log.Field {
 	})
 }
 
+// Strings is an opentracing log.Field which is a LazyLogger. It will log each
+// string as key.$i.
+func Strings(key string, values []string) log.Field {
+	return log.Lazy(func(fv log.Encoder) {
+		for i, v := range values {
+			fv.EmitString(fmt.Sprintf("%s.%d", key, i), v)
+		}
+	})
+}
+
 // LazyFields is an opentracing log.Field that will only call the field-generating
 // function if the trace is collected.
 func LazyFields(lazyFields func() []log.Field) log.Field {

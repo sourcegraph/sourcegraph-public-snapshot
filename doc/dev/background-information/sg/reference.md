@@ -187,6 +187,7 @@ Preview the pipeline that would be run against the currently checked out branch.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ci status
@@ -197,8 +198,9 @@ Get the status of the CI run associated with the currently checked out branch.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
-* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
 
@@ -233,6 +235,7 @@ Flags:
 
 * `--commit, -c="<value>"`: `commit` from the current branch to build (defaults to current commit)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 
 ### sg ci logs
 
@@ -250,11 +253,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
-* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
 * `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
 * `--overwrite-state="<value>"`: `state` to overwrite the job state metadata
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--state, -s="<value>"`: Job `state` to export logs for (provide an empty value for all states) (default: failed)
 
 ### sg ci docs
@@ -780,9 +784,8 @@ Flags:
 
 ## sg doctor
 
-Run checks to test whether system is in correct state to run Sourcegraph.
+DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.
 
-Arguments: `[...checks]`
 
 Flags:
 
@@ -827,12 +830,15 @@ Flags:
 
 ## sg setup
 
-Set up your local dev environment!.
+Validate and set up your local dev environment!.
 
 
 Flags:
 
+* `--check, -c`: Run checks and report setup state
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--fix, -f`: Fix all checks
+* `--oss`: Omit Sourcegraph-teammate-specific setup
 
 ## sg teammate
 
@@ -889,6 +895,79 @@ $ sg rfc search "search terms"
 # Open a specific RFC
 $ sg rfc open 420
 ```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+## sg adr
+
+List, search, view, and create Sourcegraph Architecture Decision Records (ADRs).
+
+We use Architecture Decision Records (ADRs) only for logging decisions that have notable
+architectural impact on our codebase. Since we're a high-agency company, we encourage any
+contributor to commit an ADR if they've made an architecturally significant decision.
+
+ADRs are not meant to replace our current RFC process but to complement it by capturing
+decisions made in RFCs. However, ADRs do not need to come out of RFCs only. GitHub issues
+or pull requests, PoCs, team-wide discussions, and similar processes may result in an ADR
+as well.
+
+Learn more about ADRs here: https://docs.sourcegraph.com/dev/adr
+
+```sh
+# List all ADRs
+$ sg adr list
+
+# Search for an ADR
+$ sg adr search "search terms"
+
+# Open a specific index
+$ sg adr view 420
+
+# Create a new ADR!
+$ sg adr create my ADR title
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg adr list
+
+List all ADRs.
+
+
+Flags:
+
+* `--asc`: List oldest ADRs first
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg adr search
+
+Search ADR titles and content.
+
+Arguments: `[terms...]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg adr view
+
+View an ADR.
+
+Arguments: `[number]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg adr create
+
+Create an ADR!.
+
+Arguments: `<title>`
 
 Flags:
 

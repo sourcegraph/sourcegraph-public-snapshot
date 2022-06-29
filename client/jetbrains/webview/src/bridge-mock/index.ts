@@ -52,6 +52,8 @@ function handleRequest(
                     instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
+                    anonymousUserId: 'test',
+                    pluginVersion: '1.2.3',
                 })
             )
             break

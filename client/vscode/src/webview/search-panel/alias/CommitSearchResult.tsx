@@ -18,6 +18,8 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     onSelect: () => void
     openInNewTab?: boolean
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 export const CommitSearchResult: React.FunctionComponent<Props> = ({
@@ -27,6 +29,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -104,6 +108,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 
     return (
         <ResultContainer
+            as={as}
+            index={index}
             icon={icon}
             collapsible={false}
             defaultExpanded={true}

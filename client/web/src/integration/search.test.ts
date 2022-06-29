@@ -217,36 +217,47 @@ describe('Search', () => {
 
     describe('Search field value', () => {
         withSearchQueryInput((editorName, editorSelector) => {
-            test(`Is set from the URL query parameter when loading a search-related page ${editorName}`, async () => {
-                const editor = createEditorAPI(driver, editorName, editorSelector)
+            describe(editorName, () => {
+                let editor: EditorAPI
 
-                testContext.overrideGraphQL({
-                    ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
-                    RegistryExtensions: () => ({
-                        extensionRegistry: {
-                            __typename: 'ExtensionRegistry',
-                            extensions: { error: null, nodes: [] },
-                            featuredExtensions: null,
-                        },
-                    }),
+                beforeEach(() => {
+                    editor = createEditorAPI(driver, editorName, editorSelector)
+
+                    testContext.overrideGraphQL({
+                        ...commonSearchGraphQLResults,
+                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        RegistryExtensions: () => ({
+                            extensionRegistry: {
+                                __typename: 'ExtensionRegistry',
+                                extensions: { error: null, nodes: [] },
+                                featuredExtensions: null,
+                            },
+                        }),
+                    })
                 })
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
-                await editor.waitForIt()
-                expect(await editor.getValue()).toStrictEqual('foo')
-                // Field value is cleared when navigating to a non search-related page
-                await driver.page.waitForSelector('a[href="/extensions"]')
-                await driver.page.click('a[href="/extensions"]')
-                // Search box is gone when in a non-search page
-                expect(await editor.getValue()).toStrictEqual(undefined)
-                // Field value is restored when the back button is pressed
-                await driver.page.goBack()
-                expect(await editor.getValue()).toStrictEqual('foo')
+                test('Is set from the URL query parameter when loading a search-related page', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+                    await editor.waitForIt()
+                    expect(await editor.getValue()).toStrictEqual('foo')
+                    // Field value is cleared when navigating to a non search-related page
+                    await driver.page.waitForSelector('a[href="/extensions"]')
+                    await driver.page.click('a[href="/extensions"]')
+                    // Search box is gone when in a non-search page
+                    expect(await editor.getValue()).toStrictEqual(undefined)
+                    // Field value is restored when the back button is pressed
+                    await driver.page.goBack()
+                    expect(await editor.getValue()).toStrictEqual('foo')
+                })
+
+                test('Normalizes input with line breaks', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+                    await editor.focus()
+                    await driver.paste('foo\n\n\n\n\nbar')
+                    expect(await editor.getValue()).toBe('foo bar')
+                })
             })
         })
-
-        // TODO: Add test for line break handling (https://github.com/sourcegraph/sourcegraph/issues/36725)
     })
 
     describe('Case sensitivity toggle', () => {

@@ -21,15 +21,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Updated minimum required veresion of `git` to 2.35.2 in `gitserver` and `server` Docker image. This addresses a few vulnerabilities disclosed in https://github.blog/2022-04-12-git-security-vulnerability-announced/.
+- Search: Pasting a query with line breaks into the main search query input will now replace them with spaces instead of removing them. [#37674](https://github.com/sourcegraph/sourcegraph/pull/37674)
+- Rewrite resource estimator using the latest metrics [#37869](https://github.com/sourcegraph/sourcegraph/pull/37869)
 
 ### Fixed
 
 - Fix an issue where updating the title or body of a Bitbucket Cloud pull request opened by a batch change could fail when the pull request was not on a fork of the target repository. [#37585](https://github.com/sourcegraph/sourcegraph/issues/37585)
+- A bug where some complex `repo:` regexes only returned a subset of repository results. [#37925](https://github.com/sourcegraph/sourcegraph/pull/37925)
 
 ### Removed
 
--
+- The direct DataDog trace export integration has been removed. ([#37654](https://github.com/sourcegraph/sourcegraph/pull/37654))
 
 ## 3.41.0
 

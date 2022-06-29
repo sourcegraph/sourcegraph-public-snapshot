@@ -1,6 +1,6 @@
 <!-- Plugin description -->
 
-# Sourcegraph for JetBrains IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
+# Sourcegraph for JetBrains IDEs
 
 - Instantly search in all open source repos and your private code.
 - Peek into any remote repo in the IDE, without checking it out.
@@ -9,7 +9,7 @@
 
 <!-- Plugin description end -->
 
-## Supported IDEs
+## Supported IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
 
 The plugin works with all JetBrains IDEs, including:
 

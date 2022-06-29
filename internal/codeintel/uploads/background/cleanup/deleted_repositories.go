@@ -16,9 +16,9 @@ func (j *janitor) HandleDeletedRepository(ctx context.Context) (err error) {
 		return errors.Wrap(err, "uploadSvc.DeleteUploadsWithoutRepository")
 	}
 
-	indexesCounts, err := j.uploadSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
+	indexesCounts, err := j.indexSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "uploadSvc.DeleteIndexesWithoutRepository")
+		return errors.Wrap(err, "indexSvc.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(uploadsCounts, indexesCounts) {
