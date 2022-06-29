@@ -3,7 +3,7 @@
     {
       "ID": 1,
       "ChangesetID": 1,
-      "Kind": "github:push",
+      "Kind": "github:ready_for_review",
       "Key": "hi mom",
       "CreatedAt": "2020-10-19T15:31:20.37865Z",
       "UpdatedAt": "2020-10-19T15:31:20.37865Z",

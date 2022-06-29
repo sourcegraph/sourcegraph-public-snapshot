@@ -291,15 +291,6 @@ func (p PullRequestCommit) Key() string {
 	return p.Commit.OID
 }
 
-type PushCommit struct {
-	// insert some attributes here
-}
-
-func (p PushCommit) Key() string {
-	fmt.Println("TODO: internal/extsvc/github/common.go")
-	return "hi mom"
-}
-
 // CommitWithChecks represents check/build status of a commit. When we load the PR
 // from GitHub we fetch the most recent commit into this type to check build status.
 type CommitWithChecks struct {

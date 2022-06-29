@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	syncwebhooks "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -226,7 +227,7 @@ func activatePushWebhook(db database.DB, userID int32, url string, t *testing.T)
 		t.Fatal(err)
 	}
 
-	hook := NewGitHubWebhook(s)
+	sc := syncwebhooks.SyncWebhook{}
 
 	fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 	if err != nil {
@@ -240,20 +241,21 @@ func activatePushWebhook(db database.DB, userID int32, url string, t *testing.T)
 			continue
 		}
 		t.Run(name, func(t *testing.T) {
-			fmt.Println()
 			fmt.Println("name:", name)
 
-			ct.TruncateTables(t, db, "changeset_events")
-
 			tc := loadWebhookTestCase(t, fixtureFile)
+			fmt.Println("done loading tc")
 
 			for _, event := range tc.Payloads {
+				// fmt.Printf("Event:%+v\n", event)
 				handler := webhooks.GitHubWebhook{
 					ExternalServices: esStore,
 				}
-				hook.Register(&handler)
+				fmt.Println("registering")
+				sc.Register(&handler)
 
 				u := url + "/enqueue-repo-update"
+				syncwebhooks.Url = url
 
 				req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 				if err != nil {

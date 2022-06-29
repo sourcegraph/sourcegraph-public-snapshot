@@ -110,11 +110,11 @@ func (h *GitHubWebhook) handleGitHubPushWebhook(ctx context.Context, extSvc *typ
 	// add the repo to the UpdateScheduler
 	repo := rs[0]
 	p := protocol.RepoUpdateRequest{Repo: repo.Name}
+	fmt.Printf("p:%+v\n", p)
 	bs, err := json.Marshal(p)
 	body := bytes.NewBuffer(bs)
 	// send HTTP post req to "/enqueue-repo-update" including the repo
 	// server sends back the repo ID + repo Name, httpStatusOK, no errors
-	// we know that the repo has been sent
 	fmt.Println("url:", r.URL.String())
 	resp, err := http.Post(r.URL.String(), "application/json", body)
 	if err != nil {
@@ -627,13 +627,6 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	}
 
 	return &comment
-}
-
-func (*GitHubWebhook) pushCommitEvent(e *gh.PushEvent) *github.PushCommit {
-	fmt.Println("TODO: internal/batches/webhooks/github.go")
-	return &github.PushCommit{
-		// insert some attributes here
-	}
 }
 
 func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus {

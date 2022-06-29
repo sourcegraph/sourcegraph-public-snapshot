@@ -1048,8 +1048,6 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		return ChangesetEventKindGitHubUnassigned, nil
 	case *github.PullRequestCommit:
 		return ChangesetEventKindGitHubCommit, nil
-	case *github.PushCommit:
-		return ChangesetEventKindGitHubPush, nil
 	case *github.LabelEvent:
 		if e.Removed {
 			return ChangesetEventKindGitHubUnlabeled, nil
@@ -1205,8 +1203,6 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 			return new(github.UnassignedEvent), nil
 		case ChangesetEventKindGitHubCommit:
 			return new(github.PullRequestCommit), nil
-		case ChangesetEventKindGitHubPush:
-			return new(github.PushCommit), nil
 		case ChangesetEventKindGitHubLabeled:
 			return new(github.LabelEvent), nil
 		case ChangesetEventKindGitHubUnlabeled:
