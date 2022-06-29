@@ -18,6 +18,7 @@ import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
+import { ShowMoreButton } from './ShowMoreButton'
 import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
@@ -129,10 +130,10 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                             <td>
                                 <small>
                                     <Link
-                                    to={recentFile.url}
-                                    ref={getItemRef(index)}
-                                    onClick={logFileClicked}
-                                    data-testid="recent-files-item"
+                                        to={recentFile.url}
+                                        ref={getItemRef(index)}
+                                        onClick={logFileClicked}
+                                        data-testid="recent-files-item"
                                     >
                                         {recentFile.repoName} › {recentFile.filePath}
                                     </Link>
@@ -142,6 +143,11 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                     ))}
                 </tbody>
             </table>
+            {recentFiles?.pageInfo.hasNextPage && (
+                <div>
+                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
+                </div>
+            )}
         </>
     )
 
@@ -191,8 +197,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                                     onClick={logFileClicked}
                                     data-testid="recent-files-item"
                                 >
-                                    ›
-                                    {file}
+                                    ›{file}
                                 </Link>
                             </small>
                         </li>
