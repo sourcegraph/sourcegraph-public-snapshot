@@ -35,16 +35,17 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 		wrappedAction := command.Action
 		command.Action = func(cmd *cli.Context) (actionErr error) {
 			// Make sure analytics hook gets called before exit (interrupts or panics)
-			interrupt.Register(func() { analyticsHook(cmd, "cancelled") })
+			interrupt.Register(func() { analyticsHook(cmd, nil, "cancelled") })
 			defer func() {
 				if p := recover(); p != nil {
-					analyticsHook(cmd, "panic")
-
 					// Render a more elegant message
 					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
 						sgBugReportTemplate)
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack("addAnalyticsHooks"))
 					actionErr = cli.NewExitError(message, 1)
+
+					// Log event
+					analyticsHook(cmd, actionErr, "panic")
 				}
 			}()
 
@@ -53,9 +54,9 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 
 			// Capture analytics post-run
 			if actionErr != nil {
-				analyticsHook(cmd, "error")
+				analyticsHook(cmd, actionErr, "error")
 			} else {
-				analyticsHook(cmd, "success")
+				analyticsHook(cmd, actionErr, "success")
 			}
 
 			return actionErr
@@ -63,10 +64,13 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 	}
 }
 
-func makeAnalyticsHook(start time.Time, commandPath []string) func(ctx *cli.Context, events ...string) {
-	return func(cmd *cli.Context, events ...string) {
+func makeAnalyticsHook(start time.Time, commandPath []string) func(ctx *cli.Context, err error, events ...string) {
+	return func(cmd *cli.Context, err error, events ...string) {
 		// Log an sg usage occurrence
-		analytics.LogEvent(cmd.Context, "sg_action", commandPath, start, events...)
+		event := analytics.LogEvent(cmd.Context, "sg_action", commandPath, start, events...)
+		if err != nil {
+			event.Properties["error_details"] = err.Error()
+		}
 
 		// Persist all tracked to disk
 		flagsUsed := cmd.FlagNames()

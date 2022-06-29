@@ -51,13 +51,13 @@ Here are some examples:
 - When the diff or attributes that affect the resulting commit of a changeset directly (such as the [`changesetTemplate.commit.message`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-message) or the [`changesetTemplate.commit.author`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-author)) and the changeset has been published, the commit on the code host will be overwritten by a new commit that includes the updated diff.
 - When the [`changesetTemplate.title`](../references/batch_spec_yaml_reference.md#changesettemplate-title) or the [`changesetTemplate.body`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-author) are changed and the changeset has been published, the changeset on the code host will be updated accordingly.
 - When the [`changesetTemplate.branch`](../references/batch_spec_yaml_reference.md#changesettemplate-title) is changed after the changeset has been published on the code host, the existing changeset will be closed on the code host and new one, with the new branch, will be created.
-- When the batch spec is changed in such a way that no diff is produced in a repository in which the batch change already created and published a changeset, the existing changeset will be closed on the code host and detached from the batch change.
+- When the batch spec is changed in such a way that no diff is produced in a repository in which the batch change already created and published a changeset, the existing changeset will be closed on the code host and archived in the batch change.
 
 See the "[Batch Changes design](../explanations/batch_changes_design.md)" doc for more information on the declarative nature of the Batch Changes system.
 
 ## Updating a batch change to change its scope
 
-### Increasing the number of changesets
+### Adding changesets
 
 You can gradually increase the number of repositories to which a batch change applies by modifying the entries in the [`on`](../references/batch_spec_yaml_reference.md#on) property of the batch spec.
 
@@ -89,7 +89,7 @@ The updated [`repo:` keyword](../../code_search/reference/queries.md#keywords-al
 
 If you apply the updated batch spec new changesets will be created for each additional repository.
 
-### Decreasing the number of changesets
+### Removing changesets
 
 You can also decrease the number of repositories to which a batch change applies the by modifying the entries in the [`on`](../references/batch_spec_yaml_reference.md#on) property.
 
@@ -117,4 +117,24 @@ on:
 # [...]
 ```
 
-and apply it, then all the changesets that were published in repositories other than `my-one-repository` _will be closed on the code host and detached from the batch change_.
+and apply it, then all the changesets that were published in repositories other than `my-one-repository` will be closed on the code host and archived from the batch change. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead:
+
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/archived-tab.png" class="screenshot">
+
+To fully remove the changesets from the batch change, you can detach them from this tab in the UI.
+
+#### Unarchiving changesets
+
+Archiving is not permanent, and changesets can be unarchived just as easily by reversing the process that archived them. To unarchive a changeset, modify your `on` property once more to match the repository whose changeset you want to bring back. The easiest way to target an individual repository is by adding an [`on.repository`](../references/batch_spec_yaml_reference.md#on-repository) statement for it:
+
+```yaml
+# [...]
+
+# Find all repositories that contain a README.md file, in the GitHub my-company org.
+on:
+  - repositoriesMatchingQuery: file:README.md repo:github.com/my-company
+  # Also include one repository from outside my-company.
+  - repository: github.com/another-org/my-one-repository
+
+# [...]
+```

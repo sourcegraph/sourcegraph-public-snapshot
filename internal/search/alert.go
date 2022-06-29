@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,6 +17,7 @@ type Alert struct {
 	Title           string
 	Description     string
 	ProposedQueries []*ProposedQuery
+	Kind            string // An identifier indicating the kind of alert
 	// The higher the priority the more important is the alert.
 	Priority int
 }
@@ -54,12 +56,16 @@ type ProposedQuery struct {
 func (q *ProposedQuery) QueryString() string {
 	if q.Description != "Remove quotes" {
 		switch q.PatternType {
+		case query.SearchTypeStandard:
+			return q.Query + " patternType:standard"
 		case query.SearchTypeRegex:
 			return q.Query + " patternType:regexp"
-		case query.SearchTypeLiteralDefault:
+		case query.SearchTypeLiteral:
 			return q.Query + " patternType:literal"
 		case query.SearchTypeStructural:
 			return q.Query + " patternType:structural"
+		case query.SearchTypeLucky:
+			return q.Query
 		default:
 			panic("unreachable")
 		}
@@ -140,7 +146,7 @@ func AlertForStructuralSearchNotSet(queryString string) *Alert {
 	return &Alert{
 		PrometheusType: "structural_search_not_set",
 		Title:          "No results",
-		Description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
+		Description:    "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
 		ProposedQueries: []*ProposedQuery{
 			{
 				Description: "Activate structural search",
@@ -224,5 +230,19 @@ func AlertForInvalidRevision(revision string) *Alert {
 	return &Alert{
 		Title:       "Invalid revision syntax",
 		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+	}
+}
+
+func AlertForUnindexedLockfile(repoName api.RepoName, revisions []string) *Alert {
+	var description strings.Builder
+	fmt.Fprintf(&description, "No lockfile indexed in **%s** at these revisions yet:\n", repoName)
+	for _, r := range revisions {
+		fmt.Fprintf(&description, "- `%s`", r)
+	}
+
+	return &Alert{
+		PrometheusType: "unindexed_dependency_search",
+		Title:          "Lockfile not indexed",
+		Description:    description.String(),
 	}
 }

@@ -10,10 +10,9 @@ import { Observable } from 'rxjs'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult, FileSearchResult } from '@sourcegraph/search-ui'
+import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -113,6 +112,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 case 'symbol':
                     return (
                         <FileSearchResult
+                            index={index}
                             location={location}
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
@@ -128,24 +128,29 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'commit':
                     return (
                         <CommitSearchResult
+                            index={index}
                             result={result}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'repo':
                     return (
                         <RepoSearchResult
+                            index={index}
                             result={result}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
             }
@@ -179,7 +184,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 </div>
             </div>
             <VirtualList<SearchMatch>
-                className="mt-2"
+                as="ol"
+                aria-label="Search results"
+                className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}

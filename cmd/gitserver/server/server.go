@@ -27,13 +27,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,11 +56,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -100,14 +101,13 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
-	span, _ := ot.StartSpanFromContext(ctx, "runCommand")
+	span, _ := trace.New(ctx, "runCommand", "")
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 			span.SetTag("exitCode", exitCode)
 		}
 		span.Finish()
@@ -186,8 +186,7 @@ func NewCloneQueue(jobs *list.List) *cloneQueue {
 
 // Server is a gitserver server.
 type Server struct {
-	// Logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
 
 	// ReposDir is the path to the base directory for gitserver storage.
@@ -248,7 +247,7 @@ type Server struct {
 
 	// rpsLimiter limits the remote code host git operations done per second
 	// per gitserver instance
-	rpsLimiter *rate.Limiter
+	rpsLimiter *ratelimit.InstrumentedLimiter
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
@@ -338,7 +337,7 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	s.rpsLimiter = rate.NewLimiter(rate.Inf, 10)
+	s.rpsLimiter = ratelimit.NewInstrumentedLimiter("RpsLimiter", rate.NewLimiter(rate.Inf, 10))
 	setRPSLimiter := func() {
 		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
 			// As a special case, -1 means no limiting
@@ -361,26 +360,28 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", s.handleArchive)
-	mux.HandleFunc("/exec", s.handleExec)
-	mux.HandleFunc("/search", s.handleSearch)
-	mux.HandleFunc("/batch-log", s.handleBatchLog)
-	mux.HandleFunc("/p4-exec", s.handleP4Exec)
-	mux.HandleFunc("/list", s.handleList)
-	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
-	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
-	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	mux.HandleFunc("/repos", s.handleRepoInfo)
-	mux.HandleFunc("/repos-stats", s.handleReposStats)
-	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
-	mux.HandleFunc("/delete", s.handleRepoDelete)
-	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", s.handleExec))
+	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
+	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
+	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
+	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
+	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
+	mux.HandleFunc("/is-repo-cloned", trace.WithRouteName("is-repo-cloned", s.handleIsRepoCloned))
+	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
+	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
+	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
+	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
+	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
+	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
+	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	})
+	}))
 
-	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
+	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
+		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+	}))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -394,13 +395,13 @@ func (s *Server) Handler() http.Handler {
 	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
+		span, ctx := trace.New(ctx, "Git: GetObject", "")
 		span.SetTag("objectName", objectName)
 		defer span.Finish()
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", handleGetObject(getObjectFunc))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", handleGetObject(getObjectFunc)))
 
 	return mux
 }
@@ -409,7 +410,9 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		s.cleanupRepos()
+		cfg := conf.Get()
+		addrs := cfg.ServiceConnectionConfig.GitServers
+		s.cleanupRepos(addrs)
 		time.Sleep(interval)
 	}
 }
@@ -506,8 +509,10 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 			if err != nil {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
-
-			s.setLastErrorNonFatal(ctx, job.repo, err)
+			// Use a different context in case we failed because the original context failed.
+			ctx2, cancel := s.serverContext()
+			defer cancel()
+			s.setLastErrorNonFatal(ctx2, job.repo, err)
 		}(j)
 	}
 }
@@ -536,6 +541,18 @@ var (
 		Name: "src_repo_sync_state_upsert_counter",
 		Help: "Incremented each time we upsert repo state in the database",
 	}, []string{"success"})
+	wrongShardReposTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_repo_wrong_shard",
+		Help: "The number of repos that are on disk on the wrong shard",
+	})
+	wrongShardReposSizeTotalBytes = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_repo_wrong_shard_bytes",
+		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
+	})
+	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_wrong_shard_deleted",
+		Help: "The number of repos on the wrong shard that we deleted",
+	})
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
@@ -569,7 +586,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	if perSecond < 0 {
 		perSecond = 1
 	}
-	limiter := rate.NewLimiter(rate.Limit(perSecond), perSecond)
+	limiter := ratelimit.NewInstrumentedLimiter("SyncRepoState", rate.NewLimiter(rate.Limit(perSecond), perSecond))
 
 	// The rate limiter doesn't allow writes that are larger than the burst size
 	// which we've set to perSecond.
@@ -668,6 +685,10 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 // In fact this commit will be just reverted.
 // If it still bothers you -- contact sashaostrikov
 func addrForKey(repo api.RepoName, addrs []string) string {
+	if len(addrs) == 0 {
+		// Avoid a panic where we index lower down
+		return ""
+	}
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
 	sum := md5.Sum([]byte(rs))
@@ -837,6 +858,7 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 // unconditional; we debounce them based on the provided
 // interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -866,7 +888,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// the implementation details of cloneRepo.
 		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
-			s.Logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
 		}
 	} else {
@@ -892,7 +914,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.LastChanged = &lastChanged
 		}
 		if statusErr != nil {
-			s.Logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
 			// report this error in-band, but still produce a valid response with the
 			// other information.
 			resp.Error = statusErr.Error()
@@ -913,6 +935,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
+		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
 		q         = r.URL.Query()
 		treeish   = q.Get("treeish")
 		repo      = q.Get("repo")
@@ -928,7 +951,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 
 	if repo == "" || format == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		s.Logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
+		logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
 		return
 	}
 
@@ -962,6 +985,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleSearch", "http handler for search")
 	tr, ctx := trace.New(r.Context(), "search", "")
 	defer tr.Finish()
 
@@ -1003,7 +1027,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// Run the search
 	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		s.Logger.Error("failed to send done event", log.Error(writeErr))
+		logger.Error("failed to send done event", log.Error(writeErr))
 	}
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
@@ -1034,7 +1058,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			_ = ev.Send()
 		}
 		if traceLogs {
-			s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+			logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 		}
 	}
 }
@@ -1108,6 +1132,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 
 		searcher := &search.CommitSearcher{
+			Logger:               s.Logger,
 			RepoDir:              dir.Path(),
 			Revisions:            args.Revisions,
 			Query:                mt,
@@ -1841,10 +1866,18 @@ type cloneOptions struct {
 
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (cloneProgress string, err error) {
 	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
 	}
+
+	// We always want to store whether there was an error cloning the repo
+	defer func() {
+		// Use a different context in case we failed because the original context failed.
+		ctx2, cancel := s.serverContext()
+		defer cancel()
+		s.setLastErrorNonFatal(ctx2, repo, err)
+	}()
 
 	dir := s.dir(repo)
 
@@ -1923,8 +1956,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		// We are blocking, so use the passed in context.
 		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		err = errors.Wrapf(err, "failed to clone %s", repo)
-		// Use a background context to ensure we still update the DB even if we time out
-		s.setLastErrorNonFatal(context.Background(), repo, err)
 		return "", err
 	}
 
@@ -1953,7 +1984,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
-
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 
@@ -2261,7 +2291,7 @@ func honeySampleRate(cmd string, internal bool) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
-	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
+	span, ctx := trace.New(ctx, "Server.doRepoUpdate", "")
 	span.SetTag("repo", repo)
 	defer span.Finish()
 

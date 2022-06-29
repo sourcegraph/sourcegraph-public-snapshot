@@ -40,7 +40,6 @@ else
   export CODEINSIGHTS_PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-codeinsights"
 fi
 
-
 # Output-psql formatted schema description
 ./tmp-sg migration describe -db frontend --format=psql -force -out internal/database/schema.md
 ./tmp-sg migration describe -db codeintel --format=psql -force -out internal/database/schema.codeintel.md

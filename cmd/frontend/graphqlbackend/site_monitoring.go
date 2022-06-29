@@ -4,10 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
-
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // MonitoringAlert implements GraphQL getters on top of srcprometheus.MonitoringAlert
@@ -39,12 +37,12 @@ type siteMonitoringStatisticsResolver struct {
 
 func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*MonitoringAlert, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts")
+	span, ctx := trace.New(ctx, "site.MonitoringStatistics.alerts", "")
 
 	var err error
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
+			span.SetError(err)
 			span.SetTag("err", err.Error())
 		}
 		cancel()

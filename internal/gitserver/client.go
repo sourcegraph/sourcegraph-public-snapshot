@@ -21,14 +21,13 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
@@ -44,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -126,14 +126,14 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
-	logger sglog.Logger
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// logger is used for all logging and logger creation
+	logger sglog.Logger
 
 	// addrs is a function which should return the addresses for gitservers. It
 	// is called each time a request is made. The function must be safe for
@@ -162,7 +162,6 @@ type RawBatchLogResult struct {
 }
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
@@ -173,6 +172,9 @@ type Client interface {
 
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
+
+	// ArchiveReader streams back the file contents of an archived git repo.
+	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
 
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
@@ -189,6 +191,13 @@ type Client interface {
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
+	// GetDefaultBranch returns the name of the default branch and the commit it's
+	// currently at from the given repository.
+	//
+	// If the repository is empty or currently being cloned, empty values and no
+	// error are returned.
+	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
@@ -202,6 +211,12 @@ type Client interface {
 
 	// ListGitolite lists Gitolite repositories.
 	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+
+	// ListRefs returns a list of all refs in the repository.
+	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
+
+	// ListBranches returns a list of all branches in the repository.
+	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error)
 
 	// MergeBase returns the merge base commit for the specified commits.
 	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
@@ -269,6 +284,9 @@ type Client interface {
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+
+	// Stat returns a FileInfo describing the named file at commit.
+	Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
 	// DiffPath returns a position-ordered slice of changes (additions or deletions)
 	// of the given path between the given source and target commits.
@@ -448,13 +466,12 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	if ClientMocks.Archive != nil {
 		return ClientMocks.Archive(ctx, repo, opt)
 	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
+	span, ctx := trace.New(ctx, "Git: Archive", "")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -512,11 +529,10 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
+	span, ctx := trace.New(ctx, "Client.sendExec", "")
 	defer func() {
 		if errRes != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", errRes.Error())
+			span.SetError(errRes)
 		}
 		span.Finish()
 	}()
@@ -561,15 +577,14 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 }
 
 func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span, ctx := trace.New(ctx, "GitserverClient.Search", "")
 	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
 	span.SetTag("diff", args.IncludeDiff)
 	span.SetTag("limit", args.Limit)
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -623,11 +638,10 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 }
 
 func (c *ClientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
+	span, ctx := trace.New(ctx, "Client.P4Exec", "")
 	defer func() {
 		if errRes != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", errRes.Error())
+			span.SetError(errRes)
 		}
 		span.Finish()
 	}()
@@ -1330,12 +1344,13 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := trace.New(ctx, "Client.do", "")
 	defer func() {
-		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		span.SetTag("repo", string(repo))
+		span.SetTag("method", method)
+		span.SetTag("path", parsedURL.Path)
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 		}
 		span.Finish()
 	}()
@@ -1352,10 +1367,10 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	if c.HTTPLimiter != nil {
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
-		span.LogKV("event", "Acquired HTTP limiter")
+		span.LogFields(log.String("event", "Acquired HTTP limiter"))
 	}
 
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
 		nethttp.OperationName("Gitserver Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

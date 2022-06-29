@@ -1384,6 +1384,26 @@ extend type Mutation {
     ): BatchChange!
 
     """
+    Checks if a batch change with the specified name exists, if it doesn't, it creates a batch change
+    with an empty batch spec otherwise returns the existing batch change, this is useful for drafting
+    server-side batch changes with the src-cli tool.
+    The user creating the batch change must have permission to create it in the
+    namespace provided. Use `createBatchSpecFromRaw` and `replaceBatchSpecInput` to update
+    the input batch spec after creating.
+    """
+    upsertEmptyBatchChange(
+        """
+        The namespace (either a user or organization) that this batch change should belong to.
+        """
+        namespace: ID!
+
+        """
+        The (unique) name to identify the batch change by in its namespace.
+        """
+        name: String!
+    ): BatchChange!
+
+    """
     Creates a batch spec and triggers a job to evaluate the workspaces. Consumers need to
     poll the batch spec until the resolution is completed to get a full list of all
     workspaces. This might become streaming so the results will come in over time.
@@ -1842,6 +1862,10 @@ extend type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2097,6 +2121,11 @@ interface BatchSpecWorkspace {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2117,10 +2146,16 @@ interface BatchSpecWorkspace {
     state: BatchSpecWorkspaceState!
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2181,6 +2216,11 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     Executor stages of running in this workspace. Null, if the execution hasn't
     started yet.
     """
@@ -2234,10 +2274,16 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     changesetSpecs: [VisibleChangesetSpec!]
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2290,6 +2336,11 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2310,10 +2361,16 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     state: BatchSpecWorkspaceState!
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2666,6 +2723,10 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
 }
 
@@ -2844,6 +2905,22 @@ enum BatchSpecState {
     The execution has been canceled.
     """
     CANCELED
+}
+
+"""
+The possible sources of a batch spec.
+"""
+enum BatchSpecSource {
+    """
+    The spec was created from the local src-cli workflow.
+    """
+    LOCAL
+
+    """
+    This spec was created for remote server-side execution, e.g. from the web UI editor,
+    or with src batch remote.
+    """
+    REMOTE
 }
 
 """
@@ -3092,6 +3169,12 @@ type BatchSpec implements Node {
     retryBatchSpecExecution.
     """
     viewerCanRetry: Boolean!
+
+    """
+    Whether the batch spec was created from the local src-cli workflow or remotely for
+    server-side execution.
+    """
+    source: BatchSpecSource!
 }
 
 """

@@ -14,9 +14,6 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
-	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -29,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -127,8 +123,8 @@ func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolv
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
-func newRouter() *muxtrace.Router {
-	r := muxtrace.NewRouter(muxtrace.WithAnalyticsRate(tracer.MUX_ANALYTICS_TRACE_RATE))
+func newRouter() *mux.Router {
+	r := mux.NewRouter()
 	r.StrictSlash(true)
 
 	// Top-level routes.
@@ -225,8 +221,8 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *muxtrace.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
-	uirouter.Router = router.Router // make accessible to other packages
+func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
 		return handler(db, serveBrandedPageString(db, titles, nil, index))
@@ -472,9 +468,8 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 
 	// Determine trace URL and log the error.
 	var traceURL string
-	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("err", err)
+	if span := trace.TraceFromContext(r.Context()); span != nil {
+		span.SetError(err)
 		span.SetTag("error-id", errorID)
 		traceURL = trace.URL(trace.IDFromSpan(span), conf.ExternalURL(), conf.Tracer())
 	}

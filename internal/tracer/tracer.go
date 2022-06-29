@@ -3,9 +3,7 @@ package tracer
 import (
 	"fmt"
 	"io"
-	"os"
 	"reflect"
-	"strconv"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -14,12 +12,10 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
 	"go.uber.org/automaxprocs/maxprocs"
-	ddopentracing "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
-	ddtracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,18 +30,7 @@ func init() {
 	if _, err := maxprocs.Set(); err != nil {
 		log15.Error("automaxprocs failed", "error", err)
 	}
-	if r := os.Getenv("MUX_ANALYTICS_TRACE_RATE"); r != "" {
-		rate, err := strconv.ParseFloat(r, 64)
-		if err != nil {
-			log15.Error("Failed to parse MUX_ANALYTICS_TRACE_RATE", "error", err)
-			return
-		}
-		MUX_ANALYTICS_TRACE_RATE = rate
-	}
-
 }
-
-var MUX_ANALYTICS_TRACE_RATE = 0.1
 
 // options control the behavior of a TracerType
 type options struct {
@@ -61,16 +46,15 @@ type options struct {
 type TracerType string
 
 const (
-	None    TracerType = "none"
-	Datadog TracerType = "datadog"
-	Ot      TracerType = "opentracing"
+	None TracerType = "none"
+	Ot   TracerType = "opentracing"
 )
 
 // isSetByUser returns true if the TracerType is one supported by the schema
 // should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
 func (t TracerType) isSetByUser() bool {
 	switch t {
-	case Datadog, Ot:
+	case Ot:
 		return true
 	}
 	return false
@@ -82,9 +66,6 @@ func Init(c conftypes.WatchableSiteConfig) {
 	opts.serviceName = env.MyName
 	if version.IsDev(version.Version()) {
 		opts.env = "dev"
-	}
-	if d := os.Getenv("DD_ENV"); d != "" {
-		opts.env = d
 	}
 	opts.version = version.Version()
 
@@ -115,16 +96,16 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 	go c.Watch(func() {
 		siteConfig := c.SiteConfig()
 
-		samplingStrategy := ot.TraceNone
+		samplingStrategy := policy.TraceNone
 		shouldLog := false
 		setTracer := None
 		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
 			switch tracingConfig.Sampling {
 			case "all":
-				samplingStrategy = ot.TraceAll
+				samplingStrategy = policy.TraceAll
 				setTracer = Ot
 			case "selective":
-				samplingStrategy = ot.TraceSelective
+				samplingStrategy = policy.TraceSelective
 				setTracer = Ot
 			}
 			if t := TracerType(tracingConfig.Type); t.isSetByUser() {
@@ -132,11 +113,11 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 			}
 			shouldLog = tracingConfig.Debug
 		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
+		if tracePolicy := policy.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
 			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
 		}
 		initial = false
-		ot.SetTracePolicy(samplingStrategy)
+		policy.SetTracePolicy(samplingStrategy)
 
 		opts := options{
 			externalURL: siteConfig.ExternalURL,
@@ -167,20 +148,7 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Closer, error) {
 	if opts.TracerType == None {
 		log15.Info("tracing disabled")
-		if prevTracer == Datadog {
-			ddtracer.Stop()
-		}
 		return opentracing.NoopTracer{}, nil, nil
-	}
-	if opts.TracerType == Datadog {
-		log15.Info("Datadog: tracing enabled")
-		tracer := ddopentracing.New(ddtracer.WithService(opts.serviceName),
-			ddtracer.WithDebugMode(opts.debug),
-			ddtracer.WithServiceVersion(opts.version), ddtracer.WithEnv(opts.env))
-		return tracer, nil, nil
-	}
-	if prevTracer == Datadog {
-		ddtracer.Stop()
 	}
 
 	log15.Info("opentracing: enabled")

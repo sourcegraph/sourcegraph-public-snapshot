@@ -8,9 +8,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -19,10 +20,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -32,8 +34,9 @@ var _ workerutil.Handler = &workHandler{}
 type workHandler struct {
 	baseWorkerStore *basestore.Store
 	insightsStore   *store.Store
+	repoStore       discovery.RepoStore
 	metadadataStore *store.InsightStore
-	limiter         *rate.Limiter
+	limiter         *ratelimit.InstrumentedLimiter
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
@@ -178,7 +181,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 		return nil, err
 	}
 	if len(streamResults.Errors) > 0 {
-		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
+		return nil, classifiedError(streamResults.Errors, types.SearchCompute)
 	}
 	if len(streamResults.Alerts) > 0 {
 		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
@@ -302,7 +305,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		return nil, StreamingError{Messages: tr.Errors}
+		return nil, classifiedError(tr.Errors, types.Search)
 	}
 	if len(tr.Alerts) > 0 {
 		return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
@@ -340,23 +343,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 		return err
 	}
 
-	tx, err := r.insightsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
-		// The purpose of the snapshot is for low fidelity but recently updated data points.
-		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
-		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
-		}
-	}
-
-	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
-	}
+	err = r.persistRecordings(ctx, job, series, recordings)
 	return err
 }
 
@@ -376,6 +363,12 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		return err
 	}
 
+	err = r.persistRecordings(ctx, job, series, recordings)
+	return err
+}
+
+func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
+
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -390,10 +383,45 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		}
 	}
 
-	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+	// Newly queued queries should be scoped to correct repos however leaving filtering
+	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
+	filteredRecordings, err := filterRecordingsBySeriesRepos(ctx, r.repoStore, series, recordings)
+	if err != nil {
+		return errors.Wrap(err, "filterRecordingsBySeriesRepos")
+	}
+
+	if recordErr := tx.RecordSeriesPoints(ctx, filteredRecordings); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
+}
+
+func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.RepoStore, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) ([]store.RecordSeriesPointArgs, error) {
+	// If this series isn't scoped to some repos return all
+	if len(series.Repositories) == 0 {
+		return recordings, nil
+	}
+
+	seriesRepos, err := repoStore.List(ctx, database.ReposListOptions{Names: series.Repositories})
+	if err != nil {
+		return nil, errors.Wrap(err, "repoStore.List")
+	}
+	repos := map[api.RepoID]bool{}
+	for _, repo := range seriesRepos {
+		repos[repo.ID] = true
+	}
+
+	filteredRecords := make([]store.RecordSeriesPointArgs, 0, len(series.Repositories))
+	for _, record := range recordings {
+		if record.RepoID == nil {
+			continue
+		}
+		if included := repos[*record.RepoID]; included == true {
+			filteredRecords = append(filteredRecords, record)
+		}
+	}
+	return filteredRecords, nil
+
 }
 
 func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {

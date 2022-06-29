@@ -9,10 +9,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,13 +22,14 @@ type InsightStore struct {
 }
 
 // NewInsightStore returns a new InsightStore backed by the given Postgres db.
-func NewInsightStore(db dbutil.DB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+func NewInsightStore(db edb.InsightsDB) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+// NewInsightStoreWith returns a new InsightStore backed by the given Postgres db.
+func NewInsightStoreWith(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(other.Handle()), Now: time.Now}
+}
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
@@ -349,6 +350,7 @@ type GetDataSeriesArgs struct {
 	BackfillIncomplete  bool
 	SeriesID            string
 	GlobalOnly          bool
+	ExcludeJustInTime   bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -374,6 +376,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if args.GlobalOnly {
 		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
+	}
+	if args.ExcludeJustInTime {
+		preds = append(preds, sqlf.Sprintf("just_in_time = false"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -405,6 +410,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.GeneratedFromCaptureGroups,
 			&temp.JustInTime,
 			&temp.GenerationMethod,
+			pq.Array(&temp.Repositories),
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -964,7 +970,7 @@ const getInsightDataSeriesSql = `
 select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method
+just_in_time, generation_method, repositories
 from insight_series
 WHERE %s
 `

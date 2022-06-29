@@ -6,7 +6,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Label } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -150,8 +150,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                         <Form onSubmit={this.handleSubmit}>
                             <Container className="mb-3">
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
-                                <input
-                                    type="text"
+                                <Input
                                     value={this.props.user.username}
                                     name="username"
                                     autoComplete="username"

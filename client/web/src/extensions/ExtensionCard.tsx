@@ -219,14 +219,16 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </H3>
                         <span>
                             by {publisher}
-                            {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
+                            {isSourcegraphExtension && (
+                                <Icon className={styles.logo} as={SourcegraphExtensionIcon} aria-hidden={true} />
+                            )}
                         </span>
                     </div>
                     <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <Icon role="img" as={WarningIcon} aria-hidden={true} /> Invalid manifest
+                                    <Icon as={WarningIcon} aria-hidden={true} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -235,7 +237,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <Icon role="img" as={WarningIcon} aria-hidden={true} /> No manifest
+                                <Icon as={WarningIcon} aria-hidden={true} /> No manifest
                             </span>
                         )}
                     </div>

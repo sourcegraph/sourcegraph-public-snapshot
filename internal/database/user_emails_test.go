@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -57,10 +59,12 @@ func TestUserEmails_Get(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -105,10 +109,12 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -157,10 +163,12 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -201,10 +209,12 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -271,12 +281,14 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	const emailA = "a@example.com"
 	const emailB = "b@example.com"
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 emailA,
 		Username:              "u2",
 		Password:              "pw",
@@ -352,11 +364,13 @@ func TestUserEmails_SetVerified(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	const email = "a@example.com"
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 email,
 		Username:              "u2",
 		Password:              "pw",
@@ -430,11 +444,13 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 addr,
 		Username:              "alice",
 		Password:              "pw",
@@ -478,11 +494,13 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 addr,
 		Username:              "alice",
 		Password:              "pw",
@@ -509,7 +527,7 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	}
 
 	// Create another user with same email address and set "last_verification_sent_at" column
-	user2, err := Users(db).Create(ctx, NewUser{
+	user2, err := db.Users().Create(ctx, NewUser{
 		Email:                 addr,
 		Username:              "bob",
 		Password:              "pw",
@@ -537,7 +555,9 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -554,7 +574,7 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	}
 
 	for _, newUser := range newUsers {
-		_, err := Users(db).Create(ctx, newUser)
+		_, err := db.Users().Create(ctx, newUser)
 		if err != nil {
 			t.Fatal(err)
 		}

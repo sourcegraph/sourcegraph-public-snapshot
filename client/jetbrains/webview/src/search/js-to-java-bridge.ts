@@ -1,20 +1,52 @@
 import { encode } from 'js-base64'
 
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    ContentMatch,
+    getRepoMatchUrl,
+    PathMatch,
+    SearchMatch,
+    SearchType,
+    SymbolMatch,
+} from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
 
-export interface MatchRequest {
-    action: 'preview' | 'open'
-    arguments: {
-        fileName: string
-        path: string
-        content: string | null
-        lineNumber: number
-        absoluteOffsetAndLengths: number[][]
-    }
+export interface PreviewContent {
+    timeAsISOString: string
+    resultType: SearchType
+    fileName?: string
+    repoUrl: string
+    commit?: string
+    path?: string
+    content: string | null
+    symbolName?: string
+    symbolContainerName?: string
+    commitMessagePreview?: string
+    lineNumber?: number
+    absoluteOffsetAndLengths?: number[][]
+    relativeUrl?: string
+}
+
+export interface PreviewLoadingRequest {
+    action: 'previewLoading'
+    arguments: { timeAsISOString: string }
+}
+
+export interface PreviewRequest {
+    action: 'preview'
+    arguments: PreviewContent
+}
+
+interface ClearPreviewRequest {
+    action: 'clearPreview'
+    arguments: { timeAsISOString: string }
+}
+
+interface OpenRequest {
+    action: 'open'
+    arguments: PreviewContent
 }
 
 interface GetConfigRequest {
@@ -34,16 +66,14 @@ interface LoadLastSearchRequest {
     action: 'loadLastSearch'
 }
 
-interface ClearPreviewRequest {
-    action: 'clearPreview'
-}
-
 interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
 }
 
 export type Request =
-    | MatchRequest
+    | PreviewLoadingRequest
+    | PreviewRequest
+    | OpenRequest
     | GetConfigRequest
     | GetThemeRequest
     | SaveLastSearchRequest
@@ -51,7 +81,9 @@ export type Request =
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
 
-export async function getConfig(): Promise<PluginConfig> {
+let lastPreviewUpdateCallSendDateTime = new Date()
+
+export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
     try {
         return (await callJava({ action: 'getConfig' })) as PluginConfig
     } catch (error) {
@@ -60,18 +92,20 @@ export async function getConfig(): Promise<PluginConfig> {
             instanceURL: 'https://sourcegraph.com',
             isGlobbingEnabled: false,
             accessToken: null,
+            anonymousUserId: 'no-user-id',
+            pluginVersion: '0.0.0',
         }
     }
 }
 
-export async function getTheme(): Promise<Theme> {
+export async function getThemeAlwaysFulfill(): Promise<Theme> {
     try {
         return (await callJava({ action: 'getTheme' })) as Theme
     } catch (error) {
         console.error(`Failed to get theme: ${(error as Error).message}`)
         return {
-            isDarkTheme: true,
-            buttonColor: '#0078d4',
+            isDarkTheme: false,
+            intelliJTheme: {},
         }
     }
 }
@@ -84,35 +118,49 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
-    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'preview')
+export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
-        await callJava(request)
+        const initiationDateTime = new Date()
+        if (match.type === 'content' || match.type === 'path' || match.type === 'symbol') {
+            lastPreviewUpdateCallSendDateTime = initiationDateTime
+            await callJava({
+                action: 'previewLoading',
+                arguments: { timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+            })
+        }
+        const previewContent = await createPreviewContent(match, lineOrSymbolMatchIndex)
+        if (initiationDateTime < lastPreviewUpdateCallSendDateTime) {
+            // Apparently, the content was slow to load, and we already sent a newer request in the meantime.
+            // The best we can do is to ignore this change to prevent overwriting the newer content.
+            return
+        }
+        await callJava({ action: 'preview', arguments: previewContent })
     } catch (error) {
-        console.error(`Failed to preview match: ${(error as Error).message}`, request)
+        console.error(`Failed to preview match: ${(error as Error).message}`)
     }
 }
 
 export async function onPreviewClear(): Promise<void> {
     try {
-        await callJava({ action: 'clearPreview' })
+        lastPreviewUpdateCallSendDateTime = new Date()
+        await callJava({
+            action: 'clearPreview',
+            arguments: { timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+        })
     } catch (error) {
         console.error(`Failed to clear preview: ${(error as Error).message}`)
     }
 }
 
-export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
-    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'open')
-    if (request.arguments.fileName) {
-        try {
-            await callJava(request)
-        } catch (error) {
-            console.error(`Failed to open match: ${(error as Error).message}`)
-        }
+export async function onOpen(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
+    try {
+        await callJava({ action: 'open', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
+    } catch (error) {
+        console.error(`Failed to open match: ${(error as Error).message}`)
     }
 }
 
-export async function loadLastSearch(): Promise<Search | null> {
+export async function loadLastSearchAlwaysFulfill(): Promise<Search | null> {
     try {
         return (await callJava({ action: 'loadLastSearch' })) as Search
     } catch (error) {
@@ -135,47 +183,47 @@ async function callJava(request: Request): Promise<object> {
     return window.callJava(request)
 }
 
-export async function createPreviewOrOpenRequest(
+export async function createPreviewContent(
     match: SearchMatch,
-    lineMatchIndexOrSymbolIndex: number | undefined,
-    action: MatchRequest['action']
-): Promise<MatchRequest> {
+    lineOrSymbolMatchIndex: number | undefined
+): Promise<PreviewContent> {
     if (match.type === 'commit') {
+        const isCommitResult = match.content.startsWith('```COMMIT_EDITMSG')
+        const content = prepareContent(
+            isCommitResult
+                ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
+                : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
+        )
         return {
-            action,
-            arguments: {
-                fileName: '',
-                path: '',
-                content: match.message,
-                lineNumber: -1,
-                absoluteOffsetAndLengths: [],
-            },
+            timeAsISOString: new Date().toISOString(),
+            resultType: isCommitResult ? 'commit' : 'diff',
+            repoUrl: match.repository,
+            content,
+            commitMessagePreview: match.message.split('\n', 1)[0],
+            relativeUrl: match.url,
         }
     }
 
     if (match.type === 'content') {
-        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndexOrSymbolIndex as number, action)
+        return createPreviewContentForContentMatch(match, lineOrSymbolMatchIndex as number)
     }
 
     if (match.type === 'path') {
-        return createPreviewOrOpenRequestForPathMatch(match, action)
+        return createPreviewContentForPathMatch(match)
     }
 
     if (match.type === 'repo') {
         return {
-            action,
-            arguments: {
-                fileName: '',
-                path: '',
-                content: null,
-                lineNumber: -1,
-                absoluteOffsetAndLengths: [],
-            },
+            timeAsISOString: new Date().toISOString(),
+            resultType: match.type,
+            repoUrl: getRepoMatchUrl(match).slice(1),
+            content: null,
+            relativeUrl: getRepoMatchUrl(match),
         }
     }
 
     if (match.type === 'symbol') {
-        return createPreviewOrOpenRequestForSymbolMatch(match, lineMatchIndexOrSymbolIndex as number, action)
+        return createPreviewContentForSymbolMatch(match, lineOrSymbolMatchIndex as number)
     }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -183,22 +231,17 @@ export async function createPreviewOrOpenRequest(
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
-        action,
-        arguments: {
-            fileName: '',
-            path: '',
-            content: null,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-        },
+        timeAsISOString: new Date().toISOString(),
+        resultType: null,
+        repoUrl: '',
+        content: null,
     }
 }
 
-export async function createPreviewOrOpenRequestForContentMatch(
+async function createPreviewContentForContentMatch(
     match: ContentMatch,
-    lineMatchIndex: number,
-    action: MatchRequest['action']
-): Promise<MatchRequest> {
+    lineMatchIndex: number
+): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
     const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
@@ -208,58 +251,58 @@ export async function createPreviewOrOpenRequestForContentMatch(
     )
 
     return {
-        action,
-        arguments: {
-            fileName,
-            path: match.path,
-            content: prepareContent(content),
-            lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
-            absoluteOffsetAndLengths,
-        },
+        timeAsISOString: new Date().toISOString(),
+        resultType: 'file',
+        fileName,
+        repoUrl: match.repository,
+        commit: match.commit,
+        path: match.path,
+        content: prepareContent(content),
+        lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+        absoluteOffsetAndLengths,
     }
 }
 
-export async function createPreviewOrOpenRequestForPathMatch(
-    match: PathMatch,
-    action: MatchRequest['action']
-): Promise<MatchRequest> {
+async function createPreviewContentForPathMatch(match: PathMatch): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
 
     return {
-        action,
-        arguments: {
-            fileName,
-            path: match.path,
-            content: prepareContent(content),
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-        },
+        timeAsISOString: new Date().toISOString(),
+        resultType: match.type,
+        fileName,
+        repoUrl: match.repository,
+        path: match.path,
+        content: prepareContent(content),
     }
 }
 
-export async function createPreviewOrOpenRequestForSymbolMatch(
+async function createPreviewContentForSymbolMatch(
     match: SymbolMatch,
-    symbolIndex: number,
-    action: MatchRequest['action']
-): Promise<MatchRequest> {
+    symbolMatchIndex: number
+): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
+    const symbolMatch = match.symbols[symbolMatchIndex]
 
     return {
-        action,
-        arguments: {
-            fileName,
-            path: match.path,
-            content: prepareContent(content),
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-        },
+        timeAsISOString: new Date().toISOString(),
+        resultType: match.type,
+        fileName,
+        repoUrl: match.repository,
+        commit: match.commit,
+        path: match.path,
+        content: prepareContent(content),
+        symbolName: symbolMatch.name,
+        symbolContainerName: symbolMatch.containerName,
+        lineNumber: getLineFromSourcegraphUrl(symbolMatch.url),
+        absoluteOffsetAndLengths: getAbsoluteOffsetAndLengthsFromSourcegraphUrl(symbolMatch.url, content),
+        relativeUrl: '',
     }
 }
 
 // We encode the content as base64-encoded string to avoid encoding errors in the Java JSON parser.
-// The Java side also does not expact `\r\n` line endings, so we replace them with `\n`.
+// The Java side also does not expect `\r\n` line endings, so we replace them with `\n`.
 //
 // We can not use the native btoa() function because it does not support all Unicode characters.
 function prepareContent(content: string | null): string | null {
@@ -288,4 +331,51 @@ function getCharacterCountUntilLine(content: string | null, lineNumber: number):
 
 function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
     return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
+}
+
+function getLineFromSourcegraphUrl(url: string): number {
+    const offsets = extractStartAndEndOffsetsFromSourcegraphUrl(url)
+    if (offsets === null) {
+        return -1
+    }
+    return offsets.start.line
+}
+
+function getAbsoluteOffsetAndLengthsFromSourcegraphUrl(url: string, content: string | null): number[][] {
+    const offsets = extractStartAndEndOffsetsFromSourcegraphUrl(url)
+    if (offsets === null) {
+        return []
+    }
+    const absoluteStart = getCharacterCountUntilLine(content, offsets.start.line) + offsets.start.col
+    const absoluteEnd = getCharacterCountUntilLine(content, offsets.end.line) + offsets.end.col
+    return [[absoluteStart, absoluteEnd - absoluteStart]]
+}
+
+// Parses a Sourcegraph URL and extracts the offsets from it. E.g.:
+//
+//     /github.com/apache/kafka/-/blob/streams/src/main/j…ls/graph/SourceGraphNode.java?L28:23-28:38
+//
+// Will be parsed into:
+//
+//    {
+//      start: {
+//        line: 28,
+//        column: 23
+//      },
+//      end: {
+//         line: 28,
+//         column: 38
+//       }
+//    }
+function extractStartAndEndOffsetsFromSourcegraphUrl(
+    url: string
+): null | { start: { line: number; col: number }; end: { line: number; col: number } } {
+    const match = url.match(/L(\d+):(\d+)-(\d+):(\d+)$/)
+    if (match === null) {
+        return null
+    }
+    return {
+        start: { line: parseInt(match[1], 10) - 1, col: parseInt(match[2], 10) - 1 },
+        end: { line: parseInt(match[3], 10) - 1, col: parseInt(match[4], 10) - 1 },
+    }
 }

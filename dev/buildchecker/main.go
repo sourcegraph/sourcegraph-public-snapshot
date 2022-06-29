@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -140,7 +141,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := slackSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
+		summary := generateBranchEventSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
 		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
 
 		// Post update first to avoid invisible changes
@@ -404,13 +405,9 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			totalFlakes += flake
 		}
 
-		message := fmt.Sprintf(`:bar_chart: Welcome to your weekly CI report for week ending %s!
-	• Total builds: *%d*
-	• Total incident duration: *%v*
-	• Total flakes: *%d*
+		avgFlakes := math.Round(float64(totalFlakes) / float64(totalBuilds) * 100)
 
-	For more information, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OKAYHQ>.
-`, historyFlags.createdToDate, totalBuilds, time.Duration(totalTime*int(time.Minute)), totalFlakes)
+		message := generateWeeklySummary(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
 
 		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
 			log.Fatal("postSlackUpdate: ", err)

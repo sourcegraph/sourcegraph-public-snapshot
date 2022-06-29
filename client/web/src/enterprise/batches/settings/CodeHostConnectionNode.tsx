@@ -102,7 +102,6 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
-                                role="img"
                                 className="text-success test-code-host-connection-node-enabled"
                                 data-tooltip="This code host has credentials connected."
                                 aria-label="This code host has credentials connected."
@@ -111,15 +110,13 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                         )}
                         {!isEnabled && (
                             <Icon
-                                role="img"
                                 className="text-danger test-code-host-connection-node-disabled"
                                 data-tooltip="This code host does not have credentials configured."
                                 aria-label="This code host does not have credentials configured."
                                 as={CheckboxBlankCircleOutlineIcon}
                             />
                         )}
-                        <Icon role="img" className="mx-2" aria-hidden={true} as={ExternalServiceIcon} />{' '}
-                        {node.externalServiceURL}{' '}
+                        <Icon className="mx-2" aria-hidden={true} as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
                             <Badge
                                 variant="secondary"

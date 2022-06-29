@@ -106,9 +106,9 @@ func (*GlobalSymbolSearchJob) Name() string {
 
 func (s *GlobalSymbolSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", s.GlobalZoektQuery.query),
-		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.repoScope),
-		log.Bool("includePrivate", s.GlobalZoektQuery.includePrivate),
+		trace.Stringer("query", s.GlobalZoektQuery.Query),
+		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),
+		log.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
 		log.String("type", string(s.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", s.ZoektArgs.Select),

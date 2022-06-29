@@ -18,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -52,7 +54,7 @@ type prometheusTracer struct {
 func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
-	if ot.ShouldTrace(ctx) {
+	if policy.ShouldTrace(ctx) {
 		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
@@ -143,7 +145,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
 	var finish trace.TraceValidationFinishFunc
-	if ot.ShouldTrace(ctx) {
+	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
 	}
 	return func(queryErrors []*gqlerrors.QueryError) {
@@ -462,6 +464,7 @@ func NewSchema(
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
+	logger sglog.Logger
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
@@ -644,7 +647,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.NewRepos(r.db).GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.logger, r.db).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {

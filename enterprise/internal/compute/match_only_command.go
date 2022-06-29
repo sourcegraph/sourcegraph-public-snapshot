@@ -70,7 +70,7 @@ func fromRegexpMatches(submatches []int, namedGroups []string, lineValue string,
 }
 
 func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
-	lineMatches := fm.HunkMatches.AsLineMatches()
+	lineMatches := fm.ChunkMatches.AsLineMatches()
 	matches := make([]Match, 0, len(lineMatches))
 	for _, l := range lineMatches {
 		for _, submatches := range r.FindAllStringSubmatchIndex(l.Preview, -1) {

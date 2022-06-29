@@ -3,32 +3,26 @@ import { ReactElement, useMemo } from 'react'
 import { isDefined } from '@sourcegraph/common'
 import { H3 } from '@sourcegraph/wildcard'
 
-import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
-import { Series } from '../../../../types'
+import { TooltipList, TooltipListBlankItem, TooltipListItem } from '../../../../core'
 import { Point } from '../../types'
-import { isValidNumber, formatYTick } from '../../utils'
+import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
-
-import styles from './TooltipContent.module.scss'
-
-export function getLineStroke<Datum>(line: Series<Datum>): string {
-    return line?.color ?? DEFAULT_FALLBACK_COLOR
-}
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
 export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'seriesId' | 'value' | 'time'>
 
 export interface TooltipContentProps<Datum> {
-    series: Series<Datum>[]
+    series: SeriesWithData<Datum>[]
     activePoint: MinimumPointInfo<Datum>
     stacked: boolean
 }
 
 /**
- * Display tooltip content for XYChart.
- * It consists of title - datetime for current x point and list of all nearest y points.
+ * Display tooltip content for series-like chart.
+ * This tooltip renders title - datetime for hovered/focused x point
+ * and its list of all nearest y points.
  */
 export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactElement | null {
     const { activePoint, series, stacked } = props
@@ -40,10 +34,10 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
         const sortedSeries = series
             .map(line => {
-                const seriesDatum = line.data.find(
-                    datum => line.getXValue(datum).getTime() === activePoint.time.getTime()
+                const seriesDatum = (line.data as SeriesDatum<Datum>[]).find(
+                    datum => datum.x.getTime() === activePoint.time.getTime()
                 )
-                const value = seriesDatum ? line.getYValue(seriesDatum) : null
+                const value = seriesDatum ? getDatumValue(seriesDatum) : null
 
                 if (!isValidNumber(value)) {
                     return
@@ -67,34 +61,30 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
         <>
             <H3>{activePoint.time.toDateString()}</H3>
 
-            <ul className={styles.tooltipList}>
-                {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
+            <TooltipList>
+                {lines.leftRemaining > 0 && (
+                    <TooltipListBlankItem>... and {lines.leftRemaining} more</TooltipListBlankItem>
+                )}
                 {lines.window.map(line => {
                     const value = formatYTick(line.value)
                     const isActiveLine = activePoint.seriesId === line.id
                     const stackedValue = isActiveLine && stacked ? formatYTick(activePoint.value) : null
-                    const backgroundColor = isActiveLine ? 'var(--secondary-2)' : ''
 
-                    /* eslint-disable react/forbid-dom-props */
                     return (
-                        <li key={line.id} className={styles.item} style={{ backgroundColor }}>
-                            <div style={{ backgroundColor: getLineStroke(line) }} className={styles.mark} />
-
-                            <span className={styles.legendText}>{line.name}</span>
-
-                            {stackedValue && (
-                                <span className={styles.legendStackedValue}>
-                                    {stackedValue}
-                                    {'\u00A0—\u00A0'}
-                                </span>
-                            )}
-
-                            <span>{value}</span>
-                        </li>
+                        <TooltipListItem
+                            key={line.id}
+                            isActive={isActiveLine}
+                            name={line.name}
+                            value={value}
+                            stackedValue={stackedValue}
+                            color={getLineColor(line)}
+                        />
                     )
                 })}
-                {lines.rightRemaining > 0 && <li className={styles.item}>... and {lines.rightRemaining} more</li>}
-            </ul>
+                {lines.rightRemaining > 0 && (
+                    <TooltipListBlankItem>... and {lines.rightRemaining} more</TooltipListBlankItem>
+                )}
+            </TooltipList>
         </>
     )
 }

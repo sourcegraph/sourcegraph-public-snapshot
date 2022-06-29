@@ -32,7 +32,7 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 	}
 	var (
 		repoStore = r.db.Repos()
-		uprs      = database.UserPublicRepos(r.db)
+		uprs      = r.db.UserPublicRepos()
 		repos     = make([]database.UserPublicRepo, len(args.RepoURIs))
 		eg        errgroup.Group
 	)

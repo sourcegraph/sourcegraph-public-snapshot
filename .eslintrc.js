@@ -70,6 +70,10 @@ const config = {
             message:
               'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
           },
+          {
+            name: 'chromatic/isChromatic',
+            message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
+          },
         ],
         patterns: [
           {
@@ -99,6 +103,10 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             element: 'form',
             message:
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
+          },
+          {
+            element: 'input',
+            message: 'Use the <Input/> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'select',
@@ -179,6 +187,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         selector: 'JSXAttribute JSXIdentifier[name="data-tooltip"]',
         message:
           'The use of data-tooltip has been deprecated. Please wrap your trigger element with the <Tooltip> component from Wildcard instead. If there are problems using the new <Tooltip>, please contact the Frontend Platform Team.',
+      },
+      {
+        selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
+        message:
+          "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
       },
     ],
     // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint

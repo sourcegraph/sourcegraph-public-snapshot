@@ -52,7 +52,7 @@ func TestSearchResults(t *testing.T) {
 			case *result.RepoMatch:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name)
 			case *result.FileMatch:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.HunkMatches[0].Ranges[0].Start.Line)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.ChunkMatches[0].Ranges[0].Start.Line)
 			default:
 				t.Fatal("unexpected result type:", match)
 			}

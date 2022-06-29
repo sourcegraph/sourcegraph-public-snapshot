@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/neelance/parallel"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -52,7 +50,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 			defer run.Release()
 
 			matches, err := searchInRepo(ctx, clients.DB, repoRevs, s.PatternInfo, s.Limit)
-			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
+			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
@@ -87,11 +85,10 @@ func (s *SymbolSearchJob) Tags() []log.Field {
 }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
+	span, ctx := trace.New(ctx, "Search symbols in repo", "")
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
+			span.SetError(err)
 		}
 		span.Finish()
 	}()

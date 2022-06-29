@@ -1,13 +1,18 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
-const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlockInputs', module).addDecorator(story => (
-    <div className="container p-3">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="container p-3">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/blocks/file/NotebookFileBlockInputs',
+    decorators: [decorator],
+}
+
+export default config
 
 const defaultProps = {
     id: 'block-id',
@@ -27,4 +32,6 @@ const defaultProps = {
     setEditor: noop,
 }
 
-add('default', () => <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>)
+export const Default: Story = () => (
+    <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>
+)

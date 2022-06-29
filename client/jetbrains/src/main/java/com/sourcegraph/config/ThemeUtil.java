@@ -4,28 +4,45 @@ import com.google.gson.JsonObject;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 
 public class ThemeUtil {
+    private static final Logger logger = LoggerFactory.getLogger(ThemeUtil.class);
+
     @NotNull
     public static JsonObject getCurrentThemeAsJson() {
-        // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
+        JsonObject intelliJTheme = new JsonObject();
+        UIDefaults defaults = UIManager.getDefaults();
+        Enumeration<Object> keysEnumeration = defaults.keys();
+        ArrayList<Object> keysList = Collections.list(keysEnumeration);
+        for (Object key : keysList) {
+            try {
+                Object value = UIManager.get(key);
+                if (value instanceof ColorUIResource) {
+                    intelliJTheme.addProperty(key.toString(), getHexString(UIManager.getColor(key)));
+                }
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+            }
+        }
+
         JsonObject theme = new JsonObject();
         theme.addProperty("isDarkTheme", isDarkTheme());
-        theme.addProperty("backgroundColor", getHexString(UIUtil.getPanelBackground()));
-        theme.addProperty("buttonArc", UIManager.get("Button.arc").toString());
-        theme.addProperty("buttonColor", getHexString(UIManager.getColor("Button.default.background")));
-        theme.addProperty("color", getHexString(UIUtil.getLabelForeground()));
-        theme.addProperty("font", UIUtil.getLabelFont().getFontName());
-        theme.addProperty("fontSize", UIUtil.getLabelFont().getSize());
-        theme.addProperty("labelBackground", getHexString(UIManager.getColor("Label.background")));
+        theme.add("intelliJTheme", intelliJTheme);
         return theme;
     }
 
     @NotNull
     public static String getPanelBackgroundColorHexString() {
+        //noinspection ConstantConditions - UIUtil.getPanelBackground() can't be null, so our return value can't be null.
         return getHexString(UIUtil.getPanelBackground());
     }
 
@@ -36,7 +53,12 @@ public class ThemeUtil {
     @Nullable
     private static String getHexString(@Nullable Color color) {
         if (color != null) {
-            return "#" + Integer.toHexString(color.getRGB()).substring(2);
+            String colorString = Integer.toHexString(color.getRGB());
+            if (colorString.length() > 2) {
+                return "#" + colorString.substring(2);
+            } else {
+                return "#000000";
+            }
         } else {
             return null;
         }

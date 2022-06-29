@@ -3,6 +3,8 @@ package workerdb
 import (
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,6 +21,7 @@ func Init() (*sql.DB, error) {
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
+	logger := log.Scoped("initDatabaseMemo", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -27,7 +30,7 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(logger, db).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}

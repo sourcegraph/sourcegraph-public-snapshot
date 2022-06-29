@@ -63,7 +63,7 @@ func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http
 			return
 		}
 
-		usr, err := database.Users(db).GetByVerifiedEmail(ctx, formData.Email)
+		usr, err := db.Users().GetByVerifiedEmail(ctx, formData.Email)
 		if err != nil {
 			// 🚨 SECURITY: We don't show an error message when the user is not found
 			// as to not leak the existence of a given e-mail address in the database.

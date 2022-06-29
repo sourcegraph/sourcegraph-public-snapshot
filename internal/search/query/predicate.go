@@ -38,8 +38,8 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
 		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
-		"dependents":            func() Predicate { return &RepoDependenciesPredicate{} },
-		"revdeps":               func() Predicate { return &RepoDependenciesPredicate{} },
+		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
+		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -237,8 +237,8 @@ func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
 func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
 func (f *RepoContainsFilePredicate) Plan(parent Basic) (Plan, error) {
-	contains := RepoContainsPredicate{File: f.Pattern, Content: ""}
-	return contains.Plan(parent)
+	// Handled by repo search
+	return nil, nil
 }
 
 /* repo:contains.commit.after(...) */

@@ -54,12 +54,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                             <Link to={items[0].to} className="bg-2 border-0 d-flex list-group-item-action p-2 w-100">
                                 <span>
                                     {header?.icon && (
-                                        <Icon
-                                            role="img"
-                                            className="sidebar__icon mr-1"
-                                            as={header.icon}
-                                            aria-hidden={true}
-                                        />
+                                        <Icon className="sidebar__icon mr-1" as={header.icon} aria-hidden={true} />
                                     )}{' '}
                                     {items[0].label}
                                 </span>

@@ -790,6 +790,27 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	return nil
 }
 
+// ProjectRepos returns all repos of a project with a given projectKey
+func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
+	if projectKey == "" {
+		return nil, errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+
+	pageToken := &PageToken{Limit: 1000}
+
+	for pageToken.HasMore() {
+		var page []*Repo
+		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+			return nil, err
+		}
+		repos = append(repos, page...)
+	}
+
+	return repos, nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)

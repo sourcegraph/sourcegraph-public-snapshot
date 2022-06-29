@@ -1,5 +1,7 @@
 import { Optional } from 'utility-types'
 
+// eslint-disable-next-line no-restricted-imports
+import { TourListState } from '@sourcegraph/web/src/tour/components/Tour/useTour'
 import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
@@ -26,7 +28,6 @@ export interface TemporarySettingsSchema {
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
-    'codemonitor.info.visible': boolean
     'homepage.userInvites.tab': number
     'integrations.vscode.lastDetectionTimestamp': number
     'integrations.jetbrains.lastDetectionTimestamp': number
@@ -37,6 +38,7 @@ export interface TemporarySettingsSchema {
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'codeintel.referencePanel.redesign.enabled': boolean
+    'onboarding.quickStartTour': TourListState
 }
 
 /**

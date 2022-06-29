@@ -56,7 +56,6 @@ function go_test() {
 
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then
-    set -x
     echo "~~~ Creating test failures anotation"
     RICHGO_CONFIG="./.richstyle.yml"
     cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG

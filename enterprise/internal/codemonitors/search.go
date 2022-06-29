@@ -126,7 +126,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
 			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
 		}
@@ -210,11 +210,30 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
+	// HACK(camdencheek): limit the concurrency of the commit search job
+	// because the db passed into this function might actually be a transaction
+	// and transactions cannot be used concurrently.
+	planJob = limitConcurrency(planJob)
+
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
+
+func limitConcurrency(in job.Job) job.Job {
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
+		switch typedAtom := atom.(type) {
+		case *commit.SearchJob:
+			jobCopy := *typedAtom
+			jobCopy.Concurrency = 1
+			return &jobCopy
+		default:
+			return atom
+		}
+	})
+
+}
 
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0
@@ -229,8 +248,9 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
 		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
-			// ComputeExcludedJob is fine for code monitor jobs
-			return atom
+			// ComputeExcludedJob is fine for code monitor jobs, but should be
+			// removed since it's not used
+			return jobutil.NewNoopJob()
 		default:
 			if err == nil {
 				err = errors.Errorf("found invalid atom job type %T for code monitor search", atom)

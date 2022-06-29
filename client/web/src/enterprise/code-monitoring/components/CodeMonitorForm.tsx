@@ -186,9 +186,9 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                     </div>
 
                     <Select
+                        id="code-monitor-select-owner"
                         label="Owner"
                         className="w-100"
-                        aria-label="Owner"
                         selectClassName={classNames('mb-2 w-auto', styles.ownerDropdown)}
                         disabled={true}
                         message="Event history and configuration will not be shared. Code monitoring currently only supports individual owners."

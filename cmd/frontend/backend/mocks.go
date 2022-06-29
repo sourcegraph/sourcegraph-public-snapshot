@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var Mocks MockServices
@@ -17,11 +17,11 @@ type MockServices struct {
 // testContext creates a new context.Context for use by tests
 func testContext() context.Context {
 	Mocks = MockServices{}
-	git.ResetMocks()
+	gitserver.ResetMocks()
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
+	_, ctx = tracepkg.New(ctx, "dummy", "")
 
 	return ctx
 }

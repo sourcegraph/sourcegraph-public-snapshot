@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import {
@@ -14,6 +14,15 @@ import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '
 
 import { CodeIntelligenceBadgeContentProps } from './CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './CodeIntelligenceBadgeMenu'
+
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/codeintel/enterprise/CodeIntelligenceBadgeMenu',
+    decorators: [decorator],
+}
+
+export default config
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -41,6 +50,7 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
+    auditLogs: [],
 }
 
 const executionLogPrototype: ExecutionLogEntryFields = {
@@ -248,37 +258,43 @@ const defaultProps: CodeIntelligenceBadgeContentProps = {
         { loading: false },
     ],
 }
-const { add } = storiesOf('web/codeintel/enterprise/CodeIntelligenceBadgeMenu', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
 
 const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaultProps => ({
     ...defaultProps,
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unsupported', () => <CodeIntelligenceBadgeMenu {...defaultProps} />)
+export const Unsupported: Story = () => <CodeIntelligenceBadgeMenu {...defaultProps} />
+export const Unavailable: Story = () => <CodeIntelligenceBadgeMenu {...withPayload({ searchBasedSupport })} />
 
-add('Unavailable', () => <CodeIntelligenceBadgeMenu {...withPayload({ searchBasedSupport })} />)
-
-add('Multiple projects', () => (
+export const MultipleProjects: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ preciseSupport: multiplePreciseSupport })} />
-))
+)
 
-add('Multiple projects, one enabled', () => (
+MultipleProjects.storyName = 'Multiple projects'
+
+export const MultipleProjectsOneEnabled: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
-))
+)
 
-add('Processing error', () => (
+MultipleProjectsOneEnabled.storyName = 'Multiple projects, one enabled'
+
+export const ProcessingError: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />
-))
+)
 
-add('Indexing error', () => (
+ProcessingError.storyName = 'Processing error'
+
+export const IndexingError: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
-))
+)
 
-add('Multiple errors', () => (
+IndexingError.storyName = 'Indexing error'
+
+export const MultipleErrors: Story = () => (
     <CodeIntelligenceBadgeMenu
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
-))
+)
+
+MultipleErrors.storyName = 'Multiple errors'

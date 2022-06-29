@@ -90,8 +90,14 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
-                        <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
-                            <Icon role="img" aria-hidden={true} as={PlusIcon} /> Add dashboard
+                        <Button
+                            as={Link}
+                            to="/insights/add-dashboard"
+                            variant="secondary"
+                            className="mr-2"
+                            aria-label="add dashboard button"
+                        >
+                            <Icon aria-hidden={true} as={PlusIcon} /> Add dashboard
                         </Button>
                         <Button
                             as={Link}
@@ -99,7 +105,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                             variant="primary"
                             onClick={() => telemetryService.log('InsightAddMoreClick')}
                         >
-                            <Icon role="img" aria-hidden={true} as={PlusIcon} /> Create insight
+                            <Icon aria-hidden={true} as={PlusIcon} /> Create insight
                         </Button>
                     </>
                 }

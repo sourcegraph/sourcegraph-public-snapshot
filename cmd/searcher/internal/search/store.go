@@ -15,10 +15,11 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,9 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -127,14 +127,17 @@ func (s *Store) Start() {
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
 func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
-	ext.Component.Set(span, "store")
+	return s.PrepareZipPaths(ctx, repo, commit, nil)
+}
+
+func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
+	span, ctx := trace.New(ctx, "Store.prepareZip", "")
+	span.SetTag("component", "store")
 	var cacheHit bool
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 		}
 		span.Finish()
 		duration := time.Since(start).Seconds()
@@ -157,9 +160,14 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 	largeFilePatterns := conf.Get().SearchLargeFiles
 
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo, commit, largeFilePatterns)))
-	key := hex.EncodeToString(h[:])
-	span.LogKV("key", key)
+	h := sha256.New()
+	_, _ = fmt.Fprintf(h, "%q %q %q", repo, commit, largeFilePatterns)
+	for _, p := range paths {
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(p))
+	}
+	key := hex.EncodeToString(h.Sum(nil))
+	span.LogFields(otlog.String("key", key))
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
@@ -174,10 +182,10 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		cacheHit := true
-		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
+		bgctx := trace.CopyContext(context.Background(), ctx)
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
-			return s.fetch(ctx, repo, commit, largeFilePatterns)
+			return s.fetch(ctx, repo, commit, largeFilePatterns, paths)
 		})
 		var path string
 		if f != nil {
@@ -208,7 +216,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string, paths []string) (rc io.ReadCloser, err error) {
 	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -219,8 +227,8 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
-	ext.Component.Set(span, "store")
+	span, ctx := trace.New(ctx, "Store.fetch", "")
+	span.SetTag("component", "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
 
@@ -236,8 +244,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		releaseFetchLimiter() // Release concurrent fetches semaphore
 		cancel()              // Release context resources
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetError(err)
 			metricFetchFailed.Inc()
 		}
 		metricFetching.Dec()
@@ -249,9 +256,17 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}()
 
-	r, err := s.FetchTar(ctx, repo, commit)
-	if err != nil {
-		return nil, err
+	var r io.ReadCloser
+	if len(paths) == 0 {
+		r, err = s.FetchTar(ctx, repo, commit)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		r, err = s.FetchTarPaths(ctx, repo, commit, paths)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	filter := func(hdr *tar.Header) bool { return false } // default: don't filter

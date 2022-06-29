@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
@@ -60,6 +62,8 @@ var (
 		Required:    true,
 		Destination: &outputFilepath,
 	}
+
+	logger = log.Scoped("sg migration", "")
 )
 
 var (
@@ -69,7 +73,7 @@ var (
 		Usage:       "Add a new migration file",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
-		Action:      execAdapter(addExec),
+		Action:      addExec,
 	}
 
 	revertCommand = &cli.Command{
@@ -77,27 +81,12 @@ var (
 		ArgsUsage:   "<commit>",
 		Usage:       "Revert the migrations defined on the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      execAdapter(revertExec),
+		Action:      revertExec,
 	}
 
 	// outputFactory lazily retrieves the global output that might not yet be instantiated
 	// at compile-time in sg.
 	outputFactory = func() *output.Output { return std.Out.Output }
-
-	// expectedSchemaFactory returns the description of the given schema at the given version via
-	// the local git clone. If the version is not resolvable as a git rev-like, then an error is
-	// returned.
-	expectedSchemaFactory = func(filename, version string) (descriptions.SchemaDescription, error) {
-		ctx := context.Background()
-		output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
-
-		var schemaDescription descriptions.SchemaDescription
-		if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
-			return schemaDescription, err
-		}
-
-		return schemaDescription, nil
-	}
 
 	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
 	upToCommand     = cliutil.UpTo("sg migration", makeRunner, outputFactory, true)
@@ -105,15 +94,15 @@ var (
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, expectedSchemaFactory)
-	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, localGitExpectedSchemaFactory)
+	addLogCommand   = cliutil.AddLog(logger, "sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
 		ArgsUsage:   "<commit>",
 		Usage:       "Identiy the migration leaves for the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      execAdapter(leavesExec),
+		Action:      leavesExec,
 	}
 
 	squashCommand = &cli.Command{
@@ -122,7 +111,7 @@ var (
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
-		Action:      execAdapter(squashExec),
+		Action:      squashExec,
 	}
 
 	squashAllCommand = &cli.Command{
@@ -131,7 +120,16 @@ var (
 		Usage:       "Collapse schema definitions into a single SQL file",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
-		Action:      execAdapter(squashAllExec),
+		Action:      squashAllExec,
+	}
+
+	visualizeCommand = &cli.Command{
+		Name:        "visualize",
+		ArgsUsage:   "",
+		Usage:       "Output a DOT visualization of the migration graph",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, outputFilepathFlag},
+		Action:      visualizeExec,
 	}
 
 	migrationCommand = &cli.Command{
@@ -165,6 +163,7 @@ sg migration squash
 			leavesCommand,
 			squashCommand,
 			squashAllCommand,
+			visualizeCommand,
 		},
 	}
 )
@@ -174,6 +173,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
 	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	logger := log.Scoped("makeRunner", "")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {
@@ -187,12 +187,53 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	if err != nil {
 		return nil, err
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
 
 	return cliutil.NewShim(r), nil
+}
+
+// localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
+// (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
+// exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
+func localGitExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
+	ctx := context.Background()
+	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
+
+	if err := output.Wait(); err != nil {
+		// See if there is an error indicating a missing object, but no other problems
+		return descriptions.SchemaDescription{}, false, filterLocalGitErrors(filename, version, err)
+	}
+
+	if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
+		return descriptions.SchemaDescription{}, false, err
+	}
+
+	return schemaDescription, true, nil
+}
+
+func filterLocalGitErrors(filename, version string, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	missingMessages := []string{
+		// unknown revision
+		fmt.Sprintf("fatal: invalid object name '%s^'", version),
+
+		// path unknown to the revision (regardless of repo state)
+		fmt.Sprintf("fatal: path '%s' does not exist in '%s^'", filename, version),
+		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s^'", filename, version),
+	}
+	for _, missingMessage := range missingMessages {
+		if strings.Contains(err.Error(), missingMessage) {
+			return nil
+		}
+	}
+
+	return err
 }
 
 func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
@@ -208,15 +249,12 @@ func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
 }
 
 func resolveSchema(name string) (*schemas.Schema, error) {
-	repositoryRoot, err := root.RepositoryRoot()
+	fs, err := db.GetFSForPath(name)()
 	if err != nil {
-		if errors.Is(err, root.ErrNotInsideSourcegraph) {
-			return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
-		}
 		return nil, err
 	}
 
-	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
+	schema, err := schemas.ResolveSchema(fs, name)
 	if err != nil {
 		return nil, errors.Newf("malformed migration definitions: %w", err)
 	}
@@ -224,7 +262,8 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 	return schema, nil
 }
 
-func addExec(ctx context.Context, args []string) error {
+func addExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return cli.NewExitError("no migration name specified", 1)
 	}
@@ -242,7 +281,9 @@ func addExec(ctx context.Context, args []string) error {
 
 	return migration.Add(database, args[0])
 }
-func revertExec(ctx context.Context, args []string) error {
+
+func revertExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return cli.NewExitError("no commit specified", 1)
 	}
@@ -253,12 +294,13 @@ func revertExec(ctx context.Context, args []string) error {
 	return migration.Revert(db.Databases(), args[0])
 }
 
-func squashExec(ctx context.Context, args []string) (err error) {
+func squashExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		cli.NewExitError("no current-version specified", 1)
+		return cli.NewExitError("no current-version specified", 1)
 	}
 	if len(args) != 1 {
-		cli.NewExitError("too many arguments", 1)
+		return cli.NewExitError("too many arguments", 1)
 	}
 
 	var (
@@ -266,7 +308,7 @@ func squashExec(ctx context.Context, args []string) (err error) {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
@@ -279,9 +321,14 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	return migration.Squash(database, commit, squashInContainer, skipTeardown)
 }
 
-func squashAllExec(ctx context.Context, args []string) (err error) {
+func visualizeExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) != 0 {
-		cli.NewExitError("too many arguments", 1)
+		return cli.NewExitError("too many arguments", 1)
+	}
+
+	if outputFilepath == "" {
+		return cli.NewExitError("Supply an output file with -f", 1)
 	}
 
 	var (
@@ -290,18 +337,41 @@ func squashAllExec(ctx context.Context, args []string) (err error) {
 	)
 
 	if !ok {
-		cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+	}
+
+	return migration.Visualize(database, outputFilepath)
+}
+
+func squashAllExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
+	if len(args) != 0 {
+		return cli.NewExitError("too many arguments", 1)
+	}
+
+	if outputFilepath == "" {
+		return cli.NewExitError("Supply an output file with -f", 1)
+	}
+
+	var (
+		databaseName = migrateTargetDatabase
+		database, ok = db.DatabaseByName(databaseName)
+	)
+
+	if !ok {
+		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
 }
 
-func leavesExec(ctx context.Context, args []string) (err error) {
+func leavesExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		cli.NewExitError("no commit specified", 1)
+		return cli.NewExitError("no commit specified", 1)
 	}
 	if len(args) != 1 {
-		cli.NewExitError("too many arguments", 1)
+		return cli.NewExitError("too many arguments", 1)
 	}
 
 	return migration.LeavesForCommit(db.Databases(), args[0])

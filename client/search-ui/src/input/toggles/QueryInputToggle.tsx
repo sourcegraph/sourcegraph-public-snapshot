@@ -5,7 +5,7 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './Toggles.module.scss'
 
@@ -73,30 +73,35 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
     const isActive = props.isActive && !disabledRule
 
     const interactiveProps = interactive
-        ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
-        : {}
+        ? {
+              tabIndex: 0,
+              'aria-label': `${props.title} toggle`,
+              onClick: onCheckboxToggled,
+          }
+        : { tabIndex: -1, 'aria-hidden': true }
 
     return (
         // Click events here are defined in useEffect
-        <Button
-            as="div"
-            ref={toggleCheckbox}
-            className={classNames(
-                styles.toggle,
-                props.className,
-                !!disabledRule && styles.disabled,
-                isActive && styles.toggleActive,
-                !interactive && styles.toggleNonInteractive,
-                props.activeClassName
-            )}
-            role="checkbox"
-            variant="icon"
-            aria-disabled={!!disabledRule}
-            aria-checked={isActive}
-            aria-label={`${props.title} toggle`}
-            {...interactiveProps}
-        >
-            <Icon role="img" aria-hidden={true} as={props.icon} />
-        </Button>
+        <Tooltip content={tooltipValue} placement="bottom">
+            <Button
+                as="div"
+                className={classNames(
+                    styles.toggle,
+                    props.className,
+                    !!disabledRule && styles.disabled,
+                    isActive && styles.toggleActive,
+                    !interactive && styles.toggleNonInteractive,
+                    props.activeClassName
+                )}
+                ref={toggleCheckbox}
+                role="checkbox"
+                variant="icon"
+                aria-disabled={!!disabledRule}
+                aria-checked={isActive}
+                {...interactiveProps}
+            >
+                <Icon aria-hidden={true} as={props.icon} />
+            </Button>
+        </Tooltip>
     )
 }

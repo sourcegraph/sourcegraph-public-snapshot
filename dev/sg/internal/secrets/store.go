@@ -13,6 +13,8 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,6 +24,10 @@ const (
 
 var (
 	ErrSecretNotFound = errors.New("secret not found")
+
+	// externalSecretTTL declares how long external secrets are allowed to be persisted
+	// once fetched.
+	externalSecretTTL = 24 * time.Hour
 )
 
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
@@ -119,30 +125,56 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 
 	// Check if we already have this secret
 	if err := s.Get(secret.id(), &value); err == nil {
-		return value.Value, nil
+		if time.Since(value.Fetched) < externalSecretTTL {
+			return value.Value, nil
+		}
+
+		// If expired, remove the secret and fetch a new one.
+		_ = s.Remove(secret.id())
+		value = externalSecretValue{}
 	}
 
-	if secret.Provider != "gcloud" {
+	// Get secret from provider
+	var err error
+	switch secret.Provider {
+
+	case ExternalProviderGCloud:
+		client, err := s.getSecretmanagerClient(ctx)
+		if err != nil {
+			return "", err
+		}
+		var result *secretmanagerpb.AccessSecretVersionResponse
+		result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+			Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
+		})
+		if err == nil {
+			value.Value = string(result.Payload.Data)
+		}
+
+	case ExternalProvider1Pass:
+		value.Value, err = run.Cmd(ctx, "op read",
+			run.Arg(fmt.Sprintf("op://%s/%s/%s", secret.Project, secret.Name, secret.Field)),
+			`--account="team-sourcegraph.1password.com"`).
+			Run().String()
+
+	default:
 		return "", errors.Newf("Unknown secrets provider %q", secret.Provider)
 	}
 
-	client, err := s.getSecretmanagerClient(ctx)
 	if err != nil {
-		return "", err
-	}
-	result, err := client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
-	})
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to access secret %q from %q", secret.Name, secret.Project)
+		errMessaage := fmt.Sprintf("%s: failed to access secret %q from %q",
+			secret.Provider, secret.Name, secret.Project)
+		// Some secret providers use their respective CLI, if not found the user might not
+		// have run 'sg setup' to set up the relevant tool.
+		if strings.Contains(err.Error(), "command not found") {
+			errMessaage += "- you may need to run 'sg setup' again"
+		}
+		return "", errors.Wrap(err, errMessaage)
 	}
 
-	// cache value, but don't save - TBD if we want to persist these secrets
+	// Return and persist the fetched secret
 	value.Fetched = time.Now()
-	value.Value = string(result.Payload.Data)
-	s.Put(secret.id(), &value)
-
-	return value.Value, nil
+	return value.Value, s.PutAndSave(secret.id(), &value)
 }
 
 // Remove deletes a value from memory.

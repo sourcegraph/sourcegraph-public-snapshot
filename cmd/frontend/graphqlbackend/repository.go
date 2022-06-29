@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,13 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type RepositoryResolver struct {
+	logger    log.Logger
 	hydration sync.Once
 	err       error
 
@@ -162,7 +165,7 @@ type RepositoryCommitArgs struct {
 }
 
 func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit")
+	span, ctx := trace.New(ctx, "repository.commit", "")
 	defer span.Finish()
 	span.SetTag("commit", args.Rev)
 
@@ -171,7 +174,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -219,13 +222,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}

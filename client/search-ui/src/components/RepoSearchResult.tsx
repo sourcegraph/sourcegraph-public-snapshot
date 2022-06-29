@@ -1,14 +1,12 @@
 import React from 'react'
 
+import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Link, useIsTruncated } from '@sourcegraph/wildcard'
+import { Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { ResultContainer } from './ResultContainer'
@@ -19,12 +17,16 @@ export interface RepoSearchResultProps {
     result: RepositoryMatch
     onSelect: () => void
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
     result,
     onSelect,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -35,14 +37,15 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span
-                onMouseEnter={checkTruncation}
-                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                ref={titleReference}
-                data-tooltip={(truncated && displayRepoName(getRepoMatchLabel(result))) || null}
-            >
-                <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
-            </span>
+            <Tooltip content={(truncated && displayRepoName(getRepoMatchLabel(result))) || null} placement="bottom">
+                <span
+                    onMouseEnter={checkTruncation}
+                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                    ref={titleReference}
+                >
+                    <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                </span>
+            </Tooltip>
         </div>
     )
 
@@ -59,10 +62,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div className={styles.divider} />
                             <div>
                                 <Icon
-                                    role="img"
                                     aria-label="Forked repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={SourceForkIcon}
+                                    svgPath={mdiSourceFork}
                                 />
                             </div>
                             <div>
@@ -75,10 +77,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div className={styles.divider} />
                             <div>
                                 <Icon
-                                    role="img"
                                     aria-label="Archived repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={ArchiveIcon}
+                                    svgPath={mdiArchive}
                                 />
                             </div>
                             <div>
@@ -91,10 +92,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div className={styles.divider} />
                             <div>
                                 <Icon
-                                    role="img"
                                     aria-label="Private repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={LockIcon}
+                                    svgPath={mdiLock}
                                 />
                             </div>
                             <div>
@@ -119,6 +119,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     return (
         <ResultContainer
+            index={index}
             icon={SourceRepositoryIcon}
             collapsible={false}
             defaultExpanded={true}
@@ -129,6 +130,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            as={as}
         />
     )
 }

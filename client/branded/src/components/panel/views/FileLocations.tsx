@@ -1,17 +1,16 @@
 import * as React from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, isDefined, property } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FileSearchResult } from '@sourcegraph/search-ui'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -33,13 +32,13 @@ export const FileLocationsError: React.FunctionComponent<React.PropsWithChildren
 
 export const FileLocationsNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found
+        <Icon aria-hidden={true} svgPath={mdiMapSearch} /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className="m-2">
-        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found in the current repository
+        <Icon aria-hidden={true} svgPath={mdiMapSearch} /> No locations found in the current repository
     </div>
 )
 
@@ -163,7 +162,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         item: OrderedURI,
                         index: number,
                         additionalProps: { locationsByURI: Map<string, Location[]> }
-                    ) => this.renderFileMatch(item, additionalProps)}
+                    ) => this.renderFileMatch(item, additionalProps, index)}
                     itemProps={{ locationsByURI }}
                     itemKey={this.itemKey}
                 />
@@ -185,9 +184,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
     private renderFileMatch = (
         { uri }: OrderedURI,
-        { locationsByURI }: { locationsByURI: Map<string, Location[]> }
+        { locationsByURI }: { locationsByURI: Map<string, Location[]> },
+        index: number
     ): JSX.Element => (
         <FileSearchResult
+            index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
             expanded={true}

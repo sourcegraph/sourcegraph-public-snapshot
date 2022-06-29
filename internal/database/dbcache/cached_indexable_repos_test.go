@@ -7,6 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,6 +21,8 @@ func TestListIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
 
 	createExternalService := func(ctx context.Context, db database.DB) *types.ExternalService {
 		confGet := func() *conf.Unified {
@@ -37,7 +41,7 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Run("user-added repos", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		ctx := context.Background()
 
 		es := createExternalService(ctx, db)
@@ -75,7 +79,7 @@ func TestListIndexableRepos(t *testing.T) {
 		}
 
 		t.Run("List ALL repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(db.Repos()).List(ctx)
+			repos, err := NewIndexableReposLister(logger, db.Repos()).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -107,7 +111,7 @@ func TestListIndexableRepos(t *testing.T) {
 		})
 
 		t.Run("List only public indexable repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(db.Repos()).ListPublic(ctx)
+			repos, err := NewIndexableReposLister(logger, db.Repos()).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +140,8 @@ func TestListIndexableRepos(t *testing.T) {
 }
 
 func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
-	db := database.NewDB(dbtest.NewDB(b))
+	logger := logtest.Scoped(b)
+	db := database.NewDB(logger, dbtest.NewDB(logger, b))
 
 	ctx := context.Background()
 	select {
@@ -146,7 +151,7 @@ func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := NewIndexableReposLister(db.Repos()).List(ctx)
+		_, err := NewIndexableReposLister(logger, db.Repos()).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

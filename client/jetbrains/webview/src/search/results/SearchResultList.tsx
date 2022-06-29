@@ -8,7 +8,7 @@ import { PathSearchResult } from './PathSearchResult'
 import { RepoSearchResult } from './RepoSearchResult'
 import {
     getFirstResultId,
-    getLineMatchIndexOrSymbolIndexForFileResult,
+    getLineOrSymbolMatchIndexForFileResult,
     getMatchId,
     getMatchIdForResult,
     getSearchResultElement,
@@ -18,9 +18,9 @@ import {
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => void
-    onPreviewClear: () => void
-    onOpen: (result: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => void
+    onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
+    onPreviewClear: () => Promise<void>
+    onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     matches: SearchMatch[]
 }
 
@@ -53,14 +53,18 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     onPreviewChange(
                         match,
                         match.type === 'content' || match.type === 'symbol'
-                            ? getLineMatchIndexOrSymbolIndexForFileResult(resultId)
+                            ? getLineOrSymbolMatchIndexForFileResult(resultId)
                             : undefined
                     )
+                        .then(() => {})
+                        .catch(() => {})
                 } else {
                     console.log(`No match found for result id: ${resultId}`)
                 }
             } else {
                 onPreviewClear()
+                    .then(() => {})
+                    .catch(() => {})
             }
             setSelectedResultId(resultId)
         },
@@ -78,15 +82,12 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             const target = event.target as HTMLElement
 
             // We only want to handle keydown events on the search box
-            if (
-                (target.nodeName !== 'TEXTAREA' || !target.className.includes('inputarea')) &&
-                target.nodeName !== 'BODY'
-            ) {
+            if (!target.className.includes('cm-content') && target.nodeName !== 'BODY') {
                 return
             }
 
             // Ignore events when the autocomplete dropdown is open
-            const isAutocompleteOpen = document.querySelector('.monaco-list.element-focused') !== null
+            const isAutocompleteOpen = document.querySelector('.cm-tooltip-autocomplete') !== null
             if (isAutocompleteOpen) {
                 return
             }
@@ -107,9 +108,11 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     onOpen(
                         match,
                         match.type === 'content' || match.type === 'symbol'
-                            ? getLineMatchIndexOrSymbolIndexForFileResult(selectedResultId)
+                            ? getLineOrSymbolMatchIndexForFileResult(selectedResultId)
                             : undefined
                     )
+                        .then(() => {})
+                        .catch(() => {})
                 }
                 return
             }

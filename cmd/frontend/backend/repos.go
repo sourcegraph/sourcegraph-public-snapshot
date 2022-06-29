@@ -6,10 +6,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,8 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -45,12 +46,12 @@ func (e ErrRepoSeeOther) Error() string {
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(db database.DB) *repos {
+func NewRepos(logger log.Logger, db database.DB) *repos {
 	repoStore := db.Repos()
 	return &repos{
 		db:    db,
 		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(repoStore),
+		cache: dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
@@ -173,7 +174,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
+			span := tracepkg.TraceFromContext(ctx)
 			span.LogFields(otlog.Int("result.len", len(repos)))
 		}
 		done()
@@ -188,7 +189,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
+			span := tracepkg.TraceFromContext(ctx)
 			span.LogFields(otlog.Int("result.len", len(repos)))
 		}
 		done()
@@ -219,7 +220,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, s.db, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := gitserver.NewClient(s.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

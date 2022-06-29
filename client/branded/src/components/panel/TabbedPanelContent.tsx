@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
@@ -11,6 +11,7 @@ import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
@@ -18,7 +19,6 @@ import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/c
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -333,7 +333,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                             data-tooltip="Close panel"
                             data-placement="left"
                         >
-                            <Icon role="img" as={CloseIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
                 }

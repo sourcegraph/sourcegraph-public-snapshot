@@ -42,7 +42,7 @@ func newOperations(observationContext *observation.Context) *operations {
 				if err == ErrIllegalBounds || err == ErrIllegalLimit {
 					return observation.EmitForNone
 				}
-				return observation.EmitForSentry
+				return observation.EmitForLogs
 			},
 		})
 	}

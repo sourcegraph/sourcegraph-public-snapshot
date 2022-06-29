@@ -96,7 +96,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 			}
 			return
 		}),
-		Action: execAdapter(startExec),
+		Action: startExec,
 	}
 )
 
@@ -132,12 +132,13 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
-func startExec(ctx context.Context, args []string) error {
+func startExec(ctx *cli.Context) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
 	}
 
+	args := ctx.Args().Slice()
 	if len(args) > 2 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
@@ -177,7 +178,7 @@ func startExec(ctx context.Context, args []string) error {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to get set up: https://docs.sourcegraph.com/dev/setup/quickstart#run-sg-setup"))
 
 			std.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
@@ -193,7 +194,7 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	return startCommandSet(ctx, set, config)
+	return startCommandSet(ctx.Context, set, config)
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {

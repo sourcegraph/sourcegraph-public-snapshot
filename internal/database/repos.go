@@ -12,11 +12,13 @@ import (
 	"time"
 
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -88,22 +90,26 @@ var _ RepoStore = (*repoStore)(nil)
 
 // repoStore handles access to the repo table
 type repoStore struct {
+	logger log.Logger
 	*basestore.Store
 }
 
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
-func ReposWith(other basestore.ShareableStore) RepoStore {
-	return &repoStore{Store: basestore.NewWithHandle(other.Handle())}
+func ReposWith(logger log.Logger, other basestore.ShareableStore) RepoStore {
+	return &repoStore{
+		logger: logger,
+		Store:  basestore.NewWithHandle(other.Handle()),
+	}
 }
 
 func (s *repoStore) With(other basestore.ShareableStore) RepoStore {
-	return &repoStore{Store: s.Store.With(other)}
+	return &repoStore{logger: s.logger, Store: s.Store.With(other)}
 }
 
 func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &repoStore{Store: txBase}, err
+	return &repoStore{logger: s.logger, Store: txBase}, err
 }
 
 // Get finds and returns the repo with the given repository ID from the database.
@@ -138,7 +144,7 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "metric to measure the impact of logging access granted to private repos",
 })
 
-func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.RepoID) {
+func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
 		return
 	}
@@ -171,7 +177,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 		event.AnonymousUserID = "internal"
 	}
 
-	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -408,7 +414,7 @@ var repoColumns = []string{
 	"repo.blocked",
 }
 
-func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
+func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
@@ -466,7 +472,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
-		log15.Warn("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
+		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
 		return nil
 	}
 	switch typ {
@@ -500,8 +506,10 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:
 		r.Metadata = &struct{}{}
+	case extsvc.TypeRustPackages:
+		r.Metadata = &struct{}{}
 	default:
-		log15.Warn("scanRepo - unknown service type", "type", typ)
+		logger.Warn("unknown service type", log.String("type", typ))
 		return nil
 	}
 
@@ -762,7 +770,7 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
+		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
 	return nil
@@ -779,7 +787,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	var privateIDs []api.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
-		if err := scanRepo(rows, &r); err != nil {
+		if err := scanRepo(s.logger, rows, &r); err != nil {
 			return err
 		}
 
@@ -793,14 +801,14 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
+		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
 	return rs, err
 }
 
 func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
-	q, err := s.listSQL(ctx, opt)
+	q, err := s.listSQL(ctx, tr, opt)
 	if err != nil {
 		return err
 	}
@@ -825,7 +833,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	return rows.Err()
 }
 
-func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
+func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
@@ -850,7 +858,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	for _, includePattern := range opt.IncludePatterns {
-		extraConds, err := parsePattern(includePattern, opt.CaseSensitivePatterns)
+		extraConds, err := parsePattern(tr, includePattern, opt.CaseSensitivePatterns)
 		if err != nil {
 			return nil, err
 		}
@@ -1033,7 +1041,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}
@@ -1498,11 +1506,19 @@ func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL str
 	return api.RepoName(name), nil
 }
 
-func parsePattern(p string, caseSensitive bool) ([]*sqlf.Query, error) {
+func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
 	}
+
+	tr.LogFields(
+		otlog.String("parsePattern", p),
+		otlog.Bool("caseSensitive", caseSensitive),
+		trace.Strings("exact", exact),
+		trace.Strings("like", like),
+		otlog.String("pattern", pattern))
+
 	var conds []*sqlf.Query
 	if exact != nil {
 		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
@@ -1591,7 +1607,7 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	if err != nil {
 		return nil, nil, "", err
 	}
-	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify(), false)
+	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify())
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -1610,10 +1626,9 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	return nil, nil, pattern, nil
 }
 
-// allMatchingStrings returns a complete list of the strings that re
-// matches, if it's possible to determine the list. The "last" argument
-// indicates if this is the last part of the original regexp.
-func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, prefix, suffix []string, err error) {
+// allMatchingStrings returns a complete list of the strings that re matches,
+// if it's possible to determine the list.
+func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
 	switch re.Op {
 	case regexpsyntax.OpEmptyMatch:
 		return []string{""}, nil, nil, nil, nil
@@ -1646,14 +1661,6 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 		}
 		return nil, nil, nil, nil, nil
 
-	case regexpsyntax.OpStar:
-		if len(re.Sub) == 1 && (re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar) {
-			if last {
-				return nil, []string{""}, nil, nil, nil
-			}
-			return nil, nil, nil, nil, nil
-		}
-
 	case regexpsyntax.OpBeginText:
 		return nil, nil, []string{""}, nil, nil
 
@@ -1661,7 +1668,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 		return nil, nil, nil, []string{""}, nil
 
 	case regexpsyntax.OpCapture:
-		return allMatchingStrings(re.Sub0[0], false)
+		return allMatchingStrings(re.Sub0[0])
 
 	case regexpsyntax.OpConcat:
 		var begin, end bool
@@ -1674,11 +1681,20 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 				end = true
 				continue
 			}
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, i == len(re.Sub)-1)
-			if err != nil {
-				return nil, nil, nil, nil, err
+			var subexact, subcontains []string
+			if isDotStar(sub) && i == len(re.Sub)-1 {
+				subcontains = []string{""}
+			} else {
+				var subprefix, subsuffix []string
+				subexact, subcontains, subprefix, subsuffix, err = allMatchingStrings(sub)
+				if err != nil {
+					return nil, nil, nil, nil, err
+				}
+				if subprefix != nil || subsuffix != nil {
+					return nil, nil, nil, nil, nil
+				}
 			}
-			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+			if subexact == nil && subcontains == nil {
 				return nil, nil, nil, nil, nil
 			}
 
@@ -1723,9 +1739,13 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 
 	case regexpsyntax.OpAlternate:
 		for _, sub := range re.Sub {
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, false)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
 			if err != nil {
 				return nil, nil, nil, nil, err
+			}
+			// If we don't understand one sub expression, we give up.
+			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+				return nil, nil, nil, nil, nil
 			}
 			exact = append(exact, subexact...)
 			contains = append(contains, subcontains...)
@@ -1736,4 +1756,10 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 	}
 
 	return nil, nil, nil, nil, nil
+}
+
+func isDotStar(re *regexpsyntax.Regexp) bool {
+	return re.Op == regexpsyntax.OpStar &&
+		len(re.Sub) == 1 &&
+		(re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar)
 }

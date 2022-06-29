@@ -11,6 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -52,7 +54,9 @@ func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestAuthzQueryConds(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
 		before := globals.PermissionsUserMapping()
@@ -170,11 +174,13 @@ func TestAuthzQueryConds(t *testing.T) {
 }
 
 func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
-	db := NewDB(dbtest.NewDB(t))
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
-	alice, err := Users(db).Create(ctx, NewUser{
+	alice, err := db.Users().Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -183,7 +189,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,11 +273,12 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
-	alice, err := Users(db).Create(ctx,
+	alice, err := db.Users().Create(ctx,
 		NewUser{
 			Email:                 "alice@example.com",
 			Username:              "alice",
@@ -282,7 +289,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,11 +382,12 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
-	alice, err := Users(db).Create(ctx,
+	alice, err := db.Users().Create(ctx,
 		NewUser{
 			Email:                 "alice@example.com",
 			Username:              "alice",
@@ -390,7 +398,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -506,11 +514,12 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users(db).Create(ctx, NewUser{
+	alice, err := db.Users().Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -519,7 +528,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users(db).Create(ctx, NewUser{
+	bob, err := db.Users().Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -528,7 +537,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users(db).Create(ctx, NewUser{
+	admin, err := db.Users().Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -540,11 +549,11 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users(db).SetIsSiteAdmin(ctx, admin.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -767,11 +776,12 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users(db).Create(ctx, NewUser{
+	alice, err := db.Users().Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -780,7 +790,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users(db).Create(ctx, NewUser{
+	bob, err := db.Users().Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -789,7 +799,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users(db).Create(ctx, NewUser{
+	admin, err := db.Users().Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -801,11 +811,11 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users(db).SetIsSiteAdmin(ctx, admin.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}

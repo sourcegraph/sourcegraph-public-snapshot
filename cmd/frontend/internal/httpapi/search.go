@@ -228,12 +228,13 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
-		err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-			IDs: opt.IndexedIDs,
-		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
-
-		if err != nil {
-			return err
+		if len(opt.IndexedIDs) > 0 {
+			err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
+				IDs: opt.IndexedIDs,
+			}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
+			if err != nil {
+				return err
+			}
 		}
 
 		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)

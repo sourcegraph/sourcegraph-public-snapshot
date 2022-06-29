@@ -5,15 +5,18 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestProductSubscriptions_Create(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,14 +58,15 @@ func TestProductSubscriptions_Create(t *testing.T) {
 }
 
 func TestProductSubscriptions_List(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	u1, err := database.Users(db).Create(ctx, database.NewUser{Username: "u1"})
+	u1, err := db.Users().Create(ctx, database.NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	u2, err := database.Users(db).Create(ctx, database.NewUser{Username: "u2"})
+	u2, err := db.Users().Create(ctx, database.NewUser{Username: "u2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,10 +122,11 @@ func TestProductSubscriptions_List(t *testing.T) {
 }
 
 func TestProductSubscriptions_Update(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

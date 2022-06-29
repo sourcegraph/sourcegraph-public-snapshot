@@ -21,6 +21,7 @@ const (
 	Terraform
 	SVG
 	Shell
+	DockerImages
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -70,6 +71,11 @@ func ParseDiff(files []string) (diff Diff) {
 				diff |= Go
 			}
 		}
+		if p == "sg.config.yaml" {
+			// sg config affects generated output and potentially tests and checks that we
+			// run in the future, so we consider this to have affected Go.
+			diff |= Go
+		}
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
@@ -97,9 +103,14 @@ func ParseDiff(files []string) (diff Diff) {
 			diff |= Docs
 		}
 
-		// Affects Dockerfiles
+		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= Dockerfiles
+			diff |= (Dockerfiles | DockerImages)
+		}
+		// Affects anything in docker-images directories (which implies image build
+		// scripts and/or resources are affected)
+		if strings.HasPrefix(p, "docker-images/") {
+			diff |= DockerImages
 		}
 
 		// Affects executor docker registry mirror
@@ -157,6 +168,8 @@ func (d Diff) String() string {
 		return "SVG"
 	case Shell:
 		return "Shell"
+	case DockerImages:
+		return "DockerImages"
 
 	case All:
 		return "All"

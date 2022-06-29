@@ -9,7 +9,7 @@ import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, t
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

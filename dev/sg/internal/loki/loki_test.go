@@ -1,11 +1,98 @@
 package loki
 
 import (
+	"bytes"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/internal/randstring"
 )
+
+func TestChunkEntry(t *testing.T) {
+	ts := time.Now().UnixNano()
+	line := "0123456789"
+	entry := [2]string{fmt.Sprintf("%d", ts), line}
+
+	results, err := chunkEntry(entry, 2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(results) != len(line)/2 {
+		t.Errorf("Got %d chunks wanted %d", len(results), len(line)/2)
+	}
+
+	allLines := bytes.NewBuffer(nil)
+	for i := 0; i < len(results); i++ {
+		expectedTs := fmt.Sprintf("%d", ts+int64(i))
+		if results[i][0] != expectedTs {
+			t.Errorf("wrong timestamp at %d. Got %s wanted %s", i, results[i][0], expectedTs)
+		}
+		allLines.WriteString(results[i][1])
+	}
+
+	if allLines.String() != line {
+		t.Errorf("reconstructed chunked line differs from original line. Got %q wanted %q", allLines.String(), line)
+	}
+}
+
+func TestSplitIntoChunks(t *testing.T) {
+	t.Run("general split into chunks", func(t *testing.T) {
+		line := randstring.NewLen(100)
+
+		result := splitIntoChunks([]byte(line), 10)
+		if len(result) != 10 {
+			t.Errorf("expected string of size 100 to be split into 10 chunks. Got %d wanted %d", len(result), 10)
+		}
+	})
+
+	t.Run("chunk size larger than string", func(t *testing.T) {
+		line := randstring.NewLen(100)
+
+		result := splitIntoChunks([]byte(line), len(line)+1)
+		if len(result) != 1 {
+			t.Errorf("expected string of size 100 to be split into 10 chunks. Got %d wanted %d", len(result), 1)
+		}
+	})
+
+	t.Run("line size larger by 1 than chunk size", func(t *testing.T) {
+		line := randstring.NewLen(100)
+
+		result := splitIntoChunks([]byte(line), 99)
+		if len(result) != 2 {
+			t.Errorf("expected string of size 100 to be split into 10 chunks. Got %d wanted %d", len(result), 2)
+		}
+	})
+
+	t.Run("check chunk content", func(t *testing.T) {
+		line := "123456789"
+
+		result := splitIntoChunks([]byte(line), 5)
+
+		if bytes.Compare(result[0], []byte("12345")) != 0 {
+			t.Errorf("incorrect chunk content for 0 idx. Got %s wanted %s", string(result[0]), "12345")
+		}
+
+		if bytes.Compare(result[1], []byte("6789")) != 0 {
+			t.Errorf("incorrect chunk content for 0 idx. Got %s wanted %s", string(result[0]), "12345")
+		}
+	})
+
+	t.Run("chunk sizes", func(t *testing.T) {
+		line := randstring.NewLen(1337)
+
+		results := splitIntoChunks([]byte(line), 1024)
+
+		for i, r := range results {
+			if len(r) > 1024 {
+				t.Errorf("incorrect sized chunk found at %d with size %d", i, len(r))
+			}
+		}
+	})
+}
 
 func TestNewStreamFromJobLogs(t *testing.T) {
 	type args struct {

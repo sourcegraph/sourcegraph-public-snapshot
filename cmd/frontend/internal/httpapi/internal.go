@@ -13,10 +13,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -26,9 +27,10 @@ import (
 )
 
 func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	logger := log.Scoped("serveReposGetByName", "")
 	return func(w http.ResponseWriter, r *http.Request) error {
 		repoName := api.RepoName(mux.Vars(r)["RepoName"])
-		repo, err := backend.NewRepos(db).GetByName(r.Context(), repoName)
+		repo, err := backend.NewRepos(logger, db).GetByName(r.Context(), repoName)
 		if err != nil {
 			return err
 		}
@@ -214,24 +216,6 @@ func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func serveUsersGetByUsername(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var username string
-		err := json.NewDecoder(r.Body).Decode(&username)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		user, err := database.Users(db).GetByUsername(r.Context(), username)
-		if err != nil {
-			return errors.Wrap(err, "Users.GetByUsername")
-		}
-		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
 func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var userID int32
@@ -252,13 +236,6 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
@@ -295,6 +272,7 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
+		log15.Warn("The use of .internal/git/[repoID]/exec has been deprecated")
 		req := protocol.ExecRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return errors.Wrap(err, "Decode")

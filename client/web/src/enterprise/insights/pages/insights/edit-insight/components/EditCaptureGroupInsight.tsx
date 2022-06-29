@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { MinimalCaptureGroupInsightData } from '../../../../core/backend/code-insights-backend-types'
-import { CaptureGroupInsight } from '../../../../core/types'
+import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
 import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'
 import { getSanitizedCaptureGroupInsight } from '../../creation/capture-group/utils/capture-group-insight-sanitizer'

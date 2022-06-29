@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
@@ -24,31 +22,32 @@ sg rfc search "search terms"
 sg rfc open 420
 `,
 	Category: CategoryCompany,
-	Action:   execAdapter(rfcExec),
+	Action:   rfcExec,
 }
 
-func rfcExec(ctx context.Context, args []string) error {
+func rfcExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		args = append(args, "list")
 	}
 
 	switch args[0] {
 	case "list":
-		return rfc.List(ctx, std.Out.Output)
+		return rfc.List(ctx.Context, std.Out)
 
 	case "search":
 		if len(args) != 2 {
 			return errors.New("no search query given")
 		}
 
-		return rfc.Search(ctx, args[1], std.Out.Output)
+		return rfc.Search(ctx.Context, args[1], std.Out)
 
 	case "open":
 		if len(args) != 2 {
 			return errors.New("no number given")
 		}
 
-		return rfc.Open(ctx, args[1], std.Out.Output)
+		return rfc.Open(ctx.Context, args[1], std.Out)
 	}
 
 	return nil

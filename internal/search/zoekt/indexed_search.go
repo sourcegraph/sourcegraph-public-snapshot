@@ -366,7 +366,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 			continue
 		}
 
-		var hms result.HunkMatches
+		var hms result.ChunkMatches
 		if typ != search.SymbolRequest {
 			hms = zoektFileMatchToMultilineMatches(&file)
 		}
@@ -379,8 +379,8 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
 			fm := result.FileMatch{
-				HunkMatches: hms,
-				Symbols:     symbols,
+				ChunkMatches: hms,
+				Symbols:      symbols,
 				File: result.File{
 					InputRev: &inputRev,
 					CommitID: api.CommitID(file.Version),
@@ -400,40 +400,43 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	})
 }
 
-func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.HunkMatches {
-	hms := make(result.HunkMatches, 0, len(file.LineMatches))
+func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
+	hms := make(result.ChunkMatches, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
 		}
 
+		ranges := make(result.Ranges, 0, len(l.LineFragments))
 		for _, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 
-			hms = append(hms, result.HunkMatch{
-				Content: string(l.Line),
-				// zoekt line numbers are 1-based rather than 0-based so subtract 1
-				ContentStart: result.Location{
-					Offset: l.LineStart,
+			ranges = append(ranges, result.Range{
+				Start: result.Location{
+					Offset: int(m.Offset),
 					Line:   l.LineNumber - 1,
-					Column: 0,
+					Column: offset,
 				},
-				Ranges: result.Ranges{{
-					Start: result.Location{
-						Offset: int(m.Offset),
-						Line:   l.LineNumber - 1,
-						Column: offset,
-					},
-					End: result.Location{
-						Offset: int(m.Offset) + m.MatchLength,
-						Line:   l.LineNumber - 1,
-						Column: offset + length,
-					},
-				}},
+				End: result.Location{
+					Offset: int(m.Offset) + m.MatchLength,
+					Line:   l.LineNumber - 1,
+					Column: offset + length,
+				},
 			})
 		}
+
+		hms = append(hms, result.ChunkMatch{
+			Content: string(l.Line),
+			// zoekt line numbers are 1-based rather than 0-based so subtract 1
+			ContentStart: result.Location{
+				Offset: l.LineStart,
+				Line:   l.LineNumber - 1,
+				Column: 0,
+			},
+			Ranges: ranges,
+		})
 	}
 
 	return hms
@@ -602,9 +605,9 @@ func (*GlobalTextSearchJob) Name() string {
 
 func (t *GlobalTextSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),
-		log.Bool("includePrivate", t.GlobalZoektQuery.includePrivate),
+		trace.Stringer("query", t.GlobalZoektQuery.Query),
+		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
+		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
 		log.String("type", string(t.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", t.ZoektArgs.Select),

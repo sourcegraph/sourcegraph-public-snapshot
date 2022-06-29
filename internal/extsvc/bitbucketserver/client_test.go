@@ -1268,6 +1268,23 @@ func TestClient_CreateFork(t *testing.T) {
 	checkGolden(t, fixture, have)
 }
 
+func TestClient_ProjectRepos(t *testing.T) {
+	cli := NewTestClient(t, "ProjectRepos", *update)
+
+	// Empty project key should cause an error
+	_, err := cli.ProjectRepos(context.Background(), "")
+	if err == nil {
+		t.Fatal("Empty projectKey should cause an error", err)
+	}
+
+	repos, err := cli.ProjectRepos(context.Background(), "SGDEMO")
+	if err != nil {
+		t.Fatal("Error during getting SGDEMO project repos", err)
+	}
+
+	checkGolden(t, "ProjectRepos", repos)
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {

@@ -1,14 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiPuzzle, mdiConsole, mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
@@ -19,7 +16,7 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner, Icon, Label } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, LoadingSpinner, Icon, Label, Input } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -44,7 +41,7 @@ import styles from './CommandList.module.scss'
 export interface CommandListPopoverButtonClassProps {
     /** The class name for the root button element of {@link CommandListPopoverButton}. */
     buttonClassName?: string
-    buttonElement?: 'span' | 'a'
+    buttonElement?: 'span' | 'a' | 'button'
     buttonOpenClassName?: string
 
     showCaret?: boolean
@@ -91,8 +88,6 @@ interface State {
 
     /** Recently invoked actions, which should be sorted first in the list. */
     recentActions: string[] | null
-
-    autoFocus?: boolean
 
     settingsCascade?: SettingsCascadeOrError
 }
@@ -167,12 +162,6 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         this.subscriptions.add(
             this.props.platformContext.settings.subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
-
-        // Only focus input after it has been rendered in the DOM
-        // Workaround for Firefox and Safari where preventScroll isn't compatible
-        setTimeout(() => {
-            this.setState({ autoFocus: true })
-        })
     }
 
     public componentDidUpdate(_previousProps: CommandListProps, previousState: State): void {
@@ -192,7 +181,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <Icon role="img" as={PuzzleIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiPuzzle} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -215,18 +204,18 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                         <Label className="sr-only" htmlFor="command-list-input">
                             Command
                         </Label>
-                        <input
+                        <Input
                             id="command-list-input"
-                            ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
-                            type="text"
-                            className={this.props.inputClassName}
+                            inputClassName={this.props.inputClassName}
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}
+                            autoFocus={true}
                             autoCorrect="off"
                             autoComplete="off"
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
+                            onClick={this.onInputClick}
                         />
                     </form>
                 </header>
@@ -298,6 +287,11 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 break
             }
         }
+    }
+
+    // prevent input click from closing the popover
+    private onInputClick: React.MouseEventHandler<HTMLInputElement> = event => {
+        event.stopPropagation()
     }
 
     private onSubmit: React.FormEventHandler = event => event.preventDefault()
@@ -388,13 +382,29 @@ export const CommandListPopoverButton: React.FunctionComponent<
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
-    const close = useCallback(() => setIsOpen(false), [])
-    const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
+    // Capture active element on open in order to restore focus on close.
+    const originallyFocusedElement = useMemo(() => {
+        if (isOpen && document.activeElement instanceof HTMLElement) {
+            return document.activeElement
+        }
+        return null
+    }, [isOpen])
+
+    const close = useCallback(() => {
+        originallyFocusedElement?.focus()
+        setIsOpen(false)
+    }, [originallyFocusedElement])
+    const toggleIsOpen = useCallback(() => {
+        if (isOpen) {
+            originallyFocusedElement?.focus()
+        }
+        setIsOpen(!isOpen)
+    }, [isOpen, originallyFocusedElement])
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
     const MenuDropdownIcon = (): JSX.Element => (
-        <Icon role="img" as={isOpen ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+        <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
     )
     return (
         <Button
@@ -406,7 +416,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
             variant={variant}
             aria-label="Command list"
         >
-            <Icon role="img" as={ConsoleIcon} size="md" aria-hidden={true} />
+            <Icon size="md" aria-hidden={true} svgPath={mdiConsole} />
 
             {showCaret && <MenuDropdownIcon />}
 

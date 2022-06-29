@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Modal, Icon, H3 } from '@sourcegraph/wildcard'
 
@@ -43,7 +43,12 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
 
     let thumbnailElement = thumbnail ? (
         <button type="button" className={classNames('pb-2', styles.thumbnailButton)} onClick={() => toggleDialog(true)}>
-            <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
+            <img
+                src={`${assetsRoot}/${thumbnail.src}`}
+                alt={thumbnail.alt}
+                className={styles.thumbnailImage}
+                aria-hidden={true}
+            />
             <div className={styles.playIconWrapper}>
                 <PlayIcon />
             </div>
@@ -87,7 +92,7 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >
-                                <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
                             </Button>
                         </div>
                         <div className="w-100">

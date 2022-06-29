@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -40,12 +42,13 @@ func TestPermissionLevels(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	key := et.TestKey{}
 
 	cstore := store.New(db, &observation.TestContext, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +65,8 @@ func TestPermissionLevels(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -173,7 +176,10 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpBatchSpecs := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{
+			LimitOpts:                   store.LimitOpts{Limit: 1000},
+			IncludeLocallyExecutedSpecs: true,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -600,6 +606,7 @@ func TestPermissionLevels(t *testing.T) {
 					},
 				},
 			}
+
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
@@ -609,10 +616,19 @@ func TestPermissionLevels(t *testing.T) {
 						expectedIDs[graphqlID] = true
 					}
 
-					query := `query { batchSpecs() { totalCount, nodes { id } } }`
+					input := map[string]any{
+						"includeLocallyExecutedSpecs": true,
+					}
+
+					query := `
+query($includeLocallyExecutedSpecs: Boolean) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
+		totalCount, nodes { id }
+	}
+}`
 
 					var res struct{ BatchSpecs apitest.BatchSpecConnection }
-					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					apitest.MustExec(actorCtx, t, s, input, &res, query)
 
 					if have, want := res.BatchSpecs.TotalCount, len(tc.wantBatchSpecs); have != want {
 						t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
@@ -1254,11 +1270,13 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: bstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1271,8 +1289,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(bstore)
-	esStore := database.ExternalServicesWith(bstore)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)

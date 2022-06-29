@@ -19,6 +19,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
             excludeRepoRegexp: '',
             context: '',
         },
+        dashboards: [],
         seriesDisplayOptions: {},
     }
 }

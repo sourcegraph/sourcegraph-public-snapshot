@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -39,9 +41,10 @@ func notebookByOrg(notebook *Notebook, creatorID int32, orgID int32) *Notebook {
 
 func TestCreateAndGetNotebook(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	n := Notebooks(db)
 
 	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
@@ -79,9 +82,10 @@ func TestCreateAndGetNotebook(t *testing.T) {
 
 func TestUpdateNotebook(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	n := Notebooks(db)
 
 	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
@@ -116,9 +120,10 @@ func TestUpdateNotebook(t *testing.T) {
 
 func TestDeleteNotebook(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	n := Notebooks(db)
 
 	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
@@ -189,9 +194,10 @@ func createNotebookStars(ctx context.Context, store NotebooksStore, userID int32
 
 func TestListingAndCountingNotebooks(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 	n := Notebooks(db)
@@ -447,9 +453,10 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 
 func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	n := Notebooks(db)
 
 	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
@@ -471,9 +478,10 @@ func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 
 func TestNotebookPermissions(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 	n := Notebooks(db)
@@ -541,9 +549,10 @@ func TestNotebookPermissions(t *testing.T) {
 
 func TestListingNotebookStars(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	n := Notebooks(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -627,9 +636,10 @@ func TestListingNotebookStars(t *testing.T) {
 
 func TestCreatingAndDeletingNotebookStars(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	n := Notebooks(db)
 
 	user, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})

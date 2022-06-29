@@ -13,6 +13,12 @@ import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './
 export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
     typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
+export const hasDisplayName = (value: unknown): value is { displayName: Scalars['String'] } =>
+    typeof value === 'object' &&
+    value !== null &&
+    hasProperty('displayName')(value) &&
+    typeof value.displayName === 'string'
+
 export const getFilterFromURL = (
     searchParameters: URLSearchParams,
     filters: FilteredConnectionFilter[] | undefined

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var analyticsCommand = &cli.Command{
@@ -22,7 +23,7 @@ var analyticsCommand = &cli.Command{
 			Name:        "submit",
 			ArgsUsage:   "[github username]",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
-			Description: "Uses OKAYHQ_TOKEN, or fetches a token from gcloud.",
+			Description: "Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.",
 			Action: func(cmd *cli.Context) error {
 				if cmd.Args().Len() != 1 {
 					return cli.ShowSubcommandHelp(cmd)
@@ -34,13 +35,36 @@ var analyticsCommand = &cli.Command{
 					if err != nil {
 						return err
 					}
-					okayToken, err = store.GetExternal(cmd.Context, secrets.ExternalSecret{
-						Provider: "gcloud",
-						Project:  "sourcegraph-ci",
-						Name:     "CI_OKAYHQ_TOKEN",
-					})
-					if err != nil {
-						return err
+
+					var errs error
+					for _, secret := range []secrets.ExternalSecret{
+						{
+							Provider: secrets.ExternalProvider1Pass,
+							Project:  "Shared",
+							Name:     "ttdgfcufz3jggx3d57g6rwodwi",
+							Field:    "credential",
+						},
+						{
+							Provider: secrets.ExternalProviderGCloud,
+							Project:  "sourcegraph-ci",
+							Name:     "CI_OKAYHQ_TOKEN",
+						},
+					} {
+						okayToken, err = store.GetExternal(cmd.Context, secret)
+						if err != nil {
+							errs = errors.Append(errs, err)
+							continue // try the next provider
+						}
+						if okayToken != "" {
+							std.Out.Writef("Got OkayHQ token from %s!", secret.Provider)
+							break // done!
+						}
+					}
+
+					// If we've tried all providers and still don't have the token, we
+					// return the error.
+					if okayToken == "" {
+						return errors.Wrap(errs, "failed to get OkayHQ token")
 					}
 				}
 

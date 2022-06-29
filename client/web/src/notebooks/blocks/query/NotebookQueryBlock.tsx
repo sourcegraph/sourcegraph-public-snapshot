@@ -10,9 +10,8 @@ import { Observable, of } from 'rxjs'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsList, useQueryDiagnostics } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsList, useQueryDiagnostics, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -102,7 +101,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 type: 'button',
                 label: isLoading ? 'Searching...' : 'Run search',
                 isDisabled: isLoading ?? false,
-                icon: <Icon role="img" aria-hidden={true} as={PlayCircleOutlineIcon} />,
+                icon: <Icon aria-hidden={true} as={PlayCircleOutlineIcon} />,
                 onClick: onRunBlock,
                 keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
             }
@@ -113,7 +112,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
                     url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
                 },
             ],
@@ -141,49 +140,53 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 actions={isSelected ? commonMenuActions : linkMenuActions}
                 {...props}
             >
-                <div className="mb-1 text-muted">Search query</div>
-                <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
-                    <MonacoEditor
-                        language={sourcegraphSearchLanguageId}
-                        value={input.query}
-                        height="auto"
-                        isLightTheme={isLightTheme}
-                        editorWillMount={noop}
-                        onEditorCreated={setEditor}
-                        options={MONACO_BLOCK_INPUT_OPTIONS}
-                        border={false}
-                    />
-                </div>
-
-                {searchResults && searchResults.state === 'loading' && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
-                        <LoadingSpinner />
-                    </div>
-                )}
-                {searchResults && searchResults.state !== 'loading' && (
-                    <div className={styles.results}>
-                        <StreamingSearchResultsList
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            searchContextsEnabled={props.searchContextsEnabled}
-                            allExpanded={false}
-                            results={searchResults}
+                <div className={styles.content}>
+                    <div className="mb-1 text-muted">Search query</div>
+                    <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
+                        <MonacoEditor
+                            language={sourcegraphSearchLanguageId}
+                            value={input.query}
+                            height="auto"
                             isLightTheme={isLightTheme}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            telemetryService={telemetryService}
-                            settingsCascade={settingsCascade}
-                            authenticatedUser={props.authenticatedUser}
-                            showSearchContext={showSearchContext}
-                            assetsRoot={window.context?.assetsRoot || ''}
-                            renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
-                            platformContext={props.platformContext}
-                            extensionsController={props.extensionsController}
-                            hoverifier={hoverifier}
-                            openMatchesInNewTab={true}
-                            executedQuery={executedQuery}
+                            editorWillMount={noop}
+                            onEditorCreated={setEditor}
+                            options={MONACO_BLOCK_INPUT_OPTIONS}
+                            border={false}
                         />
                     </div>
-                )}
+
+                    {searchResults && searchResults.state === 'loading' && (
+                        <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
+                            <LoadingSpinner />
+                        </div>
+                    )}
+                    {searchResults && searchResults.state !== 'loading' && (
+                        <div className={styles.results}>
+                            <StreamingSearchResultsList
+                                isSourcegraphDotCom={props.isSourcegraphDotCom}
+                                searchContextsEnabled={props.searchContextsEnabled}
+                                allExpanded={false}
+                                results={searchResults}
+                                isLightTheme={isLightTheme}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                telemetryService={telemetryService}
+                                settingsCascade={settingsCascade}
+                                authenticatedUser={props.authenticatedUser}
+                                showSearchContext={showSearchContext}
+                                assetsRoot={window.context?.assetsRoot || ''}
+                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                                platformContext={props.platformContext}
+                                extensionsController={props.extensionsController}
+                                hoverifier={hoverifier}
+                                openMatchesInNewTab={true}
+                                executedQuery={executedQuery}
+                            />
+                        </div>
+                    )}
+                </div>
             </NotebookBlock>
         )
     }
 )
+
+NotebookQueryBlock.displayName = 'NotebookQueryBlock'

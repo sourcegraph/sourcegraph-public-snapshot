@@ -18,6 +18,8 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -26,9 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // PageInfo contains the paging information based on the Redux conventions.
@@ -1521,7 +1522,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := trace.New(ctx, "GitHub", "")
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {

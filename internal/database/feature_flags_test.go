@@ -2,12 +2,13 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -44,7 +45,7 @@ func cleanup(t *testing.T, db DB) func() {
 			// Retain content on failed tests
 			return
 		}
-		_, err := db.Handle().DB().ExecContext(
+		_, err := db.Handle().ExecContext(
 			context.Background(),
 			`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`,
 		)
@@ -54,7 +55,8 @@ func cleanup(t *testing.T, db DB) func() {
 
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
-	flagStore := NewDB(dbtest.NewDB(t)).FeatureFlags()
+	logger := logtest.Scoped(t)
+	flagStore := NewDB(logger, dbtest.NewDB(logger, t)).FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
 	cases := []struct {
@@ -110,7 +112,9 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(dbtest.NewDB(t), sql.TxOptions{})}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := actor.WithInternalActor(context.Background())
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
@@ -144,9 +148,10 @@ func testListFeatureFlags(t *testing.T) {
 
 func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	flagStore := db.FeatureFlags()
-	users := Users(db)
+	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
 	ff1, err := flagStore.CreateBool(ctx, "t", true)
@@ -193,9 +198,10 @@ func testNewOverrideRoundtrip(t *testing.T) {
 
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-	users := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string) *types.User {
@@ -272,9 +278,10 @@ func testListUserOverrides(t *testing.T) {
 
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-	users := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
@@ -357,9 +364,10 @@ func testListOrgOverrides(t *testing.T) {
 
 func testUserFlags(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	flagStore := db.FeatureFlags()
-	users := Users(db)
+	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
@@ -504,8 +512,18 @@ func testUserFlags(t *testing.T) {
 		f1 := mkFFBool("f1", true)
 		mkUserOverride(u1.ID, "f1", false)
 
+		called := false
+		oldClearRedisCache := clearRedisCache
+		clearRedisCache = func(flagName string) {
+			if flagName == f1.Name {
+				called = true
+			}
+		}
+		t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+
 		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
 		require.NoError(t, err)
+		require.True(t, called)
 
 		flags, err := flagStore.GetFeatureFlags(ctx)
 		require.NoError(t, err)
@@ -515,7 +533,8 @@ func testUserFlags(t *testing.T) {
 
 func testAnonymousUserFlags(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -559,7 +578,8 @@ func testAnonymousUserFlags(t *testing.T) {
 
 func testUserlessFeatureFlags(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -607,7 +627,8 @@ func testUserlessFeatureFlags(t *testing.T) {
 
 func testOrgFeatureFlag(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	flagStore := db.FeatureFlags()
 	orgs := db.Orgs()
 	ctx := actor.WithInternalActor(context.Background())

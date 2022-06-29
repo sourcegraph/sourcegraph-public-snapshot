@@ -18,7 +18,6 @@ import (
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -28,7 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -360,7 +360,7 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &ot.Transport{RoundTripper: cli.Transport}
+	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
 	return nil
 }
 
@@ -424,7 +424,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
 			shouldTraceLog := retry || a.Index > 0
-			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil && shouldTraceLog {
+			if span := trace.TraceFromContext(a.Request.Context()); span != nil && shouldTraceLog {
 				fields := []otlog.Field{
 					otlog.Event("request-retry-decision"),
 					otlog.Bool("retry", retry),
