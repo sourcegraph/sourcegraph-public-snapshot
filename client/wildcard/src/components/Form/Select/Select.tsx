@@ -29,6 +29,10 @@ export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSe
          * Optional label position. Default is 'inline'
          */
         labelVariant?: 'inline' | 'block'
+        /**
+         * Custom class name for label element.
+         */
+        labelClassName?: string
     }
 
 /**
@@ -58,6 +62,7 @@ export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps
         children,
         className,
         selectClassName,
+        labelClassName,
         message,
         isValid,
         isCustomStyle,
@@ -70,7 +75,10 @@ export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps
     return (
         <div className={classNames('form-group', className)}>
             {'label' in props && (
-                <FormFieldLabel htmlFor={props.id} className={labelVariant === 'block' ? styles.labelBlock : undefined}>
+                <FormFieldLabel
+                    htmlFor={props.id}
+                    className={classNames(labelVariant === 'block' && styles.labelBlock, labelClassName)}
+                >
                     {props.label}
                 </FormFieldLabel>
             )}

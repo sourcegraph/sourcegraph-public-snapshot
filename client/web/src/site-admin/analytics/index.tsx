@@ -127,14 +127,20 @@ const ChartLegendList: React.FunctionComponent<ChartLegendListProps> = ({ items,
 interface DateRangeSelectorProps {
     onDateRangeChange: (dateRange: AnalyticsDateRange) => void
     dateRange: AnalyticsDateRange
+    className?: string
 }
 
-const DateRangeSelector: React.FunctionComponent<DateRangeSelectorProps> = ({ dateRange, onDateRangeChange }) => (
+const DateRangeSelector: React.FunctionComponent<DateRangeSelectorProps> = ({
+    dateRange,
+    onDateRangeChange,
+    className,
+}) => (
     <Select
         id="date-range"
         label="Date&nbsp;range"
         isCustomStyle={true}
-        className="d-flex align-items-baseline"
+        className={classNames('d-flex align-items-center m-0', className)}
+        labelClassName="mb-0"
         selectClassName="ml-2"
         onChange={value => onDateRangeChange(value.target.value as AnalyticsDateRange)}
     >
@@ -159,56 +165,26 @@ interface ChartStatItem {
 }
 
 interface ChartProps {
-    onDateRangeChange: (dateRange: AnalyticsDateRange) => void
-    dateRange: AnalyticsDateRange
     stats: ChartStatItem[]
     labelY?: string
     labelX?: string
     className?: string
 }
 
-const Chart: React.FunctionComponent<ChartProps> = ({
-    stats,
-    dateRange,
-    onDateRangeChange,
-    labelY,
-    labelX,
-    className,
-}) => {
+const Chart: React.FunctionComponent<ChartProps> = ({ stats, labelY, labelX, className }) => {
     const series: Series<StandardDatum>[] = useMemo(
         () =>
             stats
                 .filter(item => item.series)
-                .map(item => {
-                    // Generates 0 value series for dates that don't exist in the original data
-                    const [to, daysOffset] =
-                        dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
-                            ? [startOfWeek(new Date(), { weekStartsOn: 1 }), 7]
-                            : [startOfDay(new Date()), 1]
-                    const from =
-                        dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
-                            ? sub(to, { months: 3 })
-                            : dateRange === AnalyticsDateRange.LAST_MONTH
-                            ? sub(to, { months: 1 })
-                            : sub(to, { weeks: 1 })
-                    const datums: StandardDatum[] = []
-                    let date = to
-                    while (date >= from) {
-                        const datum = item.series?.find(datum => getDayOfYear(datum.date) === getDayOfYear(date))
-                        datums.push(datum ? { ...datum, date } : { date, value: 0 })
-                        date = addDays(date, -daysOffset)
-                    }
-
-                    return {
-                        id: item.name,
-                        name: item.name,
-                        data: datums,
-                        color: item.color,
-                        getXValue: datum => datum.date,
-                        getYValue: datum => datum.value,
-                    }
-                }),
-        [stats, dateRange]
+                .map(item => ({
+                    id: item.name,
+                    name: item.name,
+                    data: item.series as StandardDatum[],
+                    color: item.color,
+                    getXValue: datum => datum.date,
+                    getYValue: datum => datum.value,
+                })),
+        [stats]
     )
     const legendList = useMemo(
         () =>
@@ -222,9 +198,6 @@ const Chart: React.FunctionComponent<ChartProps> = ({
     )
     return (
         <div className={className}>
-            <div className="d-flex justify-content-end">
-                <DateRangeSelector dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
-            </div>
             <ChartLegendList className="mb-3" items={legendList} />
             <div className="d-flex mr-1">
                 {labelY && <span className={styles.chartYLabel}>{labelY}</span>}
@@ -233,6 +206,61 @@ const Chart: React.FunctionComponent<ChartProps> = ({
             {labelX && <div className={styles.chartXLabel}>{labelX}</div>}
         </div>
     )
+}
+
+interface ToggleGroupProps<T> {
+    selected: T
+    items: {
+        tooltip: string
+        label: string
+        value: T
+    }[]
+    onChange: (value: T) => void
+}
+
+const ToggleSelect = <T extends any>({
+    selected,
+    items,
+    onChange,
+}: React.PropsWithChildren<ToggleGroupProps<T>>): JSX.Element => (
+    <ButtonGroup>
+        {items.map(({ tooltip, label, value }) => (
+            <Tooltip key={label} content={tooltip} placement="top">
+                <Button
+                    onClick={() => onChange(value)}
+                    outline={selected !== value}
+                    variant={selected !== value ? 'secondary' : 'primary'}
+                    display="inline"
+                    size="sm"
+                >
+                    {label}
+                </Button>
+            </Tooltip>
+        ))}
+    </ButtonGroup>
+)
+
+function fillWithEmptyDatum(datums: StandardDatum[], dateRange: AnalyticsDateRange): StandardDatum[] {
+    // Generates 0 value series for dates that don't exist in the original data
+    const [to, daysOffset] =
+        dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
+            ? [startOfWeek(new Date(), { weekStartsOn: 1 }), 7]
+            : [startOfDay(new Date()), 1]
+    const from =
+        dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
+            ? sub(to, { months: 3 })
+            : dateRange === AnalyticsDateRange.LAST_MONTH
+            ? sub(to, { months: 1 })
+            : sub(to, { weeks: 1 })
+    const newDatums: StandardDatum[] = []
+    let date = to
+    while (date >= from) {
+        const datum = datums?.find(datum => getDayOfYear(datum.date) === getDayOfYear(date))
+        newDatums.push(datum ? { ...datum, date } : { date, value: 0 })
+        date = addDays(date, -daysOffset)
+    }
+
+    return newDatums
 }
 
 export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
@@ -254,30 +282,39 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 totalCount: searches.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 name: eventAggregation === 'count' ? 'Searches' : 'Users searched',
                 color: 'var(--cyan)',
-                series: searches.nodes.map(node => ({
-                    date: new Date(node.date),
-                    value: node[eventAggregation],
-                })),
+                series: fillWithEmptyDatum(
+                    searches.nodes.map(node => ({
+                        date: new Date(node.date),
+                        value: node[eventAggregation],
+                    })),
+                    dateRange
+                ),
             },
             {
                 ...fileViews.summary,
                 totalCount: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 name: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
-                series: fileViews.nodes.map(node => ({
-                    date: new Date(node.date),
-                    value: node[eventAggregation],
-                })),
+                series: fillWithEmptyDatum(
+                    fileViews.nodes.map(node => ({
+                        date: new Date(node.date),
+                        value: node[eventAggregation],
+                    })),
+                    dateRange
+                ),
             },
             {
                 ...fileOpens.summary,
                 totalCount: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 name: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
-                series: fileOpens.nodes.map(node => ({
-                    date: new Date(node.date),
-                    value: node[eventAggregation],
-                })),
+                series: fillWithEmptyDatum(
+                    fileOpens.nodes.map(node => ({
+                        date: new Date(node.date),
+                        value: node[eventAggregation],
+                    })),
+                    dateRange
+                ),
             },
         ]
         const timeSavedStats = [
@@ -291,7 +328,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             },
         ]
         return [stats, timeSavedStats]
-    }, [data, eventAggregation])
+    }, [data, eventAggregation, dateRange])
 
     if (error) {
         return <div>Something went wrong! :( Please, try again later. </div>
@@ -315,118 +352,26 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             </H2>
 
             <Card className="p-2 position-relative">
-                {stats && (
-                    <Chart
-                        className="ml-4"
-                        stats={stats}
-                        dateRange={dateRange}
-                        onDateRangeChange={setDateRange}
-                        labelX="Time"
+                <div className="d-flex justify-content-end align-items-stretch">
+                    <DateRangeSelector dateRange={dateRange} onDateRangeChange={setDateRange} className="mr-2" />
+                    <ToggleSelect<typeof eventAggregation>
+                        selected={eventAggregation}
+                        onChange={setEventAggregation}
+                        items={[
+                            { tooltip: 'total # of actions triggered', label: 'Totals', value: 'count' },
+                            {
+                                tooltip: 'unique # of users triggered',
+                                label: 'Uniques',
+                                value: 'uniqueUsers',
+                            },
+                        ]}
                     />
-                )}
-                <div className="d-flex justify-content-end">
-                    <ButtonGroup className="mb-3">
-                        <Tooltip content="total # of actions triggered" placement="top">
-                            <Button
-                                onClick={() => setEventAggregation('count')}
-                                outline={eventAggregation !== 'count'}
-                                variant="primary"
-                                display="block"
-                                size="sm"
-                            >
-                                Totals
-                            </Button>
-                        </Tooltip>
-
-                        <Tooltip content="unique # of users triggered" placement="top">
-                            <Button
-                                onClick={() => setEventAggregation('uniqueUsers')}
-                                outline={eventAggregation !== 'uniqueUsers'}
-                                variant="primary"
-                                display="block"
-                                size="sm"
-                            >
-                                Uniques
-                            </Button>
-                        </Tooltip>
-                    </ButtonGroup>
                 </div>
+                {stats && <Chart className="ml-4" labelX="Time" stats={stats} />}
                 <H3 className="my-3">Time saved</H3>
                 {timeSavedStats?.map(timeSavedStatItem => (
                     <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
                 ))}
-            </Card>
-        </>
-    )
-}
-
-export const AnalyticsOverview: React.FunctionComponent<RouteComponentProps<{}>> = () => {
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
-    return (
-        <>
-            <H2 className="my-4 d-flex align-items-center">
-                <Icon
-                    className="mr-1"
-                    color="var(--link-color)"
-                    svgPath={mdiChartLineVariant}
-                    size="sm"
-                    aria-label="Search Statistics"
-                />
-                Statistics / Overview
-            </H2>
-
-            <Card className="p-2 position-relative">
-                <div className="d-flex justify-content-end">
-                    <DateRangeSelector dateRange={dateRange} onDateRangeChange={setDateRange} />
-                </div>
-                <ChartLegendList
-                    className="mb-3 mx-auto"
-                    items={[
-                        {
-                            description: 'Active Users',
-                            color: 'var(--body-color)',
-                            value: 200,
-                        },
-                        {
-                            description: 'Events',
-                            color: 'var(--body-color)',
-                            value: 100000,
-                        },
-
-                        {
-                            description: 'Hours saved',
-                            color: 'var(--purple)',
-                            value: 1200,
-                        },
-                    ]}
-                />
-                {/* // TODO: event type table */}
-                <Grid columnCount={4} spacing={1} className="mx-6">
-                    <Text>EVENT TYPE</Text>
-                    <Text>COUNT</Text>
-                    <Text>AVG MIN PER</Text>
-                    <Text>HOURS</Text>
-
-                    <Text>Search</Text>
-                    <Text>13.k</Text>
-                    <Text>5</Text>
-                    <Text>110</Text>
-
-                    <Text>Code intel</Text>
-                    <Text>13.k</Text>
-                    <Text>5</Text>
-                    <Text>110</Text>
-
-                    <Text>Code insights</Text>
-                    <Text>13.k</Text>
-                    <Text>5</Text>
-                    <Text>110</Text>
-
-                    <Text>Batch changes</Text>
-                    <Text>13.k</Text>
-                    <Text>5</Text>
-                    <Text>110</Text>
-                </Grid>
             </Card>
         </>
     )
@@ -462,5 +407,3 @@ export const AnalyticsComingSoon: React.FunctionComponent<RouteComponentProps<{}
         </>
     )
 }
-
-// TODO: rename dir to admin-analytics
