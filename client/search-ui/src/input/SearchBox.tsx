@@ -100,11 +100,11 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         <div className={styles.searchBoxSeparator} />
                     </>
                 )}
-                <div
-                    className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')}
-                    role="search"
-                    id="search"
-                >
+                {/*
+                    To fix Rule: "region" (All page content should be contained by landmarks)
+                    Added role attribute to the following element to satisfy the rule.
+                */}
+                <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
                     <LazyMonacoQueryInput
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
