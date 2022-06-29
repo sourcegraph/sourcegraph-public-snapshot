@@ -699,7 +699,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
-				skip:  skipStream & skipGraphQL,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  "Structural, index only, backcompat, nonzero result",
