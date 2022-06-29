@@ -106,12 +106,19 @@
 
         button[data-search-context-spec] {
             &[data-selected],
-            &:hover,
             &:focus {
                 background-color: var(--dropdown-link-active-bg);
 
                 > small {
-                    color: var(--light-text) !important;
+                    color: var(--light-text);
+                }
+            }
+
+            &:hover {
+                background-color: var(--dropdown-link-hover-bg);
+
+                > small {
+                    color: var(--dropdown-link-color);
                 }
             }
         }
@@ -189,7 +196,7 @@
     :global(.cm-editor) {
         :global(.cm-tooltip),
         :global(.cm-tooltip-autocomplete) {
-            background-color: var(--dropdown-bg) !important;
+            background-color: var(--dropdown-bg);
         }
 
         :global(.cm-tooltip) {
@@ -204,7 +211,7 @@
 
                     &[aria-selected],
                     &:focus {
-                        background-color: var(--dropdown-link-active-bg) !important;
+                        background-color: var(--dropdown-link-active-bg);
 
                         &:not(:hover) {
                             :global(.cm-completionMatchedText) {
@@ -219,7 +226,7 @@
                     }
 
                     &:hover {
-                        background-color: var(--dropdown-link-hover-bg) !important;
+                        background-color: var(--dropdown-link-hover-bg);
                     }
                 }
             }
