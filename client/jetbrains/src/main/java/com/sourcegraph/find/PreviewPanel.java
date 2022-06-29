@@ -2,10 +2,21 @@ package com.sourcegraph.find;
 
 import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
+import com.intellij.openapi.editor.impl.ContextMenuPopupHandler;
+import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanelWithEmptyText;
+import com.sourcegraph.Icons;
+import com.sourcegraph.website.Copy;
+import com.sourcegraph.website.FileAction;
+import com.sourcegraph.website.OpenFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,6 +87,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         settings.setAnimatedScrolling(false);
         settings.setAutoCodeFoldingEnabled(false);
 
+        ((EditorImpl) editor).installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
+
         editorComponent = editor.getComponent();
         add(editorComponent, BorderLayout.CENTER);
         validate();
@@ -119,4 +132,45 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             EditorFactory.getInstance().releaseEditor(editor);
         }
     }
+
+    private ActionGroup createActionGroup() {
+        DefaultActionGroup group = new DefaultActionGroup();
+        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
+        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
+        group.add(new DumbAwareAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                try {
+                    getPreviewContent().openInEditorOrBrowser();
+                } catch (Exception ex) {
+                    Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
+                    logger.error("Error opening file in editor: " + ex.getMessage());
+                }
+            }
+        });
+        return group;
+    }
+
+    class SimpleEditorFileAction extends DumbAwareAction {
+        FileAction action;
+        Editor editor;
+
+        SimpleEditorFileAction(String text, FileAction action, Editor editor) {
+            super(text, text, Icons.Logo);
+            this.action = action;
+            this.editor = editor;
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            SelectionModel sel = editor.getSelectionModel();
+            VisualPosition selectionStartPosition = sel.getSelectionStartPosition();
+            VisualPosition selectionEndPosition = sel.getSelectionEndPosition();
+            LogicalPosition start = selectionStartPosition != null ? editor.visualToLogicalPosition(selectionStartPosition) : null;
+            LogicalPosition end = selectionEndPosition != null ? editor.visualToLogicalPosition(selectionEndPosition) : null;
+
+            action.actionPerformedFromPreviewContent(project, getPreviewContent(), start, end);
+        }
+    }
+
 }

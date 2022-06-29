@@ -18,6 +18,7 @@ export interface PreviewContent {
     resultType: SearchType
     fileName?: string
     repoUrl: string
+    commit?: string
     path?: string
     content: string | null
     symbolName?: string
@@ -254,6 +255,7 @@ async function createPreviewContentForContentMatch(
         resultType: 'file',
         fileName,
         repoUrl: match.repository,
+        commit: match.commit,
         path: match.path,
         content: prepareContent(content),
         lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
@@ -283,13 +285,12 @@ async function createPreviewContentForSymbolMatch(
     const content = await loadContent(match)
     const symbolMatch = match.symbols[symbolMatchIndex]
 
-    console.log(symbolMatch)
-
     return {
         timeAsISOString: new Date().toISOString(),
         resultType: match.type,
         fileName,
         repoUrl: match.repository,
+        commit: match.commit,
         path: match.path,
         content: prepareContent(content),
         symbolName: symbolMatch.name,
