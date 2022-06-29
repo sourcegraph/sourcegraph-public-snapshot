@@ -11,7 +11,9 @@ export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
 export const KEYBOARD_SHORTCUT_SWITCH_THEME: KeyboardShortcut = {
     id: 'switchTheme',
     title: 'Switch color theme',
-    keybindings: [{ held: ['Alt'], ordered: ['t'] }],
+    keybindings: isMacPlatform()
+        ? [{ held: ['Alt'], ordered: ['†'] as any }] // use '†' here to make `Alt + t` works on macOS
+        : [{ held: ['Control'], ordered: ['t'] }],
 }
 
 export const KEYBOARD_SHORTCUT_SHOW_HELP: KeyboardShortcut = {
