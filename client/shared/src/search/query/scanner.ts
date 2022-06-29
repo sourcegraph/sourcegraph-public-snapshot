@@ -470,6 +470,31 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     )
 }
 
+const scanStandard = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
 /**
  * Scans a search query string.
  */
@@ -480,6 +505,9 @@ export const scanSearchQuery = (
 ): ScanResult<Token[]> => {
     let patternKind
     switch (searchPatternType) {
+        case SearchPatternType.standard:
+        case SearchPatternType.lucky:
+            return scanStandard(query)
         case SearchPatternType.literal:
             patternKind = PatternKind.Literal
             break
@@ -488,14 +516,6 @@ export const scanSearchQuery = (
             break
         case SearchPatternType.structural:
             patternKind = PatternKind.Structural
-            break
-        case SearchPatternType.lucky:
-            // A `lucky` search pattern can be interpreted in multiple ways
-            // (e.g., literal _or_ regexp), so effectively scan and label patterns as literals.
-            patternKind = PatternKind.Literal
-            break
-        case SearchPatternType.standard:
-            patternKind = PatternKind.Literal
             break
     }
     const scanner = createScanner(patternKind, interpretComments)
