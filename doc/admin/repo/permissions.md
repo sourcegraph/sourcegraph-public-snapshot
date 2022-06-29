@@ -460,7 +460,7 @@ For example:
 
 ```graphql
 mutation {
-  setRepositoryPermissionsUnrestricted(repositories: ["A","B","C"], unrestricted: true)
+  setRepositoryPermissionsUnrestricted(repositories: ["<repo ID>", "<repo ID>", "<repo ID>"], unrestricted: true)
 }
 ```
 
