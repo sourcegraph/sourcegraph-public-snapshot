@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
@@ -233,7 +235,7 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, logger log.Logger, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
