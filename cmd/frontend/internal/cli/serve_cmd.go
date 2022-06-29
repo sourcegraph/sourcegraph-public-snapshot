@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/check"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -140,6 +141,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
+
+	hc := &check.HealthChecker{Checks: []check.Check{
+		checkCanReachGitserver,
+	}}
+	hc.Init()
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
