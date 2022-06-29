@@ -38,9 +38,9 @@ export const SkipLinkProvider: React.FunctionComponent = ({ children }) => {
     return (
         <SkipLinkContext.Provider value={{ links, addLink, removeLink }}>
             {links.length > 0 && (
-                <nav>
+                <nav aria-label="Skip links">
                     <ul className={styles.list}>
-                        {links.map((link, index) => (
+                        {links.map(link => (
                             <li key={link.id}>
                                 <Button variant="secondary" as={AnchorLink} to={`#${link.id}`} className={styles.link}>
                                     Skip to {link.name}
