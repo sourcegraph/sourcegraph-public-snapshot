@@ -98,7 +98,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
                 <Tabs
-                    className="w-100 test-repo-revision-sidebar pr-3 h-25 flex-grow-1"
+                    className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
                     defaultIndex={persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
