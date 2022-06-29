@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
@@ -103,6 +104,10 @@ func TestParseIncludePattern(t *testing.T) {
 		// Recognize perl character class shorthand syntax.
 		`\s`: {regexp: `\s`},
 	}
+
+	tr, _ := trace.New(context.Background(), "", "")
+	defer tr.Finish()
+
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
 		if err != nil {
@@ -117,7 +122,7 @@ func TestParseIncludePattern(t *testing.T) {
 		if regexp != want.regexp {
 			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
 		}
-		if qs, err := parsePattern(pattern, false); err != nil {
+		if qs, err := parsePattern(tr, pattern, false); err != nil {
 			t.Fatal(pattern, err)
 		} else {
 			if testing.Verbose() {
