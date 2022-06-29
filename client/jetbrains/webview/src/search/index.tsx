@@ -33,18 +33,21 @@ let initialAuthenticatedUser: AuthenticatedUser | null
 let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
-    const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
+    const [theme, config, lastSearch]: [Theme, PluginConfig, Search | null] = await Promise.all([
         getThemeAlwaysFulfill(),
         getConfigAlwaysFulfill(),
         loadLastSearchAlwaysFulfill(),
-        getAuthenticatedUser(instanceURL, accessToken),
     ])
 
-    applyConfig((config as PromiseFulfilledResult<PluginConfig>).value)
-    applyTheme((theme as PromiseFulfilledResult<Theme>).value)
-    applyLastSearch((lastSearch as PromiseFulfilledResult<Search | null>).value)
-    applyAuthenticatedUser(authenticatedUser.status === 'fulfilled' ? authenticatedUser.value : null)
-    if (accessToken && authenticatedUser.status === 'rejected') {
+    applyConfig(config)
+    applyTheme(theme)
+    applyLastSearch(lastSearch)
+
+    const authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
+
+    applyAuthenticatedUser(authenticatedUser)
+
+    if (accessToken && !authenticatedUser) {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
 
@@ -52,7 +55,7 @@ window.initializeSourcegraph = async () => {
 
     renderReactApp()
 
-    await indicateFinishedLoading(authenticatedUser.status === 'fulfilled' && !!authenticatedUser.value)
+    await indicateFinishedLoading(!!authenticatedUser)
 }
 
 window.callJS = handleRequest
