@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -96,16 +96,16 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 	go c.Watch(func() {
 		siteConfig := c.SiteConfig()
 
-		samplingStrategy := ot.TraceNone
+		samplingStrategy := policy.TraceNone
 		shouldLog := false
 		setTracer := None
 		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
 			switch tracingConfig.Sampling {
 			case "all":
-				samplingStrategy = ot.TraceAll
+				samplingStrategy = policy.TraceAll
 				setTracer = Ot
 			case "selective":
-				samplingStrategy = ot.TraceSelective
+				samplingStrategy = policy.TraceSelective
 				setTracer = Ot
 			}
 			if t := TracerType(tracingConfig.Type); t.isSetByUser() {
@@ -113,11 +113,11 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 			}
 			shouldLog = tracingConfig.Debug
 		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
+		if tracePolicy := policy.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
 			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
 		}
 		initial = false
-		ot.SetTracePolicy(samplingStrategy)
+		policy.SetTracePolicy(samplingStrategy)
 
 		opts := options{
 			externalURL: siteConfig.ExternalURL,
