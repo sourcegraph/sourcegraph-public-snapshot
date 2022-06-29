@@ -3,7 +3,6 @@ package com.sourcegraph.find;
 import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.diagnostic.Logger;
@@ -11,6 +10,7 @@ import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.editor.impl.ContextMenuPopupHandler;
 import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.sourcegraph.Icons;
@@ -139,7 +139,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         DefaultActionGroup group = new DefaultActionGroup();
         group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
         group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
-        group.add(new AnAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
+        group.add(new DumbAwareAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 try {
@@ -153,7 +153,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         return group;
     }
 
-    class SimpleEditorFileAction extends AnAction {
+    class SimpleEditorFileAction extends DumbAwareAction {
         FileAction action;
         Editor editor;
 
