@@ -108,7 +108,7 @@ func (p *Plan) SetOp(op btypes.ReconcilerOperation) { p.Ops = Operations{op} }
 // It consumes the current and the previous changeset spec, if they exist. If
 // the current ChangesetSpec is not applied to a batch change, it returns an
 // error.
-func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChangeset *btypes.Changeset, wantedChangeset *btypes.Changeset) (*Plan, error) {
+func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChangeset, wantedChangeset *btypes.Changeset) (*Plan, error) {
 	pl := &Plan{
 		Changeset:     wantedChangeset,
 		ChangesetSpec: currentSpec,
