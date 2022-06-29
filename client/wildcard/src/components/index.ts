@@ -45,7 +45,7 @@ export {
     createRectangle,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
-export { SkipLink } from './SkipLink'
+export { SkipLink, SkipLinkProvider } from './SkipLink'
 
 /**
  * Type Exports

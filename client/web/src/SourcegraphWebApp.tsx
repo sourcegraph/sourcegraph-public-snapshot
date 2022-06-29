@@ -58,8 +58,8 @@ import {
     RouterLink,
     WildcardThemeContext,
     WildcardTheme,
+    SkipLinkProvider,
 } from '@sourcegraph/wildcard'
-import { SkipLinksProvider } from '@sourcegraph/wildcard/src/components/SkipLink'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -391,7 +391,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                                     <SearchResultsCacheProvider>
                                         <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                                            <SkipLinksProvider>
+                                            <SkipLinkProvider>
                                                 <ScrollManager history={history}>
                                                     <Router history={history} key={0}>
                                                         <CompatRouter>
@@ -482,7 +482,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CompatRouter>
                                                     </Router>
                                                 </ScrollManager>
-                                            </SkipLinksProvider>
+                                            </SkipLinkProvider>
                                             <DeprecatedTooltip key={1} />
                                             <Notifications
                                                 key={2}

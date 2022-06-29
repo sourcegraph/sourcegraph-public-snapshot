@@ -1,68 +1,45 @@
-import React, { useState, useEffect } from 'react'
-
-import VisuallyHidden from '@reach/visually-hidden'
+import React, { useEffect } from 'react'
 
 import { AnchorLink } from '../Link'
 
-import styles from './SkipLink.module.scss'
+import { useSkipLinkContext } from './SkipLinkProvider'
 
-export interface SkipLinksState {
-    addLink: (link: string) => void
-    removeLink: (link: string) => void
-    links: string[]
-}
-export const SkipLinksContext = React.createContext<SkipLinksState | undefined>(undefined)
-SkipLinksContext.displayName = 'SkipLinksContext'
-
-const useSkipLinksContext = (): SkipLinksState => {
-    const context = React.useContext(SkipLinksContext)
-    if (context === undefined) {
-        throw new Error('SkipLink must be used within a SkipLinksProvider')
-    }
-    return context
+export interface SkipLinkState {
+    /**
+     * Unique identifier to allow navigating to this skip link.
+     */
+    id: `skip-to-${string}`
+    /**
+     * Name to display to the user at the top of the page.
+     */
+    name: `Skip to ${string}`
 }
 
-export const SkipLinksProvider: React.FunctionComponent = ({ children }) => {
-    const [links, setLinks] = useState<string[]>([])
-
-    const addLink = (linkToAdd: string): void => {
-        setLinks(previous => [...previous, linkToAdd])
-    }
-
-    const removeLink = (linkToRemove: string): void => {
-        setLinks(previous => previous.filter(link => link !== linkToRemove))
-    }
-
-    return (
-        <SkipLinksContext.Provider value={{ links, addLink, removeLink }}>
-            {links.length > 0 && (
-                <div className={styles.skipLinks}>
-                    {links.map((link, index) => (
-                        <AnchorLink key={link} to={`#${link}`} tabIndex={index + 1}>
-                            Link to {link}
-                        </AnchorLink>
-                    ))}
-                </div>
-            )}
-            {children}
-        </SkipLinksContext.Provider>
-    )
-}
-
-interface SkipLinkProps {
-    id: string
-    name: string
+interface SkipLinkProps extends SkipLinkState {
+    /**
+     * If the component should render an empty anchor tag to support skip link navigation.
+     * Defaults to `true`.
+     */
+    renderAnchor?: boolean
 }
 
 /**
- * Skip links
+ * Adds a SkipLink to the current page.
+ * This will appears when it is navigated to using the keyboard.
+ *
+ * By default, this component will render a hidden anchor wherever it is used that allows for quick and simple navigation.
+ *
+ * If you wish for more control, you should set an `id` on your specific element and set `renderAnchor` to `false` here.
+ * If you do this, please ensure your `id` exists for as long as the SkipLink is used!
+ *
+ * **Note:** Skip links should be used sparingly and only for certain parts of the application that make sense to allow quick keyboard access to.
+ * If you are trying to improve screen reader navigation, you may want to consider using a [landmark](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles#3._landmark_roles) instead
  */
-export const SkipLink: React.FunctionComponent<SkipLinkProps> = ({ id, name }) => {
-    const context = useSkipLinksContext()
+export const SkipLink: React.FunctionComponent<SkipLinkProps> = ({ id, name, renderAnchor = true }) => {
+    const context = useSkipLinkContext()
 
     useEffect(() => {
-        console.log('Adding links!!')
-        context.addLink(id)
+        context.addLink({ id, name })
 
         return () => {
             context.removeLink(id)
@@ -70,11 +47,9 @@ export const SkipLink: React.FunctionComponent<SkipLinkProps> = ({ id, name }) =
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id])
 
-    return (
-        <VisuallyHidden>
-            <AnchorLink to={id} id={id}>
-                Hello!
-            </AnchorLink>
-        </VisuallyHidden>
-    )
+    if (!renderAnchor) {
+        return null
+    }
+
+    return <AnchorLink id={id} to={`#${id}`} aria-hidden={true} tabIndex={-1} className="invisible" />
 }
