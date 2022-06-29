@@ -71,7 +71,7 @@ func main() {
 	defer liblog.Sync()
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 
 	// Ready immediately

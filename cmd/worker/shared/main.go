@@ -62,7 +62,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	tracer.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
