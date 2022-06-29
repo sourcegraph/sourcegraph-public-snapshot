@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"sort"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -11,129 +12,159 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestGroup(t *testing.T) {
+func TestResultGroup(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
-		g := New()
-		var completed int64 = 0
+		g := NewWithResults[int]()
+		expected := []int{}
 		for i := 0; i < 100; i++ {
-			g.Go(func() {
-				time.Sleep(10 * time.Millisecond)
-				atomic.AddInt64(&completed, 1)
+			i := i
+			expected = append(expected, i)
+			g.Go(func() int {
+				return i
 			})
 		}
-		g.Wait()
-		require.Equal(t, completed, int64(100))
+		res := g.Wait()
+		sort.Ints(res)
+		require.Equal(t, expected, res)
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := New().WithLimit(1)
+		g := NewWithResults[int]().WithLimit(1)
 
 		currentConcurrent := int64(0)
 		errCount := int64(0)
 		for i := 0; i < 10; i++ {
-			g.Go(func() {
+			g.Go(func() int {
 				cur := atomic.AddInt64(&currentConcurrent, 1)
 				if cur > 1 {
 					atomic.AddInt64(&errCount, 1)
 				}
 				time.Sleep(time.Millisecond)
 				atomic.AddInt64(&currentConcurrent, -1)
+				return 0
 			})
 		}
-		g.Wait()
+		res := g.Wait()
+		require.Len(t, res, 10)
 		require.Equal(t, int64(0), errCount)
 	})
 }
 
-func TestErrorGroup(t *testing.T) {
+func TestResultErrorGroup(t *testing.T) {
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
 	t.Run("wait returns no error if no errors", func(t *testing.T) {
-		g := New().WithErrors()
-		g.Go(func() error { return nil })
-		require.NoError(t, g.Wait())
+		g := NewWithResults[int]().WithErrors()
+		g.Go(func() (int, error) { return 1, nil })
+		res, err := g.Wait()
+		require.NoError(t, err)
+		require.Equal(t, []int{1}, res)
 	})
 
 	t.Run("wait error if func returns error", func(t *testing.T) {
-		g := New().WithErrors()
-		g.Go(func() error { return err1 })
-		require.ErrorIs(t, g.Wait(), err1)
+		g := NewWithResults[int]().WithErrors()
+		g.Go(func() (int, error) { return 0, err1 })
+		res, err := g.Wait()
+		require.Len(t, res, 0) // errored value is ignored
+		require.ErrorIs(t, err, err1)
+	})
+
+	t.Run("WithCollectErrored", func(t *testing.T) {
+		g := NewWithResults[int]().WithErrors().WithCollectErrored()
+		g.Go(func() (int, error) { return 0, err1 })
+		res, err := g.Wait()
+		require.Len(t, res, 1) // errored value is collected
+		require.ErrorIs(t, err, err1)
 	})
 
 	t.Run("wait error is all returned errors", func(t *testing.T) {
-		g := New().WithErrors()
-		g.Go(func() error { return err1 })
-		g.Go(func() error { return nil })
-		g.Go(func() error { return err2 })
-		require.ErrorIs(t, g.Wait(), err1)
-		require.ErrorIs(t, g.Wait(), err2)
+		g := NewWithResults[int]().WithErrors()
+		g.Go(func() (int, error) { return 0, err1 })
+		g.Go(func() (int, error) { return 0, nil })
+		g.Go(func() (int, error) { return 0, err2 })
+		res, err := g.Wait()
+		require.Len(t, res, 1)
+		require.ErrorIs(t, err, err1)
+		require.ErrorIs(t, err, err2)
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := New().WithErrors().WithLimit(1)
+		g := NewWithResults[int]().WithErrors().WithLimit(1)
 
 		currentConcurrent := int64(0)
 		for i := 0; i < 10; i++ {
-			g.Go(func() error {
+			g.Go(func() (int, error) {
 				cur := atomic.AddInt64(&currentConcurrent, 1)
 				if cur > 1 {
-					return errors.New("expected no more than 1 concurrent goroutine")
+					return 0, errors.New("expected no more than 1 concurrent goroutine")
 				}
 				time.Sleep(time.Millisecond)
 				atomic.AddInt64(&currentConcurrent, -1)
-				return nil
+				return 0, nil
 			})
 		}
-		require.NoError(t, g.Wait())
+		res, err := g.Wait()
+		require.Len(t, res, 10)
+		require.NoError(t, err)
 	})
 }
 
-func TestContextErrorGroup(t *testing.T) {
+func TestResultContextErrorGroup(t *testing.T) {
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
 	t.Run("behaves the same as ErrorGroup", func(t *testing.T) {
 		bgctx := context.Background()
 		t.Run("wait returns no error if no errors", func(t *testing.T) {
-			g := New().WithContext(bgctx)
-			g.Go(func(context.Context) error { return nil })
-			require.NoError(t, g.Wait())
+			g := NewWithResults[int]().WithContext(bgctx)
+			g.Go(func(context.Context) (int, error) { return 0, nil })
+			res, err := g.Wait()
+			require.Len(t, res, 1)
+			require.NoError(t, err)
 		})
 
 		t.Run("wait error if func returns error", func(t *testing.T) {
-			g := New().WithContext(bgctx)
-			g.Go(func(context.Context) error { return err1 })
-			require.ErrorIs(t, g.Wait(), err1)
+			g := NewWithResults[int]().WithContext(bgctx)
+			g.Go(func(context.Context) (int, error) { return 0, err1 })
+			res, err := g.Wait()
+			require.Len(t, res, 0)
+			require.ErrorIs(t, err, err1)
 		})
 
 		t.Run("wait error is all returned errors", func(t *testing.T) {
-			g := New().WithErrors().WithContext(bgctx)
-			g.Go(func(context.Context) error { return err1 })
-			g.Go(func(context.Context) error { return nil })
-			g.Go(func(context.Context) error { return err2 })
-			require.ErrorIs(t, g.Wait(), err1)
-			require.ErrorIs(t, g.Wait(), err2)
+			g := NewWithResults[int]().WithErrors().WithContext(bgctx)
+			g.Go(func(context.Context) (int, error) { return 0, err1 })
+			g.Go(func(context.Context) (int, error) { return 0, nil })
+			g.Go(func(context.Context) (int, error) { return 0, err2 })
+			res, err := g.Wait()
+			require.Len(t, res, 1)
+			require.ErrorIs(t, err, err1)
+			require.ErrorIs(t, err, err2)
 		})
 	})
 
 	t.Run("context cancel propagates", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		g := New().WithContext(ctx)
-		g.Go(func(ctx context.Context) error {
+		g := NewWithResults[int]().WithContext(ctx)
+		g.Go(func(ctx context.Context) (int, error) {
 			<-ctx.Done()
-			return ctx.Err()
+			return 0, ctx.Err()
 		})
 		cancel()
-		require.ErrorIs(t, g.Wait(), context.Canceled)
+		res, err := g.Wait()
+		require.Len(t, res, 0)
+		require.ErrorIs(t, err, context.Canceled)
 	})
 
 	t.Run("cancel unblocks limiter", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
-		g := New().WithContext(ctx).WithLimit(0)
-		g.Go(func(context.Context) error { return nil })
-		require.ErrorIs(t, g.Wait(), context.DeadlineExceeded)
+		g := NewWithResults[int]().WithContext(ctx).WithLimit(0)
+		g.Go(func(context.Context) (int, error) { return 0, nil })
+		res, err := g.Wait()
+		require.Len(t, res, 0)
+		require.ErrorIs(t, err, context.DeadlineExceeded)
 	})
 
 	t.Run("CancelOnError", func(t *testing.T) {

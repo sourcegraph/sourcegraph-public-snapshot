@@ -103,7 +103,7 @@ func (g *streamGroup[T]) WithContext(ctx context.Context) ContextErrorStreamGrou
 }
 
 func (g *streamGroup[T]) WithLimit(limit int) StreamGroup[T] {
-	g.os.group.limiter = newBasicLimiter(limit)
+	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
@@ -147,7 +147,7 @@ func (g *errorStreamGroup[T]) WithContext(ctx context.Context) ContextErrorStrea
 }
 
 func (g *errorStreamGroup[T]) WithLimit(limit int) ErrorStreamGroup[T] {
-	g.os.group.limiter = newBasicLimiter(limit)
+	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
@@ -185,7 +185,7 @@ func (g *contextErrorStreamGroup[T]) Wait() {
 }
 
 func (g *contextErrorStreamGroup[T]) WithLimit(limit int) ContextErrorStreamGroup[T] {
-	g.os.group.limiter = newBasicLimiter(limit)
+	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
@@ -196,7 +196,7 @@ func (g *contextErrorStreamGroup[T]) WithLimiter(limiter Limiter) ContextErrorSt
 
 func newOrderedStreamer[T any]() orderedStreamer[T] {
 	return orderedStreamer[T]{
-		group: &group{limiter: &unlimitedLimiter{}},
+		group: &group{},
 		// Set reasonably high default limit on the output channel by default.
 		// This doesn't limit the max goroutines, it just limits the number of
 		// goroutines waiting for their results to be handled.

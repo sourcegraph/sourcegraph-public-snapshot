@@ -15,14 +15,7 @@ type Limiter interface {
 	Acquire(context.Context) (ctx context.Context, release context.CancelFunc, err error)
 }
 
-// unlimitedLimiter is a Limiter whose Acquire function will always return immediately.
-type unlimitedLimiter struct{}
-
-func (l *unlimitedLimiter) Acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	return ctx, func() {}, nil
-}
-
-func newBasicLimiter(limit int) Limiter {
+func NewBasicLimiter(limit int) Limiter {
 	return make(basicLimiter, limit)
 }
 

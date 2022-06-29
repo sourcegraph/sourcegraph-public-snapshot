@@ -165,7 +165,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 		t.Run("out of order", func(t *testing.T) {
 			var results []int
 			cb := func(_ context.Context, i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithContext(bgctx).WithLimit(10)
+			g := NewWithStreaming[int]().WithErrors().WithContext(bgctx).WithLimit(10)
 			g.Go(sleepReturn(15*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 			g.Go(sleepReturn(5*time.Millisecond, 3, nil), cb)

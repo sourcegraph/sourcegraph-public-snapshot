@@ -5,7 +5,10 @@ package group
 
 import (
 	"context"
+	"fmt"
 	"sync"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -14,9 +17,7 @@ import (
 // or it can be used a starting point to construct more specific
 // group types (for more information, see the With* methods).
 func New() Group {
-	return &group{
-		limiter: &unlimitedLimiter{},
-	}
+	return &group{}
 }
 
 // Group is the most basic group type. It starts goroutines
@@ -109,7 +110,7 @@ type Errorable[T any] interface {
 
 type group struct {
 	wg      sync.WaitGroup
-	limiter Limiter
+	limiter Limiter // nil limiter means unlimited (default)
 }
 
 func (g *group) Go(f func()) {
@@ -119,8 +120,11 @@ func (g *group) Go(f func()) {
 }
 
 func (g *group) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	ctx, release, err := g.limiter.Acquire(ctx)
-	return ctx, release, errors.Wrap(err, "acquire limiter")
+	if g.limiter != nil {
+		ctx, release, err := g.limiter.Acquire(ctx)
+		return ctx, release, errors.Wrap(err, "acquire limiter")
+	}
+	return ctx, func() {}, nil
 }
 
 func (g *group) start(f, release func()) {
@@ -128,7 +132,8 @@ func (g *group) start(f, release func()) {
 	go func() {
 		defer release()
 		defer g.wg.Done()
-		// TODO add panic handlers
+		defer recoverPanic()
+
 		f()
 	}()
 }
@@ -138,7 +143,7 @@ func (g *group) Wait() {
 }
 
 func (g *group) WithLimit(limit int) Group {
-	g.limiter = newBasicLimiter(limit)
+	g.limiter = NewBasicLimiter(limit)
 	return g
 }
 
@@ -192,7 +197,7 @@ func (g *errorGroup) addErr(err error) {
 	if err != nil {
 		g.mu.Lock()
 		if g.onlyFirst {
-			if g.errs != nil {
+			if g.errs == nil {
 				g.errs = err
 			}
 		} else {
@@ -208,7 +213,7 @@ func (g *errorGroup) Wait() error {
 }
 
 func (g *errorGroup) WithLimit(limit int) ErrorGroup {
-	g.limiter = newBasicLimiter(limit)
+	g.limiter = NewBasicLimiter(limit)
 	return g
 }
 
@@ -253,7 +258,7 @@ func (g *contextErrorGroup) WithCancelOnError() ContextErrorGroup {
 }
 
 func (g *contextErrorGroup) WithLimit(limit int) ContextErrorGroup {
-	g.limiter = newBasicLimiter(limit)
+	g.limiter = NewBasicLimiter(limit)
 	return g
 }
 
@@ -265,4 +270,14 @@ func (g *contextErrorGroup) WithLimiter(limiter Limiter) ContextErrorGroup {
 func (g *contextErrorGroup) WithFirstError() ContextErrorGroup {
 	g.onlyFirst = true
 	return g
+}
+
+func recoverPanic() {
+	if val := recover(); val != nil {
+		if err, ok := val.(error); ok {
+			log.Scoped("internal", "group").Error("recovered from panic", log.Error(err))
+		} else {
+			log.Scoped("internal", "group").Error("recovered from panic", log.Error(errors.New(fmt.Sprintf("%#v", val))))
+		}
+	}
 }
