@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -713,6 +714,84 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Same(t, css, have)
 			assert.Same(t, want, css.ValidateAuthenticator(ctx))
+		})
+	})
+}
+
+func TestGetRemoteRepo(t *testing.T) {
+	ctx := context.Background()
+	targetRepo := &types.Repo{}
+
+	t.Run("forks disabled", func(t *testing.T) {
+		t.Run("unforked changeset", func(t *testing.T) {
+			// Set up a changeset source that will panic if any methods are invoked.
+			css := NewStrictMockChangesetSource()
+
+			// This should succeed, since loadRemoteRepo() should early return with
+			// forks disabled.
+			remoteRepo, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: nil,
+			})
+			assert.Nil(t, err)
+			assert.Same(t, targetRepo, remoteRepo)
+		})
+
+		t.Run("forked changeset", func(t *testing.T) {
+			forkNamespace := "fork"
+			want := &types.Repo{}
+			css := NewMockForkableChangesetSource()
+			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
+
+			// This should succeed, since loadRemoteRepo() should early return with
+			// forks disabled.
+			remoteRepo, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: &forkNamespace,
+			})
+			assert.Nil(t, err)
+			assert.Same(t, want, remoteRepo)
+			mockassert.CalledOnce(t, css.GetNamespaceForkFunc)
+		})
+	})
+
+	t.Run("forks enabled", func(t *testing.T) {
+		forkNamespace := "<user>"
+
+		t.Run("unforkable changeset source", func(t *testing.T) {
+			css := NewMockChangesetSource()
+
+			repo, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: &forkNamespace,
+			})
+			assert.Nil(t, repo)
+			assert.ErrorIs(t, err, ErrChangesetSourceCannotFork)
+		})
+
+		t.Run("forkable changeset source", func(t *testing.T) {
+			t.Run("success", func(t *testing.T) {
+				want := &types.Repo{}
+				css := NewMockForkableChangesetSource()
+				css.GetUserForkFunc.SetDefaultReturn(want, nil)
+
+				have, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+					ForkNamespace: &forkNamespace,
+				})
+				assert.Nil(t, err)
+				assert.Same(t, want, have)
+				mockassert.CalledOnce(t, css.GetUserForkFunc)
+			})
+
+			t.Run("error from the source", func(t *testing.T) {
+				want := errors.New("source error")
+				css := NewMockForkableChangesetSource()
+				css.GetUserForkFunc.SetDefaultReturn(nil, want)
+
+				repo, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+					ForkNamespace: &forkNamespace,
+				})
+				assert.Nil(t, repo)
+				assert.Same(t, want, err)
+				mockassert.CalledOnce(t, css.GetUserForkFunc)
+			})
 		})
 	})
 }
