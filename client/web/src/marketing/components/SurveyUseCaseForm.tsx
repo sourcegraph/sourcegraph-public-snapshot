@@ -102,7 +102,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                     containerClassName="mt-3"
                     label={
                         <Text size="small" className={formLabelClassName}>
-                            What else are you using Sourcegraph to do?
+                            What else do you use Sourcegraph to do?
                         </Text>
                     }
                     onChange={event => onChangeOtherUseCase(event.target.value)}
@@ -113,7 +113,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 containerClassName="mt-3"
                 label={
                     <Text size="small" className={formLabelClassName}>
-                        What can Sourcegraph do to provide a better product?
+                        What would make Sourcegraph better?
                     </Text>
                 }
                 onChange={event => onChangeBetter(event.target.value)}
