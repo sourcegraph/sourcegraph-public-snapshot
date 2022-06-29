@@ -1,6 +1,7 @@
 package debugserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -73,7 +75,7 @@ type Service struct {
 // Dumper is a service which can dump its state for debugging.
 type Dumper interface {
 	// DebugDump returns a snapshot of the current state.
-	DebugDump() any
+	DebugDump(ctx context.Context, db database.DB) any
 }
 
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
