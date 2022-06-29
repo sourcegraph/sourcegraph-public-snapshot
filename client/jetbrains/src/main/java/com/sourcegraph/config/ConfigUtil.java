@@ -19,6 +19,8 @@ public class ConfigUtil {
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
         configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
+        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
+        configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         return configAsJson;
     }
 
@@ -56,6 +58,14 @@ public class ConfigUtil {
 
     public static void setAnonymousUserId(@Nullable String anonymousUserId) {
         SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
+    }
+
+    public static boolean isInstallEventLogged() {
+        return SourcegraphApplicationService.getInstance().isInstallEventLogged();
+    }
+
+    public static void setInstallEventLogged(boolean value) {
+        SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
     }
 
     @Nullable

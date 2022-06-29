@@ -1,15 +1,20 @@
 import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { ExecutionStatsBar } from './ExecutionStatsBar'
 
-const { add } = storiesOf('web/batches/batch-spec/execute', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('ExecutionStatsBar', () => (
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute',
+    decorators: [decorator],
+}
+
+export default config
+
+export const ExecutionStatsBarStory: Story = () => (
     <WebStory>
         {props => (
             <ExecutionStatsBar
@@ -22,4 +27,6 @@ add('ExecutionStatsBar', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ExecutionStatsBarStory.storyName = 'ExecutionStatsBar'

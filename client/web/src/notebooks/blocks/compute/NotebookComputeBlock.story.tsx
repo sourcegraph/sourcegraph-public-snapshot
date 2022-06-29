@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
@@ -7,9 +7,14 @@ import { WebStory } from '../../../components/WebStory'
 
 import { NotebookComputeBlock } from './NotebookComputeBlock'
 
-const { add } = storiesOf('web/search/notebooks/blocks/compute/NotebookComputeBlock', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/blocks/compute/NotebookComputeBlock',
+    decorators: [decorator],
+}
+
+export default config
 
 const noopBlockCallbacks = {
     onRunBlock: noop,
@@ -21,7 +26,7 @@ const noopBlockCallbacks = {
     onDuplicateBlock: noop,
 }
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {props => (
             <NotebookComputeBlock
@@ -37,4 +42,4 @@ add('default', () => (
             />
         )}
     </WebStory>
-))
+)

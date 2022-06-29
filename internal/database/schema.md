@@ -2478,15 +2478,17 @@ Responsible for storing permissions at a finer granularity than repo
 
 # Table "public.survey_responses"
 ```
-   Column   |           Type           | Collation | Nullable |                   Default                    
-------------+--------------------------+-----------+----------+----------------------------------------------
- id         | bigint                   |           | not null | nextval('survey_responses_id_seq'::regclass)
- user_id    | integer                  |           |          | 
- email      | text                     |           |          | 
- score      | integer                  |           | not null | 
- reason     | text                     |           |          | 
- better     | text                     |           |          | 
- created_at | timestamp with time zone |           | not null | now()
+     Column     |           Type           | Collation | Nullable |                   Default                    
+----------------+--------------------------+-----------+----------+----------------------------------------------
+ id             | bigint                   |           | not null | nextval('survey_responses_id_seq'::regclass)
+ user_id        | integer                  |           |          | 
+ email          | text                     |           |          | 
+ score          | integer                  |           | not null | 
+ reason         | text                     |           |          | 
+ better         | text                     |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ use_cases      | text[]                   |           |          | 
+ other_use_case | text                     |           |          | 
 Indexes:
     "survey_responses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:

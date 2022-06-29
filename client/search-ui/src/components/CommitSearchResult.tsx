@@ -20,6 +20,8 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     onSelect: () => void
     openInNewTab?: boolean
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 // This is a search result for types diff or commit.
@@ -29,6 +31,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -51,7 +55,11 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
             </span>
             <span className={styles.spacer} />
-            <Link to={getCommitMatchUrl(result)}>
+            {/*
+                Relative positioning needed needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
+                Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+            */}
+            <Link to={getCommitMatchUrl(result)} className="position-relative">
                 <Code className={styles.commitOid}>
                     <VisuallyHidden>Commit hash:</VisuallyHidden>
                     {result.oid.slice(0, 7)}
@@ -75,6 +83,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 
     return (
         <ResultContainer
+            index={index}
             icon={SourceCommitIcon}
             collapsible={false}
             defaultExpanded={true}
@@ -85,6 +94,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            as={as}
         />
     )
 }
