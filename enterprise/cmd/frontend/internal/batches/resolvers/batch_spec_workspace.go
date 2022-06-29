@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -47,7 +49,7 @@ func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes
 		execution:    execution,
 		batchSpec:    batchSpec,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(log.Scoped("batchSpecWorkspaceResolver", ""), store.DatabaseDB(), repo),
 	}
 }
 

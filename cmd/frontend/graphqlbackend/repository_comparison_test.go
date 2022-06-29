@@ -52,7 +52,7 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 	}
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(logger, db, repo)
 
 	// There shouldn't be any error even when there is no merge base.
 	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
@@ -105,7 +105,7 @@ func TestRepositoryComparison(t *testing.T) {
 	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(logger, db, repo)
 
 	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
 	if err != nil {

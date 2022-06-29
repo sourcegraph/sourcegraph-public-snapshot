@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -231,5 +233,5 @@ func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, e
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return schemaResolver{db: r.db}.ViewerSettings(ctx)
+	return schemaResolver{db: r.db, logger: log.Scoped("schemaResolver", "")}.ViewerSettings(ctx)
 }

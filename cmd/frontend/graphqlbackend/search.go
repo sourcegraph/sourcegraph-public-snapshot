@@ -5,6 +5,8 @@ import (
 
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -86,7 +88,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
+	cascade, err := (&schemaResolver{db: db, logger: log.Scoped("DecodedViewerFinalSettings", "")}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

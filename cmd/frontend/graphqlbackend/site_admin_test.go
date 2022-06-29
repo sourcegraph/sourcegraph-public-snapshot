@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -29,7 +31,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
+		result, err := (&schemaResolver{db: db, logger: logtest.Scoped(t)}).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -51,7 +53,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
+		_, err := (&schemaResolver{db: db, logger: logtest.Scoped(t)}).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{

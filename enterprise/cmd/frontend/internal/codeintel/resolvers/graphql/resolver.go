@@ -633,7 +633,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 			return nil, err
 		}
 
-		resolvers = append(resolvers, gql.NewRepositoryResolver(r.db, repo))
+		resolvers = append(resolvers, gql.NewRepositoryResolver(r.locationResolver.logger, r.db, repo))
 	}
 
 	limitedCount := totalCount
