@@ -478,7 +478,12 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 		}
 	}()
 
-	return comby.StartAndWaitForCompletion(cmd)
+	err = comby.StartAndWaitForCompletion(cmd)
+	if ctx.Err() != nil {
+		// context has been canceled, ignore any "process killed" errors from the subprocess
+		return nil
+	}
+	return err
 }
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
