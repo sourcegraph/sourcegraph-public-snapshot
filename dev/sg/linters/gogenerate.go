@@ -28,9 +28,6 @@ var goGenerateLinter = &linter{
 			return report.Err
 		}
 
-		// if you specify that the diff should have colors with --color=always, the rendering of annotations
-		// in the terminal will be slightly broken since the terminal markdown renderer does not like `term` code
-		// blocks
 		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code --color=always -- . :!go.sum")).String()
 		if err != nil && strings.TrimSpace(diffOutput) != "" {
 			out.WriteWarningf("Uncommitted changes found after running go generate:")
