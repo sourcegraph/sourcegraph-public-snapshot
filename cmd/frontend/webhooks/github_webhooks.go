@@ -2,7 +2,6 @@ package webhooks
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -105,7 +104,6 @@ func (h *GitHubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
 		h.handlers = make(map[string][]WebhookHandler)
 	}
 	for _, eventType := range eventTypes {
-		fmt.Println("event:", eventType)
 		h.handlers[eventType] = append(h.handlers[eventType], handler)
 	}
 }

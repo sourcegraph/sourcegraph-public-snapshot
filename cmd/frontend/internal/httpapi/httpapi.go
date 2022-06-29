@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -88,9 +87,7 @@ func NewHandler(
 	)
 
 	handlers.GitHubWebhook.Register(&gh)
-	fmt.Println("before sync")
-	handlers.SyncGitHubWebhook.Register(&gh)
-	fmt.Println("after sync")
+	initSyncingWebhooks(handlers, &gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
@@ -202,6 +199,12 @@ func init() {
 		}
 		return reflect.ValueOf(time.Unix(0, ms*int64(time.Millisecond)))
 	})
+}
+
+func initSyncingWebhooks(handlers *Handlers, webhook *webhooks.GitHubWebhook) {
+	handlers.SyncGitHubWebhook.Register(webhook)
+	// handlers.SyncGitLabWebhook.Register(webhook)
+	// etc etc
 }
 
 type errorHandler struct {
