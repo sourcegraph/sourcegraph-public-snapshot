@@ -40,7 +40,7 @@
 </style>
 
 <script src="https://storage.googleapis.com/sourcegraph-resource-estimator/go_1_18_wasm_exec.js"></script>
-<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="dbc14f6"></script>
+<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="a446673"></script>
 
 # Sourcegraph resource estimator
 
