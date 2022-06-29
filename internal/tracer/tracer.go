@@ -195,17 +195,20 @@ type switchableTracer struct {
 	opentracer   opentracing.Tracer
 	tracerCloser io.Closer
 
-	log    bool
-	logger log.Logger
+	log          bool
+	logger       log.Logger
+	parentLogger log.Logger // used to create logger
 }
 
 var _ opentracing.Tracer = &switchableTracer{}
 
 // move to OpenTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
 func newSwitchableTracer(logger log.Logger) *switchableTracer {
+	var t opentracing.NoopTracer
 	return &switchableTracer{
-		logger:     logger,
-		opentracer: opentracing.NoopTracer{},
+		opentracer:   t,
+		logger:       logger.With(log.String("opentracer", fmt.Sprintf("%T", t))),
+		parentLogger: logger,
 	}
 }
 
@@ -214,8 +217,7 @@ func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.S
 	defer t.mu.RUnlock()
 	if t.log {
 		t.logger.Info("opentracing: StartSpan",
-			log.String("operationName", operationName),
-			t.currentTracerType())
+			log.String("operationName", operationName))
 	}
 	return t.opentracer.StartSpan(operationName, opts...)
 }
@@ -224,7 +226,7 @@ func (t *switchableTracer) Inject(sm opentracing.SpanContext, format any, carrie
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		t.logger.Info("opentracing: Inject", t.currentTracerType())
+		t.logger.Info("opentracing: Inject")
 	}
 	return t.opentracer.Inject(sm, format, carrier)
 }
@@ -233,12 +235,12 @@ func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanCon
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		t.logger.Info("opentracing: Extract", t.currentTracerType())
+		t.logger.Info("opentracing: Extract")
 	}
 	return t.opentracer.Extract(format, carrier)
 }
 
-func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, log bool) {
+func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, shouldLog bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if tc := t.tracerCloser; tc != nil {
@@ -248,9 +250,6 @@ func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer
 
 	t.tracerCloser = tracerCloser
 	t.opentracer = tracer
-	t.log = log
-}
-
-func (t *switchableTracer) currentTracerType() log.Field {
-	return log.String("opentracer", fmt.Sprintf("%T", t.opentracer))
+	t.log = shouldLog
+	t.logger = t.parentLogger.With(log.String("opentracer", fmt.Sprintf("%T", t)))
 }
