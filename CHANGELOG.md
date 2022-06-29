@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Batch specs that mount paths now cache results. [sourcegraph/sourcegraph#37216](https://github.com/sourcegraph/sourcegraph/issues/37216)
+
 ### Changed
 
 ### Fixed

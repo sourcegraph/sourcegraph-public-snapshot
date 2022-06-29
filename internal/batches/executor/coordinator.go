@@ -49,10 +49,10 @@ type NewCoordinatorOpts struct {
 	// Used by batcheslib.BuildChangesetSpecs
 	Features batches.FeatureFlags
 
-	Parallelism     int
-	Timeout         time.Duration
-	TempDir         string
-	AllowPathMounts bool
+	Parallelism int
+	Timeout     time.Duration
+	TempDir     string
+	IsRemote    bool
 }
 
 func NewCoordinator(opts NewCoordinatorOpts, logger log.LogManager) *Coordinator {
@@ -62,19 +62,13 @@ func NewCoordinator(opts NewCoordinatorOpts, logger log.LogManager) *Coordinator
 		Creator:             opts.Creator,
 		Logger:              logger,
 
-		Parallelism:     opts.Parallelism,
-		Timeout:         opts.Timeout,
-		TempDir:         opts.TempDir,
-		AllowPathMounts: opts.AllowPathMounts,
-		GlobalEnv:       opts.GlobalEnv,
+		Parallelism: opts.Parallelism,
+		Timeout:     opts.Timeout,
+		TempDir:     opts.TempDir,
+		IsRemote:    opts.IsRemote,
+		GlobalEnv:   opts.GlobalEnv,
 		WriteStepCacheResult: func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error {
-			// Temporarily skip writing to the cache if a mount is present
-			for _, step := range task.Steps {
-				if len(step.Mount) > 0 {
-					return nil
-				}
-			}
-			cacheKey := task.cacheKey(opts.GlobalEnv)
+			cacheKey := task.cacheKey(opts.GlobalEnv, opts.IsRemote)
 			return writeToCache(ctx, opts.Cache, stepResult, task, cacheKey)
 		},
 	})
@@ -121,7 +115,7 @@ func (c *Coordinator) CheckStepResultsCache(ctx context.Context, tasks []*Task, 
 
 func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 	for _, task := range tasks {
-		cacheKey := task.cacheKey(c.opts.GlobalEnv)
+		cacheKey := task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote)
 		if err := c.cache.Clear(ctx, cacheKey); err != nil {
 			return errors.Wrapf(err, "clearing cache for %q", task.Repository.Name)
 		}
@@ -137,7 +131,7 @@ func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 
 func (c *Coordinator) checkCacheForTask(ctx context.Context, batchSpec *batcheslib.BatchSpec, task *Task) (specs []*batcheslib.ChangesetSpec, found bool, err error) {
 	// Check if the task is cached.
-	cacheKey := task.cacheKey(c.opts.GlobalEnv)
+	cacheKey := task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote)
 
 	var result execution.Result
 	result, found, err = c.cache.Get(ctx, cacheKey)
@@ -201,7 +195,7 @@ func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.Batch
 func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, globalEnv []string) error {
 	// We start at the back so that we can find the _last_ cached step,
 	// then restart execution on the following step.
-	taskKey := task.cacheKey(globalEnv)
+	taskKey := task.cacheKey(globalEnv, c.opts.IsRemote)
 	for i := len(task.Steps) - 1; i > -1; i-- {
 		key := cacheKeyForStep(taskKey, i)
 
@@ -230,9 +224,9 @@ func writeToCache(ctx context.Context, cache cache.Cache, stepResult execution.A
 	return nil
 }
 
-func (c *Coordinator) writeExecutionCacheResult(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) error {
+func (c *Coordinator) writeExecutionCacheResult(ctx context.Context, taskResult taskResult) error {
 	// Add to the cache, even if no diff was produced.
-	cacheKey := taskResult.task.cacheKey(c.opts.GlobalEnv)
+	cacheKey := taskResult.task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote)
 	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
 		return errors.Wrapf(err, "caching result for %q", taskResult.task.Repository.Name)
 	}
@@ -241,18 +235,7 @@ func (c *Coordinator) writeExecutionCacheResult(ctx context.Context, taskResult 
 }
 
 func (c *Coordinator) writeCacheAndBuildSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
-	// Temporarily prevent writing to the cache when running a spec with a mount. Caching does not at the moment "know"
-	// when a file that is being mounted has changed. This causes the execution not to re-run if a mounted file changes.
-	hasMount := false
-	for _, step := range batchSpec.Steps {
-		if len(step.Mount) > 0 {
-			hasMount = true
-			break
-		}
-	}
-	if !hasMount {
-		c.writeExecutionCacheResult(ctx, taskResult, ui)
-	}
+	c.writeExecutionCacheResult(ctx, taskResult)
 
 	// If the steps didn't result in any diff, we don't need to create a
 	// changeset spec that's displayed to the user and send to the server.
@@ -276,7 +259,7 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, ui TaskExecuti
 
 	// Write results to cache.
 	for _, taskResult := range results {
-		if cacheErr := c.writeExecutionCacheResult(ctx, taskResult, ui); cacheErr != nil {
+		if cacheErr := c.writeExecutionCacheResult(ctx, taskResult); cacheErr != nil {
 			return cacheErr
 		}
 	}

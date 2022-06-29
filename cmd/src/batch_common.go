@@ -366,13 +366,13 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		archiveRegistry,
 		log.NewDiskManager(opts.flags.tempDir, opts.flags.keepLogs),
 		executor.NewCoordinatorOpts{
-			Creator:         workspaceCreator,
-			Cache:           executor.NewDiskCache(opts.flags.cacheDir),
-			Parallelism:     parallelism,
-			Timeout:         opts.flags.timeout,
-			TempDir:         opts.flags.tempDir,
-			GlobalEnv:       os.Environ(),
-			AllowPathMounts: true,
+			Creator:     workspaceCreator,
+			Cache:       executor.NewDiskCache(opts.flags.cacheDir),
+			Parallelism: parallelism,
+			Timeout:     opts.flags.timeout,
+			TempDir:     opts.flags.tempDir,
+			GlobalEnv:   os.Environ(),
+			IsRemote:    false,
 		},
 	)
 

@@ -63,7 +63,7 @@ type newExecutorOpts struct {
 	Parallelism          int
 	Timeout              time.Duration
 	TempDir              string
-	AllowPathMounts      bool
+	IsRemote             bool
 	GlobalEnv            []string
 	WriteStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
@@ -175,13 +175,13 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 
 	// Actually execute the steps.
 	opts := &executionOpts{
-		task:            task,
-		logger:          l,
-		wc:              x.opts.Creator,
-		ensureImage:     x.opts.EnsureImage,
-		tempDir:         x.opts.TempDir,
-		allowPathMounts: x.opts.AllowPathMounts,
-		globalEnv:       x.opts.GlobalEnv,
+		task:        task,
+		logger:      l,
+		wc:          x.opts.Creator,
+		ensureImage: x.opts.EnsureImage,
+		tempDir:     x.opts.TempDir,
+		isRemote:    x.opts.IsRemote,
+		globalEnv:   x.opts.GlobalEnv,
 
 		ui:                   ui.StepsExecutionUI(task),
 		writeStepCacheResult: x.opts.WriteStepCacheResult,

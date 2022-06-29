@@ -20,7 +20,7 @@ require (
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/scip v0.1.0
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220614233452-81dc06f6e96e
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220624142708-f2b0579b57ff
 	github.com/stretchr/testify v1.7.2
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -83,7 +83,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sourcegraph/log v0.0.0-20220613150728-bb50c87ba841 // indirect
+	github.com/sourcegraph/log v0.0.0-20220621231153-3bee7082c87e // indirect
 	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
@@ -98,7 +98,7 @@ require (
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.0.0-20220614162138-6c1b26c55098 // indirect
+	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664 // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.11 // indirect

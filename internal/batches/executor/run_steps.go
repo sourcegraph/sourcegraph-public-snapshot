@@ -38,7 +38,7 @@ type executionOpts struct {
 
 	ui StepsExecutionUI
 
-	allowPathMounts bool
+	isRemote bool
 
 	globalEnv []string
 
@@ -309,7 +309,7 @@ func executeSingleStep(
 	}
 
 	// Temporarily add a guard to prevent a path to mount path for server-side processing
-	if opts.allowPathMounts {
+	if !opts.isRemote {
 		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing
 		for _, mount := range step.Mount {
 			args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", mount.Path, mount.Mountpoint))

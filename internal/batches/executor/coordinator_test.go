@@ -226,7 +226,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			},
 		},
 		{
-			name: "skip cache for step mount",
+			name: "cache for step mount",
 
 			tasks: []*Task{srcCLITask, sourcegraphTask},
 
@@ -250,7 +250,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			},
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
-			wantCacheEntries: 0,
+			wantCacheEntries: 2,
 			wantSpecs: []*batcheslib.ChangesetSpec{
 				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
 					spec.Commits[0].Diff = `dummydiff1`

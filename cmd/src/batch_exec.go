@@ -224,7 +224,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 			// Don't allow to read from env.
 			GlobalEnv: []string{},
 			// Temporarily prevent the ability to sending a batch spec with a mount for server-side processing.
-			AllowPathMounts: false,
+			IsRemote: true,
 		},
 	)
 

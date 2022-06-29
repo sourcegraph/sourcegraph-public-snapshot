@@ -1,10 +1,14 @@
 package executor
 
 import (
+	"os"
+	"path/filepath"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
@@ -41,7 +45,12 @@ func (t *Task) ArchivePathToFetch() string {
 	return ""
 }
 
-func (t *Task) cacheKey(globalEnv []string) *cache.ExecutionKeyWithGlobalEnv {
+func (t *Task) cacheKey(globalEnv []string, isRemote bool) *cache.ExecutionKeyWithGlobalEnv {
+	var metadataRetriever cache.MetadataRetriever
+	// If the task is being run locally, set the metadata retrieve to use the filesystem based implementation.
+	if !isRemote {
+		metadataRetriever = fileMetadataRetriever{}
+	}
 	return &cache.ExecutionKeyWithGlobalEnv{
 		GlobalEnv: globalEnv,
 		ExecutionKey: &cache.ExecutionKey{
@@ -56,8 +65,67 @@ func (t *Task) cacheKey(globalEnv []string) *cache.ExecutionKeyWithGlobalEnv {
 			OnlyFetchWorkspace:    t.OnlyFetchWorkspace,
 			Steps:                 t.Steps,
 			BatchChangeAttributes: t.BatchChangeAttributes,
+			MetadataRetriever:     metadataRetriever,
 		},
 	}
+}
+
+type fileMetadataRetriever struct {
+}
+
+func (f fileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
+	var mountsMetadata []cache.MountMetadata
+	for _, step := range steps {
+		// Build up the metadata for each mount for each step
+		for _, mount := range step.Mount {
+			metadata, err := getMountMetadata(mount.Path)
+			if err != nil {
+				return nil, err
+			}
+			// A mount could be a directory containing multiple files
+			mountsMetadata = append(mountsMetadata, metadata...)
+		}
+	}
+	return mountsMetadata, nil
+}
+
+func getMountMetadata(path string) ([]cache.MountMetadata, error) {
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, errors.Newf("path %s does not exist", path)
+	} else if err != nil {
+		return nil, err
+	}
+	var metadata []cache.MountMetadata
+	if info.IsDir() {
+		dirMetadata, err := getDirectoryMountMetadata(path)
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, dirMetadata...)
+	} else {
+		metadata = append(metadata, cache.MountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime().UTC()})
+	}
+	return metadata, nil
+}
+
+func getDirectoryMountMetadata(path string) ([]cache.MountMetadata, error) {
+	dir, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var metadata []cache.MountMetadata
+	for _, dirEntry := range dir {
+		newPath := filepath.Join(path, dirEntry.Name())
+		// Go back to the very start. Need to get the FileInfo again for the new path and figure out if it is a
+		// directory or a file.
+		fileMetadata, err := getMountMetadata(newPath)
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, fileMetadata...)
+	}
+	return metadata, nil
 }
 
 func cacheKeyForStep(key *cache.ExecutionKeyWithGlobalEnv, stepIndex int) *cache.StepsCacheKeyWithGlobalEnv {
