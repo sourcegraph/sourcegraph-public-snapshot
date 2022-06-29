@@ -95,9 +95,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 
 	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
-		//
-		// TODO https://github.com/sourcegraph/sourcegraph/issues/27386 might be incompatible
-		// with OTel tracing
 		spanContext := make(map[string]string)
 		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
 			newOpts := *opts

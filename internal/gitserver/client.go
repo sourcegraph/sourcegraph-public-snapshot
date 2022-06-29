@@ -21,6 +21,7 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -43,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -466,12 +466,13 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	if ClientMocks.Archive != nil {
 		return ClientMocks.Archive(ctx, repo, opt)
 	}
-	span, ctx := trace.New(ctx, "Git: Archive", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(err))
 		}
 		span.Finish()
 	}()
@@ -529,10 +530,11 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
-	span, ctx := trace.New(ctx, "Client.sendExec", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
 		if errRes != nil {
-			span.SetError(errRes)
+			ext.Error.Set(span, true)
+			span.SetTag("err", errRes.Error())
 		}
 		span.Finish()
 	}()
@@ -577,14 +579,15 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 }
 
 func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := trace.New(ctx, "GitserverClient.Search", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
 	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
 	span.SetTag("diff", args.IncludeDiff)
 	span.SetTag("limit", args.Limit)
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
@@ -638,10 +641,11 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 }
 
 func (c *ClientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := trace.New(ctx, "Client.P4Exec", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
 	defer func() {
 		if errRes != nil {
-			span.SetError(errRes)
+			ext.Error.Set(span, true)
+			span.SetTag("err", errRes.Error())
 		}
 		span.Finish()
 	}()
@@ -1344,13 +1348,12 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := trace.New(ctx, "Client.do", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
-		span.SetTag("repo", string(repo))
-		span.SetTag("method", method)
-		span.SetTag("path", parsedURL.Path)
+		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
@@ -1367,10 +1370,10 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	if c.HTTPLimiter != nil {
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
-		span.LogFields(log.String("event", "Acquired HTTP limiter"))
+		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Gitserver Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

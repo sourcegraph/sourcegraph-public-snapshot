@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -1522,7 +1522,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 
 	var resp *http.Response
 
-	span, ctx := trace.New(ctx, "GitHub", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {

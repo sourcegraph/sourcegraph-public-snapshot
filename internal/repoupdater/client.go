@@ -9,12 +9,12 @@ import (
 	"net/http"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -74,13 +74,14 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := trace.New(ctx, "Client.RepoLookup", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
 		}
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
@@ -309,10 +310,11 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := trace.New(ctx, "Client.do", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
@@ -320,7 +322,7 @@ func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, e
 	req.Header.Set("Content-Type", "application/json")
 
 	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("RepoUpdater Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

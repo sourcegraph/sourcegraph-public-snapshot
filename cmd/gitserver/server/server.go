@@ -27,6 +27,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -35,7 +36,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -56,6 +56,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -101,13 +102,14 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
-	span, _ := trace.New(ctx, "runCommand", "")
+	span, _ := ot.StartSpanFromContext(ctx, "runCommand")
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 			span.SetTag("exitCode", exitCode)
 		}
 		span.Finish()
@@ -395,7 +397,7 @@ func (s *Server) Handler() http.Handler {
 	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		span, ctx := trace.New(ctx, "Git: GetObject", "")
+		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
 		span.SetTag("objectName", objectName)
 		defer span.Finish()
 		return getObjectService.GetObject(ctx, repo, objectName)
@@ -2291,7 +2293,7 @@ func honeySampleRate(cmd string, internal bool) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
-	span, ctx := trace.New(ctx, "Server.doRepoUpdate", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
 

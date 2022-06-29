@@ -6,13 +6,15 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -98,7 +100,7 @@ func linksForRepository(
 	db database.DB,
 	repo *types.Repo,
 ) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
-	span, ctx := trace.New(ctx, "externallink.linksForRepository", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
 	span.SetTag("Repo", repo.Name)
 	span.SetTag("ExternalRepo", repo.ExternalRepo)
@@ -106,7 +108,7 @@ func linksForRepository(
 	var err error
 	phabRepo, err = db.Phabricator().GetByName(ctx, repo.Name)
 	if err != nil && !errcode.IsNotFound(err) {
-		span.SetError(err)
+		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())
 	}
 

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -133,7 +134,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	span, ctx := trace.New(ctx, "treeentry.URL", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
 	defer span.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
@@ -198,7 +199,7 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	span, ctx := trace.New(ctx, "cloneURLToRepoName", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName")
 	defer span.Finish()
 
 	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)

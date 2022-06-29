@@ -16,18 +16,18 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -385,11 +385,12 @@ type subset []string
 var all universalSet = struct{}{}
 
 func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
-	span, ctx := trace.New(ctx, "StructuralSearch", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch")
 	span.SetTag("repo", repo)
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
