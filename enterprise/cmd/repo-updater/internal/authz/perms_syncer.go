@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -1323,7 +1324,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 }
 
 // DebugDump returns the state of the permissions syncer for debugging.
-func (s *PermsSyncer) DebugDump() any {
+func (s *PermsSyncer) DebugDump(_ context.Context, _ debugserver.ExternalServicesStore) any {
 	type requestInfo struct {
 		Meta     *requestMeta
 		Acquired bool
