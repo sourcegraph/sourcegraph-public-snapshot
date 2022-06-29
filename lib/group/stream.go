@@ -1,6 +1,7 @@
 package group
 
 import (
+	"context"
 	"sync"
 )
 
@@ -25,6 +26,7 @@ type StreamGroup[T any] interface {
 
 	// Configuration methods. See interface definitions for details.
 	Errorable[ErrorStreamGroup[T]]
+	Contextable[ContextErrorStreamGroup[T]]
 	Limitable[StreamGroup[T]]
 }
 
@@ -45,7 +47,28 @@ type ErrorStreamGroup[T any] interface {
 	Wait()
 
 	// Configuration methods. See interface definitions for details.
+	Contextable[ContextErrorStreamGroup[T]]
 	Limitable[ErrorStreamGroup[T]]
+}
+
+// ContextErrorStreamGroup is a group that processes an ordered stream in parallel with
+// tasks that require a context and might return an error.
+type ContextErrorStreamGroup[T any] interface {
+	// Go starts a task in a goroutine then passes its result the provided callback.
+	// This interface guarantees that the callbacks are called in the same order
+	// that the tasks are submitted. Additionally, it guarantees that the submitted
+	// callbacks will all be called from a single goroutine.
+	//
+	// Note that, unlike Group and ResultGroup, the nil-ness of the error does not
+	// change behavior.
+	Go(task func(context.Context) (T, error), callback func(context.Context, T, error))
+
+	// Wait blocks until all started goroutines have completed and all callbacks
+	// have been called and have completed.
+	Wait()
+
+	// Configuration methods. See interface definitions for details.
+	Limitable[ContextErrorStreamGroup[T]]
 }
 
 type streamGroup[T any] struct {
@@ -53,7 +76,9 @@ type streamGroup[T any] struct {
 }
 
 func (g *streamGroup[T]) Go(task func() T, callback func(T)) {
-	g.os.submit(funcPair[T]{task, callback})
+	// acquire will not error unless the context is canceled
+	_, release, _ := g.os.acquire(context.Background())
+	g.os.start(funcPair[T]{task, callback}, release)
 }
 
 func (g *streamGroup[T]) Wait() {
@@ -61,8 +86,19 @@ func (g *streamGroup[T]) Wait() {
 }
 
 func (g *streamGroup[T]) WithErrors() ErrorStreamGroup[T] {
+	os := newOrderedStreamer[resultPair[T]]()
+	os.group = g.os.group
 	return &errorStreamGroup[T]{
-		os: newOrderedStreamer[resultPair[T]](),
+		os: os,
+	}
+}
+
+func (g *streamGroup[T]) WithContext(ctx context.Context) ContextErrorStreamGroup[T] {
+	os := newOrderedStreamer[resultPair[T]]()
+	os.group = g.os.group
+	return &contextErrorStreamGroup[T]{
+		os:  os,
+		ctx: ctx,
 	}
 }
 
@@ -95,11 +131,19 @@ func (g *errorStreamGroup[T]) Go(task func() (T, error), callback func(T, error)
 		callback(pair.res, pair.err)
 	}
 
-	g.os.submit(funcPair[resultPair[T]]{pairedTask, pairedCallback})
+	_, release, _ := g.os.acquire(context.Background())
+	g.os.start(funcPair[resultPair[T]]{pairedTask, pairedCallback}, release)
 }
 
 func (g *errorStreamGroup[T]) Wait() {
 	g.os.wait()
+}
+
+func (g *errorStreamGroup[T]) WithContext(ctx context.Context) ContextErrorStreamGroup[T] {
+	return &contextErrorStreamGroup[T]{
+		os:  g.os,
+		ctx: ctx,
+	}
 }
 
 func (g *errorStreamGroup[T]) WithLimit(limit int) ErrorStreamGroup[T] {
@@ -108,6 +152,40 @@ func (g *errorStreamGroup[T]) WithLimit(limit int) ErrorStreamGroup[T] {
 }
 
 func (g *errorStreamGroup[T]) WithLimiter(limiter Limiter) ErrorStreamGroup[T] {
+	g.os.group.limiter = limiter
+	return g
+}
+
+type contextErrorStreamGroup[T any] struct {
+	os  orderedStreamer[resultPair[T]]
+	ctx context.Context
+}
+
+func (g *contextErrorStreamGroup[T]) Go(task func(context.Context) (T, error), callback func(context.Context, T, error)) {
+	ctx, release, _ := g.os.acquire(context.Background())
+
+	pairedTask := func() resultPair[T] {
+		res, err := task(ctx)
+		return resultPair[T]{res, err}
+	}
+
+	pairedCallback := func(pair resultPair[T]) {
+		callback(ctx, pair.res, pair.err)
+	}
+
+	g.os.start(funcPair[resultPair[T]]{pairedTask, pairedCallback}, release)
+}
+
+func (g *contextErrorStreamGroup[T]) Wait() {
+	g.os.wait()
+}
+
+func (g *contextErrorStreamGroup[T]) WithLimit(limit int) ContextErrorStreamGroup[T] {
+	g.os.group.limiter = newBasicLimiter(limit)
+	return g
+}
+
+func (g *contextErrorStreamGroup[T]) WithLimiter(limiter Limiter) ContextErrorStreamGroup[T] {
 	g.os.group.limiter = limiter
 	return g
 }
@@ -145,15 +223,19 @@ type funcPair[T any] struct {
 	callback func(T)
 }
 
-func (o *orderedStreamer[T]) submit(funcs funcPair[T]) {
+func (o *orderedStreamer[T]) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
+	return o.group.acquire(ctx)
+}
+
+func (o *orderedStreamer[T]) start(funcs funcPair[T], release func()) {
 	o.initOnce()
 
 	resChan := make(chan streamEvent[T], 1)
 	o.resChans <- resChan
 
-	o.group.Go(func() {
+	o.group.start(func() {
 		resChan <- streamEvent[T]{funcs.task(), funcs.callback}
-	})
+	}, release)
 }
 
 func (o *orderedStreamer[T]) initOnce() {
