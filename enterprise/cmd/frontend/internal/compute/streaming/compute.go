@@ -49,30 +49,30 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	type groupEvent struct {
 		results []compute.Result
 		stats   streaming.Stats
-		err     error
 	}
-	g := group.NewParallelOrdered(8, func(e groupEvent) {
-		if e.err != nil {
+	g := group.NewWithStreaming[groupEvent]().WithErrors().WithLimit(8)
+	cb := func(e groupEvent, err error) {
+		if err != nil {
 			select {
-			case errorC <- e.err:
+			case errorC <- err:
 			default:
 			}
 		} else {
 			eventsC <- Event{Results: e.results, Stats: e.stats}
 		}
-	})
+	}
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if !event.Stats.Zero() {
-			g.Submit(func() groupEvent {
-				return groupEvent{nil, event.Stats, nil}
-			})
+			g.Go(func() (groupEvent, error) {
+				return groupEvent{nil, event.Stats}, nil
+			}, cb)
 		}
 		for _, match := range event.Results {
 			match := match
-			g.Submit(func() groupEvent {
+			g.Go(func() (groupEvent, error) {
 				results, err := toComputeResult(ctx, db, computeQuery.Command, match)
-				return groupEvent{results, streaming.Stats{}, err}
-			})
+				return groupEvent{results, streaming.Stats{}}, err
+			}, cb)
 		}
 	})
 
@@ -102,7 +102,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(final)
 		defer close(eventsC)
 		defer close(errorC)
-		defer g.Done()
+		defer g.Wait()
 
 		alert, err := searchClient.Execute(ctx, stream, inputs)
 		final <- finalResult{alert: alert, err: err}

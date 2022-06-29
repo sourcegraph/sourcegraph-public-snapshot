@@ -68,7 +68,7 @@ type ResultContextErrorGroup[T any] interface {
 	// WithCollectErrored configures the group to collect results even from
 	// tasks that errored. By default, the return values from errored tasks are
 	// dropped.
-	WithCollectErrored() ResultErrorGroup[T]
+	WithCollectErrored() ResultContextErrorGroup[T]
 	Limitable[ResultContextErrorGroup[T]]
 }
 
@@ -185,7 +185,7 @@ func (g *resultContextErrorGroup[T]) Wait() ([]T, error) {
 	return g.results, err
 }
 
-func (g *resultContextErrorGroup[T]) WithCollectErrored() ResultErrorGroup[T] {
+func (g *resultContextErrorGroup[T]) WithCollectErrored() ResultContextErrorGroup[T] {
 	g.collectErrored = true
 	return g
 }
