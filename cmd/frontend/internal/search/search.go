@@ -41,12 +41,13 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db database.DB) http.Handler {
+func StreamHandler(logger log.Logger, db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		searchClient:        client.NewSearchClient(log.Scoped("StreamHandler", ""), db, search.Indexed(log.Scoped("streamHandler", "")), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+		log:                 logger,
 	}
 }
 

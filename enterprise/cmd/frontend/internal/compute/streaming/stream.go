@@ -25,11 +25,12 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewComputeStreamHandler is an http handler which streams back compute results.
-func NewComputeStreamHandler(db database.DB) http.Handler {
+func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+		log:                 logger,
 	}
 }
 
