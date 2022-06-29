@@ -2,6 +2,7 @@ local languages = {
     "clang",
     "go",
     "java",
+    "python",
     "rust",
     "test",
     "typescript",

@@ -23,9 +23,10 @@ import (
 )
 
 var schemeToExternalService = map[string]string{
-	dependencies.JVMPackagesScheme:  extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme:  extsvc.KindNpmPackages,
-	dependencies.RustPackagesScheme: extsvc.KindRustPackages,
+	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
+	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
+	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -90,6 +91,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 
 	for {
 		packageReference, exists, err := scanner.Next()
+
 		if err != nil {
 			return errors.Wrap(err, "dbstore.ReferencesForUpload.Next")
 		}
@@ -190,6 +192,11 @@ func newPackage(pkg shared.Package) precise.Package {
 	case dependencies.JVMPackagesScheme:
 		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
+	case "scip-python":
+		// TODO: I'm not 100% sure this is necessary, but I think it is
+		//   I still don't understand why the pkg.Scheme should be a
+		//   string that is dependent in so many places?
+		p.Scheme = dependencies.PythonPackagesScheme
 	}
 
 	return p
@@ -225,6 +232,7 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "lsif-tsc" ||
 		upload.Indexer == "scip-typescript" ||
 		upload.Indexer == "lsif-typescript" ||
+		upload.Indexer == "scip-python" ||
 		upload.Indexer == "rust-analyzer", nil
 }
 
