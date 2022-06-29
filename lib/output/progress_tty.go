@@ -234,12 +234,12 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 	statusLabelWidth := len(statusLabel)
 
 	// The bar width is the space remaining after we write the label and some emoji space...
-	remainingSpaceAfterLabel := p.o.caps.Width - p.labelWidth - p.emojiWidth
-	barWidth := remainingSpaceAfterLabel -
+	remainingSpaceAfterLabel := floorZero(p.o.caps.Width - p.labelWidth - p.emojiWidth)
+	barWidth := floorZero(remainingSpaceAfterLabel -
 		// minus a overall status indicator...
 		statusLabelWidth -
 		// minus two spaces after the label, 2 spaces before the status label
-		2 - 2
+		2 - 2)
 
 	// Unicode box drawing gives us eight possible bar widths, so we need to
 	// calculate both the bar width and then the final character, if any.
@@ -256,13 +256,8 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 		}
 	} else {
 		if fillWidth+1 > barWidth {
-			fillWidth = barWidth - 1
+			fillWidth = floorZero(barWidth - 1)
 		}
-	}
-
-	// Defend against negative values
-	if fillWidth < 0 {
-		fillWidth = 0
 	}
 
 	fmt.Fprintf(p.o.w, "  ")
@@ -291,4 +286,11 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 	fmt.Fprint(p.o.w, StyleBold, runewidth.FillLeft(statusLabel, consumedSpace), StyleReset)
 
 	fmt.Fprintln(p.o.w) // end the line
+}
+
+func floorZero(v int) int {
+	if v < 0 {
+		return 0
+	}
+	return v
 }
