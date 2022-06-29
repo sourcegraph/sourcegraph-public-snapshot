@@ -17,17 +17,17 @@ var (
 	Url = ""
 )
 
-type SyncWebhook struct {
+type SyncGitHubWebhook struct {
 }
 
-func (h *SyncWebhook) Register(router *webhooks.GitHubWebhook) {
+func (h *SyncGitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 	router.Register(
 		h.handleSyncWebhook,
 		githubEvents...,
 	)
 }
 
-func (h *SyncWebhook) handleSyncWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+func (h *SyncGitHubWebhook) handleSyncWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
 	fmt.Println("handleSyncWebhook...")
 	// repo := payload.(*github.PushEvent).GetRepo()
 	// fmt.Printf("repo:%+v\n", repo)

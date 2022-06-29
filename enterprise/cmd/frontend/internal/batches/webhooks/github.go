@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	// githubEvents is the set of events this webhook handler listens to pertaining to batch changes
+	// githubEvents is the set of events this webhook handler listens to
 	// you can find info about what these events contain here:
 	// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
 	githubEvents = []string{

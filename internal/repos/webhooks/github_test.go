@@ -153,7 +153,7 @@ func activatePushWebhook(db database.DB, url string, t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sc := SyncWebhook{}
+	sc := SyncGitHubWebhook{}
 
 	bs, err := os.ReadFile(filepath.Join("testdata", "github.json"))
 	if err != nil {

@@ -82,6 +82,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		err = repoStore.Create(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
