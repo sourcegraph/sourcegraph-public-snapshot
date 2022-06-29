@@ -206,18 +206,20 @@
                     &:focus {
                         background-color: var(--dropdown-link-active-bg) !important;
 
-                        :global(.cm-completionMatchedText) {
-                            color: var(--light-text);
+                        &:not(:hover) {
+                            :global(.cm-completionMatchedText) {
+                                color: var(--light-text);
+                            }
+
+                            :global(.tab-style) {
+                                color: var(--light-text);
+                                border-color: var(--light-text);
+                            }
                         }
                     }
 
                     &:hover {
                         background-color: var(--dropdown-link-hover-bg) !important;
-                    }
-
-                    :global(.tab-style) {
-                        color: var(--light-text);
-                        border-color: var(--light-text);
                     }
                 }
             }
