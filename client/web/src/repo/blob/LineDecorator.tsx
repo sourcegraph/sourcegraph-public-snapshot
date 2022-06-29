@@ -102,7 +102,7 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     innerPortalNode.id = portalID
                     innerPortalNode.dataset.testid = 'line-decoration'
                     innerPortalNode.dataset.lineDecorationAttachmentPortal = 'true'
-                    codeCell?.append(innerPortalNode)
+                    codeCell?.insertBefore(innerPortalNode, codeCell?.querySelector('.bottom-spacer'))
                     setPortalNode(innerPortalNode)
                 } else {
                     // code view ref passed `null`, so element is leaving DOM
