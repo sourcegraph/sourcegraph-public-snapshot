@@ -68,7 +68,7 @@ interface LoadLastSearchRequest {
 
 interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
-    arguments: { wasAuthenticationSuccessful: boolean }
+    arguments: { wasServerAccessSuccessful: boolean; wasAuthenticationSuccessful: boolean }
 }
 
 interface WindowCloseRequest {
@@ -116,9 +116,15 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
     }
 }
 
-export async function indicateFinishedLoading(wasAuthenticationSuccessful: boolean): Promise<void> {
+export async function indicateFinishedLoading(
+    wasServerAccessSuccessful: boolean,
+    wasAuthenticationSuccessful: boolean
+): Promise<void> {
     try {
-        await callJava({ action: 'indicateFinishedLoading', arguments: { wasAuthenticationSuccessful } })
+        await callJava({
+            action: 'indicateFinishedLoading',
+            arguments: { wasServerAccessSuccessful, wasAuthenticationSuccessful },
+        })
     } catch (error) {
         console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
     }

@@ -31,9 +31,9 @@ export async function handleRequest(
                 (argumentsAsObject as PluginSettingsChangedRequestArguments).instanceURL,
                 (argumentsAsObject as PluginSettingsChangedRequestArguments).accessToken
             )
-            await indicateFinishedLoading(!!authenticatedUser)
+            await indicateFinishedLoading(true, !!authenticatedUser)
         } catch {
-            await indicateFinishedLoading(false)
+            await indicateFinishedLoading(false, false)
         }
         renderReactApp()
         return callback(JSON.stringify(null))

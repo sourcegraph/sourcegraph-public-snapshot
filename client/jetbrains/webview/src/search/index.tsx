@@ -43,8 +43,10 @@ window.initializeSourcegraph = async () => {
     applyTheme(theme)
     applyLastSearch(lastSearch)
 
+    let isServerAccessSuccessful = false
     try {
         authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
+        isServerAccessSuccessful = true
     } catch (error) {
         console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
     }
@@ -57,7 +59,7 @@ window.initializeSourcegraph = async () => {
 
     renderReactApp()
 
-    await indicateFinishedLoading(!!authenticatedUser)
+    await indicateFinishedLoading(isServerAccessSuccessful, !!authenticatedUser)
 }
 
 window.callJS = handleRequest
