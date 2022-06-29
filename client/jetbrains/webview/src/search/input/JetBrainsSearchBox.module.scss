@@ -220,6 +220,10 @@
                                 color: var(--light-text);
                                 border-color: var(--light-text);
                             }
+
+                            :global(.cm-completionDetail) {
+                                color: var(--jb-completion-detail-color);
+                            }
                         }
                     }
 
