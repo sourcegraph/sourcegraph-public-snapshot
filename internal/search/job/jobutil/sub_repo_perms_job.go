@@ -19,8 +19,8 @@ import (
 
 // NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewFilterJob(child job.Job) job.Job {
-	return &subRepoPermsFilterJob{child: child}
+func NewFilterJob(logger sglog.Logger, child job.Job) job.Job {
+	return &subRepoPermsFilterJob{child: child, log: logger}
 }
 
 type subRepoPermsFilterJob struct {

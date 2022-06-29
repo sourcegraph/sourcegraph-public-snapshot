@@ -33,10 +33,11 @@ type meteredSearcher struct {
 	log      sglog.Logger
 }
 
-func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
+func NewMeteredSearcher(logger sglog.Logger, hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
+		log:      logger,
 	}
 }
 

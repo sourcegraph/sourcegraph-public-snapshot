@@ -140,11 +140,13 @@ func NewBasicJob(logger log.Logger, inputs *run.SearchInputs, b query.Basic) (jo
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 				Concurrency:          4,
+				Log:                  logger,
 			})
 		}
 
 		addJob(&searchrepos.ComputeExcludedJob{
 			RepoOpts: repoOptions,
+			Log:      logger,
 		})
 	}
 
@@ -171,7 +173,7 @@ func NewBasicJob(logger log.Logger, inputs *run.SearchInputs, b query.Basic) (jo
 	{ // Apply subrepo permissions checks
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
-			basicJob = NewFilterJob(basicJob)
+			basicJob = NewFilterJob(logger, basicJob)
 		}
 	}
 
@@ -359,6 +361,7 @@ func NewFlatJob(logger log.Logger, searchInputs *run.SearchInputs, f query.Flat)
 				UseIndex:         f.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				RepoOpts:         repoOptions,
+				Log:              logger,
 			})
 		}
 

@@ -143,6 +143,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:            db,
+		log:           sglog.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
 		ListIndexable: backend.NewRepos(logger, db).ListIndexable,
 		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {

@@ -17,6 +17,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -42,7 +43,7 @@ import (
 func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
-		searchClient:        client.NewSearchClient(db, search.Indexed(), search.SearcherURLs()),
+		searchClient:        client.NewSearchClient(log.Scoped("StreamHandler", ""), db, search.Indexed(log.Scoped("streamHandler", "")), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}

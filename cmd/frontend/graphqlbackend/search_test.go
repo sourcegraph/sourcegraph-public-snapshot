@@ -420,7 +420,7 @@ func zoektRPC(t testing.TB, s zoekt.Streamer) zoekt.Streamer {
 		t.Fatal(err)
 	}
 	ts := httptest.NewServer(srv)
-	cl := backend.ZoektDial(strings.TrimPrefix(ts.URL, "http://"))
+	cl := backend.ZoektDial(logtest.Scoped(t), strings.TrimPrefix(ts.URL, "http://"))
 	t.Cleanup(func() {
 		cl.Close()
 		ts.Close()

@@ -30,7 +30,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts, Log: s.Log}
 	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 

@@ -10,6 +10,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/google/zoekt/stream"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -23,7 +24,7 @@ func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolve
 
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: search.Indexed(),
+		client: search.Indexed(log.Scoped("repositoryTextSearchIndexResolver", "")),
 	}
 }
 

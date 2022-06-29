@@ -74,7 +74,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: database.NewDBWith(r.logger, r.workerBaseStore)}
+	scLoader := &scLoader{primary: database.NewDBWith(r.logger, r.workerBaseStore), log: r.logger}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
@@ -281,6 +281,7 @@ func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGener
 	return &seriesResolverGenerator{
 		handlesSeries:    handles,
 		generateResolver: generate,
+		log:              log.Scoped("seriesResolverGenerator", ""),
 	}
 }
 
@@ -317,7 +318,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: db}
+	scLoader := &scLoader{primary: db, log: log.Scoped("scLoader", "")}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
@@ -436,7 +437,7 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 		Value: definition.SampleIntervalValue,
 	}
 
-	scLoader := &scLoader{primary: r.postgresDB}
+	scLoader := &scLoader{primary: r.postgresDB, log: log.Scoped("scLoader", "")}
 	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
 	if err != nil {
 		return nil, err
@@ -463,7 +464,7 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 		Value: definition.SampleIntervalValue,
 	}
 
-	scLoader := &scLoader{primary: r.postgresDB}
+	scLoader := &scLoader{primary: r.postgresDB, log: log.Scoped("scLoader", "")}
 	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
 	if err != nil {
 		return nil, err

@@ -60,7 +60,7 @@ type Pager interface {
 type Resolver struct {
 	DB   database.DB
 	Opts search.RepoOptions
-	log  log.Logger
+	Log  log.Logger
 }
 
 func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
@@ -165,7 +165,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.log, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.Log, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}

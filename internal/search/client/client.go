@@ -38,11 +38,12 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
 	return &searchClient{
 		db:           db,
 		zoekt:        zoektStreamer,
 		searcherURLs: searcherURLs,
+		log:          logger,
 	}
 }
 

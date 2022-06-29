@@ -358,6 +358,7 @@ func RunRepoSubsetTextSearch(
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		context.Background(),
+		logger,
 		repos,
 		zoekt,
 		search.TextRequest,

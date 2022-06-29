@@ -327,7 +327,7 @@ func filterRepositories(ctx context.Context, filters types.InsightViewFilters, r
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
 	if i.view.PresentationType == types.Pie {
-		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view}
+		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view, log: log.Scoped("pieChartInsightViewPresentation", "")}
 		return &insightPresentationUnionResolver{resolver: pieChartPresentation}, nil
 	} else {
 		lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
@@ -856,6 +856,7 @@ func (r *Resolver) InsightViews(ctx context.Context, args *graphqlbackend.Insigh
 	return &InsightViewQueryConnectionResolver{
 		baseInsightResolver: r.baseInsightResolver,
 		args:                args,
+		log:                 log.Scoped("InsightViewQueryConnectionResolver", ""),
 	}, nil
 }
 

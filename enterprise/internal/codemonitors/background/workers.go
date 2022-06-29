@@ -36,7 +36,7 @@ func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics cod
 		Metrics:              metrics.workerMetrics,
 		MaximumRuntimePerJob: time.Minute,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db, log: log.Scoped("queryRunner", "")}, options)
 	return worker
 }
 

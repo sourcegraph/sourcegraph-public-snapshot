@@ -14,6 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -37,6 +39,7 @@ func TestServeConfiguration(t *testing.T) {
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return map[api.RepoID][]string{6: {"a", "b"}}, nil
 		},
+		log: logtest.Scoped(t),
 	}
 
 	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -144,6 +147,7 @@ func TestReposIndex(t *testing.T) {
 					Repos: allRepos,
 				},
 				Indexers: suffixIndexers(true),
+				log:      logtest.Scoped(t),
 			}
 
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))

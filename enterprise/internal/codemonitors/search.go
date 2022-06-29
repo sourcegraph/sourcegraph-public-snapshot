@@ -109,7 +109,7 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 }
 
 func Search(ctx context.Context, logger sglog.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	searchClient := client.NewSearchClient(sglog.Scoped("Settings", ""), db, search.Indexed(logger), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
@@ -185,7 +185,7 @@ func Search(ctx context.Context, logger sglog.Logger, db database.DB, query stri
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
 func Snapshot(ctx context.Context, logger sglog.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(sglog.Scoped("Snapshot", "")), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return err

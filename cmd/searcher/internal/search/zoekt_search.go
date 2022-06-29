@@ -32,10 +32,12 @@ var (
 func getZoektClient(indexerEndpoints []string) zoekt.Streamer {
 	zoektOnce.Do(func() {
 		zoektClient = backend.NewMeteredSearcher(
+			log.Scoped("NewMeteredSearcher", ""),
 			"", // no hostname means its the aggregator
 			&backend.HorizontalSearcher{
 				Map:  &endpointMap,
 				Dial: backend.ZoektDial,
+				Log:  log.Scoped("HorizontalSearcher", ""),
 			},
 		)
 	})

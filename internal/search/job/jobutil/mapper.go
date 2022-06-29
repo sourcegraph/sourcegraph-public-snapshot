@@ -220,7 +220,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		if m.MapSubRepoPermsFilterJob != nil {
 			child = m.MapSubRepoPermsFilterJob(child)
 		}
-		return NewFilterJob(child)
+		return NewFilterJob(m.Log, child)
 
 	case *NoopJob:
 		return j

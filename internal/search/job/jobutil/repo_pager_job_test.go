@@ -20,6 +20,7 @@ func Test_setRepos(t *testing.T) {
 		RepoRevs: map[api.RepoID]*search.RepositoryRevisions{
 			1: {Repo: types.MinimalRepo{Name: "indexed"}},
 		},
+		Log: logtest.Scoped(t),
 	}
 	unindexed := []*search.RepositoryRevisions{
 		{Repo: types.MinimalRepo{Name: "unindexed"}},

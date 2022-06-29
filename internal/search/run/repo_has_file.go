@@ -42,6 +42,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
+		s.Log,
 		repos,
 		clients.Zoekt,
 		search.TextRequest,

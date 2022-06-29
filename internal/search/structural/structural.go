@@ -163,17 +163,18 @@ type SearchJob struct {
 	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
-	log      sglog.Logger
+	Log      sglog.Logger
 }
 
 func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts, Log: s.Log}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
+			s.Log,
 			page.RepoRevs,
 			clients.Zoekt,
 			search.TextRequest,
@@ -188,7 +189,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, s.log, clients, s.SearcherArgs, repoSet, stream)
+		return runStructuralSearch(ctx, s.Log, clients, s.SearcherArgs, repoSet, stream)
 	})
 }
 

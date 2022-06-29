@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -124,6 +126,7 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 			workerBaseStore: r.workerBaseStore,
 			series:          series,
 			metadataStore:   r.metadataStore,
+			logger:          log.Scoped("insightSeriesResolver", ""),
 		})
 	}
 	return resolvers
