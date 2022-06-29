@@ -4,13 +4,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-type Search struct {
+type Notebooks struct {
 	DateRange string
 	DB        database.DB
 }
 
-func (s *Search) Searches() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchResultsQueried"})
+func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchNotebookCreated"})
 	if err != nil {
 		return nil, err
 	}
@@ -20,12 +20,12 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Search:Searches",
+		group:        "Notebooks:Creations",
 	}, nil
 }
 
-func (s *Search) FileViews() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"ViewBlob"})
+func (s *Notebooks) Views() (*AnalyticsFetcher, error) {
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchNotebookPageViewed"})
 	if err != nil {
 		return nil, err
 	}
@@ -35,17 +35,14 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Search:FileViews",
+		group:        "Notebooks:Views",
 	}, nil
 }
 
-func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
+func (s *Notebooks) BlockRuns() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
-		"GoToCodeHostClicked",
-		"vscode.open.file",
-		"openInAtom.open.file",
-		"openineditor.open.file",
-		"openInWebstorm.open.file",
+		"SearchNotebookRunAllBlocks",
+		"SearchNotebookRunBlock",
 	})
 	if err != nil {
 		return nil, err
@@ -56,6 +53,6 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Search:FileOpens",
+		group:        "Notebooks:BlockRuns",
 	}, nil
 }
