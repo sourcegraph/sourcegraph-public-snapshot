@@ -237,6 +237,9 @@ func TestConcat(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
 	})
 
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
+	})
 }
 
 func TestEllipsesForHoles(t *testing.T) {
