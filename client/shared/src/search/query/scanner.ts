@@ -412,13 +412,19 @@ const filter: Scanner<Filter> = (input, start) => {
     }
 }
 
-const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
+const createPattern = (
+    value: string,
+    range: CharacterRange,
+    kind: PatternKind,
+    delimited?: boolean
+): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
         type: 'pattern',
         range,
         kind,
         value,
+        delimited,
     },
 })
 
@@ -431,10 +437,13 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param scanner The literal scanner.
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
-export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> => (input, start) => {
+export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> => (
+    input,
+    start
+) => {
     const result = scanner(input, start)
     if (result.type === 'success') {
-        return createPattern(result.term.value, result.term.range, kind)
+        return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
     }
     return result
 }
