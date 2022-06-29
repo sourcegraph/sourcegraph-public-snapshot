@@ -87,9 +87,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         settings.setAnimatedScrolling(false);
         settings.setAutoCodeFoldingEnabled(false);
 
-
-        EditorImpl impl = (EditorImpl) editor;
-        impl.installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
+        ((EditorImpl) editor).installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
 
         editorComponent = editor.getComponent();
         add(editorComponent, BorderLayout.CENTER);
