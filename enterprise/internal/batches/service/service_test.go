@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -213,8 +213,8 @@ func TestService(t *testing.T) {
 	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
-	fakeSource := &sources.FakeChangesetSource{}
-	sourcer := sources.NewFakeSourcer(nil, fakeSource)
+	fakeSource := &stesting.FakeChangesetSource{}
+	sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 	svc := New(s)
 	svc.sourcer = sourcer
@@ -814,8 +814,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{Username: "my-bbs-username"}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{Username: "my-bbs-username"}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 		// Create a fresh service for this test as to not mess with state
 		// possibly used by other tests.
