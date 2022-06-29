@@ -11,6 +11,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -37,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -237,10 +240,11 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	span, ctx := trace.New(ctx, "blameFileMatch", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch")
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
@@ -334,7 +338,7 @@ loop:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
 	}
-	span := trace.TraceFromContext(ctx)
+	span := opentracing.SpanFromContext(ctx)
 	span.SetTag("blame_ops", blameOps)
 	return sparkline, nil
 }
@@ -574,7 +578,8 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	// 'kicks off loading' and places the result into cache regardless of
 	// whether or not the original querier of this information still wants it.
 	originalCtx := ctx
-	ctx = trace.CopyContext(context.Background(), originalCtx)
+	ctx = context.Background()
+	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
 
 	cacheKey := r.SearchInputs.OriginalQuery
 	// Check if value is in the cache.

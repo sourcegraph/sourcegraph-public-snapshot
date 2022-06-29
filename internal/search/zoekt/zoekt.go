@@ -65,8 +65,6 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 		return false, nil
 	}
 
-	// TODO https://github.com/sourcegraph/sourcegraph/issues/27386 might be incompatible
-	// with OTel tracing
 	spanContext = make(map[string]string)
 	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
 		log15.Warn("Error injecting span context into map: %s", err)

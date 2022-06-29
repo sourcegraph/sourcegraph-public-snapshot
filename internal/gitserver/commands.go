@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -119,7 +120,7 @@ type ShortLogOptions struct {
 }
 
 func (c *ClientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error) {
-	span, ctx := trace.New(ctx, "Git: ShortLog", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -157,7 +158,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 		return Mocks.ExecReader(args)
 	}
 
-	span, ctx := trace.New(ctx, "Git: ExecReader", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()
 
@@ -347,7 +348,7 @@ func (c *ClientImplementor) ReadDir(
 		return Mocks.ReadDir(commit, path, recurse)
 	}
 
-	span, ctx := trace.New(ctx, "Git: ReadDir", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	span.SetTag("Recurse", recurse)
@@ -436,7 +437,7 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
 // TODO(sashaostrikov): make private when git.Stat is moved here as well
 func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	span, ctx := trace.New(ctx, "Git: lStat", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -672,7 +673,7 @@ type Hunk struct {
 
 // BlameFile returns Git blame information about a file.
 func (c *ClientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
-	span, ctx := trace.New(ctx, "Git: BlameFile", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag("repo", repo)
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
@@ -868,7 +869,7 @@ func (c *ClientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
-	span, ctx := trace.New(ctx, "Git: ResolveRevision", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
 	span.SetTag("Opt", fmt.Sprintf("%+v", opt))
 	defer span.Finish()
@@ -1084,7 +1085,7 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
-	span, ctx := trace.New(ctx, "Git: Tags", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
@@ -1204,7 +1205,7 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		return Mocks.ExecSafe(params)
 	}
 
-	span, ctx := trace.New(ctx, "Git: execSafe", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
 	defer span.Finish()
 
 	if len(params) == 0 {
@@ -1229,7 +1230,7 @@ func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 	if Mocks.MergeBase != nil {
 		return Mocks.MergeBase(repo, a, b)
 	}
-	span, ctx := trace.New(ctx, "Git: MergeBase", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
 	defer span.Finish()
@@ -1285,7 +1286,7 @@ func (c *ClientImplementor) RevListEach(stdout io.Reader, onCommit func(commit s
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
 func (c *ClientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
-	span, ctx := trace.New(ctx, "Git: BehindAhead", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
 	if err := checkSpecArgSafety(left); err != nil {
@@ -1319,7 +1320,7 @@ func (c *ClientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 		return Mocks.ReadFile(commit, name)
 	}
 
-	span, ctx := trace.New(ctx, "Git: ReadFile", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
 
@@ -1350,7 +1351,7 @@ func (c *ClientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 		return nil, os.ErrNotExist
 	}
 
-	span, ctx := trace.New(ctx, "Git: GetFileReader", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
 	span.SetTag("Name", name)
 	defer span.Finish()
 
@@ -1439,7 +1440,7 @@ func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 		return Mocks.Stat(commit, path)
 	}
 
-	span, ctx := trace.New(ctx, "Git: Stat", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -1544,7 +1545,7 @@ func (c *ClientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
 func (c *ClientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
-	span, ctx := trace.New(ctx, "Git: GetCommit", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
@@ -1557,7 +1558,7 @@ func (c *ClientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 		return Mocks.Commits(repo, opt)
 	}
 
-	span, ctx := trace.New(ctx, "Git: Commits", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -1676,7 +1677,7 @@ func (c *ClientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 	if authz.SubRepoEnabled(checker) {
 		return c.hasCommitAfterWithFiltering(ctx, repo, date, revspec, checker)
 	}
-	span, ctx := trace.New(ctx, "Git: HasCommitAfter", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
@@ -1898,7 +1899,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 // commitCount returns the number of commits that would be returned by Commits.
 func (c *ClientImplementor) commitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
-	span, ctx := trace.New(ctx, "Git: CommitCount", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -1924,7 +1925,7 @@ func (c *ClientImplementor) commitCount(ctx context.Context, repo api.RepoName, 
 
 // FirstEverCommit returns the first commit ever made to the repository.
 func (c *ClientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
-	span, ctx := trace.New(ctx, "Git: FirstEverCommit", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
 	defer span.Finish()
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
@@ -1979,7 +1980,7 @@ func (c *ClientImplementor) CommitsExist(ctx context.Context, repoCommits []api.
 // If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 // resulting commit to be nil, but not fail the entire operation.
 func (c *ClientImplementor) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	span, ctx := trace.New(ctx, "Git: getCommits", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits")
 	span.SetTag("numRepoCommits", len(repoCommits))
 	defer span.Finish()
 
@@ -2470,7 +2471,7 @@ func (f branchFilter) add(list []string) {
 
 // ListBranches returns a list of all branches in the repository.
 func (c *ClientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error) {
-	span, ctx := trace.New(ctx, "Git: Branches", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -2545,7 +2546,7 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
 func (c *ClientImplementor) ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error) {
-	span, ctx := trace.New(ctx, "Git: ListRefs", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
 	defer span.Finish()
 	return c.showRef(ctx, repo)
 }

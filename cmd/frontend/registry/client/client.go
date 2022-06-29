@@ -10,9 +10,10 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,7 +34,7 @@ const (
 
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
 func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension, err error) {
-	span, ctx := trace.New(ctx, "registry/client.List", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List")
 	span.SetTag("registry", registry.String())
 	span.SetTag("query", query)
 	defer func() {
@@ -41,7 +42,8 @@ func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension
 			span.SetTag("results", len(xs))
 		}
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("error", err.Error())
 		}
 		span.Finish()
 	}()

@@ -15,7 +15,8 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -29,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -131,13 +132,14 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	span, ctx := trace.New(ctx, "Store.prepareZip", "")
-	span.SetTag("component", "store")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
+	ext.Component.Set(span, "store")
 	var cacheHit bool
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 		duration := time.Since(start).Seconds()
@@ -167,7 +169,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		_, _ = h.Write([]byte(p))
 	}
 	key := hex.EncodeToString(h.Sum(nil))
-	span.LogFields(otlog.String("key", key))
+	span.LogKV("key", key)
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
@@ -182,7 +184,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		cacheHit := true
-		bgctx := trace.CopyContext(context.Background(), ctx)
+		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
 			return s.fetch(ctx, repo, commit, largeFilePatterns, paths)
@@ -227,8 +229,8 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := trace.New(ctx, "Store.fetch", "")
-	span.SetTag("component", "store")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
+	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
 
@@ -244,7 +246,8 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		releaseFetchLimiter() // Release concurrent fetches semaphore
 		cancel()              // Release context resources
 		if err != nil {
-			span.SetError(err)
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 			metricFetchFailed.Inc()
 		}
 		metricFetching.Dec()

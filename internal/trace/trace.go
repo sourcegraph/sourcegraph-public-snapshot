@@ -16,7 +16,7 @@ import (
 // opentracing.Span. Use New to construct one.
 type Trace struct {
 	trace  nettrace.Trace
-	otSpan opentracing.Span
+	span   opentracing.Span
 	family string
 }
 
@@ -30,31 +30,25 @@ func New(ctx context.Context, family, title string, tags ...Tag) (*Trace, contex
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
 func (t *Trace) LazyPrintf(format string, a ...any) {
-	t.otSpan.LogFields(Printf("log", format, a...))
+	t.span.LogFields(Printf("log", format, a...))
 	t.trace.LazyPrintf(format, a...)
 }
 
 // LogFields logs fields to the opentracing.Span
 // as well as the nettrace.Trace.
 func (t *Trace) LogFields(fields ...log.Field) {
-	t.otSpan.LogFields(fields...)
+	t.span.LogFields(fields...)
 	t.trace.LazyLog(fieldsStringer(fields), false)
 }
 
 // TagFields adds fields to the opentracing.Span as tags
 // as well as as logs to the nettrace.Trace.
 func (t *Trace) TagFields(fields ...log.Field) {
-	enc := spanTagEncoder{Span: t.otSpan}
+	enc := spanTagEncoder{Span: t.span}
 	for _, field := range fields {
 		field.Marshal(&enc)
 	}
 	t.trace.LazyLog(fieldsStringer(fields), false)
-}
-
-// SetTag lets Trace implement opentrace.Span.SetTag
-func (t *Trace) SetTag(key string, value interface{}) {
-	t.otSpan.SetTag(key, value)
-	t.trace.LazyPrintf("%s: %v", key, value)
 }
 
 // SetError declares that this trace and span resulted in an error.
@@ -64,8 +58,8 @@ func (t *Trace) SetError(err error) {
 	}
 	t.trace.LazyPrintf("error: %v", err)
 	t.trace.SetError()
-	t.otSpan.LogFields(log.Error(err))
-	ext.Error.Set(t.otSpan, true)
+	t.span.LogFields(log.Error(err))
+	ext.Error.Set(t.span, true)
 }
 
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
@@ -73,7 +67,7 @@ func (t *Trace) SetError(err error) {
 func (t *Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		t.trace.LazyPrintf("error: %v", err)
-		t.otSpan.LogFields(log.Error(err))
+		t.span.LogFields(log.Error(err))
 		return
 	}
 	t.SetError(err)
@@ -83,5 +77,5 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 // The trace should not be used after calling this method.
 func (t *Trace) Finish() {
 	t.trace.Finish()
-	t.otSpan.Finish()
+	t.span.Finish()
 }

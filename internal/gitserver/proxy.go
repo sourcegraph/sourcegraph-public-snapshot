@@ -5,10 +5,9 @@ import (
 	"net/http/httputil"
 
 	"github.com/neelance/parallel"
-	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // DefaultReverseProxy is the default ReverseProxy. It uses the same transport and HTTP
@@ -38,18 +37,16 @@ type ReverseProxy struct {
 // to gitserver. The director must rewrite the request to the correct gitserver address, which
 // should be obtained via a gitserver client's AddrForRepo method.
 func (p *ReverseProxy) ServeHTTP(repo api.RepoName, method, op string, director func(req *http.Request), res http.ResponseWriter, req *http.Request) {
-	span, _ := trace.New(req.Context(), "ReverseProxy.ServeHTTP", "")
+	span, _ := ot.StartSpanFromContext(req.Context(), "ReverseProxy.ServeHTTP")
 	defer func() {
-		span.SetTag("repo", string(repo))
-		span.SetTag("method", method)
-		span.SetTag("op", op)
+		span.LogKV("repo", string(repo), "method", method, "op", op)
 		span.Finish()
 	}()
 
 	if p.HTTPLimiter != nil {
 		p.HTTPLimiter.Acquire()
 		defer p.HTTPLimiter.Release()
-		span.LogFields(log.String("event", "Acquired HTTP limiter"))
+		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
 	proxy := &httputil.ReverseProxy{

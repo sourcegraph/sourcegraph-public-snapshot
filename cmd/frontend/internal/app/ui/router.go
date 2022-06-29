@@ -14,6 +14,8 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -468,8 +470,9 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 
 	// Determine trace URL and log the error.
 	var traceURL string
-	if span := trace.TraceFromContext(r.Context()); span != nil {
-		span.SetError(err)
+	if span := opentracing.SpanFromContext(r.Context()); span != nil {
+		ext.Error.Set(span, true)
+		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
 		traceURL = trace.URL(trace.IDFromSpan(span), conf.ExternalURL(), conf.Tracer())
 	}
