@@ -92,6 +92,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     class="ml-1 flex-shrink-past-contents text-truncate"
                   >
                     <a
+                      aria-label="Repository github.com/foo/bar"
                       class="anchorLink"
                       href="/github.com/foo/bar"
                     >
@@ -104,6 +105,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </span>
                      
                     <a
+                      aria-label="File path "
                       class="anchorLink"
                       href="/github.com/foo/bar/-/blob/?subtree=true"
                     >
@@ -211,6 +213,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           data-testid="hierarchical-locations-view-list"
         >
           <button
+            aria-label="File path file1.txt"
             class="list-group-item list-group-item-action locationButton active"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -239,6 +242,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </button>
           <button
+            aria-label="File path file2.txt"
             class="list-group-item list-group-item-action locationButton"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -353,6 +357,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     class="ml-1 flex-shrink-past-contents text-truncate"
                   >
                     <a
+                      aria-label="Repository github.com/foo/bar"
                       class="anchorLink"
                       href="/github.com/foo/bar"
                     >
@@ -365,6 +370,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </span>
                      
                     <a
+                      aria-label="File path file1.txt"
                       class="anchorLink"
                       href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                     >
@@ -570,6 +576,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     class="ml-1 flex-shrink-past-contents text-truncate"
                   >
                     <a
+                      aria-label="Repository github.com/foo/bar"
                       class="anchorLink"
                       href="/github.com/foo/bar"
                     >
@@ -582,6 +589,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </span>
                      
                     <a
+                      aria-label="File path "
                       class="anchorLink"
                       href="/github.com/foo/bar/-/blob/?subtree=true"
                     >
