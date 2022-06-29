@@ -216,7 +216,7 @@
                                 color: var(--light-text);
                             }
 
-                            [data-completion-hint] {
+                            :global(.completion-hint) {
                                 color: var(--light-text);
                                 border-color: var(--light-text);
                             }
