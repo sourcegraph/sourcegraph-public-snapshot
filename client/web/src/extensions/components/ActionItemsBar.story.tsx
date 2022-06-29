@@ -9,13 +9,10 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController, NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { DeprecatedTooltip } from '@sourcegraph/wildcard'
 
-import { AppRouterContainer } from '../../components/AppRouterContainer'
+import { WebStory } from '../../components/WebStory'
 
 import { ActionItemsBar, useWebActionItems } from './ActionItemsBar'
-
-import webStyles from '../../SourcegraphWebApp.scss'
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
@@ -58,15 +55,7 @@ const mockExtensionsController = {
     ),
 }
 
-const decorator: DecoratorFn = story => (
-    <>
-        <style>{webStyles}</style>
-        <AppRouterContainer>
-            <DeprecatedTooltip />
-            <div className="container mt-3">{story()}</div>
-        </AppRouterContainer>
-    </>
-)
+const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
     title: 'web/extensions/ActionItemsBar',
