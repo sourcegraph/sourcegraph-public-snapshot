@@ -45,7 +45,6 @@ func (g *streamGroup[T]) WithErrors() ErrorStreamGroup[T] {
 
 func (g *streamGroup[T]) WithLimit(limit int) StreamGroup[T] {
 	g.os.group = g.os.group.WithLimit(limit)
-	g.os.resChans = make(chan chan streamEvent[T])
 	return g
 }
 

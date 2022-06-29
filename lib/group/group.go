@@ -113,18 +113,17 @@ type group struct {
 }
 
 func (g *group) Go(f func()) {
-	// g.goCtx will never error if the context is not canceled
-	_ = g.goCtx(context.Background(), f)
+	// acquire will never error if the context is not canceled
+	_, release, _ := g.acquire(context.Background())
+	g.start(f, release)
 }
 
-// goCtx starts a goroutine, using the provided context to
-// wait for the limiter.
-func (g *group) goCtx(ctx context.Context, f func()) error {
-	_, release, err := g.limiter.Acquire(ctx)
-	if err != nil {
-		return errors.Wrap(err, "acquire limiter")
-	}
+func (g *group) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
+	ctx, release, err := g.limiter.Acquire(ctx)
+	return ctx, release, errors.Wrap(err, "acquire limiter")
+}
 
+func (g *group) start(f, release func()) {
 	g.wg.Add(1)
 	go func() {
 		defer release()
@@ -132,8 +131,6 @@ func (g *group) goCtx(ctx context.Context, f func()) error {
 		// TODO add panic handlers
 		f()
 	}()
-
-	return nil
 }
 
 func (g *group) Wait() {
@@ -173,16 +170,22 @@ type errorGroup struct {
 }
 
 func (g *errorGroup) Go(f func() error) {
-	g.goCtx(context.Background(), f)
+	_, release := g.acquire(context.Background())
+	g.start(f, release)
+}
+
+func (g *errorGroup) acquire(ctx context.Context) (context.Context, context.CancelFunc) {
+	ctx, release, err := g.group.acquire(ctx)
+	g.addErr(err)
+	return ctx, release
 }
 
 // goCtx starts the goroutine, capturing any errors from the limiter
 // in the set of errors.
-func (g *errorGroup) goCtx(ctx context.Context, f func() error) {
-	err := g.group.goCtx(ctx, func() {
+func (g *errorGroup) start(f func() error, release func()) {
+	g.group.start(func() {
 		g.addErr(f())
-	})
-	g.addErr(err)
+	}, release)
 }
 
 func (g *errorGroup) addErr(err error) {
@@ -205,12 +208,12 @@ func (g *errorGroup) Wait() error {
 }
 
 func (g *errorGroup) WithLimit(limit int) ErrorGroup {
-	g.group.limiter = newBasicLimiter(limit)
+	g.limiter = newBasicLimiter(limit)
 	return g
 }
 
 func (g *errorGroup) WithLimiter(limiter Limiter) ErrorGroup {
-	g.group.limiter = limiter
+	g.limiter = limiter
 	return g
 }
 
@@ -234,13 +237,14 @@ type contextErrorGroup struct {
 }
 
 func (g *contextErrorGroup) Go(f func(context.Context) error) {
-	g.errorGroup.goCtx(g.ctx, func() error {
-		err := f(g.ctx)
+	ctx, release := g.errorGroup.acquire(g.ctx)
+	g.errorGroup.start(func() error {
+		err := f(ctx)
 		if err != nil && g.cancel != nil {
 			g.cancel()
 		}
 		return err
-	})
+	}, release)
 }
 
 func (g *contextErrorGroup) WithCancelOnError() ContextErrorGroup {
