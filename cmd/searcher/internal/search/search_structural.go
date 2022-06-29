@@ -418,18 +418,18 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 
 	switch combyInput := inputType.(type) {
 	case comby.Tar:
-		return runCombyWithStreaming(ctx, args, combyInput, sender)
+		return runCombyAgainstTar(ctx, args, combyInput, sender)
 	case comby.ZipPath:
-		return runCombyWithCollection(ctx, args, combyInput, sender)
+		return runCombyAgainstZip(ctx, args, combyInput, sender)
 	}
 
 	return errors.New("comby input must be either -tar or -zip for structural search")
 }
 
-// runCombyWithStreaming runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
+// runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
-func runCombyWithStreaming(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) (err error) {
+func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) (err error) {
 	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
@@ -482,13 +482,14 @@ func runCombyWithStreaming(ctx context.Context, args comby.Args, tarInput comby.
 	return comby.StartAndWaitForCompletion(cmd)
 }
 
-// runCombyWithCollection runs comby with the flag `-zip`. It collects all matches that comby finds in the zip file, then
-// attempts to convert each of those to a protocol.FileMatch, sending it to the result stream if successful.
-func runCombyWithCollection(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
-	combyMatches, err := comby.Matches(ctx, args)
+// runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
+// attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
+func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
+	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
+	stdin.Close() // don't need to write to stdin when using `-zip`
 
 	zipReader, err := zip.OpenReader(string(zipPath))
 	if err != nil {
@@ -496,16 +497,39 @@ func runCombyWithCollection(ctx context.Context, args comby.Args, zipPath comby.
 	}
 	defer zipReader.Close()
 
-	for _, combyMatch := range combyMatches {
-		fm, err := toFileMatch(&zipReader.Reader, combyMatch)
-		if err != nil {
-			log.NamedError("error converting comby match to FileMatch, skipping", err)
-			continue
-		}
-		sender.Send(fm)
-	}
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
 
-	return nil
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer stdout.Close()
+
+		scanner := bufio.NewScanner(stdout)
+		// increase the scanner buffer size for potentially long lines
+		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+
+		for scanner.Scan() {
+			b := scanner.Bytes()
+			if err := scanner.Err(); err != nil {
+				// warn on scanner errors and skip
+				log.NamedError("comby error: skipping scanner error line", err)
+				break
+			}
+
+			cfm := comby.ToFileMatch(b)
+			if cfm != nil {
+				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+				if err != nil {
+					log.NamedError("error converting comby match to FileMatch, skipping", err)
+					continue
+				}
+				sender.Send(fm)
+			}
+		}
+	}()
+
+	return comby.StartAndWaitForCompletion(cmd)
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

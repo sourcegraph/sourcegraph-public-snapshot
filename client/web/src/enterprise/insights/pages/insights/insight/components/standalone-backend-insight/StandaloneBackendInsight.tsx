@@ -101,6 +101,9 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 }
                 setInsightData(parsedData)
             },
+            onError: () => {
+                stopPolling()
+            },
         }
     )
 

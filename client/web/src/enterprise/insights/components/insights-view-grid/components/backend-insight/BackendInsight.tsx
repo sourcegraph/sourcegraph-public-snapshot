@@ -110,6 +110,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 seriesToggleState.setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
+            onError: () => {
+                stopPolling()
+            },
         }
     )
 
