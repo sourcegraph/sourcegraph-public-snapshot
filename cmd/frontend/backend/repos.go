@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -174,7 +174,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
+			span := tracepkg.TraceFromContext(ctx)
 			span.LogFields(otlog.Int("result.len", len(repos)))
 		}
 		done()
@@ -189,7 +189,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
+			span := tracepkg.TraceFromContext(ctx)
 			span.LogFields(otlog.Int("result.len", len(repos)))
 		}
 		done()

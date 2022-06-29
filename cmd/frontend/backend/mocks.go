@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var Mocks MockServices
@@ -21,7 +21,7 @@ func testContext() context.Context {
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
+	_, ctx = tracepkg.New(ctx, "dummy", "")
 
 	return ctx
 }
