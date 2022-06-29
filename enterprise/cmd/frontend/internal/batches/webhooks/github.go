@@ -18,10 +18,10 @@ import (
 )
 
 var (
-	// githubBatchChangeEvents is the set of events this webhook handler listens to pertaining to batch changes
+	// githubEvents is the set of events this webhook handler listens to pertaining to batch changes
 	// you can find info about what these events contain here:
 	// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
-	githubBatchChangeEvents = []string{
+	githubEvents = []string{
 		"issue_comment",
 		"pull_request",
 		"pull_request_review",
@@ -47,7 +47,7 @@ func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
 func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 	router.Register(
 		h.handleGitHubWebhook,
-		githubBatchChangeEvents...,
+		githubEvents...,
 	)
 }
 

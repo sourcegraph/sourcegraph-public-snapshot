@@ -137,7 +137,6 @@ func (h Webhook) upsertChangesetEvent(
 		UpdatedAt:   now,
 		Metadata:    ev,
 	}
-	fmt.Printf("ChangesetEvent:%+v\n", event) // this is where we add the correct changeset event to the store
 
 	existing, err := tx.GetChangesetEvent(ctx, store.GetChangesetEventOpts{
 		ChangesetID: cs.ID,

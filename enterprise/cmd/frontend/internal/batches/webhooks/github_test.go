@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -68,8 +67,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 			}),
 		}
-		fmt.Printf("extSvc:%+v\n", extSvc)
-		fmt.Println()
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
@@ -81,7 +78,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph") // yaml GET req
+		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,8 +86,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("githubRepo:", githubRepo)
-		fmt.Println()
 
 		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 		sourcer := sources.NewSourcer(cf)
@@ -102,8 +97,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("spec:%+v\n", spec)
-		fmt.Println()
 
 		batchChange := &btypes.BatchChange{
 			Name:            "Test batch changes",
@@ -119,8 +112,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("batchChange:%+v\n", batchChange)
-		fmt.Println()
 
 		// NOTE: Your sample payload should apply to a PR with the number matching below
 		changeset := &btypes.Changeset{
@@ -165,12 +156,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				if name == "push-event" {
-					t.Skip()
-				}
-				fmt.Println()
-				fmt.Println("name:", name)
-
 				ct.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
@@ -187,7 +172,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
-						fmt.Println("\n url:", u)
 
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
@@ -198,9 +182,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 
 						rec := httptest.NewRecorder()
 						handler.ServeHTTP(rec, req)
-
 						resp := rec.Result()
-						fmt.Printf("RESP:%+v\n", resp)
 
 						if resp.StatusCode != http.StatusOK {
 							t.Fatalf("Non 200 code: %v", resp.StatusCode)
@@ -233,16 +215,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
-
-				fmt.Println()
-				csEvents := tc.ChangesetEvents
-				for _, csEvent := range csEvents {
-					fmt.Printf("c:%+v\n", csEvent)
-				}
-				for _, h := range have {
-					fmt.Printf("h:%+v\n", h)
-				}
-				fmt.Println()
 			})
 		}
 

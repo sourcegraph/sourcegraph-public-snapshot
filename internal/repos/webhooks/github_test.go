@@ -144,7 +144,7 @@ func activatePushWebhook(db database.DB, url string, t *testing.T) {
 		t.Fatal(err)
 	}
 
-	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
+	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph") // YAML GET req
 	if err != nil {
 		t.Fatal(err)
 	}
