@@ -436,11 +436,12 @@ func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver
 				},
 			})
 			template.Must(tmpl.Parse(stateHTMLTemplate))
-			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context(), db))
+			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context(), db.ExternalServices()))
 			if err != nil {
 				http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+			return
 		}
 
 		var dumps []any
@@ -448,7 +449,7 @@ func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver
 			if wantDumper != "" && wantDumper != name {
 				continue
 			}
-			dumps = append(dumps, dumper.DebugDump(r.Context(), db))
+			dumps = append(dumps, dumper.DebugDump(r.Context(), db.ExternalServices()))
 		}
 
 		p, err := json.MarshalIndent(dumps, "", "  ")

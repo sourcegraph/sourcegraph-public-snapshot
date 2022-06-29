@@ -15,10 +15,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
@@ -72,10 +72,14 @@ type Service struct {
 	DefaultPath string
 }
 
+type ExternalServicesStore interface {
+	GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error)
+}
+
 // Dumper is a service which can dump its state for debugging.
 type Dumper interface {
 	// DebugDump returns a snapshot of the current state.
-	DebugDump(ctx context.Context, db database.DB) any
+	DebugDump(ctx context.Context, esStore ExternalServicesStore) any
 }
 
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
