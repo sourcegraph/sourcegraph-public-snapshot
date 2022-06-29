@@ -162,9 +162,13 @@ type contextErrorStreamGroup[T any] struct {
 }
 
 func (g *contextErrorStreamGroup[T]) Go(task func(context.Context) (T, error), callback func(context.Context, T, error)) {
-	ctx, release, _ := g.os.acquire(context.Background())
-
+	ctx, release, err := g.os.acquire(g.ctx)
 	pairedTask := func() resultPair[T] {
+		// If acquiring failed, return its error immediately without running the task.
+		if err != nil {
+			var t T
+			return resultPair[T]{t, err}
+		}
 		res, err := task(ctx)
 		return resultPair[T]{res, err}
 	}
