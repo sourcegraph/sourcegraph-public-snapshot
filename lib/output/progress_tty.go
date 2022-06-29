@@ -203,6 +203,7 @@ func (p *progressTTY) draw() {
 	}
 }
 
+// We think this means "draw in position"?
 func (p *progressTTY) drawInSitu() {
 	p.moveToOrigin()
 	p.draw()
@@ -212,6 +213,7 @@ func (p *progressTTY) moveToOrigin() {
 	p.o.moveUp(len(p.bars))
 }
 
+// This is the core render function
 func (p *progressTTY) writeBar(bar *ProgressBar) {
 	p.o.clearCurrentLine()
 
@@ -227,9 +229,17 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 
 	fmt.Fprint(p.o.w, runewidth.FillRight(runewidth.Truncate(bar.Label, p.labelWidth, "..."), p.labelWidth))
 
-	// The bar width is the width of the terminal, minus the label width, minus
-	// two spaces.
-	barWidth := p.o.caps.Width - p.labelWidth - p.emojiWidth - 2
+	// Create a status label that represents percentage completion
+	statusLabel := fmt.Sprintf("%d", int(math.Floor(bar.Value/bar.Max*100))) + "%"
+	statusLabelWidth := len(statusLabel)
+
+	// The bar width is the space remaining after we write the label and some emoji space...
+	remainingSpaceAfterLabel := floorZero(p.o.caps.Width - p.labelWidth - p.emojiWidth)
+	barWidth := floorZero(remainingSpaceAfterLabel -
+		// minus a overall status indicator...
+		statusLabelWidth -
+		// minus two spaces after the label, 2 spaces before the status label
+		2 - 2)
 
 	// Unicode box drawing gives us eight possible bar widths, so we need to
 	// calculate both the bar width and then the final character, if any.
@@ -246,14 +256,17 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 		}
 	} else {
 		if fillWidth+1 > barWidth {
-			fillWidth = barWidth - 1
+			fillWidth = floorZero(barWidth - 1)
 		}
 	}
 
 	fmt.Fprintf(p.o.w, "  ")
 	fmt.Fprint(p.o.w, strings.Repeat("█", fillWidth))
-	fmt.Fprintln(p.o.w, []string{
-		"",
+
+	// The final bar character - if the remainder of the segment division is 0, we write
+	// no space. Otherwise we write a *single* character that represents that remainder.
+	fmt.Fprint(p.o.w, []string{
+		"", // no remainder case
 		"▏",
 		"▎",
 		"▍",
@@ -264,4 +277,20 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 	}[remainder])
 
 	p.o.writeStyle(StyleReset)
+
+	barSize := fillWidth
+	if remainder > 0 {
+		barSize += 1 // only a single character gets written if there is a remainder
+	}
+	consumedSpace := remainingSpaceAfterLabel - barSize - 2 // leave space for the label
+	fmt.Fprint(p.o.w, StyleBold, runewidth.FillLeft(statusLabel, consumedSpace), StyleReset)
+
+	fmt.Fprintln(p.o.w) // end the line
+}
+
+func floorZero(v int) int {
+	if v < 0 {
+		return 0
+	}
+	return v
 }
