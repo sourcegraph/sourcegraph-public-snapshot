@@ -627,8 +627,6 @@ github.com/denisenkom/go-mssqldb v0.11.0/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/derision-test/glock v1.0.0 h1:b6sViZG+Cm6QtdpqbfWEjaBVbzNPntIS4GzsxpS+CmM=
 github.com/derision-test/glock v1.0.0/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
-github.com/derision-test/go-mockgen v1.3.2 h1:wFndNkm+IjLMdk8P+q6Bi6rWuiB5CoWP06BSBmoGVPM=
-github.com/derision-test/go-mockgen v1.3.2/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
 github.com/derision-test/go-mockgen v1.3.3 h1:TyCowqp/S9J3Tvv+ZCnsIDwVW5flJEMFZlNNMfjSLNM=
 github.com/derision-test/go-mockgen v1.3.3/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
@@ -2177,8 +2175,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20220623103047-52951bd0828a h1:+dx92TcK+x7ASmAYH2Gqe6SIuEJDRaqKKHIVarhVUF4=
-github.com/sourcegraph/zoekt v0.0.0-20220623103047-52951bd0828a/go.mod h1:0CbTEyUNtZNzJQmVQAo7GsYnp1WVq15/I5HYfKwQp6s=
+github.com/sourcegraph/zoekt v0.0.0-20220627132930-629b7ab33825 h1:eecshdWWFxXNvmkn9S+YxPgMylP0vPtSCOQbqZ5iGTY=
+github.com/sourcegraph/zoekt v0.0.0-20220627132930-629b7ab33825/go.mod h1:0CbTEyUNtZNzJQmVQAo7GsYnp1WVq15/I5HYfKwQp6s=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
