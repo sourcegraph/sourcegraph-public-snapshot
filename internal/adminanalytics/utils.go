@@ -14,6 +14,14 @@ var (
 	LastWeek        = "LAST_WEEK"
 )
 
+func makeStringsInExpression(values []string) *sqlf.Query {
+	var conds []*sqlf.Query
+	for _, value := range values {
+		conds = append(conds, sqlf.Sprintf("%s", value))
+	}
+	return sqlf.Join(conds, ",")
+}
+
 func makeDateParameters(dateRange string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
 	now := time.Now()
 	var from time.Time
