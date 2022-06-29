@@ -297,7 +297,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 <MenuLink
                                     className={styles.dropdownItem}
                                     as={AnchorLink}
-                                    to="https://docs.sourcegraph.com/integration/browser_extension"
+                                    to="/help/integration/browser_extension"
                                     target="_blank"
                                     rel="noopener"
                                 >
