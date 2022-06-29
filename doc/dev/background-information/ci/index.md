@@ -148,6 +148,42 @@ An example use of `Skip`:
  }
 ```
 
+##### Assessing flaky client steps
+
+The breakdown of known client flakes by type with resolution tips:
+
+###### Visual regression flakes
+
+_Problem:_ Percy’s pixel sensitivity is too high, and we cannot relax it further which means that SVG rendering can be flaky.
+_Solution:_ Snapshot these pages in Chromatic or hide flaky elements from Percy using the `.percy-hide` class name.
+
+_Problem:_ UI depends on the date and time, which are not appropriately mocked.
+_Solution:_ Mock the date and time properly in your integration test or Storybook story.
+
+_Problem:_ Mocks are not configured correctly, resulting in flaky error messages in UI.
+_Solution:_ Double-check mocks required for rendering the snapshotted UI.
+
+_Problem:_ The screenshot is taken without waiting for the UI to settle down. E.g., a snapshot taken after clicking an input element doesn’t wait for the focus state on it.
+_Solution:_ Wait for the UI to settle using tools provided by Puppeteer.
+
+###### Visual regression flakes caused by test logic
+
+_Problem examples:_
+
+1. `Navigation timeout of 30000 ms exceeded.`
+2. `Error: GraphQL query "XXX" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "XXX" query.`
+
+_Solution:_ These should be disabled immediately and fixed later by owning teams.
+
+###### Percy outages
+
+_Problem:_ Percy API outages result into
+
+1. HTTP requests to upload screenshots fail with internal server errors.
+2. HTTP requests to upload screenshots fail with errors about duplicated snapshot names. `[percy] Error: The name of each snapshot must be unique, and this name already exists in the build`
+
+_Solution:_ Wait for the Percy infrastructure to come back to life and restart the build. 🥲
+
 ##### Flaky infrastructure
 
 If the [build or test infrastructure itself is flaky](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support), then [open an issue with the `team/devx` label](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/devx) and notify the [Developer Experience team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#contact).
