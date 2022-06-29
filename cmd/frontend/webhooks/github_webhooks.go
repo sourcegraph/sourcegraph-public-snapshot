@@ -2,7 +2,6 @@ package webhooks
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -44,7 +43,6 @@ type GitHubWebhook struct {
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("serving http")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
@@ -67,11 +65,8 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := actor.WithInternalActor(r.Context())
 
 	// parse event
-	fmt.Println("parsing event type")
 	eventType := gh.WebHookType(r)
-	fmt.Println("eventType:", eventType)
 	e, err := gh.ParseWebHook(eventType, body)
-	// fmt.Printf("e:%+v\n", e)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -87,12 +82,12 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// match event handlers
-	err = h.DispatchPush(ctx, eventType, extSvc, e, r)
-	if err != nil {
-		log15.Error("Error handling github webhook event", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// err = h.DispatchPush(ctx, eventType, extSvc, e, r)
+	// if err != nil {
+	// 	log15.Error("Error handling github webhook event", "error", err)
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 }
 
 // Dispatch accepts an event for a particular event type and dispatches it

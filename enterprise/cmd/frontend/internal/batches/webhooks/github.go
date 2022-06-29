@@ -1,12 +1,8 @@
 package webhooks
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
@@ -15,10 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,13 +29,6 @@ var (
 		"status",
 		"check_suite",
 		"check_run",
-	}
-
-	// githubPushEvents is the set of events this webhook handler listens to in general
-	// you can find info about what these events contain here:
-	//
-	githubPushEvents = []string{
-		"push",
 	}
 )
 
@@ -61,10 +48,6 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 	router.Register(
 		h.handleGitHubWebhook,
 		githubBatchChangeEvents...,
-	)
-	router.RegisterPush(
-		h.handleGitHubPushWebhook,
-		githubPushEvents...,
 	)
 }
 
@@ -97,36 +80,6 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 		}
 	}
 	return m
-}
-
-func (h *GitHubWebhook) handleGitHubPushWebhook(ctx context.Context, extSvc *types.ExternalService, payload any, r *http.Request) error {
-	fmt.Println("reached the push handler!")
-	// get the repo
-	rs, err := h.Webhook.Store.Repos().List(ctx, database.ReposListOptions{})
-	if err != nil {
-		fmt.Println("ERR:", err)
-	}
-
-	// add the repo to the UpdateScheduler
-	repo := rs[0]
-	p := protocol.RepoUpdateRequest{Repo: repo.Name}
-	fmt.Printf("p:%+v\n", p)
-	bs, err := json.Marshal(p)
-	body := bytes.NewBuffer(bs)
-	// send HTTP post req to "/enqueue-repo-update" including the repo
-	// server sends back the repo ID + repo Name, httpStatusOK, no errors
-	fmt.Println("url:", r.URL.String())
-	resp, err := http.Post(r.URL.String(), "application/json", body)
-	if err != nil {
-		fmt.Println("err:", err)
-	}
-	bst, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("err:", err)
-	}
-	fmt.Println("RESPO:", string(bst))
-
-	return nil
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs any) (prs []PR, ours keyer) {
