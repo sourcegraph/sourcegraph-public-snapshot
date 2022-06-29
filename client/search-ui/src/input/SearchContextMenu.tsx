@@ -311,7 +311,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                     onClick={() => closeMenu()}
                     onKeyDown={onCloseButtonKeyDown}
                     variant="icon"
-                    className={styles.titleClose}
+                    className={classNames(styles.titleClose, 'btn-close')}
                     aria-label="Close"
                 >
                     <Icon aria-hidden={true} svgPath={mdiClose} />

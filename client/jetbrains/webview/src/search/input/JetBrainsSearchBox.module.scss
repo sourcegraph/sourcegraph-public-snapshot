@@ -44,6 +44,7 @@
         margin: 2px;
         border: 1px solid transparent;
         border-radius: var(--border-radius);
+        background-color: var(--jb-input-bg);
 
         &__icon {
             padding-left: 0.25rem;
@@ -80,8 +81,18 @@
             margin-bottom: 0.5rem;
         }
 
-        > * > button {
-            border: 1px solid var(--jb-border-color) !important;
+        > button,
+        > button:hover,
+        > button:focus {
+            background: var(--jb-button-bg);
+
+            &:hover {
+                border-color: var(--jb-border-color);
+            }
+
+            &:focus {
+                border-color: var(--jb-focus-border-color);
+            }
         }
     }
 
@@ -89,7 +100,11 @@
         // On JetBrains, the menu always appears under the context button with a top positon of 40px
         max-height: calc(100vh - 40px);
 
-        button {
+        > div {
+            border-color: var(--jb-border-color);
+        }
+
+        button[data-search-context-spec] {
             &[data-selected],
             &:hover,
             &:focus {
@@ -98,6 +113,22 @@
                 > small {
                     color: var(--light-text) !important;
                 }
+            }
+        }
+
+        input {
+            background-color: var(--jb-input-bg);
+
+            &:focus {
+                border-color: var(--jb-focus-border-color);
+                box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+            }
+        }
+
+        :global(.btn-close) {
+            &:hover,
+            &:focus {
+                background: var(--jb-hover-button-bg);
             }
         }
     }
@@ -125,7 +156,7 @@
 
             &:focus-within,
             &:focus {
-                border: 1px solid var(--input-focus-border-color);
+                border: 1px solid var(--jb-focus-border-color);
                 box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
             }
         }
@@ -155,18 +186,41 @@
         }
     }
 
-    :global(.cm-editor) :global(.cm-tooltip-autocomplete) > ul > li {
-        &[aria-selected],
-        &:hover,
-        &:focus {
-            background-color: var(--dropdown-link-active-bg) !important;
-
-            :global(.cm-completionMatchedText) {
-                color: var(--light-text);
-            }
+    :global(.cm-editor) {
+        :global(.cm-tooltip),
+        :global(.cm-tooltip-autocomplete) {
+            background-color: var(--dropdown-bg) !important;
         }
 
-        align-items: center;
-        font-size: var(--code-font-size);
+        :global(.cm-tooltip) {
+            margin-top: -2px;
+        }
+
+        :global(.cm-tooltip-autocomplete) {
+            > ul {
+                > li {
+                    align-items: center;
+                    font-size: var(--code-font-size);
+
+                    &[aria-selected],
+                    &:focus {
+                        background-color: var(--dropdown-link-active-bg) !important;
+
+                        :global(.cm-completionMatchedText) {
+                            color: var(--light-text);
+                        }
+                    }
+
+                    &:hover {
+                        background-color: var(--dropdown-link-hover-bg) !important;
+                    }
+
+                    :global(.tab-style) {
+                        color: var(--light-text);
+                        border-color: var(--light-text);
+                    }
+                }
+            }
+        }
     }
 }
