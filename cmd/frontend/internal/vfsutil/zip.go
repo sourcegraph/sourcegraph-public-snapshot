@@ -5,8 +5,10 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -14,12 +16,13 @@ import (
 // on disk) and returns a new VFS backed by that zip archive.
 func NewZipVFS(url string, onFetchStart, onFetchFailed func(), evictOnClose bool) (*ArchiveFS, error) {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
-		span, ctx := trace.New(ctx, "zip Fetch", "")
-		span.SetTag("component", "zipvfs")
+		span, ctx := ot.StartSpanFromContext(ctx, "zip Fetch")
+		ext.Component.Set(span, "zipvfs")
 		span.SetTag("url", url)
 		defer func() {
 			if err != nil {
-				span.SetError(err)
+				ext.Error.Set(span, true)
+				span.SetTag("err", err)
 			}
 			span.Finish()
 		}()

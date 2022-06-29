@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -662,7 +662,7 @@ func (e *externalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 }
 
 func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {
-	span, ctx := trace.New(ctx, "ExternalServiceStore.maybeDecryptConfig", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "ExternalServiceStore.maybeDecryptConfig")
 	defer span.Finish()
 
 	if keyID == "" {
@@ -676,7 +676,7 @@ func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 	if key == nil {
 		return config, errors.Errorf("couldn't decrypt encrypted config, key is nil")
 	}
-	decryptSpan, ctx := trace.New(ctx, "key.Decrypt", "")
+	decryptSpan, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
 	decrypted, err := key.Decrypt(ctx, []byte(config))
 	decryptSpan.Finish()
 	if err != nil {
@@ -1180,7 +1180,7 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	span, _ := trace.New(ctx, "ExternalServiceStore.list", "")
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
 	defer span.Finish()
 
 	if opt.OrderByDirection != "ASC" {

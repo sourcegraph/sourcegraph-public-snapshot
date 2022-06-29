@@ -15,7 +15,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -221,7 +221,7 @@ func StartAndWaitForCompletion(cmd *exec.Cmd) error {
 
 // Matches returns all matches in all files for which comby finds matches.
 func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
-	span, ctx := trace.New(ctx, "Comby.Matches", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
 	defer span.Finish()
 
 	args.ResultKind = MatchOnly
@@ -238,7 +238,7 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 
 // Replacements performs in-place replacement for match and rewrite template.
 func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
-	span, ctx := trace.New(ctx, "Comby.Replacements", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
 	defer span.Finish()
 
 	results, err := Run(ctx, args, toFileReplacement)
@@ -255,7 +255,7 @@ func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
 // Outputs performs substitution of all variables captured in a match
 // pattern in a rewrite template and outputs the result, newline-sparated.
 func Outputs(ctx context.Context, args Args) (string, error) {
-	span, ctx := trace.New(ctx, "Comby.Outputs", "")
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs")
 	defer span.Finish()
 
 	results, err := Run(ctx, args, toOutput)

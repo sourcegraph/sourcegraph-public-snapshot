@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var metricLabels = []string{"method", "success"}
@@ -29,7 +30,7 @@ var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 func trace(ctx context.Context, server, method string, arg any, err *error) (context.Context, func()) {
 	requestGauge.WithLabelValues(server + "." + method).Inc()
 
-	span, ctx := tracepkg.New(ctx, server+"."+method, "")
+	span, ctx := ot.StartSpanFromContext(ctx, server+"."+method)
 	span.SetTag("Server", server)
 	span.SetTag("Method", method)
 	span.SetTag("Argument", fmt.Sprintf("%#v", arg))
