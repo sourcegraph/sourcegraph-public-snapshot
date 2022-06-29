@@ -99,6 +99,8 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             </fieldset>
             {showOtherInput && (
                 <FlexTextArea
+                    minRows={2}
+                    maxRows={6}
                     containerClassName="mt-3"
                     label={
                         <Text size="small" className={formLabelClassName}>
@@ -110,6 +112,8 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 />
             )}
             <FlexTextArea
+                minRows={2}
+                maxRows={6}
                 containerClassName="mt-3"
                 label={
                     <Text size="small" className={formLabelClassName}>
