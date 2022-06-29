@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,8 +21,9 @@ import (
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	rs := database.ReposWith(s.Store)
-	es := database.ExternalServicesWith(s.Store)
+	logger := logtest.Scoped(t)
+	rs := database.ReposWith(logger, s.Store)
+	es := database.ExternalServicesWith(s.observationContext.Logger, s.Store)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)

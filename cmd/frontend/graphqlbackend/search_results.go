@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -358,7 +360,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -372,9 +374,11 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			types = append(types, "file")
 		case "file":
 			switch {
+			case si.PatternType == query.SearchTypeStandard:
+				types = append(types, "standard")
 			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteralDefault:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
@@ -427,14 +431,10 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
-				if err != nil {
-					log15.Warn("Could not log search latency", "err", err)
-				}
-			}()
+			err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
+			if err != nil {
+				log15.Warn("Could not log search latency", "err", err)
+			}
 		}
 	}
 }
@@ -466,8 +466,12 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 
 func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInputs, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
-	LogSearchLatency(ctx, db, &wg, searchInputs, srr.ElapsedMilliseconds())
 	defer wg.Wait()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		LogSearchLatency(ctx, db, searchInputs, srr.ElapsedMilliseconds())
+	}()
 
 	var status, alertType string
 	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
@@ -542,6 +546,7 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 }
 
 type searchResultsStats struct {
+	logger                  log.Logger
 	JApproximateResultCount string
 	JSparkline              []int32
 

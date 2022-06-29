@@ -7,7 +7,11 @@ Dependencies search is a code search feature that lets you search through the de
 
 ### Setup
 
-Configure a package host connection for each kind of dependency you want to search over.
+1. Configure a package host connection for each kind of dependency you want to search over.
+1. Add `"codeIntelLockfileIndexing.enabled": true` to your [site configuration](../../admin/config/site_config.md) to enable the lockfile-indexing feature.
+1. Add `"codeIntelAutoIndexing.allowGlobalPolicies": true` to your [site configuration](../../admin/config/site_config.md) to allow a lockfile-indexing policy to match multiple repositories.
+1. Go to **Site admin > Code intelligence > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lock-file index all repositories matching the name `go-*` and `go/`.
+1. Wait until lockfile indexing has finished and then run a dependency search.
 
 ### Use cases
 

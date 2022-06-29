@@ -8,6 +8,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -38,7 +39,7 @@ func GetService(db database.DB) *Service {
 		svc = newService(
 			luasandbox.GetService(),
 			NewDefaultGitService(nil, db),
-			rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1),
+			ratelimit.NewInstrumentedLimiter("InferenceService", rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)),
 			maximumFilesWithContentCount,
 			maximumFileWithContentSizeBytes,
 			observationContext,

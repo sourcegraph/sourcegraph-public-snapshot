@@ -34,7 +34,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 
 	var and []zoekt.Q
 	if q != nil {

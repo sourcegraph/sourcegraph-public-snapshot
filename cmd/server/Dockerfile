@@ -2,9 +2,9 @@
 FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05 AS p4cli
 
 # hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
-    mv p4 /usr/local/bin/p4 && \
-    chmod +x /usr/local/bin/p4
+RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4
+RUN mv p4 /usr/local/bin/p4
+RUN chmod +x /usr/local/bin/p4
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
 FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05 AS p4-fusion
@@ -42,20 +42,24 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git>=2.34.1' \
+    # We require git 2.35.2 to fix this vulnerability:
+    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
+    'git>=2.35.2' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main
+
+RUN apk add --no-cache --verbose \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     # You can't just bump the major version since that requires pgupgrade
     # between Sourcegraph releases.
-    && apk add --no-cache --verbose \
     postgresql=~12 \
     postgresql-contrib=~12 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
-    && apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
+
+RUN apk add --no-cache --verbose \
     'bash>=5.0.17' \
     'redis>=5.0' \
     python2 \
@@ -68,7 +72,7 @@ RUN apk add --no-cache --verbose \
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:1.7.1@sha256:6a581342b15e0032e6293ea2f4827af70f33646106b7c8900315bcc7d4b63b1a /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331a474d2a67b811a1b374b0b24a4661446a2d8e9b211f51ea8ae95e1130 /syntect_server /usr/local/bin/
 

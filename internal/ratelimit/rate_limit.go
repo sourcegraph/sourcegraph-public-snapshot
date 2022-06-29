@@ -67,7 +67,7 @@ func (r *Registry) getOrSet(urn string, fallback *InstrumentedLimiter) *Instrume
 		if defaultRateLimit <= 0 {
 			fallbackRateLimit = rate.Inf
 		}
-		fallback = &InstrumentedLimiter{urn: urn, Limiter: rate.NewLimiter(fallbackRateLimit, defaultBurst)}
+		fallback = NewInstrumentedLimiter(urn, rate.NewLimiter(fallbackRateLimit, defaultBurst))
 	}
 	r.rateLimiters[urn] = fallback
 	return fallback
@@ -119,6 +119,14 @@ type InstrumentedLimiter struct {
 	*rate.Limiter
 }
 
+// NewInstrumentedLimiter creates new InstrumentedLimiter with given URN and rate.Limiter
+func NewInstrumentedLimiter(urn string, limiter *rate.Limiter) *InstrumentedLimiter {
+	return &InstrumentedLimiter{
+		urn:     urn,
+		Limiter: limiter,
+	}
+}
+
 // Wait is shorthand for WaitN(ctx, 1).
 func (i *InstrumentedLimiter) Wait(ctx context.Context) error {
 	return i.WaitN(ctx, 1)
@@ -148,6 +156,16 @@ func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
 
 	metricWaitDuration.WithLabelValues(urn, failedLabel).Observe(d.Seconds())
 	return err
+}
+
+// SetBurst is calling SetBurstAt(time.Now(), newBurst) method of the wrapped *rate.Limiter.
+func (i *InstrumentedLimiter) SetBurst(newBurst int) {
+	i.Limiter.SetBurstAt(time.Now(), newBurst)
+}
+
+// SetLimit is calling SetLimitAt(time.Now(), newLimit) method of the wrapped *rate.Limiter.
+func (i *InstrumentedLimiter) SetLimit(newLimit rate.Limit) {
+	i.Limiter.SetLimitAt(time.Now(), newLimit)
 }
 
 var metricWaitDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{

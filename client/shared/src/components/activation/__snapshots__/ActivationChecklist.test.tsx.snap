@@ -32,7 +32,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
               >
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon iconInline icon iconDown"
+                  class="iconInline icon iconDown"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -45,7 +45,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
                 </svg>
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon iconInline icon iconRight"
+                  class="iconInline icon iconRight"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -64,7 +64,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
             <div>
               <svg
                 aria-label="Not completed"
-                class="mdi-icon iconInline text-muted"
+                class="iconInline text-muted"
                 fill="currentColor"
                 height="24"
                 role="img"
@@ -131,7 +131,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
               >
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon iconInline icon iconDown"
+                  class="iconInline icon iconDown"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -144,7 +144,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
                 </svg>
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon iconInline icon iconRight"
+                  class="iconInline icon iconRight"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -163,7 +163,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
             <div>
               <svg
                 aria-label="Not completed"
-                class="mdi-icon iconInline text-muted"
+                class="iconInline text-muted"
                 fill="currentColor"
                 height="24"
                 role="img"

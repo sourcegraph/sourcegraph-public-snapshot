@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -40,7 +40,7 @@ const MOCK_FILE_DIFF_QUERIES = {
     queryChangesetSpecFileDiffs,
 }
 
-const { add } = storiesOf('web/batches/batch-spec/execute/WorkspaceDetails', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className="d-flex w-100" style={{ height: '95vh' }}>
         <Card className="w-100 overflow-auto flex-grow-1" style={{ backgroundColor: 'var(--color-bg-1)' }}>
             <div className="w-100">
@@ -48,48 +48,81 @@ const { add } = storiesOf('web/batches/batch-spec/execute/WorkspaceDetails', mod
             </div>
         </Card>
     </div>
-))
+)
 
-function addStory(
-    name: string,
-    node: BatchSpecWorkspaceByIDResult['node'],
-    queries: {
-        queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
-        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-    } = {}
-) {
-    add(name, () => {
-        const mocks = new WildcardMockLink([
-            {
-                request: {
-                    query: getDocumentNode(BATCH_SPEC_WORKSPACE_BY_ID),
-                    variables: MATCH_ANY_PARAMETERS,
-                },
-                result: { data: { node } },
-                nMatches: Number.POSITIVE_INFINITY,
-            },
-        ])
-
-        return (
-            <BrandedStory>
-                {props => (
-                    <MockedTestProvider link={mocks}>
-                        <WorkspaceDetails {...props} {...queries} deselectWorkspace={noop} id="random" />
-                    </MockedTestProvider>
-                )}
-            </BrandedStory>
-        )
-    })
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute/WorkspaceDetails',
+    decorators: [decorator],
 }
 
-addStory('Hidden workspace', HIDDEN_WORKSPACE)
-addStory('Workspace not found', null)
-addStory('Visible workspace: complete', mockWorkspace(), MOCK_FILE_DIFF_QUERIES)
-addStory('Visible workspace: complete with lots of steps', LOTS_OF_STEPS_WORKSPACE, MOCK_FILE_DIFF_QUERIES)
-addStory('Visible workspace: queued', QUEUED_WORKSPACE)
-addStory('Visible workspace: processing', PROCESSING_WORKSPACE)
-addStory('Visible workspace: skipped', SKIPPED_WORKSPACE)
-addStory('Visible workspace: unsupported', UNSUPPORTED_WORKSPACE)
-addStory('Visible workspace: failed', FAILED_WORKSPACE, MOCK_FILE_DIFF_QUERIES)
-addStory('Visible workspace: canceling', CANCELING_WORKSPACE)
-addStory('Visible workspace: canceled', CANCELED_WORKSPACE)
+export default config
+
+interface BaseStoryProps {
+    node?: BatchSpecWorkspaceByIDResult['node']
+    queries?: {
+        queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
+        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+    }
+}
+
+const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {} }) => {
+    const mocks = new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_WORKSPACE_BY_ID),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: { node } },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
+
+    return (
+        <BrandedStory>
+            {props => (
+                <MockedTestProvider link={mocks}>
+                    <WorkspaceDetails {...props} {...queries} deselectWorkspace={noop} id="random" />
+                </MockedTestProvider>
+            )}
+        </BrandedStory>
+    )
+}
+
+export const WorkspaceNotFound: Story = () => <BaseStory />
+WorkspaceNotFound.storyName = 'Workspace not found'
+
+export const VisibleWorkspaceComplete: Story = () => (
+    <BaseStory node={mockWorkspace()} queries={MOCK_FILE_DIFF_QUERIES} />
+)
+VisibleWorkspaceComplete.storyName = 'Visible workspace: complete'
+
+export const HiddenWorkspace: Story = () => <BaseStory node={HIDDEN_WORKSPACE} />
+HiddenWorkspace.storyName = 'Hidden workspace'
+
+export const VisibleWorkspaceProcessing: Story = () => <BaseStory node={PROCESSING_WORKSPACE} />
+VisibleWorkspaceProcessing.storyName = 'Visible workspace: processing'
+
+export const VisibleWorkspaceQueued: Story = () => <BaseStory node={QUEUED_WORKSPACE} />
+VisibleWorkspaceQueued.storyName = 'Visible workspace: queued'
+
+export const VisibleWorkspaceSkipped: Story = () => <BaseStory node={SKIPPED_WORKSPACE} />
+VisibleWorkspaceSkipped.storyName = 'Visible workspace: skipped'
+
+export const VisibleWorkspaceUnsupported: Story = () => <BaseStory node={UNSUPPORTED_WORKSPACE} />
+VisibleWorkspaceUnsupported.storyName = 'Visible workspace: unsupported'
+
+export const VisibleWorkspaceCompleteWithLotsOfSteps: Story = () => (
+    <BaseStory node={LOTS_OF_STEPS_WORKSPACE} queries={MOCK_FILE_DIFF_QUERIES} />
+)
+VisibleWorkspaceCompleteWithLotsOfSteps.storyName = 'Visible workspace: complete with lots of steps'
+
+export const VisibleWorkspaceFailed: Story = () => (
+    <BaseStory node={FAILED_WORKSPACE} queries={MOCK_FILE_DIFF_QUERIES} />
+)
+VisibleWorkspaceFailed.storyName = 'Visible workspace: failed'
+
+export const VisibleWorkspaceCanceling: Story = () => <BaseStory node={CANCELING_WORKSPACE} />
+VisibleWorkspaceCanceling.storyName = 'Visible workspace: canceling'
+
+export const VisibleWorkspaceCanceled: Story = () => <BaseStory node={CANCELED_WORKSPACE} />
+VisibleWorkspaceCanceled.storyName = 'Visible workspace: canceled'

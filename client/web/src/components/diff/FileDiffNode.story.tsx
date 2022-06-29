@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
@@ -183,11 +183,17 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('All unified file node states overview', () => (
+const config: Meta = {
+    title: 'web/diffs/FileDiffNode',
+    decorators: [decorator],
+    includeStories: ['AllUnifiedFileNode', 'AllSplitFileNode'],
+}
+
+export default config
+
+export const AllUnifiedFileNode: Story = () => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -205,9 +211,11 @@ add('All unified file node states overview', () => (
             </ul>
         )}
     </WebStory>
-))
+)
 
-add('All split file node states overview', () => (
+AllUnifiedFileNode.storyName = 'All unified file node states overview'
+
+export const AllSplitFileNode: Story = () => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -225,4 +233,6 @@ add('All split file node states overview', () => (
             </ul>
         )}
     </WebStory>
-))
+)
+
+AllSplitFileNode.storyName = 'All split file node states overview'

@@ -82,12 +82,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
 
     return (
         // Click events here are defined in useEffect
-        <Tooltip
-            // For now, Tooltip wraps the child element in a <span>, so make sure that gets styled to space the toggles correctly
-            className={styles.toggleWrapper}
-            content={tooltipValue}
-            placement="bottom"
-        >
+        <Tooltip content={tooltipValue} placement="bottom">
             <Button
                 as="div"
                 className={classNames(

@@ -1,6 +1,6 @@
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
 import { of, Observable } from 'rxjs'
 import { WildcardMockLink } from 'wildcard-mock-link'
@@ -22,14 +22,21 @@ import { BatchChangePreviewPage } from './BatchChangePreviewPage'
 import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
 import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
 
-const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview/BatchChangePreviewPage',
+    decorators: [decorator],
+
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
@@ -179,7 +186,7 @@ const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConn
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('Create', () => {
+export const Create: Story = () => {
     const link = useMemo(() => fetchBatchSpecCreate(), [])
     return (
         <WebStory>
@@ -203,9 +210,9 @@ add('Create', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Update', () => {
+export const Update: Story = () => {
     const link = useMemo(() => fetchBatchSpecUpdate(), [])
     return (
         <WebStory>
@@ -229,9 +236,9 @@ add('Update', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Missing credentials', () => {
+export const MissingCredentials: Story = () => {
     const link = useMemo(() => fetchBatchSpecMissingCredentials(), [])
     return (
         <WebStory>
@@ -255,9 +262,11 @@ add('Missing credentials', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Spec file', () => {
+MissingCredentials.storyName = 'Missing credentials'
+
+export const SpecFile: Story = () => {
     const link = useMemo(() => fetchBatchSpecCreate(), [])
     return (
         <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
@@ -281,9 +290,11 @@ add('Spec file', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('No changesets', () => {
+SpecFile.storyName = 'Spec file'
+
+export const NoChangesets: Story = () => {
     const link = useMemo(() => fetchBatchSpecCreate(), [])
     return (
         <WebStory>
@@ -307,4 +318,6 @@ add('No changesets', () => {
             )}
         </WebStory>
     )
-})
+}
+
+NoChangesets.storyName = 'No changesets'

@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,13 +9,18 @@ import { WebStory } from '../../components/WebStory'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { savedSearchesPayload, authUser } from './utils'
 
-const { add } = storiesOf('web/search/panels/SavedSearchesPanel', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
+const config: Meta = {
+    title: 'web/search/panels/SavedSearchesPanel',
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
+        },
+        chromatic: { disableSnapshot: false },
     },
-    chromatic: { disableSnapshot: false },
-})
+}
+
+export default config
 
 const props = {
     authenticatedUser: authUser,
@@ -24,7 +29,7 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('SavedSearchesPanel', () => (
+export const SavedSearchesPanelStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -39,4 +44,6 @@ add('SavedSearchesPanel', () => (
             </div>
         )}
     </WebStory>
-))
+)
+
+SavedSearchesPanelStory.storyName = 'SavedSearchesPanel'

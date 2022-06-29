@@ -13,6 +13,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -169,6 +171,7 @@ func createMaliciousJar(t *testing.T, name string) {
 }
 
 func TestJVMCloneCommand(t *testing.T) {
+	logger := logtest.Scoped(t)
 	dir := t.TempDir()
 
 	createPlaceholderSourcesJar(t, dir, exampleFileContents, exampleJar)
@@ -180,7 +183,7 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
-	depsSvc := livedependencies.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), nil)
 	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}}, depsSvc).(*vcsDependenciesSyncer)
 	bareGitDirectory := path.Join(dir, "git")
 

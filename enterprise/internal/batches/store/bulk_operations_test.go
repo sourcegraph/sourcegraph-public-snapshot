@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,8 +17,9 @@ import (
 )
 
 func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))

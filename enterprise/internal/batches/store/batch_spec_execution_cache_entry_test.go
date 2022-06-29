@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -145,8 +147,9 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	// Separate test function because we want a clean DB
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	c := &ct.TestClock{Time: timeutil.Now()}
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 	user := ct.CreateTestUser(t, db, true)

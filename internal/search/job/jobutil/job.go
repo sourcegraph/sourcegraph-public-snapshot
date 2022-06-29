@@ -527,7 +527,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 

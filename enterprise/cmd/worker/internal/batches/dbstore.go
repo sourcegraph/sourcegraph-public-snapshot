@@ -25,8 +25,9 @@ func InitStore() (*store.Store, error) {
 }
 
 var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
+	logger := log.Scoped("store.batches", "batches store")
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("store.batches", "batches store"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -36,7 +37,7 @@ var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
 		return nil, err
 	}
 
-	return store.New(database.NewDB(db), observationContext, keyring.Default().BatchChangesCredentialKey), nil
+	return store.New(database.NewDB(logger, db), observationContext, keyring.Default().BatchChangesCredentialKey), nil
 })
 
 // InitReconcilerWorkerStore initializes and returns a dbworker.Store instance for the reconciler worker.

@@ -6,6 +6,8 @@ import (
 
 	"github.com/jackc/pgconn"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,13 +86,14 @@ func (r *Runner) runSchema(
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 
-	logger.Info(
-		"Checked current schema state",
-		"schema", schemaContext.schema.Name,
-		"appliedVersions", extractIDs(byState.applied),
-		"pendingVersions", extractIDs(byState.pending),
-		"failedVersions", extractIDs(byState.failed),
+	logger := r.logger.With(
+		log.String("schema", schemaContext.schema.Name),
 	)
+
+	logger.Info("Checked current schema state",
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)))
 
 	// Before we commit to performing an upgrade (which takes locks), determine if there is anything to do
 	// and early out if not. We'll no-op if there are no definitions with pending or failed attempts, and
@@ -98,36 +101,26 @@ func (r *Runner) runSchema(
 
 	if len(byState.pending)+len(byState.failed) == 0 {
 		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
-			logger.Info(
-				"Schema is in the expected state",
-				"schema", schemaContext.schema.Name,
-			)
+			logger.Info("Schema is in the expected state")
 
 			return nil
 		}
 
 		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
-			logger.Info(
-				"Schema is in the expected state",
-				"schema", schemaContext.schema.Name,
-			)
+			logger.Info("Schema is in the expected state")
 
 			return nil
 		}
 	}
 
-	logger.Warn(
-		"Schema not in expected state",
-		"schema", schemaContext.schema.Name,
-		"appliedVersions", extractIDs(byState.applied),
-		"pendingVersions", extractIDs(byState.pending),
-		"failedVersions", extractIDs(byState.failed),
-		"targetDefinitions", extractIDs(definitions),
+	logger.Warn("Schema not in expected state",
+		log.Ints("targetDefinitions", extractIDs(definitions)),
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
-	logger.Info(
-		"Checking for active migrations",
-		"schema", schemaContext.schema.Name,
-	)
+
+	logger.Info("Checking for active migrations")
 
 	for {
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable
@@ -149,10 +142,7 @@ func (r *Runner) runSchema(
 		}
 	}
 
-	logger.Info(
-		"Schema is in the expected state",
-		"schema", schemaContext.schema.Name,
-	)
+	logger.Info("Schema is in the expected state")
 
 	return nil
 }
@@ -182,11 +172,11 @@ func (r *Runner) applyMigrations(
 			return nil
 		}
 
-		logger.Info(
+		r.logger.Info(
 			"Applying migrations",
-			"schema", schemaContext.schema.Name,
-			"up", up,
-			"count", len(definitions),
+			log.String("schema", schemaContext.schema.Name),
+			log.Bool("up", up),
+			log.Int("count", len(definitions)),
 		)
 
 		for _, definition := range definitions {
@@ -239,11 +229,11 @@ func (r *Runner) applyMigration(
 
 	up := operation.Type == MigrationOperationTypeTargetedUp
 
-	logger.Info(
+	r.logger.Info(
 		"Applying migration",
-		"schema", schemaContext.schema.Name,
-		"migrationID", definition.ID,
-		"up", up,
+		log.String("schema", schemaContext.schema.Name),
+		log.Int("migrationID", definition.ID),
+		log.Bool("up", up),
 	)
 
 	applyMigration := func() (err error) {
@@ -374,12 +364,12 @@ pollIndexStatusLoop:
 			}
 		)
 
-		logger.Info(
+		r.logger.Info(
 			"Creating index concurrently",
-			"schema", schemaContext.schema.Name,
-			"migrationID", definition.ID,
-			"tableName", tableName,
-			"indexName", indexName,
+			log.String("schema", schemaContext.schema.Name),
+			log.Int("migrationID", definition.ID),
+			log.String("tableName", tableName),
+			log.String("indexName", indexName),
 		)
 
 		createIndex := func() error {
@@ -393,7 +383,7 @@ pollIndexStatusLoop:
 					}
 
 					if _, _, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName); err != nil {
-						logger.Error("Failed to retrieve index status", "error", err)
+						r.logger.Error("Failed to retrieve index status", log.Error(err))
 					}
 				}
 			}()

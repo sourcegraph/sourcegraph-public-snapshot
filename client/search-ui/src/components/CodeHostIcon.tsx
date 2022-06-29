@@ -1,9 +1,6 @@
 import * as React from 'react'
 
-import { MdiReactIconProps } from 'mdi-react'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -13,20 +10,20 @@ import { Icon, Tooltip } from '@sourcegraph/wildcard'
 export const CodeHostIcon: React.FunctionComponent<
     React.PropsWithChildren<{ repoName: string; className?: string }>
 > = ({ repoName, className }) => {
-    const iconMap: { [key: string]: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>> } = {
-        'github.com': GithubIcon,
-        'gitlab.com': GitlabIcon,
-        'bitbucket.com': BitbucketIcon,
+    const iconMap: { [key: string]: string } = {
+        'github.com': mdiGithub,
+        'gitlab.com': mdiGitlab,
+        'bitbucket.com': mdiBitbucket,
     }
 
     const hostName = repoName.split('/')[0]
 
-    const CodehostIcon: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>> | undefined = iconMap[hostName]
+    const codehostIconPath: string | undefined = iconMap[hostName]
 
-    if (CodehostIcon) {
+    if (codehostIconPath) {
         return (
             <Tooltip content={hostName}>
-                <Icon aria-label={hostName} className={className} as={CodehostIcon} />
+                <Icon aria-label={hostName} className={className} svgPath={codehostIconPath} />
             </Tooltip>
         )
     }

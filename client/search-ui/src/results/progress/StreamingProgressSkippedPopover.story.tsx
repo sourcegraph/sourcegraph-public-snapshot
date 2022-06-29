@@ -1,19 +1,24 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-const { add } = storiesOf('search-ui/results/progress/StreamingProgressSkippedPopover', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+const config: Meta = {
+    title: 'search-ui/results/progress/StreamingProgressSkippedPopover',
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+        },
+        chromatic: { viewports: [350], disableSnapshot: false },
     },
-    chromatic: { viewports: [350], disableSnapshot: false },
-})
+}
 
-add('popover', () => {
+export default config
+
+export const Popover: Story = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -65,9 +70,9 @@ add('popover', () => {
             {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}
         </BrandedStory>
     )
-})
+}
 
-add('only info, all should be closed', () => {
+export const ShouldCloseAllInfo: Story = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -101,9 +106,11 @@ add('only info, all should be closed', () => {
             {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}
         </BrandedStory>
     )
-})
+}
 
-add('only one info, should be open', () => {
+ShouldCloseAllInfo.storyName = 'only info, all should be closed'
+
+export const ShouldOpenOneInfo: Story = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -127,4 +134,6 @@ add('only one info, should be open', () => {
             {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}
         </BrandedStory>
     )
-})
+}
+
+ShouldOpenOneInfo.storyName = 'only one info, should be open'

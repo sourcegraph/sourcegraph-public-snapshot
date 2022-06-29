@@ -39,7 +39,7 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
+        SourcegraphProjectService settings = SourcegraphProjectService.getInstance(project);
         return !mySettingsComponent.getSourcegraphUrl().equals(settings.getSourcegraphUrl())
             || !mySettingsComponent.getAccessToken().equals(settings.getAccessToken())
             || !mySettingsComponent.getDefaultBranchName().equals(settings.getDefaultBranchName())
@@ -51,21 +51,29 @@ public class SettingsConfigurable implements Configurable {
     public void apply() {
         MessageBus bus = project.getMessageBus();
         PluginSettingChangeActionNotifier publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
-        publisher.beforeAction();
 
-        SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
-        settings.url = mySettingsComponent.getSourcegraphUrl();
-        settings.accessToken = mySettingsComponent.getAccessToken();
+        SourcegraphProjectService settings = SourcegraphProjectService.getInstance(project);
+
+        String oldUrl = settings.url;
+        String oldAccessToken = settings.accessToken;
+        String newUrl = mySettingsComponent.getSourcegraphUrl();
+        String newAccessToken = mySettingsComponent.getAccessToken();
+        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken);
+
+        publisher.beforeAction(context);
+
+        settings.url = newUrl;
+        settings.accessToken = newAccessToken;
         settings.defaultBranch = mySettingsComponent.getDefaultBranchName();
         settings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
         settings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
 
-        publisher.afterAction();
+        publisher.afterAction(context);
     }
 
     @Override
     public void reset() {
-        SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
+        SourcegraphProjectService settings = SourcegraphProjectService.getInstance(project);
         mySettingsComponent.setSourcegraphUrl(settings.getSourcegraphUrl() != null ? settings.getSourcegraphUrl() : "https://sourcegraph.com");
         mySettingsComponent.setAccessToken(settings.getAccessToken() != null ? settings.getAccessToken() : "");
         mySettingsComponent.setDefaultBranchName(settings.getDefaultBranchName() != null ? settings.getDefaultBranchName() : "main");

@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -47,7 +49,8 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 }
 
 func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &search.Alert{
