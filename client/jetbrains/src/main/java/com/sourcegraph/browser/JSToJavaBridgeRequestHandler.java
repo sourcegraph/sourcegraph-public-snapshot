@@ -100,7 +100,7 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     arguments = request.getAsJsonObject("arguments");
-                    findPopupPanel.indicateAuthenticationStatus(arguments.get("wasAuthenticationSuccessful").getAsBoolean());
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
                     return createSuccessResponse(null);
                 case "windowClose":
                     ApplicationManager.getApplication().invokeLater(() -> findService.hidePopup());
