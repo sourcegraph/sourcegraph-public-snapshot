@@ -117,5 +117,16 @@ func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Resul
 		return &Text{Value: outputPattern, Kind: "output"}, nil
 	}
 
-	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
+	text, err := output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
+	if err != nil {
+		return nil, err
+	}
+	return enrichTextWithRepoMetadata(text, r), nil
+}
+
+func enrichTextWithRepoMetadata(text *Text, r result.Match) *Text {
+	text.RepositoryID = int32(r.RepoName().ID)
+	text.Repository = string(r.RepoName().Name)
+
+	return text
 }

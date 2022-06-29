@@ -5,6 +5,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 
@@ -40,4 +44,24 @@ func Test_replace(t *testing.T) {
 			SearchPattern:  &Comby{Value: `foo(:[x], :[y])`},
 			ReplacePattern: "foo(:[y], :[x])",
 		}))
+}
+
+func TestRunReplaceRepoMetadata(t *testing.T) {
+	test := func(q string, m result.Match) *Text {
+		defer gitserver.ResetMocks()
+		computeQuery, _ := Parse(q)
+		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
+		if err != nil {
+			t.Error(err)
+		}
+		return res.(*Text)
+	}
+
+	autogold.Want(
+		"verify repo metadata exists",
+		&Text{
+			Value: "abc", Kind: "replace-in-place", RepositoryID: 11,
+			Repository: "my/awesome/repo",
+		}).
+		Equal(t, test(`content:replace(anything -> abc)`, fileMatch("anything")))
 }
