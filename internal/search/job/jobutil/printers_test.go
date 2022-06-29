@@ -226,7 +226,8 @@ func TestPrettyJSON(t *testing.T) {
               "ArchivedSet": false,
               "NoArchived": true,
               "OnlyArchived": false
-            }
+            },
+            "Log": {}
           }
         },
         {
