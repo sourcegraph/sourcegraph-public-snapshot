@@ -1598,7 +1598,7 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	if err != nil {
 		return nil, nil, "", err
 	}
-	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify(), false)
+	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify())
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -1617,10 +1617,9 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	return nil, nil, pattern, nil
 }
 
-// allMatchingStrings returns a complete list of the strings that re
-// matches, if it's possible to determine the list. The "last" argument
-// indicates if this is the last part of the original regexp.
-func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, prefix, suffix []string, err error) {
+// allMatchingStrings returns a complete list of the strings that re matches,
+// if it's possible to determine the list.
+func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
 	switch re.Op {
 	case regexpsyntax.OpEmptyMatch:
 		return []string{""}, nil, nil, nil, nil
@@ -1653,14 +1652,6 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 		}
 		return nil, nil, nil, nil, nil
 
-	case regexpsyntax.OpStar:
-		if len(re.Sub) == 1 && (re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar) {
-			if last {
-				return nil, []string{""}, nil, nil, nil
-			}
-			return nil, nil, nil, nil, nil
-		}
-
 	case regexpsyntax.OpBeginText:
 		return nil, nil, []string{""}, nil, nil
 
@@ -1668,7 +1659,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 		return nil, nil, nil, []string{""}, nil
 
 	case regexpsyntax.OpCapture:
-		return allMatchingStrings(re.Sub0[0], false)
+		return allMatchingStrings(re.Sub0[0])
 
 	case regexpsyntax.OpConcat:
 		var begin, end bool
@@ -1681,11 +1672,16 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 				end = true
 				continue
 			}
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, i == len(re.Sub)-1)
-			if err != nil {
-				return nil, nil, nil, nil, err
+			var subexact, subcontains []string
+			if isDotStar(sub) && i == len(re.Sub)-1 {
+				subcontains = []string{""}
+			} else {
+				subexact, subcontains, _, _, err = allMatchingStrings(sub)
+				if err != nil {
+					return nil, nil, nil, nil, err
+				}
 			}
-			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+			if subexact == nil && subcontains == nil {
 				return nil, nil, nil, nil, nil
 			}
 
@@ -1730,7 +1726,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 
 	case regexpsyntax.OpAlternate:
 		for _, sub := range re.Sub {
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, false)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
 			if err != nil {
 				return nil, nil, nil, nil, err
 			}
@@ -1743,4 +1739,10 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 	}
 
 	return nil, nil, nil, nil, nil
+}
+
+func isDotStar(re *regexpsyntax.Regexp) bool {
+	return re.Op == regexpsyntax.OpStar &&
+		len(re.Sub) == 1 &&
+		(re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar)
 }
