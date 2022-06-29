@@ -147,8 +147,8 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 	}
 
 	// If the subpath includes a wildcard:
-	// - depot: "//app/main/"
-	// - match: "//app/.../file" or "//*/main/..."
+	// - depot: "//depot/main/"
+	// - match: "//depot/.../file" or "//*/main/..."
 	// Then we want to check if it could match this match
 	if !hasPerforceWildcard(match.original) {
 		return false
