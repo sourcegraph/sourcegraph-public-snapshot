@@ -31,7 +31,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
-                        revision: 'main',
+                        revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -53,7 +53,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.sgdev.org/sourcegraph/sourcegraph',
-                        revision: 'main',
+                        revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
