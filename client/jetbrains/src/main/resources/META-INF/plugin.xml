@@ -6,10 +6,11 @@
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
-    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
+        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
+        <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationService"/>
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"
@@ -19,6 +20,7 @@
         />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
+        <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
     </extensions>
 
     <actions>

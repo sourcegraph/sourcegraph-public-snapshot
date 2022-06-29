@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -165,12 +165,12 @@ type IteratePurgableReposOptions struct {
 	// DeletedBefore will filter the deleted repos to only those that were deleted
 	// before the given time. The zero value will not apply filtering.
 	DeletedBefore time.Time
-	// Limit optionally limtits the repos iterated over. The zero value means no
+	// Limit optionally limits the repos iterated over. The zero value means no
 	// limits are applied. Repos are ordered by their deleted at date, oldest first.
 	Limit int
 	// Limiter is an optional rate limiter that limits the rate at which we iterate
 	// through the repos.
-	Limiter *rate.Limiter
+	Limiter *ratelimit.InstrumentedLimiter
 }
 
 // IteratePurgeableRepos iterates over all purgeable repos. These are repos that

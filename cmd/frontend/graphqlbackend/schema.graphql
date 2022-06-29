@@ -1058,6 +1058,17 @@ type RandomizeUserPasswordResult {
 }
 
 """
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
+"""
+enum SurveyUseCase {
+    UNDERSTAND_NEW_CODE
+    FIX_SECURITY_VULNERABILITIES
+    REUSE_CODE
+    RESPOND_TO_INCIDENTS
+    IMPROVE_CODE_QUALITY
+}
+
+"""
 Input for a user satisfaction (NPS) survey submission.
 """
 input SurveySubmissionInput {
@@ -1071,11 +1082,15 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "What is the most important reason for the score you gave".
+    The answer to "You use Sourcegraph to...".
     """
-    reason: String
+    useCases: [SurveyUseCase!]
     """
-    The answer to "What can Sourcegraph do to provide a better product"
+    The answer to "What else do you use Sourcegraph to do?".
+    """
+    otherUseCase: String
+    """
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -1420,6 +1435,11 @@ type Query {
     Retrieve the list of defined feature flags
     """
     featureFlags: [FeatureFlag!]!
+
+    """
+    Retrieve a feature flag
+    """
+    featureFlag(name: String!): FeatureFlag!
 
     """
     Evaluates a feature flag for the current user
@@ -1855,6 +1875,7 @@ enum SearchVersion {
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
@@ -2124,6 +2145,10 @@ type SearchAlert {
     The description.
     """
     description: String
+    """
+    An identifier indicating the kind of alert
+    """
+    kind: String
     """
     "Did you mean: ____" query proposals
     """
@@ -2650,7 +2675,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """
@@ -5964,6 +5989,14 @@ type SurveyResponse {
     The answer to "What can Sourcegraph do to provide a better product"
     """
     better: String
+    """
+    The answer to "You use Sourcegraph to...".
+    """
+    useCases: [SurveyUseCase!]
+    """
+    The answer to "What else do you use Sourcegraph to do?".
+    """
+    otherUseCase: String
     """
     The time when this response was created.
     """

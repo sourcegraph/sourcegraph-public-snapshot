@@ -1,3 +1,10 @@
+.form {
+    display: inline-flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+}
+
 .noncompact {
     margin-bottom: 0.5rem;
 }

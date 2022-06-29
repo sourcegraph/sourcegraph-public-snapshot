@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -47,5 +46,5 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return git.GetCommit(ctx, s.db, repo.Name, commitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(s.db).GetCommit(ctx, repo.Name, commitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 }

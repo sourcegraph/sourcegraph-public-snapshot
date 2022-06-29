@@ -8,7 +8,11 @@ import (
 )
 
 type operations struct {
-	list *observation.Operation
+	list                           *observation.Operation
+	deleteUploadsWithoutRepository *observation.Operation
+	staleSourcedCommits            *observation.Operation
+	deleteSourcedCommits           *observation.Operation
+	updateSourcedCommits           *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +32,10 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		list: op("List"),
+		list:                           op("List"),
+		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
+		staleSourcedCommits:            op("StaleSourcedCommits"),
+		deleteSourcedCommits:           op("DeleteSourcedCommits"),
+		updateSourcedCommits:           op("UpdateSourcedCommits"),
 	}
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -131,7 +132,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return []*gitdomain.Commit{{Committer: &gitdomain.Signature{Date: nearby}}}, nil
 	}
 
-	limiter := rate.NewLimiter(10, 1)
+	limiter := ratelimit.NewInstrumentedLimiter("TestHistoricalEnqueuer", rate.NewLimiter(10, 1))
 
 	stats := make(statistics)
 	analyzer := backfillAnalyzer{

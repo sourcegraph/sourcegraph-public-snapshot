@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -77,6 +79,7 @@ func createMaliciousTgz(t *testing.T) []byte {
 
 func TestNpmCloneCommand(t *testing.T) {
 	dir := t.TempDir()
+	logger := logtest.Scoped(t)
 
 	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
@@ -100,7 +103,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := livedependencies.TestService(database.NewDB(dbtest.NewDB(t)), livedependencies.NewSyncer())
+	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), livedependencies.NewSyncer())
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},

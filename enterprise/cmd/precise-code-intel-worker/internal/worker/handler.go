@@ -101,8 +101,8 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-	db := database.NewDBWith(h.workerStore)
-	repo, err := backend.NewRepos(db).Get(ctx, api.RepoID(upload.RepositoryID))
+	db := database.NewDBWith(logger, h.workerStore)
+	repo, err := backend.NewRepos(logger, db).Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
@@ -238,7 +238,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := backend.NewRepos(db).ResolveRev(ctx, repo, upload.Commit)
+	_, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
 		return false, nil

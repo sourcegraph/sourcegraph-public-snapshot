@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { useState } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent.fixtures'
@@ -146,7 +146,7 @@ export const WithChildren: Story = props => {
                             data-placement="left"
                             variant="icon"
                         >
-                            <Icon aria-hidden={true} as={CloseIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
                 </div>

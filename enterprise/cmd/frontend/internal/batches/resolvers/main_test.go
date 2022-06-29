@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -194,7 +193,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.GetCommit = nil })
+	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {

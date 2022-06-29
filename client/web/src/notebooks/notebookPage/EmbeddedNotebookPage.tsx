@@ -7,11 +7,11 @@ import { catchError, startWith } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { createPlatformContext } from '../../platform/context'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
@@ -20,14 +20,16 @@ import { NotebookContent, NotebookContentProps } from './NotebookContent'
 
 interface EmbeddedNotebookPageProps
     extends Pick<
-        NotebookContentProps,
-        | 'isLightTheme'
-        | 'searchContextsEnabled'
-        | 'showSearchContext'
-        | 'isSourcegraphDotCom'
-        | 'authenticatedUser'
-        | 'settingsCascade'
-    > {
+            NotebookContentProps,
+            | 'isLightTheme'
+            | 'searchContextsEnabled'
+            | 'showSearchContext'
+            | 'isSourcegraphDotCom'
+            | 'authenticatedUser'
+            | 'settingsCascade'
+        >,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     notebookId: string
 }
 
@@ -35,12 +37,11 @@ const LOADING = 'loading' as const
 
 export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
     notebookId,
+    platformContext,
+    extensionsController,
     ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
-
-    const platformContext = useMemo(() => createPlatformContext(), [])
-    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
 
     const notebookOrError = useObservable(
         useMemo(

@@ -8,6 +8,8 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -18,11 +20,12 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
+	logger := logtest.Scoped(t)
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	type args struct {
 		cfg *conf.Unified

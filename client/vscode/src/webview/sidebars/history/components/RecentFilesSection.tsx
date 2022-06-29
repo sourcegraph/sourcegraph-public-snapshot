@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/search'
 import { Icon, Link, H5, useObservable } from '@sourcegraph/wildcard'
@@ -62,7 +61,7 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <H5 className="flex-grow-1">Recent Files</H5>
-                <Icon aria-hidden={true} className="mr-1" as={collapsed ? ChevronLeftIcon : ChevronDownIcon} />
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
             </button>
 
             {!collapsed && (

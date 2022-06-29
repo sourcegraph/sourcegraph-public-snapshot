@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { Container } from '@sourcegraph/wildcard'
@@ -12,17 +12,23 @@ import { SelectedExternalService } from './backend'
 import { buildHeaderMock } from './story/fixtures'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
-const { add } = storiesOf('web/site-admin/webhooks/WebhookLogPageHeader', module)
-    .addDecorator(story => (
-        <Container>
-            <div className="p-3 container">{story()}</div>
-        </Container>
-    ))
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <Container>
+        <div className="p-3 container">{story()}</div>
+    </Container>
+)
+
+const config: Meta = {
+    title: 'web/site-admin/webhooks/WebhookLogPageHeader',
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 // Create a component to handle the minimum state management required for a
 // WebhookLogPageHeader.
@@ -45,7 +51,7 @@ const WebhookLogPageHeaderContainer: React.FunctionComponent<
     )
 }
 
-add('all zeroes', () => (
+export const AllZeroes: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(0, 0)}>
@@ -53,9 +59,11 @@ add('all zeroes', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('external services', () => (
+AllZeroes.storyName = 'all zeroes'
+
+export const ExternalServices: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(10, 0)}>
@@ -63,9 +71,11 @@ add('external services', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('external services and errors', () => (
+ExternalServices.storyName = 'external services'
+
+export const ExternalServicesAndErrors: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
@@ -73,9 +83,11 @@ add('external services and errors', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('only errors turned on', () => (
+ExternalServicesAndErrors.storyName = 'external services and errors'
+
+export const OnlyErrorsTurnedOn: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
@@ -83,9 +95,11 @@ add('only errors turned on', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('specific external service selected', () => (
+OnlyErrorsTurnedOn.storyName = 'only errors turned on'
+
+export const SpecificExternalServiceSelected: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
@@ -95,9 +109,11 @@ add('specific external service selected', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('unmatched external service selected', () => (
+SpecificExternalServiceSelected.storyName = 'specific external service selected'
+
+export const UnmatchedExternalServiceSelected: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
@@ -105,4 +121,6 @@ add('unmatched external service selected', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+UnmatchedExternalServiceSelected.storyName = 'unmatched external service selected'

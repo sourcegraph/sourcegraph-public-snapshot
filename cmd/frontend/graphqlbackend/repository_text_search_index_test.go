@@ -9,17 +9,19 @@ import (
 
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 	defaultBranchRef := "refs/heads/main"
 	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
@@ -31,7 +33,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
 		return []byte(defaultBranchRef), nil, 0, nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
 		repo: NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),

@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -522,7 +523,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
-		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
+		rpsLimiter:       ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	}
 
 	s.StartClonePipeline(ctx)
@@ -530,12 +531,13 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 }
 
 func TestCloneRepo(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -639,9 +641,10 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	logger := logtest.Scoped(t)
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -730,12 +733,13 @@ func TestHandleRepoDeleteWhenDeleteInDB(t *testing.T) {
 }
 
 func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -847,12 +851,13 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 }
 
 func TestHandleRepoUpdate(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -999,6 +1004,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 }
 
 func TestHandleRepoUpdateFromShard(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -1006,7 +1012,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	remote := filepath.Join(reposDirSource, "example.com/foo/bar")
 	os.MkdirAll(remote, 0755)
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -1324,10 +1330,11 @@ func TestHostnameMatch(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) {

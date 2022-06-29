@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // Examples:
@@ -159,9 +158,9 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", contentType)
 			w.Header().Set("Content-Disposition", mime.FormatMediaType("Attachment", map[string]string{"filename": downloadName}))
 
-			format := git.ArchiveFormatZip
+			format := gitserver.ArchiveFormatZip
 			if contentType == applicationXTar {
-				format = git.ArchiveFormatTar
+				format = gitserver.ArchiveFormatTar
 			}
 
 			relativePath := strings.TrimPrefix(requestedPath, "/")
@@ -183,7 +182,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// caching locally is not useful. Additionally we transfer the output over the
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
-			f, err := git.ArchiveReader(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name,
+			f, err := gitserver.NewClient(db).ArchiveReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name,
 				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitserver.Pathspec{gitserver.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err

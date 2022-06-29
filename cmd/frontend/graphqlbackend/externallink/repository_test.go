@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -168,7 +167,7 @@ func TestFileOrDir(t *testing.T) {
 		gitserver.Mocks.GetDefaultBranchShort = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
 			return "mybranch", "", nil
 		}
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 
 		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {

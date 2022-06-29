@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { Observable, of } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -13,19 +13,25 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
-const { add } = storiesOf('search-ui/input/SearchContextMenu', module)
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <div className="dropdown-menu show" style={{ position: 'static' }}>
+        {story()}
+    </div>
+)
+
+const config: Meta = {
+    title: 'search-ui/input/SearchContextMenu',
+    parameters: {
         chromatic: { viewports: [500], disableSnapshot: false },
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/4Fy9rURbfF2bsl4BvYunUO/RFC-261-Search-Contexts?node-id=581%3A4754',
         },
-    })
-    .addDecorator(story => (
-        <div className="dropdown-menu show" style={{ position: 'static' }}>
-            {story()}
-        </div>
-    ))
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 const defaultProps: SearchContextMenuProps = {
     authenticatedUser: null,
@@ -82,18 +88,14 @@ const emptySearchContexts = {
     fetchSearchContexts: mockFetchSearchContexts,
 }
 
-add('default', () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>, {})
+export const Default: Story = () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>
 
-add(
-    'empty',
-    () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</BrandedStory>,
-    {}
+export const Empty: Story = () => (
+    <BrandedStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</BrandedStory>
 )
 
-add(
-    'with manage link',
-    () => (
-        <BrandedStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</BrandedStory>
-    ),
-    {}
+export const WithManageLink: Story = () => (
+    <BrandedStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</BrandedStory>
 )
+
+WithManageLink.storyName = 'with manage link'
