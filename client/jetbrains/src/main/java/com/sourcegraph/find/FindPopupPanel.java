@@ -45,7 +45,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         bottomPanel.add(selectionMetadataPanel, BorderLayout.NORTH);
         bottomPanel.add(previewPanel, BorderLayout.CENTER);
 
-        browserAndLoadingPanel = new BrowserAndLoadingPanel();
+        browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
         JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
         if (browser != null) {
@@ -76,8 +76,13 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return previewPanel;
     }
 
-    public void setBrowserVisible(boolean visible) {
-        browserAndLoadingPanel.setBrowserVisible(visible);
+    public void indicateAuthenticationStatus(boolean authenticated) {
+        browserAndLoadingPanel.setBrowserVisible(authenticated);
+        browserAndLoadingPanel.setLoading(authenticated);
+        if (!authenticated) {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setContent(null);
+        }
     }
 
     public void indicateLoadingIfInTime(@NotNull Date date) {
