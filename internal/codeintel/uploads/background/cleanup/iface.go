@@ -17,7 +17,6 @@ type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 	HardDeleteUploadByID(ctx context.Context, ids ...int) error
@@ -36,6 +35,7 @@ type UploadService interface {
 
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 }
 
 type AutoIndexingService interface {

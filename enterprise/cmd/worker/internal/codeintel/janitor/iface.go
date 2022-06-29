@@ -21,7 +21,6 @@ type DBStore interface {
 	SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
 	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 }

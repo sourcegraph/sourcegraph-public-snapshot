@@ -1297,68 +1297,6 @@ SET reference_count = lu.reference_count
 FROM locked_uploads lu WHERE lu.id = u.id
 `
 
-// SoftDeleteExpiredUploads marks upload records that are both expired and have no references
-// as deleted. The associated repositories will be marked as dirty so that their commit graphs
-// are updated in the near future.
-func (s *Store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err error) {
-	ctx, trace, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// Just in case
-	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
-		log15.Warn("Reference count operations are currently disabled")
-		return 0, nil
-	}
-
-	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
-	defer unset(ctx)
-	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
-	if err != nil {
-		return 0, err
-	}
-
-	for _, numUpdated := range repositories {
-		count += numUpdated
-	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
-
-	for repositoryID := range repositories {
-		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
-			return 0, err
-		}
-	}
-
-	return count, nil
-}
-
-const softDeleteExpiredUploadsQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:SoftDeleteExpiredUploads
-WITH candidates AS (
-	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.state = 'completed' AND u.expired AND u.reference_count = 0
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
-	ORDER BY u.id FOR UPDATE
-),
-updated AS (
-	UPDATE lsif_uploads u
-	SET state = 'deleting'
-	WHERE u.id IN (SELECT id FROM candidates)
-	RETURNING u.id, u.repository_id
-)
-SELECT u.repository_id, count(*) FROM updated u GROUP BY u.repository_id
-`
-
 // GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
 // non-nil values, a false-valued flag is returned.
 func (s *Store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {

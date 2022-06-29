@@ -5,20 +5,61 @@ import (
 	"io"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var _ service = (*Service)(nil)
+
+type service interface {
+	// Not in use yet.
+	List(ctx context.Context, opts ListOpts) (uploads []Upload, err error)
+	Get(ctx context.Context, id int) (upload Upload, ok bool, err error)
+	GetBatch(ctx context.Context, ids ...int) (uploads []Upload, err error)
+	Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error)
+	Delete(ctx context.Context, id int) (err error)
+	CommitsVisibleToUpload(ctx context.Context, id int) (commits []string, err error)
+	UploadsVisibleToCommit(ctx context.Context, commit string) (uploads []Upload, err error)
+
+	// Commits
+	StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
+
+	// Uploads
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []Upload, totalCount int, err error)
+	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
+	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
+	SoftDeleteExpiredUploads(ctx context.Context) (count int, err error)
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+
+	// Repositories
+	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
+	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+
+	// Packages
+	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
+
+	// References
+	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+}
+
 type Service struct {
 	store      store.Store
+	lsifstore  lsifstore.LsifStore
 	operations *operations
 }
 
-func newService(store store.Store, observationCtx *observation.Context) *Service {
+func newService(store store.Store, lsifstore lsifstore.LsifStore, observationCtx *observation.Context) *Service {
 	return &Service{
 		store:      store,
+		lsifstore:  lsifstore,
 		operations: newOperations(observationCtx),
 	}
 }
@@ -34,13 +75,6 @@ func (s *Service) List(ctx context.Context, opts ListOpts) (uploads []Upload, er
 	defer endObservation(1, observation.Args{})
 
 	return s.store.List(ctx, store.ListOpts(opts))
-}
-
-func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteUploadsWithoutRepository(ctx, now)
 }
 
 func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err error) {
@@ -120,13 +154,6 @@ func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, co
 	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, now)
 }
 
-func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
-}
-
 func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []Upload, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -134,4 +161,67 @@ func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions)
 	return s.store.GetUploads(ctx, opts)
 }
 
-func (s *Service) HardDelete()
+func (s *Service) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error) {
+	ctx, _, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateUploadRetention(ctx, protectedIDs, expiredIDs)
+}
+
+func (s *Service) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error) {
+	ctx, _, endObservation := s.operations.updateUploadsReferenceCounts.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateUploadsReferenceCounts(ctx, ids, dependencyUpdateType)
+}
+
+func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (count int, err error) {
+	ctx, _, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SoftDeleteExpiredUploads(ctx)
+}
+
+func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
+}
+
+func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploadsWithoutRepository(ctx, now)
+}
+
+func (s *Service) HardDelete() // TODO
+
+func (s *Service) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRepositoryAsDirty(ctx, repositoryID, tx)
+}
+
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetDirtyRepositories(ctx)
+}
+
+func (s *Service) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
+	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdatePackages(ctx, dumpID, packages)
+}
+
+func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
+	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdatePackageReferences(ctx, dumpID, references)
+}

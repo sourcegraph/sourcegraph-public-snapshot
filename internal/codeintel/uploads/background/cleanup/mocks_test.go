@@ -602,9 +602,6 @@ type MockDBStore struct {
 	// HardDeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method HardDeleteUploadByID.
 	HardDeleteUploadByIDFunc *DBStoreHardDeleteUploadByIDFunc
-	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
-	// controlling the behavior of the method SoftDeleteExpiredUploads.
-	SoftDeleteExpiredUploadsFunc *DBStoreSoftDeleteExpiredUploadsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *DBStoreTransactFunc
@@ -636,11 +633,6 @@ func NewMockDBStore() *MockDBStore {
 		},
 		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, ...int) (r0 error) {
-				return
-			},
-		},
-		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -681,11 +673,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.HardDeleteUploadByID")
 			},
 		},
-		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (int, error) {
-				panic("unexpected invocation of MockDBStore.SoftDeleteExpiredUploads")
-			},
-		},
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: func(context.Context) (DBStore, error) {
 				panic("unexpected invocation of MockDBStore.Transact")
@@ -712,9 +699,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
 			defaultHook: i.HardDeleteUploadByID,
-		},
-		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: i.SoftDeleteExpiredUploads,
 		},
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -1255,114 +1239,6 @@ func (c DBStoreHardDeleteUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// DBStoreSoftDeleteExpiredUploadsFunc describes the behavior when the
-// SoftDeleteExpiredUploads method of the parent MockDBStore instance is
-// invoked.
-type DBStoreSoftDeleteExpiredUploadsFunc struct {
-	defaultHook func(context.Context) (int, error)
-	hooks       []func(context.Context) (int, error)
-	history     []DBStoreSoftDeleteExpiredUploadsFuncCall
-	mutex       sync.Mutex
-}
-
-// SoftDeleteExpiredUploads delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockDBStore) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
-	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
-	m.SoftDeleteExpiredUploadsFunc.appendCall(DBStoreSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// SoftDeleteExpiredUploads method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SoftDeleteExpiredUploads method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) appendCall(r0 DBStoreSoftDeleteExpiredUploadsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreSoftDeleteExpiredUploadsFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) History() []DBStoreSoftDeleteExpiredUploadsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreSoftDeleteExpiredUploadsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreSoftDeleteExpiredUploadsFuncCall is an object that describes an
-// invocation of method SoftDeleteExpiredUploads on an instance of
-// MockDBStore.
-type DBStoreSoftDeleteExpiredUploadsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // DBStoreTransactFunc describes the behavior when the Transact method of
 // the parent MockDBStore instance is invoked.
 type DBStoreTransactFunc struct {
@@ -1875,6 +1751,9 @@ type MockUploadService struct {
 	// object controlling the behavior of the method
 	// DeleteUploadsWithoutRepository.
 	DeleteUploadsWithoutRepositoryFunc *UploadServiceDeleteUploadsWithoutRepositoryFunc
+	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method SoftDeleteExpiredUploads.
+	SoftDeleteExpiredUploadsFunc *UploadServiceSoftDeleteExpiredUploadsFunc
 	// StaleSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method StaleSourcedCommits.
 	StaleSourcedCommitsFunc *UploadServiceStaleSourcedCommitsFunc
@@ -1899,6 +1778,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
+				return
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -1934,6 +1818,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.DeleteUploadsWithoutRepository")
 			},
 		},
+		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockUploadService.SoftDeleteExpiredUploads")
+			},
+		},
 		StaleSourcedCommitsFunc: &UploadServiceStaleSourcedCommitsFunc{
 			defaultHook: func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error) {
 				panic("unexpected invocation of MockUploadService.StaleSourcedCommits")
@@ -1960,6 +1849,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: i.DeleteUploadsWithoutRepository,
+		},
+		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: i.SoftDeleteExpiredUploads,
 		},
 		StaleSourcedCommitsFunc: &UploadServiceStaleSourcedCommitsFunc{
 			defaultHook: i.StaleSourcedCommits,
@@ -2314,6 +2206,115 @@ func (c UploadServiceDeleteUploadsWithoutRepositoryFuncCall) Args() []interface{
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceDeleteUploadsWithoutRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceSoftDeleteExpiredUploadsFunc describes the behavior when the
+// SoftDeleteExpiredUploads method of the parent MockUploadService instance
+// is invoked.
+type UploadServiceSoftDeleteExpiredUploadsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []UploadServiceSoftDeleteExpiredUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// SoftDeleteExpiredUploads delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadService) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
+	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
+	m.SoftDeleteExpiredUploadsFunc.appendCall(UploadServiceSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SoftDeleteExpiredUploads method of the parent MockUploadService instance
+// is invoked and the hook queue is empty.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SoftDeleteExpiredUploads method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) appendCall(r0 UploadServiceSoftDeleteExpiredUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceSoftDeleteExpiredUploadsFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) History() []UploadServiceSoftDeleteExpiredUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceSoftDeleteExpiredUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceSoftDeleteExpiredUploadsFuncCall is an object that describes
+// an invocation of method SoftDeleteExpiredUploads on an instance of
+// MockUploadService.
+type UploadServiceSoftDeleteExpiredUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

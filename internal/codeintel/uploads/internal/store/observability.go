@@ -15,6 +15,13 @@ type operations struct {
 	getUploads                     *observation.Operation
 	deleteUploadsStuckUploading    *observation.Operation
 	deleteUploadsWithoutRepository *observation.Operation
+	softDeleteExpiredUploads       *observation.Operation
+	markRepositoryAsDirty          *observation.Operation
+	dirtyRepositories              *observation.Operation
+	updatePackages                 *observation.Operation
+	updatePackageReferences        *observation.Operation
+	updateUploadRetention          *observation.Operation
+	updateUploadsReferenceCounts   *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,5 +48,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploads:                     op("GetUploads"),
 		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
+		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
+		markRepositoryAsDirty:          op("MarkRepositoryAsDirty"),
+		dirtyRepositories:              op("DirtyRepositories"),
+		updatePackages:                 op("UpdatePackages"),
+		updatePackageReferences:        op("UpdatePackageReferences"),
+		updateUploadRetention:          op("UpdateUploadRetention"),
+		updateUploadsReferenceCounts:   op("UpdateUploadsReferenceCounts"),
 	}
 }

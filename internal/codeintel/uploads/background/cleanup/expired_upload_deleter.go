@@ -7,7 +7,7 @@ import (
 )
 
 func (j *janitor) HandleExpiredUploadDeleter(ctx context.Context) error {
-	count, err := j.dbStore.SoftDeleteExpiredUploads(ctx)
+	count, err := j.uploadSvc.SoftDeleteExpiredUploads(ctx)
 	if err != nil {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}

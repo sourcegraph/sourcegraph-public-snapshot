@@ -55,3 +55,24 @@ type GetUploadsOptions struct {
 	// that we might later mistake for unreachable.
 	InCommitGraph bool
 }
+
+// Package pairs a package schem+name+version with the dump that provides it.
+type Package struct {
+	DumpID  int
+	Scheme  string
+	Name    string
+	Version string
+}
+
+// PackageReference is a package scheme+name+version
+type PackageReference struct {
+	Package
+}
+
+type DependencyReferenceCountUpdateType int
+
+const (
+	DependencyReferenceCountUpdateTypeNone DependencyReferenceCountUpdateType = iota
+	DependencyReferenceCountUpdateTypeAdd
+	DependencyReferenceCountUpdateTypeRemove
+)

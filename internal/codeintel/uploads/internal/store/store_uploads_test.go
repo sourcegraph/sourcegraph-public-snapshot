@@ -91,7 +91,6 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 func TestDeleteUploadsStuckUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	// store := testStore(db)
 	store := New(db, &observation.TestContext)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -134,6 +133,101 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
 		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+	}
+}
+
+// Package pairs a package schem+name+version with the dump that provides it.
+type Package struct {
+	DumpID  int
+	Scheme  string
+	Name    string
+	Version string
+}
+
+// PackageReference is a package scheme+name+version
+type PackageReference struct {
+	Package
+}
+
+func TestSoftDeleteExpiredUploads(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db,
+		shared.Upload{ID: 50, State: "completed"},
+		shared.Upload{ID: 51, State: "completed"},
+		shared.Upload{ID: 52, State: "completed"},
+		shared.Upload{ID: 53, State: "completed"}, // referenced by 51, 52, 54, 55, 56
+		shared.Upload{ID: 54, State: "completed"}, // referenced by 52
+		shared.Upload{ID: 55, State: "completed"}, // referenced by 51
+		shared.Upload{ID: 56, State: "completed"}, // referenced by 52, 53
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
+		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		// References removed
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+
+		// Remaining references
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+	})
+
+	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+
+	if _, err := store.UpdateUploadsReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, shared.DependencyReferenceCountUpdateTypeAdd); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
+	}
+
+	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 2 {
+		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
+	}
+
+	// Ensure records were deleted
+	expectedStates := map[int]string{
+		50: "completed",
+		51: "deleting",
+		52: "deleting",
+		53: "completed",
+		54: "completed",
+		55: "completed",
+		56: "completed",
+	}
+	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
+	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -161,6 +162,38 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedUploadStates, uploadStates); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	}
+}
+
+func TestMarkRepositoryAsDirty(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+	tx := basestore.NewWithHandle(db.Handle())
+
+	for _, id := range []int{50, 51, 52} {
+		insertRepo(t, db, id, "")
+	}
+
+	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
+		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID, tx); err != nil {
+			t.Errorf("unexpected error marking repository as dirty: %s", err)
+		}
+	}
+
+	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if diff := cmp.Diff([]int{50, 51, 52}, keys); diff != "" {
+		t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,19 +24,18 @@ var (
 // new, it will use the given database handle.
 func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
-		storeObservationCtx := &observation.Context{
-			Logger:     log.Scoped("uploads.store", "codeintel uploads store"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
+		oc := func(name string) *observation.Context {
+			return &observation.Context{
+				Logger:     log.Scoped("uploads."+name, "codeintel uploads "+name),
+				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Registerer: prometheus.DefaultRegisterer,
+			}
 		}
-		store := store.New(db, storeObservationCtx)
 
-		observationContext := &observation.Context{
-			Logger:     log.Scoped("uploads.service", "codeintel uploads service"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-		svc = newService(store, observationContext)
+		store := store.New(db, oc("store"))
+		lsifstore := lsifstore.New(db, oc("lsifstore"))
+
+		svc = newService(store, lsifstore, oc("service"))
 	})
 
 	return svc

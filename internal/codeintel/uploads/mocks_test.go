@@ -13,6 +13,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -31,12 +32,21 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// DeleteUploadsWithoutRepository.
 	DeleteUploadsWithoutRepositoryFunc *StoreDeleteUploadsWithoutRepositoryFunc
+	// GetDirtyRepositoriesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetDirtyRepositories.
+	GetDirtyRepositoriesFunc *StoreGetDirtyRepositoriesFunc
 	// GetUploadsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUploads.
 	GetUploadsFunc *StoreGetUploadsFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *StoreListFunc
+	// SetRepositoryAsDirtyFunc is an instance of a mock function object
+	// controlling the behavior of the method SetRepositoryAsDirty.
+	SetRepositoryAsDirtyFunc *StoreSetRepositoryAsDirtyFunc
+	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method SoftDeleteExpiredUploads.
+	SoftDeleteExpiredUploadsFunc *StoreSoftDeleteExpiredUploadsFunc
 	// StaleSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method StaleSourcedCommits.
 	StaleSourcedCommitsFunc *StoreStaleSourcedCommitsFunc
@@ -64,6 +74,11 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (r0 map[int]int, r1 error) {
+				return
+			},
+		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
 			defaultHook: func(context.Context, shared.GetUploadsOptions) (r0 []shared.Upload, r1 int, r2 error) {
 				return
@@ -71,6 +86,16 @@ func NewMockStore() *MockStore {
 		},
 		ListFunc: &StoreListFunc{
 			defaultHook: func(context.Context, store.ListOpts) (r0 []shared.Upload, r1 error) {
+				return
+			},
+		},
+		SetRepositoryAsDirtyFunc: &StoreSetRepositoryAsDirtyFunc{
+			defaultHook: func(context.Context, int, *basestore.Store) (r0 error) {
+				return
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -106,6 +131,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteUploadsWithoutRepository")
 			},
 		},
+		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				panic("unexpected invocation of MockStore.GetDirtyRepositories")
+			},
+		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
 			defaultHook: func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error) {
 				panic("unexpected invocation of MockStore.GetUploads")
@@ -114,6 +144,16 @@ func NewStrictMockStore() *MockStore {
 		ListFunc: &StoreListFunc{
 			defaultHook: func(context.Context, store.ListOpts) ([]shared.Upload, error) {
 				panic("unexpected invocation of MockStore.List")
+			},
+		},
+		SetRepositoryAsDirtyFunc: &StoreSetRepositoryAsDirtyFunc{
+			defaultHook: func(context.Context, int, *basestore.Store) error {
+				panic("unexpected invocation of MockStore.SetRepositoryAsDirty")
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockStore.SoftDeleteExpiredUploads")
 			},
 		},
 		StaleSourcedCommitsFunc: &StoreStaleSourcedCommitsFunc{
@@ -142,11 +182,20 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		DeleteUploadsWithoutRepositoryFunc: &StoreDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: i.DeleteUploadsWithoutRepository,
 		},
+		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
+			defaultHook: i.GetDirtyRepositories,
+		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
 			defaultHook: i.GetUploads,
 		},
 		ListFunc: &StoreListFunc{
 			defaultHook: i.List,
+		},
+		SetRepositoryAsDirtyFunc: &StoreSetRepositoryAsDirtyFunc{
+			defaultHook: i.SetRepositoryAsDirty,
+		},
+		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
+			defaultHook: i.SoftDeleteExpiredUploads,
 		},
 		StaleSourcedCommitsFunc: &StoreStaleSourcedCommitsFunc{
 			defaultHook: i.StaleSourcedCommits,
@@ -499,6 +548,111 @@ func (c StoreDeleteUploadsWithoutRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreGetDirtyRepositoriesFunc describes the behavior when the
+// GetDirtyRepositories method of the parent MockStore instance is invoked.
+type StoreGetDirtyRepositoriesFunc struct {
+	defaultHook func(context.Context) (map[int]int, error)
+	hooks       []func(context.Context) (map[int]int, error)
+	history     []StoreGetDirtyRepositoriesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetDirtyRepositories delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) GetDirtyRepositories(v0 context.Context) (map[int]int, error) {
+	r0, r1 := m.GetDirtyRepositoriesFunc.nextHook()(v0)
+	m.GetDirtyRepositoriesFunc.appendCall(StoreGetDirtyRepositoriesFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetDirtyRepositories
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreGetDirtyRepositoriesFunc) SetDefaultHook(hook func(context.Context) (map[int]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetDirtyRepositories method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreGetDirtyRepositoriesFunc) PushHook(hook func(context.Context) (map[int]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetDirtyRepositoriesFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (map[int]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetDirtyRepositoriesFunc) PushReturn(r0 map[int]int, r1 error) {
+	f.PushHook(func(context.Context) (map[int]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetDirtyRepositoriesFunc) nextHook() func(context.Context) (map[int]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetDirtyRepositoriesFunc) appendCall(r0 StoreGetDirtyRepositoriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetDirtyRepositoriesFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetDirtyRepositoriesFunc) History() []StoreGetDirtyRepositoriesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetDirtyRepositoriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetDirtyRepositoriesFuncCall is an object that describes an
+// invocation of method GetDirtyRepositories on an instance of MockStore.
+type StoreGetDirtyRepositoriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int]int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetDirtyRepositoriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetDirtyRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreGetUploadsFunc describes the behavior when the GetUploads method of
 // the parent MockStore instance is invoked.
 type StoreGetUploadsFunc struct {
@@ -713,6 +867,221 @@ func (c StoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreSetRepositoryAsDirtyFunc describes the behavior when the
+// SetRepositoryAsDirty method of the parent MockStore instance is invoked.
+type StoreSetRepositoryAsDirtyFunc struct {
+	defaultHook func(context.Context, int, *basestore.Store) error
+	hooks       []func(context.Context, int, *basestore.Store) error
+	history     []StoreSetRepositoryAsDirtyFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepositoryAsDirty delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) SetRepositoryAsDirty(v0 context.Context, v1 int, v2 *basestore.Store) error {
+	r0 := m.SetRepositoryAsDirtyFunc.nextHook()(v0, v1, v2)
+	m.SetRepositoryAsDirtyFunc.appendCall(StoreSetRepositoryAsDirtyFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetRepositoryAsDirty
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreSetRepositoryAsDirtyFunc) SetDefaultHook(hook func(context.Context, int, *basestore.Store) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepositoryAsDirty method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreSetRepositoryAsDirtyFunc) PushHook(hook func(context.Context, int, *basestore.Store) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSetRepositoryAsDirtyFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, *basestore.Store) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSetRepositoryAsDirtyFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, *basestore.Store) error {
+		return r0
+	})
+}
+
+func (f *StoreSetRepositoryAsDirtyFunc) nextHook() func(context.Context, int, *basestore.Store) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSetRepositoryAsDirtyFunc) appendCall(r0 StoreSetRepositoryAsDirtyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSetRepositoryAsDirtyFuncCall objects
+// describing the invocations of this function.
+func (f *StoreSetRepositoryAsDirtyFunc) History() []StoreSetRepositoryAsDirtyFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSetRepositoryAsDirtyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSetRepositoryAsDirtyFuncCall is an object that describes an
+// invocation of method SetRepositoryAsDirty on an instance of MockStore.
+type StoreSetRepositoryAsDirtyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *basestore.Store
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSetRepositoryAsDirtyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSetRepositoryAsDirtyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreSoftDeleteExpiredUploadsFunc describes the behavior when the
+// SoftDeleteExpiredUploads method of the parent MockStore instance is
+// invoked.
+type StoreSoftDeleteExpiredUploadsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []StoreSoftDeleteExpiredUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// SoftDeleteExpiredUploads delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
+	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
+	m.SoftDeleteExpiredUploadsFunc.appendCall(StoreSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SoftDeleteExpiredUploads method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SoftDeleteExpiredUploads method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSoftDeleteExpiredUploadsFunc) appendCall(r0 StoreSoftDeleteExpiredUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSoftDeleteExpiredUploadsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreSoftDeleteExpiredUploadsFunc) History() []StoreSoftDeleteExpiredUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSoftDeleteExpiredUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSoftDeleteExpiredUploadsFuncCall is an object that describes an
+// invocation of method SoftDeleteExpiredUploads on an instance of
+// MockStore.
+type StoreSoftDeleteExpiredUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
