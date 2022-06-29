@@ -5,7 +5,9 @@ import (
 )
 
 func NewWithStreaming[T any]() StreamGroup[T] {
-	return &streamGroup[T]{}
+	return &streamGroup[T]{
+		os: newOrderedStreamer[T](),
+	}
 }
 
 type StreamGroup[T any] interface {
@@ -24,30 +26,36 @@ type ErrorStreamGroup[T any] interface {
 }
 
 type streamGroup[T any] struct {
-	orderedStreamer[T]
+	os orderedStreamer[T]
 }
 
 func (g *streamGroup[T]) Go(first func() T, then func(T)) {
-	g.orderedStreamer.submit(funcPair[T]{first, then})
+	g.os.submit(funcPair[T]{first, then})
+}
+
+func (g *streamGroup[T]) Wait() {
+	g.os.wait()
 }
 
 func (g *streamGroup[T]) WithErrors() ErrorStreamGroup[T] {
-	return &errorStreamGroup[T]{}
+	return &errorStreamGroup[T]{
+		os: newOrderedStreamer[resultPair[T]](),
+	}
 }
 
 func (g *streamGroup[T]) WithLimit(limit int) StreamGroup[T] {
-	g.Group = g.Group.WithLimit(limit)
-	g.orderedStreamer.resChans = make(chan chan streamEvent[T])
+	g.os.group = g.os.group.WithLimit(limit)
+	g.os.resChans = make(chan chan streamEvent[T])
 	return g
 }
 
 func (g *streamGroup[T]) WithLimiter(limiter Limiter) StreamGroup[T] {
-	g.Group = g.Group.WithLimiter(limiter)
+	g.os.group = g.os.group.WithLimiter(limiter)
 	return g
 }
 
 type errorStreamGroup[T any] struct {
-	orderedStreamer[resultPair[T]]
+	os orderedStreamer[resultPair[T]]
 }
 
 type resultPair[T any] struct {
@@ -65,22 +73,36 @@ func (g *errorStreamGroup[T]) Go(first func() (T, error), then func(T, error)) {
 		then(pair.res, pair.err)
 	}
 
-	g.orderedStreamer.submit(funcPair[resultPair[T]]{pairedFirst, pairedThen})
+	g.os.submit(funcPair[resultPair[T]]{pairedFirst, pairedThen})
+}
+
+func (g *errorStreamGroup[T]) Wait() {
+	g.os.wait()
 }
 
 func (g *errorStreamGroup[T]) WithLimit(limit int) ErrorStreamGroup[T] {
-	g.Group = g.Group.WithLimit(limit)
-	g.orderedStreamer.resChans = make(chan chan streamEvent[resultPair[T]])
+	g.os.group = g.os.group.WithLimit(limit)
 	return g
 }
 
 func (g *errorStreamGroup[T]) WithLimiter(limiter Limiter) ErrorStreamGroup[T] {
-	g.Group = g.Group.WithLimiter(limiter)
+	g.os.group = g.os.group.WithLimiter(limiter)
 	return g
 }
 
+func newOrderedStreamer[T any]() orderedStreamer[T] {
+	return orderedStreamer[T]{
+		group: New(),
+		// Set reasonably high default limit on the output channel by default.
+		// This doesn't limit the max goroutines, it just limits the number of
+		// goroutines waiting for their results to be handled.
+		resChans:    make(chan chan streamEvent[T], 32),
+		handlerDone: make(chan struct{}),
+	}
+}
+
 type orderedStreamer[T any] struct {
-	Group
+	group    Group
 	resChans chan chan streamEvent[T]
 
 	handlerOnce sync.Once
@@ -98,24 +120,18 @@ type funcPair[T any] struct {
 }
 
 func (o *orderedStreamer[T]) submit(funcs funcPair[T]) {
-	o.init()
+	o.initOnce()
 
 	resChan := make(chan streamEvent[T], 1)
 	o.resChans <- resChan
 
-	o.Group.Go(func() {
+	o.group.Go(func() {
 		resChan <- streamEvent[T]{funcs.first(), funcs.then}
 	})
 }
 
-func (o *orderedStreamer[T]) init() {
+func (o *orderedStreamer[T]) initOnce() {
 	o.handlerOnce.Do(func() {
-		if o.resChans == nil { // may be set by limit
-			// Set reasonably high limit on the output channel by default.
-			// Since callbacks shoudn't take as much time as the parallelized
-			// funcs, this should be fine.
-			o.resChans = make(chan chan streamEvent[T], 32)
-		}
 		go func() {
 			defer close(o.handlerDone)
 
@@ -129,6 +145,6 @@ func (o *orderedStreamer[T]) init() {
 
 func (g *orderedStreamer[T]) wait() {
 	close(g.resChans)
-	g.Group.Wait()
+	g.group.Wait()
 	<-g.handlerDone
 }

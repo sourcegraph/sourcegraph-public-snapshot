@@ -127,10 +127,10 @@ func (g *group) goCtx(ctx context.Context, f func()) error {
 
 	g.wg.Add(1)
 	go func() {
+		defer release()
+		defer g.wg.Done()
 		// TODO add panic handlers
 		f()
-		g.wg.Done()
-		release()
 	}()
 
 	return nil
