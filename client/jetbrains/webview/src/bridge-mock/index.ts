@@ -137,6 +137,12 @@ function handleRequest(
             break
         }
 
+        case 'windowClose': {
+            console.log('Closing window')
+            onSuccessCallback('null')
+            break
+        }
+
         default: {
             const exhaustiveCheck: never = action
             onFailureCallback(2, `Unknown action: ${exhaustiveCheck as string}`)
