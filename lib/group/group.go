@@ -23,7 +23,7 @@ func New() Group {
 // with Go(), and waits for them to finish with Wait().
 type Group interface {
 	// Go starts a background goroutine. It will not return
-	// until the goroutine has started.
+	// until the goroutine has been started.
 	Go(func())
 
 	// Wait blocks until all goroutines started with Go() have completed
