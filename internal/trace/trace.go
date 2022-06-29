@@ -30,6 +30,9 @@ func New(ctx context.Context, family, title string, tags ...Tag) (*Trace, contex
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
 func (t *Trace) LazyPrintf(format string, a ...any) {
+	if t == nil {
+		return
+	}
 	t.otSpan.LogFields(Printf("log", format, a...))
 	t.trace.LazyPrintf(format, a...)
 }
@@ -37,6 +40,9 @@ func (t *Trace) LazyPrintf(format string, a ...any) {
 // LogFields logs fields to the opentracing.Span
 // as well as the nettrace.Trace.
 func (t *Trace) LogFields(fields ...log.Field) {
+	if t == nil {
+		return
+	}
 	t.otSpan.LogFields(fields...)
 	t.trace.LazyLog(fieldsStringer(fields), false)
 }
@@ -44,6 +50,9 @@ func (t *Trace) LogFields(fields ...log.Field) {
 // TagFields adds fields to the opentracing.Span as tags
 // as well as as logs to the nettrace.Trace.
 func (t *Trace) TagFields(fields ...log.Field) {
+	if t == nil {
+		return
+	}
 	enc := spanTagEncoder{Span: t.otSpan}
 	for _, field := range fields {
 		field.Marshal(&enc)
@@ -53,12 +62,18 @@ func (t *Trace) TagFields(fields ...log.Field) {
 
 // SetTag lets Trace implement opentrace.Span.SetTag
 func (t *Trace) SetTag(key string, value interface{}) {
+	if t == nil {
+		return
+	}
 	t.otSpan.SetTag(key, value)
 	t.trace.LazyPrintf("%s: %v", key, value)
 }
 
 // SetError declares that this trace and span resulted in an error.
 func (t *Trace) SetError(err error) {
+	if t == nil {
+		return
+	}
 	if err == nil {
 		return
 	}
@@ -71,6 +86,9 @@ func (t *Trace) SetError(err error) {
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
 // context.DeadlineExceeded.
 func (t *Trace) SetErrorIfNotContext(err error) {
+	if t == nil {
+		return
+	}
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		t.trace.LazyPrintf("error: %v", err)
 		t.otSpan.LogFields(log.Error(err))
@@ -82,6 +100,9 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 // Finish declares that this trace and span is complete.
 // The trace should not be used after calling this method.
 func (t *Trace) Finish() {
+	if t == nil {
+		return
+	}
 	t.trace.Finish()
 	t.otSpan.Finish()
 }
