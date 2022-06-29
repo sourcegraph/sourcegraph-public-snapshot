@@ -2,7 +2,7 @@ import React, { createRef, useCallback, useEffect, useMemo, useState } from 'rea
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { isJetBrainsDropdownOpen } from '../GlobalKeyboardListeners'
+import { isAnyDropdownOpen } from '../GlobalKeyboardListeners'
 
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
@@ -89,7 +89,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             // Ignore events when the autocomplete dropdown is open
-            if (isJetBrainsDropdownOpen()) {
+            if (isAnyDropdownOpen()) {
                 return
             }
 

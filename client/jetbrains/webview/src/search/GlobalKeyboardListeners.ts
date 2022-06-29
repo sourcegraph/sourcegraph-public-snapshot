@@ -7,7 +7,7 @@ const CAPTURE_PHASE = { capture: true }
 export const GlobalKeyboardListeners: React.FunctionComponent<{}> = () => {
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         if (event.key === 'Escape' && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey) {
-            if (isJetBrainsDropdownOpen()) {
+            if (isAnyDropdownOpen()) {
                 return
             }
 
@@ -18,7 +18,7 @@ export const GlobalKeyboardListeners: React.FunctionComponent<{}> = () => {
     }, [])
 
     useEffect(() => {
-        // We're adding listeners to the capture phase to be able to exermine the dropdown status before the event is
+        // We're adding listeners to the capture phase to be able to examine the dropdown status before the event is
         // propagated and the dropdown is closed.
         document.addEventListener('keydown', handleKeyDown, CAPTURE_PHASE)
         return () => document.removeEventListener('keydown', handleKeyDown, CAPTURE_PHASE)
@@ -27,8 +27,8 @@ export const GlobalKeyboardListeners: React.FunctionComponent<{}> = () => {
     return null
 }
 
-// CodeMirror does not prevent bubbeling of the escape keyboard event so we need to check if the dropdown are open.
-export function isJetBrainsDropdownOpen(): boolean {
+// CodeMirror does not prevent bubbling of the escape keyboard event so we need to check if any dropdown is open.
+export function isAnyDropdownOpen(): boolean {
     const isCodeMirrorDropdownOpen = document.querySelector('.cm-tooltip-autocomplete') !== null
     const isSearchContextDropdownOpen = document.querySelector('.jb-search-context-dropdown.show') !== null
     return isCodeMirrorDropdownOpen || isSearchContextDropdownOpen

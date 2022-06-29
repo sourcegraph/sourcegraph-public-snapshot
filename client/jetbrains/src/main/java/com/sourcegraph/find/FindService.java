@@ -55,7 +55,7 @@ public class FindService implements Disposable {
             popup = new FindPopupDialog(project, mainPanel);
 
             // We add a manual listener to the global key handler since the editor component seems to work around the
-            // default swing event handler.
+            // default Swing event handler.
             registerGlobalKeyListeners();
 
             // We also need to detect when the main IDE frame or another popup inside the project gets focus and close
