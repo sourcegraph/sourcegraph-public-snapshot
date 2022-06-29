@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { AnchorLink } from '../Link'
+import VisuallyHidden from '@reach/visually-hidden'
 
 import { useSkipLinkContext } from './SkipLinkProvider'
 
@@ -12,7 +12,7 @@ export interface SkipLinkState {
     /**
      * Name to display to the user at the top of the page.
      */
-    name: `Skip to ${string}`
+    name: string
 }
 
 interface SkipLinkProps extends SkipLinkState {
@@ -51,5 +51,9 @@ export const SkipLink: React.FunctionComponent<SkipLinkProps> = ({ id, name, ren
         return null
     }
 
-    return <AnchorLink id={id} to={`#${id}`} aria-hidden={true} tabIndex={-1} className="invisible" />
+    return (
+        <VisuallyHidden>
+            <span id={id}>Start of {name}</span>
+        </VisuallyHidden>
+    )
 }

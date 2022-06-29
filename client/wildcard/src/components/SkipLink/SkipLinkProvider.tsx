@@ -43,7 +43,7 @@ export const SkipLinkProvider: React.FunctionComponent = ({ children }) => {
                         {links.map((link, index) => (
                             <li key={link.id}>
                                 <Button variant="secondary" as={AnchorLink} to={`#${link.id}`} className={styles.link}>
-                                    {link.name}
+                                    Skip to {link.name}
                                 </Button>
                             </li>
                         ))}

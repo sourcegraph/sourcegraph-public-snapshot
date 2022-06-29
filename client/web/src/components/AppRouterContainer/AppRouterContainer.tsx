@@ -20,7 +20,7 @@ export const AppRouterContainer: React.FunctionComponent<React.PropsWithChildren
             from child levels in order to handle or react on this container scroll or other important events.
          */}
         <main data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
-            <SkipLink id="skip-to-content" name="Skip to content" />
+            <SkipLink id="skip-to-content" name="content" />
             {children}
         </main>
     </ElementScroller>
