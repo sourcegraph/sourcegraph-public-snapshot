@@ -391,9 +391,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 					srp.PathIncludes = nil
 				}
 
-				if len(srp.PathIncludes) > 0 {
-					srp.PathExcludes = append(srp.PathExcludes, match.pattern)
-				}
+				srp.PathExcludes = append(srp.PathExcludes, match.pattern)
 
 				var i int
 				for _, include := range srp.PathIncludes {
