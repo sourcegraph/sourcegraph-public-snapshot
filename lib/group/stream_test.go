@@ -63,22 +63,6 @@ func TestStreamGroup(t *testing.T) {
 	})
 }
 
-func BenchmarkParallelOrdered(b *testing.B) {
-	for _, size := range []int{1, 100, 10000} {
-		for _, parallelism := range []int{1, 4, 8, 16, 32} {
-			b.Run(fmt.Sprintf("%d_tasks_%d_workers", size, parallelism), func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					g := NewParallelOrdered(parallelism, func(int) {})
-					for j := 0; j < size; j++ {
-						g.Submit(func() int { return 1 })
-					}
-					g.Done()
-				}
-			})
-		}
-	}
-}
-
 func BenchmarkStreamGroup(b *testing.B) {
 	for _, size := range []int{1, 100, 10000} {
 		for _, parallelism := range []int{1, 4, 8, 16, 32} {
