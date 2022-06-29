@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -397,7 +398,7 @@ func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
-func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) any {
+func (s *UpdateScheduler) DebugDump(ctx context.Context, esStore debugserver.ExternalServicesStore) any {
 	data := struct {
 		Name        string
 		UpdateQueue []*repoUpdate
@@ -446,7 +447,7 @@ func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) any {
 	}
 
 	var err error
-	data.SyncJobs, err = db.ExternalServices().GetSyncJobs(ctx)
+	data.SyncJobs, err = esStore.GetSyncJobs(ctx)
 	if err != nil {
 		s.logger.Warn("getting external service sync jobs for debug page", log.Error(err))
 	}

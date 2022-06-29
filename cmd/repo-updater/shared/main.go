@@ -13,7 +13,6 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/golang/gddo/httputil"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -59,7 +58,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) map[string]debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -159,7 +158,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	// All dependencies ready
-	var debugDumpers []debugserver.Dumper
+	debugDumpers := make(map[string]debugserver.Dumper)
 	if enterpriseInit != nil {
 		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
 	}
@@ -230,7 +229,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	globals.WatchExternalURL(nil)
 
-	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(db, updateScheduler, debugDumpers)
+	debugDumpers["repos"] = updateScheduler
+	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(db, debugDumpers)
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
 	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
@@ -413,44 +413,20 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 	}
 }
 
-func repoUpdaterStatsHandler(db database.DB, scheduler *repos.UpdateScheduler, debugDumpers []debugserver.Dumper) http.HandlerFunc {
+func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver.Dumper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dumps := []any{
-			scheduler.DebugDump(r.Context(), db),
-		}
-		for _, dumper := range debugDumpers {
-			dumps = append(dumps, dumper.DebugDump())
-		}
+		wantDumper := r.URL.Query().Get("dumper")
+		wantFormat := r.URL.Query().Get("format")
 
-		const (
-			textPlain       = "text/plain"
-			applicationJson = "application/json"
-		)
-
-		// Negotiate the content type.
-		contentTypeOffers := []string{textPlain, applicationJson}
-		defaultOffer := textPlain
-		contentType := httputil.NegotiateContentType(r, contentTypeOffers, defaultOffer)
-
-		// Allow users to override the negotiated content type so that e.g. browser
-		// users can easily request json by adding ?format=json to
-		// the URL.
-		switch r.URL.Query().Get("format") {
-		case "json":
-			contentType = applicationJson
-		}
-
-		switch contentType {
-		case applicationJson:
-			p, err := json.MarshalIndent(dumps, "", "  ")
-			if err != nil {
-				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
+		// Showing the HTML version of repository syncing schedule as the default,
+		// also the only dumper that supports rendering the HTML version.
+		if (wantDumper == "" || wantDumper == "repos") && wantFormat != "json" {
+			reposDumper, ok := debugDumpers["repos"].(*repos.UpdateScheduler)
+			if !ok {
+				http.Error(w, "No debug dumper for repos found", http.StatusInternalServerError)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(p)
 
-		default:
 			// This case also applies for defaultOffer. Note that this is preferred
 			// over e.g. a 406 status code, according to the MDN:
 			// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
@@ -460,12 +436,29 @@ func repoUpdaterStatsHandler(db database.DB, scheduler *repos.UpdateScheduler, d
 				},
 			})
 			template.Must(tmpl.Parse(stateHTMLTemplate))
-			err := tmpl.Execute(w, dumps)
+			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context(), db.ExternalServices()))
 			if err != nil {
-				http.Error(w, "failed to render template: "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+			return
 		}
+
+		var dumps []any
+		for name, dumper := range debugDumpers {
+			if wantDumper != "" && wantDumper != name {
+				continue
+			}
+			dumps = append(dumps, dumper.DebugDump(r.Context(), db.ExternalServices()))
+		}
+
+		p, err := json.MarshalIndent(dumps, "", "  ")
+		if err != nil {
+			http.Error(w, "Failed to marshal dumps: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(p)
 	}
 }
 
