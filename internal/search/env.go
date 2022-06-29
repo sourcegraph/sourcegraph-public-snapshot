@@ -35,6 +35,8 @@ var (
 	indexersOnce sync.Once
 	indexers     *backend.Indexers
 
+	logger log.Logger
+
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
 		if ttl == 0 {
@@ -47,7 +49,7 @@ var (
 		return ttl
 	}()
 
-	indexedDialer = backend.NewCachedZoektDialer(log.Scoped("NewCachedZoektDialer", ""), func(logger log.Logger, endpoint string) zoekt.Streamer {
+	indexedDialer = backend.NewCachedZoektDialer(logger, func(logger log.Logger, endpoint string) zoekt.Streamer {
 		return backend.NewCachedSearcher(indexedListTTL, backend.ZoektDial(logger, endpoint))
 	})
 )
@@ -130,9 +132,9 @@ func getEnv(environ []string, key string) (string, bool) {
 	return "", false
 }
 
-func reposAtEndpoint(dial func(log.Logger, string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
-	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
-		cl := dial(log.Scoped("reposAtEndpoint", ""), endpoint)
+func reposAtEndpoint(dial func(log.Logger, string) zoekt.Streamer) func(context.Context, log.Logger, string) map[uint32]*zoekt.MinimalRepoListEntry {
+	return func(ctx context.Context, logger log.Logger, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+		cl := dial(logger, endpoint)
 
 		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 		if err != nil {

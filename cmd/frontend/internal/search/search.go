@@ -55,6 +55,7 @@ type streamHandler struct {
 	searchClient        client.SearchClient
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
+	log                 log.Logger
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +128,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		Limit:        limit,
 		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 		DisplayLimit: displayLimit,
-		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
+		RepoNamer:    streamclient.RepoNamer(ctx, h.log, h.db),
 	}
 
 	var wgLogLatency sync.WaitGroup

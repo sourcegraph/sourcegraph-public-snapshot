@@ -69,7 +69,7 @@ type searchIndexerServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
+		ReposSubset(ctx context.Context, logger log.Logger, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -243,7 +243,7 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 			}
 		}
 
-		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)
+		indexable, err = h.Indexers.ReposSubset(r.Context(), h.log, opt.Hostname, indexed, indexable)
 		if err != nil {
 			return err
 		}

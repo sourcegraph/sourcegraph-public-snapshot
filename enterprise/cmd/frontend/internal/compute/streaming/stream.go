@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -35,6 +37,7 @@ type streamHandler struct {
 	db                  database.DB
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
+	log                 log.Logger
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +65,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	progress := &streamclient.ProgressAggregator{
 		Start:     start,
-		RepoNamer: streamclient.RepoNamer(ctx, h.db),
+		RepoNamer: streamclient.RepoNamer(ctx, h.log, h.db),
 		Trace:     trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 	}
 
