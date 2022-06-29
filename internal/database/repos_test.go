@@ -79,6 +79,12 @@ func TestParseIncludePattern(t *testing.T) {
 			exact: []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/sourcegraph-atom"},
 		},
 
+		// Ensure we don't lose foo/.*. In the past we returned exact for bar only.
+		`(^foo/.+$|^bar$)`:     {regexp: `(^foo/.+$|^bar$)`},
+		`^foo/.+$|^bar$`:       {regexp: `^foo/.+$|^bar$`},
+		`((^foo/.+$)|(^bar$))`: {regexp: `((^foo/.+$)|(^bar$))`},
+		`((^foo/.+)|(^bar$))`:  {regexp: `((^foo/.+)|(^bar$))`},
+
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {
 			exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"},
 		},

@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- A bug where some complex `repo:` regexes only returned a subset of repository results. [#37925](https://github.com/sourcegraph/sourcegraph/pull/37925)
 
 ### Removed
 

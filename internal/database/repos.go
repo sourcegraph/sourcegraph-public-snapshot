@@ -1676,9 +1676,13 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 			if isDotStar(sub) && i == len(re.Sub)-1 {
 				subcontains = []string{""}
 			} else {
-				subexact, subcontains, _, _, err = allMatchingStrings(sub)
+				var subprefix, subsuffix []string
+				subexact, subcontains, subprefix, subsuffix, err = allMatchingStrings(sub)
 				if err != nil {
 					return nil, nil, nil, nil, err
+				}
+				if subprefix != nil || subsuffix != nil {
+					return nil, nil, nil, nil, nil
 				}
 			}
 			if subexact == nil && subcontains == nil {
@@ -1729,6 +1733,10 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
 			if err != nil {
 				return nil, nil, nil, nil, err
+			}
+			// If we don't understand one sub expression, we give up.
+			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+				return nil, nil, nil, nil, nil
 			}
 			exact = append(exact, subexact...)
 			contains = append(contains, subcontains...)
