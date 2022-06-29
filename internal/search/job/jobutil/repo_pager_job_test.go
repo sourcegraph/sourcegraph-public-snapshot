@@ -47,7 +47,8 @@ func Test_setRepos(t *testing.T) {
               },
               "Revs": null
             }
-          }
+          },
+          "Log": {}
         },
         "Query": null,
         "Typ": "",
