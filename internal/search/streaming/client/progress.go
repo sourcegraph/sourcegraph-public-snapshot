@@ -1,4 +1,4 @@
-package search
+package client
 
 import (
 	"sort"
@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 )
 
-type progressAggregator struct {
+type ProgressAggregator struct {
 	Start        time.Time
 	MatchCount   int
 	Stats        streaming.Stats
@@ -24,7 +24,7 @@ type progressAggregator struct {
 	Dirty bool
 }
 
-func (p *progressAggregator) Update(event streaming.SearchEvent) {
+func (p *ProgressAggregator) Update(event streaming.SearchEvent) {
 	if len(event.Results) == 0 && event.Stats.Zero() {
 		return
 	}
@@ -51,7 +51,7 @@ func (p *progressAggregator) Update(event streaming.SearchEvent) {
 	}
 }
 
-func (p *progressAggregator) currentStats() api.ProgressStats {
+func (p *ProgressAggregator) currentStats() api.ProgressStats {
 	// Suggest the next 1000 after rounding off.
 	suggestedLimit := (p.Limit + 1500) / 1000 * 1000
 
@@ -71,7 +71,7 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 }
 
 // Current returns the current progress event.
-func (p *progressAggregator) Current() api.Progress {
+func (p *ProgressAggregator) Current() api.Progress {
 	p.Dirty = false
 
 	return api.BuildProgressEvent(p.currentStats(), p.RepoNamer)
@@ -79,7 +79,7 @@ func (p *progressAggregator) Current() api.Progress {
 
 // Final returns the current progress event, but with final fields set to
 // indicate it is the last progress event.
-func (p *progressAggregator) Final() api.Progress {
+func (p *ProgressAggregator) Final() api.Progress {
 	p.Dirty = false
 
 	s := p.currentStats()

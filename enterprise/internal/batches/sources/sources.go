@@ -463,3 +463,43 @@ func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo 
 	// parsedU.User = nil
 	return cloneURL.String(), nil
 }
+
+var ErrChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
+
+// GetRemoteRepo returns the remote that should be pushed to for a given
+// changeset, changeset source, and target repo. The changeset spec may
+// optionally be provided, and is required if the repo will be pushed to.
+func GetRemoteRepo(
+	ctx context.Context,
+	css ChangesetSource,
+	targetRepo *types.Repo,
+	ch *btypes.Changeset,
+	spec *btypes.ChangesetSpec,
+) (*types.Repo, error) {
+	// If the changeset spec doesn't expect a fork _and_ we're not updating a
+	// changeset that was previously created using a fork, then we don't need to
+	// even check if the changeset source is forkable, let alone set up the
+	// remote repo: we can just return the target repo and be done with it.
+	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
+		return targetRepo, nil
+	}
+
+	fss, ok := css.(ForkableChangesetSource)
+	if !ok {
+		return nil, ErrChangesetSourceCannotFork
+	}
+
+	if ch.ExternalForkNamespace != "" {
+		// If we're updating an existing changeset, we should push/modify the
+		// same fork, even if the user credential would now fork into a
+		// different namespace.
+		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+	} else if namespace := spec.GetForkNamespace(); namespace != nil {
+		// If the changeset spec requires a specific fork namespace, then we
+		// should handle that here.
+		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
+	}
+
+	// Otherwise, we're pushing to a user fork.
+	return fss.GetUserFork(ctx, targetRepo)
+}

@@ -55,7 +55,11 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
             </span>
             <span className={styles.spacer} />
-            <Link to={getCommitMatchUrl(result)}>
+            {/*
+                Relative positioning needed needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
+                Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+            */}
+            <Link to={getCommitMatchUrl(result)} className="position-relative">
                 <Code className={styles.commitOid}>
                     <VisuallyHidden>Commit hash:</VisuallyHidden>
                     {result.oid.slice(0, 7)}

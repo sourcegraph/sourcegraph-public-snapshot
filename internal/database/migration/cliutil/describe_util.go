@@ -18,7 +18,7 @@ func getOutput(out *output.Output, filename string, force, noColor bool) (_ io.W
 	if filename == "" {
 		writeFunc := out.WriteMarkdown
 		if noColor {
-			writeFunc = func(s string) error {
+			writeFunc = func(s string, opts ...output.MarkdownStyleOpts) error {
 				out.Write(s)
 				return nil
 			}
@@ -41,7 +41,7 @@ func getOutput(out *output.Output, filename string, force, noColor bool) (_ io.W
 
 // outputWriter is an io.WriteCloser over a single write method.
 type outputWriter struct {
-	write func(string) error
+	write func(s string, opts ...output.MarkdownStyleOpts) error
 }
 
 func (w *outputWriter) Write(b []byte) (int, error) {

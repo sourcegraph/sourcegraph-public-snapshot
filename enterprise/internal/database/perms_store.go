@@ -107,6 +107,13 @@ type PermsStore interface {
 	// permissions when we can't sync permissions for the repository (e.g. due to
 	// insufficient permissions of the access token).
 	TouchRepoPermissions(ctx context.Context, repoID int32) error
+	// TouchUserPermissions only updates the value of both `updated_at` and
+	// `synced_at` columns of the `user_permissions` table without modifying the
+	// permissions. It inserts a new row when the row does not yet exist. The use
+	// case is to trick the scheduler to skip the repository for syncing permissions
+	// when we can't sync permissions for the user (e.g. due to insufficient
+	// permissions of the access token).
+	TouchUserPermissions(ctx context.Context, userID int32) error
 	// LoadUserPendingPermissions returns pending permissions found by given
 	// parameters. An ErrPermsNotFound is returned when there are no pending
 	// permissions available.
@@ -670,6 +677,31 @@ DO UPDATE SET
 `, repoID, perm, touchedAt, touchedAt)
 	if err = s.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions query")
+	}
+	return nil
+}
+
+func (s *permsStore) TouchUserPermissions(ctx context.Context, userID int32) (err error) {
+	ctx, save := s.observe(ctx, "TouchUserPermissions", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	touchedAt := s.clock().UTC()
+	perm := authz.Read.String()   // Note: We currently only support read for repository permissions.
+	objectType := authz.PermRepos // Note: We currently only support user permissions regarding repos
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/database/perms_store.go:TouchUserPermissions
+INSERT INTO user_permissions
+	(user_id, object_type, permission, updated_at, synced_at)
+VALUES
+  (%s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  user_permissions_perm_object_unique
+DO UPDATE SET
+  updated_at = excluded.updated_at,
+  synced_at = excluded.synced_at
+`, userID, objectType, perm, touchedAt, touchedAt)
+	if err = s.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute upsert user permissions query")
 	}
 	return nil
 }

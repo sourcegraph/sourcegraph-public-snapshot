@@ -26,4 +26,7 @@
 .label {
     width: 100%;
     text-align: left;
+    // Overrides default SurveyUseCaseForm's properties
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
 }
