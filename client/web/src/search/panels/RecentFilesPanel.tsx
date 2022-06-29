@@ -157,7 +157,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
             () =>
                 checkHomePanelsFeatureFlag && authenticatedUser
                     ? streamComputeQuery(
-                          `content:output((.|\n)* -> $repo > $path) author:${authenticatedUser.email} type:diff after:"1 year ago" count:all`
+                          `content:output((.|\n)* -> $repo › $path) author:${authenticatedUser.email} type:diff after:"1 year ago" count:all`
                       )
                     : of([]),
             [authenticatedUser, checkHomePanelsFeatureFlag]
@@ -183,28 +183,35 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         return gitSet
     }, [gitRecentFiles])
     const gitFilesDisplay = (
-        <div>
-            <div className="mb-1 mt-2">
-                <small>File</small>
-            </div>
-            {gitSet.size > 0 && (
-                <ul className="list-group-flush list-group mb-2">
-                    {Array.from(gitSet).map(file => (
-                        <li key={`${file}`} className="text-monospace mb-2 d-block">
-                            <small>
-                                <Link
-                                    to={`/${file.split(' > ')[0]}/-/blob/${file.split(' > ')[1].trim()}`}
-                                    onClick={logFileClicked}
-                                    data-testid="recent-files-item"
-                                >
-                                    ›{file}
-                                </Link>
-                            </small>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+        <>
+            <table className={classNames('mt-2', styles.resultsTable)}>
+                <thead>
+                    <tr className={styles.resultsTableRow}>
+                        <th>
+                            <small>File</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {gitSet.size > 0 &&
+                        [...gitSet].map((file, index) => (
+                            <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                                <td>
+                                    <small>
+                                        <Link
+                                            to={`/${file.split(' › ')[0]}/-/blob/${file.split(' › ')[1].trim()}`}
+                                            onClick={logFileClicked}
+                                            data-testid="recent-files-item"
+                                        >
+                                            {file}
+                                        </Link>
+                                    </small>
+                                </td>
+                            </tr>
+                        ))}
+                </tbody>
+            </table>
+        </>
     )
     return (
         <PanelContainer
