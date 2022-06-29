@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -482,7 +483,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &sources.FakeChangesetSource{
+			fakeSource := &stesting.FakeChangesetSource{
 				Svc:             extSvc,
 				Err:             tc.sourcerErr,
 				ChangesetExists: tc.alreadyExists,
@@ -498,7 +499,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := sources.NewFakeSourcer(nil, fakeSource)
+			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			tc.plan.Changeset = changeset
 			tc.plan.ChangesetSpec = changesetSpec
@@ -626,7 +627,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -652,7 +653,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	changeset := ct.BuildChangeset(ct.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
 
 	ourError := errors.New("this should not be returned")
-	sourcer := sources.NewFakeSourcer(ourError, &sources.FakeChangesetSource{})
+	sourcer := stesting.NewFakeSourcer(ourError, &stesting.FakeChangesetSource{})
 
 	t.Run("plan requires changeset source", func(t *testing.T) {
 		plan := &Plan{}
@@ -699,8 +700,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
@@ -722,8 +723,8 @@ func TestLoadChangesetSource(t *testing.T) {
 		t.Cleanup(func() {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
@@ -736,8 +737,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by missing batch change", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
@@ -747,8 +748,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
@@ -758,8 +759,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -778,8 +779,8 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
@@ -804,8 +805,8 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "user_credentials")
 		})
 
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -828,8 +829,8 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
 
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -1017,8 +1018,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			})
 
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
-			fakeSource := &sources.FakeChangesetSource{Svc: tt.extSvc}
-			sourcer := sources.NewFakeSourcer(nil, fakeSource)
+			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc}
+			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(
 				context.Background(),
