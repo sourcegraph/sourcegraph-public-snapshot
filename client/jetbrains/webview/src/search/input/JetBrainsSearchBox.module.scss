@@ -102,6 +102,13 @@
             border-color: var(--jb-border-color);
         }
 
+        button {
+            &:hover,
+            &:focus {
+                background: var(--jb-hover-button-bg);
+            }
+        }
+
         button[data-search-context-spec] {
             &[data-selected],
             &:focus {
@@ -127,13 +134,6 @@
             &:focus {
                 border-color: var(--jb-focus-border-color);
                 box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
-            }
-        }
-
-        button[data-close-button] {
-            &:hover,
-            &:focus {
-                background: var(--jb-hover-button-bg);
             }
         }
     }
