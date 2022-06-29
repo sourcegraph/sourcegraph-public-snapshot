@@ -518,20 +518,22 @@ const highlightFocusedFilter = ViewPlugin.define(
     () => ({
         decorations: Decoration.none,
         update(update) {
-            if (update.focusChanged && !update.view.hasFocus) {
-                this.decorations = Decoration.none
-            } else if (update.docChanged || update.selectionSet || update.focusChanged) {
-                const query = update.state.facet(parsedQuery)
-                const position = update.state.selection.main.head
-                const focusedFilter = query.tokens.find(
-                    (token): token is Filter =>
-                        // Inclusive end so that the filter is highlighed when
-                        // the cursor is positioned directly after the value
-                        token.type === 'filter' && token.range.start <= position && token.range.end >= position
-                )
-                this.decorations = focusedFilter
-                    ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-                    : Decoration.none
+            if (update.docChanged || update.selectionSet || update.focusChanged) {
+                if (update.view.hasFocus) {
+                    const query = update.state.facet(parsedQuery)
+                    const position = update.state.selection.main.head
+                    const focusedFilter = query.tokens.find(
+                        (token): token is Filter =>
+                            // Inclusive end so that the filter is highlighed when
+                            // the cursor is positioned directly after the value
+                            token.type === 'filter' && token.range.start <= position && token.range.end >= position
+                    )
+                    this.decorations = focusedFilter
+                        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+                        : Decoration.none
+                } else {
+                    this.decorations = Decoration.none
+                }
             }
         },
     }),

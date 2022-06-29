@@ -187,6 +187,7 @@ Preview the pipeline that would be run against the currently checked out branch.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ci status
@@ -197,8 +198,9 @@ Get the status of the CI run associated with the currently checked out branch.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
-* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
 
@@ -233,6 +235,7 @@ Flags:
 
 * `--commit, -c="<value>"`: `commit` from the current branch to build (defaults to current commit)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 
 ### sg ci logs
 
@@ -250,11 +253,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
-* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
 * `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
 * `--overwrite-state="<value>"`: `state` to overwrite the job state metadata
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--state, -s="<value>"`: Job `state` to export logs for (provide an empty value for all states) (default: failed)
 
 ### sg ci docs

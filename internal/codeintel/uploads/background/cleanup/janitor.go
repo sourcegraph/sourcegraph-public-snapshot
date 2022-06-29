@@ -16,6 +16,7 @@ type janitor struct {
 	dbStore   DBStore
 	lsifStore LSIFStore
 	uploadSvc UploadService
+	indexSvc  AutoIndexingService
 	metrics   *metrics
 	clock     glock.Clock
 }

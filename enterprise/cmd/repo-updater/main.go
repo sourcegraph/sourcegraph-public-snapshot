@@ -39,7 +39,7 @@ func enterpriseInit(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (debugDumpers []debugserver.Dumper) {
+) (debugDumpers map[string]debugserver.Dumper) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		logger.Info("enterprise edition")
@@ -60,12 +60,13 @@ func enterpriseInit(
 	permsStore := edb.Perms(logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
-	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
 		server.PermsSyncer = permsSyncer
 	}
 
-	return debugDumpers
+	return map[string]debugserver.Dumper{
+		"repoPerms": permsSyncer,
+	}
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
