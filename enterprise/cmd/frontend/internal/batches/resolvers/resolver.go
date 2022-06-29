@@ -508,7 +508,6 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		return nil, err
 	}
 
-	// mark
 	if err := checkLicense(); err != nil {
 		if licensing.IsFeatureNotActivated(err) {
 			if len(args.ChangesetSpecs) > maxUnlicensedChangesets {
@@ -1579,8 +1578,6 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
-	// TODO
-
 	svc := service.New(r.store)
 
 	var uid, oid int32
@@ -1719,8 +1716,6 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
-
-	// TODO
 
 	batchSpecRandID, err := unmarshalBatchSpecID(args.PreviousSpec)
 	if err != nil {
