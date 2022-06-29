@@ -29,7 +29,7 @@ let accessToken: string | null = null
 let anonymousUserId: string
 let pluginVersion: string
 let initialSearch: Search | null = null
-let initialAuthenticatedUser: AuthenticatedUser | null
+let authenticatedUser: AuthenticatedUser | null = null
 let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
@@ -43,9 +43,11 @@ window.initializeSourcegraph = async () => {
     applyTheme(theme)
     applyLastSearch(lastSearch)
 
-    const authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
-
-    applyAuthenticatedUser(authenticatedUser)
+    try {
+        authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
+    } catch (error) {
+        console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+    }
 
     if (accessToken && !authenticatedUser) {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
@@ -72,7 +74,7 @@ export function renderReactApp(): void {
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
-            authenticatedUser={initialAuthenticatedUser}
+            authenticatedUser={authenticatedUser}
             telemetryService={telemetryService}
         />,
         node
@@ -117,10 +119,6 @@ export function applyTheme(theme: Theme): void {
 
 function applyLastSearch(lastSearch: Search | null): void {
     initialSearch = lastSearch
-}
-
-function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
-    initialAuthenticatedUser = authenticatedUser
 }
 
 export function getAccessToken(): string | null {
