@@ -44,7 +44,6 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
 exports[`ActionItem actionItem variant 1`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
@@ -63,7 +62,6 @@ exports[`ActionItem actionItem variant 1`] = `
 exports[`ActionItem non-actionItem variant 1`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
@@ -126,7 +124,6 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
 exports[`ActionItem run command 1`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
@@ -145,7 +142,6 @@ exports[`ActionItem run command 1`] = `
 exports[`ActionItem run command 2`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
@@ -164,7 +160,6 @@ exports[`ActionItem run command 2`] = `
 exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
@@ -183,7 +178,6 @@ exports[`ActionItem run command with error 1`] = `
 exports[`ActionItem run command with error with showInlineError 1`] = `
 <DocumentFragment>
   <a
-    aria-label="Error: x"
     class="test-action-item"
     data-tooltip="Error: x"
     href=""
@@ -210,7 +204,6 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       tabindex="0"
     />
     <a
-      aria-label="d"
       class="test-action-item actionItemLoading disabled"
       data-tooltip="d"
       disabled=""
@@ -239,7 +232,6 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
@@ -258,7 +250,6 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 exports[`ActionItem title element 1`] = `
 <DocumentFragment>
   <a
-    aria-label="d"
     class="test-action-item"
     data-tooltip="d"
     href=""
