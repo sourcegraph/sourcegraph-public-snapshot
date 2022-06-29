@@ -792,7 +792,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     return (
         <>
-            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
+            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement} tabIndex={-1}>
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
