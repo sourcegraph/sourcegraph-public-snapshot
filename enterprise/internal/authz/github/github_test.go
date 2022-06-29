@@ -351,59 +351,64 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 		})
 
-		t.Run("special case: ListTeamRepositories returns 404", func(t *testing.T) {
-			mc := &mockClient{
-				MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
-				MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
-				MockGetAuthenticatedUserTeams: func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					switch page {
-					case 1:
-						return []*github.Team{
-							// should not get repos from this team because parent org has default read permissions
-							{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
-							// should not get repos from this team since it has no repos
-							{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
-						}, true, 1, nil
-					case 2:
-						return []*github.Team{
-							// should get repos from this team
-							{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-						}, false, 1, nil
-					}
-					return nil, false, 1, nil
-				},
-				MockListOrgRepositories: mockListOrgRepositories,
-				MockListTeamRepositories: func(_ context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-					return nil, false, 1, &github.APIError{Code: 404}
-				},
-			}
+		makeStatusCodeTest := func(code int) func(t *testing.T) {
+			return func(t *testing.T) {
+				mc := &mockClient{
+					MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
+					MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
+					MockGetAuthenticatedUserTeams: func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
+						switch page {
+						case 1:
+							return []*github.Team{
+								// should not get repos from this team because parent org has default read permissions
+								{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
+								// should not get repos from this team since it has no repos
+								{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
+							}, true, 1, nil
+						case 2:
+							return []*github.Team{
+								// should get repos from this team
+								{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+							}, false, 1, nil
+						}
+						return nil, false, 1, nil
+					},
+					MockListOrgRepositories: mockListOrgRepositories,
+					MockListTeamRepositories: func(_ context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+						return nil, false, 1, &github.APIError{Code: code}
+					},
+				}
 
-			p := setupProvider(t, mc)
+				p := setupProvider(t, mc)
 
-			repoIDs, err := p.FetchUserPerms(context.Background(),
-				mockAccount,
-				authz.FetchPermsOptions{InvalidateCaches: true},
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
+				repoIDs, err := p.FetchUserPerms(context.Background(),
+					mockAccount,
+					authz.FetchPermsOptions{InvalidateCaches: true},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // from ListAffiliatedRepos
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // from ListOrgRepositories
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
+				wantRepoIDs := []extsvc.RepoID{
+					"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
+					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
+					"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // from ListAffiliatedRepos
+					"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // from ListOrgRepositories
+					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
+					"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
+				}
+				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+				}
+				_, found := p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
+				if !found {
+					t.Error("expected to find group in cache")
+				}
 			}
-			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
-			}
-			_, found := p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
-			if !found {
-				t.Error("expected to find group in cache")
-			}
-		})
+		}
+
+		t.Run("special case: ListTeamRepositories returns 404", makeStatusCodeTest(404))
+		t.Run("special case: ListTeamRepositories returns 403", makeStatusCodeTest(403))
 
 		t.Run("cache and invalidate: user in orgs and teams", func(t *testing.T) {
 			callsToListOrgRepos := 0
