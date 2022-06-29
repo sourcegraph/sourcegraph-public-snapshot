@@ -202,6 +202,14 @@ describe('scanSearchQuery() for regexp', () => {
     })
 })
 
+describe('scanSearchQuery() for standard', () => {
+    test('scan literal and regexp patterns', () => {
+        expect(scanSearchQuery('pfalz /mosel/', false, SearchPatternType.standard)).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":5},"kind":1,"value":"pfalz"},{"type":"whitespace","range":{"start":5,"end":6}},{"type":"pattern","range":{"start":6,"end":13},"kind":2,"value":"mosel"}]}'
+        )
+    })
+})
+
 describe('scanSearchQuery() with comments', () => {
     test('interpret C-style comments', () => {
         const query = `// saucegraph is best graph
