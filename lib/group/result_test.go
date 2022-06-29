@@ -168,47 +168,53 @@ func TestResultContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("CancelOnError", func(t *testing.T) {
-		g := New().WithContext(context.Background()).WithCancelOnError()
-		g.Go(func(ctx context.Context) error {
+		g := NewWithResults[int]().WithContext(context.Background()).WithCancelOnError()
+		g.Go(func(ctx context.Context) (int, error) {
 			<-ctx.Done()
-			return ctx.Err()
+			return 0, ctx.Err()
 		})
-		g.Go(func(ctx context.Context) error {
-			return err1
+		g.Go(func(ctx context.Context) (int, error) {
+			return 0, err1
 		})
-		require.ErrorIs(t, g.Wait(), context.Canceled)
-		require.ErrorIs(t, g.Wait(), err1)
+		res, err := g.Wait()
+		require.Len(t, res, 0)
+		require.ErrorIs(t, err, context.Canceled)
+		require.ErrorIs(t, err, err1)
 	})
 
 	t.Run("WithFirstError", func(t *testing.T) {
-		g := New().WithContext(context.Background()).WithCancelOnError().WithFirstError()
-		g.Go(func(ctx context.Context) error {
+		g := NewWithResults[int]().WithContext(context.Background()).WithCancelOnError().WithFirstError()
+		g.Go(func(ctx context.Context) (int, error) {
 			<-ctx.Done()
-			return err2
+			return 0, err2
 		})
-		g.Go(func(ctx context.Context) error {
-			return err1
+		g.Go(func(ctx context.Context) (int, error) {
+			return 0, err1
 		})
-		require.ErrorIs(t, g.Wait(), err1)
-		require.NotErrorIs(t, g.Wait(), context.Canceled)
+		res, err := g.Wait()
+		require.Len(t, res, 0)
+		require.ErrorIs(t, err, err1)
+		require.NotErrorIs(t, err, context.Canceled)
 	})
 
 	t.Run("limit", func(t *testing.T) {
 		ctx := context.Background()
-		g := New().WithContext(ctx).WithLimit(1)
+		g := NewWithResults[int]().WithContext(ctx).WithLimit(1)
 
 		currentConcurrent := int64(0)
 		for i := 0; i < 10; i++ {
-			g.Go(func(context.Context) error {
+			g.Go(func(context.Context) (int, error) {
 				cur := atomic.AddInt64(&currentConcurrent, 1)
 				if cur > 1 {
-					return errors.New("expected no more than 1 concurrent goroutine")
+					return 0, errors.New("expected no more than 1 concurrent goroutine")
 				}
 				time.Sleep(time.Millisecond)
 				atomic.AddInt64(&currentConcurrent, -1)
-				return nil
+				return 0, nil
 			})
 		}
-		require.NoError(t, g.Wait())
+		res, err := g.Wait()
+		require.Len(t, res, 10)
+		require.NoError(t, err)
 	})
 }

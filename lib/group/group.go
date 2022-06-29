@@ -64,9 +64,6 @@ type ContextErrorGroup interface {
 	// the submitted functions.
 	Wait() error
 
-	// Configuration methods. See interfaces for details.
-	Limitable[ContextErrorGroup]
-
 	// WithCancelOnError will cancel the group's context whenever any of the
 	// functions started with Go() return an error. All further errors will
 	// be ignored.
@@ -75,6 +72,9 @@ type ContextErrorGroup interface {
 	// WithFirstError will configure the group to only retain the first error,
 	// ignoring any subsequent errors.
 	WithFirstError() ContextErrorGroup
+
+	// Configuration methods. See interfaces for details.
+	Limitable[ContextErrorGroup]
 }
 
 // Limitable is a group that can be configured to limit the number of live
@@ -175,14 +175,14 @@ type errorGroup struct {
 }
 
 func (g *errorGroup) Go(f func() error) {
-	_, release := g.acquire(context.Background())
+	_, release, _ := g.acquire(context.Background())
 	g.start(f, release)
 }
 
-func (g *errorGroup) acquire(ctx context.Context) (context.Context, context.CancelFunc) {
+func (g *errorGroup) acquire(ctx context.Context) (context.Context, context.CancelFunc, bool) {
 	ctx, release, err := g.group.acquire(ctx)
 	g.addErr(err)
-	return ctx, release
+	return ctx, release, err == nil
 }
 
 // goCtx starts the goroutine, capturing any errors from the limiter
@@ -242,7 +242,11 @@ type contextErrorGroup struct {
 }
 
 func (g *contextErrorGroup) Go(f func(context.Context) error) {
-	ctx, release := g.errorGroup.acquire(g.ctx)
+	ctx, release, ok := g.errorGroup.acquire(g.ctx)
+	if !ok {
+		// acquire will only fail if the context is canceled
+		return
+	}
 	g.errorGroup.start(func() error {
 		err := f(ctx)
 		if err != nil && g.cancel != nil {

@@ -69,6 +69,16 @@ type ResultContextErrorGroup[T any] interface {
 	// tasks that errored. By default, the return values from errored tasks are
 	// dropped.
 	WithCollectErrored() ResultContextErrorGroup[T]
+
+	// WithCancelOnError will cancel the group's context whenever any of the
+	// functions started with Go() return an error.
+	WithCancelOnError() ResultContextErrorGroup[T]
+
+	// WithFirstError will configure the group to only retain the first error,
+	// ignoring any subsequent errors.
+	WithFirstError() ResultContextErrorGroup[T]
+
+	// Configuration methods. See interface definitions for details.
 	Limitable[ResultContextErrorGroup[T]]
 }
 
@@ -197,5 +207,15 @@ func (g *resultContextErrorGroup[T]) WithLimit(limit int) ResultContextErrorGrou
 
 func (g *resultContextErrorGroup[T]) WithLimiter(limiter Limiter) ResultContextErrorGroup[T] {
 	g.ContextErrorGroup = g.ContextErrorGroup.WithLimiter(limiter)
+	return g
+}
+
+func (g *resultContextErrorGroup[T]) WithCancelOnError() ResultContextErrorGroup[T] {
+	g.ContextErrorGroup = g.ContextErrorGroup.WithCancelOnError()
+	return g
+}
+
+func (g *resultContextErrorGroup[T]) WithFirstError() ResultContextErrorGroup[T] {
+	g.ContextErrorGroup = g.ContextErrorGroup.WithFirstError()
 	return g
 }
