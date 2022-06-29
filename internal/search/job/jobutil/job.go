@@ -76,6 +76,7 @@ func NewBasicJob(logger log.Logger, inputs *run.SearchInputs, b query.Basic) (jo
 			features:       &features,
 			fileMatchLimit: fileMatchLimit,
 			selector:       selector,
+			log:            logger,
 		}
 
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
@@ -671,6 +672,7 @@ type jobBuilder struct {
 	features       *search.Features
 	fileMatchLimit int32
 	selector       filter.SelectPath
+	log            log.Logger
 }
 
 func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
@@ -705,12 +707,14 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOpts:         b.repoOptions,
+			Log:              b.log,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.GlobalTextSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOpts:         b.repoOptions,
+			Log:              b.log,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
