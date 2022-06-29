@@ -235,9 +235,26 @@ const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
     const tokens: DecoratedToken[] = []
+
+    if (pattern.delimited) {
+        tokens.push({
+            type: 'metaRegexp',
+            range: { start: pattern.range.start, end: pattern.range.start + 1 },
+            value: '/',
+            kind: MetaRegexpKind.Delimited,
+        })
+        tokens.push({
+            type: 'metaRegexp',
+            range: { start: pattern.range.end - 1, end: pattern.range.end },
+            value: '/',
+            kind: MetaRegexpKind.Delimited,
+        })
+    }
+
+    const offset = pattern.delimited ? pattern.range.start + 1 : pattern.range.start
+
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
-        const offset = pattern.range.start
         visitRegExpAST(ast, {
             onAlternativeEnter(node: Alternative) {
                 // regexpp doesn't tell us where a '|' operator is. We infer it by visiting any
