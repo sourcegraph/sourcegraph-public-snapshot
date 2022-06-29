@@ -207,7 +207,8 @@ export function searchQueryAutocompletion(
                 {
                     render() {
                         const node = document.createElement('span')
-                        node.classList.add(styles.tabStyle, 'tab-style')
+                        node.dataset.completionHint = ''
+                        node.className = styles.tabStyle
                         node.textContent = 'Tab'
                         return node
                     },
