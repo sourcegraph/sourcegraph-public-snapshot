@@ -135,7 +135,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
     private ActionGroup createActionGroup() {
         DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new DumbAwareAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
+        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.Logo) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 try {
