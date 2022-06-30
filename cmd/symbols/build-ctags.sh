@@ -12,9 +12,12 @@ if [[ "${CTAGS_COMMAND}" != "cmd/symbols/universal-ctags-dev" ]]; then
   exit 0
 fi
 
-# Build ctags docker image for universal-ctags-dev
-echo "Building ctags docker image"
-docker build -f cmd/symbols/Dockerfile -t ctags . \
-  --target=ctags \
-  --progress=plain \
-  --quiet >/dev/null
+# If we already have universal-ctags installed, skip building the docker image.
+if ! hash ctags >/dev/null; then
+  # Build ctags docker image for universal-ctags-dev
+  echo "Building ctags docker image"
+  docker build -f cmd/symbols/Dockerfile -t ctags . \
+    --target=ctags \
+    --progress=plain \
+    --quiet >/dev/null
+fi
