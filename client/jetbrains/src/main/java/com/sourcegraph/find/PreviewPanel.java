@@ -135,8 +135,6 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
     private ActionGroup createActionGroup() {
         DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
-        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
         group.add(new DumbAwareAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
@@ -148,6 +146,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
                 }
             }
         });
+        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
+        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
         return group;
     }
 
