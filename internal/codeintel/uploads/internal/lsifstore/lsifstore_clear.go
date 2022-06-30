@@ -57,7 +57,8 @@ func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	for _, tableName := range tableNames {
 		trace.Log(log.String("tableName", tableName))
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
+		query := sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))
+		if err := tx.Exec(ctx, query); err != nil {
 			return err
 		}
 	}

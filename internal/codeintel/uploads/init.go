@@ -26,7 +26,7 @@ var (
 
 // GetService creates or returns an already-initialized uploads service. If the service is
 // new, it will use the given database handle.
-func GetService(db database.DB) *Service {
+func GetService(db, codeIntelDB database.DB) *Service {
 	svcOnce.Do(func() {
 		lg := func(name string) log.Logger {
 			return log.Scoped("uploads."+name, "codeintel uploads "+name)
@@ -40,7 +40,6 @@ func GetService(db database.DB) *Service {
 			}
 		}
 
-		codeIntelDB := mustInitializeCodeIntelDB(lg("lsifstore"))
 		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
 		store := store.New(db, oc("store"))
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,7 +17,8 @@ import (
 
 func TestClear(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
 
 	for i := 0; i < 5; i++ {

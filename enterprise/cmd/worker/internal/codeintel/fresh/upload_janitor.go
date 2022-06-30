@@ -50,6 +50,11 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 		return nil, err
 	}
 
+	lsifStore, err := codeintel.InitLSIFStore()
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -63,7 +68,7 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 	autoindexingDBStore := &autoindexing.DBStoreShim{Store: dbStore}
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 	indexSvc := autoindexing.GetService(database.NewDB(logger, db), autoindexingDBStore, gitserverClient, repoUpdaterClient)
-	uploadSvc := uploads.GetService(database.NewDB(logger, db))
+	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore))
 
 	return []goroutine.BackgroundRoutine{
 		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, indexSvc, metrics),
