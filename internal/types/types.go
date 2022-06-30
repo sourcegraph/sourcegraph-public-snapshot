@@ -1432,7 +1432,36 @@ type CodeMonitoringUsageStatistics struct {
 	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
-	CodeMonitorEmailLinkClicks                    *int32
+	CodeMonitorEmailLinkClicked                   *int32
+	ExampleMonitorClicked                         *int32
+	GettingStartedPageViewed                      *int32
+	CreateFormSubmitted                           *int32
+	ManageFormSubmitted                           *int32
+	ManageDeleteSubmitted                         *int32
+	LogsPageViewed                                *int32
+	EmailActionsTriggered                         *int32
+	EmailActionsErrored                           *int32
+	EmailActionsTriggeredUniqueUsers              *int32
+	EmailActionsEnabled                           *int32
+	EmailActionsEnabledUniqueUsers                *int32
+	SlackActionsTriggered                         *int32
+	SlackActionsErrored                           *int32
+	SlackActionsTriggeredUniqueUsers              *int32
+	SlackActionsEnabled                           *int32
+	SlackActionsEnabledUniqueUsers                *int32
+	WebhookActionsTriggered                       *int32
+	WebhookActionsErrored                         *int32
+	WebhookActionsTriggeredUniqueUsers            *int32
+	WebhookActionsEnabled                         *int32
+	WebhookActionsEnabledUniqueUsers              *int32
+	MonitorsEnabled                               *int32
+	MonitorsEnabledUniqueUsers                    *int32
+	MonitorsEnabledLastRunErrored                 *int32
+	ReposMonitored                                *int32
+	TriggerRuns                                   *int32
+	TriggerRunsErrored                            *int32
+	P50TriggerRunTimeSeconds                      *float32
+	P90TriggerRunTimeSeconds                      *float32
 }
 
 type NotebooksUsageStatistics struct {
