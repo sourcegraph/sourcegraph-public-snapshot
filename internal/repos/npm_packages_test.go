@@ -47,7 +47,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmDependency{NpmPackage: pkg, Version: dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmPackageVersion{NpmPackageName: pkg, Version: dep.Version}).PackageVersionSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -69,7 +69,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmDependency{NpmPackage: pkg, Version: deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmPackageVersion{NpmPackageName: pkg, Version: deps[0].Version}).PackageVersionSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -103,7 +103,7 @@ var testDependencies = []string{
 var testDependencyRepos = func() []dependencies.Repo {
 	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(depStr)
+		dep, err := reposource.ParseNpmPackageVersion(depStr)
 		if err != nil {
 			panic(err.Error())
 		}

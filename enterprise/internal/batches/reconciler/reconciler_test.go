@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -133,13 +133,13 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &sources.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
+			fakeSource := &stesting.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := sources.NewFakeSourcer(nil, fakeSource)
+			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
 			rec := Reconciler{

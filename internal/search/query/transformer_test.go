@@ -228,6 +228,18 @@ func TestConcat(t *testing.T) {
 	t.Run("", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test("a b (c and d) e f (g or h) (i j k)", SearchTypeRegex)))
 	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeStandard)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
+	})
 }
 
 func TestEllipsesForHoles(t *testing.T) {

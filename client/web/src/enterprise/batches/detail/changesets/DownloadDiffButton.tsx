@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
+import { mdiAlertCircle, mdiDownload } from '@mdi/js'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
@@ -63,11 +62,11 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
 
     let icon: JSX.Element
     if (isErrorLike(state)) {
-        icon = <Icon aria-hidden={true} className="icon" data-tooltip={state?.message} as={AlertCircleIcon} />
+        icon = <Icon aria-hidden={true} className="icon" data-tooltip={state?.message} svgPath={mdiAlertCircle} />
     } else if (state === DownloadState.LOADING) {
         icon = <LoadingSpinner />
     } else {
-        icon = <Icon aria-hidden={true} as={DownloadIcon} />
+        icon = <Icon aria-hidden={true} svgPath={mdiDownload} />
     }
 
     return (

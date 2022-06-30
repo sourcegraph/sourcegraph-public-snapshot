@@ -65,6 +65,12 @@ var Mac = []category{
 				Fix:   cmdFix(`brew install sqlite`),
 			},
 			{
+				Name:        "universal-ctags",
+				Description: "Required by the symbols service",
+				Check:       checkAction(check.Combine(check.InPath("ctags"), check.CommandOutputContains("ctags --help", "+interactive"))),
+				Fix:         cmdFix(`brew install universal-ctags`),
+			},
+			{
 				Name:  "jq",
 				Check: checkAction(check.InPath("jq")),
 				Fix:   cmdFix(`brew install jq`),

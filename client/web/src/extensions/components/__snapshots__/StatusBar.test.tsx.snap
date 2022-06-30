@@ -22,7 +22,6 @@ exports[`StatusBar renders correctly 1`] = `
           </small>
         </a>
         <a
-          aria-label="Code owners: @felixbecker, @beyang"
           class="h-100 d-flex align-items-center px-1 item text-decoration-none itemNoop"
           data-tooltip="Code owners: @felixbecker, @beyang"
           href=""

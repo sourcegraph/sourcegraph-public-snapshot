@@ -112,7 +112,7 @@ describe('SurveyToast', () => {
                 const continueButton = renderResult.getByRole('button', { name: 'Continue' })
                 expect(continueButton).toBeVisible()
                 fireEvent.click(continueButton)
-                expect(renderResult.getByText('You are using Sourcegraph to...')).toBeVisible()
+                expect(renderResult.getByText('You use Sourcegraph to...')).toBeVisible()
             })
         })
 
@@ -207,7 +207,7 @@ describe('SurveyToast', () => {
 
             const continueButton = renderResult.getByRole('button', { name: 'Continue' })
             fireEvent.click(continueButton)
-            expect(renderResult.getByText('You are using Sourcegraph to...')).toBeVisible()
+            expect(renderResult.getByText('You use Sourcegraph to...')).toBeVisible()
         }
 
         beforeEach(() => moveToUseCaseForm())
@@ -218,18 +218,18 @@ describe('SurveyToast', () => {
                     expect(renderResult.getByLabelText(labelValue)).toBeVisible()
                 })
             }
-            expect(renderResult.getByLabelText('What can Sourcegraph do to provide a better product?')).toBeVisible()
+            expect(renderResult.getByLabelText('What would make Sourcegraph better?')).toBeVisible()
         })
 
         it('Should allow user to provide arbitrary use case', () => {
             const otherUseCaseElement = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseElement)
 
-            expect(renderResult.getByLabelText('What else are you using Sourcegraph to do?')).toBeVisible()
+            expect(renderResult.getByLabelText('What else do you use Sourcegraph to do?')).toBeVisible()
         })
 
         it('Should show some gratitude after usecase submission', async () => {
-            const reasonInput = renderResult.getByLabelText('What can Sourcegraph do to provide a better product?')
+            const reasonInput = renderResult.getByLabelText('What would make Sourcegraph better?')
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 
@@ -240,7 +240,7 @@ describe('SurveyToast', () => {
             const otherUseCaseCheckbox = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseCheckbox)
 
-            const otherUseCaseInput = renderResult.getByLabelText('What else are you using Sourcegraph to do?')
+            const otherUseCaseInput = renderResult.getByLabelText('What else do you use Sourcegraph to do?')
             expect(otherUseCaseInput).toBeVisible()
 
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
