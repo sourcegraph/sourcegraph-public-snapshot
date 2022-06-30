@@ -9,6 +9,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,11 +27,11 @@ const DefaultSymbolLimit = 100
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
+func indexedSymbolsBranch(ctx context.Context, logger sglog.Logger, repo *types.MinimalRepo, commit string) string {
 	if !conf.SearchIndexEnabled() {
 		return ""
 	}
-	z := search.Indexed()
+	z := search.Indexed(logger)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
@@ -53,7 +54,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 	return ""
 }
 
-func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoekt(ctx context.Context, logger sglog.Logger, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -95,7 +96,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
-	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
+	resp, err := search.Indexed(logger).Search(ctx, final, &zoekt.SearchOptions{
 		Trace:                  policy.ShouldTrace(ctx),
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     match * 25,
@@ -144,11 +145,11 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	return
 }
 
-func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, logger sglog.Logger, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
-		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+	if branch := indexedSymbolsBranch(ctx, logger, &repoName, string(commitID)); branch != "" {
+		return searchZoekt(ctx, logger, repoName, commitID, inputRev, branch, query, first, includePatterns)
 	}
 
 	serverTimeout := 5 * time.Second
@@ -203,12 +204,12 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, logger sglog.Logger, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
+	symbolMatches, err := Compute(ctx, logger, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
 	if err != nil {
 		return nil, err
 	}
