@@ -5,7 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { SeriesSortMode, SeriesSortDirection } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
-import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
+import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
 
 import { SortFilterSeriesPanel } from './SortFilterSeriesPanel'
 
@@ -19,8 +19,8 @@ const defaultStory: Meta = {
 export default defaultStory
 
 export const Primary: Story = () => {
-    const [value, setValue] = useState<SeriesDisplayOptionsInputRequired>({
-        limit: 20,
+    const [value, setValue] = useState<DrillDownFiltersFormValues['seriesDisplayOptions']>({
+        limit: '20',
         sortOptions: {
             mode: SeriesSortMode.RESULT_COUNT,
             direction: SeriesSortDirection.DESC,

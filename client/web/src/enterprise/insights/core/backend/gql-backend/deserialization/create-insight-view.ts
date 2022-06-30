@@ -44,7 +44,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             )
 
             const seriesDisplayOptions = {
-                limit: insight.appliedSeriesDisplayOptions.limit ?? MAX_NUMBER_OF_SERIES,
+                limit: `${insight.appliedSeriesDisplayOptions.limit ?? MAX_NUMBER_OF_SERIES}`,
                 sortOptions: {
                     direction: insight.appliedSeriesDisplayOptions.sortOptions.direction ?? SeriesSortDirection.DESC,
                     mode: insight.appliedSeriesDisplayOptions.sortOptions.mode ?? SeriesSortMode.RESULT_COUNT,

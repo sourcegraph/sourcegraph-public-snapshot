@@ -4,17 +4,17 @@ import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
 import { SeriesSortOptionsInput, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
 import { MAX_NUMBER_OF_SERIES } from '../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
-import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
+import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
 
 import styles from './SortFilterSeriesPanel.module.scss'
 
 interface SortFilterSeriesPanelProps {
     value: {
-        limit: number
+        limit: string
         sortOptions: SeriesSortOptionsInput
     }
     seriesCount: number
-    onChange: (parameter: SeriesDisplayOptionsInputRequired) => void
+    onChange: (parameter: DrillDownFiltersFormValues['seriesDisplayOptions']) => void
 }
 
 export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({
@@ -31,11 +31,7 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
     }
 
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        if (event.target.value.length === 0) {
-            return
-        }
-        const count = Math.min(parseInt(event.target.value, 10), maxLimit)
-        onChange({ ...value, limit: count })
+        onChange({ ...value, limit: event.target.value })
     }
 
     return (

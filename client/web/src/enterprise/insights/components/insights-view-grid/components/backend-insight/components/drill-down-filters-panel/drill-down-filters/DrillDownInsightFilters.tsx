@@ -47,7 +47,7 @@ export interface DrillDownFiltersFormValues {
     includeRepoRegexp: string
     excludeRepoRegexp: string
     seriesDisplayOptions: {
-        limit: number
+        limit: string
         sortOptions: {
             mode: SeriesSortMode
             direction: SeriesSortDirection

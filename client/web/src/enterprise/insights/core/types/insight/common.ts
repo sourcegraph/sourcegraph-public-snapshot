@@ -36,7 +36,7 @@ export interface InsightFilters {
     context: string
     repositories?: string[]
     seriesDisplayOptions: {
-        limit: number
+        limit: string
         sortOptions: {
             mode: SeriesSortMode
             direction: SeriesSortDirection

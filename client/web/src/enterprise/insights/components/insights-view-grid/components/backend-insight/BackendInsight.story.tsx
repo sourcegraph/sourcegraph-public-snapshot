@@ -44,7 +44,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: 20,
+            limit: '20',
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -247,7 +247,7 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: 20,
+            limit: '20',
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -277,7 +277,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: 20,
+            limit: '20',
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -304,7 +304,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: 20,
+            limit: '20',
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,

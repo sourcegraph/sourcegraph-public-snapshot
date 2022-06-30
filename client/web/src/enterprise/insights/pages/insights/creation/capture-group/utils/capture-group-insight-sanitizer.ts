@@ -21,7 +21,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
             excludeRepoRegexp: '',
             context: '',
             seriesDisplayOptions: {
-                limit: MAX_NUMBER_OF_SERIES,
+                limit: `${MAX_NUMBER_OF_SERIES}`,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,

@@ -21,7 +21,7 @@ export const DrillDownPopover: Story = () => {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: 20,
+            limit: '20',
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,

@@ -1,4 +1,5 @@
 import {
+    Maybe,
     SeriesDisplayOptionsInput,
     SeriesSortDirection,
     SeriesSortMode,
@@ -7,6 +8,8 @@ import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { MAX_NUMBER_OF_SERIES } from '../../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { Validator } from '../../../../../../form/hooks/useField'
+
+import { DrillDownFiltersFormValues } from './DrillDownInsightFilters'
 
 export const validRegexp: Validator<string> = (value = '') => {
     if (value.trim() === '') {
@@ -84,13 +87,13 @@ export function getSerializedSearchContextFilter(
  */
 export const parseSeriesDisplayOptions = (
     seriesCount: number,
-    options?: SeriesDisplayOptions | SeriesDisplayOptionsInput
+    options?: SeriesDisplayOptions | SeriesDisplayOptionsInput | DrillDownFiltersFormValues['seriesDisplayOptions']
 ): SeriesDisplayOptionsInputRequired => {
     if (!options) {
         return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: Math.min(seriesCount, MAX_NUMBER_OF_SERIES) }
     }
 
-    const limit = Math.min(options.limit || seriesCount, seriesCount, MAX_NUMBER_OF_SERIES)
+    const limit = Math.min(parseSeriesLimit(options?.limit) || seriesCount, seriesCount)
     const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
 
     return {
@@ -100,4 +103,20 @@ export const parseSeriesDisplayOptions = (
             direction: sortOptions.direction || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions.direction,
         },
     }
+}
+
+export const parseSeriesLimit = (limit: string | Maybe<number> | undefined): number | undefined => {
+    if (!limit) {
+        return MAX_NUMBER_OF_SERIES
+    }
+
+    if (typeof limit === 'number') {
+        return Math.min(limit, MAX_NUMBER_OF_SERIES)
+    }
+
+    if (limit.length === 0) {
+        return
+    }
+
+    return Math.min(parseInt(limit, 10), MAX_NUMBER_OF_SERIES)
 }

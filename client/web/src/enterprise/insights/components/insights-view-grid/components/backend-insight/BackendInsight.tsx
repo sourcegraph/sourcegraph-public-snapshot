@@ -33,6 +33,7 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
+import { parseSeriesLimit } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -86,15 +87,15 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
         searchContexts: [debouncedFilters.context],
     }
-    const displayInput: SeriesDisplayOptionsInput = {
-        limit: debouncedFilters.seriesDisplayOptions.limit,
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
         sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
-            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
+            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
             skip: !wasEverVisible,
@@ -115,7 +116,11 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions: filters.seriesDisplayOptions }
+            const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+                limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
+                sortOptions: filters.seriesDisplayOptions.sortOptions,
+            }
+            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
 
             await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
