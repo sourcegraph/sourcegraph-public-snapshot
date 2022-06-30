@@ -140,7 +140,7 @@ interface HorizontalSelect<T> {
     items: { label: string; value: T; disabled?: boolean }[]
 }
 
-const HorizontalSelect = <T extends any>({
+const HorizontalSelect = <T extends string>({
     items,
     label,
     selected,
@@ -157,7 +157,7 @@ const HorizontalSelect = <T extends any>({
         onChange={value => onChange(value.target.value as T)}
     >
         {items.map(({ value, label, disabled }) => (
-            <option key={value} value={value} selected={selected === value} disabled={disabled}>
+            <option key={label} value={value} selected={selected === value} disabled={disabled}>
                 {label}
             </option>
         ))}

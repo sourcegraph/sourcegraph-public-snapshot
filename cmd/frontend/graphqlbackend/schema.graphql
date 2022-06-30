@@ -5538,6 +5538,9 @@ type Site implements SettingsSubject {
         months: Int
     ): SiteUsageStatistics!
 
+    """
+    New usage statistics/analytics for this site.
+    """
     analytics: Analytics!
 
     """
@@ -5849,49 +5852,145 @@ type SiteUsageStatistics {
     maus: [SiteUsagePeriod!]!
 }
 
+"""
+A pre-defined periods to get site analytics.
+"""
 enum AnalyticsDateRange {
+    """
+    Last 3 monthes date range.
+    """
     LAST_THREE_MONTHS
+    """
+    Last month date range.
+    """
     LAST_MONTH
+    """
+    Last week date range.
+    """
     LAST_WEEK
+    """
+    Custom date range.
+    """
     CUSTOM
 }
 
+"""
+Analytics for certain date.
+"""
 type AnalyticsStatItemNode {
+    """
+    A date in ISO format
+    """
     date: String!
+    """
+    Total number of events.
+    """
     count: Int!
+    """
+    Unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
     uniqueUsers: Int!
+    """
+    Unique number of currently registered users who triggered event.
+    """
     registeredUsers: Int!
 }
 
+"""
+Analytics summary.
+"""
 type AnalyticsStatItemSummary {
+    """
+    Total number of events.
+    """
     totalCount: Int!
+    """
+    Total unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
     totalUniqueUsers: Int!
+    """
+    Total unique number of currently registered users who triggered event.
+    """
     totalRegisteredUsers: Int!
 }
+
+"""
+Analytics result item.
+"""
 type AnalyticsStatItem {
+    """
+    Analytics summary.
+    """
     summary: AnalyticsStatItemSummary!
+    """
+    Array of analytics by period.
+    """
     nodes: [AnalyticsStatItemNode!]!
 }
 
+"""
+Search analytics.
+"""
 type AnalyticsSearchResult {
+    """
+    Searches analytics.
+    """
     searches: AnalyticsStatItem!
+    """
+    File view analytics.
+    """
     fileViews: AnalyticsStatItem!
+    """
+    File open analytics
+    """
     fileOpens: AnalyticsStatItem!
 }
 
+"""
+Notebook analytics.
+"""
 type AnalyticsNotebooksResults {
+    """
+    Notebooks creation analytics.
+    """
     creations: AnalyticsStatItem!
+    """
+    Notebooks views analytics.
+    """
     views: AnalyticsStatItem!
+    """
+    Notebooks block run analytics.
+    """
     blockRuns: AnalyticsStatItem!
 }
 
+"""
+Users' analytics.
+"""
 type AnalyticsUsersResult {
+    """
+    Users' activity analytics.
+    """
     activity: AnalyticsStatItem!
 }
 
+"""
+Analytics describes a new site statistics.
+"""
 type Analytics {
+    """
+    Search statistics.
+    """
     search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    """
+    Notebooks statistics.
+    """
     notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    """
+    Users statistics.
+    """
     users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
 }
 

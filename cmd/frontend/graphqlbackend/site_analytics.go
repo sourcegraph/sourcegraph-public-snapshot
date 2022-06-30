@@ -134,7 +134,6 @@ func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
 	return &siteAnalyticsUsersResolver{store: &adminanalytics.Users{DateRange: *args.DateRange, DB: r.db}}, nil
 }
 
-
 type siteAnalyticsUsersResolver struct {
 	store *adminanalytics.Users
 }
