@@ -409,7 +409,8 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 
 		message := generateWeeklySummary(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
 
-		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
+		webhooks := strings.Split(historyFlags.slackReportWebHook, ",")
+		if _, err := postSlackUpdate(webhooks, message); err != nil {
 			log.Fatal("postSlackUpdate: ", err)
 		}
 	}
