@@ -55,7 +55,7 @@ func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "codeintel.uploads", &observation.TestContext)
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "codeintel", &observation.TestContext)
 	if err != nil {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
