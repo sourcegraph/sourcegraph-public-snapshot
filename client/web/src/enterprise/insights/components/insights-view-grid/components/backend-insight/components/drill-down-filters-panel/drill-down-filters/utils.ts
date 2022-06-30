@@ -106,15 +106,11 @@ export const parseSeriesDisplayOptions = (
 }
 
 export const parseSeriesLimit = (limit: string | Maybe<number> | undefined): number | undefined => {
-    if (!limit) {
-        return MAX_NUMBER_OF_SERIES
-    }
-
     if (typeof limit === 'number') {
         return Math.min(limit, MAX_NUMBER_OF_SERIES)
     }
 
-    if (limit.length === 0) {
+    if (!limit || limit.length === 0) {
         return
     }
 
