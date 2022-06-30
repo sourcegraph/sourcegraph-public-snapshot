@@ -138,14 +138,19 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
-	logger := sglog.Scoped("server", "the frontend server program")
-	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
-
 	hc := &check.HealthChecker{Checks: []check.Check{
 		checkCanReachGitserver,
+		checkDummy,
 	}}
 	hc.Init()
+
+	logger := sglog.Scoped("server", "the frontend server program")
+	ready := make(chan struct{})
+	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
+		Name:    "checks",
+		Path:    "/checks",
+		Handler: check.NewAggregateHealthCheckHandler(),
+	}).Start()
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
@@ -293,7 +298,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc.NewHealthCheckHandler())
 	if err != nil {
 		return err
 	}
@@ -347,7 +352,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, newHealthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -364,6 +369,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
+		newHealthCheckHandler,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,

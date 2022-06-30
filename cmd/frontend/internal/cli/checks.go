@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -14,12 +15,11 @@ import (
 var checkCanReachGitserver = check.Check{
 	Name:     "check_can_reach_gitserver",
 	Interval: time.Minute,
-	Run: func() any {
+	Run: func(ctx context.Context) (any, error) {
 
 		type resp struct {
 			Addr string `json:"addr"`
-			Ok   bool   `json:"ok"`
-			Msg  string `json:"msg"`
+			Out  string `json:"out"`
 		}
 
 		addrs := conf.Get().ServiceConnections().GitServers
@@ -47,23 +47,38 @@ var checkCanReachGitserver = check.Check{
 			return b, nil
 		}
 
+		fail := false
 		for _, addr := range addrs {
 			b, err := checkAddr(addr)
 			if err != nil {
+				fail = true
 				resps = append(resps, resp{
 					Addr: addr,
-					Ok:   false,
-					Msg:  err.Error(),
+					Out:  err.Error(),
 				})
 			} else {
 				resps = append(resps, resp{
 					Addr: addr,
-					Ok:   true,
-					Msg:  string(b),
+					Out:  string(b),
 				})
 			}
 		}
 
-		return resps
+		var err error
+		if fail {
+			err = errors.New("could not reach one or more gitservers")
+		}
+		return resps, err
+	},
+}
+
+var checkDummy = check.Check{
+	Name:     "check_dummy",
+	Interval: time.Second * 10,
+	Run: func(ctx context.Context) (any, error) {
+		return struct {
+			Time time.Time
+			Msg  string
+		}{Time: time.Now(), Msg: "hello"}, nil
 	},
 }
