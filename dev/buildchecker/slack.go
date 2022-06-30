@@ -69,6 +69,7 @@ For a high-level overview, view the dashboards at <https://app.okayhq.com/dashbo
 
 // postSlackUpdate attempts to send the given summary to at each of the provided webhooks.
 func postSlackUpdate(webhooks []string, summary string) (bool, error) {
+	log.Printf("postSlackUpdate. len(webhooks)=%d\n", len(webhooks))
 	if len(webhooks) == 0 {
 		return false, nil
 	}
@@ -101,7 +102,6 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 	log.Println("slackBody: ", string(body))
 
 	// Attempt to send a message out to each
-	var errs error
 	var oneSucceeded bool
 	for i, webhook := range webhooks {
 		if len(webhook) == 0 {
@@ -112,7 +112,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 
 		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 		if err != nil {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: NewRequest: %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: NewRequest: %w", webhook, err))
 			continue
 		}
 		req.Header.Add("Content-Type", "application/json")
@@ -121,7 +121,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		client := &http.Client{Timeout: 10 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: client.Do: %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: client.Do: %w", webhook, err))
 			continue
 		}
 
@@ -129,12 +129,12 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		buf := new(bytes.Buffer)
 		_, err = buf.ReadFrom(resp.Body)
 		if err != nil {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
 			continue
 		}
 		defer resp.Body.Close()
-		if buf.String() != "ok" {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: non-ok response from Slack: %s", webhook, buf.String()))
+		if resp.StatusCode != 200 {
+			err = errors.CombineErrors(err, errors.Newf("%s: Status code %d response from Slack: %s", webhook, resp.StatusCode, buf.String()))
 			continue
 		}
 
