@@ -139,7 +139,9 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 try {
-                    getPreviewContent().openInEditorOrBrowser();
+                    if (getPreviewContent() != null) {
+                        getPreviewContent().openInEditorOrBrowser();
+                    }
                 } catch (Exception ex) {
                     Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
                     logger.error("Error opening file in editor: " + ex.getMessage());
