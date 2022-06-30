@@ -747,7 +747,18 @@ input LineChartSearchInsightDataSeriesInput {
     """
     The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
     """
-    groupBy: String
+    groupBy: GroupByField
+}
+
+"""
+Fields that can be grouped on for compute powered insights.
+"""
+enum GroupByField {
+    REPO
+    LANG
+    PATH
+    AUTHOR
+    DATE
 }
 
 """
@@ -1002,7 +1013,7 @@ type SearchInsightDataSeriesDefinition {
     """
     The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
     """
-    groupBy: String
+    groupBy: GroupByField
 }
 
 """

@@ -399,6 +399,10 @@ func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups()
 }
 
 func (s *searchInsightDataSeriesDefinitionResolver) GroupBy() (*string, error) {
+	if s.series.GroupBy != nil {
+		groupBy := strings.ToUpper(*s.series.GroupBy)
+		return &groupBy, nil
+	}
 	return s.series.GroupBy, nil
 }
 
@@ -1014,6 +1018,12 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
+	var groupBy *string
+	if series.GroupBy != nil {
+		temp := strings.ToLower(*series.GroupBy)
+		groupBy = &temp
+	}
+
 	// Don't try to match on non-global series, since they are always replaced
 	if len(series.RepositoryScope.Repositories) == 0 {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
@@ -1021,7 +1031,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
 			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
 			GenerateFromCaptureGroups: dynamic,
-			GroupBy:                   series.GroupBy,
+			GroupBy:                   groupBy,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "FindMatchingSeries")
@@ -1043,7 +1053,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			GeneratedFromCaptureGroups: dynamic,
 			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
 			GenerationMethod:           searchGenerationMethod(series),
-			GroupBy:                    series.GroupBy,
+			GroupBy:                    groupBy,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
