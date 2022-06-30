@@ -81,6 +81,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
         ((EditorImpl) editor).installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
 
+        setState(State.PREVIEW_AVAILABLE);
+
         editorComponent = editor.getComponent();
         add(editorComponent, BorderLayout.CENTER);
         validate();
