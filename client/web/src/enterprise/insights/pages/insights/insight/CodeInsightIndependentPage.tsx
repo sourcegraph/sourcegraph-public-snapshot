@@ -1,4 +1,4 @@
-import { FunctionComponent, useContext, useEffect, useMemo } from 'react'
+import { FunctionComponent, useContext, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
@@ -25,10 +25,6 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
 
     const insight = useObservable(useMemo(() => getInsightById(insightId), [getInsightById, insightId]))
 
-    useEffect(() => {
-        telemetryService.logPageView('StandaloneInsightPage')
-    }, [telemetryService])
-
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />
     }
@@ -42,11 +38,10 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
             <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
                 path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
-                actions={<CodeInsightIndependentPageActions insight={insight} telemetryService={telemetryService} />}
+                actions={<CodeInsightIndependentPageActions insight={insight} />}
             />
 
             <StandaloneInsightDashboardPills
-                telemetryService={telemetryService}
                 dashboards={insight.dashboards}
                 insightId={insight.id}
                 className={styles.dashboards}

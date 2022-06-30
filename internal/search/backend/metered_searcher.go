@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -92,7 +93,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event.AddLogFields(fields)
 	}
 
-	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
+	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
 		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {

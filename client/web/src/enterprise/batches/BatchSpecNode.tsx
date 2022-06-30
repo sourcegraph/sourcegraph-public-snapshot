@@ -56,18 +56,18 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             <div className="px-2 pb-1">
                 <H3 className="pr-2">
-                    {currentSpecID === node.id && (
-                        <>
-                            <Icon
-                                className="text-warning"
-                                data-tooltip="Currently applied spec"
-                                aria-label="Currently applied spec"
-                                as={StarIcon}
-                            />{' '}
-                        </>
-                    )}
                     {currentSpecID && (
                         <Link to={`${node.namespace.url}/batch-changes/${node.description.name}/executions/${node.id}`}>
+                            {currentSpecID === node.id && (
+                                <>
+                                    <Icon
+                                        className="text-warning"
+                                        data-tooltip="Currently applied spec"
+                                        aria-label="Currently applied spec"
+                                        as={StarIcon}
+                                    />{' '}
+                                </>
+                            )}
                             Executed by <strong>{node.creator?.username}</strong>{' '}
                             <Timestamp date={node.createdAt} now={now} />
                         </Link>
