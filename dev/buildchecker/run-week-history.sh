@@ -15,5 +15,5 @@ go run ./dev/buildchecker/ \
   -created.to="$created_to" \
   -honeycomb.dataset="buildkite-history" \
   -honeycomb.token="$HONEYCOMB_TOKEN" \
-  -okayhq.token="$CI_OKAYHQ_TOKEN" \
+  -slack.report-webhook="$SLACK_REPORT_WEBHOOK" \
   history
