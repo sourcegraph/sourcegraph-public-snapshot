@@ -148,6 +148,10 @@ An example use of `Skip`:
  }
 ```
 
+##### Assessing flaky client steps
+
+See more information on how to assess flaky client steps [here](../../how-to/testing.md#assessing-flaky-client-steps).
+
 ##### Flaky infrastructure
 
 If the [build or test infrastructure itself is flaky](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support), then [open an issue with the `team/devx` label](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/devx) and notify the [Developer Experience team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#contact).
