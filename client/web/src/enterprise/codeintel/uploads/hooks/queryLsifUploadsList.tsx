@@ -70,7 +70,7 @@ export const queryLsifUploadsList = (
         first,
         after,
         includeDeleted,
-    }: GQL.ILsifUploadsOnRepositoryArguments,
+    }: GQL.ILsifUploadsOnQueryArguments,
     client: ApolloClient<object>
 ): Observable<LsifUploadConnectionFields> => {
     const variables: LsifUploadsVariables = {
