@@ -175,7 +175,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                               })}
                     />
                     <div className={classNames('mx-1', styles.headerDivider)} />
-                    <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                    <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
                         data-testid="result-container-header"
@@ -186,10 +186,10 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         )}
                     </div>
                     {matchCountLabel && (
-                        <>
+                        <span className="d-flex align-items-center">
                             <small>{matchCountLabel}</small>
                             {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
-                        </>
+                        </span>
                     )}
                     {collapsible && (
                         <Button
@@ -222,10 +222,10 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         <div className={classNames('mx-2', styles.headerDivider)} />
                     )}
                     {formattedRepositoryStarCount && (
-                        <>
+                        <span className="d-flex align-items-center">
                             <SearchResultStar aria-label={`${repoStars} stars`} />
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
-                        </>
+                        </span>
                     )}
                 </div>
                 {!expanded && collapsedChildren}

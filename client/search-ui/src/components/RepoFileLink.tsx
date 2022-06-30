@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { useIsTruncated, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 interface Props {
     repoName: string
@@ -28,20 +28,9 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     className,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
-    /**
-     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
-     * We want to do it on mouse enter as browser window size might change after the element has been
-     * loaded initially
-     */
-    const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     return (
-        <div
-            ref={titleReference}
-            onMouseEnter={checkTruncation}
-            className={classNames(className)}
-            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
-        >
+        <div className={classNames(className)}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link>
             <span aria-hidden={true}> ›</span>{' '}
             <Link to={appendSubtreeQueryParameter(fileURL)}>
