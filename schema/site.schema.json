@@ -1141,9 +1141,9 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Determines what tracing provider to enable. Supports \"opentracing\" (\"datadog\" support is deprecated)",
+          "description": "Determines what tracing provider to enable (note that \"datadog\" support is deprecated)",
           "type": "string",
-          "enum": ["datadog", "opentracing"],
+          "enum": ["opentracing", "opentelemetry", "datadog"],
           "default": "opentracing"
         },
         "sampling": {
@@ -1153,7 +1153,7 @@
           "default": "selective"
         },
         "debug": {
-          "description": "Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
+          "description": "Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
           "type": "boolean",
           "default": false
         }
