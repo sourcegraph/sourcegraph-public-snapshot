@@ -206,7 +206,7 @@ func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *
 }
 
 const setRepositoryAsDirtyQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:SetRepositoryAsDirty
+-- source: internal/codeintel/uploads/internal/stores/store_commits.go:SetRepositoryAsDirty
 INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
 VALUES (%s, 1, 0)
 ON CONFLICT (repository_id) DO UPDATE SET
@@ -233,7 +233,7 @@ func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err er
 }
 
 const dirtyRepositoriesQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:DirtyRepositories
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetDirtyRepositories
 SELECT ldr.repository_id, ldr.dirty_token
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id

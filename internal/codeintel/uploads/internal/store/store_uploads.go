@@ -307,7 +307,7 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 }
 
 const softDeleteExpiredUploadsQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:SoftDeleteExpiredUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:SoftDeleteExpiredUploads
 WITH candidates AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -363,7 +363,7 @@ func (s *store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 }
 
 const hardDeleteUploadByIDQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:HardDeleteUploadByID
 WITH locked_uploads AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -424,7 +424,7 @@ func (s *store) UpdateUploadRetention(ctx context.Context, protectedIDs, expired
 }
 
 const updateUploadRetentionQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:UpdateUploadRetention
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadRetention
 UPDATE lsif_uploads SET %s WHERE id IN (%s)
 `
 
@@ -479,7 +479,7 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 	}
 
 	result, err := tx.ExecResult(ctx, sqlf.Sprintf(
-		updateReferenceCountsQuery,
+		updateUploadsReferenceCountsQuery,
 		idArray,
 		idArray,
 		excludeCondition,
@@ -494,8 +494,8 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 	return int(affected), nil
 }
 
-var updateReferenceCountsQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:UpdateReferenceCounts
+var updateUploadsReferenceCountsQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateReferenceCounts
 WITH
 -- Select the set of package identifiers provided by the target upload list. This
 -- result set includes non-canonical results.

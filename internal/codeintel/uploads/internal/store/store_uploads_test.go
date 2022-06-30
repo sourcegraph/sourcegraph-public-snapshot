@@ -180,19 +180,6 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	})
 }
 
-// Package pairs a package schem+name+version with the dump that provides it.
-type Package struct {
-	DumpID  int
-	Scheme  string
-	Name    string
-	Version string
-}
-
-// PackageReference is a package scheme+name+version
-type PackageReference struct {
-	Package
-}
-
 func TestSoftDeleteExpiredUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

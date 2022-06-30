@@ -51,7 +51,7 @@ func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []preci
 }
 
 const updatePackagesTemporaryTableQuery = `
--- source: internal/codeintel/stores/dbstore/packages.go:UpdatePackages
+-- source: internal/codeintel/uploads/internal/store/store_packages.go:UpdatePackages
 CREATE TEMPORARY TABLE t_lsif_packages (
 	scheme text NOT NULL,
 	name text NOT NULL,
@@ -60,7 +60,7 @@ CREATE TEMPORARY TABLE t_lsif_packages (
 `
 
 const updatePackagesInsertQuery = `
--- source: internal/codeintel/stores/dbstore/packages.go:UpdatePackages
+-- source: internal/codeintel/uploads/internal/store/store_packages.go:UpdatePackages
 INSERT INTO lsif_packages (dump_id, scheme, name, version)
 SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_packages source

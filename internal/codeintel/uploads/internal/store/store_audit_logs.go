@@ -21,7 +21,7 @@ func (s *store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, no
 }
 
 const deleteOldAuditLogsQuery = `
--- source: internal/codeintel/stores/dbstore/janitor.go:DeleteOldAuditLogs
+-- source: internal/codeintel/uploads/internal/store/store_audit_logs.go:DeleteOldAuditLogs
 WITH deleted AS (
 	DELETE FROM lsif_uploads_audit_logs
 	WHERE %s - log_timestamp > (%s * '1 second'::interval)

@@ -35,7 +35,3 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 		operations: s.operations,
 	}, nil
 }
-
-func (s *store) Done(err error) error {
-	return s.db.Done(err)
-}

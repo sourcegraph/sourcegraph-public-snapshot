@@ -66,7 +66,7 @@ func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 }
 
 const clearQuery = `
--- source: internal/codeintel/stores/lsifstore/clear.go:Clear
+-- source: internal/codeintel/uploads/internal/lsifstore/lsifstore_clear.go:Clear
 DELETE FROM %s WHERE dump_id IN (%s)
 `
 
