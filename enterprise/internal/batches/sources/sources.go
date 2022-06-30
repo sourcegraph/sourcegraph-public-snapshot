@@ -69,14 +69,6 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 	}
 }
 
-// NewFakeSourcer returns a new faked Sourcer to be used for testing Batch Changes.
-func NewFakeSourcer(err error, source ChangesetSource) Sourcer {
-	return &fakeSourcer{
-		err,
-		source,
-	}
-}
-
 // ForChangeset returns a ChangesetSource for the given changeset. The changeset.RepoID
 // is used to find the matching code host.
 func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
@@ -125,7 +117,10 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func gitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+// GitserverPushConfig creates a push configuration given a repo and an
+// authenticator. This function is only public for testing purposes, and should
+// not be used otherwise.
+func GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -462,4 +457,44 @@ func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo 
 	// // Remove any existing credentials from the clone URL.
 	// parsedU.User = nil
 	return cloneURL.String(), nil
+}
+
+var ErrChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
+
+// GetRemoteRepo returns the remote that should be pushed to for a given
+// changeset, changeset source, and target repo. The changeset spec may
+// optionally be provided, and is required if the repo will be pushed to.
+func GetRemoteRepo(
+	ctx context.Context,
+	css ChangesetSource,
+	targetRepo *types.Repo,
+	ch *btypes.Changeset,
+	spec *btypes.ChangesetSpec,
+) (*types.Repo, error) {
+	// If the changeset spec doesn't expect a fork _and_ we're not updating a
+	// changeset that was previously created using a fork, then we don't need to
+	// even check if the changeset source is forkable, let alone set up the
+	// remote repo: we can just return the target repo and be done with it.
+	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
+		return targetRepo, nil
+	}
+
+	fss, ok := css.(ForkableChangesetSource)
+	if !ok {
+		return nil, ErrChangesetSourceCannotFork
+	}
+
+	if ch.ExternalForkNamespace != "" {
+		// If we're updating an existing changeset, we should push/modify the
+		// same fork, even if the user credential would now fork into a
+		// different namespace.
+		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+	} else if namespace := spec.GetForkNamespace(); namespace != nil {
+		// If the changeset spec requires a specific fork namespace, then we
+		// should handle that here.
+		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
+	}
+
+	// Otherwise, we're pushing to a user fork.
+	return fss.GetUserFork(ctx, targetRepo)
 }

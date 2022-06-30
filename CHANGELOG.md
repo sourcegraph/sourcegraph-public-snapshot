@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fix an issue where updating the title or body of a Bitbucket Cloud pull request opened by a batch change could fail when the pull request was not on a fork of the target repository. [#37585](https://github.com/sourcegraph/sourcegraph/issues/37585)
 - A bug where some complex `repo:` regexes only returned a subset of repository results. [#37925](https://github.com/sourcegraph/sourcegraph/pull/37925)
 
 ### Removed
