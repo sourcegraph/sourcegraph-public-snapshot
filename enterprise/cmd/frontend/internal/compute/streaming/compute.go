@@ -46,32 +46,28 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
-	type groupEvent struct {
-		results []compute.Result
-		stats   streaming.Stats
-	}
-	g := group.NewWithStreaming[groupEvent]().WithErrors().WithLimit(8)
-	cb := func(e groupEvent, err error) {
+	g := group.NewWithStreaming[Event]().WithErrors().WithLimit(8)
+	cb := func(ev Event, err error) {
 		if err != nil {
 			select {
 			case errorC <- err:
 			default:
 			}
 		} else {
-			eventsC <- Event{Results: e.results, Stats: e.stats}
+			eventsC <- ev
 		}
 	}
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if !event.Stats.Zero() {
-			g.Go(func() (groupEvent, error) {
-				return groupEvent{nil, event.Stats}, nil
+			g.Go(func() (Event, error) {
+				return Event{nil, event.Stats}, nil
 			}, cb)
 		}
 		for _, match := range event.Results {
 			match := match
-			g.Go(func() (groupEvent, error) {
+			g.Go(func() (Event, error) {
 				results, err := toComputeResult(ctx, db, computeQuery.Command, match)
-				return groupEvent{results, streaming.Stats{}}, err
+				return Event{results, streaming.Stats{}}, err
 			}, cb)
 		}
 	})
