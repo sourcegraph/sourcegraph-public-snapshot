@@ -89,8 +89,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     public void indicateLoadingIfInTime(@NotNull Date date) {
         if (lastPreviewUpdate.before(date)) {
             selectionMetadataPanel.clearSelectionMetadataLabel();
-            previewPanel.setLoading(true);
-            previewPanel.clearContent();
+            previewPanel.setState(PreviewPanel.State.LOADING);
         }
     }
 
@@ -106,7 +105,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         if (lastPreviewUpdate.before(date)) {
             this.lastPreviewUpdate = date;
             selectionMetadataPanel.clearSelectionMetadataLabel();
-            previewPanel.setContent(null);
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
         }
     }
 

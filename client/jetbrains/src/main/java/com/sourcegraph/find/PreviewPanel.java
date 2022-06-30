@@ -46,22 +46,14 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     }
 
     public void setContent(@Nullable PreviewContent previewContent) {
-        if (previewContent == null) {
-            setLoading(false);
-            clearContent();
+        String fileContent = previewContent != null ? previewContent.getContent() : null;
+        if (previewContent == null || fileContent == null) {
+            setState(State.NO_PREVIEW_AVAILABLE);
             return;
         }
 
         if (editorComponent != null && previewContent.equals(this.previewContent)) {
-            return;
-        }
-
-        String fileContent = previewContent.getContent();
-
-        /* If no content, just show "No preview available" */
-        if (fileContent == null) {
-            setLoading(false);
-            clearContent();
+            setState(State.PREVIEW_AVAILABLE);
             return;
         }
 
@@ -96,8 +88,15 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
     }
 
-    public void setLoading(boolean isLoading) {
-        getEmptyText().setText(isLoading ? LOADING_TEXT : NO_PREVIEW_AVAILABLE_TEXT);
+    public void setState(@NotNull State state) {
+        if (editorComponent != null) {
+            editorComponent.setVisible(state == State.PREVIEW_AVAILABLE);
+        }
+        if (state == State.LOADING) {
+            getEmptyText().setText(LOADING_TEXT);
+        } else if (state == State.NO_PREVIEW_AVAILABLE) {
+            getEmptyText().setText(NO_PREVIEW_AVAILABLE_TEXT);
+        }
     }
 
     private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
@@ -113,16 +112,6 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
         if (firstOffset != -1) {
             editor.getScrollingModel().scrollTo(editor.offsetToLogicalPosition(firstOffset), ScrollType.CENTER);
-        }
-    }
-
-    public void clearContent() {
-        if (editorComponent != null) {
-            previewContent = null;
-            remove(editorComponent);
-            validate();
-            repaint();
-            editorComponent = null;
         }
     }
 
@@ -153,6 +142,12 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         return group;
     }
 
+    public enum State {
+        LOADING,
+        PREVIEW_AVAILABLE,
+        NO_PREVIEW_AVAILABLE,
+    }
+
     class SimpleEditorFileAction extends DumbAwareAction {
         FileAction action;
         Editor editor;
@@ -174,5 +169,4 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             action.actionPerformedFromPreviewContent(project, getPreviewContent(), start, end);
         }
     }
-
 }
