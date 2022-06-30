@@ -23,7 +23,7 @@ import (
 
 // NewResolver returns a new Resolver that uses the given database
 func NewResolver(db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: db}
+	return &Resolver{db: db, log: log.Scoped("codeMonitorResolver", "")}
 }
 
 type Resolver struct {
@@ -643,7 +643,8 @@ func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
 		return nil, err
 	}
 	return &Resolver{
-		db: edb.NewEnterpriseDB(tx),
+		db:  edb.NewEnterpriseDB(tx),
+		log: r.log,
 	}, nil
 }
 

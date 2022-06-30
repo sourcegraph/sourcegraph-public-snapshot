@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -98,10 +98,18 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     isLightTheme,
     isSourcegraphDotCom,
 }) => {
-    const [showQueryForm, setShowQueryForm] = useState(startExpanded)
-    const toggleQueryForm: React.FormEventHandler = useCallback(event => {
-        event.preventDefault()
-        setShowQueryForm(show => !show)
+    const [expanded, setExpanded] = useState(startExpanded)
+
+    // Focus card when collapsing
+    const collapsedCard = useRef<HTMLButtonElement>(null)
+    const closeCard = useCallback((): void => {
+        setExpanded(false)
+
+        // Use timeout to wait for render to complete after calling setExpanded
+        // so that collapsedCard is rendered and can be focused.
+        setTimeout(() => {
+            collapsedCard.current?.focus()
+        }, 0)
     }, [])
 
     const [isValidQuery, setIsValidQuery] = useState(false)
@@ -181,20 +189,20 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setTriggerCompleted(true)
             onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
+        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setQueryState({ query })
         },
-        [setShowQueryForm, query]
+        [closeCard, query]
     )
 
     const derivedInputClassName = useMemo(() => {
@@ -210,7 +218,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     return (
         <>
             <H3>Trigger</H3>
-            {showQueryForm && (
+            {expanded && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
@@ -317,12 +325,13 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     </div>
                 </Card>
             )}
-            {!showQueryForm && (
+            {!expanded && (
                 <Card
                     data-testid="trigger-button"
                     as={Button}
                     className={classNames('test-trigger-button', cardBtnClassName)}
-                    onClick={toggleQueryForm}
+                    onClick={() => setExpanded(true)}
+                    ref={collapsedCard}
                 >
                     <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
