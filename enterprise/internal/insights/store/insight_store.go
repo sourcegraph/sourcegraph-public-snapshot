@@ -733,7 +733,7 @@ type DataSeriesStore interface {
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
-	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
 	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
 }
 
