@@ -340,25 +340,11 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 		}
 	})
 
-	VisitField(nodes, FieldRepo, func(v string, negated bool, ann Annotation) {
-		if !ann.Labels.IsSet(IsPredicate) {
-			return
-		}
-
-		name, params := ParseAsPredicate(v)
-		if name != "contains.file" {
-			return
-		}
-
-		var p RepoContainsFilePredicate
-		if err := p.ParseParams(params); err != nil {
-			return
-		}
-
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
 		if negated {
-			exclude = append(exclude, p.Pattern)
+			exclude = append(exclude, pred.Pattern)
 		} else {
-			include = append(include, p.Pattern)
+			include = append(include, pred.Pattern)
 		}
 	})
 
