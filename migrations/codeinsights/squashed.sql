@@ -168,7 +168,7 @@ CREATE TABLE insight_series (
     generated_from_capture_groups boolean DEFAULT false NOT NULL,
     generation_method text NOT NULL,
     just_in_time boolean DEFAULT false NOT NULL,
-    backfill_attempts integer
+    backfill_attempts integer DEFAULT 0 NOT NULL
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';
