@@ -1,5 +1,6 @@
 :root {
     --monospace-font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --lead-font-size: calc(var(--font-size-base) * 1.25);
 }
 
 h1 {
@@ -156,7 +157,7 @@ mark,
 }
 
 .lead {
-    font-size: 1.09375rem;
+    font-size: var(--lead-font-size);
     font-weight: 300;
 }
 
