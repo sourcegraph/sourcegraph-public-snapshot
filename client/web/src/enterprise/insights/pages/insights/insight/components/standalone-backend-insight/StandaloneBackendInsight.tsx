@@ -34,7 +34,6 @@ import {
     ALL_INSIGHTS_DASHBOARD,
     BackendInsight,
     CodeInsightsBackendContext,
-    DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
@@ -165,8 +164,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
-                        onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                         seriesCount={insight.seriesCount}
                     />
                 )}
