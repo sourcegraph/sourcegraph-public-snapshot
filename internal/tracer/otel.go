@@ -30,14 +30,15 @@ import (
 //
 // OTEL_EXPORTER_OTLP_ENDPOINT is the name chosen because it is used in other
 // projects: https://sourcegraph.com/search?q=OTEL_EXPORTER_OTLP_ENDPOINT+-f:vendor
-var otelCollectorAddress = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317", "Address of OpenTelemetry collector")
+var otelCollectorEndpoint = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317", "Address of OpenTelemetry collector")
 
 // newOTelTracer creates an opentracing.Tracer that actually exports OpenTelemetry traces
 // to an OpenTelemetry collector.
 func newOTelTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
-	logger = logger.Scoped("otel", "OpenTelemetry tracer")
+	logger = logger.Scoped("otel", "OpenTelemetry tracer").
+		With(log.String("otel-collector.endpoint", otelCollectorEndpoint))
 
-	processor, err := newOTelCollectorExporter(context.Background(), opts.debug)
+	processor, err := newOTelCollectorExporter(context.Background(), logger, opts.debug)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -70,8 +71,8 @@ func newOTelTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Clo
 
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
 // collector.
-func newOTelCollectorExporter(ctx context.Context, debug bool) (oteltrace.SpanProcessor, error) {
-	conn, err := grpc.DialContext(ctx, otelCollectorAddress,
+func newOTelCollectorExporter(ctx context.Context, logger log.Logger, debug bool) (oteltrace.SpanProcessor, error) {
+	conn, err := grpc.DialContext(ctx, otelCollectorEndpoint,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create gRPC connection to collector")
@@ -86,6 +87,7 @@ func newOTelCollectorExporter(ctx context.Context, debug bool) (oteltrace.SpanPr
 	// If in debug mode, we use a synchronous span processor to force spans to get pushed
 	// immediately.
 	if debug {
+		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
 		return oteltrace.NewSimpleSpanProcessor(traceExporter), nil
 	}
 	return oteltrace.NewBatchSpanProcessor(traceExporter), nil

@@ -76,4 +76,6 @@ func (t *switchableTracer) set(
 	t.tracer = tracer
 	t.log = shouldLog
 	t.logger = logger.With(log.String("tracer", fmt.Sprintf("%T", tracer))).AddCallerSkip(1)
+
+	t.logger.Info("tracer set")
 }

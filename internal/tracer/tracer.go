@@ -117,8 +117,8 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 		}
 
 		opts := options{
-			externalURL: siteConfig.ExternalURL,
 			TracerType:  setTracer,
+			externalURL: siteConfig.ExternalURL,
 			debug:       debug,
 			// Stays the same
 			resource: oldOpts.resource,
@@ -129,22 +129,21 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 		}
 		oldOpts = opts
 
-		t, closer, err := newTracer(logger, &opts)
+		tracerLogger := logger.With(
+			log.String("tracerType", string(opts.TracerType)),
+			log.Bool("debug", opts.debug))
+		t, closer, err := newTracer(tracerLogger, &opts)
 		if err != nil {
-			logger.Warn("Could not initialize tracer",
-				log.String("tracer", string(opts.TracerType)),
-				log.Error(err))
+			tracerLogger.Warn("failed to initialize tracer", log.Error(err))
 			return
 		}
-		globalTracer.set(logger, t, closer, opts.debug)
+		globalTracer.set(tracerLogger, t, closer, opts.debug)
 	})
 }
 
 // newTracer creates a tracer based on options
 func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
-	logger = logger.With(log.String("type", string(opts.TracerType)))
-
-	logger.Info("configuring tracer")
+	logger.Debug("configuring tracer")
 
 	switch opts.TracerType {
 	case OpenTracing:
@@ -154,7 +153,6 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer,
 		return newOTelTracer(logger, opts)
 
 	default:
-		logger.Info("tracing disabled")
 		return opentracing.NoopTracer{}, nil, nil
 	}
 }
