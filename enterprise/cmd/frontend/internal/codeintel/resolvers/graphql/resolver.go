@@ -52,7 +52,7 @@ type Resolver struct {
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
+func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
 	baseResolver := &Resolver{
 		db:                 db,
 		gitserver:          gitserver,
@@ -64,7 +64,7 @@ func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.R
 	return &frankenResolver{
 		Resolver:                    baseResolver,
 		AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
-		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db)),
+		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db, codeIntelDB)),
 		PoliciesServiceResolver:     policiesgraphql.GetResolver(policies.GetService(db)),
 	}
 }

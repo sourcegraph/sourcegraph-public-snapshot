@@ -76,7 +76,6 @@ func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows
 
 func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
 	return d.Handle().ExecContext(ctx, q, args...)
-
 }
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {

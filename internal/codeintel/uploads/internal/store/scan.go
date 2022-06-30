@@ -1,6 +1,11 @@
 package store
 
 import (
+	"database/sql"
+	"sort"
+
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -13,3 +18,150 @@ func scanUpload(s dbutil.Scanner) (upload shared.Upload, err error) {
 }
 
 var scanUploads = basestore.NewSliceScanner(scanUpload)
+
+var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
+
+func scanUploadWithCount(s dbutil.Scanner) (upload shared.Upload, count int, err error) {
+	var rawUploadedParts []sql.NullInt32
+	if err = s.Scan(
+		&upload.ID,
+		&upload.Commit,
+		&upload.Root,
+		&upload.VisibleAtTip,
+		&upload.UploadedAt,
+		&upload.State,
+		&upload.FailureMessage,
+		&upload.StartedAt,
+		&upload.FinishedAt,
+		&upload.ProcessAfter,
+		&upload.NumResets,
+		&upload.NumFailures,
+		&upload.RepositoryID,
+		&upload.RepositoryName,
+		&upload.Indexer,
+		&dbutil.NullString{S: &upload.IndexerVersion},
+		&upload.NumParts,
+		pq.Array(&rawUploadedParts),
+		&upload.UploadSize,
+		&upload.AssociatedIndexID,
+		&upload.Rank,
+		&count,
+	); err != nil {
+		return upload, 0, err
+	}
+
+	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
+	for _, uploadedPart := range rawUploadedParts {
+		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+	}
+
+	return upload, count, nil
+}
+
+// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
+func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return visibilities, nil
+}
+
+// scanSourcedCommits scans triples of repository ids/repository names/commits from the
+// return value of `*Store.query`. The output of this function is ordered by repository
+// identifier, then by commit.
+func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	sourcedCommitsMap := map[int]shared.SourcedCommits{}
+	for rows.Next() {
+		var repositoryID int
+		var repositoryName string
+		var commit string
+		if err := rows.Scan(&repositoryID, &repositoryName, &commit); err != nil {
+			return nil, err
+		}
+
+		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
+			RepositoryID:   repositoryID,
+			RepositoryName: repositoryName,
+			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
+		}
+	}
+
+	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
+	for _, sourcedCommits := range sourcedCommitsMap {
+		sort.Strings(sourcedCommits.Commits)
+		flattened = append(flattened, sourcedCommits)
+	}
+
+	sort.Slice(flattened, func(i, j int) bool {
+		return flattened[i].RepositoryID < flattened[j].RepositoryID
+	})
+	return flattened, nil
+}
+
+func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
+	if queryErr != nil {
+		return 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value); err != nil {
+			return 0, err
+		}
+	}
+
+	return value, nil
+}
+
+func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
+	if queryErr != nil {
+		return 0, 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return value1, value2, nil
+}
+
+func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	values := map[int]int{}
+	for rows.Next() {
+		var value1 int
+		var value2 int
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return nil, err
+		}
+
+		values[value1] = value2
+	}
+
+	return values, nil
+}
