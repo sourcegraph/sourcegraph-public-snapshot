@@ -5,16 +5,19 @@ import (
 	"encoding/json"
 	"io"
 
+	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type ComputeTextStreamDecoder struct {
-	OnResult  func(results []compute.Text)
-	OnAlert   func(*http.EventAlert)
-	OnError   func(*http.EventError)
-	OnUnknown func(event, data []byte)
+	OnProgress func(progress *streamapi.Progress)
+	OnResult   func(results []compute.Text)
+	OnAlert    func(*http.EventAlert)
+	OnError    func(*http.EventError)
+	OnUnknown  func(event, data []byte)
 }
 
 func (rr ComputeTextStreamDecoder) ReadAll(r io.Reader) error {
