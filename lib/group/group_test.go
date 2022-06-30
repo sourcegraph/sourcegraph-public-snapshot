@@ -26,7 +26,7 @@ func TestGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := New().WithLimit(1)
+		g := New().WithMaxConcurrency(1)
 
 		currentConcurrent := int64(0)
 		errCount := int64(0)
@@ -71,7 +71,7 @@ func TestErrorGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := New().WithErrors().WithLimit(1)
+		g := New().WithErrors().WithMaxConcurrency(1)
 
 		currentConcurrent := int64(0)
 		for i := 0; i < 10; i++ {
@@ -131,7 +131,7 @@ func TestContextErrorGroup(t *testing.T) {
 	t.Run("cancel unblocks limiter", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
-		g := New().WithContext(ctx).WithLimit(0)
+		g := New().WithContext(ctx).WithMaxConcurrency(0)
 		g.Go(func(context.Context) error { return nil })
 		require.ErrorIs(t, g.Wait(), context.DeadlineExceeded)
 	})
@@ -164,7 +164,7 @@ func TestContextErrorGroup(t *testing.T) {
 
 	t.Run("limit", func(t *testing.T) {
 		ctx := context.Background()
-		g := New().WithContext(ctx).WithLimit(1)
+		g := New().WithContext(ctx).WithMaxConcurrency(1)
 
 		currentConcurrent := int64(0)
 		for i := 0; i < 10; i++ {

@@ -29,7 +29,7 @@ func TestResultGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := NewWithResults[int]().WithLimit(1)
+		g := NewWithResults[int]().WithMaxConcurrency(1)
 
 		currentConcurrent := int64(0)
 		errCount := int64(0)
@@ -90,7 +90,7 @@ func TestResultErrorGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := NewWithResults[int]().WithErrors().WithLimit(1)
+		g := NewWithResults[int]().WithErrors().WithMaxConcurrency(1)
 
 		currentConcurrent := int64(0)
 		for i := 0; i < 10; i++ {
@@ -160,7 +160,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 	t.Run("cancel unblocks limiter", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
-		g := NewWithResults[int]().WithContext(ctx).WithLimit(0)
+		g := NewWithResults[int]().WithContext(ctx).WithMaxConcurrency(0)
 		g.Go(func(context.Context) (int, error) { return 0, nil })
 		res, err := g.Wait()
 		require.Len(t, res, 0)
@@ -199,7 +199,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 
 	t.Run("limit", func(t *testing.T) {
 		ctx := context.Background()
-		g := NewWithResults[int]().WithContext(ctx).WithLimit(1)
+		g := NewWithResults[int]().WithContext(ctx).WithMaxConcurrency(1)
 
 		currentConcurrent := int64(0)
 		for i := 0; i < 10; i++ {

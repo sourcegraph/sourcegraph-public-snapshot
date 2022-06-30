@@ -129,13 +129,13 @@ func (g *resultGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] 
 	}
 }
 
-func (g *resultGroup[T]) WithLimit(limit int) ResultGroup[T] {
-	g.group = g.group.WithLimit(limit)
+func (g *resultGroup[T]) WithMaxConcurrency(limit int) ResultGroup[T] {
+	g.group = g.group.WithMaxConcurrency(limit)
 	return g
 }
 
-func (g *resultGroup[T]) WithLimiter(limiter Limiter) ResultGroup[T] {
-	g.group = g.group.WithLimiter(limiter)
+func (g *resultGroup[T]) WithConcurrencyLimiter(limiter Limiter) ResultGroup[T] {
+	g.group = g.group.WithConcurrencyLimiter(limiter)
 	return g
 }
 
@@ -172,13 +172,13 @@ func (g *resultErrorGroup[T]) WithFirstError() ResultErrorGroup[T] {
 	return g
 }
 
-func (g *resultErrorGroup[T]) WithLimit(limit int) ResultErrorGroup[T] {
-	g.errorGroup = g.errorGroup.WithLimit(limit)
+func (g *resultErrorGroup[T]) WithMaxConcurrency(limit int) ResultErrorGroup[T] {
+	g.errorGroup = g.errorGroup.WithMaxConcurrency(limit)
 	return g
 }
 
-func (g *resultErrorGroup[T]) WithLimiter(limiter Limiter) ResultErrorGroup[T] {
-	g.errorGroup = g.errorGroup.WithLimiter(limiter)
+func (g *resultErrorGroup[T]) WithConcurrencyLimiter(limiter Limiter) ResultErrorGroup[T] {
+	g.errorGroup = g.errorGroup.WithConcurrencyLimiter(limiter)
 	return g
 }
 
@@ -216,13 +216,13 @@ func (g *resultContextGroup[T]) WithCollectErrored() ResultContextGroup[T] {
 	return g
 }
 
-func (g *resultContextGroup[T]) WithLimit(limit int) ResultContextGroup[T] {
-	g.contextGroup = g.contextGroup.WithLimit(limit)
+func (g *resultContextGroup[T]) WithMaxConcurrency(limit int) ResultContextGroup[T] {
+	g.contextGroup = g.contextGroup.WithMaxConcurrency(limit)
 	return g
 }
 
-func (g *resultContextGroup[T]) WithLimiter(limiter Limiter) ResultContextGroup[T] {
-	g.contextGroup = g.contextGroup.WithLimiter(limiter)
+func (g *resultContextGroup[T]) WithConcurrencyLimiter(limiter Limiter) ResultContextGroup[T] {
+	g.contextGroup = g.contextGroup.WithConcurrencyLimiter(limiter)
 	return g
 }
 

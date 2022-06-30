@@ -85,13 +85,13 @@ type ContextGroup interface {
 // goroutines. By default, groups can start an unlimited number of concurrent
 // goroutines. Its type parameter is the return type after limiting.
 type Limitable[T any] interface {
-	// WithLimit will set the maximum number concurrent goroutines running
+	// WithMaxConcurrency will set the maximum number concurrent goroutines running
 	// as part of this group.
-	WithLimit(int) T
+	WithMaxConcurrency(int) T
 
-	// WithLimiter will set the limiter of this group. This is useful if
+	// WithConcurrencyLimiter will set the limiter of this group. This is useful if
 	// you want to share a limiter between multiple groups.
-	WithLimiter(Limiter) T
+	WithConcurrencyLimiter(Limiter) T
 }
 
 // Contextable is a group that can be configured to operate with a context.
@@ -151,12 +151,12 @@ func (g *group) Wait() {
 	g.wg.Wait()
 }
 
-func (g *group) WithLimit(limit int) Group {
+func (g *group) WithMaxConcurrency(limit int) Group {
 	g.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *group) WithLimiter(limiter Limiter) Group {
+func (g *group) WithConcurrencyLimiter(limiter Limiter) Group {
 	g.limiter = limiter
 	return g
 }
@@ -228,12 +228,12 @@ func (g *errorGroup) Wait() error {
 	return g.errs
 }
 
-func (g *errorGroup) WithLimit(limit int) ErrorGroup {
+func (g *errorGroup) WithMaxConcurrency(limit int) ErrorGroup {
 	g.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *errorGroup) WithLimiter(limiter Limiter) ErrorGroup {
+func (g *errorGroup) WithConcurrencyLimiter(limiter Limiter) ErrorGroup {
 	g.group.limiter = limiter
 	return g
 }
@@ -284,12 +284,12 @@ func (g *contextGroup) WithCancelOnError() ContextGroup {
 	return g
 }
 
-func (g *contextGroup) WithLimit(limit int) ContextGroup {
+func (g *contextGroup) WithMaxConcurrency(limit int) ContextGroup {
 	g.errorGroup.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *contextGroup) WithLimiter(limiter Limiter) ContextGroup {
+func (g *contextGroup) WithConcurrencyLimiter(limiter Limiter) ContextGroup {
 	g.errorGroup.group.limiter = limiter
 	return g
 }

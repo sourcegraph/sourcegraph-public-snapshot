@@ -107,12 +107,12 @@ func (g *streamGroup[T]) WithContext(ctx context.Context) ContextStreamGroup[T] 
 	return csg
 }
 
-func (g *streamGroup[T]) WithLimit(limit int) StreamGroup[T] {
+func (g *streamGroup[T]) WithMaxConcurrency(limit int) StreamGroup[T] {
 	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *streamGroup[T]) WithLimiter(limiter Limiter) StreamGroup[T] {
+func (g *streamGroup[T]) WithConcurrencyLimiter(limiter Limiter) StreamGroup[T] {
 	g.os.group.limiter = limiter
 	return g
 }
@@ -158,12 +158,12 @@ func (g *errorStreamGroup[T]) WithContext(ctx context.Context) ContextStreamGrou
 	}
 }
 
-func (g *errorStreamGroup[T]) WithLimit(limit int) ErrorStreamGroup[T] {
+func (g *errorStreamGroup[T]) WithMaxConcurrency(limit int) ErrorStreamGroup[T] {
 	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *errorStreamGroup[T]) WithLimiter(limiter Limiter) ErrorStreamGroup[T] {
+func (g *errorStreamGroup[T]) WithConcurrencyLimiter(limiter Limiter) ErrorStreamGroup[T] {
 	g.os.group.limiter = limiter
 	return g
 }
@@ -204,12 +204,12 @@ func (g *contextStreamGroup[T]) Wait() {
 	g.os.wait()
 }
 
-func (g *contextStreamGroup[T]) WithLimit(limit int) ContextStreamGroup[T] {
+func (g *contextStreamGroup[T]) WithMaxConcurrency(limit int) ContextStreamGroup[T] {
 	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *contextStreamGroup[T]) WithLimiter(limiter Limiter) ContextStreamGroup[T] {
+func (g *contextStreamGroup[T]) WithConcurrencyLimiter(limiter Limiter) ContextStreamGroup[T] {
 	g.os.group.limiter = limiter
 	return g
 }

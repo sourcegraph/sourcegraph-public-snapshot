@@ -46,7 +46,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
-	g := group.NewWithStreaming[Event]().WithErrors().WithLimit(8)
+	g := group.NewWithStreaming[Event]().WithErrors().WithMaxConcurrency(8)
 	cb := func(ev Event, err error) {
 		if err != nil {
 			select {

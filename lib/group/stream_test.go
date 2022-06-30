@@ -21,7 +21,7 @@ func TestStreamGroup(t *testing.T) {
 
 	t.Run("in order", func(t *testing.T) {
 		var results []int
-		g := NewWithStreaming[int]().WithLimit(10)
+		g := NewWithStreaming[int]().WithMaxConcurrency(10)
 		cb := func(i int) { results = append(results, i) }
 		g.Go(sleepReturn(5*time.Millisecond, 1), cb)
 		g.Go(sleepReturn(10*time.Millisecond, 2), cb)
@@ -33,7 +33,7 @@ func TestStreamGroup(t *testing.T) {
 	t.Run("out of order", func(t *testing.T) {
 		var results []int
 		cb := func(i int) { results = append(results, i) }
-		g := NewWithStreaming[int]().WithLimit(10)
+		g := NewWithStreaming[int]().WithMaxConcurrency(10)
 		g.Go(sleepReturn(15*time.Millisecond, 1), cb)
 		g.Go(sleepReturn(10*time.Millisecond, 2), cb)
 		g.Go(sleepReturn(5*time.Millisecond, 3), cb)
@@ -44,7 +44,7 @@ func TestStreamGroup(t *testing.T) {
 	t.Run("no parallel", func(t *testing.T) {
 		var results []int
 		cb := func(i int) { results = append(results, i) }
-		g := NewWithStreaming[int]().WithLimit(1)
+		g := NewWithStreaming[int]().WithMaxConcurrency(1)
 		g.Go(sleepReturn(15*time.Millisecond, 1), cb)
 		g.Go(sleepReturn(10*time.Millisecond, 2), cb)
 		g.Go(sleepReturn(5*time.Millisecond, 3), cb)
@@ -55,7 +55,7 @@ func TestStreamGroup(t *testing.T) {
 	t.Run("very parallel", func(t *testing.T) {
 		var results []int
 		cb := func(i int) { results = append(results, i) }
-		g := NewWithStreaming[int]().WithLimit(20)
+		g := NewWithStreaming[int]().WithMaxConcurrency(20)
 		expected := make([]int, 100)
 		for i := 0; i < 100; i++ {
 			g.Go(sleepReturn(10*time.Millisecond, i), cb)
@@ -80,7 +80,7 @@ func TestErrorStreamGroup(t *testing.T) {
 	t.Run("same behavior as StreamGroup", func(t *testing.T) {
 		t.Run("in order", func(t *testing.T) {
 			var results []int
-			g := NewWithStreaming[int]().WithErrors().WithLimit(10)
+			g := NewWithStreaming[int]().WithErrors().WithMaxConcurrency(10)
 			cb := func(i int, err error) { results = append(results, i) }
 			g.Go(sleepReturn(5*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
@@ -92,7 +92,7 @@ func TestErrorStreamGroup(t *testing.T) {
 		t.Run("out of order", func(t *testing.T) {
 			var results []int
 			cb := func(i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithErrors().WithLimit(10)
+			g := NewWithStreaming[int]().WithErrors().WithMaxConcurrency(10)
 			g.Go(sleepReturn(15*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 			g.Go(sleepReturn(5*time.Millisecond, 3, nil), cb)
@@ -103,7 +103,7 @@ func TestErrorStreamGroup(t *testing.T) {
 		t.Run("no parallel", func(t *testing.T) {
 			var results []int
 			cb := func(i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithErrors().WithLimit(1)
+			g := NewWithStreaming[int]().WithErrors().WithMaxConcurrency(1)
 			g.Go(sleepReturn(15*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 			g.Go(sleepReturn(5*time.Millisecond, 3, nil), cb)
@@ -114,7 +114,7 @@ func TestErrorStreamGroup(t *testing.T) {
 		t.Run("very parallel", func(t *testing.T) {
 			var results []int
 			cb := func(i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithErrors().WithLimit(20)
+			g := NewWithStreaming[int]().WithErrors().WithMaxConcurrency(20)
 			expected := make([]int, 100)
 			for i := 0; i < 100; i++ {
 				g.Go(sleepReturn(10*time.Millisecond, i, nil), cb)
@@ -128,7 +128,7 @@ func TestErrorStreamGroup(t *testing.T) {
 	t.Run("errors are passed", func(t *testing.T) {
 		var errs error
 		cb := func(_ int, err error) { errs = errors.Append(errs, err) }
-		g := NewWithStreaming[int]().WithErrors().WithLimit(1)
+		g := NewWithStreaming[int]().WithErrors().WithMaxConcurrency(1)
 		g.Go(sleepReturn(15*time.Millisecond, 1, err1), cb)
 		g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 		g.Go(sleepReturn(5*time.Millisecond, 3, err2), cb)
@@ -153,7 +153,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 	t.Run("same behavior as ErrorStreamGroup", func(t *testing.T) {
 		t.Run("in order", func(t *testing.T) {
 			var results []int
-			g := NewWithStreaming[int]().WithContext(bgctx).WithLimit(10)
+			g := NewWithStreaming[int]().WithContext(bgctx).WithMaxConcurrency(10)
 			cb := func(_ context.Context, i int, err error) { results = append(results, i) }
 			g.Go(sleepReturn(5*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
@@ -165,7 +165,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 		t.Run("out of order", func(t *testing.T) {
 			var results []int
 			cb := func(_ context.Context, i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithErrors().WithContext(bgctx).WithLimit(10)
+			g := NewWithStreaming[int]().WithErrors().WithContext(bgctx).WithMaxConcurrency(10)
 			g.Go(sleepReturn(15*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 			g.Go(sleepReturn(5*time.Millisecond, 3, nil), cb)
@@ -176,7 +176,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 		t.Run("no parallel", func(t *testing.T) {
 			var results []int
 			cb := func(_ context.Context, i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithContext(bgctx).WithLimit(1)
+			g := NewWithStreaming[int]().WithContext(bgctx).WithMaxConcurrency(1)
 			g.Go(sleepReturn(15*time.Millisecond, 1, nil), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 			g.Go(sleepReturn(5*time.Millisecond, 3, nil), cb)
@@ -187,7 +187,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 		t.Run("very parallel", func(t *testing.T) {
 			var results []int
 			cb := func(_ context.Context, i int, err error) { results = append(results, i) }
-			g := NewWithStreaming[int]().WithContext(bgctx).WithLimit(20)
+			g := NewWithStreaming[int]().WithContext(bgctx).WithMaxConcurrency(20)
 			expected := make([]int, 100)
 			for i := 0; i < 100; i++ {
 				g.Go(sleepReturn(10*time.Millisecond, i, nil), cb)
@@ -200,7 +200,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 		t.Run("errors are passed", func(t *testing.T) {
 			var errs error
 			cb := func(_ context.Context, _ int, err error) { errs = errors.Append(errs, err) }
-			g := NewWithStreaming[int]().WithContext(bgctx).WithLimit(1)
+			g := NewWithStreaming[int]().WithContext(bgctx).WithMaxConcurrency(1)
 			g.Go(sleepReturn(15*time.Millisecond, 1, err1), cb)
 			g.Go(sleepReturn(10*time.Millisecond, 2, nil), cb)
 			g.Go(sleepReturn(5*time.Millisecond, 3, err2), cb)
@@ -221,7 +221,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 			results = append(results, i)
 			errs = errors.Append(errs, err)
 		}
-		g := NewWithStreaming[int]().WithContext(ctx).WithLimit(0)
+		g := NewWithStreaming[int]().WithContext(ctx).WithMaxConcurrency(0)
 		g.Go(func(ctx context.Context) (int, error) {
 			<-emptyChan // will never unblock
 			return 1, nil
@@ -240,7 +240,7 @@ func BenchmarkStreamGroup(b *testing.B) {
 		for _, parallelism := range []int{1, 4, 8, 16, 32} {
 			b.Run(fmt.Sprintf("%d_tasks_%d_workers", size, parallelism), func(b *testing.B) {
 				for i := 0; i < b.N; i++ {
-					g := NewWithStreaming[int]().WithLimit(parallelism)
+					g := NewWithStreaming[int]().WithMaxConcurrency(parallelism)
 					for j := 0; j < size; j++ {
 						g.Go(func() int { return 1 }, func(int) {})
 					}
