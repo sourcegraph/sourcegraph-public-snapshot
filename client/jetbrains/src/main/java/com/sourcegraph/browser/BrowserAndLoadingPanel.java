@@ -51,6 +51,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
                 __ -> ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class)
             );
         } else {
+            // We need to do this because the "COULD_NOT_CONNECT" link is clickable even when the empty text is hidden! :o
             emptyText.setText("");
         }
         revalidate();
