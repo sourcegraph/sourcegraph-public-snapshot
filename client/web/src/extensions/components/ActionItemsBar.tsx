@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
@@ -283,8 +284,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
-                <ul className="list-unstyled m-0">
-                    <li className={styles.listItem}>
+                <div className="list-unstyled m-0">
+                    <div className={styles.listItem}>
                         <Link
                             to="/extensions"
                             className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
@@ -293,8 +294,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         >
                             <Icon as={PlusIcon} aria-hidden={true} />
                         </Link>
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </ErrorBoundary>
         </div>
     )
@@ -328,7 +329,11 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <ButtonLink
                         data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
-                        aria-label={`${isOpen ? 'Close' : 'Open'} extensions panel`}
+                        aria-label={
+                            isOpen
+                                ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
+                                : 'Open extensions panel'
+                        }
                         className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                         onSelect={toggle}
                         ref={toggleReference}
@@ -340,6 +345,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                         ) : (
                             <Icon as={PuzzleOutlineIcon} aria-hidden={true} />
                         )}
+                        {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
                     </ButtonLink>
                 </div>
             </li>
