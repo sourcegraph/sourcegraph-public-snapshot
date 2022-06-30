@@ -20,8 +20,8 @@ import static com.intellij.ui.SimpleTextAttributes.STYLE_PLAIN;
 public class BrowserAndLoadingPanel extends JLayeredPane {
     private final Project project;
     private final JBPanelWithEmptyText overlayPanel;
-    private boolean isBrowserVisible = false;
     private final JBPanelWithEmptyText jcefPanel;
+    private boolean isBrowserVisible = false;
 
     public BrowserAndLoadingPanel(Project project) {
         this.project = project;
@@ -59,13 +59,6 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
         jcefPanel.add(browser.getComponent());
     }
 
-    public enum State {
-        LOADING,
-        AUTHENTICATED,
-        COULD_NOT_CONNECT,
-        COULD_CONNECT_BUT_NOT_AUTHENTICATED
-    }
-
     @Override
     public void doLayout() {
         if (isBrowserVisible) {
@@ -79,5 +72,12 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
     @Override
     public Dimension getPreferredSize() {
         return getBounds().getSize();
+    }
+
+    public enum State {
+        LOADING,
+        AUTHENTICATED,
+        COULD_NOT_CONNECT,
+        COULD_CONNECT_BUT_NOT_AUTHENTICATED
     }
 }
