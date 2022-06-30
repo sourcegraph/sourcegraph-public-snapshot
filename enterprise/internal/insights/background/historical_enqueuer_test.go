@@ -75,6 +75,17 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		},
 	}, nil)
 
+	dataSeriesStore.IncrementBackfillAttemptsFunc.SetDefaultHook(func(ctx context.Context, is itypes.InsightSeries) error {
+		r.operations = append(r.operations, fmt.Sprintf("IncrementBackfillAttemptsFunc(seriesId=%v)", is.SeriesID))
+		return nil
+	})
+
+	dataSeriesStore.StampBackfillFunc.SetDefaultHook(func(ctx context.Context, is itypes.InsightSeries) (itypes.InsightSeries, error) {
+		r.operations = append(r.operations, fmt.Sprintf("StampBackfillFunc(seriesId=%v)", is.SeriesID))
+		is.BackfillQueuedAt = time.Now()
+		return is, nil
+	})
+
 	dataFrameFilter := compression.NoopFilter{}
 
 	insightsStore := store.NewMockInterface()
@@ -163,13 +174,23 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 func Test_historicalEnqueuer(t *testing.T) {
 	// Test that when no insights are defined, no work or sleeping is performed.
 	t.Run("no_insights_no_repos", func(t *testing.T) {
-		want := autogold.Want("no_insights_no_repos", &testResults{allReposIteratorCalls: 1})
+		want := autogold.Want("no_insights_no_repos", &testResults{allReposIteratorCalls: 1, operations: []string{
+			"IncrementBackfillAttemptsFunc(seriesId=series1)",
+			"IncrementBackfillAttemptsFunc(seriesId=series2)",
+			"StampBackfillFunc(seriesId=series1)",
+			"StampBackfillFunc(seriesId=series2)",
+		}})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{}))
 	})
 
 	// Test that when insights are defined, but no repos exist, no work or sleeping is performed.
 	t.Run("some_insights_no_repos", func(t *testing.T) {
-		want := autogold.Want("some_insights_no_repos", &testResults{allReposIteratorCalls: 1})
+		want := autogold.Want("some_insights_no_repos", &testResults{allReposIteratorCalls: 1, operations: []string{
+			"IncrementBackfillAttemptsFunc(seriesId=series1)",
+			"IncrementBackfillAttemptsFunc(seriesId=series2)",
+			"StampBackfillFunc(seriesId=series1)",
+			"StampBackfillFunc(seriesId=series2)",
+		}})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{
 			settings: testRealGlobalSettings,
 		}))
@@ -184,6 +205,8 @@ func Test_historicalEnqueuer(t *testing.T) {
 	//
 	t.Run("no_data", func(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{allReposIteratorCalls: 1, operations: []string{
+			"IncrementBackfillAttemptsFunc(seriesId=series1)",
+			"IncrementBackfillAttemptsFunc(seriesId=series2)",
 			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
 			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
 			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
@@ -232,6 +255,8 @@ func Test_historicalEnqueuer(t *testing.T) {
 			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
 			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
 			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
+			"StampBackfillFunc(seriesId=series1)",
+			"StampBackfillFunc(seriesId=series2)",
 		}})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{
 			settings:              testRealGlobalSettings,

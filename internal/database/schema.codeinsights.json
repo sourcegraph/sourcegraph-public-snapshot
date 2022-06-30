@@ -767,6 +767,19 @@
       "Comment": "Data series that comprise code insights.",
       "Columns": [
         {
+          "Name": "backfill_attempts",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "backfill_queued_at",
           "Index": 9,
           "TypeName": "timestamp without time zone",

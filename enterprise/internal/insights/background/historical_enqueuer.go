@@ -378,7 +378,12 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	var multi error
 	for _, series := range foundInsights {
 		log15.Info("Loaded insight data series for historical processing", "series_id", series.SeriesID)
+		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
+		if incrementErr != nil {
+			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID)
+		}
 	}
+
 	if err := h.buildFrames(ctx, foundInsights); err != nil {
 		multi = errors.Append(multi, err)
 	}

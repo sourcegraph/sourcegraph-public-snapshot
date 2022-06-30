@@ -21,6 +21,10 @@ type MockDataSeriesStore struct {
 	// GetDataSeriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDataSeries.
 	GetDataSeriesFunc *DataSeriesStoreGetDataSeriesFunc
+	// IncrementBackfillAttemptsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// IncrementBackfillAttempts.
+	IncrementBackfillAttemptsFunc *DataSeriesStoreIncrementBackfillAttemptsFunc
 	// SetSeriesEnabledFunc is an instance of a mock function object
 	// controlling the behavior of the method SetSeriesEnabled.
 	SetSeriesEnabledFunc *DataSeriesStoreSetSeriesEnabledFunc
@@ -42,6 +46,11 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 	return &MockDataSeriesStore{
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: func(context.Context, GetDataSeriesArgs) (r0 []types.InsightSeries, r1 error) {
+				return
+			},
+		},
+		IncrementBackfillAttemptsFunc: &DataSeriesStoreIncrementBackfillAttemptsFunc{
+			defaultHook: func(context.Context, types.InsightSeries) (r0 error) {
 				return
 			},
 		},
@@ -77,6 +86,11 @@ func NewStrictMockDataSeriesStore() *MockDataSeriesStore {
 				panic("unexpected invocation of MockDataSeriesStore.GetDataSeries")
 			},
 		},
+		IncrementBackfillAttemptsFunc: &DataSeriesStoreIncrementBackfillAttemptsFunc{
+			defaultHook: func(context.Context, types.InsightSeries) error {
+				panic("unexpected invocation of MockDataSeriesStore.IncrementBackfillAttempts")
+			},
+		},
 		SetSeriesEnabledFunc: &DataSeriesStoreSetSeriesEnabledFunc{
 			defaultHook: func(context.Context, string, bool) error {
 				panic("unexpected invocation of MockDataSeriesStore.SetSeriesEnabled")
@@ -107,6 +121,9 @@ func NewMockDataSeriesStoreFrom(i DataSeriesStore) *MockDataSeriesStore {
 	return &MockDataSeriesStore{
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: i.GetDataSeries,
+		},
+		IncrementBackfillAttemptsFunc: &DataSeriesStoreIncrementBackfillAttemptsFunc{
+			defaultHook: i.IncrementBackfillAttempts,
 		},
 		SetSeriesEnabledFunc: &DataSeriesStoreSetSeriesEnabledFunc{
 			defaultHook: i.SetSeriesEnabled,
@@ -230,6 +247,115 @@ func (c DataSeriesStoreGetDataSeriesFuncCall) Args() []interface{} {
 // invocation.
 func (c DataSeriesStoreGetDataSeriesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DataSeriesStoreIncrementBackfillAttemptsFunc describes the behavior when
+// the IncrementBackfillAttempts method of the parent MockDataSeriesStore
+// instance is invoked.
+type DataSeriesStoreIncrementBackfillAttemptsFunc struct {
+	defaultHook func(context.Context, types.InsightSeries) error
+	hooks       []func(context.Context, types.InsightSeries) error
+	history     []DataSeriesStoreIncrementBackfillAttemptsFuncCall
+	mutex       sync.Mutex
+}
+
+// IncrementBackfillAttempts delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDataSeriesStore) IncrementBackfillAttempts(v0 context.Context, v1 types.InsightSeries) error {
+	r0 := m.IncrementBackfillAttemptsFunc.nextHook()(v0, v1)
+	m.IncrementBackfillAttemptsFunc.appendCall(DataSeriesStoreIncrementBackfillAttemptsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// IncrementBackfillAttempts method of the parent MockDataSeriesStore
+// instance is invoked and the hook queue is empty.
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) SetDefaultHook(hook func(context.Context, types.InsightSeries) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IncrementBackfillAttempts method of the parent MockDataSeriesStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) PushHook(hook func(context.Context, types.InsightSeries) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.InsightSeries) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.InsightSeries) error {
+		return r0
+	})
+}
+
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) nextHook() func(context.Context, types.InsightSeries) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) appendCall(r0 DataSeriesStoreIncrementBackfillAttemptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DataSeriesStoreIncrementBackfillAttemptsFuncCall objects describing the
+// invocations of this function.
+func (f *DataSeriesStoreIncrementBackfillAttemptsFunc) History() []DataSeriesStoreIncrementBackfillAttemptsFuncCall {
+	f.mutex.Lock()
+	history := make([]DataSeriesStoreIncrementBackfillAttemptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DataSeriesStoreIncrementBackfillAttemptsFuncCall is an object that
+// describes an invocation of method IncrementBackfillAttempts on an
+// instance of MockDataSeriesStore.
+type DataSeriesStoreIncrementBackfillAttemptsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.InsightSeries
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DataSeriesStoreIncrementBackfillAttemptsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DataSeriesStoreIncrementBackfillAttemptsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DataSeriesStoreSetSeriesEnabledFunc describes the behavior when the
