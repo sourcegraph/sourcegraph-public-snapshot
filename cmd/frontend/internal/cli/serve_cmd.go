@@ -147,8 +147,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
-		Name:    "checks",
-		Path:    "/checks",
+		Name:    "aggregate checks",
+		Path:    "/aggregate-checks",
 		Handler: check.NewAggregateHealthCheckHandler(),
 	}).Start()
 
