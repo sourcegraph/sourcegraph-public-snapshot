@@ -340,7 +340,7 @@ describe('Search Notebook', () => {
         await accessibilityAudit(driver.page)
     })
 
-    it.only('Should add file block and edit it', async () => {
+    it('Should add file block and edit it', async () => {
         testContext.overrideSearchStreamEvents(mockFilePathStreamEvents)
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')

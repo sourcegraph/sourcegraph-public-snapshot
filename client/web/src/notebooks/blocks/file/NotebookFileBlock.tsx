@@ -45,6 +45,7 @@ interface NotebookFileBlockProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         ThemeProps {
     isSourcegraphDotCom: boolean
+    globbing: boolean
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 

@@ -48,8 +48,8 @@ export const Default: Story = () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={false}
+                globbing={false}
                 extensionsController={extensionsController}
-                sourcegraphSearchLanguageId="sourcegraph"
             />
         )}
     </WebStory>
@@ -68,8 +68,8 @@ export const EditMode: Story = () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={false}
+                globbing={false}
                 extensionsController={extensionsController}
-                sourcegraphSearchLanguageId="sourcegraph"
             />
         )}
     </WebStory>
@@ -90,8 +90,8 @@ export const ErrorFetchingFile: Story = () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={false}
+                globbing={false}
                 extensionsController={extensionsController}
-                sourcegraphSearchLanguageId="sourcegraph"
             />
         )}
     </WebStory>
