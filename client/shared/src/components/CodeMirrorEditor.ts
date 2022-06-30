@@ -83,6 +83,9 @@ export const defaultEditorTheme = EditorView.theme({
     '.cm-content': {
         backgroundColor: 'var(--color-bg-1)',
         color: 'var(--search-query-text-color)',
+        caretColor: 'var(--search-query-text-color)',
+        fontFamily: 'var(--code-font-family)',
+        fontSize: 'var(--code-font-size)',
     },
     '.cm-gutters': {
         backgroundColor: 'var(--color-bg-2)',
