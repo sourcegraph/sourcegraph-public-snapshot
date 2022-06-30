@@ -87,6 +87,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-worker
 * debug-env
 * docsite
+* enterprise-frontend
 * executor-template
 * frontend
 * github-proxy
