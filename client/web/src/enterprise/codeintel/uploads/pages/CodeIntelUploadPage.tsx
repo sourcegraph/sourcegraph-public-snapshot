@@ -1,8 +1,8 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -218,9 +218,9 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <Icon aria-hidden={true} as={InformationOutlineIcon} /> This upload can answer queries
-                                for the tip of the default branch and are targets of cross-repository find reference
-                                operations.
+                                <Icon aria-hidden={true} svgPath={mdiInformationOutline} /> This upload can answer
+                                queries for the tip of the default branch and are targets of cross-repository find
+                                reference operations.
                             </div>
                         )}
                     </Container>

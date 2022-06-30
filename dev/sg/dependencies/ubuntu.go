@@ -61,6 +61,12 @@ var Ubuntu = []category{
 				Fix:   aptGetInstall("jq"),
 			},
 			{
+				Name:        "universal-ctags",
+				Description: "Required by the symbols service",
+				Check:       checkAction(check.Combine(check.InPath("ctags"), check.CommandOutputContains("ctags --help", "+interactive"))),
+				Fix:         aptGetInstall("universal-ctags"),
+			},
+			{
 				Name:  "curl",
 				Check: checkAction(check.InPath("curl")),
 				Fix:   aptGetInstall("curl"),
@@ -128,56 +134,7 @@ var Ubuntu = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	{
-		Name:      "Programming languages & tooling",
-		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
-		Enabled:   enableOnlyInSourcegraphRepo(),
-		Checks: []*check.Check[CheckArgs]{
-			{
-				Name:  "go",
-				Check: checkGoVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "golang", "https://github.com/kennyp/asdf-golang.git"); err != nil {
-						return err
-					}
-					return root.Run(usershell.Command(ctx, "asdf install golang")).StreamLines(cio.Verbose)
-				},
-			},
-			{
-				Name:  "yarn",
-				Check: checkYarnVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "yarn", ""); err != nil {
-						return err
-					}
-					return root.Run(usershell.Command(ctx, "asdf install yarn")).StreamLines(cio.Verbose)
-				},
-			},
-			{
-				Name:  "node",
-				Check: checkNodeVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/asdf-vm/asdf-nodejs.git"); err != nil {
-						return err
-					}
-					return cmdFixes(
-						`grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc`,
-						"asdf install nodejs",
-					)(ctx, cio, args)
-				},
-			},
-			{
-				Name:  "rust",
-				Check: checkRustVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/asdf-community/asdf-rust.git"); err != nil {
-						return err
-					}
-					return root.Run(usershell.Command(ctx, "asdf install rust")).StreamLines(cio.Verbose)
-				},
-			},
-		},
-	},
+	categoryProgrammingLanguagesAndTools(),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsBaseUtilities},

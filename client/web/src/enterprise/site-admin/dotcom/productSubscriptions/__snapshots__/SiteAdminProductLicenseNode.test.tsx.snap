@@ -61,6 +61,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
       Tags: 
       <div
         class="badge secondary mr-1"
+        data-state="closed"
       >
         a
       </div>
@@ -167,6 +168,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
       Tags: 
       <div
         class="badge secondary mr-1"
+        data-state="closed"
       >
         a
       </div>

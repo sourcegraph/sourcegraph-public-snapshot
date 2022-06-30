@@ -1,8 +1,9 @@
-package sources
+package testing
 
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -13,20 +14,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// NewFakeSourcer returns a new faked Sourcer to be used for testing Batch Changes.
+func NewFakeSourcer(err error, source sources.ChangesetSource) sources.Sourcer {
+	return &fakeSourcer{
+		err,
+		source,
+	}
+}
+
 type fakeSourcer struct {
 	err    error
-	source ChangesetSource
+	source sources.ChangesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForRepo(ctx context.Context, tx SourcerStore, repo *types.Repo) (ChangesetSource, error) {
+func (s *fakeSourcer) ForRepo(ctx context.Context, tx sources.SourcerStore, repo *types.Repo) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForExternalService(ctx context.Context, tx SourcerStore, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
@@ -71,33 +80,33 @@ type FakeChangesetSource struct {
 	Err error
 
 	// ClosedChangesets contains the changesets that were passed to CloseChangeset
-	ClosedChangesets []*Changeset
+	ClosedChangesets []*sources.Changeset
 
 	// CreatedChangesets contains the changesets that were passed to
 	// CreateChangeset
-	CreatedChangesets []*Changeset
+	CreatedChangesets []*sources.Changeset
 
 	// LoadedChangesets contains the changesets that were passed to LoadChangeset
-	LoadedChangesets []*Changeset
+	LoadedChangesets []*sources.Changeset
 
 	// UpdateChangesets contains the changesets that were passed to
 	// UpdateChangeset
-	UpdatedChangesets []*Changeset
+	UpdatedChangesets []*sources.Changeset
 
 	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
-	ReopenedChangesets []*Changeset
+	ReopenedChangesets []*sources.Changeset
 
 	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
-	UndraftedChangesets []*Changeset
+	UndraftedChangesets []*sources.Changeset
 
 	// Username is the username returned by AuthenticatedUsername
 	Username string
 }
 
-var _ ChangesetSource = &FakeChangesetSource{}
-var _ DraftChangesetSource = &FakeChangesetSource{}
+var _ sources.ChangesetSource = &FakeChangesetSource{}
+var _ sources.DraftChangesetSource = &FakeChangesetSource{}
 
-func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
 
 	if s.Err != nil {
@@ -105,7 +114,10 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Chang
 	}
 
 	if c.TargetRepo == nil {
-		return false, NoReposErr
+		return false, noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return false, noReposErr{name: "remote"}
 	}
 
 	if c.HeadRef != s.WantHeadRef {
@@ -124,7 +136,7 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Chang
 	return s.ChangesetExists, s.Err
 }
 
-func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.UndraftedChangesetsCalled = true
 
 	if s.Err != nil {
@@ -132,7 +144,10 @@ func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *Changeset
 	}
 
 	if c.TargetRepo == nil {
-		return NoReposErr
+		return noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{name: "remote"}
 	}
 
 	s.UndraftedChangesets = append(s.UndraftedChangesets, c)
@@ -140,7 +155,7 @@ func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *Changeset
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
 	s.CreateChangesetCalled = true
 
 	if s.Err != nil {
@@ -148,7 +163,10 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset)
 	}
 
 	if c.TargetRepo == nil {
-		return false, NoReposErr
+		return false, noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return false, noReposErr{name: "remote"}
 	}
 
 	if c.HeadRef != s.WantHeadRef {
@@ -167,14 +185,17 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset)
 	return s.ChangesetExists, s.Err
 }
 
-func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.UpdateChangesetCalled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 	if c.TargetRepo == nil {
-		return NoReposErr
+		return noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{name: "remote"}
 	}
 
 	if c.BaseRef != s.WantBaseRef {
@@ -198,7 +219,7 @@ func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 
 	return types.ExternalServices{s.Svc}
 }
-func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *Changeset) error {
+func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.LoadChangesetCalled = true
 
 	if s.Err != nil {
@@ -206,7 +227,10 @@ func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *Changeset) e
 	}
 
 	if c.TargetRepo == nil {
-		return NoReposErr
+		return noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{name: "remote"}
 	}
 
 	if err := c.SetMetadata(s.FakeMetadata); err != nil {
@@ -217,9 +241,13 @@ func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *Changeset) e
 	return nil
 }
 
-var NoReposErr = errors.New("no repository set on Changeset")
+type noReposErr struct{ name string }
 
-func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+func (e noReposErr) Error() string {
+	return "no " + e.name + " repository set on Changeset"
+}
+
+func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.CloseChangesetCalled = true
 
 	if s.Err != nil {
@@ -227,7 +255,10 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *Changeset) 
 	}
 
 	if c.TargetRepo == nil {
-		return NoReposErr
+		return noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{name: "remote"}
 	}
 
 	s.ClosedChangesets = append(s.ClosedChangesets, c)
@@ -235,7 +266,7 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *Changeset) 
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.ReopenChangesetCalled = true
 
 	if s.Err != nil {
@@ -243,7 +274,10 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 	}
 
 	if c.TargetRepo == nil {
-		return NoReposErr
+		return noReposErr{name: "target"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{name: "remote"}
 	}
 
 	s.ReopenedChangesets = append(s.ReopenedChangesets, c)
@@ -251,16 +285,16 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *Changeset, body string) error {
+func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *sources.Changeset, body string) error {
 	s.CreateCommentCalled = true
 	return s.Err
 }
 
 func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.CurrentAuthenticator)
+	return sources.GitserverPushConfig(ctx, store, repo, s.CurrentAuthenticator)
 }
 
-func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (sources.ChangesetSource, error) {
 	s.CurrentAuthenticator = a
 	return s, nil
 }
@@ -278,7 +312,7 @@ func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string
 	return s.Username, nil
 }
 
-func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *sources.Changeset, squash bool) error {
 	s.MergeChangesetCalled = true
 	return s.Err
 }

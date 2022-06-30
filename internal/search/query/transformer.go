@@ -561,9 +561,9 @@ func substituteOrForRegexp(nodes []Node) []Node {
 
 // fuzzyRegexp interpolates patterns with .*? regular expressions and
 // concatenates them. Invariant: len(patterns) > 0.
-func fuzzyRegexp(patterns []Pattern) Pattern {
+func fuzzyRegexp(patterns []Pattern) []Node {
 	if len(patterns) == 1 {
-		return patterns[0]
+		return []Node{patterns[0]}
 	}
 	var values []string
 	for _, p := range patterns {
@@ -573,28 +573,79 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 			values = append(values, p.Value)
 		}
 	}
-	return Pattern{
-		Annotation: Annotation{Labels: Regexp},
-		Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
+	return []Node{
+		Pattern{
+			Annotation: Annotation{Labels: Regexp},
+			Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
+		},
 	}
+}
+
+// standard reduces a sequence of Patterns such that:
+//
+// - adjacent literal patterns are concattenated with space. I.e., contiguous
+// literal patterns are joined on space to create one literal pattern.
+//
+// - any patterns adjacent to regular expression patterns are AND-ed.
+//
+// Here are concrete examples of input strings and equivalent transformation.
+// I'm using the `content` field for literal patterns to explicitly delineate
+// how those are processed.
+//
+// `/foo/ /bar/ baz` -> (/foo/ AND /bar/ AND content:"baz")
+// `/foo/ bar baz` -> (/foo/ AND content:"bar baz")
+// `/foo/ bar /baz/` -> (/foo/ AND content:"bar" AND /baz/)
+func standard(patterns []Pattern) []Node {
+	if len(patterns) == 1 {
+		return []Node{patterns[0]}
+	}
+
+	var literals []Pattern
+	var result []Node
+	for _, p := range patterns {
+		if p.Annotation.Labels.IsSet(Regexp) {
+			// Push any sequence of literal patterns accumulated.
+			// Then push this regexp pattern.
+			if len(literals) > 0 {
+				// Use existing `space` concatenator on literal
+				// patterns. Correct and safe cast under
+				// invariant len(literals) > 0.
+				result = append(result, space(literals)[0].(Pattern))
+			}
+
+			result = append(result, p)
+			literals = []Pattern{}
+			continue
+		}
+		// Not Regexp => assume literal pattern and accumulate.
+		literals = append(literals, p)
+	}
+
+	if len(literals) > 0 {
+		result = append(result, space(literals)[0].(Pattern))
+	}
+
+	return result
 }
 
 // fuzzyRegexp interpolates patterns with spaces and concatenates them.
 // Invariant: len(patterns) > 0.
-func space(patterns []Pattern) Pattern {
+func space(patterns []Pattern) []Node {
 	if len(patterns) == 1 {
-		return patterns[0]
+		return []Node{patterns[0]}
 	}
 	var values []string
 	for _, p := range patterns {
 		values = append(values, p.Value)
 	}
 
-	return Pattern{
-		// Preserve labels based on first pattern. Required to
-		// distinguish quoted, literal, structural pattern labels.
-		Annotation: patterns[0].Annotation,
-		Value:      strings.Join(values, " "),
+	return []Node{
+		Pattern{
+			// Preserve labels based on first pattern. Required to
+			// distinguish quoted, literal, structural pattern labels.
+			Annotation: patterns[0].Annotation,
+			Value:      strings.Join(values, " "),
+		},
 	}
 }
 
@@ -604,7 +655,7 @@ func space(patterns []Pattern) Pattern {
 //
 // The callback parameter defines how the function concatenates patterns. The
 // return value of callback is substituted in-place in the tree.
-func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
+func substituteConcat(callback func([]Pattern) []Node) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
@@ -636,13 +687,13 @@ func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Nod
 							continue
 						}
 						if len(ps) > 0 {
-							newNode = append(newNode, callback(ps))
+							newNode = append(newNode, callback(ps)...)
 							ps = []Pattern{}
 						}
 						newNode = append(newNode, substituteNodes([]Node{node})...)
 					}
 					if len(ps) > 0 {
-						newNode = append(newNode, callback(ps))
+						newNode = append(newNode, callback(ps)...)
 					}
 				} else {
 					newNode = append(newNode, NewOperator(substituteNodes(v.Operands), v.Kind)...)
