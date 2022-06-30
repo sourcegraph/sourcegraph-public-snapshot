@@ -49,7 +49,6 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
     onRunBlock,
     onEditorCreated,
     extension,
-    ...props
 }: SearchTypeSuggestionsInputProps<S>): ReactElement => {
     const [editor, setEditor] = useState<EditorView | null>(null)
 

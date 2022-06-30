@@ -10,7 +10,7 @@ import classNames from 'classnames'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 
-import { changeListener } from '@sourcegraph/search-ui'
+import { changeListener, editorHeight } from '@sourcegraph/search-ui'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -81,6 +81,7 @@ const staticExtensions: Extension[] = [
             { tag: tags.url, class: styles.markdownCode },
         ])
     ),
+    editorHeight({ height: '60rem' }),
 ]
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
