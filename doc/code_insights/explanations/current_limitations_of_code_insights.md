@@ -33,6 +33,12 @@ In some cases, depending on the size of the Sourcegraph instance and the size of
 
 If this does not solve your problem, please reach out directly to your Sourcegraph contact or in your shared slack channel, as there are experimental solutions we are currently working on to further improve our handling of large repositories. 
 
+## Accuracy considerations for a data series returning a large result set
+
+If you create an insight with a search query that returns a large result set that exceeds the search timeout, non-historical data points may report undercounted numbers. This behaviour is tracked in [this issue](https://github.com/sourcegraph/sourcegraph/issues/37859). This is because non-historical data points are recorded with a global search query as opposed to per-repo queries we run for backfilling. For a large result set (e.g. a query for `test`) the global query will be disadvantaged by the global search timeout. In this case, you may want to try:
+* Using a more granular query
+* Changing your site configuration so that the `maxTimeoutSeconds` is increased, provided your instance setup allows it e.g. it is not set up behind a load balancer timeout. 
+
 ## Feature parity limitations 
 
 ### Features currently available only on insights over all your repositories
