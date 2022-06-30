@@ -44,7 +44,7 @@ type npmPackagesSource struct {
 }
 
 func (npmPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseNpmDependency(dep)
+	return reposource.ParseNpmPackageVersion(dep)
 }
 
 func (npmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {

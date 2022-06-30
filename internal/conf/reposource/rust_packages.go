@@ -12,16 +12,16 @@ type RustPackageVersion struct {
 	Version string
 }
 
-func NewRustDependency(name, version string) *RustPackageVersion {
+func NewRustPackageVersion(name, version string) *RustPackageVersion {
 	return &RustPackageVersion{
 		Name:    name,
 		Version: version,
 	}
 }
 
-// ParseRustDependency parses a string in a '<name>(@version>)?' format into an
+// ParseRustPackageVersion parses a string in a '<name>(@version>)?' format into an
 // RustPackageVersion.
-func ParseRustDependency(dependency string) (*RustPackageVersion, error) {
+func ParseRustPackageVersion(dependency string) (*RustPackageVersion, error) {
 	var dep RustPackageVersion
 	if i := strings.LastIndex(dependency, "@"); i == -1 {
 		dep.Name = dependency
@@ -32,14 +32,14 @@ func ParseRustDependency(dependency string) (*RustPackageVersion, error) {
 	return &dep, nil
 }
 
-// ParseRustDependencyFromRepoName is a convenience function to parse a repo name in a
+// ParseRustPackageFromRepoName is a convenience function to parse a repo name in a
 // 'crates/<name>(@<version>)?' format into a RustPackageVersion.
-func ParseRustDependencyFromRepoName(name string) (*RustPackageVersion, error) {
+func ParseRustPackageFromRepoName(name string) (*RustPackageVersion, error) {
 	dependency := strings.TrimPrefix(name, "crates/")
 	if len(dependency) == len(name) {
 		return nil, errors.Newf("invalid Rust dependency repo name, missing crates/ prefix '%s'", name)
 	}
-	return ParseRustDependency(dependency)
+	return ParseRustPackageVersion(dependency)
 }
 
 func (p *RustPackageVersion) Scheme() string {

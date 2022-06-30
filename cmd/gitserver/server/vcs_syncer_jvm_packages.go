@@ -34,7 +34,7 @@ const (
 )
 
 func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service) VCSSyncer {
-	placeholder, err := reposource.ParseMavenDependency("com.sourcegraph:sourcegraph:1.0.0")
+	placeholder, err := reposource.ParseMavenPackageVersion("com.sourcegraph:sourcegraph:1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
@@ -44,7 +44,7 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		configDeps = connection.Maven.Dependencies
 	}
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
 		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
 		typ:         "jvm_packages",
 		scheme:      dependencies.JVMPackagesScheme,
@@ -61,17 +61,17 @@ type jvmPackagesSyncer struct {
 }
 
 func (jvmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseMavenDependency(dep)
+	return reposource.ParseMavenPackageVersion(dep)
 }
 
 func (jvmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return reposource.ParseMavenDependencyFromRepoName(repoName)
+	return reposource.ParseMavenPackageFromRepoName(repoName)
 }
 
 func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	dep, err := reposource.ParseMavenDependency(name + ":" + version)
+	dep, err := reposource.ParseMavenPackageVersion(name + ":" + version)
 	if err != nil {
-		return nil, errors.Wrap(err, "reposource.ParseMavenDependency")
+		return nil, errors.Wrap(err, "reposource.ParseMavenPackageVersion")
 	}
 
 	err = coursier.Exists(ctx, s.config, dep)

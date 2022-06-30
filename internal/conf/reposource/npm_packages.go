@@ -41,7 +41,7 @@ type NpmPackageName struct {
 	name string
 }
 
-func NewNpmPackage(scope string, name string) (*NpmPackageName, error) {
+func NewNpmPackageName(scope string, name string) (*NpmPackageName, error) {
 	if scope != "" && !npmScopeRegex.MatchString(scope) {
 		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, A-Z, _, -)", scope)
 	}
@@ -75,7 +75,7 @@ func ParseNpmPackageFromRepoURL(urlPath string) (*NpmPackageName, error) {
 // ParseNpmPackageFromPackageSyntax is a convenience function to parse a
 // string in a '(@scope/)?name' format into an NpmPackageName.
 func ParseNpmPackageFromPackageSyntax(pkg string) (*NpmPackageName, error) {
-	dep, err := ParseNpmDependency(fmt.Sprintf("%s@0", pkg))
+	dep, err := ParseNpmPackageVersion(fmt.Sprintf("%s@0", pkg))
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (pkg *NpmPackageName) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	newPkg, err := NewNpmPackage(wrapper.Scope, wrapper.Name)
+	newPkg, err := NewNpmPackageName(wrapper.Scope, wrapper.Name)
 	if err != nil {
 		return err
 	}
@@ -138,8 +138,6 @@ func (pkg *NpmPackageName) PackageSyntax() string {
 // NpmPackageVersion is a "versioned package" for use by npm commands, such as
 // `npm install`.
 //
-// See also: [NOTE: Dependency-terminology]
-//
 // Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
 type NpmPackageVersion struct {
 	*NpmPackageName
@@ -157,11 +155,11 @@ type NpmPackageVersion struct {
 	PackageDescription string
 }
 
-// ParseNpmDependency parses a string in a '(@scope/)?module@version' format into an NpmPackageVersion.
+// ParseNpmPackageVersion parses a string in a '(@scope/)?module@version' format into an NpmPackageVersion.
 //
 // npm supports many ways of specifying dependencies (https://docs.npmjs.com/cli/v8/commands/npm-install)
 // but we only support exact versions for now.
-func ParseNpmDependency(dependency string) (*NpmPackageVersion, error) {
+func ParseNpmPackageVersion(dependency string) (*NpmPackageVersion, error) {
 	// We use slightly more restrictive validation compared to the official
 	// rules (https://github.com/npm/validate-npm-package-name#naming-rules).
 	//

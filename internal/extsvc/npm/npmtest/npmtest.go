@@ -21,7 +21,7 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 
 	packages := map[string]*npm.PackageInfo{}
 	for _, dep := range deps {
-		d, err := reposource.ParseNpmDependency(dep)
+		d, err := reposource.ParseNpmPackageVersion(dep)
 		if err != nil {
 			t.Fatal(err)
 		}

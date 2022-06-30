@@ -44,13 +44,13 @@ func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (r
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewPythonDependency(name, version), nil
+	return reposource.NewPythonPackageVersion(name, version), nil
 }
 
 func (pythonPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParsePythonDependency(dep)
+	return reposource.ParsePackageVersion(dep)
 }
 
 func (pythonPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return reposource.ParsePythonDependencyFromRepoName(repoName)
+	return reposource.ParsePythonPackageFromRepoName(repoName)
 }

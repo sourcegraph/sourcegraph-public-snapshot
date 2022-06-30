@@ -113,9 +113,9 @@ func (d *MavenPackageVersion) LsifJavaDependencies() []string {
 	return []string{d.PackageVersionSyntax()}
 }
 
-// ParseMavenDependency parses a dependency string in the Coursier format
+// ParseMavenPackageVersion parses a dependency string in the Coursier format
 // (colon seperated group ID, artifact ID and an optional version) into a MavenPackageVersion.
-func ParseMavenDependency(dependency string) (*MavenPackageVersion, error) {
+func ParseMavenPackageVersion(dependency string) (*MavenPackageVersion, error) {
 	dep := &MavenPackageVersion{MavenModule: &MavenModule{}}
 
 	switch ps := strings.Split(dependency, ":"); len(ps) {
@@ -132,9 +132,9 @@ func ParseMavenDependency(dependency string) (*MavenPackageVersion, error) {
 	return dep, nil
 }
 
-// ParseMavenDependencyFromRepoName is a convenience function to parse a repo name in a
+// ParseMavenPackageFromRepoName is a convenience function to parse a repo name in a
 // 'maven/<name>' format into a MavenPackageVersion.
-func ParseMavenDependencyFromRepoName(name string) (*MavenPackageVersion, error) {
+func ParseMavenPackageFromRepoName(name string) (*MavenPackageVersion, error) {
 	if name == "jdk" {
 		return &MavenPackageVersion{MavenModule: jdkModule()}, nil
 	}
@@ -144,7 +144,7 @@ func ParseMavenDependencyFromRepoName(name string) (*MavenPackageVersion, error)
 		return nil, errors.New("invalid maven dependency repo name, missing maven/ prefix")
 	}
 
-	return ParseMavenDependency(dep)
+	return ParseMavenPackageVersion(dep)
 }
 
 // jdkModule returns the module for the Java standard library (JDK). This module

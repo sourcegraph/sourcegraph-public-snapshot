@@ -25,12 +25,12 @@ func NewNpmPackagesSyncer(
 	svc *dependencies.Service,
 	client npm.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseNpmDependency("@sourcegraph/placeholder@1.0.0")
+	placeholder, err := reposource.ParseNpmPackageVersion("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
 		logger:      log.Scoped("NPMPackagesSyncer", "sync NPM packages"),
 		typ:         "npm_packages",
 		scheme:      dependencies.NpmPackagesScheme,
@@ -47,7 +47,7 @@ type npmPackagesSyncer struct {
 }
 
 func (npmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseNpmDependency(dep)
+	return reposource.ParseNpmPackageVersion(dep)
 }
 
 func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
@@ -59,7 +59,7 @@ func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.P
 }
 
 func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	dep, err := reposource.ParseNpmDependency(name + "@" + version)
+	dep, err := reposource.ParseNpmPackageVersion(name + "@" + version)
 	if err != nil {
 		return nil, err
 	}

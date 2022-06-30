@@ -26,12 +26,12 @@ func NewGoModulesSyncer(
 	svc *dependencies.Service,
 	client *gomodproxy.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseGoDependency("sourcegraph.com/placeholder@v0.0.0")
+	placeholder, err := reposource.ParseGoPackageVersion("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
 		logger:      log.Scoped("GoModulesSyncer", "sync Go modules"),
 		typ:         "go_modules",
 		scheme:      dependencies.GoModulesScheme,
@@ -47,7 +47,7 @@ type goModulesSyncer struct {
 }
 
 func (goModulesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseGoDependency(dep)
+	return reposource.ParseGoPackageVersion(dep)
 }
 
 func (goModulesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
@@ -59,7 +59,7 @@ func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposo
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewGoDependency(*mod), nil
+	return reposource.NewGoPackageVersion(*mod), nil
 }
 
 func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {

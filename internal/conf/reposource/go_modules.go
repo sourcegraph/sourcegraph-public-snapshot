@@ -18,14 +18,14 @@ type GoPackageVersion struct {
 	Module module.Version
 }
 
-// NewGoDependency returns a GoPackageVersion for the given module.Version.
-func NewGoDependency(mod module.Version) *GoPackageVersion {
+// NewGoPackageVersion returns a GoPackageVersion for the given module.Version.
+func NewGoPackageVersion(mod module.Version) *GoPackageVersion {
 	return &GoPackageVersion{Module: mod}
 }
 
-// ParseGoDependency parses a string in a '<name>(@<version>)?' format into an
+// ParseGoPackageVersion parses a string in a '<name>(@<version>)?' format into an
 // GoPackageVersion.
-func ParseGoDependency(dependency string) (*GoPackageVersion, error) {
+func ParseGoPackageVersion(dependency string) (*GoPackageVersion, error) {
 	var mod module.Version
 	if i := strings.LastIndex(dependency, "@"); i == -1 {
 		mod.Path = dependency
@@ -55,7 +55,7 @@ func ParseGoDependencyFromRepoName(name string) (*GoPackageVersion, error) {
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid go dependency repo name, missing go/ prefix")
 	}
-	return ParseGoDependency(dependency)
+	return ParseGoPackageVersion(dependency)
 }
 
 func (d *GoPackageVersion) Scheme() string {

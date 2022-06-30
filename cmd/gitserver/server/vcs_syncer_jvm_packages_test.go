@@ -184,7 +184,7 @@ func TestJVMCloneCommand(t *testing.T) {
 	coursier.CoursierBinary = coursierScript(t, dir)
 
 	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), nil)
-	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}}, depsSvc).(*vcsDependenciesSyncer)
+	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}}, depsSvc).(*vcsPackagesSyncer)
 	bareGitDirectory := path.Join(dir, "git")
 
 	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})

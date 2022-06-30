@@ -30,7 +30,7 @@ func TestParseNpmDependency(t *testing.T) {
 		{"@A.B-C.D-E/F.G--H.IJK-L@0.1-ABC", true},
 	}
 	for _, entry := range table {
-		dep, err := ParseNpmDependency(entry.testName)
+		dep, err := ParseNpmPackageVersion(entry.testName)
 		if entry.expect && (err != nil) {
 			t.Errorf("expected success but got error '%s' when parsing %s",
 				err.Error(), entry.testName)
@@ -74,7 +74,7 @@ func TestNpmDependency_Less(t *testing.T) {
 }
 
 func parseNpmDependencyOrPanic(t *testing.T, value string) *NpmPackageVersion {
-	dependency, err := ParseNpmDependency(value)
+	dependency, err := ParseNpmPackageVersion(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}

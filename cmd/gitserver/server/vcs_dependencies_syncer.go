@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
+// vcsPackagesSyncer implements the VCSSyncer interface for dependency repos
 // of different types.
-type vcsDependenciesSyncer struct {
+type vcsPackagesSyncer struct {
 	logger log.Logger
 	typ    string
 	scheme string
@@ -29,15 +29,15 @@ type vcsDependenciesSyncer struct {
 	// so it can have any random value.
 	placeholder reposource.PackageVersion
 	configDeps  []string
-	source      dependenciesSource
+	source      packagesSource
 	svc         dependenciesService
 }
 
-var _ VCSSyncer = &vcsDependenciesSyncer{}
+var _ VCSSyncer = &vcsPackagesSyncer{}
 
-// dependenciesSource encapsulates the methods required to implement a source of
+// packagesSource encapsulates the methods required to implement a source of
 // package dependencies e.g. npm, go modules, jvm, python.
-type dependenciesSource interface {
+type packagesSource interface {
 	// Get verifies that a dependency at a specific version exists in the package
 	// host and returns it if so. Otherwise it returns an error that passes
 	// errcode.IsNotFound() test.
@@ -56,19 +56,19 @@ type dependenciesService interface {
 	ListDependencyRepos(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error)
 }
 
-func (s *vcsDependenciesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
+func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
 	return nil
 }
 
-func (s *vcsDependenciesSyncer) Type() string {
+func (s *vcsPackagesSyncer) Type() string {
 	return s.typ
 }
 
-func (s *vcsDependenciesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
 
-func (s *vcsDependenciesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
+func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
 	if err != nil {
 		return nil, err
@@ -88,8 +88,8 @@ func (s *vcsDependenciesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) (err error) {
-	var dep reposource.PackageVersion
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) (err error) {
+	var dep reposource.Package
 	dep, err = s.source.ParsePackageFromRepoName(remoteURL.Path)
 	if err != nil {
 		return err
@@ -201,7 +201,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 //
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
-func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageVersion) error {
+func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageVersion) error {
 	workDir, err := os.MkdirTemp("", s.Type())
 	if err != nil {
 		return err
@@ -257,7 +257,7 @@ func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGi
 	return nil
 }
 
-func (s *vcsDependenciesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
+func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
 	var versions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParsePackageVersionFromConfiguration(d)

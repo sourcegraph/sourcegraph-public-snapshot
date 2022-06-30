@@ -34,7 +34,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	}
 	depsService := &fakeDepsService{deps: map[string][]dependencies.Repo{}}
 
-	s := vcsDependenciesSyncer{
+	s := vcsPackagesSyncer{
 		logger:      logtest.Scoped(t),
 		typ:         "fake",
 		scheme:      "fake",
@@ -136,7 +136,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.download["org.springframework.boot:spring-boot:3.0"] = notFoundError{errors.New("Please contact Josh Long")}
 
 	t.Run("trying to download non-existent Maven dependency", func(t *testing.T) {
-		springBootDep, err := reposource.ParseMavenDependency("org.springframework.boot:spring-boot:3.0")
+		springBootDep, err := reposource.ParseMavenPackageVersion("org.springframework.boot:spring-boot:3.0")
 		if err != nil {
 			t.Fatal("Cannot parse Maven dependency")
 		}
@@ -254,7 +254,7 @@ func (f fakePackageVersion) Less(other reposource.PackageVersion) bool {
 	return f.PackageVersionSyntax() > other.PackageVersionSyntax()
 }
 
-func (s vcsDependenciesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
+func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
 	u := vcs.URL{
 		URL: url.URL{Path: examplePackageURL},
 	}
@@ -264,7 +264,7 @@ func (s vcsDependenciesSyncer) runCloneCommand(t *testing.T, examplePackageURL, 
 	assert.Nil(t, cmd.Run())
 }
 
-func (s vcsDependenciesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
+func (s vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
 	t.Helper()
 
 	cmd := exec.Command("git", "show-ref", "--head", "--dereference")

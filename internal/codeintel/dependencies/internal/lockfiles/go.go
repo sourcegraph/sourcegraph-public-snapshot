@@ -56,7 +56,7 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageVersion, error) {
 			r.Mod.Version = s.New.Version
 		}
 
-		deps = append(deps, reposource.NewGoDependency(r.Mod))
+		deps = append(deps, reposource.NewGoPackageVersion(r.Mod))
 	}
 	return deps, nil
 }

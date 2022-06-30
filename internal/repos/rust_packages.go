@@ -41,7 +41,7 @@ type rustPackagesSource struct {
 var _ packagesSource = &rustPackagesSource{}
 
 func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	dep := reposource.NewRustDependency(name, version)
+	dep := reposource.NewRustPackageVersion(name, version)
 	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
 	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
 	if _, err := s.client.Get(ctx, metaURL); err != nil {
@@ -52,9 +52,9 @@ func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (rep
 }
 
 func (rustPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseRustDependency(dep)
+	return reposource.ParseRustPackageVersion(dep)
 }
 
 func (rustPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return reposource.ParseRustDependencyFromRepoName(repoName)
+	return reposource.ParseRustPackageFromRepoName(repoName)
 }

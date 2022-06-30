@@ -15,16 +15,16 @@ type PythonPackageVersion struct {
 	PackageURL string
 }
 
-func NewPythonDependency(name, version string) *PythonPackageVersion {
+func NewPythonPackageVersion(name, version string) *PythonPackageVersion {
 	return &PythonPackageVersion{
 		Name:    name,
 		Version: version,
 	}
 }
 
-// ParsePythonDependency parses a string in a '<name>(==<version>)?' format into an
+// ParsePackageVersion parses a string in a '<name>(==<version>)?' format into an
 // PythonPackageVersion.
-func ParsePythonDependency(dependency string) (*PythonPackageVersion, error) {
+func ParsePackageVersion(dependency string) (*PythonPackageVersion, error) {
 	var dep PythonPackageVersion
 	if i := strings.LastIndex(dependency, "=="); i == -1 {
 		dep.Name = dependency
@@ -35,14 +35,14 @@ func ParsePythonDependency(dependency string) (*PythonPackageVersion, error) {
 	return &dep, nil
 }
 
-// ParsePythonDependencyFromRepoName is a convenience function to parse a repo name in a
+// ParsePythonPackageFromRepoName is a convenience function to parse a repo name in a
 // 'python/<name>(==<version>)?' format into a PythonPackageVersion.
-func ParsePythonDependencyFromRepoName(name string) (*PythonPackageVersion, error) {
+func ParsePythonPackageFromRepoName(name string) (*PythonPackageVersion, error) {
 	dependency := strings.TrimPrefix(name, "python/")
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
 	}
-	return ParsePythonDependency(dependency)
+	return ParsePackageVersion(dependency)
 }
 
 func (p *PythonPackageVersion) Scheme() string {

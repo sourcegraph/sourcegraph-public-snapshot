@@ -42,7 +42,7 @@ type jvmPackagesSource struct {
 var _ packagesSource = &jvmPackagesSource{}
 
 func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	mavenDependency, err := reposource.ParseMavenDependency(name + ":" + version)
+	mavenDependency, err := reposource.ParseMavenPackageVersion(name + ":" + version)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +55,9 @@ func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (repo
 }
 
 func (jvmPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseMavenDependency(dep)
+	return reposource.ParseMavenPackageVersion(dep)
 }
 
 func (jvmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return reposource.ParseMavenDependencyFromRepoName(repoName)
+	return reposource.ParseMavenPackageFromRepoName(repoName)
 }

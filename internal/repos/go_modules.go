@@ -46,11 +46,11 @@ func (s *goModulesSource) Get(ctx context.Context, name, version string) (reposo
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewGoDependency(*mod), nil
+	return reposource.NewGoPackageVersion(*mod), nil
 }
 
 func (goModulesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseGoDependency(dep)
+	return reposource.ParseGoPackageVersion(dep)
 }
 
 func (goModulesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {

@@ -10,14 +10,14 @@ import (
 )
 
 func TestDecomposeMavenPath(t *testing.T) {
-	obtained, _ := ParseMavenDependencyFromRepoName("maven/org.hamcrest/hamcrest-core")
+	obtained, _ := ParseMavenPackageFromRepoName("maven/org.hamcrest/hamcrest-core")
 	assert.Equal(t, obtained.GroupID, "org.hamcrest")
 	assert.Equal(t, obtained.ArtifactID, "hamcrest-core")
 	assert.Equal(t, api.RepoName("maven/org.hamcrest/hamcrest-core"), obtained.RepoName())
 }
 
 func parseMavenDependencyOrPanic(t *testing.T, value string) *MavenPackageVersion {
-	dependency, err := ParseMavenDependency(value)
+	dependency, err := ParseMavenPackageVersion(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}

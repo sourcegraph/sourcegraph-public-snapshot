@@ -20,7 +20,7 @@ import (
 )
 
 func assertPythonParsesPlaceholder() *reposource.PythonPackageVersion {
-	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
+	placeholder, err := reposource.ParsePackageVersion("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -35,7 +35,7 @@ func NewPythonPackagesSyncer(
 ) VCSSyncer {
 	placeholder := assertPythonParsesPlaceholder()
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
 		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
@@ -46,17 +46,17 @@ func NewPythonPackagesSyncer(
 	}
 }
 
-// pythonPackagesSyncer implements dependenciesSource
+// pythonPackagesSyncer implements packagesSource
 type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
 func (pythonPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParsePythonDependency(dep)
+	return reposource.ParsePackageVersion(dep)
 }
 
 func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return reposource.ParsePythonDependencyFromRepoName(repoName)
+	return reposource.ParsePythonPackageFromRepoName(repoName)
 }
 
 func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
@@ -64,7 +64,7 @@ func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (r
 	if err != nil {
 		return nil, err
 	}
-	dep := reposource.NewPythonDependency(name, version)
+	dep := reposource.NewPythonPackageVersion(name, version)
 	dep.PackageURL = f.URL
 	return dep, nil
 }

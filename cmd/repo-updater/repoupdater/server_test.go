@@ -368,7 +368,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			},
 		},
 		Metadata: &reposource.NpmMetadata{Package: func() *reposource.NpmPackageName {
-			p, _ := reposource.NewNpmPackage("", "package")
+			p, _ := reposource.NewNpmPackageName("", "package")
 			return p
 		}()},
 	}

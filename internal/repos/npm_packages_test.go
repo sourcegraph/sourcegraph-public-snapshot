@@ -103,7 +103,7 @@ var testDependencies = []string{
 var testDependencyRepos = func() []dependencies.Repo {
 	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(depStr)
+		dep, err := reposource.ParseNpmPackageVersion(depStr)
 		if err != nil {
 			panic(err.Error())
 		}

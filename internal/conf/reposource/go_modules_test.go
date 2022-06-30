@@ -37,7 +37,7 @@ func TestParseGoDependency(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dep, err := ParseGoDependency(test.name)
+			dep, err := ParseGoPackageVersion(test.name)
 			require.NoError(t, err)
 			assert.Equal(t, api.RepoName(test.wantRepoName), dep.RepoName())
 			assert.Equal(t, test.wantVersion, dep.PackageVersion())
@@ -53,13 +53,13 @@ func TestParseGoDependencyFromRepoName(t *testing.T) {
 	}{
 		{
 			name: "go/cloud.google.com/go",
-			dep: NewGoDependency(module.Version{
+			dep: NewGoPackageVersion(module.Version{
 				Path: "cloud.google.com/go",
 			}),
 		},
 		{
 			name: "go/cloud.google.com/go@v0.16.0",
-			dep: NewGoDependency(module.Version{
+			dep: NewGoPackageVersion(module.Version{
 				Path:    "cloud.google.com/go",
 				Version: "v0.16.0",
 			}),
@@ -116,7 +116,7 @@ func TestGoDependency_Less(t *testing.T) {
 }
 
 func parseGoDependencyOrPanic(t *testing.T, value string) *GoPackageVersion {
-	dependency, err := ParseGoDependency(value)
+	dependency, err := ParseGoPackageVersion(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}
