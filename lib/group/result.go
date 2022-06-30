@@ -125,7 +125,7 @@ func (g *resultGroup[T]) WithErrors() ResultErrorGroup[T] {
 
 func (g *resultGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] {
 	return &resultContextGroup[T]{
-		ContextGroup: g.Group.WithContext(ctx),
+		contextGroup: g.Group.WithContext(ctx),
 	}
 }
 
@@ -184,31 +184,31 @@ func (g *resultErrorGroup[T]) WithLimiter(limiter Limiter) ResultErrorGroup[T] {
 
 func (g *resultErrorGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] {
 	return &resultContextGroup[T]{
-		ContextGroup: g.ErrorGroup.WithContext(ctx),
+		contextGroup: g.ErrorGroup.WithContext(ctx),
 	}
 }
 
 // resultContextGroup wraps a ContextGroup and a resultAggregator to collect
 // the return values and errors of tasks that require a context.
 type resultContextGroup[T any] struct {
-	contextGroup ContextGroup
-	resultAggregator[T]
+	contextGroup   ContextGroup
+	agg            resultAggregator[T]
 	collectErrored bool
 }
 
 func (g *resultContextGroup[T]) Go(f func(context.Context) (T, error)) {
-	g.ContextGroup.Go(func(ctx context.Context) error {
+	g.contextGroup.Go(func(ctx context.Context) error {
 		res, err := f(ctx)
 		if err == nil || g.collectErrored {
-			g.add(res)
+			g.agg.add(res)
 		}
 		return err
 	})
 }
 
 func (g *resultContextGroup[T]) Wait() ([]T, error) {
-	err := g.ContextGroup.Wait()
-	return g.results, err
+	err := g.contextGroup.Wait()
+	return g.agg.results, err
 }
 
 func (g *resultContextGroup[T]) WithCollectErrored() ResultContextGroup[T] {
@@ -217,21 +217,21 @@ func (g *resultContextGroup[T]) WithCollectErrored() ResultContextGroup[T] {
 }
 
 func (g *resultContextGroup[T]) WithLimit(limit int) ResultContextGroup[T] {
-	g.ContextGroup = g.ContextGroup.WithLimit(limit)
+	g.contextGroup = g.contextGroup.WithLimit(limit)
 	return g
 }
 
 func (g *resultContextGroup[T]) WithLimiter(limiter Limiter) ResultContextGroup[T] {
-	g.ContextGroup = g.ContextGroup.WithLimiter(limiter)
+	g.contextGroup = g.contextGroup.WithLimiter(limiter)
 	return g
 }
 
 func (g *resultContextGroup[T]) WithCancelOnError() ResultContextGroup[T] {
-	g.ContextGroup = g.ContextGroup.WithCancelOnError()
+	g.contextGroup = g.contextGroup.WithCancelOnError()
 	return g
 }
 
 func (g *resultContextGroup[T]) WithFirstError() ResultContextGroup[T] {
-	g.ContextGroup = g.ContextGroup.WithFirstError()
+	g.contextGroup = g.contextGroup.WithFirstError()
 	return g
 }
