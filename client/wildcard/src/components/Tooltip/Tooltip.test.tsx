@@ -1,5 +1,6 @@
-import { render, RenderResult, cleanup, waitFor } from '@testing-library/react'
+import { render, RenderResult, cleanup, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { wait } from '@testing-library/user-event/dist/utils'
 
 import { Tooltip } from './Tooltip'
 
@@ -12,6 +13,14 @@ const TooltipTest = () => (
         , or{' '}
         <Tooltip content="Tooltip 2">
             <strong data-testid="trigger-2">me</strong>
+        </Tooltip>
+        , but nothing for{' '}
+        <Tooltip content="">
+            <strong data-testid="trigger-3">empty string</strong>
+        </Tooltip>{' '}
+        or{' '}
+        <Tooltip content={null}>
+            <strong data-testid="trigger-4">null</strong>
         </Tooltip>
     </>
 )
@@ -53,6 +62,20 @@ describe('Tooltip', () => {
             expect(tooltips[1]).toHaveTextContent('Tooltip 2')
             expect(tooltips[1]).toHaveAttribute('id', 'radix-1')
         })
+    })
+
+    it('does not display a tooltip on hover for empty content', async () => {
+        userEvent.hover(rendered.getByTestId('trigger-3'))
+        await act(async () => {
+            await wait(100)
+        })
+        expect(rendered.queryByRole('tooltip')).not.toBeInTheDocument()
+
+        userEvent.hover(rendered.getByTestId('trigger-4'))
+        await act(async () => {
+            await wait(100)
+        })
+        expect(rendered.queryByRole('tooltip')).not.toBeInTheDocument()
     })
 
     it('hides content when the ESC key is pressed', async () => {

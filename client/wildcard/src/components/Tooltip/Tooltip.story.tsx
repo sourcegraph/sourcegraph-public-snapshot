@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid, Code, Text } from '..'
+import { Button, Grid, Code, Text, Input } from '..'
 
 import { Tooltip } from '.'
 
@@ -77,41 +77,6 @@ export const Conditional: Story = () => {
     )
 }
 
-export const DisabledTrigger: Story = () => (
-    <Grid columnCount={1}>
-        <div>
-            <Tooltip content="Tooltip still works properly">
-                <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
-                    Disabled Button 🚫
-                </Button>
-            </Tooltip>
-        </div>
-
-        <Text>
-            {/**
-             * This is necessary to support our current implementation using Radix.
-             * Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
-             * */}
-            When rendering a Tooltip for a disabled <Code>{'<Button>'}</Code>, the button element also needs to have the
-            CSS property <Code>pointer-events: none</Code>.
-        </Text>
-    </Grid>
-)
-
-export const LongContent: Story = () => (
-    <Grid columnCount={1}>
-        <div>
-            <Tooltip content="Nulla porttitor accumsan tincidunt. IAmVeryLongTextWithNoBreaksAndIWantToBeWrappedInMultipleLines. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada.">
-                <Button variant="primary">Example</Button>
-            </Tooltip>
-        </div>
-
-        <Text>
-            Tooltips with long text will not exceed the width specified by <Code>--tooltip-max-width</Code>.
-        </Text>
-    </Grid>
-)
-
 export const DefaultOpen: Story = () => (
     <Grid columnCount={1}>
         <div>
@@ -140,6 +105,46 @@ DefaultOpen.parameters = {
         disableSnapshot: false,
     },
 }
+
+export const DisabledTrigger: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Tooltip still works properly" placement="right">
+                <Button variant="primary" disabled={true}>
+                    Disabled Button 🚫
+                </Button>
+            </Tooltip>
+        </div>
+
+        <div>
+            <Tooltip content="Tooltip still works properly" placement="right">
+                <Input placeholder="Disabled Input 🚫" disabled={true} style={{ width: '300px' }} />
+            </Tooltip>
+        </div>
+
+        <Text>
+            Disabled <Code>{'<Button>'}</Code> and <Code>{'<Input>'}</Code> elements should work without any additional
+            modifications needed.
+        </Text>
+    </Grid>
+)
+
+export const LongContent: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip
+                content="Nulla porttitor accumsan tincidunt. IAmVeryLongTextWithNoBreaksAndIWantToBeWrappedInMultipleLines. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada."
+                placement="right"
+            >
+                <Button variant="primary">Example</Button>
+            </Tooltip>
+        </div>
+
+        <Text>
+            Tooltips with long text will not exceed the width specified by <Code>--tooltip-max-width</Code>.
+        </Text>
+    </Grid>
+)
 
 export const PlacementOptions: Story = () => (
     <>
@@ -193,7 +198,7 @@ export const UpdateContent: Story = () => {
     return (
         <Grid columnCount={1}>
             <div>
-                <Tooltip content={clicked ? 'New message!' : 'Click to change the message.'}>
+                <Tooltip content={clicked ? 'New message!' : 'Click to change the message.'} placement="right">
                     <Button variant="primary" onClick={onClick}>
                         Click Me
                     </Button>

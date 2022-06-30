@@ -185,36 +185,27 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
-  <div
-    class="container"
+  <button
+    aria-label="d"
+    class="test-action-item actionItemLoading"
+    data-tooltip="d"
+    disabled=""
+    type="button"
   >
-    <div
-      class="disabledTooltip"
-      data-tooltip="d"
-      tabindex="0"
+    <img
+      alt="d"
+      src="u"
     />
-    <button
-      aria-label="d"
-      class="test-action-item actionItemLoading"
-      data-tooltip="d"
-      disabled=""
-      type="button"
+     g: t 
+    <div
+      class="loader"
+      data-testid="action-item-spinner"
     >
-      <img
-        alt="d"
-        src="u"
-      />
-       g: t 
       <div
-        class="loader"
-        data-testid="action-item-spinner"
-      >
-        <div
-          class="loadingSpinner"
-        />
-      </div>
-    </button>
-  </div>
+        class="loadingSpinner"
+      />
+    </div>
+  </button>
 </DocumentFragment>
 `;
 
