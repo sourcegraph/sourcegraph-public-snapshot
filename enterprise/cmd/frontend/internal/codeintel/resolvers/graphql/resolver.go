@@ -711,15 +711,16 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 	}
 
 	return store.GetUploadsOptions{
-		RepositoryID: repositoryID,
-		State:        strings.ToLower(derefString(args.State, "")),
-		Term:         derefString(args.Query, ""),
-		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
-		DependencyOf: int(dependencyOf),
-		DependentOf:  int(dependentOf),
-		Limit:        derefInt32(args.First, DefaultUploadPageSize),
-		Offset:       offset,
-		AllowExpired: true,
+		RepositoryID:       repositoryID,
+		State:              strings.ToLower(derefString(args.State, "")),
+		Term:               derefString(args.Query, ""),
+		VisibleAtTip:       derefBool(args.IsLatestForRepo, false),
+		DependencyOf:       int(dependencyOf),
+		DependentOf:        int(dependentOf),
+		Limit:              derefInt32(args.First, DefaultUploadPageSize),
+		Offset:             offset,
+		AllowExpired:       true,
+		AllowDeletedUpload: derefBool(args.IncludeDeleted, false),
 	}, nil
 }
 
