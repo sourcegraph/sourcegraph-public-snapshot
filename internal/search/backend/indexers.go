@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -28,7 +30,7 @@ type Indexers struct {
 
 	// Indexed returns a set of repository names currently indexed on
 	// endpoint. If indexed fails, it is expected to return an empty set.
-	Indexed func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry
+	Indexed func(ctx context.Context, logger log.Logger, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry
 }
 
 // ReposSubset returns the subset of repoNames that hostname should index.
@@ -38,7 +40,7 @@ type Indexers struct {
 // indexed is the set of repositories currently indexed by hostname.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, logger log.Logger, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !c.Enabled() {
 		return repos, nil
 	}
@@ -76,7 +78,7 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	// Only include repos from other if the assigned endpoint has not yet
 	// indexed the repository.
 	for assigned, otherRepos := range other {
-		drop := c.Indexed(ctx, assigned)
+		drop := c.Indexed(ctx, logger, assigned)
 		for _, r := range otherRepos {
 			if _, ok := drop[uint32(r.ID)]; !ok {
 				subset = append(subset, r)
