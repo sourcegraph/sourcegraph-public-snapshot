@@ -25,12 +25,10 @@ export async function handleRequest(
     }
 
     if (action === 'pluginSettingsChanged') {
-        applyConfig(argumentsAsObject as PluginSettingsChangedRequestArguments)
+        const pluginConfig = argumentsAsObject as PluginSettingsChangedRequestArguments
+        applyConfig(pluginConfig)
         try {
-            const authenticatedUser = await getAuthenticatedUser(
-                (argumentsAsObject as PluginSettingsChangedRequestArguments).instanceURL,
-                (argumentsAsObject as PluginSettingsChangedRequestArguments).accessToken
-            )
+            const authenticatedUser = await getAuthenticatedUser(pluginConfig.instanceURL, pluginConfig.accessToken)
             await indicateFinishedLoading(true, !!authenticatedUser)
         } catch {
             await indicateFinishedLoading(false, false)
