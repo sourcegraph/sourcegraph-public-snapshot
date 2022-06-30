@@ -216,7 +216,8 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                                         className={classNames(
                                             hoverOverlayStyle.action,
                                             actionItemClassName,
-                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`,
+                                            index !== 0 && 'ml-1'
                                         )}
                                         iconClassName={iconClassName}
                                         pressedClassName={actionItemPressedClassName}
