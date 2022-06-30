@@ -1,8 +1,4 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
-import CircleOffOutlineIcon from 'mdi-react/CircleOffOutlineIcon'
-import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import { mdiAlertCircle, mdiCheckBold, mdiTimerSand, mdiTimelineClockOutline, mdiCircleOffOutline } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
@@ -14,23 +10,23 @@ import styles from './ExecutionStatsBar.module.scss'
 export const ExecutionStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchSpecWorkspaceStats>> = stats => (
     <div className="d-flex align-items-center">
         <ExecutionStat>
-            <Icon aria-hidden={true} as={AlertCircleIcon} className="text-danger" />
+            <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} />
             {stats.errored} {pluralize('error', stats.errored)}
         </ExecutionStat>
         <ExecutionStat>
-            <Icon aria-hidden={true} as={CheckBoldIcon} className="text-success" />
+            <Icon aria-hidden={true} className="text-success" svgPath={mdiCheckBold} />
             {stats.completed} complete
         </ExecutionStat>
         <ExecutionStat>
-            <Icon aria-hidden={true} as={TimerSandIcon} />
+            <Icon aria-hidden={true} svgPath={mdiTimerSand} />
             {stats.processing} working
         </ExecutionStat>
         <ExecutionStat>
-            <Icon aria-hidden={true} as={TimelineClockOutlineIcon} />
+            <Icon aria-hidden={true} svgPath={mdiTimelineClockOutline} />
             {stats.queued} queued
         </ExecutionStat>
         <ExecutionStat>
-            <Icon aria-hidden={true} as={CircleOffOutlineIcon} />
+            <Icon aria-hidden={true} svgPath={mdiCircleOffOutline} />
             {stats.ignored} ignored
         </ExecutionStat>
     </div>

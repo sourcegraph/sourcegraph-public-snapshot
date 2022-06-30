@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { mdiInformationOutline } from '@mdi/js'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Select } from '@sourcegraph/wildcard'
@@ -48,8 +48,8 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
                     <Icon
                         aria-label="Coming soon"
                         data-tooltip="Coming soon"
-                        as={InfoCircleOutlineIcon}
                         className="ml-1"
+                        svgPath={mdiInformationOutline}
                     />
                 </>
             }

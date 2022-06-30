@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, H3 } from '@sourcegraph/wildcard'
@@ -76,7 +76,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
                 <Icon
                     aria-label="You have no permissions to access this repository."
                     data-tooltip="You have no permissions to access this repository."
-                    as={InfoCircleOutlineIcon}
+                    svgPath={mdiInformationOutline}
                 />
             </span>
         </div>

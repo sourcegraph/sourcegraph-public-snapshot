@@ -1,8 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react'
 
+import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
 import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
@@ -105,7 +104,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 className="text-success test-code-host-connection-node-enabled"
                                 data-tooltip="This code host has credentials connected."
                                 aria-label="This code host has credentials connected."
-                                as={CheckCircleOutlineIcon}
+                                svgPath={mdiCheckCircleOutline}
                             />
                         )}
                         {!isEnabled && (
@@ -113,7 +112,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 className="text-danger test-code-host-connection-node-disabled"
                                 data-tooltip="This code host does not have credentials configured."
                                 aria-label="This code host does not have credentials configured."
-                                as={CheckboxBlankCircleOutlineIcon}
+                                svgPath={mdiCheckboxBlankCircleOutline}
                             />
                         )}
                         <Icon className="mx-2" aria-hidden={true} as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}

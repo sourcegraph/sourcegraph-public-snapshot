@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, Icon, Text } from '@sourcegraph/wildcard'
@@ -101,7 +101,7 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
             as={BatchSpecDownloadLink}
             asButton={false}
         >
-            <Icon aria-hidden={true} as={FileDownloadIcon} /> Download YAML
+            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
         </Button>
     )
 })

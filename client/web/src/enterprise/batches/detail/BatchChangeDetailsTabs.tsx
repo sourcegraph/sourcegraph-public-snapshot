@@ -1,11 +1,7 @@
 import React, { useMemo } from 'react'
 
+import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiMonitorStar } from '@mdi/js'
 import * as H from 'history'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -106,7 +102,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
                     <span>
-                        <Icon aria-hidden={true} className="text-muted mr-2" as={SourceBranchIcon} />
+                        <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiSourceBranch} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
                         </span>
@@ -117,7 +113,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 </BatchChangeTab>
                 <BatchChangeTab index={1} name={TabName.Chart}>
                     <span>
-                        <Icon aria-hidden={true} className="text-muted mr-2" as={ChartLineVariantIcon} />
+                        <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiChartLineVariant} />
                         <span className="text-content" data-tab-content="Burndown chart">
                             Burndown chart
                         </span>
@@ -126,7 +122,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 {shouldDisplayOldUI ? (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
-                            <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
+                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
                             <span className="text-content" data-tab-content="Spec">
                                 Spec
                             </span>
@@ -135,7 +131,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 ) : (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
-                            <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
+                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
                             </span>
@@ -149,7 +145,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
                     <span>
-                        <Icon aria-hidden={true} className="text-muted mr-2" as={ArchiveIcon} />
+                        <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiArchive} />
                         <span className="text-content" data-tab-content="Archived">
                             Archived
                         </span>
@@ -160,7 +156,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
                     <span>
-                        <Icon aria-hidden={true} className="text-muted mr-2" as={MonitorStarIcon} />
+                        <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiMonitorStar} />
                         <span className="text-content" data-tab-content="Bulk operations">
                             Bulk operations
                         </span>

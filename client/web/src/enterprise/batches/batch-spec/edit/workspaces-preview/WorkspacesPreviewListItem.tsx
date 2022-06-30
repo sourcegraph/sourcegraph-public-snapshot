@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiClose } from '@mdi/js'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -70,6 +70,6 @@ const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExc
         data-tooltip="Omit this repository from batch spec file"
         onClick={handleExclude}
     >
-        <Icon aria-hidden={true} as={CloseIcon} />
+        <Icon aria-hidden={true} svgPath={mdiClose} />
     </Button>
 )

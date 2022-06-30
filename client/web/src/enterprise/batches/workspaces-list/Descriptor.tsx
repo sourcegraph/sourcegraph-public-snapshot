@@ -1,6 +1,6 @@
 import { ReactElement } from 'react'
 
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import { mdiSourceBranch } from '@mdi/js'
 
 import { Icon, H4 } from '@sourcegraph/wildcard'
 
@@ -35,7 +35,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
             ) : null}
             {workspace && (
                 <div className="d-flex align-items-center text-muted text-monospace pt-1">
-                    <Icon aria-hidden={true} className="mr-1" as={SourceBranchIcon} />
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiSourceBranch} />
                     <small>{workspace.branch.displayName}</small>
                 </div>
             )}
