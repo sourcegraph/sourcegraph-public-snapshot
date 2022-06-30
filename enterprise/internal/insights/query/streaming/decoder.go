@@ -7,9 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
@@ -131,14 +129,6 @@ type ComputeTabulationResult struct {
 }
 
 const capturedValueMaxLength = 100
-
-type computeDecoder struct {
-	OnProgress func(*api.Progress)
-	OnResult   func(results []compute.MatchContext)
-	OnAlert    func(*http.EventAlert)
-	OnError    func(*http.EventError)
-	OnUnknown  func(event, data []byte)
-}
 
 func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
 	ctr := &ComputeTabulationResult{
