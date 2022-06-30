@@ -6,6 +6,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log/otfields"
 	"github.com/uber/jaeger-client-go"
+	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
@@ -74,11 +76,20 @@ func Context(ctx context.Context) *otfields.TraceContext {
 // Context retrieves the full trace context, if any, from the span - this includes
 // both TraceID and SpanID.
 func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
-	spanCtx, ok := span.Context().(jaeger.SpanContext)
-	if ok {
+	if jaegerSpan, ok := span.Context().(jaeger.SpanContext); ok {
 		return &otfields.TraceContext{
-			TraceID: spanCtx.TraceID().String(),
-			SpanID:  spanCtx.SpanID().String(),
+			TraceID: jaegerSpan.TraceID().String(),
+			SpanID:  jaegerSpan.SpanID().String(),
+		}
+	}
+
+	// We need to retrieve the bridged OpenTracing context as an OpenTelemetry context,
+	// and then get trace details. To do so, we use a no-op bridge tracer.
+	otelCtx := otelbridge.NewBridgeTracer().ContextWithSpanHook(context.Background(), span)
+	if otelSpan := trace.SpanFromContext(otelCtx).SpanContext(); otelSpan.IsValid() {
+		return &otfields.TraceContext{
+			TraceID: otelSpan.TraceID().String(),
+			SpanID:  otelSpan.SpanID().String(),
 		}
 	}
 

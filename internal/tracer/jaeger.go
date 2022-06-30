@@ -18,11 +18,13 @@ import (
 // when using opentracing.
 func newJaegerTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
 	cfg, err := jaegercfg.FromEnv()
-	cfg.ServiceName = opts.serviceName
+	cfg.ServiceName = opts.resource.Name
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
 	}
-	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: opts.version}, opentracing.Tag{Key: "service.env", Value: opts.env})
+	cfg.Tags = append(cfg.Tags,
+		opentracing.Tag{Key: "service.version", Value: opts.resource.Version},
+		opentracing.Tag{Key: "service.env", Value: opts.resource.Namespace})
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
 		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient

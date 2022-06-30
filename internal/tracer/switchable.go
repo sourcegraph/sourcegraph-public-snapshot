@@ -27,7 +27,7 @@ func newSwitchableTracer(logger log.Logger) *switchableTracer {
 	var t opentracing.NoopTracer
 	return &switchableTracer{
 		tracer: t,
-		logger: logger.With(log.String("tracer", fmt.Sprintf("%T", t))),
+		logger: logger.With(log.String("tracer", fmt.Sprintf("%T", t))).AddCallerSkip(1),
 	}
 }
 
@@ -59,7 +59,12 @@ func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanCon
 	return t.tracer.Extract(format, carrier)
 }
 
-func (t *switchableTracer) set(logger log.Logger, tracer opentracing.Tracer, tracerCloser io.Closer, shouldLog bool) {
+func (t *switchableTracer) set(
+	logger log.Logger,
+	tracer opentracing.Tracer,
+	tracerCloser io.Closer,
+	shouldLog bool,
+) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if tc := t.tracerCloser; tc != nil {
@@ -70,5 +75,5 @@ func (t *switchableTracer) set(logger log.Logger, tracer opentracing.Tracer, tra
 	t.tracerCloser = tracerCloser
 	t.tracer = tracer
 	t.log = shouldLog
-	t.logger = t.logger.With(log.String("opentracer", fmt.Sprintf("%T", t)))
+	t.logger = logger.With(log.String("tracer", fmt.Sprintf("%T", tracer))).AddCallerSkip(1)
 }

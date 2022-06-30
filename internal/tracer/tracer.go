@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -19,9 +20,7 @@ type options struct {
 	externalURL string
 	debug       bool
 	// these values are not configurable by site config
-	serviceName string
-	version     string
-	env         string
+	resource log.Resource
 }
 
 type TracerType string
@@ -54,14 +53,19 @@ func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
 		logger.Error("automaxprocs failed", log.Error(err))
 	}
 
-	opts := &options{}
-	opts.serviceName = env.MyName
-	if version.IsDev(version.Version()) {
-		opts.env = "dev"
+	// Resource mirrors the initialization used by our OpenTelemetry logger.
+	resource := log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
 	}
-	opts.version = version.Version()
 
-	initTracer(logger, opts, c)
+	// Additionally set a dev namespace
+	if version.IsDev(version.Version()) {
+		resource.Namespace = "dev"
+	}
+
+	initTracer(logger, &options{resource: resource}, c)
 }
 
 // initTracer is a helper that should be called exactly once (from Init).
@@ -69,11 +73,10 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 	globalTracer := newSwitchableTracer(logger.Scoped("global", "the global tracer"))
 	opentracing.SetGlobalTracer(globalTracer)
 
-	// Initially everything is disabled since we haven't read conf yet.
+	// Initially everything is disabled since we haven't read conf yet. This variable is
+	// also updated to compare against new version of configuration.
 	oldOpts := options{
-		serviceName: opts.serviceName,
-		version:     opts.version,
-		env:         opts.env,
+		resource: opts.resource,
 		// the values below may change
 		TracerType:  None,
 		debug:       false,
@@ -117,9 +120,8 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 			externalURL: siteConfig.ExternalURL,
 			TracerType:  setTracer,
 			debug:       debug,
-			serviceName: opts.serviceName,
-			version:     opts.version,
-			env:         opts.env,
+			// Stays the same
+			resource: oldOpts.resource,
 		}
 		if opts == oldOpts {
 			// Nothing changed
