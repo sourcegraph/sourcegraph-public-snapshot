@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -11,7 +11,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike, numberWithCommas
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Alert, Link, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -107,11 +107,9 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
-                        <Icon
-                            aria-label={previewInvoice.message}
-                            data-tooltip={previewInvoice.message}
-                            as={AlertCircleIcon}
-                        />{' '}
+                        <Tooltip content={previewInvoice.message}>
+                            <Icon svgPath={mdiAlertCircle} aria-label={previewInvoice.message} />
+                        </Tooltip>{' '}
                         Error
                     </span>
                 ) : previewInvoice.beforeInvoiceItem ? (

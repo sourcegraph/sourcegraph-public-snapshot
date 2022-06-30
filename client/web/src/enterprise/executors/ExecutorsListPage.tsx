@@ -1,12 +1,13 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiCheckboxBlankCircle } from '@mdi/js'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -133,12 +134,13 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                             {node.active ? (
                                 <Icon aria-hidden={true} className="text-success mr-2" as={CheckboxBlankCircleIcon} />
                             ) : (
-                                <Icon
-                                    className="text-warning mr-2"
-                                    aria-label="This executor missed at least three heartbeats."
-                                    data-tooltip="This executor missed at least three heartbeats."
-                                    as={CheckboxBlankCircleIcon}
-                                />
+                                <Tooltip content="This executor missed at least three heartbeats.">
+                                    <Icon
+                                        className="text-warning mr-2"
+                                        aria-label="This executor missed at least three heartbeats."
+                                        svgPath={mdiCheckboxBlankCircle}
+                                    />
+                                </Tooltip>
                             )}
                             {node.hostname}{' '}
                             <Badge

@@ -49,6 +49,7 @@ import {
     Code,
     H4,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -450,16 +451,21 @@ export const ReferencesList: React.FunctionComponent<
                 <div data-testid="right-pane" className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
-                            <Button
-                                onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
-                                title="Close code view"
-                                data-tooltip="Close code view"
-                                data-placement="left"
-                                size="sm"
-                            >
-                                <Icon aria-hidden={true} size="sm" as={ArrowCollapseRightIcon} className="border-0" />
-                            </Button>
+                            <Tooltip content="Close code view" placement="left">
+                                <Button
+                                    onClick={() => setActiveLocation(undefined)}
+                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                    title="Close code view"
+                                    size="sm"
+                                >
+                                    <Icon
+                                        aria-hidden={true}
+                                        size="sm"
+                                        as={ArrowCollapseRightIcon}
+                                        className="border-0"
+                                    />
+                                </Button>
+                            </Tooltip>
                             <Link
                                 to={activeLocation.url}
                                 onClick={event => {
