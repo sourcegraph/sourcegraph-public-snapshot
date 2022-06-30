@@ -645,6 +645,20 @@ From there, you can start exploring logs with the Grafana explore panel.
 			}
 			return open.URL(buildkiteURL)
 		},
+	}, {
+		Name:      "failures",
+		ArgsUsage: "[text to match]",
+		Usage:     "Open CI failures logs in your browser",
+		Action: func(ctx *cli.Context) error {
+			grafanaURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
+			args := ctx.Args().Slice()
+			if len(args) > 0 && args[0] != "" {
+				pipeline := args[0]
+				// TODO where we would build it
+				grafanaURL += fmt.Sprintf("/%s", pipeline)
+			}
+			return open.URL(grafanaURL)
+		},
 	}},
 }
 
