@@ -1,8 +1,8 @@
 import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
+import { mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import DeleteIcon from 'mdi-react/DeleteIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -156,7 +156,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
                         >
                             {!isDeleting && (
                                 <>
-                                    <Icon aria-hidden={true} as={DeleteIcon} /> Delete policy
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete policy
                                 </>
                             )}
                             {isDeleting && (
