@@ -10,7 +10,13 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
--
+### Fixes
+
+## 2.2.6
+
+### Changes
+
+- Remove notification to add Sourcegraph extension to the workspace [issues/37772](https://github.com/sourcegraph/sourcegraph/issues/37772)
 
 ### Fixes
 
