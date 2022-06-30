@@ -53,11 +53,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     <li>Your code never leaves your server</li>
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
-                <Link
-                    to="https://docs.sourcegraph.com/cloud/cloud_ent_on-prem_comparison"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <Link to="/help/cloud/cloud_ent_on-prem_comparison" target="_blank" rel="noopener noreferrer">
                     Learn more about self-hosted vs. cloud features <Icon aria-hidden={true} as={OpenInNewIcon} />
                 </Link>
             </div>

@@ -74,7 +74,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center mt-3">Search your code and 2M+ open source repositories</div>
+                <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
             )}
             <div
                 className={classNames(styles.searchContainer, {
