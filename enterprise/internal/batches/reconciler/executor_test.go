@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -483,7 +483,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &sources.FakeChangesetSource{
+			fakeSource := &stesting.FakeChangesetSource{
 				Svc:             extSvc,
 				Err:             tc.sourcerErr,
 				ChangesetExists: tc.alreadyExists,
@@ -499,7 +499,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := sources.NewFakeSourcer(nil, fakeSource)
+			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			tc.plan.Changeset = changeset
 			tc.plan.ChangesetSpec = changesetSpec
@@ -627,7 +627,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -653,7 +653,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	changeset := ct.BuildChangeset(ct.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
 
 	ourError := errors.New("this should not be returned")
-	sourcer := sources.NewFakeSourcer(ourError, &sources.FakeChangesetSource{})
+	sourcer := stesting.NewFakeSourcer(ourError, &stesting.FakeChangesetSource{})
 
 	t.Run("plan requires changeset source", func(t *testing.T) {
 		plan := &Plan{}
@@ -700,8 +700,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
@@ -723,8 +723,8 @@ func TestLoadChangesetSource(t *testing.T) {
 		t.Cleanup(func() {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
@@ -737,8 +737,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by missing batch change", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
@@ -748,8 +748,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
@@ -759,8 +759,8 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -779,8 +779,8 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
@@ -805,8 +805,8 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "user_credentials")
 		})
 
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -829,8 +829,8 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
 
-		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -1018,8 +1018,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			})
 
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
-			fakeSource := &sources.FakeChangesetSource{Svc: tt.extSvc}
-			sourcer := sources.NewFakeSourcer(nil, fakeSource)
+			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc}
+			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(
 				context.Background(),
@@ -1048,85 +1048,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	}
 }
 
-func TestLoadRemoteRepo(t *testing.T) {
-	ctx := context.Background()
-	targetRepo := &types.Repo{}
-
-	t.Run("forks disabled", func(t *testing.T) {
-		t.Run("unforked changeset", func(t *testing.T) {
-			// Set up a changeset source that will panic if any methods are invoked.
-			css := NewStrictMockChangesetSource()
-
-			// This should succeed, since loadRemoteRepo() should early return with
-			// forks disabled.
-			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-				ForkNamespace: nil,
-			})
-			assert.Nil(t, err)
-			assert.Same(t, targetRepo, remoteRepo)
-		})
-
-		t.Run("forked changeset", func(t *testing.T) {
-			forkNamespace := "fork"
-			want := &types.Repo{}
-			css := NewMockForkableChangesetSource()
-			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
-
-			// This should succeed, since loadRemoteRepo() should early return with
-			// forks disabled.
-			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-				ForkNamespace: &forkNamespace,
-			})
-			assert.Nil(t, err)
-			assert.Same(t, want, remoteRepo)
-			mockassert.CalledOnce(t, css.GetNamespaceForkFunc)
-		})
-	})
-
-	t.Run("forks enabled", func(t *testing.T) {
-		forkNamespace := "<user>"
-
-		t.Run("unforkable changeset source", func(t *testing.T) {
-			css := NewMockChangesetSource()
-
-			repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-				ForkNamespace: &forkNamespace,
-			})
-			assert.Nil(t, repo)
-			assert.ErrorIs(t, err, errChangesetSourceCannotFork)
-		})
-
-		t.Run("forkable changeset source", func(t *testing.T) {
-			t.Run("success", func(t *testing.T) {
-				want := &types.Repo{}
-				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(want, nil)
-
-				have, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-					ForkNamespace: &forkNamespace,
-				})
-				assert.Nil(t, err)
-				assert.Same(t, want, have)
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
-			})
-
-			t.Run("error from the source", func(t *testing.T) {
-				want := errors.New("source error")
-				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(nil, want)
-
-				repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
-					ForkNamespace: &forkNamespace,
-				})
-				assert.Nil(t, repo)
-				assert.Same(t, want, err)
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
-			})
-		})
-	})
-}
-
 func TestDecorateChangesetBody(t *testing.T) {
+	ctx := context.Background()
+
 	ns := database.NewMockNamespaceStore()
 	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
@@ -1143,41 +1067,34 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByBatchChange: 1234})
 
-	body := "body"
-	rcs := &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
-	}
+	wantLink := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"
 
-	body = "body body ${{ batch_change_link }} body body"
-	rcs = &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := "body body [_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change) body body"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
-	}
-
-	body = "${{ batch_change_link }}\n\nbody body"
-	rcs = &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
-	}
-
-	// Spacing shouldn't matter.
-	body = "${{     batch_change_link}}\n\nbody body"
-	rcs = &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
-		t.Errorf("unexpected non-nil error: %v", err)
-	}
-	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	for name, tc := range map[string]struct {
+		body string
+		want string
+	}{
+		"no template": {
+			body: "body",
+			want: "body\n\n" + wantLink,
+		},
+		"embedded template": {
+			body: "body body ${{ batch_change_link }} body body",
+			want: "body body " + wantLink + " body body",
+		},
+		"leading template": {
+			body: "${{ batch_change_link }}\n\nbody body",
+			want: wantLink + "\n\nbody body",
+		},
+		"weird spacing": {
+			body: "${{     batch_change_link}}\n\nbody body",
+			want: wantLink + "\n\nbody body",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have, err := decorateChangesetBody(ctx, fs, ns, cs, tc.body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want, have)
+		})
 	}
 }
 

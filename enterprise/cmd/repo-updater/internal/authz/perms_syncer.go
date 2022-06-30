@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -755,13 +756,23 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external service repo IDs by user ID")
 	}
 
+	// We call this when there are errors communicating with external services so
+	// that we don't have the same user stuck at the front of the queue.
+	tryTouchUserPerms := func() {
+		if err := s.permsStore.TouchUserPermissions(ctx, userID); err != nil {
+			logger.Warn("touching user permissions", log.Int32("userID", userID), log.Error(err))
+		}
+	}
+
 	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	if err != nil {
+		tryTouchUserPerms()
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
 
 	externalServicesRepoIDs, err := s.fetchUserPermsViaExternalServices(ctx, user.ID, fetchOpts)
 	if err != nil {
+		tryTouchUserPerms()
 		return errors.Wrap(err, "fetch user permissions via external services")
 	}
 
@@ -1313,7 +1324,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 }
 
 // DebugDump returns the state of the permissions syncer for debugging.
-func (s *PermsSyncer) DebugDump() any {
+func (s *PermsSyncer) DebugDump(_ context.Context, _ debugserver.ExternalServicesStore) any {
 	type requestInfo struct {
 		Meta     *requestMeta
 		Acquired bool

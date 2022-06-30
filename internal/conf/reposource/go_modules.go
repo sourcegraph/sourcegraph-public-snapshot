@@ -10,22 +10,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GoDependency is a "versioned package" for use by go commands, such as `go
+// GoPackageVersion is a "versioned package" for use by go commands, such as `go
 // get`.
 //
 // See also: [NOTE: Dependency-terminology]
-type GoDependency struct {
+type GoPackageVersion struct {
 	Module module.Version
 }
 
-// NewGoDependency returns a GoDependency for the given module.Version.
-func NewGoDependency(mod module.Version) *GoDependency {
-	return &GoDependency{Module: mod}
+// NewGoPackageVersion returns a GoPackageVersion for the given module.Version.
+func NewGoPackageVersion(mod module.Version) *GoPackageVersion {
+	return &GoPackageVersion{Module: mod}
 }
 
-// ParseGoDependency parses a string in a '<name>(@<version>)?' format into an
-// GoDependency.
-func ParseGoDependency(dependency string) (*GoDependency, error) {
+// ParseGoPackageVersion parses a string in a '<name>(@<version>)?' format into an
+// GoPackageVersion.
+func ParseGoPackageVersion(dependency string) (*GoPackageVersion, error) {
 	var mod module.Version
 	if i := strings.LastIndex(dependency, "@"); i == -1 {
 		mod.Path = dependency
@@ -45,52 +45,52 @@ func ParseGoDependency(dependency string) (*GoDependency, error) {
 		return nil, err
 	}
 
-	return &GoDependency{Module: mod}, nil
+	return &GoPackageVersion{Module: mod}, nil
 }
 
 // ParseGoDependencyFromRepoName is a convenience function to parse a repo name in a
-// 'go/<name>(@<version>)?' format into a GoDependency.
-func ParseGoDependencyFromRepoName(name string) (*GoDependency, error) {
+// 'go/<name>(@<version>)?' format into a GoPackageVersion.
+func ParseGoDependencyFromRepoName(name string) (*GoPackageVersion, error) {
 	dependency := strings.TrimPrefix(name, "go/")
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid go dependency repo name, missing go/ prefix")
 	}
-	return ParseGoDependency(dependency)
+	return ParseGoPackageVersion(dependency)
 }
 
-func (d *GoDependency) Scheme() string {
+func (d *GoPackageVersion) Scheme() string {
 	return "go"
 }
 
 // PackageSyntax returns the name of the Go module.
-func (d *GoDependency) PackageSyntax() string {
+func (d *GoPackageVersion) PackageSyntax() string {
 	return d.Module.Path
 }
 
 // PackageManagerSyntax returns the dependency in Go syntax. The returned string
 // can (for example) be passed to `go get`.
-func (d *GoDependency) PackageManagerSyntax() string {
+func (d *GoPackageVersion) PackageVersionSyntax() string {
 	return d.Module.String()
 }
 
-func (d *GoDependency) PackageVersion() string {
+func (d *GoPackageVersion) PackageVersion() string {
 	return d.Module.Version
 }
 
 // RepoName provides a name that is "globally unique" for a Sourcegraph instance.
 //
 // The returned value is used for repo:... in queries.
-func (d *GoDependency) RepoName() api.RepoName {
+func (d *GoPackageVersion) RepoName() api.RepoName {
 	return api.RepoName("go/" + d.Module.Path)
 }
 
-func (d *GoDependency) Description() string { return "" }
+func (d *GoPackageVersion) Description() string { return "" }
 
-func (d *GoDependency) GitTagFromVersion() string {
+func (d *GoPackageVersion) GitTagFromVersion() string {
 	return d.Module.Version
 }
 
-func (d *GoDependency) Equal(o *GoDependency) bool {
+func (d *GoPackageVersion) Equal(o *GoPackageVersion) bool {
 	return d == o || (d != nil && o != nil && d.Module == o.Module)
 }
 
@@ -98,8 +98,8 @@ func (d *GoDependency) Equal(o *GoDependency) bool {
 // The Version fields are interpreted as semantic versions (using semver.Compare)
 // optionally followed by a tie-breaking suffix introduced by a slash character,
 // like in "v0.0.1/go.mod". Copied from golang.org/x/mod.
-func (d *GoDependency) Less(other PackageDependency) bool {
-	o := other.(*GoDependency)
+func (d *GoPackageVersion) Less(other PackageVersion) bool {
+	o := other.(*GoPackageVersion)
 
 	if d.Module.Path != o.Module.Path {
 		return d.Module.Path > o.Module.Path

@@ -94,7 +94,90 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 					}
 					return errors.New("could not find dev-private repository either in current directory or one above")
 				},
-				Fix: cmdFix(`git clone git@github.com:sourcegraph/dev-private.git`),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					rootDir, err := root.RepositoryRoot()
+					if err != nil {
+						return errors.Wrap(err, "sourcegraph/sourcegraph should be cloned first")
+					}
+
+					return run.Cmd(ctx, `git clone git@github.com:sourcegraph/dev-private.git`).
+						// Clone to parent
+						Dir(filepath.Join(rootDir, "..")).
+						Run().
+						StreamLines(cio.Verbose)
+				},
+			},
+		},
+	}
+}
+
+// categoryProgrammingLanguagesAndTools sets up programming languages and tooling using
+// asdf, which is uniform across platforms.
+func categoryProgrammingLanguagesAndTools() category {
+	return category{
+		Name:      "Programming languages & tooling",
+		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
+		Enabled:   enableOnlyInSourcegraphRepo(),
+		Checks: []*dependency{
+			{
+				Name:  "go",
+				Check: checkGoVersion,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "golang", "https://github.com/kennyp/asdf-golang.git"); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install golang")).StreamLines(cio.Verbose)
+				},
+			},
+			{
+				Name:  "yarn",
+				Check: checkYarnVersion,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "yarn", ""); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install yarn")).StreamLines(cio.Verbose)
+				},
+			},
+			{
+				Name:  "node",
+				Check: checkNodeVersion,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/asdf-vm/asdf-nodejs.git"); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install nodejs")).StreamLines(cio.Verbose)
+				},
+			},
+			{
+				Name:  "rust",
+				Check: checkRustVersion,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/asdf-community/asdf-rust.git"); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install rust")).StreamLines(cio.Verbose)
+				},
+			},
+			{
+				Name:        "asdf reshim",
+				Description: "Regenerate asdf shims",
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					// If any of these fail with ErrNotInPath, we may need to regenerate
+					// all our asdf shims.
+					for _, c := range []check.CheckAction[CheckArgs]{
+						checkGoVersion, checkYarnVersion, checkNodeVersion, checkRustVersion,
+					} {
+						if err := c(ctx, out, args); err != nil {
+							return errors.Wrap(err, "we may need to regenerate asdf shims")
+						}
+					}
+					return nil
+				},
+				Fix: cmdFixes(
+					`rm -rf ~/.asdf/shims`,
+					`asdf reshim`,
+				),
 			},
 		},
 	}

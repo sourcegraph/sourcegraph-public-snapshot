@@ -6,12 +6,11 @@ import (
 	"github.com/urfave/cli/v2"
 
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-type ExpectedSchemaFactory func(repoName, version string) (descriptions.SchemaDescription, error)
-
-func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactory ExpectedSchemaFactory) *cli.Command {
+func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to compare.",
@@ -41,12 +40,20 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		if err != nil {
 			return err
 		}
-		expectedSchema, err := expectedSchemaFactory(filename, version)
-		if err != nil {
-			return err
+
+		for _, factory := range expectedSchemaFactories {
+			expectedSchema, ok, err := factory(filename, version)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				continue
+			}
+
+			return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 		}
 
-		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		return errors.Newf("failed to determine squash schema for version %s (expected the file %s to exist)", version, filename)
 	})
 
 	return &cli.Command{

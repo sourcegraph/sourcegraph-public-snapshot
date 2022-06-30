@@ -93,10 +93,10 @@ func TestConvertToGlobMatch(t *testing.T) {
 		want:        "//depot/main/rel**",
 		shouldMatch: []string{"//depot/main/rel/", "//depot/main/releases/", "//depot/main/release-note.txt", "//depot/main/rel1/product1"},
 	}, {
-		name:        "//app/*",
-		match:       "//app/*",
-		want:        "//app/*{/,}",
-		shouldMatch: []string{"//app/main", "//app/main/"},
+		name:        "//depot/*",
+		match:       "//depot/*",
+		want:        "//depot/*{/,}",
+		shouldMatch: []string{"//depot/main", "//depot/main/"},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -150,50 +150,50 @@ func TestMatchesAgainstDepot(t *testing.T) {
 	}{{
 		name: "simple match",
 		args: args{
-			match: mustGlob(t, "//app/main/..."),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/main/..."),
+			depot: "//depot/main/",
 		},
 		want: true,
 	}, {
 		name: "no wildcard in match",
 		args: args{
-			match: mustGlob(t, "//app/"),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/"),
+			depot: "//depot/main/",
 		},
 		want: false,
 	}, {
 		name: "match parent path",
 		args: args{
-			match: mustGlob(t, "//app/..."),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/..."),
+			depot: "//depot/main/",
 		},
 		want: true,
 	}, {
 		name: "match sub path with all wildcard",
 		args: args{
-			match: mustGlob(t, "//app/.../file"),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/.../file"),
+			depot: "//depot/main/",
 		},
 		want: true,
 	}, {
 		name: "match sub path with dir wildcard",
 		args: args{
-			match: mustGlob(t, "//app/*/file"),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/*/file"),
+			depot: "//depot/main/",
 		},
 		want: true,
 	}, {
 		name: "match sub path with dir and all wildcards",
 		args: args{
-			match: mustGlob(t, "//app/*/file/.../path"),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/*/file/.../path"),
+			depot: "//depot/main/",
 		},
 		want: true,
 	}, {
 		name: "match sub path with dir wildcard that's deeply nested",
 		args: args{
-			match: mustGlob(t, "//app/*/file/*/another-file/path/"),
-			depot: "//app/main/",
+			match: mustGlob(t, "//depot/*/file/*/another-file/path/"),
+			depot: "//depot/main/",
 		},
 		want: true,
 	}}
@@ -227,11 +227,11 @@ func TestScanFullRepoPermissions(t *testing.T) {
 
 	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
 	p.depots = []extsvc.RepoID{
-		"//app/main/",
-		"//app/training/",
-		"//app/test/",
-		"//app/rickroll/",
-		"//not-app/not-main/", // no rules exist
+		"//depot/main/",
+		"//depot/training/",
+		"//depot/test/",
+		"//depot/rickroll/",
+		"//not-depot/not-main/", // no rules exist
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
@@ -243,20 +243,20 @@ func TestScanFullRepoPermissions(t *testing.T) {
 	// See sample-protects-u.txt for notes
 	want := &authz.ExternalUserPermissions{
 		Exacts: []extsvc.RepoID{
-			"//app/main/",
-			"//app/training/",
-			"//app/test/",
+			"//depot/main/",
+			"//depot/training/",
+			"//depot/test/",
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-			"//app/main/": {
+			"//depot/main/": {
 				PathIncludes: []string{
-					mustGlobPattern(t, "core/..."),
+					mustGlobPattern(t, "base/..."),
 					mustGlobPattern(t, "*/stuff/..."),
 					mustGlobPattern(t, "frontend/.../stuff/*"),
 					mustGlobPattern(t, "*/main/config.yaml"),
 					mustGlobPattern(t, "subdir/**"),
-					mustGlobPattern(t, "app/.../README.md"),
-					mustGlobPattern(t, "app/*/dir.yaml"),
+					mustGlobPattern(t, "depot/.../README.md"),
+					mustGlobPattern(t, "depot/*/dir.yaml"),
 				},
 				PathExcludes: []string{
 					mustGlobPattern(t, "subdir/remove/"),
@@ -264,21 +264,21 @@ func TestScanFullRepoPermissions(t *testing.T) {
 					mustGlobPattern(t, ".../.secrets.env"),
 				},
 			},
-			"//app/test/": {
+			"//depot/test/": {
 				PathIncludes: []string{
 					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, "app/.../README.md"),
-					mustGlobPattern(t, "app/*/dir.yaml"),
+					mustGlobPattern(t, "depot/.../README.md"),
+					mustGlobPattern(t, "depot/*/dir.yaml"),
 				},
 				PathExcludes: []string{
 					mustGlobPattern(t, ".../.secrets.env"),
 				},
 			},
-			"//app/training/": {
+			"//depot/training/": {
 				PathIncludes: []string{
 					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, "app/.../README.md"),
-					mustGlobPattern(t, "app/*/dir.yaml"),
+					mustGlobPattern(t, "depot/.../README.md"),
+					mustGlobPattern(t, "depot/*/dir.yaml"),
 				},
 				PathExcludes: []string{
 					mustGlobPattern(t, "secrets/..."),

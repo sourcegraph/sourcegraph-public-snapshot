@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -120,12 +121,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		displayLimit = limit
 	}
 
-	progress := &progressAggregator{
+	progress := &streamclient.ProgressAggregator{
 		Start:        start,
-		Limit:        inputs.MaxResults(),
+		Limit:        limit,
 		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 		DisplayLimit: displayLimit,
-		RepoNamer:    repoNamer(ctx, h.db),
+		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
 	var wgLogLatency sync.WaitGroup
@@ -164,7 +165,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	return err
 }
 
-func logSearch(ctx context.Context, alert *search.Alert, err error, start time.Time, originalQuery string, progress *progressAggregator) {
+func logSearch(ctx context.Context, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
 	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
 
 	var alertType string
@@ -562,7 +563,7 @@ func newEventHandler(
 	ctx context.Context,
 	db database.DB,
 	eventWriter *eventWriter,
-	progress *progressAggregator,
+	progress *streamclient.ProgressAggregator,
 	flushInterval time.Duration,
 	progressInterval time.Duration,
 	displayLimit int,
@@ -620,7 +621,7 @@ type eventHandler struct {
 
 	matchesBuf *streamhttp.JSONArrayBuf
 	filters    *streaming.SearchFilters
-	progress   *progressAggregator
+	progress   *streamclient.ProgressAggregator
 
 	// These timers will be non-nil unless Done() was called
 	flushTimer    *time.Timer

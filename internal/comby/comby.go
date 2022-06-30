@@ -87,7 +87,7 @@ func ToCombyFileMatchWithChunks(b []byte) Result {
 	return m
 }
 
-func toFileMatch(b []byte) Result {
+func ToFileMatch(b []byte) Result {
 	var m *FileMatch
 	if err := json.Unmarshal(b, &m); err != nil {
 		log15.Warn("toFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
@@ -225,7 +225,7 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 	defer span.Finish()
 
 	args.ResultKind = MatchOnly
-	results, err := Run(ctx, args, toFileMatch)
+	results, err := Run(ctx, args, ToFileMatch)
 	if err != nil {
 		return nil, err
 	}
