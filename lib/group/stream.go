@@ -73,7 +73,7 @@ type ContextStreamGroup[T any] interface {
 
 // streamGroup is a group that allows streaming task results with a callback
 type streamGroup[T any] struct {
-	os orderedStreamer[T]
+	os *orderedStreamer[T]
 }
 
 func (g *streamGroup[T]) Go(task func() T, callback func(T)) {
@@ -119,7 +119,7 @@ func (g *streamGroup[T]) WithLimiter(limiter Limiter) StreamGroup[T] {
 
 // errorStreamGroup is a stream group for tasks that return a result and an error.
 type errorStreamGroup[T any] struct {
-	os orderedStreamer[resultAndError[T]]
+	os *orderedStreamer[resultAndError[T]]
 }
 
 // a utility any+error tuple
@@ -170,7 +170,7 @@ func (g *errorStreamGroup[T]) WithLimiter(limiter Limiter) ErrorStreamGroup[T] {
 
 // errorStreamGroup is a stream group for tasks that require a context and return a result and an error.
 type contextStreamGroup[T any] struct {
-	os  orderedStreamer[resultAndError[T]]
+	os  *orderedStreamer[resultAndError[T]]
 	ctx context.Context
 }
 
@@ -214,8 +214,8 @@ func (g *contextStreamGroup[T]) WithLimiter(limiter Limiter) ContextStreamGroup[
 	return g
 }
 
-func newOrderedStreamer[T any]() orderedStreamer[T] {
-	return orderedStreamer[T]{
+func newOrderedStreamer[T any]() *orderedStreamer[T] {
+	return &orderedStreamer[T]{
 		group: &group{},
 		// Set reasonably high default limit on the output channel by default.
 		// This doesn't limit the max goroutines, it just limits the number of
