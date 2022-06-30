@@ -204,13 +204,15 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
-                                                    <th>Last updated</th>
+                                                    <th>Last updated test4</th>
                                                     <td>
                                                         <Timestamp date={this.state.textSearchIndex.status.updatedAt} />
                                                     </td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Content size</th>
+                                                    <th data-tooltip='test content size th'>
+                                                        Content size test3
+                                                    </th>
                                                     <td>
                                                         {prettyBytesBigint(
                                                             BigInt(this.state.textSearchIndex.status.contentByteSize)
@@ -224,7 +226,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     </td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Index size</th>
+                                                    <th>Index size test2</th>
                                                     <td>
                                                         {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
                                                         {this.state.textSearchIndex.status.indexShardsCount}{' '}
@@ -236,7 +238,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     </td>
                                                 </tr>
                                                 <tr>
-                                                    <th>New lines count</th>
+                                                    <th>New lines count TESt</th>
                                                     <td>
                                                         {this.state.textSearchIndex.status.newLinesCount.toLocaleString()}{' '}
                                                         (default branch:{' '}
