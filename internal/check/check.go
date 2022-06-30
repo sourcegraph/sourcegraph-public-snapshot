@@ -163,8 +163,13 @@ func NewAggregateHealthCheckHandler() http.Handler {
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
-
 				defer res.Body.Close()
+
+				if res.StatusCode != 200 {
+					fmt.Fprintf(w, "%q: %q\n", endpoint.Host, "unreachable")
+					continue
+				}
+
 				b, err := io.ReadAll(res.Body)
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
