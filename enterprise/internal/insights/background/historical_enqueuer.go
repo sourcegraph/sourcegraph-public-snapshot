@@ -43,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -444,7 +445,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 }
 
 func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, err error, softErr error) {
-	span, ctx := ot.StartSpanFromContext(ot.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
+	span, ctx := ot.StartSpanFromContext(policy.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
 	span.SetTag("repo_id", id)
 	defer func() {
 		if err != nil {

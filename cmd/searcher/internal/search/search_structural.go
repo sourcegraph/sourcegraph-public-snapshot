@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -287,7 +288,7 @@ func lookupMatcher(language string) string {
 	return ".generic"
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -309,7 +310,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil, p.Repo, sender)
+	err = zoektSearch(ctx, logger, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil, p.Repo, sender)
 	if err != nil {
 		return err
 	}
@@ -479,7 +480,12 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 		}
 	}()
 
-	return comby.StartAndWaitForCompletion(cmd)
+	err = comby.StartAndWaitForCompletion(cmd)
+	if ctx.Err() != nil {
+		// context has been canceled, ignore any "process killed" errors from the subprocess
+		return nil
+	}
+	return err
 }
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
