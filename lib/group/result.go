@@ -25,7 +25,7 @@ type ResultGroup[T any] interface {
 	Wait() []T
 
 	// Configuration methods. See interface definitions for details.
-	Contextable[ResultContextErrorGroup[T]]
+	Contextable[ResultContextGroup[T]]
 	Errorable[ResultErrorGroup[T]]
 	Limitable[ResultGroup[T]]
 }
@@ -52,13 +52,13 @@ type ResultErrorGroup[T any] interface {
 	WithFirstError() ResultErrorGroup[T]
 
 	// Configuration methods. See interface definitions for details.
-	Contextable[ResultContextErrorGroup[T]]
+	Contextable[ResultContextGroup[T]]
 	Limitable[ResultErrorGroup[T]]
 }
 
 // ResultErrorGroup is a group that runs tasks that require a context and
 // return a value and an error.
-type ResultContextErrorGroup[T any] interface {
+type ResultContextGroup[T any] interface {
 	// Go starts a task in a goroutine and collects its result. It will
 	// not return until the goroutine has been started.
 	Go(func(context.Context) (T, error))
@@ -72,18 +72,18 @@ type ResultContextErrorGroup[T any] interface {
 	// WithCollectErrored configures the group to collect results even from
 	// tasks that errored. By default, the return values from errored tasks are
 	// dropped.
-	WithCollectErrored() ResultContextErrorGroup[T]
+	WithCollectErrored() ResultContextGroup[T]
 
 	// WithCancelOnError will cancel the group's context whenever any of the
 	// functions started with Go() return an error.
-	WithCancelOnError() ResultContextErrorGroup[T]
+	WithCancelOnError() ResultContextGroup[T]
 
 	// WithFirstError will configure the group to only retain the first error,
 	// ignoring any subsequent errors.
-	WithFirstError() ResultContextErrorGroup[T]
+	WithFirstError() ResultContextGroup[T]
 
 	// Configuration methods. See interface definitions for details.
-	Limitable[ResultContextErrorGroup[T]]
+	Limitable[ResultContextGroup[T]]
 }
 
 type resultAggregator[T any] struct {
@@ -120,9 +120,9 @@ func (g *resultGroup[T]) WithErrors() ResultErrorGroup[T] {
 	}
 }
 
-func (g *resultGroup[T]) WithContext(ctx context.Context) ResultContextErrorGroup[T] {
-	return &resultContextErrorGroup[T]{
-		ContextErrorGroup: g.Group.WithContext(ctx),
+func (g *resultGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] {
+	return &resultContextGroup[T]{
+		ContextGroup: g.Group.WithContext(ctx),
 	}
 }
 
@@ -177,20 +177,20 @@ func (g *resultErrorGroup[T]) WithLimiter(limiter Limiter) ResultErrorGroup[T] {
 	return g
 }
 
-func (g *resultErrorGroup[T]) WithContext(ctx context.Context) ResultContextErrorGroup[T] {
-	return &resultContextErrorGroup[T]{
-		ContextErrorGroup: g.ErrorGroup.WithContext(ctx),
+func (g *resultErrorGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] {
+	return &resultContextGroup[T]{
+		ContextGroup: g.ErrorGroup.WithContext(ctx),
 	}
 }
 
-type resultContextErrorGroup[T any] struct {
-	ContextErrorGroup
+type resultContextGroup[T any] struct {
+	ContextGroup
 	resultAggregator[T]
 	collectErrored bool
 }
 
-func (g *resultContextErrorGroup[T]) Go(f func(context.Context) (T, error)) {
-	g.ContextErrorGroup.Go(func(ctx context.Context) error {
+func (g *resultContextGroup[T]) Go(f func(context.Context) (T, error)) {
+	g.ContextGroup.Go(func(ctx context.Context) error {
 		res, err := f(ctx)
 		if err == nil || g.collectErrored {
 			g.add(res)
@@ -199,32 +199,32 @@ func (g *resultContextErrorGroup[T]) Go(f func(context.Context) (T, error)) {
 	})
 }
 
-func (g *resultContextErrorGroup[T]) Wait() ([]T, error) {
-	err := g.ContextErrorGroup.Wait()
+func (g *resultContextGroup[T]) Wait() ([]T, error) {
+	err := g.ContextGroup.Wait()
 	return g.results, err
 }
 
-func (g *resultContextErrorGroup[T]) WithCollectErrored() ResultContextErrorGroup[T] {
+func (g *resultContextGroup[T]) WithCollectErrored() ResultContextGroup[T] {
 	g.collectErrored = true
 	return g
 }
 
-func (g *resultContextErrorGroup[T]) WithLimit(limit int) ResultContextErrorGroup[T] {
-	g.ContextErrorGroup = g.ContextErrorGroup.WithLimit(limit)
+func (g *resultContextGroup[T]) WithLimit(limit int) ResultContextGroup[T] {
+	g.ContextGroup = g.ContextGroup.WithLimit(limit)
 	return g
 }
 
-func (g *resultContextErrorGroup[T]) WithLimiter(limiter Limiter) ResultContextErrorGroup[T] {
-	g.ContextErrorGroup = g.ContextErrorGroup.WithLimiter(limiter)
+func (g *resultContextGroup[T]) WithLimiter(limiter Limiter) ResultContextGroup[T] {
+	g.ContextGroup = g.ContextGroup.WithLimiter(limiter)
 	return g
 }
 
-func (g *resultContextErrorGroup[T]) WithCancelOnError() ResultContextErrorGroup[T] {
-	g.ContextErrorGroup = g.ContextErrorGroup.WithCancelOnError()
+func (g *resultContextGroup[T]) WithCancelOnError() ResultContextGroup[T] {
+	g.ContextGroup = g.ContextGroup.WithCancelOnError()
 	return g
 }
 
-func (g *resultContextErrorGroup[T]) WithFirstError() ResultContextErrorGroup[T] {
-	g.ContextErrorGroup = g.ContextErrorGroup.WithFirstError()
+func (g *resultContextGroup[T]) WithFirstError() ResultContextGroup[T] {
+	g.ContextGroup = g.ContextGroup.WithFirstError()
 	return g
 }

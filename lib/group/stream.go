@@ -26,7 +26,7 @@ type StreamGroup[T any] interface {
 
 	// Configuration methods. See interface definitions for details.
 	Errorable[ErrorStreamGroup[T]]
-	Contextable[ContextErrorStreamGroup[T]]
+	Contextable[ContextStreamGroup[T]]
 	Limitable[StreamGroup[T]]
 }
 
@@ -47,13 +47,13 @@ type ErrorStreamGroup[T any] interface {
 	Wait()
 
 	// Configuration methods. See interface definitions for details.
-	Contextable[ContextErrorStreamGroup[T]]
+	Contextable[ContextStreamGroup[T]]
 	Limitable[ErrorStreamGroup[T]]
 }
 
-// ContextErrorStreamGroup is a group that processes an ordered stream in parallel with
+// ContextStreamGroup is a group that processes an ordered stream in parallel with
 // tasks that require a context and might return an error.
-type ContextErrorStreamGroup[T any] interface {
+type ContextStreamGroup[T any] interface {
 	// Go starts a task in a goroutine then passes its result the provided callback.
 	// This interface guarantees that the callbacks are called in the same order
 	// that the tasks are submitted. Additionally, it guarantees that the submitted
@@ -68,7 +68,7 @@ type ContextErrorStreamGroup[T any] interface {
 	Wait()
 
 	// Configuration methods. See interface definitions for details.
-	Limitable[ContextErrorStreamGroup[T]]
+	Limitable[ContextStreamGroup[T]]
 }
 
 type streamGroup[T any] struct {
@@ -93,10 +93,10 @@ func (g *streamGroup[T]) WithErrors() ErrorStreamGroup[T] {
 	}
 }
 
-func (g *streamGroup[T]) WithContext(ctx context.Context) ContextErrorStreamGroup[T] {
+func (g *streamGroup[T]) WithContext(ctx context.Context) ContextStreamGroup[T] {
 	os := newOrderedStreamer[resultPair[T]]()
 	os.group = g.os.group
-	return &contextErrorStreamGroup[T]{
+	return &contextStreamGroup[T]{
 		os:  os,
 		ctx: ctx,
 	}
@@ -139,8 +139,8 @@ func (g *errorStreamGroup[T]) Wait() {
 	g.os.wait()
 }
 
-func (g *errorStreamGroup[T]) WithContext(ctx context.Context) ContextErrorStreamGroup[T] {
-	return &contextErrorStreamGroup[T]{
+func (g *errorStreamGroup[T]) WithContext(ctx context.Context) ContextStreamGroup[T] {
+	return &contextStreamGroup[T]{
 		os:  g.os,
 		ctx: ctx,
 	}
@@ -156,12 +156,12 @@ func (g *errorStreamGroup[T]) WithLimiter(limiter Limiter) ErrorStreamGroup[T] {
 	return g
 }
 
-type contextErrorStreamGroup[T any] struct {
+type contextStreamGroup[T any] struct {
 	os  orderedStreamer[resultPair[T]]
 	ctx context.Context
 }
 
-func (g *contextErrorStreamGroup[T]) Go(task func(context.Context) (T, error), callback func(context.Context, T, error)) {
+func (g *contextStreamGroup[T]) Go(task func(context.Context) (T, error), callback func(context.Context, T, error)) {
 	ctx, release, err := g.os.acquire(g.ctx)
 	pairedTask := func() resultPair[T] {
 		// If acquiring failed, return its error immediately without running the task.
@@ -180,16 +180,16 @@ func (g *contextErrorStreamGroup[T]) Go(task func(context.Context) (T, error), c
 	g.os.start(funcPair[resultPair[T]]{pairedTask, pairedCallback}, release)
 }
 
-func (g *contextErrorStreamGroup[T]) Wait() {
+func (g *contextStreamGroup[T]) Wait() {
 	g.os.wait()
 }
 
-func (g *contextErrorStreamGroup[T]) WithLimit(limit int) ContextErrorStreamGroup[T] {
+func (g *contextStreamGroup[T]) WithLimit(limit int) ContextStreamGroup[T] {
 	g.os.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *contextErrorStreamGroup[T]) WithLimiter(limiter Limiter) ContextErrorStreamGroup[T] {
+func (g *contextStreamGroup[T]) WithLimiter(limiter Limiter) ContextStreamGroup[T] {
 	g.os.group.limiter = limiter
 	return g
 }

@@ -31,7 +31,7 @@ type Group interface {
 	Wait()
 
 	// Configuration methods. See interface definitions for details.
-	Contextable[ContextErrorGroup]
+	Contextable[ContextGroup]
 	Errorable[ErrorGroup]
 	Limitable[Group]
 }
@@ -53,11 +53,11 @@ type ErrorGroup interface {
 	WithFirstError() ErrorGroup
 
 	// Configuration methods. See interface definitions for details.
-	Contextable[ContextErrorGroup]
+	Contextable[ContextGroup]
 	Limitable[ErrorGroup]
 }
 
-type ContextErrorGroup interface {
+type ContextGroup interface {
 	// Go starts a background goroutine, calling the provided function with the
 	// group's context and collecting any returned errors. It will not return
 	// until the goroutine has started.
@@ -71,14 +71,14 @@ type ContextErrorGroup interface {
 	// WithCancelOnError will cancel the group's context whenever any of the
 	// functions started with Go() return an error. All further errors will
 	// be ignored.
-	WithCancelOnError() ContextErrorGroup
+	WithCancelOnError() ContextGroup
 
 	// WithFirstError will configure the group to only retain the first error,
 	// ignoring any subsequent errors.
-	WithFirstError() ContextErrorGroup
+	WithFirstError() ContextGroup
 
 	// Configuration methods. See interfaces for details.
-	Limitable[ContextErrorGroup]
+	Limitable[ContextGroup]
 }
 
 // Limitable is a group that can be configured to limit the number of live
@@ -160,8 +160,8 @@ func (g *group) WithErrors() ErrorGroup {
 	return &errorGroup{group: g}
 }
 
-func (g *group) WithContext(ctx context.Context) ContextErrorGroup {
-	return &contextErrorGroup{
+func (g *group) WithContext(ctx context.Context) ContextGroup {
+	return &contextGroup{
 		ctx: ctx,
 		errorGroup: &errorGroup{
 			group: g,
@@ -226,8 +226,8 @@ func (g *errorGroup) WithLimiter(limiter Limiter) ErrorGroup {
 	return g
 }
 
-func (g *errorGroup) WithContext(ctx context.Context) ContextErrorGroup {
-	return &contextErrorGroup{
+func (g *errorGroup) WithContext(ctx context.Context) ContextGroup {
+	return &contextGroup{
 		ctx:        ctx,
 		errorGroup: g,
 	}
@@ -238,14 +238,14 @@ func (g *errorGroup) WithFirstError() ErrorGroup {
 	return g
 }
 
-type contextErrorGroup struct {
+type contextGroup struct {
 	*errorGroup
 
 	ctx    context.Context
 	cancel context.CancelFunc // nil unless WithCancelOnError
 }
 
-func (g *contextErrorGroup) Go(f func(context.Context) error) {
+func (g *contextGroup) Go(f func(context.Context) error) {
 	ctx, release, ok := g.errorGroup.acquire(g.ctx)
 	if !ok {
 		// acquire will only fail if the context is canceled
@@ -260,22 +260,22 @@ func (g *contextErrorGroup) Go(f func(context.Context) error) {
 	}, release)
 }
 
-func (g *contextErrorGroup) WithCancelOnError() ContextErrorGroup {
+func (g *contextGroup) WithCancelOnError() ContextGroup {
 	g.ctx, g.cancel = context.WithCancel(g.ctx)
 	return g
 }
 
-func (g *contextErrorGroup) WithLimit(limit int) ContextErrorGroup {
+func (g *contextGroup) WithLimit(limit int) ContextGroup {
 	g.limiter = NewBasicLimiter(limit)
 	return g
 }
 
-func (g *contextErrorGroup) WithLimiter(limiter Limiter) ContextErrorGroup {
+func (g *contextGroup) WithLimiter(limiter Limiter) ContextGroup {
 	g.limiter = limiter
 	return g
 }
 
-func (g *contextErrorGroup) WithFirstError() ContextErrorGroup {
+func (g *contextGroup) WithFirstError() ContextGroup {
 	g.onlyFirst = true
 	return g
 }
