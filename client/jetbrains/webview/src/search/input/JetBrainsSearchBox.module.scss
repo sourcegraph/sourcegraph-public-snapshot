@@ -81,15 +81,16 @@
             margin-bottom: 0.5rem;
         }
 
-        > button {
+        > button,
+        > button:hover,
+        > button:focus {
             background: var(--jb-button-bg);
-
-            &:hover {
-                border-color: var(--jb-border-color);
-            }
+            border: 1px solid var(--jb-border-color);
+            border-radius: 0;
 
             &:focus {
-                border-color: var(--jb-focus-border-color);
+                border: 1px solid var(--input-focus-border-color);
+                box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
             }
         }
     }
@@ -99,31 +100,24 @@
         max-height: calc(100vh - 40px);
 
         > div {
-            border-color: var(--jb-border-color);
-        }
-
-        button {
-            &:hover,
-            &:focus {
-                background: var(--jb-hover-button-bg);
-            }
+            border: none;
         }
 
         button[data-search-context-spec] {
+            &:hover {
+                background-color: var(--dropdown-link-hover-bg);
+
+                > small {
+                    color: var(--dropdown-link-color);
+                }
+            }
+
             &[data-selected],
             &:focus {
                 background-color: var(--dropdown-link-active-bg);
 
                 > small {
                     color: var(--light-text);
-                }
-            }
-
-            &:hover {
-                background-color: var(--dropdown-link-hover-bg);
-
-                > small {
-                    color: var(--dropdown-link-color);
                 }
             }
         }
@@ -203,33 +197,51 @@
 
         :global(.cm-tooltip-autocomplete) {
             > ul {
+                font-family: inherit;
+
                 > li {
                     align-items: center;
                     font-size: var(--code-font-size);
+
+                    :global(.cm-completionLabel),
+                    :global(.cm-completionMatchedText) {
+                        font-weight: normal;
+                    }
+
+                    :global(.cm-completionMatchedText) {
+                        color: var(--dark-text);
+                        background: var(--jb-search-match-bg);
+
+                        border-width: 1px 0;
+                        border-style: solid;
+                        border-color: var(--jb-search-match-bg);
+                        border-radius: 3px;
+                    }
+
+                    &:hover {
+                        background-color: var(--dropdown-link-hover-bg);
+                    }
 
                     &[aria-selected],
                     &:focus {
                         background-color: var(--dropdown-link-active-bg) !important;
 
-                        &:not(:hover) {
-                            :global(.cm-completionLabel),
-                            :global(.cm-completionMatchedText) {
-                                color: var(--light-text);
-                            }
-
-                            :global(.completion-hint) {
-                                color: var(--light-text);
-                                border-color: var(--light-text);
-                            }
-
-                            :global(.cm-completionDetail) {
-                                color: var(--jb-completion-detail-color);
-                            }
+                        :global(.cm-completionLabel) {
+                            color: var(--light-text);
                         }
-                    }
 
-                    &:hover {
-                        background-color: var(--dropdown-link-hover-bg);
+                        :global(.completion-hint) {
+                            color: var(--light-text);
+                            border-color: var(--light-text);
+                        }
+
+                        :global(.cm-completionDetail) {
+                            color: var(--jb-completion-detail-color);
+                        }
+
+                        > svg path {
+                            fill: var(--light-text);
+                        }
                     }
                 }
             }
