@@ -86,20 +86,20 @@ func (g *streamGroup[T]) Wait() {
 }
 
 func (g *streamGroup[T]) WithErrors() ErrorStreamGroup[T] {
-	os := newOrderedStreamer[resultPair[T]]()
-	os.group = g.os.group
-	return &errorStreamGroup[T]{
-		os: os,
+	esg := &errorStreamGroup[T]{
+		os: newOrderedStreamer[resultPair[T]](),
 	}
+	esg.os.group = g.os.group
+	return esg
 }
 
 func (g *streamGroup[T]) WithContext(ctx context.Context) ContextStreamGroup[T] {
-	os := newOrderedStreamer[resultPair[T]]()
-	os.group = g.os.group
-	return &contextStreamGroup[T]{
-		os:  os,
+	csg := &contextStreamGroup[T]{
+		os:  newOrderedStreamer[resultPair[T]](),
 		ctx: ctx,
 	}
+	csg.os.group = g.os.group
+	return csg
 }
 
 func (g *streamGroup[T]) WithLimit(limit int) StreamGroup[T] {
