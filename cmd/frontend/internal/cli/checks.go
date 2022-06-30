@@ -26,7 +26,7 @@ var checkCanReachGitserver = check.Check{
 		resps := make([]resp, 0, len(addrs))
 
 		checkAddr := func(addr string) ([]byte, error) {
-			req, err := http.NewRequest("GET", "http://"+addr+"/ping", nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/ping", nil)
 			if err != nil {
 				return nil, err
 			}

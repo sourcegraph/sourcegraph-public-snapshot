@@ -118,6 +118,7 @@ func (hc *HealthChecker) NewHealthCheckHandler() http.Handler {
 func NewAggregateHealthCheckHandler() http.Handler {
 	services := []string{"frontend"}
 
+	// TODO: How can we reach ALL frontends?
 	endpoints := func(service string) []*url.URL {
 		switch service {
 		case "frontend":
