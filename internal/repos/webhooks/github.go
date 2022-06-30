@@ -2,9 +2,10 @@ package syncwebhooks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -32,10 +33,7 @@ func (h *SyncGitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 func (h *SyncGitHubWebhook) handleSyncWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
 	fmt.Println("handleSyncWebhook...")
 	repo := payload.(*github.PushEvent).GetRepo()
-	fmt.Printf("repo:%+v\n", repo)
-	// repoName := repo.Name
-	var repoName api.RepoName
-	repoName = "github.com/sourcegraph/sourcegraph"
+	name := api.RepoName(*repo.Name)
 
 	var cli *repoupdater.Client
 	if Url == "" {
@@ -44,9 +42,9 @@ func (h *SyncGitHubWebhook) handleSyncWebhook(ctx context.Context, extSvc *types
 		cli = repoupdater.NewClient(Url)
 	}
 
-	res, err := cli.EnqueueRepoUpdate(ctx, repoName)
+	res, err := cli.EnqueueRepoUpdate(ctx, name)
 	if err != nil {
-		fmt.Println("error in handleSyncWebhook", err)
+		return errors.New(fmt.Sprint("error enqueuing repo", err))
 	}
 	fmt.Printf("Enqueued:%+v\n", res)
 
