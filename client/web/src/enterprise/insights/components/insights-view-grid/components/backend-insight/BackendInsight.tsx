@@ -33,7 +33,6 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
-import { parseSeriesDisplayOptions } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -75,12 +74,10 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
-    const [originalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
@@ -116,12 +113,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         }
     )
 
-    const handleFilterSave = async (
-        filters: InsightFilters,
-        displayOptions: SeriesDisplayOptionsInput
-    ): Promise<SubmissionErrors> => {
+    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions: displayOptions }
+            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions: filters.seriesDisplayOptions }
 
             await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
@@ -150,7 +144,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 ...insight,
                 title: insightName,
                 filters,
-                seriesDisplayOptions,
             }
 
             await createInsight({
@@ -160,7 +153,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
             setOriginalInsightFilters(filters)
-            setSeriesDisplayOptions(originalSeriesDisplayOptions)
             setIsFiltersOpen(false)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -175,11 +167,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     })
 
     const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
-
-    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInput): void => {
-        setSeriesDisplayOptions(options)
-        seriesToggleState.setSelectedSeriesIds([])
-    }
 
     return (
         <InsightCard
@@ -209,11 +196,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
-                            originalSeriesDisplayOptions={parseSeriesDisplayOptions(
-                                insight.seriesCount,
-                                insight.defaultSeriesDisplayOptions
-                            )}
-                            onSeriesDisplayOptionsChange={handleSeriesDisplayOptionsChange}
                         />
                         <InsightContextMenu
                             insight={insight}
