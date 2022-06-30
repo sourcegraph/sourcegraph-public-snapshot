@@ -832,6 +832,19 @@
           "Comment": "Specifies the execution method for how this series is generated. This helps the system understand how to generate the time series data."
         },
         {
+          "Name": "group_by",
+          "Index": 18,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
