@@ -991,7 +991,7 @@ const getInsightDataSeriesSql = `
 select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method, repositories, backfill_attempts
+just_in_time, generation_method, repositories, group_by, backfill_attempts
 from insight_series
 WHERE %s
 `
