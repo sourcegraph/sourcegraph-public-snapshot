@@ -20,10 +20,14 @@
 .chart-y-label {
     display: flex;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    border-right: 1px solid var(--color-bg-2);
-    margin: 1rem 0.5rem 1.5rem 0;
-    padding-right: 0.5rem;
+    border-left: 1px solid var(--color-bg-2);
+    margin-right: 0.5rem;
+    padding-left: 0.5rem;
+    writing-mode: tb-rl;
+    transform: rotate(-180deg);
+    white-space: pre;
 }
 
 .chart-x-label {

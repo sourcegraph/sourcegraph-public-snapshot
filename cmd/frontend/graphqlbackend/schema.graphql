@@ -5885,9 +5885,14 @@ type AnalyticsNotebooksResults {
     blockRuns: AnalyticsStatItem!
 }
 
+type AnalyticsUsersResult {
+    activity: AnalyticsStatItem!
+}
+
 type Analytics {
     search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
     notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
 }
 
 """

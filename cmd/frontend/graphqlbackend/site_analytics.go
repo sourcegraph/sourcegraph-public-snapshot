@@ -125,3 +125,26 @@ func (r *siteAnalyticsNotebooksResolver) BlockRuns(ctx context.Context) (*siteAn
 
 	return &siteAnalyticsStatItemResolver{fetcher}, nil
 }
+
+/* Users Analytics */
+
+func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
+	DateRange *string
+}) (*siteAnalyticsUsersResolver, error) {
+	return &siteAnalyticsUsersResolver{store: &adminanalytics.Users{DateRange: *args.DateRange, DB: r.db}}, nil
+}
+
+
+type siteAnalyticsUsersResolver struct {
+	store *adminanalytics.Users
+}
+
+func (r *siteAnalyticsUsersResolver) Activity(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.Activity()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}

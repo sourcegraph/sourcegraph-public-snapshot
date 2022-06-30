@@ -58,3 +58,26 @@ export const NOTEBOOKS_STATISTICS = gql`
     }
     ${analyticsStatItemFragment}
 `
+
+export const USERS_STATISTICS = gql`
+    query UsersStatistics($dateRange: AnalyticsDateRange!) {
+        site {
+            analytics {
+                users(dateRange: $dateRange) {
+                    activity {
+                        ...AnalyticsStatItemFragment
+                    }
+                }
+            }
+            productSubscription {
+                license {
+                    userCount
+                }
+            }
+        }
+        users {
+            totalCount
+        }
+    }
+    ${analyticsStatItemFragment}
+`

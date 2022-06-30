@@ -88,7 +88,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         },
 
         {
-            label: 'Users (soon)',
+            label: 'Users',
             to: '/site-admin/analytics/users',
         },
         {
@@ -128,7 +128,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/users',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsUsersPage'),
         exact: true,
     },
     {
