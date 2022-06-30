@@ -64,7 +64,9 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		db,
 	)
 
-	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, &observation.Context{
+	lsifStore := database.NewDBWith(observationContext.Logger, services.lsifStore)
+
+	return codeintelgqlresolvers.NewResolver(db, lsifStore, services.gitserverClient, innerResolver, &observation.Context{
 		Logger:       nil,
 		Tracer:       &trace.Tracer{},
 		Registerer:   nil,
