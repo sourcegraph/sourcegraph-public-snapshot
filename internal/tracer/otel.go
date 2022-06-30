@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,8 +28,9 @@ import (
 // endpoint of your cluster. If you run the app inside k8s, then you can
 // probably connect directly to the service through dns
 //
-// TODO make this configurable? OTEL_EXPORTER_OTLP_ENDPOINT
-const otelCollectorAddress = "localhost:4317"
+// OTEL_EXPORTER_OTLP_ENDPOINT is the name chosen because it is used in other
+// projects: https://sourcegraph.com/search?q=OTEL_EXPORTER_OTLP_ENDPOINT+-f:vendor
+var otelCollectorAddress = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317", "Address of OpenTelemetry collector")
 
 // newOTelTracer creates an opentracing.Tracer that actually exports OpenTelemetry traces
 // to an OpenTelemetry collector.
