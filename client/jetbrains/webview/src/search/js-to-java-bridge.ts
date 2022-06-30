@@ -70,6 +70,10 @@ interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
 }
 
+interface WindowCloseRequest {
+    action: 'windowClose'
+}
+
 export type Request =
     | PreviewLoadingRequest
     | PreviewRequest
@@ -80,6 +84,7 @@ export type Request =
     | LoadLastSearchRequest
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
+    | WindowCloseRequest
 
 let lastPreviewUpdateCallSendDateTime = new Date()
 
@@ -157,6 +162,14 @@ export async function onOpen(match: SearchMatch, lineOrSymbolMatchIndex?: number
         await callJava({ action: 'open', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
+    }
+}
+
+export async function onWindowClose(): Promise<void> {
+    try {
+        await callJava({ action: 'windowClose' })
+    } catch (error) {
+        console.error(`Failed to close window: ${(error as Error).message}`)
     }
 }
 

@@ -2,6 +2,8 @@ import React, { createRef, useCallback, useEffect, useMemo, useState } from 'rea
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
+import { isAnyDropdownOpen } from '../GlobalKeyboardListeners'
+
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
 import { PathSearchResult } from './PathSearchResult'
@@ -87,8 +89,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             // Ignore events when the autocomplete dropdown is open
-            const isAutocompleteOpen = document.querySelector('.cm-tooltip-autocomplete') !== null
-            if (isAutocompleteOpen) {
+            if (isAnyDropdownOpen()) {
                 return
             }
 

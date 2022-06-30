@@ -103,7 +103,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             {...props}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
-                            className={styles.searchBoxContextDropdown}
+                            className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
                             menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
                         />

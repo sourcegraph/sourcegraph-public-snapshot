@@ -8,9 +8,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ex.WindowManagerEx;
 import com.intellij.util.ui.UIUtil;
-import org.cef.browser.CefBrowser;
-import org.cef.handler.CefKeyboardHandler;
-import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -30,7 +27,7 @@ public class FindService implements Disposable {
         this.project = project;
 
         // Create main panel
-        mainPanel = new FindPopupPanel(project);
+        mainPanel = new FindPopupPanel(project, this);
     }
 
     synchronized public void showPopup() {
@@ -57,10 +54,9 @@ public class FindService implements Disposable {
         } else {
             popup = new FindPopupDialog(project, mainPanel);
 
-            // We add a manual listener to both the global key handler (since the editor component seems to work around
-            // the default swing event handler) and the browser panel which seems to handle events in a separate queue.
+            // We add a manual listener to the global key handler since the editor component seems to work around the
+            // default Swing event handler.
             registerGlobalKeyListeners();
-            registerJBCefClientKeyListeners();
 
             // We also need to detect when the main IDE frame or another popup inside the project gets focus and close
             // the Sourcegraph window accordingly.
@@ -75,36 +71,17 @@ public class FindService implements Disposable {
                     return false;
                 }
 
-                return handleKeyPress(false, e.getKeyCode(), e.getModifiersEx());
+                return handleKeyPress(e.getKeyCode(), e.getModifiersEx());
             });
     }
 
-    private void registerJBCefClientKeyListeners() {
-        if (mainPanel.getBrowser() == null) {
-            logger.error("Browser panel is null");
-            return;
-        }
-
-        mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
-            @Override
-            public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
-                return false;
-            }
-
-            @Override
-            public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                return handleKeyPress(true, event.windows_key_code, event.modifiers);
-            }
-        }, mainPanel.getBrowser().getCefBrowser());
-    }
-
-    private boolean handleKeyPress(boolean isWebView, int keyCode, int modifiers) {
+    private boolean handleKeyPress(int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
             ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
         }
 
-        if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
+        if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
