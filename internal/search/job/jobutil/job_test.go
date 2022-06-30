@@ -7,6 +7,8 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -345,7 +347,7 @@ func TestNewPlanJob(t *testing.T) {
 				OnSourcegraphDotCom: true,
 			}
 
-			j, err := NewPlanJob(inputs, plan)
+			j, err := NewPlanJob(logtest.Scoped((t)), inputs, plan)
 			require.NoError(t, err)
 
 			tc.want.Equal(t, "\n"+PrettySexp(j))
@@ -364,7 +366,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := toFlatJobs(inputs, b)
+		j, _ := toFlatJobs(logtest.Scoped(t), inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 

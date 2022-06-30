@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -39,6 +41,7 @@ func TestServeStream_empty(t *testing.T) {
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
+		log:                 logtest.Scoped(t),
 	})
 	defer ts.Close()
 
@@ -98,6 +101,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
+		log:                 logtest.Scoped(t),
 	})
 	defer ts.Close()
 
@@ -215,6 +219,7 @@ func TestDisplayLimit(t *testing.T) {
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				searchClient:        mock,
+				log:                 logtest.Scoped(t),
 			})
 			defer ts.Close()
 

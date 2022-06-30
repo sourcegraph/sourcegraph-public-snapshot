@@ -9,9 +9,10 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,6 +39,7 @@ type IndexedRepoRevs struct {
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
+	Log         sglog.Logger
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -172,6 +174,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 
 func PartitionRepos(
 	ctx context.Context,
+	logger sglog.Logger,
 	repos []*search.RepositoryRevisions,
 	zoektStreamer zoekt.Streamer,
 	typ search.IndexedRequestType,
@@ -212,7 +215,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			log15.Warn("zoektIndexedRepos failed", "error", err)
+			indexed.Log.Warn("zoektIndexedRepos failed", sglog.Error(err))
 		}
 
 		return nil, repos, ctx.Err()
@@ -221,7 +224,7 @@ func PartitionRepos(
 	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(logger, list.Minimal, repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.RepoRevs)),
@@ -236,9 +239,9 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, logger sglog.Logger, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
+	searchOpts := SearchOpts(ctx, logger, k, args.FileMatchLimit, args.Select)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -285,7 +288,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
+	searchOpts := SearchOpts(ctx, repos.Log, k, fileMatchLimit, selector)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -507,12 +510,13 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(logger sglog.Logger, indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
 		RepoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
 		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
+		Log:         logger,
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
@@ -586,17 +590,18 @@ type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
+	Log              sglog.Logger
 }
 
 func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, t.Log, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
+	return nil, DoZoektSearchGlobal(ctx, t.Log, clients.Zoekt, t.ZoektArgs, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {

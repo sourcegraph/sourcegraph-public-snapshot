@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -22,13 +23,14 @@ type RepoSearchJob struct {
 	Features                     search.Features
 
 	Mode search.GlobalSearchMode
+	Log  sglog.Logger
 }
 
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts, Log: s.Log}
 	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 

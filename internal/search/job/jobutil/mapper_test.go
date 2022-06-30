@@ -5,6 +5,8 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
 
@@ -17,6 +19,7 @@ func TestMap(t *testing.T) {
 		MapAndJob: func(children []job.Job) []job.Job {
 			return append(children, NewOrJob(NewNoopJob(), NewNoopJob()))
 		},
+		Log: logtest.Scoped(t),
 	}
 
 	autogold.Want("basic and-job mapper", `

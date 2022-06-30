@@ -15,6 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
@@ -46,6 +48,7 @@ var (
 type GitTreeEntryResolver struct {
 	db     database.DB
 	commit *GitCommitResolver
+	log    sglog.Logger
 
 	contentOnce sync.Once
 	content     []byte
@@ -60,7 +63,7 @@ type GitTreeEntryResolver struct {
 }
 
 func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, log: sglog.Scoped("GitTreeEntryResolver", "")}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }

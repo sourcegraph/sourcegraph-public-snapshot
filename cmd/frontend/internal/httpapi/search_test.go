@@ -11,8 +11,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,6 +41,7 @@ func TestServeConfiguration(t *testing.T) {
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return map[api.RepoID][]string{6: {"a", "b"}}, nil
 		},
+		log: logtest.Scoped(t),
 	}
 
 	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -144,6 +149,7 @@ func TestReposIndex(t *testing.T) {
 					Repos: allRepos,
 				},
 				Indexers: suffixIndexers(true),
+				log:      logtest.Scoped(t),
 			}
 
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
@@ -229,7 +235,7 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, logger log.Logger, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}

@@ -252,6 +252,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
 				ctx,
+				sglog.Scoped("newCommon", ""),
 				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),

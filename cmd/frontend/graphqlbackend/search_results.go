@@ -510,7 +510,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, agg, r.SearchInputs, r.JobClients())
+	alert, err := execute.Execute(ctx, r.log, agg, r.SearchInputs, r.JobClients())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.db, r.SearchInputs, srr, err)
@@ -556,6 +556,7 @@ type searchResultsStats struct {
 	once    sync.Once
 	results result.Matches
 	err     error
+	log     log.Logger
 }
 
 func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
@@ -604,7 +605,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(r.log, r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}
@@ -651,6 +652,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,
+		log:                     log.Scoped("searchResultsStats", ""),
 	}
 
 	// Store in the cache if we got non-zero results. If we got zero results,
