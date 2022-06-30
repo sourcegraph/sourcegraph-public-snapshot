@@ -140,6 +140,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
+        seriesDisplayOptionsField.input.onChange(originalValues.seriesDisplayOptions)
     }
 
     const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections
@@ -172,7 +173,10 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
-                    disabled={!hasActiveFilters(values)}
+                    disabled={
+                        !hasActiveFilters(values) &&
+                        isEqual(originalValues.seriesDisplayOptions, values.seriesDisplayOptions)
+                    }
                     variant="link"
                     size="sm"
                     className={styles.actionButton}
@@ -202,7 +206,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     preview={getSortPreview(
                         parseSeriesDisplayOptions(seriesCount, seriesDisplayOptionsField.input.value)
                     )}
-                    hasActiveFilter={false}
+                    hasActiveFilter={!isEqual(originalValues.seriesDisplayOptions, values.seriesDisplayOptions)}
                     withSeparators={!isHorizontalMode}
                     onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                 >
