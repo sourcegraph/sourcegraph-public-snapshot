@@ -214,3 +214,7 @@
     - Store
     - WithHooks
     - WithPreDequeue
+- filename: enterprise/internal/authz/github/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github
+  interfaces:
+    - client
