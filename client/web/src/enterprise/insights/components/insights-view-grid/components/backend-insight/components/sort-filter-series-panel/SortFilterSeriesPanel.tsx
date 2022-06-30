@@ -1,7 +1,4 @@
-import { useState, useRef } from 'react'
-
 import classNames from 'classnames'
-import { debounce } from 'lodash'
 
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
@@ -11,54 +8,34 @@ import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/
 
 import styles from './SortFilterSeriesPanel.module.scss'
 
-const getClasses = (selected: SeriesSortOptionsInput, value: SeriesSortOptionsInput): string => {
-    const isSelected = selected.mode === value.mode && selected.direction === value.direction
-    return classNames({ [styles.selected]: isSelected, [styles.unselected]: !isSelected })
-}
-
 interface SortFilterSeriesPanelProps {
-    selectedOption: SeriesSortOptionsInput
-    limit: number
+    value: {
+        limit: number
+        sortOptions: SeriesSortOptionsInput
+    }
     seriesCount: number
     onChange: (parameter: SeriesDisplayOptionsInputRequired) => void
 }
 
 export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({
-    selectedOption,
-    limit,
-    seriesCount: seriesCountProperty,
+    value,
+    seriesCount,
     onChange,
 }) => {
-    const maxLimit = Math.min(seriesCountProperty, MAX_NUMBER_OF_SERIES)
-    const [selected, setSelected] = useState(selectedOption)
-    const [seriesCount, setSeriesCount] = useState(Math.min(limit, maxLimit))
-    const [seriesCountInput, setSeriesCountInput] = useState(`${seriesCount}`)
+    // It is possible to have N number of series, but we need to have maximum to render in UI
+    // or else it gets too cluttered to view
+    const maxLimit = Math.min(seriesCount, MAX_NUMBER_OF_SERIES)
 
-    const handleToggle = (value: SeriesSortOptionsInput): void => {
-        setSelected(value)
-        onChange({ limit: seriesCount, sortOptions: value })
+    const handleToggle = (sortOptions: SeriesSortOptionsInput): void => {
+        onChange({ ...value, sortOptions })
     }
-
-    const debouncedChange = useRef(
-        debounce((value: string) => {
-            const count = Math.min(parseInt(value, 10), maxLimit)
-            setSeriesCount(count)
-            onChange({ limit: count, sortOptions: selected })
-        }, 300)
-    ).current
 
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const value = event.target.value
-        setSeriesCountInput(value)
-        debouncedChange.cancel()
-
-        if (value.length > 0) {
-            debouncedChange(value)
+        if (event.target.value.length === 0) {
+            return
         }
-    }
-
-    const handleBlur: React.FocusEventHandler<HTMLInputElement> = () => {
-        setSeriesCountInput(`${seriesCount}`)
+        const count = Math.min(parseInt(event.target.value, 10), maxLimit)
+        onChange({ ...value, limit: count })
     }
 
     return (
@@ -68,14 +45,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by result count</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
-                            selected={selectedOption}
+                            selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Highest
                         </ToggleButton>
                         <ToggleButton
-                            selected={selectedOption}
+                            selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
@@ -87,14 +64,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by name</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
-                            selected={selectedOption}
+                            selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             A-Z
                         </ToggleButton>
                         <ToggleButton
-                            selected={selectedOption}
+                            selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
@@ -106,14 +83,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by date added</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
-                            selected={selectedOption}
+                            selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Newest
                         </ToggleButton>
                         <ToggleButton
-                            selected={selectedOption}
+                            selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
@@ -130,9 +107,8 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     type="number"
                     step="1"
                     max={maxLimit}
-                    value={seriesCountInput}
+                    value={value.limit}
                     onChange={handleChange}
-                    onBlur={handleBlur}
                     variant="small"
                 />
             </footer>
@@ -146,8 +122,17 @@ interface ToggleButtonProps {
     onClick: (value: SeriesSortOptionsInput) => void
 }
 
-const ToggleButton: React.FunctionComponent<ToggleButtonProps> = ({ selected, value, children, onClick }) => (
-    <Button variant="secondary" size="sm" className={getClasses(selected, value)} onClick={() => onClick(value)}>
-        {children}
-    </Button>
-)
+const ToggleButton: React.FunctionComponent<ToggleButtonProps> = ({ selected, value, children, onClick }) => {
+    const isSelected = selected.mode === value.mode && selected.direction === value.direction
+
+    return (
+        <Button
+            variant="secondary"
+            size="sm"
+            className={classNames({ [styles.selected]: isSelected, [styles.unselected]: !isSelected })}
+            onClick={() => onClick(value)}
+        >
+            {children}
+        </Button>
+    )
+}

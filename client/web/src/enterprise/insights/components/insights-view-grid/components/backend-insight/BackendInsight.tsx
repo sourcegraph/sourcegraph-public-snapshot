@@ -90,8 +90,8 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         searchContexts: [debouncedFilters.context],
     }
     const displayInput: SeriesDisplayOptionsInput = {
-        limit: seriesDisplayOptions?.limit,
-        sortOptions: seriesDisplayOptions?.sortOptions,
+        limit: debouncedFilters.seriesDisplayOptions.limit,
+        sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(

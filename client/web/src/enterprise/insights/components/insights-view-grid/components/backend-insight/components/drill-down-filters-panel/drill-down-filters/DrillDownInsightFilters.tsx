@@ -11,7 +11,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
+import {
+    SeriesDisplayOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../../../../../../graphql-operations'
 import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
@@ -48,6 +52,13 @@ export interface DrillDownFiltersFormValues {
     context: string
     includeRepoRegexp: string
     excludeRepoRegexp: string
+    seriesDisplayOptions: {
+        limit: number
+        sortOptions: {
+            mode: SeriesSortMode
+            direction: SeriesSortDirection
+        }
+    }
 }
 
 interface DrillDownInsightFilters {
@@ -121,6 +132,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         validators: { sync: validRegexp },
     })
 
+    const seriesDisplayOptionsField = useField({
+        name: 'seriesDisplayOptions',
+        formApi: formAPI,
+    })
+
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
     const hasSeriesDisplayOptionsChanged = !isEqual(DEFAULT_SERIES_DISPLAY_OPTIONS, seriesDisplayOptions)
@@ -142,10 +158,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         onSeriesDisplayOptionsChange(originalSeriesDisplayOptions)
     }
 
-    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
-        setSeriesDisplayOptions(options)
-        onSeriesDisplayOptionsChange(options)
-    }
     const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections
     const isPreviewMode = visualMode === FilterSectionVisualMode.Preview
 
@@ -209,9 +221,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                 >
                     <SortFilterSeriesPanel
-                        limit={seriesDisplayOptions.limit}
-                        selectedOption={seriesDisplayOptions.sortOptions}
-                        onChange={handleSeriesDisplayOptionsChange}
+                        value={seriesDisplayOptionsField.input.value}
+                        onChange={seriesDisplayOptionsField.input.onChange}
                         seriesCount={seriesCount}
                     />
                 </FilterCollapseSection>

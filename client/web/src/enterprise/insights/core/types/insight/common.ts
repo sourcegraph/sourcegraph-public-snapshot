@@ -1,4 +1,10 @@
-import { InsightViewNode, SeriesDisplayOptionsInput, SeriesSortOptionsInput } from '../../../../../graphql-operations'
+import {
+    InsightViewNode,
+    SeriesDisplayOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+    SeriesSortOptionsInput,
+} from '../../../../../graphql-operations'
 
 export enum InsightExecutionType {
     /**
@@ -29,6 +35,13 @@ export interface InsightFilters {
     excludeRepoRegexp: string
     context: string
     repositories?: string[]
+    seriesDisplayOptions: {
+        limit: number
+        sortOptions: {
+            mode: SeriesSortMode
+            direction: SeriesSortDirection
+        }
+    }
 }
 
 export type SeriesDisplayOptions = InsightViewNode['appliedSeriesDisplayOptions'] &
