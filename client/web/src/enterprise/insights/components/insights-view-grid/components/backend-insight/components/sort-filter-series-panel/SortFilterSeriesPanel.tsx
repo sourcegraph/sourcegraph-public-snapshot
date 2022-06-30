@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
 import { SeriesSortOptionsInput, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
 
 import styles from './SortFilterSeriesPanel.module.scss'
@@ -24,11 +25,13 @@ interface SortFilterSeriesPanelProps {
 export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({
     selectedOption,
     limit,
-    seriesCount: maxLimit,
+    seriesCount: seriesCountProperty,
     onChange,
 }) => {
+    const maxLimit = Math.min(seriesCountProperty, MAX_NUMBER_OF_SERIES)
     const [selected, setSelected] = useState(selectedOption)
     const [seriesCount, setSeriesCount] = useState(Math.min(limit, maxLimit))
+    const [seriesCountInput, setSeriesCountInput] = useState(`${seriesCount}`)
 
     const handleToggle = (value: SeriesSortOptionsInput): void => {
         setSelected(value)
@@ -36,9 +39,18 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
     }
 
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const count = Math.min(parseInt(event.target.value, 10) || 1, maxLimit)
-        setSeriesCount(count)
-        onChange({ limit: count, sortOptions: selected })
+        const value = event.target.value
+        setSeriesCountInput(value)
+
+        if (value.length > 0) {
+            const count = Math.min(parseInt(value, 10), maxLimit)
+            setSeriesCount(count)
+            onChange({ limit: count, sortOptions: selected })
+        }
+    }
+
+    const handleBlur: React.FocusEventHandler<HTMLInputElement> = () => {
+        setSeriesCountInput(`${seriesCount}`)
     }
 
     return (
@@ -110,8 +122,9 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     type="number"
                     step="1"
                     max={maxLimit}
-                    value={seriesCount}
+                    value={seriesCountInput}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     variant="small"
                 />
             </footer>

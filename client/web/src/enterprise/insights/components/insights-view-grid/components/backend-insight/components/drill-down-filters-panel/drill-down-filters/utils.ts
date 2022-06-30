@@ -4,6 +4,7 @@ import {
     SeriesSortMode,
 } from '../../../../../../../../../graphql-operations'
 import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { Validator } from '../../../../../../form/hooks/useField'
 
@@ -86,10 +87,10 @@ export const parseSeriesDisplayOptions = (
     options?: SeriesDisplayOptions | SeriesDisplayOptionsInput
 ): SeriesDisplayOptionsInputRequired => {
     if (!options) {
-        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: seriesCount }
+        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: Math.min(seriesCount, MAX_NUMBER_OF_SERIES) }
     }
 
-    const limit = Math.min(options.limit || seriesCount, seriesCount)
+    const limit = Math.min(options.limit || seriesCount, seriesCount, MAX_NUMBER_OF_SERIES)
     const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
 
     return {
