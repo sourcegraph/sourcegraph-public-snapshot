@@ -123,14 +123,17 @@ func (g *group) Go(f func()) {
 	g.start(f, release)
 }
 
+// acquire a slot from the limiter
 func (g *group) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	if g.limiter != nil {
-		ctx, release, err := g.limiter.Acquire(ctx)
-		return ctx, release, errors.Wrap(err, "acquire limiter")
+	if g.limiter == nil {
+		// nil limiter means unlimited
+		return ctx, func() {}, nil
 	}
-	return ctx, func() {}, nil
+	ctx, release, err := g.limiter.Acquire(ctx)
+	return ctx, release, errors.Wrap(err, "acquire limiter")
 }
 
+// start a goroutine
 func (g *group) start(f, release func()) {
 	g.wg.Add(1)
 	go func() {
