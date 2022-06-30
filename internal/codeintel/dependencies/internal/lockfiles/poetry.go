@@ -13,7 +13,7 @@ import (
 // poetry.lock
 //
 
-func parsePoetryLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
+func parsePoetryLockFile(r io.Reader) ([]reposource.PackageVersion, error) {
 	var lockfile struct {
 		Packages []struct {
 			Name    string `toml:"name"`
@@ -25,9 +25,9 @@ func parsePoetryLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		return nil, errors.Errorf("error decoding poetry lockfile: %w", err)
 	}
 
-	libs := make([]reposource.PackageDependency, 0, len(lockfile.Packages))
+	libs := make([]reposource.PackageVersion, 0, len(lockfile.Packages))
 	for _, pkg := range lockfile.Packages {
-		libs = append(libs, reposource.NewPythonDependency(pkg.Name, pkg.Version))
+		libs = append(libs, reposource.NewPythonPackageVersion(pkg.Name, pkg.Version))
 	}
 
 	return libs, nil

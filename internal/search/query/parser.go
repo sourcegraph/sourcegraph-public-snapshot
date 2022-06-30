@@ -1071,12 +1071,12 @@ func (p *parser) parseAnd() ([]Node, error) {
 	switch p.leafParser {
 	case SearchTypeRegex:
 		left, err = p.parseLeaves(Regexp)
-	case SearchTypeLiteral:
+	case SearchTypeLiteral, SearchTypeStructural:
 		left, err = p.parseLeaves(Literal)
-	case SearchTypeStandard:
+	case SearchTypeStandard, SearchTypeLucky:
 		left, err = p.parseLeaves(Literal | Standard)
 	default:
-		left, err = p.parseLeaves(Literal)
+		left, err = p.parseLeaves(Literal | Standard)
 	}
 	if err != nil {
 		return nil, err

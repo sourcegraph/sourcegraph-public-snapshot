@@ -147,8 +147,8 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 	}
 
 	// If the subpath includes a wildcard:
-	// - depot: "//app/main/"
-	// - match: "//app/.../file" or "//*/main/..."
+	// - depot: "//depot/main/"
+	// - match: "//depot/.../file" or "//*/main/..."
 	// Then we want to check if it could match this match
 	if !hasPerforceWildcard(match.original) {
 		return false
@@ -391,9 +391,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 					srp.PathIncludes = nil
 				}
 
-				if len(srp.PathIncludes) > 0 {
-					srp.PathExcludes = append(srp.PathExcludes, match.pattern)
-				}
+				srp.PathExcludes = append(srp.PathExcludes, match.pattern)
 
 				var i int
 				for _, include := range srp.PathIncludes {
