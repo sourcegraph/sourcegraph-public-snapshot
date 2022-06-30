@@ -25,8 +25,13 @@ on:
     - unassigned
     - labeled
     - unlabeled
+permissions:
+  contents: read
+
 jobs:
   sync-tracking-issues:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     steps:
       - uses: docker://sourcegraph/tracking-issue:latest

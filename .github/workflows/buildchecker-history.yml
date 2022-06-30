@@ -5,6 +5,9 @@ on:
   - cron: '0 0 * * SUN'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   report:
     runs-on: ubuntu-latest

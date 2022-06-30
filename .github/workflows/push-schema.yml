@@ -11,6 +11,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   sync-schema:
     runs-on: ubuntu-latest

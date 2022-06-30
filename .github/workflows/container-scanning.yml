@@ -3,8 +3,13 @@ on:
   schedule:
   - cron: '5 5 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   scan:
+    permissions:
+      security-events: write  # for github/codeql-action/upload-sarif to upload SARIF results
     name: container-scan
     runs-on: ubuntu-latest
 

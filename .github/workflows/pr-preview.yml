@@ -8,6 +8,9 @@ on:
     # At minute 0 past every 12th hour
     - cron: '0 */12 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   remove-pr-preview-app:
     if: github.event_name == 'pull_request'

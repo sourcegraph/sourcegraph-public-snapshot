@@ -6,6 +6,9 @@ on:
   # # Every Monday at 12pm UTC
   # - cron: '0 12 * * MON'
 
+permissions:
+  contents: read
+
 jobs:
   update:
     runs-on: ubuntu-latest

@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [ closed, edited, opened, synchronize, ready_for_review ]
 
+permissions:
+  contents: read
+
 jobs:
   check-pr:
     runs-on: ubuntu-latest

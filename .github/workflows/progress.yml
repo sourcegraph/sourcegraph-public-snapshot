@@ -16,6 +16,9 @@ on:
         default: 'progress'
   schedule:
   - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
+permissions:
+  contents: read
+
 jobs:
   report-to-slack:
     runs-on: ubuntu-latest

@@ -12,8 +12,13 @@ env:
   GOFLAGS: -trimpath
   CGO_ENABLED: '1'
 
+permissions:
+  contents: read
+
 jobs:
   touch_sg:
+    permissions:
+      contents: write  # for Git to git push
     name: Touch sourcegraph/sg
     runs-on: ubuntu-latest
     steps:
@@ -33,6 +38,8 @@ jobs:
           git push
 
   create_release:
+    permissions:
+      contents: none
     name: create-github-release
     needs: touch_sg
     runs-on: ubuntu-latest

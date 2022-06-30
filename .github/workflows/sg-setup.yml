@@ -6,6 +6,9 @@ on:
       - 'dev/sg/dependencies/**.go'
       - 'dev/sg/internal/check/**.go'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     strategy:

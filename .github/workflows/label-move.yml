@@ -2,6 +2,9 @@ name: Move labeled or milestoned issue to a specific project colum
 on:
   issues:
     types: [labeled]
+permissions:
+  contents: read
+
 jobs:
   # Uses issues beta API - see https://docs.github.com/en/issues/trying-out-the-new-projects-experience/automating-projects#example-workflow
   # To get your PROJECT_ID, use:
@@ -15,6 +18,8 @@ jobs:
   #   }
   #   }' -F project=212
   code-intel-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1MA== # https://github.com/orgs/sourcegraph/projects/211
@@ -42,6 +47,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   dev-experience-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1Nw== # https://github.com/orgs/sourcegraph/projects/212
@@ -69,6 +76,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   integrations-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: MDExOlByb2plY3ROZXh0NDMyNg== # https://github.com/orgs/sourcegraph/projects/213
@@ -96,6 +105,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   batchers-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM0WXg== # https://github.com/orgs/sourcegraph/projects/216
@@ -123,6 +134,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   dev-ops-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM1D1Q # https://github.com/orgs/sourcegraph/projects/220
@@ -150,6 +163,8 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   frontend-platform-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM2FqQ== # https://github.com/orgs/sourcegraph/projects/222
@@ -172,6 +187,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   delivery-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: MDExOlByb2plY3ROZXh0Mzg2Mw== # https://github.com/orgs/sourcegraph/projects/205
@@ -199,6 +216,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   wcag-accessibility-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM4AAyDB # https://github.com/orgs/sourcegraph/projects/238
@@ -221,6 +240,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   growth-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM4ABLw3 # https://github.com/orgs/sourcegraph/projects/253
@@ -248,6 +269,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   iam-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM4ABlJF # https://github.com/orgs/sourcegraph/projects/259
@@ -275,6 +298,8 @@ jobs:
             }
           }' -f project=$PROJECT_ID -f node_id=$NODE_ID
   executors-board:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: PN_kwDOADy5QM4ADYmX # https://github.com/orgs/sourcegraph/projects/267
