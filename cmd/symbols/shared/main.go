@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	sentrylib "github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -45,11 +45,11 @@ func Main(setup SetupFunc) {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
 	defer liblog.Sync()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

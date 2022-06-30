@@ -31,7 +31,7 @@ type SymbolOrError struct {
 }
 
 type parser struct {
-	parserPool         ParserPool
+	parserPool         *parserPool
 	repositoryFetcher  fetcher.RepositoryFetcher
 	requestBufferSize  int
 	numParserProcesses int
@@ -39,7 +39,7 @@ type parser struct {
 }
 
 func NewParser(
-	parserPool ParserPool,
+	parserPool *parserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
@@ -251,6 +251,8 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 }
 
 func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+	logger = logger.Scoped("ctags", "ctags processes")
+
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,

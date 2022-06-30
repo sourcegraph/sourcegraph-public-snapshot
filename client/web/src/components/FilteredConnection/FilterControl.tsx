@@ -1,7 +1,5 @@
 import React, { useCallback } from 'react'
 
-import classNames from 'classnames'
-
 import { Select, Text } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../RadioButtons'
@@ -85,10 +83,7 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                 if (filter.type === 'select') {
                     const filterLabelId = `filtered-select-label-${filter.id}`
                     return (
-                        <div
-                            key={filter.id}
-                            className={classNames('d-inline-flex flex-row align-center flex-wrap', styles.select)}
-                        >
+                        <div key={filter.id} className="d-inline-flex flex-row align-center flex-wrap">
                             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                                 <Text className="text-xl-center text-nowrap mr-2" id={filterLabelId}>
                                     {filter.label}:

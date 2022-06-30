@@ -43,11 +43,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		// generate opportunistic queries and run them after the usual jobTree
-		generatedChildren := NewFeelingLuckySearchJob(inputs, plan)
-		if len(generatedChildren) > 0 {
-			jobTree = NewSequentialJob(true, append([]job.Job{jobTree}, generatedChildren...)...)
-		}
+		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -531,7 +527,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 

@@ -497,7 +497,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.NpmPackagesConnection:
-		limit = rate.Limit(3000 / 3600.0) // Same as the default in npm-packages.schema.json
+		limit = rate.Limit(6000 / 3600.0) // Same as the default in npm-packages.schema.json
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -518,7 +518,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		}
 	case *schema.RustPackagesConnection:
 		// 1 request per second is default policy for crates.io
-		limit = rate.Limit(1)
+		limit = rate.Limit(32)
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}

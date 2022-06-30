@@ -51,7 +51,7 @@ type SubRepoPermissions struct {
 }
 
 // ExternalUserPermissions is a collection of accessible repository/project IDs
-// (on code host). It contains exact IDs, as well as prefixes to both include
+// (on the code host). It contains exact IDs, as well as prefixes to both include
 // and exclude IDs.
 //
 // 🚨 SECURITY: Every call site should evaluate all fields of this struct to

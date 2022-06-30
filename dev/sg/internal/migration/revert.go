@@ -26,20 +26,30 @@ func Revert(databases []db.Database, commit string) error {
 	}
 
 	redacted := false
-	for name, versions := range versionsByDatabase {
+	for dbName, versions := range versionsByDatabase {
 		if len(versions) == 0 {
 			continue
 		}
 		redacted = true
 
 		var (
-			database, _ = db.DatabaseByName(name)
+			database, _ = db.DatabaseByName(dbName)
 			upPaths     = make([]string, 0, len(versions))
 			downQueries = make([]string, 0, len(versions))
 		)
 
+		defs, err := readDefinitions(database)
+		if err != nil {
+			return err
+		}
+
 		for _, version := range versions {
-			files, err := makeMigrationFilenames(database, version)
+			def, ok := defs.GetByID(version)
+			if !ok {
+				return errors.Newf("could not find migration %d in database %q", version, dbName)
+			}
+
+			files, err := makeMigrationFilenames(database, version, def.Name)
 			if err != nil {
 				return err
 			}

@@ -30,6 +30,7 @@ export interface SearchContextDropdownProps
     className?: string
     onEscapeMenuClose?: () => void
     isExternalServicesUserModeAll?: boolean
+    menuClassName?: string
 }
 
 export const SearchContextDropdown: React.FunctionComponent<
@@ -51,6 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<
         onEscapeMenuClose,
         showSearchContextManagement,
         isExternalServicesUserModeAll,
+        menuClassName,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -63,7 +65,7 @@ export const SearchContextDropdown: React.FunctionComponent<
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
-    const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : null
+    const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : ''
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
@@ -124,6 +126,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                         isOpen && styles.buttonOpen
                     )}
                     data-testid="dropdown-toggle"
+                    data-test-tooltip-content={disabledTooltipText}
                     color="link"
                     disabled={isContextFilterInQuery}
                 >
@@ -159,6 +162,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}
                     closeMenu={onCloseMenu}
+                    className={menuClassName}
                 />
                 {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
                     <SearchContextCtaPrompt

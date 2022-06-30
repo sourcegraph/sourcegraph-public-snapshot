@@ -219,7 +219,9 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </H3>
                         <span>
                             by {publisher}
-                            {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
+                            {isSourcegraphExtension && (
+                                <Icon className={styles.logo} as={SourcegraphExtensionIcon} aria-hidden={true} />
+                            )}
                         </span>
                     </div>
                     <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>

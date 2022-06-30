@@ -32,10 +32,6 @@ func NewSettingsMigrationJobsStore(db database.DB) *DBSettingsMigrationJobsStore
 	return &DBSettingsMigrationJobsStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
-func (s *DBSettingsMigrationJobsStore) Handle() *basestore.TransactableHandle {
-	return s.Store.Handle()
-}
-
 func (s *DBSettingsMigrationJobsStore) With(other basestore.ShareableStore) *DBSettingsMigrationJobsStore {
 	return &DBSettingsMigrationJobsStore{Store: s.Store.With(other), Now: s.Now}
 }

@@ -4,6 +4,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
+import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components'
 import {
     getSanitizedRepositories,
@@ -46,6 +47,7 @@ export const DynamicInsightPreview: React.FunctionComponent<
     const { disabled, repositories, query, className, telemetryService } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
+    const seriesToggleState = useSeriesToggle()
 
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
@@ -86,6 +88,7 @@ export const DynamicInsightPreview: React.FunctionComponent<
                                 type={SeriesBasedChartTypes.Line}
                                 width={parent.width}
                                 height={parent.height}
+                                seriesToggleState={seriesToggleState}
                                 {...state.data}
                             />
                         ) : (
@@ -98,6 +101,7 @@ export const DynamicInsightPreview: React.FunctionComponent<
                                     onMouseEnter={trackMouseEnter}
                                     onMouseLeave={trackMouseLeave}
                                     onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
                                     // We cast to unknown here because ForwardReferenceComponent
                                     // doesn't support inferring as component with generic.
                                     {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}

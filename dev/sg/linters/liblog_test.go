@@ -2,18 +2,21 @@ package linters
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 func TestLibLogLinter(t *testing.T) {
 	lint := lintLoggingLibraries()
+	discard := std.NewFixedOutput(io.Discard, false)
 
 	t.Run("no false positives", func(t *testing.T) {
-		report := lint(context.Background(), repo.NewMockState(repo.Diff{
+		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
 			"cmd/foobar/command.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{
@@ -23,11 +26,11 @@ func TestLibLogLinter(t *testing.T) {
 				},
 			},
 		}))
-		assert.Nil(t, report.Err)
+		assert.Nil(t, err)
 	})
 
 	t.Run("catch imports", func(t *testing.T) {
-		report := lint(context.Background(), repo.NewMockState(repo.Diff{
+		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
 			"cmd/foobar/command.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{
@@ -38,6 +41,6 @@ func TestLibLogLinter(t *testing.T) {
 				},
 			},
 		}))
-		assert.NotNil(t, report.Err)
+		assert.NotNil(t, err)
 	})
 }

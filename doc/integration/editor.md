@@ -14,8 +14,10 @@ We currently have integrations with these editors:
 
 <img src="img/sublime.svg" width="30" height="30" style="margin-right:5px" /> **[Sublime Text](https://github.com/sourcegraph/sourcegraph-sublime)**
 
-<img src="img/gitpod.svg" width="30" height="30" style="margin-right:5px" /> **[Gitpod](gitpod.md)**
+<img src="img/gitpod.svg" width="30" height="30" style="margin-right:5px" /> **[Gitpod](https://open-vsx.org/extension/sourcegraph/sourcegraph)**
 
 ## References
 
+[Installation guide for Gitpod](gitpod.md)
+[Sourcegraph on Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
 [VS Code Extension Troubleshooting Docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)

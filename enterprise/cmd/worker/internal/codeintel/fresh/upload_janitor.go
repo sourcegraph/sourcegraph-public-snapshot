@@ -10,7 +10,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -51,7 +55,22 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 		return nil, err
 	}
 
+	db, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	gitserverClient, err := codeintel.InitGitserverClient()
+	if err != nil {
+		return nil, err
+	}
+
+	enqueuerDBStoreShim := &autoindexing.DBStoreShim{Store: dbStore}
+	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
+	indexSvc := autoindexing.GetService(database.NewDB(logger, db), enqueuerDBStoreShim, gitserverClient, repoUpdaterClient)
+	uploadSvc := uploads.GetService(database.NewDB(logger, db))
+
 	return []goroutine.BackgroundRoutine{
-		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, cleanup.LSIFStoreShim{Store: lsifStore}, metrics),
+		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, cleanup.LSIFStoreShim{Store: lsifStore}, uploadSvc, indexSvc, metrics),
 	}, nil
 }

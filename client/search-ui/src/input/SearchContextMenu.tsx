@@ -8,8 +8,8 @@ import React, {
     useState,
 } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 // eslint-disable-next-line no-restricted-imports
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
@@ -21,7 +21,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Link, Icon, Input } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Icon, Input, ButtonLink } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
@@ -97,6 +97,7 @@ export interface SearchContextMenuProps
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void
+    className?: string
 }
 
 interface PageInfo {
@@ -128,6 +129,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
     showSearchContextManagement,
     platformContext,
     telemetryService,
+    className,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
@@ -301,7 +303,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div onKeyDown={onMenuKeyDown}>
+        <div onKeyDown={onMenuKeyDown} className={classNames(styles.container, className)}>
             <div className={styles.title}>
                 <small>Choose search context</small>
                 <Button
@@ -311,7 +313,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                     className={styles.titleClose}
                     aria-label="Close"
                 >
-                    <Icon aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>
@@ -379,16 +381,15 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                 </Button>
                 <span className="flex-grow-1" />
                 {showSearchContextManagement && (
-                    <Button
+                    <ButtonLink
                         to="/contexts"
                         className={styles.footerButton}
                         onClick={() => closeMenu()}
                         variant="link"
                         size="sm"
-                        as={Link}
                     >
                         Manage contexts
-                    </Button>
+                    </ButtonLink>
                 )}
             </div>
         </div>

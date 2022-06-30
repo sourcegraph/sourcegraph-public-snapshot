@@ -1141,7 +1141,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
+          "description": "Determines what tracing provider to enable. Supports \"opentracing\" (\"datadog\" support is deprecated)",
           "type": "string",
           "enum": ["datadog", "opentracing"],
           "default": "opentracing"
@@ -1895,6 +1895,11 @@
             "minLength": 1
           },
           "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+        },
+        "tokenRefreshWindowMinutes": {
+          "description": "Time in minutes before token expiry when we should attempt to refresh it",
+          "default": 10,
+          "type": "integer"
         }
       }
     },

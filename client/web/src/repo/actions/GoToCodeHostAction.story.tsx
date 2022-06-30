@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
@@ -18,11 +19,16 @@ const onClose = action('onClose')
 const onReject = action('onReject')
 const onInstall = action('onInstall')
 
-const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionPopover', module).addDecorator(story => (
-    <div className="container mt-3">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="container mt-3">{story()}</div>
 
-add('GitHub', () => (
+const config: Meta = {
+    title: 'web/repo/actions/InstallBrowserExtensionPopover',
+    decorators: [decorator],
+}
+
+export default config
+
+export const GitHub: Story = () => (
     <WebStory>
         {() => {
             const serviceKind = ExternalServiceKind.GITHUB
@@ -49,111 +55,109 @@ add('GitHub', () => (
             )
         }}
     </WebStory>
-))
+)
+
+GitHub.storyName = 'GitHub'
 
 // Disable Chromatic for the non-GitHub popovers since they are mostly the same
-
-add(
-    'GitLab',
-    () => (
-        <WebStory>
-            {() => {
-                const serviceKind = ExternalServiceKind.GITLAB
-                const targetID = `view-on-${serviceKind}`
-                const [open, setOpen] = useState(false)
-                useEffect(() => {
-                    setTimeout(() => setOpen(true), 0)
-                }, [])
-                return (
-                    <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} id={targetID} aria-label="Gitlab">
-                            <Icon as={GitlabIcon} aria-hidden={true} />
-                        </PopoverTrigger>
-                        <InstallBrowserExtensionPopover
-                            url=""
-                            serviceKind={serviceKind}
-                            onClose={onClose}
-                            onReject={onReject}
-                            onInstall={onInstall}
-                        />
-                    </Popover>
-                )
-            }}
-        </WebStory>
-    ),
-    {
-        chromatic: {
-            disable: true,
-        },
-    }
+export const GitLab: Story = () => (
+    <WebStory>
+        {() => {
+            const serviceKind = ExternalServiceKind.GITLAB
+            const targetID = `view-on-${serviceKind}`
+            const [open, setOpen] = useState(false)
+            useEffect(() => {
+                setTimeout(() => setOpen(true), 0)
+            }, [])
+            return (
+                <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                    <PopoverTrigger as={Button} id={targetID} aria-label="Gitlab">
+                        <Icon as={GitlabIcon} aria-hidden={true} />
+                    </PopoverTrigger>
+                    <InstallBrowserExtensionPopover
+                        url=""
+                        serviceKind={serviceKind}
+                        onClose={onClose}
+                        onReject={onReject}
+                        onInstall={onInstall}
+                    />
+                </Popover>
+            )
+        }}
+    </WebStory>
 )
 
-add(
-    'Phabricator',
-    () => (
-        <WebStory>
-            {() => {
-                const serviceKind = ExternalServiceKind.PHABRICATOR
-                const targetID = `view-on-${serviceKind}`
-                const [open, setOpen] = useState(false)
-                useEffect(() => {
-                    setTimeout(() => setOpen(true), 0)
-                }, [])
-                return (
-                    <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} id={targetID} aria-label="Phabricator">
-                            <Icon as={PhabricatorIcon} aria-hidden={true} />
-                        </PopoverTrigger>
-                        <InstallBrowserExtensionPopover
-                            url=""
-                            serviceKind={serviceKind}
-                            onClose={onClose}
-                            onReject={onReject}
-                            onInstall={onInstall}
-                        />
-                    </Popover>
-                )
-            }}
-        </WebStory>
-    ),
-    {
-        chromatic: {
-            disable: true,
-        },
-    }
+GitLab.storyName = 'GitLab'
+GitLab.parameters = {
+    chromatic: {
+        disable: true,
+    },
+}
+
+export const Phabricator: Story = () => (
+    <WebStory>
+        {() => {
+            const serviceKind = ExternalServiceKind.PHABRICATOR
+            const targetID = `view-on-${serviceKind}`
+            const [open, setOpen] = useState(false)
+            useEffect(() => {
+                setTimeout(() => setOpen(true), 0)
+            }, [])
+            return (
+                <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                    <PopoverTrigger as={Button} id={targetID} aria-label="Phabricator">
+                        <Icon as={PhabricatorIcon} aria-hidden={true} />
+                    </PopoverTrigger>
+                    <InstallBrowserExtensionPopover
+                        url=""
+                        serviceKind={serviceKind}
+                        onClose={onClose}
+                        onReject={onReject}
+                        onInstall={onInstall}
+                    />
+                </Popover>
+            )
+        }}
+    </WebStory>
 )
 
-add(
-    'Bitbucket server',
-    () => (
-        <WebStory>
-            {() => {
-                const serviceKind = ExternalServiceKind.BITBUCKETSERVER
-                const targetID = `view-on-${serviceKind}`
-                const [open, setOpen] = useState(false)
-                useEffect(() => {
-                    setTimeout(() => setOpen(true), 0)
-                }, [])
-                return (
-                    <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} id={targetID} aria-label="Bitbucket">
-                            <Icon as={BitbucketIcon} aria-hidden={true} />
-                        </PopoverTrigger>
-                        <InstallBrowserExtensionPopover
-                            url=""
-                            serviceKind={serviceKind}
-                            onClose={onClose}
-                            onReject={onReject}
-                            onInstall={onInstall}
-                        />
-                    </Popover>
-                )
-            }}
-        </WebStory>
-    ),
-    {
-        chromatic: {
-            disable: true,
-        },
-    }
+Phabricator.parameters = {
+    chromatic: {
+        disable: true,
+    },
+}
+
+export const BitbucketServer: Story = () => (
+    <WebStory>
+        {() => {
+            const serviceKind = ExternalServiceKind.BITBUCKETSERVER
+            const targetID = `view-on-${serviceKind}`
+            const [open, setOpen] = useState(false)
+            useEffect(() => {
+                setTimeout(() => setOpen(true), 0)
+            }, [])
+            return (
+                <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                    <PopoverTrigger as={Button} id={targetID} aria-label="Bitbucket">
+                        <Icon as={BitbucketIcon} aria-hidden={true} />
+                    </PopoverTrigger>
+                    <InstallBrowserExtensionPopover
+                        url=""
+                        serviceKind={serviceKind}
+                        onClose={onClose}
+                        onReject={onReject}
+                        onInstall={onInstall}
+                    />
+                </Popover>
+            )
+        }}
+    </WebStory>
 )
+
+BitbucketServer.storyName = 'Bitbucket server'
+
+BitbucketServer.parameters = {
+    chromatic: {
+        disable: true,
+    },
+}

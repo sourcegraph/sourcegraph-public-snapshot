@@ -53,6 +53,7 @@ export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<Wor
             {connection && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
+                        centered={true}
                         noSummaryIfAllNodesVisible={true}
                         first={20}
                         connection={connection}

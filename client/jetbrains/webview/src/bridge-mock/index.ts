@@ -52,6 +52,8 @@ function handleRequest(
                     instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
+                    anonymousUserId: 'test',
+                    pluginVersion: '1.2.3',
                 })
             )
             break
@@ -63,19 +65,29 @@ function handleRequest(
             break
         }
 
+        case 'previewLoading': {
+            codeDetailsNode.innerHTML = 'Loading...'
+            onSuccessCallback('null')
+            break
+        }
+
         case 'preview': {
             previewContent = request.arguments
 
             const start =
-                previewContent.absoluteOffsetAndLengths.length > 0 ? previewContent.absoluteOffsetAndLengths[0][0] : 0
+                previewContent.absoluteOffsetAndLengths && previewContent.absoluteOffsetAndLengths.length > 0
+                    ? previewContent.absoluteOffsetAndLengths[0][0]
+                    : 0
             const length =
-                previewContent.absoluteOffsetAndLengths.length > 0 ? previewContent.absoluteOffsetAndLengths[0][1] : 0
+                previewContent.absoluteOffsetAndLengths && previewContent.absoluteOffsetAndLengths.length > 0
+                    ? previewContent.absoluteOffsetAndLengths[0][1]
+                    : 0
 
             let htmlContent: string
             if (previewContent.content === null) {
-                htmlContent = '(No preview available)'
+                htmlContent = 'No preview available'
             } else {
-                const decodedContent = atob(previewContent.content)
+                const decodedContent = atob(previewContent.content || '')
                 htmlContent = escapeHTML(decodedContent.slice(0, start))
                 htmlContent += `<span id="code-details-highlight">${escapeHTML(
                     decodedContent.slice(start, start + length)
@@ -102,7 +114,7 @@ function handleRequest(
             if (previewContent.fileName) {
                 alert(`Now the IDE would open ${previewContent.path} in the editor...`)
             } else {
-                window.open(instanceURL + previewContent.relativeUrl, '_blank')
+                window.open(instanceURL + (previewContent.relativeUrl || ''), '_blank')
             }
             onSuccessCallback('null')
             break

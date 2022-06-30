@@ -2,13 +2,16 @@
 package output
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	"github.com/charmbracelet/glamour"
 	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
+	"golang.org/x/term"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -71,6 +74,16 @@ type OutputOpts struct {
 	Verbose bool
 }
 
+type MarkdownStyleOpts func(style *glamouransi.StyleConfig)
+
+var MarkdownNoMargin MarkdownStyleOpts = func(style *glamouransi.StyleConfig) {
+	z := uint(0)
+	style.CodeBlock.Margin = &z
+	style.Document.Margin = &z
+	style.Document.BlockPrefix = ""
+	style.Document.BlockSuffix = ""
+}
+
 // newOutputPlatformQuirks provides a way for conditionally compiled code to
 // hook into NewOutput to perform any required setup.
 var newOutputPlatformQuirks func(o *Output) error
@@ -129,7 +142,12 @@ func (o *Output) SetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	o.verbose = true
+}
 
+func (o *Output) UnsetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.verbose = false
 }
 
 func (o *Output) Unlock() {
@@ -209,17 +227,50 @@ func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*Status
 	return newProgressWithStatusBars(bars, statusBars, o, opts)
 }
 
-// WriteMarkdown renders Markdown nicely, unless color is disabled.
-func (o *Output) WriteMarkdown(str string) error {
-	return o.writeMarkdown(str, false)
+type readWriter struct {
+	io.Reader
+	io.Writer
+}
+
+// PromptPassword tries to securely prompt a user for sensitive input.
+func (o *Output) PromptPassword(input io.Reader, prompt FancyLine) (string, error) {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+
+	// Render the prompt
+	prompt.Prompt = true
+	var promptText bytes.Buffer
+	prompt.write(&promptText, o.caps)
+
+	// If input is a file and terminal, read from it directly
+	if f, ok := input.(*os.File); ok {
+		fd := int(f.Fd())
+		if term.IsTerminal(fd) {
+			_, _ = o.w.Write(promptText.Bytes())
+			val, err := term.ReadPassword(fd)
+			_, _ = o.w.Write([]byte("\n")) // once we've read an input
+			return string(val), err
+		}
+	}
+
+	// Otherwise, create a terminal
+	t := term.NewTerminal(&readWriter{Reader: input, Writer: o.w}, "")
+	_ = t.SetSize(o.caps.Width, o.caps.Height)
+	return t.ReadPassword(promptText.String())
+}
+
+func MarkdownIndent(n uint) MarkdownStyleOpts {
+	return func(style *glamouransi.StyleConfig) {
+		style.Document.Indent = &n
+	}
 }
 
 // WriteCode renders the given code snippet as Markdown, unless color is disabled.
 func (o *Output) WriteCode(languageName, str string) error {
-	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
+	return o.WriteMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), MarkdownNoMargin)
 }
 
-func (o *Output) writeMarkdown(str string, noMargin bool) error {
+func (o *Output) WriteMarkdown(str string, opts ...MarkdownStyleOpts) error {
 	if !o.caps.Color {
 		o.Write(str)
 		return nil
@@ -232,12 +283,8 @@ func (o *Output) writeMarkdown(str string, noMargin bool) error {
 		style = glamour.LightStyleConfig
 	}
 
-	if noMargin {
-		z := uint(0)
-		style.CodeBlock.Margin = &z
-		style.Document.Margin = &z
-		style.Document.BlockPrefix = ""
-		style.Document.BlockSuffix = ""
+	for _, opt := range opts {
+		opt(&style)
 	}
 
 	r, err := glamour.NewTermRenderer(

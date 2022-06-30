@@ -9,28 +9,33 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sglog "github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -38,8 +43,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -83,11 +88,10 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
-	db := workerBaseStore.Handle().DB()
-	repoStore := database.NewDB(db).Repos()
+	repoStore := database.NewDBWith(observationContext.Logger, workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(repoStore),
+		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -98,9 +102,9 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
 		})
 
-	enq := globalBackfiller(workerBaseStore, dataSeriesStore, insightsStore)
+	enq := globalBackfiller(observationContext.Logger, workerBaseStore, dataSeriesStore, insightsStore)
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
-	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB())
+	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
 
 	defaultRateLimit := rate.Limit(20.0)
@@ -137,6 +141,8 @@ type ScopedBackfiller struct {
 	// frontend     database.DB
 	// codeinsights database.DB
 
+	logger sglog.Logger
+
 	workerBaseStore *basestore.Store
 	insightsStore   *store.Store
 
@@ -145,6 +151,7 @@ type ScopedBackfiller struct {
 
 func NewScopedBackfiller(workerBaseStore *basestore.Store, insightsStore *store.Store) *ScopedBackfiller {
 	return &ScopedBackfiller{
+		logger:          sglog.Scoped("ScopedBackfiller", ""),
 		insightsStore:   insightsStore,
 		workerBaseStore: workerBaseStore,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
@@ -171,7 +178,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		}
 	}
 
-	frontend := database.NewDB(s.workerBaseStore.Handle().DB())
+	frontend := database.NewDBWith(s.logger, s.workerBaseStore)
 	iterator, err := discovery.NewScopedRepoIterator(ctx, repositories, frontend.Repos())
 	if err != nil {
 		return errors.Wrap(err, "NewScopedRepoIterator")
@@ -222,22 +229,21 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
 	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
-	limiter := rate.NewLimiter(getRateLimit(), 1)
+	limiter := ratelimit.NewInstrumentedLimiter("HistoricalEnqueuer", rate.NewLimiter(getRateLimit(), 1))
 
 	return backfillAnalyzer{
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: gitFirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-			return git.Commits(ctx, frontend, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
 	}
 }
 
-func globalBackfiller(workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
-	db := workerBaseStore.Handle().DB()
-	dbConn := database.NewDB(db)
+func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
+	dbConn := database.NewDBWith(logger, workerBaseStore)
 
 	statistics := make(statistics)
 
@@ -348,7 +354,7 @@ type backfillAnalyzer struct {
 	gitFindRecentCommit func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 	statistics          statistics
 	frameFilter         compression.DataFrameFilter
-	limiter             *rate.Limiter
+	limiter             *ratelimit.InstrumentedLimiter
 	db                  database.DB
 }
 
@@ -425,8 +431,6 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 			return errors.Wrap(err, "RecordSeriesPoints Zero Value")
 		}
 		for _, job := range jobs {
-			j := *job
-			fmt.Printf("job: %v", j)
 			err := h.enqueueQueryRunnerJob(ctx, job)
 			if err != nil {
 				multi = errors.Append(multi, err)
@@ -441,7 +445,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 }
 
 func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, err error, softErr error) {
-	span, ctx := ot.StartSpanFromContext(ot.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
+	span, ctx := ot.StartSpanFromContext(policy.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
 	span.SetTag("repo_id", id)
 	defer func() {
 		if err != nil {
@@ -467,7 +471,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+		if errors.Is(err, discovery.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, nil, softErr // repository is empty
 		}
@@ -632,7 +636,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	}
 
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
-	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision)
+	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 	if err != nil {
 		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return
@@ -667,8 +671,4 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db da
 	}
 	c.cache[repoName] = entry
 	return entry, nil
-}
-
-func gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
-	return git.FirstEverCommit(ctx, db, repoName, authz.DefaultSubRepoPermsChecker)
 }

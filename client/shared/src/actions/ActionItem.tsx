@@ -263,6 +263,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                   outline: this.props.actionItemStyleProps?.actionItemOutline,
               }
             : {}
+        const disabled = this.isDisabled()
+
+        // TODO don't run action when disabled
 
         // Props shared between button and link
         const sharedProps = {
@@ -312,13 +315,15 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 data-tooltip={tooltipOrErrorMessage}
                 data-content={this.props.dataContent}
                 disabledClassName={this.props.inactiveClassName}
+                aria-disabled={disabled}
                 data-action-item-pressed={pressed}
                 className={classNames(
                     'test-action-item',
                     this.props.className,
                     showLoadingSpinner && styles.actionItemLoading,
                     pressed && [this.props.pressedClassName],
-                    buttonLinkProps.variant === 'link' && styles.actionItemLink
+                    buttonLinkProps.variant === 'link' && styles.actionItemLink,
+                    disabled && this.props.inactiveClassName
                 )}
                 pressed={pressed}
                 onSelect={this.runAction}
@@ -351,6 +356,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             return
         }
 
+        if (this.isDisabled()) {
+            return
+        }
+
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
 
@@ -380,6 +389,12 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             args: action.commandArguments,
         })
     }
+
+    private isDisabled = (): boolean | undefined =>
+        !this.props.active ||
+        ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+            this.state.actionOrError === LOADING) ||
+        this.props.disabledWhen
 }
 
 export function urlForClientCommandOpen(

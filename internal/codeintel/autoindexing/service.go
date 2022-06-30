@@ -2,6 +2,7 @@ package autoindexing
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
@@ -101,4 +102,32 @@ func (s *Service) UpdateIndexingConfiguration(ctx context.Context, repoID int) (
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
 	_ = ctx
 	return nil, errors.Newf("unimplemented: autoindexing.UpdateIndexingConfiguration")
+}
+
+func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.autoindexingStore.DeleteIndexesWithoutRepository(ctx, now)
+}
+
+func (s *Service) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.autoindexingStore.StaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.autoindexingStore.UpdateSourcedCommits(ctx, repositoryID, commit, now)
+}
+
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error) {
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.autoindexingStore.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
 }

@@ -5,6 +5,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -12,6 +14,7 @@ import (
 )
 
 type Store struct {
+	logger log.Logger
 	*basestore.Store
 	operations *operations
 }
@@ -25,6 +28,7 @@ func NewWithDB(db database.DB, observationContext *observation.Context) *Store {
 	)
 
 	return &Store{
+		logger:     log.Scoped("dbstore", ""),
 		Store:      basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext, operationsMetrics),
 	}
@@ -48,6 +52,7 @@ func (s *Store) transact(ctx context.Context) (*Store, error) {
 	}
 
 	return &Store{
+		logger:     s.logger,
 		Store:      txBase,
 		operations: s.operations,
 	}, nil

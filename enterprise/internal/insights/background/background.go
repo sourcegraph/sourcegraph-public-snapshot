@@ -2,15 +2,16 @@ package background
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/log"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -27,7 +28,7 @@ import (
 
 // GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
 // called from the worker service.
-func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
@@ -43,7 +44,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	}
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
-	featureFlagStore := database.NewDB(mainAppDB).FeatureFlags()
+	featureFlagStore := mainAppDB.FeatureFlags()
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
@@ -55,7 +56,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	}
 
 	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, database.NewDB(mainAppDB), insightsDB, time.Now, observationContext))
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB, time.Now, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
@@ -69,7 +70,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
 	if enableSync {
 		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
-		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, database.NewDB(mainAppDB), insightsDB))
+		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
 	routines = append(
 		routines,
@@ -83,14 +84,14 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 // GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
 // insights query runner. It is called from the worker service.
-func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
-	repoStore := database.NewDB(mainAppDB).Repos()
+	repoStore := mainAppDB.Repos()
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{

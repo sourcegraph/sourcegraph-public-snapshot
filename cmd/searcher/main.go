@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	sentrylib "github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -53,6 +53,7 @@ var (
 const port = "3181"
 
 func frontendDB() (database.DB, error) {
+	logger := log.Scoped("frontendDB", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -60,7 +61,7 @@ func frontendDB() (database.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return database.NewDB(sqlDB), nil
+	return database.NewDB(logger, sqlDB), nil
 }
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
@@ -130,8 +131,9 @@ func run(logger log.Logger) error {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
 
-	observationContext := &observation.Context{
-		Logger:     logger,
+	storeObservationContext := &observation.Context{
+		// Explicitly don't scope Store logger under the parent logger
+		Logger:     log.Scoped("Store", "searcher archives store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -164,8 +166,8 @@ func run(logger log.Logger) error {
 			FilterTar:          search.NewFilter,
 			Path:               filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes:  cacheSizeBytes,
-			Log:                logger,
-			ObservationContext: observationContext,
+			Log:                storeObservationContext.Logger,
+			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
 		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
@@ -235,15 +237,15 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
 	defer liblog.Sync()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
-	logger := log.Scoped("service", "the searcher service")
+	logger := log.Scoped("server", "the searcher service")
 
 	err := run(logger)
 	if err != nil {

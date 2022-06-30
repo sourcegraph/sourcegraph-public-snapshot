@@ -29,8 +29,11 @@ export interface Config {
     devtools: boolean
     headless: boolean
     keepBrowser: boolean
+    disableAppAssetsMocking: boolean
     bitbucketCloudUserBobAppPassword: string
     gitHubDotComToken: string
+    windowWidth: number
+    windowHeight: number
 }
 
 interface Field<T = string> {
@@ -210,6 +213,24 @@ const configFields: ConfigFields = {
         envVar: 'BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD',
         description:
             'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
+    },
+    disableAppAssetsMocking: {
+        envVar: 'DISABLE_APP_ASSETS_MOCKING',
+        parser: parseBool,
+        description: 'Disable index.html and client assets mocking.',
+        defaultValue: false,
+    },
+    windowWidth: {
+        envVar: 'WINDOW_WIDTH',
+        parser: parseInt,
+        description: 'Browser window width.',
+        defaultValue: 1280,
+    },
+    windowHeight: {
+        envVar: 'WINDOW_HEIGHT',
+        parser: parseInt,
+        description: 'Browser window height.',
+        defaultValue: 1024,
     },
 }
 

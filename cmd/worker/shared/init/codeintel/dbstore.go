@@ -21,8 +21,9 @@ func InitDBStore() (*dbstore.Store, error) {
 }
 
 var initDBStore = memo.NewMemoizedConstructor(func() (*dbstore.Store, error) {
+	logger := log.Scoped("store", "codeintel db store")
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("store", "codeintel db store"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -32,7 +33,7 @@ var initDBStore = memo.NewMemoizedConstructor(func() (*dbstore.Store, error) {
 		return nil, err
 	}
 
-	return dbstore.NewWithDB(database.NewDB(db), observationContext), nil
+	return dbstore.NewWithDB(database.NewDB(logger, db), observationContext), nil
 })
 
 // InitDependencySyncingStore initializes and returns a dependency index store.

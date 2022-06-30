@@ -6,6 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -15,10 +18,12 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	url1 := "https://icanhazcheezburger.com/slack_webhook"
 	url2 := "https://icanthazcheezburger.com/slack_webhook"
 
+	logger := logtest.Scoped(t)
+
 	t.Run("CreateThenGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -35,7 +40,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("CreateUpdateGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -56,7 +61,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("ErrorOnUpdateNonexistent", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 
@@ -67,7 +72,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("CreateDeleteGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -91,7 +96,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("CountCreateCount", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -111,7 +116,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 	t.Run("ListCreateList", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -134,5 +139,29 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		actions3, err := s.ListSlackWebhookActions(ctx, ListActionsOpts{MonitorID: &fixtures.monitor.ID, First: &first})
 		require.NoError(t, err)
 		require.Len(t, actions3, 1)
+	})
+
+	t.Run("Update permissions", func(t *testing.T) {
+		ctx, db, s := newTestStore(t)
+		uid1 := insertTestUser(ctx, t, db, "u1", false)
+		ctx1 := actor.WithActor(ctx, actor.FromUser(uid1))
+		uid2 := insertTestUser(ctx, t, db, "u2", false)
+		ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
+		fixtures := s.insertTestMonitor(ctx1, t)
+
+		wa, err := s.CreateSlackWebhookAction(ctx1, fixtures.monitor.ID, true, true, "https://true.com")
+		require.NoError(t, err)
+
+		// User1 can update it
+		_, err = s.UpdateSlackWebhookAction(ctx1, wa.ID, true, true, "https://false.com")
+		require.NoError(t, err)
+
+		// User2 cannot update it
+		_, err = s.UpdateSlackWebhookAction(ctx2, wa.ID, true, true, "https://truer.com")
+		require.Error(t, err)
+
+		wa, err = s.GetSlackWebhookAction(ctx1, wa.ID)
+		require.NoError(t, err)
+		require.Equal(t, wa.URL, "https://false.com")
 	})
 }

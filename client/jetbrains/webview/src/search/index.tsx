@@ -5,6 +5,7 @@ import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventS
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
+import { EventLogger } from '../telemetry/EventLogger'
 
 import { App } from './App'
 import { handleRequest } from './java-to-js-bridge'
@@ -25,8 +26,11 @@ let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
+let anonymousUserId: string
+let pluginVersion: string
 let initialSearch: Search | null = null
 let initialAuthenticatedUser: AuthenticatedUser | null
+let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
     const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
@@ -44,7 +48,7 @@ window.initializeSourcegraph = async () => {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
 
-    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+    telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
 
     renderReactApp()
 
@@ -66,6 +70,7 @@ export function renderReactApp(): void {
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
             initialAuthenticatedUser={initialAuthenticatedUser}
+            telemetryService={telemetryService}
         />,
         node
     )
@@ -75,6 +80,9 @@ export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
+    anonymousUserId = config.anonymousUserId || 'no-user-id'
+    pluginVersion = config.pluginVersion
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
 export function applyTheme(theme: Theme): void {
@@ -88,9 +96,20 @@ export function applyTheme(theme: Theme): void {
     const intelliJTheme = theme.intelliJTheme
     const root = document.querySelector(':root') as HTMLElement
 
-    // Button color (test)
     root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
+
+    root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
+
+    root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
+    root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
+
+    // There is no color for this in the serialized theme, so I have picked this option from the
+    // Dracula theme
+    root.style.setProperty('--code-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
+    root.style.setProperty('--body-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
 }
 
 function applyLastSearch(lastSearch: Search | null): void {
@@ -99,4 +118,12 @@ function applyLastSearch(lastSearch: Search | null): void {
 
 function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
     initialAuthenticatedUser = authenticatedUser
+}
+
+export function getAccessToken(): string | null {
+    return accessToken
+}
+
+export function getInstanceURL(): string {
+    return instanceURL
 }

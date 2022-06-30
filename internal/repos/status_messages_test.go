@@ -27,9 +27,12 @@ func TestStatusMessages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(logtest.Scoped(t), database.NewDB(db))
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStore(logtest.Scoped(t), db)
 
 	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
@@ -222,7 +225,6 @@ func TestStatusMessages(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
@@ -276,7 +278,7 @@ func TestStatusMessages(t *testing.T) {
 			}
 			t.Cleanup(func() {
 				q := sqlf.Sprintf(`DELETE FROM gitserver_repos`)
-				_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				require.NoError(t, err)
 			})
 
@@ -291,12 +293,12 @@ func TestStatusMessages(t *testing.T) {
 						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
 						VALUES (%s, %s, NULLIF(%s, 0), 'example.com')
 					`, svc.ID, repo.ID, svc.NamespaceUserID)
-					_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+					_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 					require.NoError(t, err)
 
 					t.Cleanup(func() {
 						q := sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID)
-						_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+						_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 						require.NoError(t, err)
 					})
 				}
@@ -309,7 +311,7 @@ func TestStatusMessages(t *testing.T) {
 				Now:    clock.Now,
 			}
 
-			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB := database.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer

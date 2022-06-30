@@ -267,6 +267,8 @@ type BitbucketServerConnection struct {
 	Password string `json:"password,omitempty"`
 	// Plugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
+	// ProjectKeys description: An array of project key strings that defines a collection of repositories related to their associated project keys
+	ProjectKeys []string `json:"projectKeys,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
 	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
@@ -839,7 +841,9 @@ type GitLabAuthProvider struct {
 	// ClientSecret description: The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
-	Type         string `json:"type"`
+	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
+	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
+	Type                      string `json:"type"`
 	// Url description: URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.
 	Url string `json:"url,omitempty"`
 }
@@ -1266,7 +1270,7 @@ type ObservabilityTracing struct {
 	Debug bool `json:"debug,omitempty"`
 	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)
 	Sampling string `json:"sampling,omitempty"`
-	// Type description: Determines what tracing provider to enable. Supports "datadog" or "opentracing"
+	// Type description: Determines what tracing provider to enable. Supports "opentracing" ("datadog" support is deprecated)
 	Type string `json:"type,omitempty"`
 }
 
@@ -1518,6 +1522,10 @@ type Responders struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
+	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Empty by default, which means no syncing happens. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
+	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
+	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
+	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
 	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
 }

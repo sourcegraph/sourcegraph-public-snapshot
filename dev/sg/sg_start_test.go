@@ -35,18 +35,19 @@ func TestStartCommandSet(t *testing.T) {
 		t.Errorf("failed to start: %s", err)
 	}
 
+	println(strings.Join(buf.Lines(), "\n"))
 	expectOutput(t, buf, []string{
 		"",
 		"💡 Installing 1 commands...",
 		"",
 		"test-cmd-1 installed",
-		"✅ 1/1 commands installed  █████████████████████████████████████████████████████",
+		"✅ 1/1 commands installed  ███████████████████████████████████████████████  100%",
 		"",
 		"✅ Everything installed! Booting up the system!",
 		"",
 		"Running test-cmd-1...",
-		"[test-cmd-1] horsegraph booted up. mount your horse.",
-		"[test-cmd-1] quitting. not horsing around anymore.",
+		"[     test-cmd-1] horsegraph booted up. mount your horse.",
+		"[     test-cmd-1] quitting. not horsing around anymore.",
 		"test-cmd-1 exited without error",
 	})
 }
