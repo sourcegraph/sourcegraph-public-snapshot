@@ -35,13 +35,7 @@ func TestStaleSourcedCommits(t *testing.T) {
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
 		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-	)
-	insertIndexes(t, db,
-		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
-		Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8)},
 	)
 
 	sourcedCommits, err := store.StaleSourcedCommits(context.Background(), time.Minute, 5, now)
@@ -49,20 +43,21 @@ func TestStaleSourcedCommits(t *testing.T) {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
 	expectedCommits := []shared.SourcedCommits{
-		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1), makeCommit(2), makeCommit(3)}},
+		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
+		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
 	}
 	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
 		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
 	}
 
 	// 120s away from next check (threshold is 60s)
-	if _, _, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now); err != nil {
+	if _, err := store.UpdateSourcedCommits(context.Background(), 52, makeCommit(7), now); err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
 	// 30s away from next check (threshold is 60s)
-	if _, _, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(2), now.Add(time.Second*90)); err != nil {
+	if _, err := store.UpdateSourcedCommits(context.Background(), 52, makeCommit(8), now.Add(time.Second*90)); err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
@@ -71,8 +66,9 @@ func TestStaleSourcedCommits(t *testing.T) {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
 	expectedCommits = []shared.SourcedCommits{
-		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1), makeCommit(3)}},
-		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5), makeCommit(6)}},
+		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
+		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
+		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7)}},
 	}
 	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
 		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
@@ -95,23 +91,13 @@ func TestUpdateSourcedCommits(t *testing.T) {
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
 	)
-	insertIndexes(t, db,
-		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
-		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
-		Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
-	)
 
-	uploadsUpdated, indexesUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
+	uploadsUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 	if uploadsUpdated != 2 {
 		t.Fatalf("unexpected uploads updated. want=%d have=%d", 2, uploadsUpdated)
-	}
-	if indexesUpdated != 1 {
-		t.Fatalf("unexpected indexes updated. want=%d have=%d", 1, indexesUpdated)
 	}
 
 	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5, 6)
@@ -128,21 +114,6 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedUploadStates, uploadStates); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
-	}
-
-	indexStates, err := getIndexStates(db, 1, 2, 3, 4, 5)
-	if err != nil {
-		t.Fatalf("unexpected error fetching index states: %s", err)
-	}
-	expectedIndexStates := map[int]string{
-		1: "completed",
-		2: "completed",
-		3: "completed",
-		4: "completed",
-		5: "completed",
-	}
-	if diff := cmp.Diff(expectedIndexStates, indexStates); diff != "" {
-		t.Errorf("unexpected index states (-want +got):\n%s", diff)
 	}
 }
 
@@ -163,15 +134,8 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
 		Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
 	)
-	insertIndexes(t, db,
-		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
-		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
-		Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
-	)
 
-	uploadsUpdated, uploadsDeleted, indexesDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour, now)
+	uploadsUpdated, uploadsDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
@@ -180,9 +144,6 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 	if uploadsDeleted != 2 {
 		t.Fatalf("unexpected number of uploads deleted. want=%d have=%d", 2, uploadsDeleted)
-	}
-	if indexesDeleted != 1 {
-		t.Fatalf("unexpected number of indexes deleted. want=%d have=%d", 1, indexesDeleted)
 	}
 
 	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5, 6, 7)
@@ -200,21 +161,6 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedUploadStates, uploadStates); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
-	}
-
-	indexStates, err := getIndexStates(db, 1, 2, 3, 4, 5)
-	if err != nil {
-		t.Fatalf("unexpected error fetching index states: %s", err)
-	}
-	expectedIndexStates := map[int]string{
-		1: "completed",
-		2: "completed",
-		// 3 was deleted
-		4: "completed",
-		5: "completed",
-	}
-	if diff := cmp.Diff(expectedIndexStates, indexStates); diff != "" {
-		t.Errorf("unexpected index states (-want +got):\n%s", diff)
 	}
 }
 
@@ -291,79 +237,6 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 	}
 }
 
-// insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...Index) {
-	for _, index := range indexes {
-		if index.Commit == "" {
-			index.Commit = makeCommit(index.ID)
-		}
-		if index.State == "" {
-			index.State = "completed"
-		}
-		if index.RepositoryID == 0 {
-			index.RepositoryID = 50
-		}
-		if index.DockerSteps == nil {
-			index.DockerSteps = []DockerStep{}
-		}
-		if index.IndexerArgs == nil {
-			index.IndexerArgs = []string{}
-		}
-		if index.LocalSteps == nil {
-			index.LocalSteps = []string{}
-		}
-
-		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
-
-		query := sqlf.Sprintf(`
-			INSERT INTO lsif_indexes (
-				id,
-				commit,
-				queued_at,
-				state,
-				failure_message,
-				started_at,
-				finished_at,
-				process_after,
-				num_resets,
-				num_failures,
-				repository_id,
-				docker_steps,
-				root,
-				indexer,
-				indexer_args,
-				outfile,
-				execution_logs,
-				local_steps
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-		`,
-			index.ID,
-			index.Commit,
-			index.QueuedAt,
-			index.State,
-			index.FailureMessage,
-			index.StartedAt,
-			index.FinishedAt,
-			index.ProcessAfter,
-			index.NumResets,
-			index.NumFailures,
-			index.RepositoryID,
-			pq.Array(index.DockerSteps),
-			index.Root,
-			index.Indexer,
-			pq.Array(index.IndexerArgs),
-			index.Outfile,
-			pq.Array(index.ExecutionLogs),
-			pq.Array(index.LocalSteps),
-		)
-
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting index: %s", err)
-		}
-	}
-}
-
 // insertRepo creates a repository record with the given id and name. If there is already a repository
 // with the given identifier, nothing happens
 func insertRepo(t testing.TB, db database.DB, id int, name string) {
@@ -399,19 +272,6 @@ func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 
 	q := sqlf.Sprintf(
 		`SELECT id, state FROM lsif_uploads WHERE id IN (%s)`,
-		sqlf.Join(intsToQueries(ids), ", "),
-	)
-
-	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
-}
-
-func getIndexStates(db database.DB, ids ...int) (map[int]string, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	q := sqlf.Sprintf(
-		`SELECT id, state FROM lsif_indexes WHERE id IN (%s)`,
 		sqlf.Join(intsToQueries(ids), ", "),
 	)
 

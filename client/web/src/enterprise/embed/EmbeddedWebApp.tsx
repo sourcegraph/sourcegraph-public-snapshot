@@ -1,13 +1,16 @@
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect, useMemo } from 'react'
 
-import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
+import { BrowserRouter, Route, RouteComponentProps, Switch, useHistory } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
+import { GlobalContributions } from '../../contributions'
+import { createPlatformContext } from '../../platform/context'
 import { ThemePreference } from '../../stores/themeState'
 import { useTheme } from '../../theme'
 
@@ -48,6 +51,10 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
         document.documentElement.classList.toggle('theme-dark', !isLightTheme)
     }, [isLightTheme])
 
+    const platformContext = useMemo(() => createPlatformContext(), [])
+    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
+    const history = useHistory()
+
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.
     // It is crucial not to embed any components that an attacker could hijack and use to leak personal information (e.g., the sign-in page).
@@ -78,6 +85,8 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                             authenticatedUser={null}
                                             isLightTheme={isLightTheme}
                                             settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                            platformContext={platformContext}
+                                            extensionsController={extensionsController}
                                         />
                                     )}
                                 />
@@ -91,6 +100,11 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                 />
                             </Switch>
                         </Suspense>
+                        <GlobalContributions
+                            extensionsController={extensionsController}
+                            platformContext={platformContext}
+                            history={history}
+                        />
                     </div>
                 </WildcardThemeContext.Provider>
             </CompatRouter>

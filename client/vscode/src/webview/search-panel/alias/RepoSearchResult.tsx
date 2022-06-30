@@ -15,12 +15,16 @@ export interface RepoSearchResultProps {
     repoName: string
     onSelect: () => void
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
     result,
     onSelect,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -109,6 +113,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     return (
         <ResultContainer
+            as={as}
+            index={index}
             icon={SourceRepositoryIcon}
             collapsible={false}
             defaultExpanded={true}

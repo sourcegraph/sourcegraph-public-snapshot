@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": true,
@@ -69,7 +69,7 @@
         {
           "id": "sourcegraph-view",
           "title": "Sourcegraph",
-          "icon": "images/logo.svg"
+          "icon": "images/logomark_dark.svg"
         }
       ]
     },

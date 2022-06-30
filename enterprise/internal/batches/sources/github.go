@@ -70,7 +70,7 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 }
 
 func (s GithubSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+	return GitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

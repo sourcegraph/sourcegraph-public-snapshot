@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
+import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -144,7 +144,13 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                         ))}
                     </ul>
                     <Text className={styles.lastItem}>
-                        <Link to="https://github.com/sourcegraph/batch-change-examples">View more examples</Link>
+                        <Link
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            to="https://github.com/sourcegraph/batch-change-examples"
+                        >
+                            View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                        </Link>
                     </Text>
                 </animated.div>
             </animated.div>

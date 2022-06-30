@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -16,6 +17,10 @@ import (
 // Store provides the interface for autoindexing storage.
 type Store interface {
 	List(ctx context.Context, opts ListOpts) (indexJobs []shared.IndexJob, err error)
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error)
 }
 
 // store manages the autoindexing store.

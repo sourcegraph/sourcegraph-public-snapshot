@@ -1,23 +1,30 @@
 import { useState } from 'react'
 
 import { select } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { TabBar, TabsConfig, TabKey } from './TabBar'
 
-const { add } = storiesOf('web/batches/batch-spec/TabBar', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/batch-spec/TabBar',
+    decorators: [decorator],
+}
+
+export default config
 
 const CREATE_TABS: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
-add('creating a new batch change', () => (
+export const CreateNewBatchChange: Story = () => (
     <WebStory>{props => <TabBar {...props} activeTabKey="configuration" tabsConfig={CREATE_TABS} />}</WebStory>
-))
+)
 
-add('editing unexecuted batch spec', () => {
+CreateNewBatchChange.storyName = 'creating a new batch change'
+
+export const EditUnexecutedBatchSpec: Story = () => {
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
 
     const tabsConfig: TabsConfig[] = [
@@ -40,7 +47,9 @@ add('editing unexecuted batch spec', () => {
     ]
 
     return <WebStory>{props => <TabBar {...props} tabsConfig={tabsConfig} activeTabKey={activeTabKey} />}</WebStory>
-})
+}
+
+EditUnexecutedBatchSpec.storyName = 'editing unexecuted batch spec'
 
 const EXECUTING_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
@@ -48,7 +57,7 @@ const EXECUTING_TABS: TabsConfig[] = [
     { key: 'execution', isEnabled: true, handler: { type: 'link' } },
 ]
 
-add('executing a batch spec', () => (
+export const ExecuteBatchSpec: Story = () => (
     <WebStory>
         {props => (
             <TabBar
@@ -58,7 +67,9 @@ add('executing a batch spec', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ExecuteBatchSpec.storyName = 'executing a batch spec'
 
 const PREVIEWING_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
@@ -67,7 +78,7 @@ const PREVIEWING_TABS: TabsConfig[] = [
     { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
-add('previewing an execution result', () => (
+export const PreviewExecutionResult: Story = () => (
     <WebStory>
         {props => (
             <TabBar
@@ -77,7 +88,9 @@ add('previewing an execution result', () => (
             />
         )}
     </WebStory>
-))
+)
+
+PreviewExecutionResult.storyName = 'previewing an execution result'
 
 const LOCAL_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
@@ -86,7 +99,7 @@ const LOCAL_TABS: TabsConfig[] = [
     { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
-add('for a locally-executed spec', () => (
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <TabBar
@@ -96,4 +109,6 @@ add('for a locally-executed spec', () => (
             />
         )}
     </WebStory>
-))
+)
+
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

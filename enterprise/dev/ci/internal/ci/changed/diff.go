@@ -103,9 +103,14 @@ func ParseDiff(files []string) (diff Diff) {
 			diff |= Docs
 		}
 
-		// Affects Dockerfiles
+		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= Dockerfiles
+			diff |= (Dockerfiles | DockerImages)
+		}
+		// Affects anything in docker-images directories (which implies image build
+		// scripts and/or resources are affected)
+		if strings.HasPrefix(p, "docker-images/") {
+			diff |= DockerImages
 		}
 
 		// Affects executor docker registry mirror
@@ -131,11 +136,6 @@ func ParseDiff(files []string) (diff Diff) {
 		// Affects scripts
 		if strings.HasSuffix(p, ".sh") {
 			diff |= Shell
-		}
-
-		// Affects docker-images directories
-		if strings.HasPrefix(p, "docker-images/") {
-			diff |= DockerImages
 		}
 	}
 	return

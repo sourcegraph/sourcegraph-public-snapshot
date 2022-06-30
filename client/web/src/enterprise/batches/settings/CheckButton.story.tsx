@@ -1,11 +1,11 @@
 import { action } from '@storybook/addon-actions'
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { CheckButton } from './CheckButton'
 
-const config = {
+const config: Meta = {
     title: 'web/batches/settings/CheckButton',
 }
 

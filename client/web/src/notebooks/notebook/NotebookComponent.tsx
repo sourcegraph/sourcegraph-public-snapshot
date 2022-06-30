@@ -512,7 +512,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
         return (
             <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
-                <div className="pb-1">
+                <div className="pb-1 px-3">
                     <Button
                         className="mr-2"
                         variant="primary"

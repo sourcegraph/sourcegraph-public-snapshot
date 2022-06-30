@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react'
 
 import {
-    mdiStar,
     mdiCheckCircle,
     mdiTimerSand,
     mdiCancel,
     mdiAlertCircle,
     mdiChevronDown,
     mdiChevronRight,
+    mdiStar,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
@@ -58,18 +58,18 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             <div className="px-2 pb-1">
                 <H3 className="pr-2">
-                    {currentSpecID === node.id && (
-                        <>
-                            <Icon
-                                className="text-warning"
-                                data-tooltip="Currently applied spec"
-                                aria-label="Currently applied spec"
-                                svgPath={mdiStar}
-                            />{' '}
-                        </>
-                    )}
                     {currentSpecID && (
                         <Link to={`${node.namespace.url}/batch-changes/${node.description.name}/executions/${node.id}`}>
+                            {currentSpecID === node.id && (
+                                <>
+                                    <Icon
+                                        className="text-warning"
+                                        data-tooltip="Currently applied spec"
+                                        aria-label="Currently applied spec"
+                                        svgPath={mdiStar}
+                                    />{' '}
+                                </>
+                            )}
                             Executed by <strong>{node.creator?.username}</strong>{' '}
                             <Timestamp date={node.createdAt} now={now} />
                         </Link>

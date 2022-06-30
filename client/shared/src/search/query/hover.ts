@@ -60,7 +60,7 @@ const toRegexpHover = (token: MetaRegexp): string => {
         case MetaRegexpKind.CharacterClassMember:
             return `**Character**. This character class matches the character \`${token.value}\`.`
         case MetaRegexpKind.Delimited:
-            return '**Group**. Groups together multiple expressions to match.'
+            return '**Delimiter**. Delimits regular expressions to match.'
         case MetaRegexpKind.EscapedCharacter: {
             const escapable = '~`!@#$%^&*()[]{}<>,.?/\\|=+-_'
             let description = escapable.includes(token.value[1])

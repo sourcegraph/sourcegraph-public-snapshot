@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
@@ -7,9 +7,14 @@ import { WebStory } from '../../../components/WebStory'
 
 import { WebhookAlert } from './WebhookAlert'
 
-const { add } = storiesOf('web/batches/details/WebhookAlert', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/details/WebhookAlert',
+    decorators: [decorator],
+}
+
+export default config
 
 const id = new Date().toString()
 
@@ -45,17 +50,25 @@ const batchChange = (totalCount: number, hasNextPage: boolean) => ({
     },
 })
 
-add('Site admin', () => (
+export const SiteAdmin: Story = () => (
     <WebStory>{() => <WebhookAlert batchChange={batchChange(3, false)} isSiteAdmin={true} />}</WebStory>
-))
+)
 
-add('Regular user', () => <WebStory>{() => <WebhookAlert batchChange={batchChange(3, false)} />}</WebStory>)
+SiteAdmin.storyName = 'Site admin'
 
-add('Regular user with more than three code hosts', () => (
+export const RegularUser: Story = () => (
+    <WebStory>{() => <WebhookAlert batchChange={batchChange(3, false)} />}</WebStory>
+)
+
+RegularUser.storyName = 'Regular user'
+
+export const RegularUserWithMoreThanThreeCodeHosts: Story = () => (
     <WebStory>{() => <WebhookAlert batchChange={batchChange(4, true)} />}</WebStory>
-))
+)
 
-add('All code hosts have webhooks', () => (
+RegularUserWithMoreThanThreeCodeHosts.storyName = 'Regular user with more than three code hosts'
+
+export const AllCodeHostsHaveWebhooks: Story = () => (
     <WebStory>
         {() => (
             <WebhookAlert
@@ -73,4 +86,6 @@ add('All code hosts have webhooks', () => (
             />
         )}
     </WebStory>
-))
+)
+
+AllCodeHostsHaveWebhooks.storyName = 'All code hosts have webhooks'

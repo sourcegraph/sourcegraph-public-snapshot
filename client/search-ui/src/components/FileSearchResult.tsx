@@ -80,6 +80,9 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
 
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+
+    as?: React.ElementType
+    index: number
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
@@ -227,6 +230,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
         if (props.showAllMatches) {
             containerProps = {
+                index: props.index,
                 collapsible: false,
                 defaultExpanded: props.expanded,
                 icon: props.icon,
@@ -246,6 +250,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         } else {
             const hideCount = matchCount - limitedMatchCount
             containerProps = {
+                index: props.index,
                 collapsible: limitedMatchCount < matchCount,
                 defaultExpanded: props.expanded,
                 icon: props.icon,
@@ -267,6 +272,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         }
     } else if (props.showAllMatches) {
         containerProps = {
+            index: props.index,
             collapsible: false,
             defaultExpanded: props.expanded,
             icon: props.icon,
@@ -285,6 +291,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
         containerProps = {
+            index: props.index,
             collapsible: items.length > collapsedMatchCount,
             defaultExpanded: props.expanded,
             icon: props.icon,
@@ -302,6 +309,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             onResultClicked: props.onSelect,
             className: props.containerClassName,
             resultType: result.type,
+            as: props.as,
         }
     }
 

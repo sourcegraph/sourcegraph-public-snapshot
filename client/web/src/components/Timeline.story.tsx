@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -8,13 +8,20 @@ import { Icon, Text } from '@sourcegraph/wildcard'
 import { Timeline } from './Timeline'
 import { WebStory } from './WebStory'
 
-const { add } = storiesOf('web/Timeline', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className="container mt-3" style={{ maxWidth: 600 }}>
         {story()}
     </div>
-))
+)
 
-add('Basic', () => (
+const config: Meta = {
+    title: 'web/Timeline',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Basic: Story = () => (
     <WebStory>
         {() => (
             <Timeline
@@ -54,9 +61,9 @@ add('Basic', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Details', () => (
+export const Details: Story = () => (
     <WebStory>
         {() => (
             <Timeline
@@ -93,9 +100,9 @@ add('Details', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Details, without durations', () => (
+export const DetailsWithoutDurations: Story = () => (
     <WebStory>
         {() => (
             <Timeline
@@ -126,4 +133,6 @@ add('Details, without durations', () => (
             />
         )}
     </WebStory>
-))
+)
+
+DetailsWithoutDurations.storyName = 'Details, without durations'

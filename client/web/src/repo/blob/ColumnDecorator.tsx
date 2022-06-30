@@ -89,11 +89,17 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                             wrapper.classList.add(styles.wrapper)
                             cell.append(wrapper)
 
-                            // add extra spacers to first and last rows
-                            if (index === 0 || index === table.rows.length - 1) {
+                            // add extra spacers to first and last rows (if table has only one row add both spacers)
+                            if (index === 0) {
                                 const spacer = document.createElement('div')
-                                spacer.classList.add(index === 0 ? 'top-spacer' : 'bottom-spacer')
-                                cell[index === 0 ? 'prepend' : 'append'](spacer)
+                                spacer.classList.add('top-spacer')
+                                cell.prepend(spacer)
+                            }
+
+                            if (index === table.rows.length - 1) {
+                                const spacer = document.createElement('div')
+                                spacer.classList.add('bottom-spacer')
+                                cell.append(spacer)
                             }
                         }
 
