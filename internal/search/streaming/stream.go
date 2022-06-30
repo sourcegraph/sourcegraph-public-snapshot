@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -75,45 +74,6 @@ func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, 
 	stream := &LimitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
 	return ctx, stream, cancel
-}
-
-// WithSelect returns a child Stream of parent that runs the select operation
-// on each event, deduplicating where possible.
-func WithSelect(parent Sender, s filter.SelectPath) Sender {
-	var mux sync.Mutex
-	dedup := result.NewDeduper()
-
-	return StreamFunc(func(e SearchEvent) {
-		mux.Lock()
-
-		selected := e.Results[:0]
-		for _, match := range e.Results {
-			current := match.Select(s)
-			if current == nil {
-				continue
-			}
-
-			// If the selected file is a file match send it unconditionally
-			// to ensure we get all line matches for a file. One exception:
-			// if we are only interested in the path (via `select:file`),
-			// we only send the result once.
-			seen := dedup.Seen(current)
-			fm, isFileMatch := current.(*result.FileMatch)
-			if seen && !isFileMatch {
-				continue
-			}
-			if seen && isFileMatch && fm.IsPathMatch() {
-				continue
-			}
-
-			dedup.Add(current)
-			selected = append(selected, current)
-		}
-		e.Results = selected
-
-		mux.Unlock()
-		parent.Send(e)
-	})
 }
 
 type StreamFunc func(SearchEvent)
