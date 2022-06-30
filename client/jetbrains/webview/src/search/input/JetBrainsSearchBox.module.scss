@@ -43,7 +43,6 @@
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         margin: 2px;
         border: 1px solid transparent;
-        border-radius: var(--border-radius);
         background-color: var(--jb-input-bg);
 
         &__icon {
@@ -93,6 +92,10 @@
                 box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
             }
         }
+
+        > div {
+            border-radius: 0;
+        }
     }
 
     &__context-menu {
@@ -124,6 +127,7 @@
 
         input {
             background-color: var(--jb-input-bg);
+            border-radius: 0;
 
             &:focus {
                 border-color: var(--jb-focus-border-color);
