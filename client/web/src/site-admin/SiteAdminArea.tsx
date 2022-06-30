@@ -100,7 +100,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/batch-changes',
         },
         {
-            label: 'Notebooks (soon)',
+            label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
         },
         {
@@ -143,7 +143,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsNotebooksPage'),
         exact: true,
     },
     {

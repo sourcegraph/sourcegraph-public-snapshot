@@ -5879,8 +5879,15 @@ type AnalyticsSearchResult {
     fileOpens: AnalyticsStatItem!
 }
 
+type AnalyticsNotebooksResults {
+    creations: AnalyticsStatItem!
+    views: AnalyticsStatItem!
+    blockRuns: AnalyticsStatItem!
+}
+
 type Analytics {
     search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
 }
 
 """

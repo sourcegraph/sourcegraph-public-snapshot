@@ -24,7 +24,7 @@ type siteAnalyticsStatItemResolver struct {
 }
 
 func (r *siteAnalyticsStatItemResolver) Nodes(ctx context.Context) ([]*adminanalytics.AnalyticsNode, error) {
-	nodes, err := r.fetcher.GetNodes(ctx, true)
+	nodes, err := r.fetcher.GetNodes(ctx, false)
 
 	if err != nil {
 		return nil, err
@@ -34,13 +34,15 @@ func (r *siteAnalyticsStatItemResolver) Nodes(ctx context.Context) ([]*adminanal
 }
 
 func (r *siteAnalyticsStatItemResolver) Summary(ctx context.Context) (*adminanalytics.AnalyticsSummary, error) {
-	summary, err := r.fetcher.GetSummary(ctx, true)
+	summary, err := r.fetcher.GetSummary(ctx, false)
 	if err != nil {
 		return nil, err
 	}
 
 	return summary, nil
 }
+
+/* Code Search Analytics */
 
 func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
 	DateRange *string
@@ -74,6 +76,48 @@ func (r *siteAnalyticsSearchResolver) FileViews(ctx context.Context) (*siteAnaly
 
 func (r *siteAnalyticsSearchResolver) FileOpens(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
 	fetcher, err := r.store.FileOpens()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
+/* Notebooks Analytics */
+
+func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
+	DateRange *string
+}) (*siteAnalyticsNotebooksResolver, error) {
+	return &siteAnalyticsNotebooksResolver{store: &adminanalytics.Notebooks{DateRange: *args.DateRange, DB: r.db}}, nil
+}
+
+type siteAnalyticsNotebooksResolver struct {
+	store *adminanalytics.Notebooks
+}
+
+func (r *siteAnalyticsNotebooksResolver) Creations(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.Creations()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
+func (r *siteAnalyticsNotebooksResolver) Views(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.Views()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
+func (r *siteAnalyticsNotebooksResolver) BlockRuns(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.BlockRuns()
 
 	if err != nil {
 		return nil, err

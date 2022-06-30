@@ -34,3 +34,27 @@ export const SEARCH_STATISTICS = gql`
     }
     ${analyticsStatItemFragment}
 `
+
+export const NOTEBOOKS_STATISTICS = gql`
+    query NotebooksStatistics($dateRange: AnalyticsDateRange!) {
+        site {
+            analytics {
+                notebooks(dateRange: $dateRange) {
+                    creations {
+                        ...AnalyticsStatItemFragment
+                    }
+                    views {
+                        ...AnalyticsStatItemFragment
+                    }
+                    blockRuns {
+                        summary {
+                            totalCount
+                            totalUniqueUsers
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ${analyticsStatItemFragment}
+`

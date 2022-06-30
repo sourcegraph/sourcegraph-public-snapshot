@@ -23,10 +23,16 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LineChart, ParentSize, Series } from '../../charts'
-import { AnalyticsDateRange, SearchStatisticsResult, SearchStatisticsVariables } from '../../graphql-operations'
+import {
+    AnalyticsDateRange,
+    SearchStatisticsResult,
+    SearchStatisticsVariables,
+    NotebooksStatisticsResult,
+    NotebooksStatisticsVariables,
+} from '../../graphql-operations'
 
 import { formatNumber } from './format-number'
-import { SEARCH_STATISTICS } from './queries'
+import { SEARCH_STATISTICS, NOTEBOOKS_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
@@ -368,6 +374,183 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     />
                 </div>
                 {stats && <Chart className="ml-4" labelX="Time" stats={stats} />}
+                <H3 className="my-3">Time saved</H3>
+                {timeSavedStats?.map(timeSavedStatItem => (
+                    <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
+                ))}
+            </Card>
+        </>
+    )
+}
+
+export const AnalyticsOverview: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    return (
+        <>
+            <H2 className="my-4 d-flex align-items-center">
+                <Icon
+                    className="mr-1"
+                    color="var(--link-color)"
+                    svgPath={mdiChartLineVariant}
+                    size="sm"
+                    aria-label="Search Statistics"
+                />
+                Statistics / Overview
+            </H2>
+
+            <Card className="p-2 position-relative">
+                <div className="d-flex justify-content-end">
+                    <DateRangeSelector dateRange={dateRange} onDateRangeChange={setDateRange} />
+                </div>
+                <ChartLegendList
+                    className="mb-3 mx-auto"
+                    items={[
+                        {
+                            description: 'Active Users',
+                            color: 'var(--body-color)',
+                            value: 200,
+                        },
+                        {
+                            description: 'Events',
+                            color: 'var(--body-color)',
+                            value: 100000,
+                        },
+
+                        {
+                            description: 'Hours saved',
+                            color: 'var(--purple)',
+                            value: 1200,
+                        },
+                    ]}
+                />
+                {/* // TODO: event type table */}
+                <Grid columnCount={4} spacing={1} className="mx-6">
+                    <Text>EVENT TYPE</Text>
+                    <Text>COUNT</Text>
+                    <Text>AVG MIN PER</Text>
+                    <Text>HOURS</Text>
+
+                    <Text>Search</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+
+                    <Text>Code intel</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+
+                    <Text>Code insights</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+
+                    <Text>Batch changes</Text>
+                    <Text>13.k</Text>
+                    <Text>5</Text>
+                    <Text>110</Text>
+                </Grid>
+            </Card>
+        </>
+    )
+}
+
+export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+    const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const { data, error, loading } = useQuery<NotebooksStatisticsResult, NotebooksStatisticsVariables>(
+        NOTEBOOKS_STATISTICS,
+        {
+            variables: {
+                dateRange,
+            },
+        }
+    )
+    const [stats, timeSavedStats] = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { creations, views, blockRuns } = data.site.analytics.notebooks
+        const stats = [
+            {
+                ...creations.summary,
+                totalCount: creations.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                name: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
+                color: 'var(--cyan)',
+                series:  fillWithEmptyDatum(creations.nodes.map(node => ({
+                    date: new Date(node.date),
+                    value: node[eventAggregation],
+                })), dateRange),
+            },
+            {
+                ...views.summary,
+                totalCount: views.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                name: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
+                color: 'var(--orange)',
+                series:  fillWithEmptyDatum(views.nodes.map(node => ({
+                    date: new Date(node.date),
+                    value: node[eventAggregation],
+                })), dateRange),
+            },
+            {
+                ...blockRuns.summary,
+                totalCount: blockRuns.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                name: eventAggregation === 'count' ? 'Block runs' : 'Users ran blocks',
+                color: 'var(--body-color)',
+                legendPosition: 'right',
+            },
+        ]
+        const timeSavedStats = [
+            {
+                label: 'Views',
+                color: 'var(--body-color)',
+                minPerItem: 5,
+                description:
+                    'Notebooks reduce the time it takes to create living documentation and share it. Each notebook view accounts for time saved by both creators and consumers of notebooks.',
+                value: views.summary.totalCount,
+            },
+        ]
+        return [stats, timeSavedStats]
+    }, [data, dateRange, eventAggregation])
+
+    if (error) {
+        return <div>Something went wrong! :( Please, try again later. </div>
+    }
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    return (
+        <>
+            <H2 className="mb-4 d-flex align-items-center">
+                <Icon
+                    className="mr-1"
+                    color="var(--link-color)"
+                    svgPath={mdiChartLineVariant}
+                    size="sm"
+                    aria-label="Notebooks Statistics"
+                />
+                Analytics / Notebooks
+            </H2>
+
+            <Card className="p-2 position-relative">
+                <div className="d-flex justify-content-end align-items-stretch">
+                    <DateRangeSelector dateRange={dateRange} onDateRangeChange={setDateRange} className="mr-2" />
+                    <ToggleSelect<typeof eventAggregation>
+                        selected={eventAggregation}
+                        onChange={setEventAggregation}
+                        items={[
+                            { tooltip: 'total # of actions triggered', label: 'Totals', value: 'count' },
+                            {
+                                tooltip: 'unique # of users triggered',
+                                label: 'Uniques',
+                                value: 'uniqueUsers',
+                            },
+                        ]}
+                    />
+                </div>
+                {stats && <Chart className="ml-4" stats={stats} labelX="Time" />}
                 <H3 className="my-3">Time saved</H3>
                 {timeSavedStats?.map(timeSavedStatItem => (
                     <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
