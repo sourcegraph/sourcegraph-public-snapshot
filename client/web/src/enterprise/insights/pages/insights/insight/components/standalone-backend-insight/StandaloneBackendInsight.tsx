@@ -73,16 +73,14 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const [filterVisualMode, setFilterVisualMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(insight.seriesDisplayOptions)
-
     const filterInput: InsightViewFiltersInput = {
         includeRepoRegex: debouncedFilters.includeRepoRegexp,
         excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
         searchContexts: [debouncedFilters.context],
     }
     const displayInput: SeriesDisplayOptionsInput = {
-        limit: seriesDisplayOptions?.limit,
-        sortOptions: seriesDisplayOptions?.sortOptions,
+        limit: insight.seriesDisplayOptions?.limit,
+        sortOptions: insight.seriesDisplayOptions?.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(

@@ -39,7 +39,18 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: 20,
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     seriesDisplayOptions: {},
@@ -231,7 +242,18 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         { id: '003', name: 'shared', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: 20,
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
@@ -250,7 +272,18 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         { id: '003', name: 'useMutation | useQuery | useConnection hooks', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: 20,
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
@@ -266,7 +299,18 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     step: { weeks: 2 },
     repositories: [],
     query: '',
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: 20,
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     dashboards: [],
