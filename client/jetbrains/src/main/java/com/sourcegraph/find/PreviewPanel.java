@@ -24,10 +24,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
-    private final String NO_PREVIEW_AVAILABLE_TEXT = "No preview available";
-    @SuppressWarnings("FieldCanBeLocal") // It's nicer to have these here at the top
-    private final String LOADING_TEXT = "Loading...";
-
     private final Project project;
     private JComponent editorComponent;
     private PreviewContent previewContent;
@@ -37,7 +33,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         super(new BorderLayout());
 
         this.project = project;
-        this.getEmptyText().setText(NO_PREVIEW_AVAILABLE_TEXT);
+        setState(State.NO_PREVIEW_AVAILABLE);
     }
 
     @Nullable
@@ -95,9 +91,9 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             editorComponent.setVisible(state == State.PREVIEW_AVAILABLE);
         }
         if (state == State.LOADING) {
-            getEmptyText().setText(LOADING_TEXT);
+            getEmptyText().setText("Loading...");
         } else if (state == State.NO_PREVIEW_AVAILABLE) {
-            getEmptyText().setText(NO_PREVIEW_AVAILABLE_TEXT);
+            getEmptyText().setText("No preview available");
         }
     }
 
