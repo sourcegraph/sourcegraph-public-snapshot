@@ -15,24 +15,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// A DependenciesSource yields dependency repositories from a package (dependencies) host connection.
-type DependenciesSource struct {
+// A PackagesSource yields dependency repositories from a package (dependencies) host connection.
+type PackagesSource struct {
 	svc        *types.ExternalService
 	configDeps []string
 	scheme     string
 	depsSvc    *dependencies.Service
-	src        dependenciesSource
+	src        packagesSource
 }
 
-type dependenciesSource interface {
-	Get(ctx context.Context, name, version string) (reposource.PackageDependency, error)
-	ParseDependency(dep string) (reposource.PackageDependency, error)
-	ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error)
+type packagesSource interface {
+	Get(ctx context.Context, name, version string) (reposource.PackageVersion, error)
+	ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error)
+	ParsePackageFromRepoName(repoName string) (reposource.Package, error)
 }
 
-var _ Source = &DependenciesSource{}
+var _ Source = &PackagesSource{}
 
-func (s *DependenciesSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	deps, err := s.configDependencies(s.configDeps)
 	if err != nil {
 		results <- SourceResult{Source: s, Err: err}
@@ -120,8 +120,8 @@ func (s *DependenciesSource) ListRepos(ctx context.Context, results chan SourceR
 	}
 }
 
-func (s *DependenciesSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
-	dep, err := s.src.ParseDependencyFromRepoName(name)
+func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.Repo, error) {
+	dep, err := s.src.ParsePackageFromRepoName(repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (s *DependenciesSource) GetRepo(ctx context.Context, name string) (*types.R
 	return s.makeRepo(dep), nil
 }
 
-func (s *DependenciesSource) makeRepo(dep reposource.PackageDependency) *types.Repo {
+func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 	urn := s.svc.URN()
 	repoName := dep.RepoName()
 	return &types.Repo{
@@ -157,15 +157,15 @@ func (s *DependenciesSource) makeRepo(dep reposource.PackageDependency) *types.R
 	}
 }
 
-func metadata(dep reposource.PackageDependency) any {
+func metadata(dep reposource.Package) any {
 	switch d := dep.(type) {
-	case *reposource.MavenDependency:
+	case *reposource.MavenPackageVersion:
 		return &reposource.MavenMetadata{
 			Module: d.MavenModule,
 		}
-	case *reposource.NpmDependency:
+	case *reposource.NpmPackageVersion:
 		return &reposource.NpmMetadata{
-			Package: d.NpmPackage,
+			Package: d.NpmPackageName,
 		}
 	default:
 		return &struct{}{}
@@ -173,17 +173,17 @@ func metadata(dep reposource.PackageDependency) any {
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *DependenciesSource) ExternalServices() types.ExternalServices {
+func (s *PackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *DependenciesSource) SetDependenciesService(depsSvc *dependencies.Service) {
+func (s *PackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 
-func (s *DependenciesSource) configDependencies(deps []string) (dependencies []reposource.PackageDependency, err error) {
+func (s *PackagesSource) configDependencies(deps []string) (dependencies []reposource.PackageVersion, err error) {
 	for _, dep := range deps {
-		dependency, err := s.src.ParseDependency(dep)
+		dependency, err := s.src.ParsePackageVersionFromConfiguration(dep)
 		if err != nil {
 			return nil, err
 		}

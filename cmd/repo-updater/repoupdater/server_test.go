@@ -367,8 +367,8 @@ func TestServer_RepoLookup(t *testing.T) {
 				CloneURL: "npm/package",
 			},
 		},
-		Metadata: &reposource.NpmMetadata{Package: func() *reposource.NpmPackage {
-			p, _ := reposource.NewNpmPackage("", "package")
+		Metadata: &reposource.NpmMetadata{Package: func() *reposource.NpmPackageName {
+			p, _ := reposource.NewNpmPackageName("", "package")
 			return p
 		}()},
 	}

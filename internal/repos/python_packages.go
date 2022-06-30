@@ -14,7 +14,7 @@ import (
 )
 
 // NewPythonPackagesSource returns a new PythonPackagesSource from the given external service.
-func NewPythonPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*DependenciesSource, error) {
+func NewPythonPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
 	var c schema.PythonPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -25,7 +25,7 @@ func NewPythonPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*
 		return nil, err
 	}
 
-	return &DependenciesSource{
+	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.PythonPackagesScheme,
@@ -37,20 +37,20 @@ type pythonPackagesSource struct {
 	client *pypi.Client
 }
 
-var _ dependenciesSource = &pythonPackagesSource{}
+var _ packagesSource = &pythonPackagesSource{}
 
-func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	_, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewPythonDependency(name, version), nil
+	return reposource.NewPythonPackageVersion(name, version), nil
 }
 
-func (pythonPackagesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParsePythonDependency(dep)
+func (pythonPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+	return reposource.ParsePackageVersion(dep)
 }
 
-func (pythonPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParsePythonDependencyFromRepoName(repoName)
+func (pythonPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+	return reposource.ParsePythonPackageFromRepoName(repoName)
 }

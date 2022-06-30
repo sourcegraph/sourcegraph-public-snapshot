@@ -7,12 +7,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-type parser func(io.Reader) ([]reposource.PackageDependency, *DependencyGraph, error)
+type parser func(io.Reader) ([]reposource.PackageVersion, *DependencyGraph, error)
 
-type nonGraphParser func(io.Reader) ([]reposource.PackageDependency, error)
+type nonGraphParser func(io.Reader) ([]reposource.PackageVersion, error)
 
 func wrapNonGraphParser(f nonGraphParser) parser {
-	return func(r io.Reader) ([]reposource.PackageDependency, *DependencyGraph, error) {
+	return func(r io.Reader) ([]reposource.PackageVersion, *DependencyGraph, error) {
 		deps, err := f(r)
 		return deps, nil, err
 	}
