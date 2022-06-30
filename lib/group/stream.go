@@ -220,7 +220,7 @@ func newOrderedStreamer[T any]() orderedStreamer[T] {
 		// Set reasonably high default limit on the output channel by default.
 		// This doesn't limit the max goroutines, it just limits the number of
 		// goroutines waiting for their results to be handled.
-		resChans: make(chan chan callbackEvent[T], 32),
+		resChans: make(chan chan resultAndCallback[T], 32),
 	}
 }
 
@@ -228,7 +228,7 @@ type orderedStreamer[T any] struct {
 	group *group
 
 	// A queue of channels that will receive the results of running tasks
-	resChans chan chan callbackEvent[T]
+	resChans chan chan resultAndCallback[T]
 
 	handlerOnce sync.Once
 	handlerWg   sync.WaitGroup
@@ -240,7 +240,7 @@ func (o *orderedStreamer[T]) acquire(ctx context.Context) (context.Context, cont
 
 // A utility type that represents a completed task and
 // a callback that will be called with the task's result.
-type callbackEvent[T any] struct {
+type resultAndCallback[T any] struct {
 	res      T
 	callback func(T)
 }
@@ -258,12 +258,12 @@ func (o *orderedStreamer[T]) start(funcs funcPair[T]) {
 	// Create a channel that we will receive the return value of
 	// the task. Send this channel to resChans so that the callbacks
 	// happen in the same order that tasks were queued.
-	resChan := make(chan callbackEvent[T], 1)
+	resChan := make(chan resultAndCallback[T], 1)
 	o.resChans <- resChan
 
 	// Start the task, and send its result and its callback to the handler
 	o.group.start(func() {
-		resChan <- callbackEvent[T]{funcs.task(), funcs.callback}
+		resChan <- resultAndCallback[T]{funcs.task(), funcs.callback}
 	})
 }
 
