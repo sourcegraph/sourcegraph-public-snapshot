@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -110,7 +110,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React
                         <Icon
                             aria-label={previewInvoice.message}
                             data-tooltip={previewInvoice.message}
-                            as={AlertCircleIcon}
+                            svgPath={mdiAlertCircle}
                         />{' '}
                         Error
                     </span>

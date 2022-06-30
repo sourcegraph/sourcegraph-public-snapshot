@@ -1,7 +1,7 @@
 import { FunctionComponent, HTMLAttributes } from 'react'
 
+import { mdiViewDashboard } from '@mdi/js'
 import classNames from 'classnames'
-import ViewDashboardIcon from 'mdi-react/ViewDashboardIcon'
 
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
@@ -35,7 +35,7 @@ export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsigh
                     rel="noopener"
                     className={styles.pill}
                 >
-                    <Icon as={ViewDashboardIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiViewDashboard} />
                     {dashboard.title}
                 </Button>
             ))}
