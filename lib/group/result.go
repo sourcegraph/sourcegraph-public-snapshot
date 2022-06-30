@@ -9,7 +9,7 @@ import (
 // of the functions passed to its `Go` method.
 func NewWithResults[T any]() ResultGroup[T] {
 	return &resultGroup[T]{
-		Group: New(),
+		group: New(),
 	}
 }
 
@@ -102,64 +102,64 @@ func (r *resultAggregator[T]) add(res T) {
 // resultGroup wraps a Group and a resultAggregator to collect
 // the return values of tasks run with the group.
 type resultGroup[T any] struct {
-	Group
-	agg resultAggregator[T]
+	group Group
+	agg   resultAggregator[T]
 }
 
 func (g *resultGroup[T]) Go(f func() T) {
-	g.Group.Go(func() {
+	g.group.Go(func() {
 		g.agg.add(f())
 	})
 }
 
 func (g *resultGroup[T]) Wait() []T {
-	g.Group.Wait()
+	g.group.Wait()
 	return g.agg.results
 }
 
 func (g *resultGroup[T]) WithErrors() ResultErrorGroup[T] {
 	return &resultErrorGroup[T]{
-		ErrorGroup: g.Group.WithErrors(),
+		errorGroup: g.group.WithErrors(),
 	}
 }
 
 func (g *resultGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] {
 	return &resultContextGroup[T]{
-		contextGroup: g.Group.WithContext(ctx),
+		contextGroup: g.group.WithContext(ctx),
 	}
 }
 
 func (g *resultGroup[T]) WithLimit(limit int) ResultGroup[T] {
-	g.Group = g.Group.WithLimit(limit)
+	g.group = g.group.WithLimit(limit)
 	return g
 }
 
 func (g *resultGroup[T]) WithLimiter(limiter Limiter) ResultGroup[T] {
-	g.Group = g.Group.WithLimiter(limiter)
+	g.group = g.group.WithLimiter(limiter)
 	return g
 }
 
 // resultErrorGroup wraps an ErrorGroup and a resultAggregator to collect
 // the results and errors of tasks run with the group.
 type resultErrorGroup[T any] struct {
-	ErrorGroup
-	resultAggregator[T]
+	errorGroup     ErrorGroup
+	agg            resultAggregator[T]
 	collectErrored bool
 }
 
 func (g *resultErrorGroup[T]) Go(f func() (T, error)) {
-	g.ErrorGroup.Go(func() error {
+	g.errorGroup.Go(func() error {
 		res, err := f()
 		if err == nil || g.collectErrored {
-			g.add(res)
+			g.agg.add(res)
 		}
 		return err
 	})
 }
 
 func (g *resultErrorGroup[T]) Wait() ([]T, error) {
-	err := g.ErrorGroup.Wait()
-	return g.results, err
+	err := g.errorGroup.Wait()
+	return g.agg.results, err
 }
 
 func (g *resultErrorGroup[T]) WithCollectErrored() ResultErrorGroup[T] {
@@ -168,23 +168,23 @@ func (g *resultErrorGroup[T]) WithCollectErrored() ResultErrorGroup[T] {
 }
 
 func (g *resultErrorGroup[T]) WithFirstError() ResultErrorGroup[T] {
-	g.ErrorGroup = g.ErrorGroup.WithFirstError()
+	g.errorGroup = g.errorGroup.WithFirstError()
 	return g
 }
 
 func (g *resultErrorGroup[T]) WithLimit(limit int) ResultErrorGroup[T] {
-	g.ErrorGroup = g.ErrorGroup.WithLimit(limit)
+	g.errorGroup = g.errorGroup.WithLimit(limit)
 	return g
 }
 
 func (g *resultErrorGroup[T]) WithLimiter(limiter Limiter) ResultErrorGroup[T] {
-	g.ErrorGroup = g.ErrorGroup.WithLimiter(limiter)
+	g.errorGroup = g.errorGroup.WithLimiter(limiter)
 	return g
 }
 
 func (g *resultErrorGroup[T]) WithContext(ctx context.Context) ResultContextGroup[T] {
 	return &resultContextGroup[T]{
-		contextGroup: g.ErrorGroup.WithContext(ctx),
+		contextGroup: g.errorGroup.WithContext(ctx),
 	}
 }
 
