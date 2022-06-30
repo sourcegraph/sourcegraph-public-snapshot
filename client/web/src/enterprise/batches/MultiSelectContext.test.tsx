@@ -23,7 +23,7 @@ describe('MultiSelectContextProvider', () => {
         mutateAndAssert(
             getContext,
             context => {
-                context.setVisible(['1', '2'])
+                context.setVisible(false, ['1', '2'])
                 context.selectSingle('1')
             },
             ({ areAllVisibleSelected, isSelected, selected }) => {
@@ -74,7 +74,7 @@ describe('MultiSelectContextProvider', () => {
 
         mutateAndAssert(
             getContext,
-            context => context.setVisible(['1', '2']),
+            context => context.setVisible(false, ['1', '2']),
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
@@ -128,7 +128,7 @@ describe('MultiSelectContextProvider', () => {
 
         mutateAndAssert(
             getContext,
-            context => context.setVisible(['1', '2']),
+            context => context.setVisible(false, ['1', '2']),
             ({ selected }) => {
                 expect(selected).not.toBe('all')
             }
