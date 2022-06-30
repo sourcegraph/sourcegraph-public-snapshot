@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -120,6 +121,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 var started bool
 
 func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
+	logger := log.Scoped("adminanalytics:cacherefresh", "admin analytics cache refresh")
 	if started {
 		panic("already started")
 	}
@@ -129,7 +131,7 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 	const delay = 24 * time.Hour
 	for {
 		if err := refreshAnalyticsCache(ctx, db); err != nil {
-			log15.Error("Error refreshing admin analytics cache", "err", err)
+			logger.Error("Error refreshing admin analytics cache", "err", err)
 		}
 
 		// Randomize sleep to prevent thundering herds.
