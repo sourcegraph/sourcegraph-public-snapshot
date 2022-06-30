@@ -676,7 +676,7 @@ func (s *InsightStore) IncrementBackfillAttempts(ctx context.Context, series typ
 
 const incrementSeriesBackfillAttemptsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:IncrementSeriesBackfillAttempts
-update insight_series set backfill_attempts = coalesce(backfill_attempts, 0) + 1 where series_id = %s;
+update insight_series set backfill_attempts = backfill_attempts + 1 where series_id = %s;
 `
 
 // CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.

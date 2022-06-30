@@ -2325,9 +2325,9 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method,backfill_attempts)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search',NULL),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search',0),
-									('series-id-3', 'query-3', $1, $1, $1, $1, $1, $1, null, 'search',1);`, now)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search',0),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search',1),
+									('series-id-3', 'query-3', $1, $1, $1, $1, $1, $1, null, 'search',2);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2357,9 +2357,9 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 		seriesID string
 		want     autogold.Value
 	}{
-		{"series-id-1", autogold.Want("update null", int32(1))},
-		{"series-id-2", autogold.Want("increment 0", int32(1))},
-		{"series-id-3", autogold.Want("increment 1", int32(2))},
+		{"series-id-1", autogold.Want("update 0", int32(1))},
+		{"series-id-2", autogold.Want("increment 1", int32(2))},
+		{"series-id-3", autogold.Want("increment 2", int32(3))},
 	}
 
 	for _, tc := range cases {
@@ -2368,10 +2368,8 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if series[0].BackfillAttempts == nil {
-				t.Fatal("unxpected nil value")
-			}
-			got := *series[0].BackfillAttempts
+
+			got := series[0].BackfillAttempts
 			tc.want.Equal(t, got)
 
 		})
