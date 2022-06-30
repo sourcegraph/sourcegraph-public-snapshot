@@ -50,6 +50,8 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
                 new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
                 __ -> ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class)
             );
+        } else {
+            emptyText.setText("");
         }
         revalidate();
         repaint();
