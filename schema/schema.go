@@ -1270,7 +1270,7 @@ type ObservabilityTracing struct {
 	Debug bool `json:"debug,omitempty"`
 	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)
 	Sampling string `json:"sampling,omitempty"`
-	// Type description: Determines what tracing provider to enable. Supports "datadog" or "opentracing"
+	// Type description: Determines what tracing provider to enable. Supports "opentracing" ("datadog" support is deprecated)
 	Type string `json:"type,omitempty"`
 }
 
@@ -1522,6 +1522,10 @@ type Responders struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
+	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Empty by default, which means no syncing happens. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
+	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
+	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
+	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
 	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
 }

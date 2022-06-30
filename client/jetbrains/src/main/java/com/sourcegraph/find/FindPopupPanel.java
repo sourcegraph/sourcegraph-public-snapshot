@@ -28,7 +28,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     private final SelectionMetadataPanel selectionMetadataPanel;
     private Date lastPreviewUpdate;
 
-    public FindPopupPanel(@NotNull Project project) {
+    public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
         super(new BorderLayout());
 
         setPreferredSize(JBUI.size(1200, 800));
@@ -46,7 +46,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         bottomPanel.add(previewPanel, BorderLayout.CENTER);
 
         browserAndLoadingPanel = new BrowserAndLoadingPanel();
-        JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this);
+        JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
         if (browser != null) {
             browserAndLoadingPanel.setBrowser(browser);

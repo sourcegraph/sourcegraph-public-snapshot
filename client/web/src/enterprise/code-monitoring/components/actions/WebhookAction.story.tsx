@@ -1,4 +1,4 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -8,6 +8,15 @@ import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
+
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/WebhookAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -25,13 +34,7 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-const config = {
-    title: 'web/enterprise/code-monitoring/actions/WebhookAction',
-}
-
-export default config
-
-export const _WebhookAction: Story = () => (
+export const WebhookActionStory: Story = () => (
     <WebStory>
         {() => (
             <>
@@ -63,8 +66,4 @@ export const _WebhookAction: Story = () => (
     </WebStory>
 )
 
-_WebhookAction.storyName = 'WebhookAction'
-
-_WebhookAction.parameters = {
-    chromatic: { disableSnapshot: false },
-}
+WebhookActionStory.storyName = 'WebhookAction'

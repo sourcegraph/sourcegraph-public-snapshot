@@ -1141,7 +1141,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
+          "description": "Determines what tracing provider to enable. Supports \"opentracing\" (\"datadog\" support is deprecated)",
           "type": "string",
           "enum": ["datadog", "opentracing"],
           "default": "opentracing"

@@ -199,6 +199,102 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 }
 
+func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
+	p := &mockProvider{
+		id:          1,
+		serviceType: extsvc.TypeGitLab,
+		serviceID:   "https://gitlab.com/",
+	}
+	authz.SetProviders(false, []authz.Provider{p})
+	defer authz.SetProviders(true, nil)
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	})
+
+	mockRepos := database.NewMockRepoStore()
+	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+		if !opt.OnlyPrivate {
+			return nil, errors.New("OnlyPrivate want true but got false")
+		}
+
+		names := make([]types.MinimalRepo, 0, len(opt.ExternalRepos))
+		for _, r := range opt.ExternalRepos {
+			id, _ := strconv.Atoi(r.ID)
+			names = append(names, types.MinimalRepo{ID: api.RepoID(id)})
+		}
+		return names, nil
+	})
+
+	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		// Force an error here to bail out of fetchUserPermsViaExternalAccounts
+		return nil, errors.New("forced error")
+	})
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, options database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return []*database.UserEmail{}, nil
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefaultReturn(mockRepos)
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
+	reposStore.ListExternalServiceUserIDsByRepoIDFunc.SetDefaultReturn([]int32{1}, nil)
+	reposStore.ListExternalServicePrivateRepoIDsByUserIDFunc.SetDefaultReturn([]api.RepoID{2, 3, 4}, nil)
+	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+
+	perms := edb.NewMockPermsStore()
+	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
+		wantIDs := []int32{1, 2, 3, 4, 5}
+		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
+		return nil
+	})
+	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
+	perms.TouchUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32) error {
+		return nil
+	})
+
+	eauthz.MockProviderFromExternalService = func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
+		return p, nil
+	}
+	defer func() {
+		eauthz.MockProviderFromExternalService = nil
+	}()
+
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+
+	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
+		err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+		if err == nil {
+			t.Fatal("expected an error")
+		}
+		mockrequire.CalledN(t, perms.TouchUserPermissionsFunc, 1)
+	})
+
+	// Setup for fetchUserPermsViaExternalServices
+	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{}, nil
+	})
+	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultHook(func(ctx context.Context, i int32) (bool, error) {
+		// Force an error here to bail out of fetchUserPermsViaExternalServices
+		return false, errors.New("forced error")
+	})
+
+	t.Run("fetchUserPermsViaExternalServices", func(t *testing.T) {
+		err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+		if err == nil {
+			t.Fatal("expected an error")
+		}
+		mockrequire.CalledN(t, perms.TouchUserPermissionsFunc, 2)
+	})
+}
+
 // If we hit a temporary error from the provider we should fetch existing
 // permissions from the database
 func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {

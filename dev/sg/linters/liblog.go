@@ -24,6 +24,8 @@ func lintLoggingLibraries() *linter {
 		}
 
 		allowedFiles = []string{
+			// Let everything in dev use whatever they want
+			"dev", "enterprise/dev",
 			// Banned imports will match on the linter here
 			"dev/sg/linters/liblog.go",
 			// We allow one usage of a direct zap import here

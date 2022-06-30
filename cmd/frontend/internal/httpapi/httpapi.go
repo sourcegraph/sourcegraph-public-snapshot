@@ -102,7 +102,7 @@ func NewHandler(
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(sglog.Scoped("NewHandler", "Handler"), db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
@@ -143,6 +143,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:            db,
+		log:           sglog.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
 		ListIndexable: backend.NewRepos(logger, db).ListIndexable,
 		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
@@ -173,7 +174,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(sglog.Scoped("Router", "StreamingSearch"), db)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))

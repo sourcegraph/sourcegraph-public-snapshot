@@ -860,6 +860,7 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 // unconditional; we debounce them based on the provided
 // interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -889,7 +890,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// the implementation details of cloneRepo.
 		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
-			s.Logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
 		}
 	} else {
@@ -915,7 +916,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.LastChanged = &lastChanged
 		}
 		if statusErr != nil {
-			s.Logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
 			// report this error in-band, but still produce a valid response with the
 			// other information.
 			resp.Error = statusErr.Error()
@@ -936,6 +937,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
+		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
 		q         = r.URL.Query()
 		treeish   = q.Get("treeish")
 		repo      = q.Get("repo")
@@ -951,7 +953,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 
 	if repo == "" || format == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		s.Logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
+		logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
 		return
 	}
 
@@ -985,6 +987,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleSearch", "http handler for search")
 	tr, ctx := trace.New(r.Context(), "search", "")
 	defer tr.Finish()
 
@@ -1026,7 +1029,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// Run the search
 	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		s.Logger.Error("failed to send done event", log.Error(writeErr))
+		logger.Error("failed to send done event", log.Error(writeErr))
 	}
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
@@ -1057,7 +1060,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			_ = ev.Send()
 		}
 		if traceLogs {
-			s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+			logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 		}
 	}
 }

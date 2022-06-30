@@ -3,6 +3,8 @@ package streaming
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
@@ -48,6 +50,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	errorC := make(chan error, 1)
 	type groupEvent struct {
 		results []compute.Result
+		stats   streaming.Stats
 		err     error
 	}
 	g := group.NewParallelOrdered(8, func(e groupEvent) {
@@ -57,15 +60,20 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 			default:
 			}
 		} else {
-			eventsC <- Event{Results: e.results}
+			eventsC <- Event{Results: e.results, Stats: e.stats}
 		}
 	})
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+		if !event.Stats.Zero() {
+			g.Submit(func() groupEvent {
+				return groupEvent{nil, event.Stats, nil}
+			})
+		}
 		for _, match := range event.Results {
 			match := match
 			g.Submit(func() groupEvent {
 				results, err := toComputeResult(ctx, db, computeQuery.Command, match)
-				return groupEvent{results, err}
+				return groupEvent{results, streaming.Stats{}, err}
 			})
 		}
 	})
@@ -78,7 +86,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	}
 
 	patternType := "regexp"
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	searchClient := client.NewSearchClient(log.Scoped("NewComputeStream", ""), db, search.Indexed(log.Scoped("NewComputeStream", "")), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)

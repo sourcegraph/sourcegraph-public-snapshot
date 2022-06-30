@@ -1,10 +1,10 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
+import { mdiClipboardOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ClipboardOutlineIcon from 'mdi-react/ClipboardOutlineIcon'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
@@ -56,7 +56,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                     aria-label={copyFullQueryTooltip}
                     onClick={nextClick}
                 >
-                    <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClipboardOutline} />
                 </Button>
             </Tooltip>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (

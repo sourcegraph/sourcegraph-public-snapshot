@@ -36,7 +36,6 @@ import {
     CodeInsightsBackendContext,
     DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
-    InsightType,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
@@ -57,7 +56,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled')
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
@@ -101,6 +100,9 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     stopPolling()
                 }
                 setInsightData(parsedData)
+            },
+            onError: () => {
+                stopPolling()
             },
         }
     )
@@ -160,7 +162,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         originalValues={originalInsightFilters}
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisualMode}
-                        showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}

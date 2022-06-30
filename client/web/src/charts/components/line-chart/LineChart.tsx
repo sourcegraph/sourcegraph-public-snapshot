@@ -30,35 +30,27 @@ import {
 import styles from './LineChart.module.scss'
 
 interface GetLineGroupStyleOptions {
-    // Whether this series contains the active point
+    /** Whether this series contains the active point */
     id: string
 
-    // The id of the series
+    /** The id of the series */
     hasActivePoint: boolean
 
-    // Whether the chart has some active point
+    /** Whether the chart has some active point */
     isActive: boolean
 }
 
 export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
-    /**
-     * The width of the chart
-     */
+    /** The width of the chart */
     width: number
 
-    /**
-     * The height of the chart
-     */
+    /** The height of the chart */
     height: number
 
-    /**
-     * Whether to start Y axis at zero
-     */
+    /** Whether to start Y axis at zero */
     zeroYAxisMin?: boolean
 
-    /**
-     * Function to style a given line group
-     */
+    /** Function to style a given line group */
     getLineGroupStyle?: (options: GetLineGroupStyleOptions) => CSSProperties
 
     /**

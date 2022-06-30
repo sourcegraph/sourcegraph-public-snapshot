@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -39,6 +41,7 @@ func TestServeStream_empty(t *testing.T) {
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
+		log:                 logtest.Scoped(t),
 	})
 	defer ts.Close()
 
@@ -57,6 +60,74 @@ func TestServeStream_empty(t *testing.T) {
 	if testing.Verbose() {
 		t.Logf("GET:\n%s", b)
 	}
+}
+
+func TestServeStream_chunkMatches(t *testing.T) {
+	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
+	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+
+	mock := client.NewMockSearchClient()
+	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
+	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
+		s.Send(streaming.SearchEvent{
+			Results: result.Matches{&result.FileMatch{
+				File: result.File{Path: "testpath"},
+				ChunkMatches: result.ChunkMatches{{
+					Content: "line1",
+					Ranges: result.Ranges{{
+						Start: result.Location{0, 0, 0},
+						End:   result.Location{1, 0, 1},
+					}},
+				}},
+			}},
+		})
+		return nil, nil
+	})
+
+	mockRepos := database.NewMockRepoStore()
+	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
+		out := make([]*types.SearchedRepo, 0, len(ids))
+		for _, id := range ids {
+			out = append(out, &types.SearchedRepo{ID: id})
+		}
+		return out, nil
+	})
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(mockRepos)
+
+	ts := httptest.NewServer(&streamHandler{
+		db:                  db,
+		flushTickerInternal: 1 * time.Millisecond,
+		pingTickerInterval:  1 * time.Millisecond,
+		searchClient:        mock,
+		log:                 logtest.Scoped(t),
+	})
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL + "?q=test&cm=t&display=1000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	var matches []streamhttp.EventMatch
+	decoder := streamhttp.FrontendStreamDecoder{
+		OnMatches: func(ev []streamhttp.EventMatch) {
+			matches = append(matches, ev...)
+		},
+	}
+	err = decoder.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("expected status 200, got %d", res.StatusCode)
+	}
+	require.Len(t, matches, 1)
+	chunkMatches := matches[0].(*streamhttp.EventContentMatch).ChunkMatches
+	require.Len(t, chunkMatches, 1)
+	require.Len(t, chunkMatches[0].Ranges, 1)
 }
 
 func TestDisplayLimit(t *testing.T) {
@@ -148,6 +219,7 @@ func TestDisplayLimit(t *testing.T) {
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				searchClient:        mock,
+				log:                 logtest.Scoped(t),
 			})
 			defer ts.Close()
 

@@ -330,6 +330,41 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 	return include, exclude
 }
 
+func (p Parameters) RepoContainsFile() (include, exclude []string) {
+	nodes := toNodes(p)
+	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+
+	VisitField(nodes, FieldRepo, func(v string, negated bool, ann Annotation) {
+		if !ann.Labels.IsSet(IsPredicate) {
+			return
+		}
+
+		name, params := ParseAsPredicate(v)
+		if name != "contains.file" {
+			return
+		}
+
+		var p RepoContainsFilePredicate
+		if err := p.ParseParams(params); err != nil {
+			return
+		}
+
+		if negated {
+			exclude = append(exclude, p.Pattern)
+		} else {
+			include = append(include, p.Pattern)
+		}
+	})
+
+	return include, exclude
+}
+
 // Exists returns whether a parameter exists in the query (whether negated or not).
 func (p Parameters) Exists(field string) bool {
 	found := false

@@ -5,14 +5,17 @@ description: Roll out pr-auditor workflow patch.
 
 on:
   - repositoriesMatchingQuery: |
-      repohasfile:.github/workflows/pr-auditor.yml count:all
+      repo:github.com/sourcegraph/.*
+      repohasfile:.github/workflows/pr-auditor.yml
+      count:all
 
 changesetTemplate:
   title: 'workflows: update pr-auditor workflow'
   body: |
     This pull request updates the pr-auditor workflow.
 
-    Test plan: created action should correctly set a status on this pull request.
+    Test plan: We have tested the code itself in https://github.com/sourcegraph/sourcegraph/tree/main/dev/pr-auditor,
+    and the pr-auditor action should continue working as expected on this pull request.
   branch: update-pr-auditor
   commit:
     message: 'workflows: update pr-auditor workflow'
@@ -21,13 +24,14 @@ steps:
   # Overwrite the GitHub action
   - run: |
       read -r -d '' TEMPLATE << 'EOF'
+      # See https://docs.sourcegraph.com/dev/background-information/ci#pr-auditor
       name: pr-auditor
       on:
         pull_request:
-          types: [ closed, edited, opened ]
+          types: [ closed, edited, opened, synchronize, ready_for_review ]
 
       jobs:
-        run:
+        check-pr:
           runs-on: ubuntu-latest
           steps:
             - uses: actions/checkout@v2

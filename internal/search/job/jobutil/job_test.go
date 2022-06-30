@@ -7,6 +7,8 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -345,7 +347,7 @@ func TestNewPlanJob(t *testing.T) {
 				OnSourcegraphDotCom: true,
 			}
 
-			j, err := NewPlanJob(inputs, plan)
+			j, err := NewPlanJob(logtest.Scoped((t)), inputs, plan)
 			require.NoError(t, err)
 
 			tc.want.Equal(t, "\n"+PrettySexp(j))
@@ -364,7 +366,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := toFlatJobs(inputs, b)
+		j, _ := toFlatJobs(logtest.Scoped(t), inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -509,6 +511,12 @@ func TestToTextPatternInfo(t *testing.T) {
 	}, {
 		input:  `patterntype:regexp // literal slash`,
 		output: autogold.Want("107", `{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+	}, {
+		input:  `repo:contains.file(Dockerfile)`,
+		output: autogold.Want("108", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":["Dockerfile"],"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+	}, {
+		input:  `repohasfile:Dockerfile`,
+		output: autogold.Want("109", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":["Dockerfile"],"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}}
 
 	test := func(input string) string {

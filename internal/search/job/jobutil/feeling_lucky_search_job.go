@@ -2,14 +2,18 @@ package jobutil
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -22,10 +26,10 @@ import (
 // queries that alter its interpretation (e.g., search literally for quotes or
 // not, attempt to search the pattern as a regexp, and so on). There is no
 // random choice when applying rules.
-func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
+func NewFeelingLuckySearchJob(logger sglog.Logger, initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
-		generators = append(generators, NewGenerator(inputs, b, rules))
+		generators = append(generators, NewGenerator(logger, inputs, b, rules))
 	}
 	return &FeelingLuckySearchJob{
 		initialJob: initialJob,
@@ -130,7 +134,7 @@ type next func() (job.Job, next)
 // generation is exhausted. Currently it implements a simple strategy that tries
 // to apply rule transforms in order, and generates jobs for transforms that
 // apply successfully.
-func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
+func NewGenerator(logger sglog.Logger, inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
 	var n func(i int) next // i keeps track of rule index in the continuation
 	n = func(i int) next {
 		if i >= len(rules) {
@@ -144,7 +148,7 @@ func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next
 				return nil, n(i + 1)
 			}
 
-			child, err := NewBasicJob(inputs, *generated)
+			child, err := NewBasicJob(logger, inputs, *generated)
 			if err != nil {
 				// Generated invalid job, go to next rule.
 				return nil, n(i + 1)
@@ -462,8 +466,25 @@ type generatedSearchJob struct {
 	ProposedQuery *search.ProposedQuery
 }
 
-func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (*search.Alert, error) {
+func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
+	stream := streaming.NewResultCountingStream(parentStream)
 	alert, err := g.Child.Run(ctx, clients, stream)
+
+	resultCount := stream.Count()
+	if resultCount == 0 {
+		return nil, nil
+	}
+
+	var resultCountString string
+	if resultCount == limits.DefaultMaxSearchResultsStreaming {
+		resultCountString = fmt.Sprintf("%d+ results", resultCount)
+	} else if resultCount == 1 {
+		resultCountString = fmt.Sprintf("1 result")
+	} else {
+		resultCountString = fmt.Sprintf("%d results", resultCount)
+	}
+
+	g.ProposedQuery.Description = fmt.Sprintf("%s (%s)", g.ProposedQuery.Description, resultCountString)
 	err = errors.Append(err, &alertobserver.ErrLuckyQueries{
 		ProposedQueries: []*search.ProposedQuery{g.ProposedQuery},
 	})

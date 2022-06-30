@@ -7,6 +7,7 @@ import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
 import com.sourcegraph.find.FindPopupPanel;
+import com.sourcegraph.find.FindService;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +22,12 @@ import java.util.Date;
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
     private final FindPopupPanel findPopupPanel;
+    private final FindService findService;
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel) {
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel, @NotNull FindService findService) {
         this.project = project;
         this.findPopupPanel = findPopupPanel;
+        this.findService = findService;
     }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
@@ -34,11 +37,7 @@ public class JSToJavaBridgeRequestHandler {
         try {
             switch (action) {
                 case "getConfig":
-                    JsonObject configAsJson = new JsonObject();
-                    configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
-                    configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(this.project));
-                    configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(this.project));
-                    return createSuccessResponse(configAsJson);
+                    return createSuccessResponse(ConfigUtil.getConfigAsJson(project));
                 case "getTheme":
                     JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                     return createSuccessResponse(currentThemeAsJson);
@@ -101,6 +100,9 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     findPopupPanel.setBrowserVisible(true);
+                    return createSuccessResponse(null);
+                case "windowClose":
+                    ApplicationManager.getApplication().invokeLater(() -> findService.hidePopup());
                     return createSuccessResponse(null);
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");

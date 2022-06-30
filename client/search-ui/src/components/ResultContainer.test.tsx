@@ -114,6 +114,7 @@ describe('ResultContainer', () => {
     // The FileMatch is not expanded by default, and is collapsible. These are the props passed
     // down to ResultContainers when they are used for search results.
     const defaultProps = {
+        index: 0,
         location: history.location,
         collapsible: true,
         defaultExpanded: false,
@@ -136,6 +137,7 @@ describe('ResultContainer', () => {
     }
 
     const findReferencesProps = {
+        index: 0,
         location: history.location,
         collapsible: true,
         defaultExpanded: true,

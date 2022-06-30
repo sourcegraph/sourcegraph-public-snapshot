@@ -1,12 +1,12 @@
-import { Subject, EMPTY } from 'rxjs'
+import { EMPTY, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
+import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
     Event,
-    EventSource,
     LogEventsResult,
     LogEventsVariables,
     LogLegacySearchUserEventResult,
@@ -78,9 +78,9 @@ let eventId = 1
 
 // Event Logger for the JetBrains Extension
 export class EventLogger implements TelemetryService {
-    private anonymousUserId: string
+    private readonly anonymousUserId: string
     private listeners: Set<(eventName: string) => void> = new Set()
-    private editorInfo: { editor: string; version: string }
+    private readonly editorInfo: { editor: string; version: string }
 
     constructor(anonymousUserId: string, editorInfo: { editor: string; version: string }) {
         this.anonymousUserId = anonymousUserId
@@ -104,14 +104,20 @@ export class EventLogger implements TelemetryService {
      * Log a user action or event.
      * Event names should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      *
-     * @param eventName: the event name.
-     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * @param eventName -
+     * @param eventProperties event properties. These get logged to our database, but do not get
      * sent to our analytics systems. This may contain private info such as repository names or search queries.
-     * @param publicArgument: event properties that include only public information. Do NOT
+     * @param publicArgument event properties that include only public information. Do NOT
      * include any private information, such as full URLs that may contain private repo names or
      * search queries. The contents of this parameter are sent to our analytics systems.
+     * @param uri -
      */
-    public log(eventName: string, eventProperties?: any, publicArgument?: any, uri?: string): void {
+    public log(
+        eventName: string,
+        eventProperties?: Record<string, unknown>,
+        publicArgument?: Record<string, unknown>,
+        uri?: string
+    ): void {
         this.tracker(
             eventName,
             { ...eventProperties, ...this.editorInfo },

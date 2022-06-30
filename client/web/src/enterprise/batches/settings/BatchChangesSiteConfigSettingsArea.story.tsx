@@ -14,6 +14,15 @@ import {
 import { GLOBAL_CODE_HOSTS } from './backend'
 import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
 
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/BatchChangesSiteConfigSettingsArea',
+    decorators: [decorator],
+}
+
+export default config
+
 const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<GlobalBatchChangesCodeHostsResult>[] => [
     {
         request: {
@@ -34,15 +43,6 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
         },
     },
 ]
-
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
-const config: Meta = {
-    title: 'web/batches/settings/BatchChangesSiteConfigSettingsArea',
-    decorators: [decorator],
-}
-
-export default config
 
 export const Overview: Story = () => (
     <WebStory>

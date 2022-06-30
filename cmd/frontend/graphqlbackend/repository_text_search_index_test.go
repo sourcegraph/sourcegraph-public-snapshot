@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,7 +33,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
 		return []byte(defaultBranchRef), nil, 0, nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
 		repo: NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),

@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
@@ -9,9 +9,14 @@ import { WebStory } from '../../../components/WebStory'
 
 import { NotebookFileBlock } from './NotebookFileBlock'
 
-const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlock', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/blocks/file/NotebookFileBlock',
+    decorators: [decorator],
+}
+
+export default config
 
 const noopBlockCallbacks = {
     onRunBlock: noop,
@@ -30,7 +35,7 @@ const fileBlockInput: FileBlockInput = {
     lineRange: null,
 }
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {props => (
             <NotebookFileBlock
@@ -48,9 +53,9 @@ add('default', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('edit mode', () => (
+export const EditMode: Story = () => (
     <WebStory>
         {props => (
             <NotebookFileBlock
@@ -68,9 +73,11 @@ add('edit mode', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('error fetching file', () => (
+EditMode.storyName = 'edit mode'
+
+export const ErrorFetchingFile: Story = () => (
     <WebStory>
         {props => (
             <NotebookFileBlock
@@ -88,4 +95,6 @@ add('error fetching file', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ErrorFetchingFile.storyName = 'error fetching file'
