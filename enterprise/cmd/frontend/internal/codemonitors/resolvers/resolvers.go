@@ -643,7 +643,8 @@ func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
 		return nil, err
 	}
 	return &Resolver{
-		db: edb.NewEnterpriseDB(tx),
+		db:  edb.NewEnterpriseDB(tx),
+		log: r.log,
 	}, nil
 }
 
