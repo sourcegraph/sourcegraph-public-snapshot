@@ -48,7 +48,7 @@ func TestParseGoDependency(t *testing.T) {
 func TestParseGoDependencyFromRepoName(t *testing.T) {
 	tests := []struct {
 		name string
-		dep  *GoDependency
+		dep  *GoPackageVersion
 		err  string
 	}{
 		{
@@ -83,7 +83,7 @@ func TestParseGoDependencyFromRepoName(t *testing.T) {
 }
 
 func TestGoDependency_Less(t *testing.T) {
-	deps := []*GoDependency{
+	deps := []*GoPackageVersion{
 		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.1"),
 		parseGoDependencyOrPanic(t, "github.com/go-kit/kit@v0.1.0"),
 		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.8.0"),
@@ -107,7 +107,7 @@ func TestGoDependency_Less(t *testing.T) {
 
 	have := make([]string, 0, len(deps))
 	for _, d := range deps {
-		have = append(have, d.PackageManagerSyntax())
+		have = append(have, d.PackageVersionSyntax())
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
@@ -115,7 +115,7 @@ func TestGoDependency_Less(t *testing.T) {
 	}
 }
 
-func parseGoDependencyOrPanic(t *testing.T, value string) *GoDependency {
+func parseGoDependencyOrPanic(t *testing.T, value string) *GoPackageVersion {
 	dependency, err := ParseGoDependency(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)

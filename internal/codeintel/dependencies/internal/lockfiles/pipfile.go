@@ -27,7 +27,7 @@ import (
 // including transitive ones.
 //
 // Further discussion at https://github.com/sourcegraph/sourcegraph/issues/35041
-func parsePipfileLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
+func parsePipfileLockFile(r io.Reader) ([]reposource.PackageVersion, error) {
 	type packageInfo struct {
 		Version string
 	}
@@ -42,7 +42,7 @@ func parsePipfileLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		return nil, errors.Errorf("error decoding Pipfile.lock: %w", err)
 	}
 
-	libs := make([]reposource.PackageDependency, 0, len(lockfile.Default)+len(lockfile.Develop))
+	libs := make([]reposource.PackageVersion, 0, len(lockfile.Default)+len(lockfile.Develop))
 	for pkgName, info := range lockfile.Default {
 		libs = append(libs, reposource.NewPythonDependency(pkgName, strings.TrimPrefix(info.Version, "==")))
 	}

@@ -46,15 +46,15 @@ type goModulesSyncer struct {
 	client *gomodproxy.Client
 }
 
-func (goModulesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
+func (goModulesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
 	return reposource.ParseGoDependency(dep)
 }
 
-func (goModulesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (goModulesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }
 
-func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	mod, err := s.client.GetVersion(ctx, name, version)
 	if err != nil {
 		return nil, err
@@ -62,13 +62,13 @@ func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposo
 	return reposource.NewGoDependency(*mod), nil
 }
 
-func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
+func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
 	zipBytes, err := s.client.GetZip(ctx, dep.PackageSyntax(), dep.PackageVersion())
 	if err != nil {
 		return errors.Wrap(err, "get zip")
 	}
 
-	mod := dep.(*reposource.GoDependency).Module
+	mod := dep.(*reposource.GoPackageVersion).Module
 	if err = unzip(mod, zipBytes, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip go module")
 	}

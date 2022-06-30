@@ -134,7 +134,7 @@ func serializeResult(res *Result) serializableResult {
 	}
 
 	for _, dep := range res.Deps {
-		serializable.Deps = append(serializable.Deps, dep.PackageManagerSyntax())
+		serializable.Deps = append(serializable.Deps, dep.PackageVersionSyntax())
 	}
 
 	sort.Strings(serializable.Deps)

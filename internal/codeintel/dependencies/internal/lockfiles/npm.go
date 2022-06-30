@@ -21,7 +21,7 @@ type packageLockDependency struct {
 	Dependencies map[string]*packageLockDependency
 }
 
-func parsePackageLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
+func parsePackageLockFile(r io.Reader) ([]reposource.PackageVersion, error) {
 	var lockFile struct {
 		Dependencies map[string]*packageLockDependency
 	}
@@ -34,10 +34,10 @@ func parsePackageLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
 	return parsePackageLockDependencies(lockFile.Dependencies)
 }
 
-func parsePackageLockDependencies(in map[string]*packageLockDependency) ([]reposource.PackageDependency, error) {
+func parsePackageLockDependencies(in map[string]*packageLockDependency) ([]reposource.PackageVersion, error) {
 	var (
 		errs errors.MultiError
-		out  = make([]reposource.PackageDependency, 0, len(in))
+		out  = make([]reposource.PackageVersion, 0, len(in))
 	)
 
 	for name, d := range in {
@@ -63,7 +63,7 @@ func parsePackageLockDependencies(in map[string]*packageLockDependency) ([]repos
 // yarn.lock
 //
 
-func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err error) {
+func parseYarnLockFile(r io.Reader) (deps []reposource.PackageVersion, err error) {
 	var (
 		name string
 		skip bool

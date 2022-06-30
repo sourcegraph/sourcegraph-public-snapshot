@@ -41,7 +41,7 @@ func TestParseNpmDependency(t *testing.T) {
 }
 
 func TestNpmDependency_Less(t *testing.T) {
-	dependencies := []*NpmDependency{
+	dependencies := []*NpmPackageVersion{
 		parseNpmDependencyOrPanic(t, "ac@1.2.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.2.0.Final"),
 		parseNpmDependencyOrPanic(t, "aa@1.2.0"),
@@ -53,7 +53,7 @@ func TestNpmDependency_Less(t *testing.T) {
 		parseNpmDependencyOrPanic(t, "ab@1.2.0-RC1"),
 		parseNpmDependencyOrPanic(t, "ab@1.1.0"),
 	}
-	expected := []*NpmDependency{
+	expected := []*NpmPackageVersion{
 		parseNpmDependencyOrPanic(t, "ac@1.2.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.11.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.2.0"),
@@ -73,7 +73,7 @@ func TestNpmDependency_Less(t *testing.T) {
 	assert.Equal(t, expected, dependencies)
 }
 
-func parseNpmDependencyOrPanic(t *testing.T, value string) *NpmDependency {
+func parseNpmDependencyOrPanic(t *testing.T, value string) *NpmPackageVersion {
 	dependency, err := ParseNpmDependency(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)

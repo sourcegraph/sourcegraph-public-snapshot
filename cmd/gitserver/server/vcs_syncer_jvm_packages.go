@@ -57,18 +57,18 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 
 type jvmPackagesSyncer struct {
 	config *schema.JVMPackagesConnection
-	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error)
+	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenPackageVersion) (sourceCodeJarPath string, err error)
 }
 
-func (jvmPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
+func (jvmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
 	return reposource.ParseMavenDependency(dep)
 }
 
-func (jvmPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (jvmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseMavenDependencyFromRepoName(repoName)
 }
 
-func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	dep, err := reposource.ParseMavenDependency(name + ":" + version)
 	if err != nil {
 		return nil, errors.Wrap(err, "reposource.ParseMavenDependency")
@@ -81,8 +81,8 @@ func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (repo
 	return dep, nil
 }
 
-func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	mavenDep := dep.(*reposource.MavenDependency)
+func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
+	mavenDep := dep.(*reposource.MavenPackageVersion)
 	sourceCodeJarPath, err := s.fetch(ctx, s.config, mavenDep)
 	if err != nil {
 		return notFoundError{errors.Errorf("%s not found", dep)}
@@ -178,7 +178,7 @@ func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
 func (s *jvmPackagesSyncer) inferJVMVersionFromByteCode(ctx context.Context,
-	dependency *reposource.MavenDependency,
+	dependency *reposource.MavenPackageVersion,
 ) (string, error) {
 	if dependency.IsJDK() {
 		return dependency.Version, nil

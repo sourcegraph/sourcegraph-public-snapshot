@@ -28,7 +28,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	placeholder, _ := parseFakeDependency("sourcegraph/placeholder@0.0.0")
 
 	depsSource := &fakeDepsSource{
-		deps:     map[string]reposource.PackageDependency{},
+		deps:     map[string]reposource.PackageVersion{},
 		get:      map[string]error{},
 		download: map[string]error{},
 	}
@@ -181,7 +181,7 @@ func (s *fakeDepsService) Delete(deps ...string) {
 }
 
 type fakeDepsSource struct {
-	deps          map[string]reposource.PackageDependency
+	deps          map[string]reposource.PackageVersion
 	get, download map[string]error
 }
 
@@ -198,7 +198,7 @@ func (s *fakeDepsSource) Delete(deps ...string) {
 	}
 }
 
-func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	d := name + "@" + version
 
 	err := s.get[d]
@@ -214,44 +214,44 @@ func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposou
 	return dep, nil
 }
 
-func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	err := s.download[dep.PackageManagerSyntax()]
+func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
+	err := s.download[dep.PackageVersionSyntax()]
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.PackageManagerSyntax()), 0666)
+	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.PackageVersionSyntax()), 0666)
 }
 
-func (fakeDepsSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
+func (fakeDepsSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
 	return parseFakeDependency(dep)
 }
 
-func (fakeDepsSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (fakeDepsSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return parseFakeDependency(strings.TrimPrefix(repoName, "fake/"))
 }
 
-type fakeDep struct {
+type fakePackageVersion struct {
 	name    string
 	version string
 }
 
-func parseFakeDependency(dep string) (reposource.PackageDependency, error) {
+func parseFakeDependency(dep string) (reposource.PackageVersion, error) {
 	i := strings.LastIndex(dep, "@")
 	if i == -1 {
-		return fakeDep{name: dep}, nil
+		return fakePackageVersion{name: dep}, nil
 	}
-	return fakeDep{name: dep[:i], version: dep[i+1:]}, nil
+	return fakePackageVersion{name: dep[:i], version: dep[i+1:]}, nil
 }
 
-func (f fakeDep) Scheme() string               { return "fake" }
-func (f fakeDep) PackageSyntax() string        { return f.name }
-func (f fakeDep) PackageManagerSyntax() string { return f.name + "@" + f.version }
-func (f fakeDep) PackageVersion() string       { return f.version }
-func (f fakeDep) Description() string          { return f.name + "@" + f.version }
-func (f fakeDep) RepoName() api.RepoName       { return api.RepoName("fake/" + f.name) }
-func (f fakeDep) GitTagFromVersion() string    { return "v" + f.version }
-func (f fakeDep) Less(other reposource.PackageDependency) bool {
-	return f.PackageManagerSyntax() > other.PackageManagerSyntax()
+func (f fakePackageVersion) Scheme() string               { return "fake" }
+func (f fakePackageVersion) PackageSyntax() string        { return f.name }
+func (f fakePackageVersion) PackageVersionSyntax() string { return f.name + "@" + f.version }
+func (f fakePackageVersion) PackageVersion() string       { return f.version }
+func (f fakePackageVersion) Description() string          { return f.name + "@" + f.version }
+func (f fakePackageVersion) RepoName() api.RepoName       { return api.RepoName("fake/" + f.name) }
+func (f fakePackageVersion) GitTagFromVersion() string    { return "v" + f.version }
+func (f fakePackageVersion) Less(other reposource.PackageVersion) bool {
+	return f.PackageVersionSyntax() > other.PackageVersionSyntax()
 }
 
 func (s vcsDependenciesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {

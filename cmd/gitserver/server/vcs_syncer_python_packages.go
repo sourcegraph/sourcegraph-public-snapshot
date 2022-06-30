@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertPythonParsesPlaceholder() *reposource.PythonDependency {
+func assertPythonParsesPlaceholder() *reposource.PythonPackageVersion {
 	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
@@ -51,15 +51,15 @@ type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
-func (pythonPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
+func (pythonPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
 	return reposource.ParsePythonDependency(dep)
 }
 
-func (pythonPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParsePythonDependencyFromRepoName(repoName)
 }
 
-func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	f, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
@@ -69,8 +69,8 @@ func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (r
 	return dep, nil
 }
 
-func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	packageURL := dep.(*reposource.PythonDependency).PackageURL
+func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
+	packageURL := dep.(*reposource.PythonPackageVersion).PackageURL
 
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {

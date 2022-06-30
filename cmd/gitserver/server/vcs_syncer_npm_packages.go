@@ -46,19 +46,19 @@ type npmPackagesSyncer struct {
 	client npm.Client
 }
 
-func (npmPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
+func (npmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
 	return reposource.ParseNpmDependency(dep)
 }
 
-func (npmPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
 		return nil, err
 	}
-	return &reposource.NpmDependency{NpmPackage: pkg}, nil
+	return &reposource.NpmPackageVersion{NpmPackageName: pkg}, nil
 }
 
-func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	dep, err := reposource.ParseNpmDependency(name + "@" + version)
 	if err != nil {
 		return nil, err
@@ -73,8 +73,8 @@ func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (repo
 	return dep, nil
 }
 
-func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmDependency))
+func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
+	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmPackageVersion))
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
 	}
