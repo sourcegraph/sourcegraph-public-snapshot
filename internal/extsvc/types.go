@@ -517,8 +517,15 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
-		// 1 request per second is default policy for crates.io
-		limit = rate.Limit(32)
+		// We couldn't find an official rate limit for crates.io. We
+		// started by using 32 rqs but experienced that it took ~30
+		// hours to sync ~120k crate versions, which is slower than we'd
+		// like. We are collaborating with the Mozilla Foundation to
+		// make sourcegraph.com/compare pages available for all crates
+		// so that the `cargo vet` tool can show you a diff between any
+		// two versions of any crate. If this rate limit turns out to be
+		// too agressive then we can reduce it in the future.
+		limit = rate.Limit(1024)
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
