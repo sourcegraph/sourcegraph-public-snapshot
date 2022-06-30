@@ -768,7 +768,7 @@
       "Columns": [
         {
           "Name": "backfill_attempts",
-          "Index": 18,
+          "Index": 19,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
