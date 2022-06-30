@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -170,7 +171,9 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchStartTime, "until", searchEndTime)
 	commits, err := i.getCommits(ctx, i.db, repoName, searchStartTime, searchEndTime, i.operations.getCommits)
 	if err != nil {
-		return false, errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
+		if !errors.Is(err, EmptyRepoErr) {
+			return false, errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
+		}
 	}
 
 	i.operations.countCommits.WithLabelValues().Add(float64(len(commits)))
@@ -196,6 +199,23 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 	return moreWindows, nil
 }
 
+var (
+	EmptyRepoErr = errors.New("empty repository")
+)
+
+const emptyRepoErrCode = `exit status 129`
+
+func isCommitEmptyRepoError(err error) bool {
+	unwrappedErr := err
+	for unwrappedErr != nil {
+		if strings.Contains(err.Error(), emptyRepoErrCode) {
+			return true
+		}
+		unwrappedErr = errors.Unwrap(unwrappedErr)
+	}
+	return false
+}
+
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.
 func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
 	ctx, _, endObservation := operation.With(ctx, &err, observation.Args{})
@@ -206,7 +226,11 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 		before = until.Format(time.RFC3339)
 	}
 
-	return git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	commits, err := git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	if err != nil && isCommitEmptyRepoError(err) {
+		return nil, errors.Wrap(EmptyRepoErr, err.Error())
+	}
+	return commits, err
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as
