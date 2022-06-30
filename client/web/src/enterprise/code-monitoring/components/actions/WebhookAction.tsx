@@ -105,7 +105,6 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
                     Call a webhook <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
-            label="Call a webhook"
             subtitle="Calls the specified URL with a JSON payload."
             idName="webhook"
             disabled={disabled}
