@@ -745,7 +745,7 @@ input LineChartSearchInsightDataSeriesInput {
     generatedFromCaptureGroups: Boolean
 
     """
-    The field to group results by. (For compute powered insights only.)
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
     """
     groupBy: String
 }
