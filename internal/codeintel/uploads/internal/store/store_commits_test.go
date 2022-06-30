@@ -165,7 +165,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 }
 
-func TestMarkRepositoryAsDirty(t *testing.T) {
+func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
