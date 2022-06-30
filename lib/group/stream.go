@@ -92,18 +92,18 @@ func (g *streamGroup[T]) Wait() {
 
 func (g *streamGroup[T]) WithErrors() ErrorStreamGroup[T] {
 	esg := &errorStreamGroup[T]{
-		os: newOrderedStreamer[resultPair[T]](),
+		os: newOrderedStreamer[resultAndError[T]](),
 	}
-	esg.os.group = g.os.group
+	esg.os.group = g.os.group // copy the group with its settings
 	return esg
 }
 
 func (g *streamGroup[T]) WithContext(ctx context.Context) ContextStreamGroup[T] {
 	csg := &contextStreamGroup[T]{
-		os:  newOrderedStreamer[resultPair[T]](),
+		os:  newOrderedStreamer[resultAndError[T]](),
 		ctx: ctx,
 	}
-	csg.os.group = g.os.group
+	csg.os.group = g.os.group // copy the group with its settings
 	return csg
 }
 
@@ -117,29 +117,34 @@ func (g *streamGroup[T]) WithLimiter(limiter Limiter) StreamGroup[T] {
 	return g
 }
 
+// errorStreamGroup is a stream group for tasks that return a result and an error.
 type errorStreamGroup[T any] struct {
-	os orderedStreamer[resultPair[T]]
+	os orderedStreamer[resultAndError[T]]
 }
 
-type resultPair[T any] struct {
+// a utility any+error tuple
+type resultAndError[T any] struct {
 	res T
 	err error
 }
 
 func (g *errorStreamGroup[T]) Go(task func() (T, error), callback func(T, error)) {
+	// acquire will not fail unless context is canceled
 	_, release, _ := g.os.acquire(context.Background())
 
-	pairedTask := func() resultPair[T] {
+	// Create functions that merge the input/output return value and error
+	// into a single type so we can use orderedStreamer.
+	pairedTask := func() resultAndError[T] {
 		defer release()
 		res, err := task()
-		return resultPair[T]{res, err}
+		return resultAndError[T]{res, err}
 	}
 
-	pairedCallback := func(pair resultPair[T]) {
+	pairedCallback := func(pair resultAndError[T]) {
 		callback(pair.res, pair.err)
 	}
 
-	g.os.start(funcPair[resultPair[T]]{pairedTask, pairedCallback})
+	g.os.start(funcPair[resultAndError[T]]{pairedTask, pairedCallback})
 }
 
 func (g *errorStreamGroup[T]) Wait() {
@@ -163,31 +168,36 @@ func (g *errorStreamGroup[T]) WithLimiter(limiter Limiter) ErrorStreamGroup[T] {
 	return g
 }
 
+// errorStreamGroup is a stream group for tasks that require a context and return a result and an error.
 type contextStreamGroup[T any] struct {
-	os  orderedStreamer[resultPair[T]]
+	os  orderedStreamer[resultAndError[T]]
 	ctx context.Context
 }
 
 func (g *contextStreamGroup[T]) Go(task func(context.Context) (T, error), callback func(context.Context, T, error)) {
 	ctx, release, err := g.os.acquire(g.ctx)
-	pairedTask := func() resultPair[T] {
+
+	// Create functions that merge the input/output return value and error
+	// into a single type so we can use orderedStreamer.
+	pairedTask := func() resultAndError[T] {
 		defer release()
 
 		// If acquiring failed, return its error immediately without running the task.
+		// We do this here so it can plug into the error handling code.
 		if err != nil {
 			var t T
-			return resultPair[T]{t, err}
+			return resultAndError[T]{t, err}
 		}
 
 		res, err := task(ctx)
-		return resultPair[T]{res, err}
+		return resultAndError[T]{res, err}
 	}
 
-	pairedCallback := func(pair resultPair[T]) {
+	pairedCallback := func(pair resultAndError[T]) {
 		callback(ctx, pair.res, pair.err)
 	}
 
-	g.os.start(funcPair[resultPair[T]]{pairedTask, pairedCallback})
+	g.os.start(funcPair[resultAndError[T]]{pairedTask, pairedCallback})
 }
 
 func (g *contextStreamGroup[T]) Wait() {
@@ -210,17 +220,22 @@ func newOrderedStreamer[T any]() orderedStreamer[T] {
 		// Set reasonably high default limit on the output channel by default.
 		// This doesn't limit the max goroutines, it just limits the number of
 		// goroutines waiting for their results to be handled.
-		resChans:    make(chan chan callbackEvent[T], 32),
-		handlerDone: make(chan struct{}),
+		resChans: make(chan chan callbackEvent[T], 32),
 	}
 }
 
 type orderedStreamer[T any] struct {
-	group    *group
+	group *group
+
+	// A queue of channels that will receive the results of running tasks
 	resChans chan chan callbackEvent[T]
 
 	handlerOnce sync.Once
-	handlerDone chan struct{}
+	handlerWg   sync.WaitGroup
+}
+
+func (o *orderedStreamer[T]) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
+	return o.group.acquire(ctx)
 }
 
 // A utility type that represents a completed task and
@@ -228,10 +243,6 @@ type orderedStreamer[T any] struct {
 type callbackEvent[T any] struct {
 	res      T
 	callback func(T)
-}
-
-func (o *orderedStreamer[T]) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	return o.group.acquire(ctx)
 }
 
 // A utility type that represents a pair of functions where the
@@ -244,9 +255,13 @@ type funcPair[T any] struct {
 func (o *orderedStreamer[T]) start(funcs funcPair[T]) {
 	o.initOnce()
 
+	// Create a channel that we will receive the return value of
+	// the task. Send this channel to resChans so that the callbacks
+	// happen in the same order that tasks were queued.
 	resChan := make(chan callbackEvent[T], 1)
 	o.resChans <- resChan
 
+	// Start the task, and send its result and its callback to the handler
 	o.group.start(func() {
 		resChan <- callbackEvent[T]{funcs.task(), funcs.callback}
 	})
@@ -255,9 +270,12 @@ func (o *orderedStreamer[T]) start(funcs funcPair[T]) {
 func (o *orderedStreamer[T]) initOnce() {
 	// start the callback handler
 	o.handlerOnce.Do(func() {
+		o.handlerWg.Add(1)
 		go func() {
-			defer close(o.handlerDone)
+			defer o.handlerWg.Done()
 
+			// For each task, wait for it to complete and call its callback
+			// with the return value.
 			for resChan := range o.resChans {
 				event := <-resChan
 				event.callback(event.res)
@@ -269,5 +287,5 @@ func (o *orderedStreamer[T]) initOnce() {
 func (g *orderedStreamer[T]) wait() {
 	close(g.resChans)
 	g.group.Wait()
-	<-g.handlerDone
+	g.handlerWg.Wait()
 }
