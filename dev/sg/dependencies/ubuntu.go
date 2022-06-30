@@ -61,6 +61,11 @@ var Ubuntu = []category{
 				Fix:   aptGetInstall("jq"),
 			},
 			{
+				Name:  "universal-ctags",
+				Check: checkAction(check.InPath("ctags")),
+				Fix:   aptGetInstall("universal-ctags"),
+			},
+			{
 				Name:  "curl",
 				Check: checkAction(check.InPath("curl")),
 				Fix:   aptGetInstall("curl"),

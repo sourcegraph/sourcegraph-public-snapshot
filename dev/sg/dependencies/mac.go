@@ -65,6 +65,11 @@ var Mac = []category{
 				Fix:   cmdFix(`brew install sqlite`),
 			},
 			{
+				Name:  "universal-ctags",
+				Check: checkAction(check.InPath("ctags")),
+				Fix:   cmdFix(`brew install universal-ctags`),
+			},
+			{
 				Name:  "jq",
 				Check: checkAction(check.InPath("jq")),
 				Fix:   cmdFix(`brew install jq`),
