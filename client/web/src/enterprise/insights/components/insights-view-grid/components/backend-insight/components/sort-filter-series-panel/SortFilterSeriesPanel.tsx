@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 import classNames from 'classnames'
+import { debounce } from 'lodash'
 
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
@@ -38,14 +39,21 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
         onChange({ limit: seriesCount, sortOptions: value })
     }
 
-    const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const value = event.target.value
-        setSeriesCountInput(value)
-
-        if (value.length > 0) {
+    const debouncedChange = useRef(
+        debounce((value: string) => {
             const count = Math.min(parseInt(value, 10), maxLimit)
             setSeriesCount(count)
             onChange({ limit: count, sortOptions: selected })
+        }, 300)
+    ).current
+
+    const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        const value = event.target.value
+        setSeriesCountInput(value)
+        debouncedChange.cancel()
+
+        if (value.length > 0) {
+            debouncedChange(value)
         }
     }
 
