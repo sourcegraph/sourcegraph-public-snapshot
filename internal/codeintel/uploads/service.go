@@ -3,6 +3,7 @@ package uploads
 import (
 	"context"
 	"io"
+	"sort"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
@@ -36,6 +37,7 @@ type service interface {
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
 	SoftDeleteExpiredUploads(ctx context.Context) (count int, err error)
+	HardDeleteExpiredUploads(ctx context.Context) (count int, err error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 
@@ -48,6 +50,9 @@ type service interface {
 
 	// References
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+
+	// Audit Logs
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 }
 
 type Service struct {
@@ -196,7 +201,45 @@ func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.T
 	return s.store.DeleteUploadsWithoutRepository(ctx, now)
 }
 
-func (s *Service) HardDelete() // TODO
+func (s *Service) HardDeleteExpiredUploads(ctx context.Context) (count int, err error) {
+	ctx, _, endObservation := s.operations.hardDeleteUploads.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	const uploadsBatchSize = 100
+	options := shared.GetUploadsOptions{
+		State:            "deleted",
+		Limit:            uploadsBatchSize,
+		AllowExpired:     true,
+		AllowDeletedRepo: true,
+	}
+
+	for {
+		// Always request the first page of deleted uploads. If this is not
+		// the first iteration of the loop, then the previous iteration has
+		// deleted the records that composed the previous page, and the
+		// previous "second" page is now the first page.
+		uploads, totalCount, err := s.store.GetUploads(ctx, options)
+		if err != nil {
+			return 0, errors.Wrap(err, "store.GetUploads")
+		}
+
+		ids := uploadIDs(uploads)
+		if err := s.lsifstore.Clear(ctx, ids...); err != nil {
+			return 0, errors.Wrap(err, "lsifstore.Clear")
+		}
+
+		if err := s.store.HardDeleteUploadByID(ctx, ids...); err != nil {
+			return 0, errors.Wrap(err, "store.HardDeleteUploadByID")
+		}
+
+		count += len(uploads)
+		if count >= totalCount {
+			break
+		}
+	}
+
+	return count, nil
+}
 
 func (s *Service) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
 	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{})
@@ -224,4 +267,21 @@ func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, refer
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdatePackageReferences(ctx, dumpID, references)
+}
+
+func (s *Service) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteOldAuditLogs(ctx, maxAge, now)
+}
+
+func uploadIDs(uploads []shared.Upload) []int {
+	ids := make([]int, 0, len(uploads))
+	for i := range uploads {
+		ids = append(ids, uploads[i].ID)
+	}
+	sort.Ints(ids)
+
+	return ids
 }

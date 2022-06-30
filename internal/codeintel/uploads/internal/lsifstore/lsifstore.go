@@ -3,7 +3,7 @@ package lsifstore
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -17,7 +17,7 @@ type store struct {
 	operations *operations
 }
 
-func New(db database.DB, observationContext *observation.Context) LsifStore {
+func New(db stores.CodeIntelDB, observationContext *observation.Context) LsifStore {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),

@@ -167,7 +167,6 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
     - DBStore
-    - LSIFStore
     - UploadService
     - AutoIndexingService
 - filename: internal/codeintel/uploads/background/commitgraph/mocks_test.go

@@ -326,6 +326,54 @@ updated AS (
 SELECT u.repository_id, count(*) FROM updated u GROUP BY u.repository_id
 `
 
+// HardDeleteUploadByID deletes the upload record with the given identifier.
+func (s *store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	var idQueries []*sqlf.Query
+	for _, id := range ids {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Before deleting the record, ensure that we decrease the number of existant references
+	// to all of this upload's dependencies. This also selects a new upload to canonically provide
+	// the same package as the deleted upload, if such an upload exists.
+	if _, err := s.UpdateUploadsReferenceCounts(ctx, ids, shared.DependencyReferenceCountUpdateTypeRemove); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", "))); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const hardDeleteUploadByIDQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
+WITH locked_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.id IN (%s)
+	ORDER BY u.id FOR UPDATE
+)
+DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+`
+
 // UpdateUploadRetention updates the last data retention scan timestamp on the upload
 // records with the given protected identifiers and sets the expired field on the upload
 // records with the given expired identifiers.

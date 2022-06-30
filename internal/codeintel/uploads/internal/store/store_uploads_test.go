@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -136,6 +137,49 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 	}
 }
 
+func TestHardDeleteUploadByID(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db,
+		shared.Upload{ID: 51, State: "completed"},
+		shared.Upload{ID: 52, State: "completed"},
+		shared.Upload{ID: 53, State: "completed"},
+		shared.Upload{ID: 54, State: "completed"},
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+	})
+
+	if _, err := store.UpdateUploadsReferenceCounts(context.Background(), []int{51, 52, 53, 54}, shared.DependencyReferenceCountUpdateTypeNone); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
+	}
+	assertReferenceCounts(t, db, map[int]int{
+		51: 0,
+		52: 2, // referenced by 51, 54
+		53: 2, // referenced by 51, 52
+		54: 0,
+	})
+
+	if err := store.HardDeleteUploadByID(context.Background(), 51); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	}
+	assertReferenceCounts(t, db, map[int]int{
+		// 51 was deleted
+		52: 1, // referenced by 54
+		53: 1, // referenced by 54
+		54: 0,
+	})
+}
+
 // Package pairs a package schem+name+version with the dump that provides it.
 type Package struct {
 	DumpID  int
@@ -239,4 +283,17 @@ func intsToQueries(values []int) []*sqlf.Query {
 	}
 
 	return queries
+}
+
+func assertReferenceCounts(t *testing.T, store database.DB, expectedReferenceCountsByID map[int]int) {
+	db := basestore.NewWithHandle(store.Handle())
+
+	referenceCountsByID, err := scanIntPairs(db.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying reference counts: %s", err)
+	}
+
+	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
+	}
 }

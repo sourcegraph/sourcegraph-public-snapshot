@@ -29,6 +29,7 @@ type operations struct {
 	softDeleteExpiredUploads       *observation.Operation
 	deleteUploadsWithoutRepository *observation.Operation
 	deleteUploadsStuckUploading    *observation.Operation
+	hardDeleteUploads              *observation.Operation
 
 	// Repositories
 	setRepositoryAsDirty *observation.Operation
@@ -39,6 +40,9 @@ type operations struct {
 
 	// References
 	updatePackageReferences *observation.Operation
+
+	// Audit Logs
+	deleteOldAuditLogs *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -71,6 +75,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		staleSourcedCommits:  op("StaleSourcedCommits"),
 		updateSourcedCommits: op("UpdateSourcedCommits"),
 		deleteSourcedCommits: op("DeleteSourcedCommits"),
+		setRepositoryAsDirty: op("SetRepositoryAsDirty"),
+		getDirtyRepositories: op("GetDirtyRepositories"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),
@@ -79,15 +85,15 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
 		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
 		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
-
-		// Repositories
-		setRepositoryAsDirty: op("SetRepositoryAsDirty"),
-		getDirtyRepositories: op("GetDirtyRepositories"),
+		hardDeleteUploads:              op("HardDeleteUploads"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+
+		// Audit Logs
+		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
 	}
 }

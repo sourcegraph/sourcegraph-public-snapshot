@@ -8,20 +8,33 @@ import (
 )
 
 type operations struct {
-	list                           *observation.Operation
-	staleSourcedCommits            *observation.Operation
-	deleteSourcedCommits           *observation.Operation
-	updateSourcedCommits           *observation.Operation
+	// Not used yet.
+	list *observation.Operation
+
+	// Commits
+	staleSourcedCommits  *observation.Operation
+	deleteSourcedCommits *observation.Operation
+	updateSourcedCommits *observation.Operation
+	setRepositoryAsDirty *observation.Operation
+	getDirtyRepositories *observation.Operation
+
+	// Uploads
 	getUploads                     *observation.Operation
-	deleteUploadsStuckUploading    *observation.Operation
-	deleteUploadsWithoutRepository *observation.Operation
-	softDeleteExpiredUploads       *observation.Operation
-	markRepositoryAsDirty          *observation.Operation
-	dirtyRepositories              *observation.Operation
-	updatePackages                 *observation.Operation
-	updatePackageReferences        *observation.Operation
 	updateUploadRetention          *observation.Operation
 	updateUploadsReferenceCounts   *observation.Operation
+	deleteUploadsWithoutRepository *observation.Operation
+	deleteUploadsStuckUploading    *observation.Operation
+	softDeleteExpiredUploads       *observation.Operation
+	hardDeleteUploadByID           *observation.Operation
+
+	// Packages
+	updatePackages *observation.Operation
+
+	// References
+	updatePackageReferences *observation.Operation
+
+	// Audit logs
+	deleteOldAuditLogs *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,19 +54,32 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		list:                           op("List"),
-		staleSourcedCommits:            op("StaleSourcedCommits"),
-		deleteSourcedCommits:           op("DeleteSourcedCommits"),
-		updateSourcedCommits:           op("UpdateSourcedCommits"),
+		// Not used yet.
+		list: op("List"),
+
+		// Commits
+		staleSourcedCommits:  op("StaleSourcedCommits"),
+		deleteSourcedCommits: op("DeleteSourcedCommits"),
+		updateSourcedCommits: op("UpdateSourcedCommits"),
+		setRepositoryAsDirty: op("SetRepositoryAsDirty"),
+		getDirtyRepositories: op("GetDirtyRepositories"),
+
+		// Uploads
 		getUploads:                     op("GetUploads"),
+		updateUploadRetention:          op("UpdateUploadRetention"),
+		updateUploadsReferenceCounts:   op("UpdateUploadsReferenceCounts"),
 		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
 		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
-		markRepositoryAsDirty:          op("MarkRepositoryAsDirty"),
-		dirtyRepositories:              op("DirtyRepositories"),
-		updatePackages:                 op("UpdatePackages"),
-		updatePackageReferences:        op("UpdatePackageReferences"),
-		updateUploadRetention:          op("UpdateUploadRetention"),
-		updateUploadsReferenceCounts:   op("UpdateUploadsReferenceCounts"),
+		hardDeleteUploadByID:           op("HardDeleteUploadByID"),
+
+		// Packages
+		updatePackages: op("UpdatePackages"),
+
+		// References
+		updatePackageReferences: op("UpdatePackageReferences"),
+
+		// Audit logs
+		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
 	}
 }

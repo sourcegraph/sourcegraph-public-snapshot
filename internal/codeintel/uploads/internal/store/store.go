@@ -31,6 +31,7 @@ type Store interface {
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
 	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 
@@ -43,6 +44,9 @@ type Store interface {
 
 	// References
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+
+	// Audit Logs
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 }
 
 // store manages the database operations for uploads.

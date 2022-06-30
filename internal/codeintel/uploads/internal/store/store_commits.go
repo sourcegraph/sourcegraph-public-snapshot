@@ -197,7 +197,7 @@ FROM candidate_uploads u
 
 // SetRepositoryAsDirty marks the given repository's commit graph as out of date.
 func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
-	ctx, _, endObservation := s.operations.markRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -220,7 +220,7 @@ ON CONFLICT (repository_id) DO UPDATE SET
 // GetDirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
 func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, trace, endObservation := s.operations.dirtyRepositories.With(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	repositories, err := scanIntPairs(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
