@@ -176,7 +176,7 @@ func (g *group) WithContext(ctx context.Context) ContextGroup {
 
 // errorGroup wraps a *group with error collection
 type errorGroup struct {
-	*group
+	group *group
 
 	onlyFirst bool // if true, only keep the first error
 
@@ -229,12 +229,12 @@ func (g *errorGroup) Wait() error {
 }
 
 func (g *errorGroup) WithLimit(limit int) ErrorGroup {
-	g.limiter = NewBasicLimiter(limit)
+	g.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
 func (g *errorGroup) WithLimiter(limiter Limiter) ErrorGroup {
-	g.limiter = limiter
+	g.group.limiter = limiter
 	return g
 }
 
@@ -251,7 +251,7 @@ func (g *errorGroup) WithFirstError() ErrorGroup {
 }
 
 type contextGroup struct {
-	*errorGroup
+	errorGroup *errorGroup
 
 	ctx    context.Context
 	cancel context.CancelFunc // nil unless WithCancelOnError
@@ -275,23 +275,27 @@ func (g *contextGroup) Go(f func(context.Context) error) {
 	})
 }
 
+func (g *contextGroup) Wait() error {
+	return g.errorGroup.Wait()
+}
+
 func (g *contextGroup) WithCancelOnError() ContextGroup {
 	g.ctx, g.cancel = context.WithCancel(g.ctx)
 	return g
 }
 
 func (g *contextGroup) WithLimit(limit int) ContextGroup {
-	g.limiter = NewBasicLimiter(limit)
+	g.errorGroup.group.limiter = NewBasicLimiter(limit)
 	return g
 }
 
 func (g *contextGroup) WithLimiter(limiter Limiter) ContextGroup {
-	g.limiter = limiter
+	g.errorGroup.group.limiter = limiter
 	return g
 }
 
 func (g *contextGroup) WithFirstError() ContextGroup {
-	g.onlyFirst = true
+	g.errorGroup.onlyFirst = true
 	return g
 }
 
