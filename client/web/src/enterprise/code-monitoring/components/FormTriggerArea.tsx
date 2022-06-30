@@ -104,6 +104,9 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const collapsedCard = useRef<HTMLButtonElement>(null)
     const closeCard = useCallback((): void => {
         setExpanded(false)
+
+        // Use timeout to wait for render to complete after calling setExpanded
+        // so that collapsedCard is rendered and can be focused.
         setTimeout(() => {
             collapsedCard.current?.focus()
         }, 0)
