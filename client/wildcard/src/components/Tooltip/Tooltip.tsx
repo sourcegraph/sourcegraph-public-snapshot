@@ -9,7 +9,7 @@ interface TooltipProps {
     /** A single child element that will trigger the Tooltip to open on hover. */
     children: React.ReactElement
     /** The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
-    content: string | null
+    content: string | null | undefined
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */

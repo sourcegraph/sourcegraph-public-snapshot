@@ -224,6 +224,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               Tags: 
               <div
                 class="badge secondary mr-1"
+                data-state="closed"
               >
                 a
               </div>

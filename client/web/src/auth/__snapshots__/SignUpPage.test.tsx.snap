@@ -43,6 +43,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
             >
               <span
                 class="badge info productStatusBadge text-uppercase mr-1"
+                data-state="closed"
                 status="beta"
               >
                 beta
