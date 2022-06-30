@@ -19,8 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertPythonParsesPlaceholder() *reposource.PythonPackageVersion {
-	placeholder, err := reposource.ParsePackageVersion("sourcegraph.com/placeholder@v0.0.0")
+func assertPythonParsesPlaceholder() *reposource.PythonVersionedPackage {
+	placeholder, err := reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -51,26 +51,30 @@ type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
-func (pythonPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParsePackageVersion(dep)
+func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(dep)
+}
+
+func (pythonPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+	return reposource.ParsePythonPackageFromName(name)
 }
 
 func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParsePythonPackageFromRepoName(repoName)
 }
 
-func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
 	f, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	dep := reposource.NewPythonPackageVersion(name, version)
+	dep := reposource.NewPythonVersionedPackage(name, version)
 	dep.PackageURL = f.URL
 	return dep, nil
 }
 
-func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	packageURL := dep.(*reposource.PythonPackageVersion).PackageURL
+func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	packageURL := dep.(*reposource.PythonVersionedPackage).PackageURL
 
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {

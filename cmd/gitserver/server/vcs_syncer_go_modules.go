@@ -26,7 +26,7 @@ func NewGoModulesSyncer(
 	svc *dependencies.Service,
 	client *gomodproxy.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseGoPackageVersion("sourcegraph.com/placeholder@v0.0.0")
+	placeholder, err := reposource.ParseGoVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -34,7 +34,7 @@ func NewGoModulesSyncer(
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("GoModulesSyncer", "sync Go modules"),
 		typ:         "go_modules",
-		scheme:      dependencies.GoModulesScheme,
+		scheme:      dependencies.GoPackagesScheme,
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
@@ -46,29 +46,33 @@ type goModulesSyncer struct {
 	client *gomodproxy.Client
 }
 
-func (goModulesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseGoPackageVersion(dep)
+func (goModulesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseGoVersionedPackage(dep)
+}
+
+func (goModulesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+	return reposource.ParseGoDependencyFromName(name)
 }
 
 func (goModulesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }
 
-func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
 	mod, err := s.client.GetVersion(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewGoPackageVersion(*mod), nil
+	return reposource.NewGoVersionedPackage(*mod), nil
 }
 
-func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
+func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
 	zipBytes, err := s.client.GetZip(ctx, dep.PackageSyntax(), dep.PackageVersion())
 	if err != nil {
 		return errors.Wrap(err, "get zip")
 	}
 
-	mod := dep.(*reposource.GoPackageVersion).Module
+	mod := dep.(*reposource.GoVersionedPackage).Module
 	if err = unzip(mod, zipBytes, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip go module")
 	}

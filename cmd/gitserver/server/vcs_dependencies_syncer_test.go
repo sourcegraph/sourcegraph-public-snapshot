@@ -28,7 +28,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	placeholder, _ := parseFakeDependency("sourcegraph/placeholder@0.0.0")
 
 	depsSource := &fakeDepsSource{
-		deps:     map[string]reposource.PackageVersion{},
+		deps:     map[string]reposource.VersionedPackage{},
 		get:      map[string]error{},
 		download: map[string]error{},
 	}
@@ -136,7 +136,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.download["org.springframework.boot:spring-boot:3.0"] = notFoundError{errors.New("Please contact Josh Long")}
 
 	t.Run("trying to download non-existent Maven dependency", func(t *testing.T) {
-		springBootDep, err := reposource.ParseMavenPackageVersion("org.springframework.boot:spring-boot:3.0")
+		springBootDep, err := reposource.ParseMavenVersionedPackage("org.springframework.boot:spring-boot:3.0")
 		if err != nil {
 			t.Fatal("Cannot parse Maven dependency")
 		}
@@ -181,7 +181,7 @@ func (s *fakeDepsService) Delete(deps ...string) {
 }
 
 type fakeDepsSource struct {
-	deps          map[string]reposource.PackageVersion
+	deps          map[string]reposource.VersionedPackage
 	get, download map[string]error
 }
 
@@ -198,7 +198,7 @@ func (s *fakeDepsSource) Delete(deps ...string) {
 	}
 }
 
-func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
 	d := name + "@" + version
 
 	err := s.get[d]
@@ -214,44 +214,48 @@ func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposou
 	return dep, nil
 }
 
-func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	err := s.download[dep.PackageVersionSyntax()]
+func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	err := s.download[dep.VersionedPackageSyntax()]
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.PackageVersionSyntax()), 0666)
+	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0666)
 }
 
-func (fakeDepsSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+func (fakeDepsSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(dep)
 }
 
-func (fakeDepsSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return parseFakeDependency(strings.TrimPrefix(repoName, "fake/"))
+func (fakeDepsSource) ParsePackageFromName(name string) (reposource.Package, error) {
+	return parseFakeDependency(name)
 }
 
-type fakePackageVersion struct {
+func (s *fakeDepsSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+	return s.ParsePackageFromName(strings.TrimPrefix(repoName, "fake/"))
+}
+
+type fakeVersionedPackage struct {
 	name    string
 	version string
 }
 
-func parseFakeDependency(dep string) (reposource.PackageVersion, error) {
+func parseFakeDependency(dep string) (reposource.VersionedPackage, error) {
 	i := strings.LastIndex(dep, "@")
 	if i == -1 {
-		return fakePackageVersion{name: dep}, nil
+		return fakeVersionedPackage{name: dep}, nil
 	}
-	return fakePackageVersion{name: dep[:i], version: dep[i+1:]}, nil
+	return fakeVersionedPackage{name: dep[:i], version: dep[i+1:]}, nil
 }
 
-func (f fakePackageVersion) Scheme() string               { return "fake" }
-func (f fakePackageVersion) PackageSyntax() string        { return f.name }
-func (f fakePackageVersion) PackageVersionSyntax() string { return f.name + "@" + f.version }
-func (f fakePackageVersion) PackageVersion() string       { return f.version }
-func (f fakePackageVersion) Description() string          { return f.name + "@" + f.version }
-func (f fakePackageVersion) RepoName() api.RepoName       { return api.RepoName("fake/" + f.name) }
-func (f fakePackageVersion) GitTagFromVersion() string    { return "v" + f.version }
-func (f fakePackageVersion) Less(other reposource.PackageVersion) bool {
-	return f.PackageVersionSyntax() > other.PackageVersionSyntax()
+func (f fakeVersionedPackage) Scheme() string                 { return "fake" }
+func (f fakeVersionedPackage) PackageSyntax() string          { return f.name }
+func (f fakeVersionedPackage) VersionedPackageSyntax() string { return f.name + "@" + f.version }
+func (f fakeVersionedPackage) PackageVersion() string         { return f.version }
+func (f fakeVersionedPackage) Description() string            { return f.name + "@" + f.version }
+func (f fakeVersionedPackage) RepoName() api.RepoName         { return api.RepoName("fake/" + f.name) }
+func (f fakeVersionedPackage) GitTagFromVersion() string      { return "v" + f.version }
+func (f fakeVersionedPackage) Less(other reposource.VersionedPackage) bool {
+	return f.VersionedPackageSyntax() > other.VersionedPackageSyntax()
 }
 
 func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {

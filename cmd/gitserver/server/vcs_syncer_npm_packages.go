@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -25,7 +26,7 @@ func NewNpmPackagesSyncer(
 	svc *dependencies.Service,
 	client npm.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseNpmPackageVersion("@sourcegraph/placeholder@1.0.0")
+	placeholder, err := reposource.ParseNpmVersionedPackage("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
@@ -46,20 +47,30 @@ type npmPackagesSyncer struct {
 	client npm.Client
 }
 
-func (npmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseNpmPackageVersion(dep)
+var _ packagesSource = &npmPackagesSyncer{}
+var _ packagesDownloadSource = &npmPackagesSyncer{}
+
+func (npmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(dep)
 }
 
+func (s *npmPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+	return s.ParsePackageFromRepoName("npm/" + strings.TrimPrefix(name, "@"))
+}
 func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
 		return nil, err
 	}
-	return &reposource.NpmPackageVersion{NpmPackageName: pkg}, nil
+	return &reposource.NpmVersionedPackage{NpmPackageName: pkg}, nil
 }
 
-func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	dep, err := reposource.ParseNpmPackageVersion(name + "@" + version)
+func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposource.Package, error) {
+	return s.Get(ctx, name, "")
+}
+
+func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
+	dep, err := reposource.ParseNpmVersionedPackage(name + "@" + version)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +84,8 @@ func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (repo
 	return dep, nil
 }
 
-func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmPackageVersion))
+func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmVersionedPackage))
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
 	}

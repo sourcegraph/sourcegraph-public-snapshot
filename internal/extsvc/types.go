@@ -83,12 +83,12 @@ const (
 	KindGitolite        = "GITOLITE"
 	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
-	KindGoModules       = "GOMODULES"
+	KindGoPackages      = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPythonPackages  = "PYTHONPACKAGES"
 	KindRustPackages    = "RUSTPACKAGES"
-	KindPagure          = "PAGURE"
 	KindNpmPackages     = "NPMPACKAGES"
+	KindPagure          = "PAGURE"
 	KindOther           = "OTHER"
 )
 
@@ -180,7 +180,7 @@ func KindToType(kind string) string {
 		return TypeRustPackages
 	case KindNpmPackages:
 		return TypeNpmPackages
-	case KindGoModules:
+	case KindGoPackages:
 		return TypeGoModules
 	case KindPagure:
 		return TypePagure
@@ -222,7 +222,7 @@ func TypeToKind(t string) string {
 	case TypeRustPackages:
 		return KindRustPackages
 	case TypeGoModules:
-		return KindGoModules
+		return KindGoPackages
 	case TypePagure:
 		return KindPagure
 	case TypeOther:
@@ -306,8 +306,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPerforce, true
 	case KindPhabricator:
 		return KindPhabricator, true
-	case KindGoModules:
-		return KindGoModules, true
+	case KindGoPackages:
+		return KindGoPackages, true
 	case KindJVMPackages:
 		return KindJVMPackages, true
 	case KindPythonPackages:
@@ -357,7 +357,7 @@ func ParseConfig(kind, config string) (cfg any, _ error) {
 		cfg = &schema.PerforceConnection{}
 	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
-	case KindGoModules:
+	case KindGoPackages:
 		cfg = &schema.GoModulesConnection{}
 	case KindJVMPackages:
 		cfg = &schema.JVMPackagesConnection{}
@@ -620,7 +620,7 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		// Perforce uses the P4PORT to specify the instance, so we use that
 		return c.P4Port, nil
 	case *schema.GoModulesConnection:
-		return KindGoModules, nil
+		return KindGoPackages, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
 	case *schema.NpmPackagesConnection:

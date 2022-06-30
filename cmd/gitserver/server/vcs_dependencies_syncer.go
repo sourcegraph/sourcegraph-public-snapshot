@@ -27,7 +27,7 @@ type vcsPackagesSyncer struct {
 	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
 	// commits or tags. The name of this dependency should never be publicly visible,
 	// so it can have any random value.
-	placeholder reposource.PackageVersion
+	placeholder reposource.VersionedPackage
 	configDeps  []string
 	source      packagesSource
 	svc         dependenciesService
@@ -41,13 +41,19 @@ type packagesSource interface {
 	// Get verifies that a dependency at a specific version exists in the package
 	// host and returns it if so. Otherwise it returns an error that passes
 	// errcode.IsNotFound() test.
-	Get(ctx context.Context, name, version string) (reposource.PackageVersion, error)
+	Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error)
 	// Download the given dependency's archive and unpack it into dir.
-	Download(ctx context.Context, dir string, dep reposource.PackageVersion) error
-	// ParseDependency parses a package-version string from the external service
-	// configuration. The format of the string varies between external services.
-	ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error)
+	Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error
+	// ParseVersionedPackageFromConfiguration parses a package and version from the "dependencies"
+	// field from the site-admin interface.
+	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
+	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
 	ParsePackageFromRepoName(repoName string) (reposource.Package, error)
+}
+
+type packagesDownloadSource interface {
+	// GetPackage sends a request to the package host to get metadata about this package, like the description.
+	GetPackage(ctx context.Context, name string) (reposource.Package, error)
 }
 
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,
@@ -104,7 +110,7 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 
 	var errs errors.MultiError
-	cloneable := make([]reposource.PackageVersion, 0, len(versions))
+	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
 	for _, version := range versions {
 		if d, err := s.source.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
@@ -201,7 +207,7 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 //
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
-func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageVersion) error {
+func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.VersionedPackage) error {
 	workDir, err := os.MkdirTemp("", s.Type())
 	if err != nil {
 		return err
@@ -212,7 +218,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	// We should not return err when dependency is not found
 	if err != nil && errcode.IsNotFound(err) {
 		s.logger.With(
-			log.String("dependency", dep.PackageVersionSyntax()),
+			log.String("dependency", dep.VersionedPackageSyntax()),
 			log.String("error", err.Error()),
 		).Warn("Error during dependency download")
 		return nil
@@ -232,13 +238,13 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify",
-		"-m", dep.PackageVersionSyntax(), "--date", stableGitCommitDate)
+		"-m", dep.VersionedPackageSyntax(), "--date", stableGitCommitDate)
 	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "tag",
-		"-m", dep.PackageVersionSyntax(), dep.GitTagFromVersion())
+		"-m", dep.VersionedPackageSyntax(), dep.GitTagFromVersion())
 	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
@@ -260,7 +266,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
 	var versions []string
 	for _, d := range s.configDeps {
-		dep, err := s.source.ParsePackageVersionFromConfiguration(d)
+		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)
 		if err != nil {
 			s.logger.Warn("skipping malformed dependency", log.String("dep", d), log.Error(err))
 			continue
@@ -288,8 +294,8 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName string) ([
 	return versions, nil
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.PackageVersion) (string, error) {
-	gitName := dependency.PackageVersionSyntax() + " authors"
+func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.VersionedPackage) (string, error) {
+	gitName := dependency.VersionedPackageSyntax() + " authors"
 	gitEmail := "code-intel@sourcegraph.com"
 	cmd.Dir = workingDirectory
 	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
