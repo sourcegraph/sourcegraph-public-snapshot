@@ -239,7 +239,8 @@ func (o *orderedStreamer[T]) start(funcs funcPair[T], release func()) {
 
 	o.group.start(func() {
 		resChan <- streamEvent[T]{funcs.task(), funcs.callback}
-	}, release)
+		release()
+	})
 }
 
 func (o *orderedStreamer[T]) initOnce() {

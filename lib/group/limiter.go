@@ -27,7 +27,7 @@ func (l basicLimiter) Acquire(ctx context.Context) (context.Context, context.Can
 	select {
 	case l <- struct{}{}: // will block if the channel is full
 		return ctx, func() { <-l }, nil
-	case <-ctx.Done():
+	case <-ctx.Done(): // return with an error if the context has been canceled
 		return ctx, func() {}, ctx.Err()
 	}
 }

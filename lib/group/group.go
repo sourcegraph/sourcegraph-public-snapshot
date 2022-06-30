@@ -120,10 +120,13 @@ type group struct {
 func (g *group) Go(f func()) {
 	// acquire will never error if the context is not canceled
 	_, release, _ := g.acquire(context.Background())
-	g.start(f, release)
+	g.start(func() {
+		f()
+		release()
+	})
 }
 
-// acquire a slot from the limiter
+// acquire a slot from the limiter. Will only return an error if the context expires.
 func (g *group) acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	if g.limiter == nil {
 		// nil limiter means unlimited
@@ -133,11 +136,10 @@ func (g *group) acquire(ctx context.Context) (context.Context, context.CancelFun
 	return ctx, release, errors.Wrap(err, "acquire limiter")
 }
 
-// start a goroutine
-func (g *group) start(f, release func()) {
+// start a goroutine with the given function
+func (g *group) start(f func()) {
 	g.wg.Add(1)
 	go func() {
-		defer release()
 		defer g.wg.Done()
 		defer recoverPanic()
 
@@ -172,6 +174,7 @@ func (g *group) WithContext(ctx context.Context) ContextGroup {
 	}
 }
 
+// errorGroup wraps a *group with error collection
 type errorGroup struct {
 	*group
 
@@ -182,22 +185,28 @@ type errorGroup struct {
 }
 
 func (g *errorGroup) Go(f func() error) {
+	// acquire will not error unless the context has been canceled
 	_, release, _ := g.acquire(context.Background())
-	g.start(f, release)
+	g.start(func() error {
+		defer release()
+		return f()
+	})
 }
 
 func (g *errorGroup) acquire(ctx context.Context) (context.Context, context.CancelFunc, bool) {
 	ctx, release, err := g.group.acquire(ctx)
+	// Collect the error, then return whether an error occured
+	// so callers know whether the goroutine was started
 	g.addErr(err)
 	return ctx, release, err == nil
 }
 
 // goCtx starts the goroutine, capturing any errors from the limiter
 // in the set of errors.
-func (g *errorGroup) start(f func() error, release func()) {
+func (g *errorGroup) start(f func() error) {
 	g.group.start(func() {
 		g.addErr(f())
-	}, release)
+	})
 }
 
 func (g *errorGroup) addErr(err error) {
@@ -251,16 +260,19 @@ type contextGroup struct {
 func (g *contextGroup) Go(f func(context.Context) error) {
 	ctx, release, ok := g.errorGroup.acquire(g.ctx)
 	if !ok {
-		// acquire will only fail if the context is canceled
+		// If acquire fails, this means the context was canceled,
+		// so there is no reason to re-cancel here.
 		return
 	}
 	g.errorGroup.start(func() error {
+		defer release()
+
 		err := f(ctx)
 		if err != nil && g.cancel != nil {
 			g.cancel()
 		}
 		return err
-	}, release)
+	})
 }
 
 func (g *contextGroup) WithCancelOnError() ContextGroup {

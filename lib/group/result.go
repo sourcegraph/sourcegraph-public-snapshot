@@ -86,6 +86,8 @@ type ResultContextGroup[T any] interface {
 	Limitable[ResultContextGroup[T]]
 }
 
+// resultAggregator is a utility type that lets us safely append from multiple
+// goroutines. The zero value is valid and ready to use.
 type resultAggregator[T any] struct {
 	mu      sync.Mutex
 	results []T
@@ -97,21 +99,22 @@ func (r *resultAggregator[T]) add(res T) {
 	r.mu.Unlock()
 }
 
+// resultGroup wraps a Group and a resultAggregator to collect
+// the return values of tasks run with the group.
 type resultGroup[T any] struct {
 	Group
-	resultAggregator[T]
+	agg resultAggregator[T]
 }
 
 func (g *resultGroup[T]) Go(f func() T) {
 	g.Group.Go(func() {
-		res := f()
-		g.add(res)
+		g.agg.add(f())
 	})
 }
 
 func (g *resultGroup[T]) Wait() []T {
 	g.Group.Wait()
-	return g.results
+	return g.agg.results
 }
 
 func (g *resultGroup[T]) WithErrors() ResultErrorGroup[T] {
@@ -136,6 +139,8 @@ func (g *resultGroup[T]) WithLimiter(limiter Limiter) ResultGroup[T] {
 	return g
 }
 
+// resultErrorGroup wraps an ErrorGroup and a resultAggregator to collect
+// the results and errors of tasks run with the group.
 type resultErrorGroup[T any] struct {
 	ErrorGroup
 	resultAggregator[T]
@@ -183,8 +188,10 @@ func (g *resultErrorGroup[T]) WithContext(ctx context.Context) ResultContextGrou
 	}
 }
 
+// resultContextGroup wraps a ContextGroup and a resultAggregator to collect
+// the return values and errors of tasks that require a context.
 type resultContextGroup[T any] struct {
-	ContextGroup
+	contextGroup ContextGroup
 	resultAggregator[T]
 	collectErrored bool
 }
