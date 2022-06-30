@@ -62,7 +62,7 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "universal-ctags",
-				Check: checkAction(check.InPath("ctags")),
+				Check: checkAction(check.Combine(check.InPath("ctags"), check.CommandOutputContains("ctags --help", "+interactive"))),
 				Fix:   aptGetInstall("universal-ctags"),
 			},
 			{
