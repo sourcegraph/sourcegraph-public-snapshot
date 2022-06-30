@@ -38,32 +38,32 @@ func newOTelTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Clo
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").
 		With(log.String("otel-collector.endpoint", otelCollectorEndpoint))
 
+	// Ensure propagation between services continues to work. This is also done by another
+	// project that uses the OpenTracing bridge:
+	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
+	compositePropagator := propagation.NewCompositeTextMapPropagator(otpropagator.OT{}, propagation.TraceContext{}, propagation.Baggage{})
+	otel.SetTextMapPropagator(compositePropagator)
+
+	// Initialize OpenTelemetry processor and tracer provider
 	processor, err := newOTelCollectorExporter(context.Background(), logger, opts.debug)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	provider := oteltrace.NewTracerProvider(
 		oteltrace.WithResource(newResource(opts.resource)),
 		oteltrace.WithSampler(oteltrace.AlwaysSample()),
 		oteltrace.WithSpanProcessor(processor),
 	)
 
-	// Set up bridge
+	// Set up bridge for converting opentracing API calls to OpenTelemetry.
 	bridge, _ := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
-
-	// Unsure what propagators do, but we set them up anyway just in case - this is also
-	// done by another project that uses the OpenTracing bridge:
-	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
-	compositePropagator := propagation.NewCompositeTextMapPropagator(otpropagator.OT{}, propagation.TraceContext{}, propagation.Baggage{})
-	otel.SetTextMapPropagator(compositePropagator)
 	bridge.SetTextMapPropagator(propagation.TraceContext{})
 
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(1) // no additional scope needed, this is already otel scope
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { otelLogger.Warn("error encountered", log.Error(err)) }))
 	bridgeLogger := logger.AddCallerSkip(1).Scoped("bridge", "OpenTracing to OpenTelemetry compatibility layer")
-	bridge.SetWarningHandler(func(msg string) { bridgeLogger.Warn(msg) })
+	bridge.SetWarningHandler(func(msg string) { bridgeLogger.Debug(msg) })
 
 	// Done
 	return &otelBridgeTracer{bridge}, &otelBridgeCloser{provider}, nil
