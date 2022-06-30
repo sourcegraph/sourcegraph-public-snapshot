@@ -14,6 +14,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 - Batch specs that mount paths now cache results. [sourcegraph/sourcegraph#37216](https://github.com/sourcegraph/sourcegraph/issues/37216)
+- `SRC_HEADERS="key:value\nkey2:value2"` is now supported for passing multiple headers when authenticating `src` with custom auth proxies. See [auth proxy configuration docs](AUTH_PROXY.md) for more information. [#796](https://github.com/sourcegraph/src-cli/pull/796)
 
 ### Changed
 

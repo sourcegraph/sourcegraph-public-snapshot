@@ -110,7 +110,7 @@ func loginCmd(ctx context.Context, cfg *config, client api.Client, endpointArg s
 			printProblem(fmt.Sprintf("Error communicating with %s: %s", endpointArg, err))
 		}
 		fmt.Fprintln(out, createAccessTokenMessage)
-		fmt.Fprintln(out, "   (If you need to supply custom HTTP request headers, see information about SRC_HEADER_* env vars at https://github.com/sourcegraph/src-cli/blob/main/AUTH_PROXY.md.)")
+		fmt.Fprintln(out, "   (If you need to supply custom HTTP request headers, see information about SRC_HEADER_* and SRC_HEADERS env vars at https://github.com/sourcegraph/src-cli/blob/main/AUTH_PROXY.md.)")
 		return cmderrors.ExitCode1
 	}
 
