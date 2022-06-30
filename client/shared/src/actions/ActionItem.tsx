@@ -8,7 +8,7 @@ import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
-import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
@@ -107,6 +107,12 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     tabIndex?: number
 
     hideExternalLinkIcon?: boolean
+
+    /**
+     * Class applied to tooltip trigger `<span>`,
+     * which is wrapped around action item content.
+     */
+    tooltipClassName?: string
 }
 
 const LOADING = 'loading' as const
@@ -250,7 +256,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                       rel: 'noopener noreferrer',
                   }
                 : {}
-        const buttonLinkProps: Partial<ButtonLinkProps> = this.context.isBranded
+        const buttonLinkProps: Pick<ButtonLinkProps, 'variant' | 'size' | 'outline'> = this.context.isBranded
             ? {
                   variant: this.props.actionItemStyleProps?.actionItemVariant ?? 'link',
                   size: this.props.actionItemStyleProps?.actionItemSize,
@@ -261,14 +267,54 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         // TODO don't run action when disabled
 
+        // Props shared between button and link
+        const sharedProps = {
+            disabled:
+                !this.props.active ||
+                ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+                    this.state.actionOrError === LOADING) ||
+                this.props.disabledWhen,
+            tabIndex: this.props.tabIndex,
+        }
+
+        const tooltipOrErrorMessage =
+            this.props.showInlineError && isErrorLike(this.state.actionOrError)
+                ? `Error: ${this.state.actionOrError.message}`
+                : tooltip
+
+        if (!to) {
+            return (
+                <Button
+                    {...sharedProps}
+                    {...buttonLinkProps}
+                    data-tooltip={tooltipOrErrorMessage}
+                    className={classNames(
+                        'test-action-item',
+                        this.props.className,
+                        showLoadingSpinner && styles.actionItemLoading,
+                        pressed && [this.props.pressedClassName],
+                        sharedProps.disabled && this.props.inactiveClassName
+                    )}
+                    onClick={this.runAction}
+                    data-action-item-pressed={pressed}
+                    aria-pressed={pressed}
+                    aria-label={tooltipOrErrorMessage}
+                >
+                    {content}{' '}
+                    {showLoadingSpinner && (
+                        <div className={styles.loader} data-testid="action-item-spinner">
+                            <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                        </div>
+                    )}
+                </Button>
+            )
+        }
+
         return (
             <ButtonLink
-                data-tooltip={
-                    this.props.showInlineError && isErrorLike(this.state.actionOrError)
-                        ? `Error: ${this.state.actionOrError.message}`
-                        : tooltip
-                }
+                data-tooltip={tooltipOrErrorMessage}
                 data-content={this.props.dataContent}
+                disabledClassName={this.props.inactiveClassName}
                 aria-disabled={disabled}
                 data-action-item-pressed={pressed}
                 className={classNames(
@@ -286,7 +332,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 to={to}
                 {...newTabProps}
                 {...buttonLinkProps}
-                tabIndex={this.props.tabIndex}
+                {...sharedProps}
             >
                 {content}{' '}
                 {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
