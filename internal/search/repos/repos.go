@@ -50,13 +50,6 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
-// A Pager implements paginated repository resolution.
-type Pager interface {
-	// Paginate calls the given callback with each page of resolved repositories. If the callback
-	// returns an error, Paginate will abort and return that error.
-	Paginate(context.Context, *search.RepoOptions, func(*Resolved) error) error
-}
-
 type Resolver struct {
 	DB   database.DB
 	Opts search.RepoOptions
