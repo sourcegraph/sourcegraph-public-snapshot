@@ -127,8 +127,11 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 			// Nothing changed
 			return
 		}
+
+		// update old opts for comparison
 		oldOpts = opts
 
+		// create the new tracer and assign it globally
 		tracerLogger := logger.With(
 			log.String("tracerType", string(opts.TracerType)),
 			log.Bool("debug", opts.debug))

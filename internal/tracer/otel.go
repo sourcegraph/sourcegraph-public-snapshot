@@ -50,7 +50,7 @@ func newOTelTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Clo
 	)
 
 	// Set up bridge
-	bridge, _ := otelbridge.NewTracerPair(provider.Tracer("global"))
+	bridge, _ := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
 
 	// Unsure what propagators do, but we set them up anyway just in case - this is also
 	// done by another project that uses the OpenTracing bridge:
