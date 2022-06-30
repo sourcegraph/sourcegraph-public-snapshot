@@ -25,7 +25,6 @@ type Flags struct {
 	BuildkiteToken      string
 	Pipeline            string
 	Branch              string
-	SlackToken          string
 	FailuresThreshold   int
 	FailuresTimeoutMins int
 }
@@ -34,7 +33,6 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.BuildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
-	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
@@ -50,6 +48,7 @@ func main() {
 	checkFlags := &cmdCheckFlags{}
 	flag.StringVar(&checkFlags.githubToken, "github.token", "", "mandatory github token")
 	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
+	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "Slack token used for resolving Slack handles to mention")
 	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
 	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
 
@@ -84,6 +83,7 @@ func main() {
 type cmdCheckFlags struct {
 	githubToken string
 
+	slackToken             string
 	slackAnnounceWebhooks  string
 	slackDebugWebhook      string
 	slackDiscussionChannel string
@@ -101,9 +101,6 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: checkFlags.githubToken},
 	)))
-
-	// Slack client
-	slc := slack.New(flags.SlackToken)
 
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -124,7 +121,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", flags.Branch),
-		team.NewTeammateResolver(ghc, slc),
+		team.NewTeammateResolver(ghc, slack.New(checkFlags.slackToken)),
 		builds,
 		opts,
 	)
