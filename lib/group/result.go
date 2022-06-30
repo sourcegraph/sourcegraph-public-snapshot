@@ -47,6 +47,10 @@ type ResultErrorGroup[T any] interface {
 	// dropped.
 	WithCollectErrored() ResultErrorGroup[T]
 
+	// WithFirstError will configure the group to only retain the first error,
+	// ignoring any subsequent errors.
+	WithFirstError() ResultErrorGroup[T]
+
 	// Configuration methods. See interface definitions for details.
 	Contextable[ResultContextErrorGroup[T]]
 	Limitable[ResultErrorGroup[T]]
@@ -155,6 +159,11 @@ func (g *resultErrorGroup[T]) Wait() ([]T, error) {
 
 func (g *resultErrorGroup[T]) WithCollectErrored() ResultErrorGroup[T] {
 	g.collectErrored = true
+	return g
+}
+
+func (g *resultErrorGroup[T]) WithFirstError() ResultErrorGroup[T] {
+	g.ErrorGroup = g.ErrorGroup.WithFirstError()
 	return g
 }
 

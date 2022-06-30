@@ -48,6 +48,10 @@ type ErrorGroup interface {
 	// the submitted functions.
 	Wait() error
 
+	// WithFirstError will configure the group to only retain the first error,
+	// ignoring any subsequent errors.
+	WithFirstError() ErrorGroup
+
 	// Configuration methods. See interface definitions for details.
 	Contextable[ContextErrorGroup]
 	Limitable[ErrorGroup]
