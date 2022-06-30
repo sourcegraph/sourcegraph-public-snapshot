@@ -17,20 +17,17 @@ type switchableTracer struct {
 	tracer       opentracing.Tracer
 	tracerCloser io.Closer
 
-	log          bool
-	logger       log.Logger
-	parentLogger log.Logger // used to create logger
+	log    bool
+	logger log.Logger
 }
 
 var _ opentracing.Tracer = &switchableTracer{}
 
-// move to OpenTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
 func newSwitchableTracer(logger log.Logger) *switchableTracer {
 	var t opentracing.NoopTracer
 	return &switchableTracer{
-		tracer:       t,
-		logger:       logger.With(log.String("tracer", fmt.Sprintf("%T", t))),
-		parentLogger: logger,
+		tracer: t,
+		logger: logger.With(log.String("tracer", fmt.Sprintf("%T", t))),
 	}
 }
 
@@ -62,7 +59,7 @@ func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanCon
 	return t.tracer.Extract(format, carrier)
 }
 
-func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, shouldLog bool) {
+func (t *switchableTracer) set(logger log.Logger, tracer opentracing.Tracer, tracerCloser io.Closer, shouldLog bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if tc := t.tracerCloser; tc != nil {
@@ -73,5 +70,5 @@ func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer
 	t.tracerCloser = tracerCloser
 	t.tracer = tracer
 	t.log = shouldLog
-	t.logger = t.parentLogger.With(log.String("opentracer", fmt.Sprintf("%T", t)))
+	t.logger = t.logger.With(log.String("opentracer", fmt.Sprintf("%T", t)))
 }

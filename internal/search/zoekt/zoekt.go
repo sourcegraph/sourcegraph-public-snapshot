@@ -68,7 +68,7 @@ func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, s
 
 	spanContext = make(map[string]string)
 	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
-		logger.Warn("Error injecting span context into map: %s", log.Error(err))
+		logger.Warn("Error injecting span context into map", log.Error(err))
 		return true, nil
 	}
 	return true, spanContext

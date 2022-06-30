@@ -134,7 +134,7 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 				log.Error(err))
 			return
 		}
-		globalTracer.set(t, closer, opts.debug)
+		globalTracer.set(logger, t, closer, opts.debug)
 	})
 }
 
@@ -149,7 +149,7 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer,
 		return newJaegerTracer(logger, opts)
 
 	case OpenTelemetry:
-		return newOTelTracer(opts)
+		return newOTelTracer(logger, opts)
 
 	default:
 		logger.Info("tracing disabled")
