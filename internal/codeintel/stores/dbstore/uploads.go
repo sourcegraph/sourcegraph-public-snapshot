@@ -324,6 +324,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	cteDefinitions := make([]cteDefinition, 0, 3)
 	sourceTableExpr := sqlf.Sprintf("lsif_uploads u")
 
+	allowDeletedUploads := (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted"
+
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -332,6 +334,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.State != "" {
 		conds = append(conds, makeStateCondition(opts.State))
+	} else if !allowDeletedUploads {
+		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
@@ -373,7 +377,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		)`, opts.DependentOf))
 	}
 
-	if (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted" {
+	if allowDeletedUploads {
 		cteDefinitions = append(cteDefinitions, cteDefinition{
 			name:       "deleted_uploads",
 			definition: sqlf.Sprintf(deletedUploadsFromAuditLogsCTEQuery),
@@ -398,7 +402,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				num_parts,
 				uploaded_parts,
 				upload_size,
-				associated_index_id
+				associated_index_id,
+				expired
 			FROM lsif_uploads
 			UNION ALL
 			SELECT *
@@ -433,9 +438,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 	var orderExpression *sqlf.Query
 	if opts.OldestFirst {
-		orderExpression = sqlf.Sprintf("uploaded_at")
+		orderExpression = sqlf.Sprintf("uploaded_at, id DESC")
 	} else {
-		orderExpression = sqlf.Sprintf("uploaded_at DESC")
+		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
 	}
 
 	uploads, totalCount, err := scanUploadsWithCount(tx.Store.Query(ctx, sqlf.Sprintf(
@@ -523,7 +528,8 @@ SELECT
 	au.indexer, au.indexer_version,
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
-	au.upload_size, au.associated_index_id
+	au.upload_size, au.associated_index_id,
+	(snapshot->'expired')::boolean AS expired
 FROM (
 	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
 	FROM lsif_uploads_audit_logs
