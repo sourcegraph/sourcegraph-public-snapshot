@@ -189,27 +189,27 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 			name:       "verify archive fork map to lang",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Lang,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output(findme -> $lang)",
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $lang)",
 		}, {
 			name:       "verify archive fork map to repo",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Repo,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output(findme -> $repo)",
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $repo)",
 		}, {
 			name:       "verify archive fork map to path",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Path,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output(findme -> $path)",
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $path)",
 		}, {
 			name:       "verify archive fork map to author",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Author,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output(findme -> $author)",
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $author)",
 		}, {
 			name:       "verify archive fork map to date",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Date,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output(findme -> $date)",
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $date)",
 		},
 	}
 	for _, test := range tests {
