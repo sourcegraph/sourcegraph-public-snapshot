@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -36,8 +37,9 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
 	return &searchClient{
+		logger:       logger,
 		db:           db,
 		zoekt:        zoektStreamer,
 		searcherURLs: searcherURLs,
@@ -45,6 +47,7 @@ func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs 
 }
 
 type searchClient struct {
+	logger       log.Logger
 	db           database.DB
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
