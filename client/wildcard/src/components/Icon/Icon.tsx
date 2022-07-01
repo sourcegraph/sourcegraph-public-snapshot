@@ -43,9 +43,8 @@ interface HiddenIconProps extends BaseIconProps {
 
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
-// eslint-disable-next-line react/display-name
-export const Icon = React.forwardRef(
-    ({ children, className, size, role = 'img', inline = true, ...props }, reference) => {
+export const Icon = React.memo(
+    React.forwardRef(function Icon({ children, className, size, role = 'img', inline = true, ...props }, reference) {
         const iconStyle = classNames(inline && styles.iconInline, size === 'md' && styles.iconInlineMd, className)
 
         if (props.svgPath) {
@@ -81,7 +80,5 @@ export const Icon = React.forwardRef(
                 {children}
             </IconComponent>
         )
-    }
-) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
-
-Icon.displayName = 'Icon'
+    }) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
+)
