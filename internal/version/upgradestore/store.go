@@ -27,19 +27,14 @@ func New(db database.DB, observationContext *observation.Context) *store {
 	}
 }
 
-// GetFirstServiceVersion returns the first version registered for the given Sourcegraph service.
-// This method will return an error if UpdateServiceVersion has never been called for the given
+// GetFirstServiceVersion returns the first version registered for the given Sourcegraph service. This
+// method will return a false-valued flag if UpdateServiceVersion has never been called for the given
 // service.
-func (s *store) GetFirstServiceVersion(ctx context.Context, service string) (_ string, err error) {
+func (s *store) GetFirstServiceVersion(ctx context.Context, service string) (_ string, _ bool, err error) {
 	// ctx, _, endObservation := s.operations.getFirstServiceVersion.With(ctx, &err, observation.Args{})
 	// defer endObservation(1, observation.Args{})
 
-	version, _, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getFirstServiceVersionQuery, service)))
-	if err != nil {
-		return "", err
-	}
-
-	return version, nil
+	return basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getFirstServiceVersionQuery, service)))
 }
 
 const getFirstServiceVersionQuery = `
