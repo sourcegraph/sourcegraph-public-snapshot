@@ -97,7 +97,7 @@ export function generateLinkURL(input: GenerateLinkInput): string {
     const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
     const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
 
-    const scopeRepoFilters = `repo:^(${repositories.map(escapeRegExp).join('|')})$`
+    const scopeRepoFilters = repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
     const contextFilter = context ? `context:${context}` : ''
     const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
     const afterFilter = after ? `after:${after}` : ''
