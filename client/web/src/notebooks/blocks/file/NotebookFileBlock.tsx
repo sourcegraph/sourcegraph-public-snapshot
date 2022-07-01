@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
+import { EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -27,12 +27,12 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
+import { focusEditor } from '../../codemirror-utils'
 import { parseFileBlockInput } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { RepoFileSymbolLink } from '../RepoFileSymbolLink'
-import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
@@ -44,8 +44,8 @@ interface NotebookFileBlockProps
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         ThemeProps {
-    sourcegraphSearchLanguageId: string
     isSourcegraphDotCom: boolean
+    globbing: boolean
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
@@ -66,7 +66,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         onBlockInputChange,
         ...props
     }) => {
-        const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+        const [editor, setEditor] = useState<EditorView | undefined>()
         const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
         const [fileQueryInput, setFileQueryInput] = useState(input.initialQueryInput ?? '')
         const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
@@ -91,7 +91,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             [input.filePath, input.repositoryName, input.revision, onFileSelected]
         )
 
-        const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+        const focusInput = useCallback(() => {
+            if (editor) {
+                focusEditor(editor)
+            }
+        }, [editor])
 
         const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
@@ -198,13 +202,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {showInputs && (
                     <NotebookFileBlockInputs
                         id={id}
-                        editor={editor}
-                        setEditor={setEditor}
+                        onEditorCreated={setEditor}
                         lineRange={input.lineRange}
                         onLineRangeChange={onLineRangeChange}
                         queryInput={fileQueryInput}
-                        setQueryInput={setFileQueryInput}
-                        debouncedSetQueryInput={debouncedSetFileQueryInput}
+                        setQueryInput={debouncedSetFileQueryInput}
                         onRunBlock={hideInputs}
                         onFileSelected={onFileSelected}
                         {...props}

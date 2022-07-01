@@ -3,9 +3,10 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import classNames from 'classnames'
 
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { BlockProps } from '..'
-import { isModifierKeyPressed, isMonacoEditorDescendant } from '../notebook/useNotebookEventHandlers'
+import { isModifierKeyPressed } from '../notebook/useNotebookEventHandlers'
 
 import { NotebookBlockMenu, NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
 import { useIsBlockInputFocused } from './useIsBlockInputFocused'
@@ -51,7 +52,7 @@ export const NotebookBlock: React.FunctionComponent<React.PropsWithChildren<Note
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
             const target = event.target as HTMLElement
-            if (isMonacoEditorDescendant(target)) {
+            if (isInputElement(target)) {
                 return
             }
 
@@ -59,6 +60,9 @@ export const NotebookBlock: React.FunctionComponent<React.PropsWithChildren<Note
                 if (isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)) {
                     setIsInputVisible?.(false)
                 } else {
+                    // This prevents CodeMirror from appending a new line when
+                    // the input was focused by pressing the Enter key
+                    event.preventDefault()
                     onEnterBlock()
                 }
             }

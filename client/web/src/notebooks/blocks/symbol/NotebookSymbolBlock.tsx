@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react'
 
+import { EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -28,11 +28,11 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { Alert, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
+import { focusEditor } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { RepoFileSymbolLink } from '../RepoFileSymbolLink'
-import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
@@ -45,8 +45,9 @@ interface NotebookSymbolBlockProps
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    sourcegraphSearchLanguageId: string
     hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    isSourcegraphDotCom: boolean
+    globbing: boolean
 }
 
 const LOADING = 'LOADING' as const
@@ -75,7 +76,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
         onBlockInputChange,
         ...props
     }) => {
-        const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+        const [editor, setEditor] = useState<EditorView | null>()
         const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
         const [symbolQueryInput, setSymbolQueryInput] = useState(input.initialQueryInput ?? '')
         const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
@@ -88,7 +89,11 @@ export const NotebookSymbolBlock: React.FunctionComponent<
             [id, onBlockInputChange, onRunBlock]
         )
 
-        const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+        const focusInput = useCallback(() => {
+            if (editor) {
+                focusEditor(editor)
+            }
+        }, [editor])
 
         const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
@@ -195,12 +200,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {showInputs && (
                     <NotebookSymbolBlockInput
                         id={id}
-                        editor={editor}
                         queryInput={symbolQueryInput}
                         isLightTheme={isLightTheme}
-                        setEditor={setEditor}
-                        setQueryInput={setSymbolQueryInput}
-                        debouncedSetQueryInput={debouncedSetSymbolQueryInput}
+                        onEditorCreated={setEditor}
+                        setQueryInput={debouncedSetSymbolQueryInput}
                         onSymbolSelected={onSymbolSelected}
                         onRunBlock={hideInputs}
                         {...props}

@@ -20,7 +20,6 @@ const defaultProps = {
     revision: 'main',
     filePath: 'client/web/file.tsx',
     lineRangeInput: '123-321',
-    sourcegraphSearchLanguageId: 'sourcegraph',
     queryInput: '',
     setQueryInput: noop,
     debouncedSetQueryInput: noop,
@@ -29,7 +28,9 @@ const defaultProps = {
     lineRange: null,
     onLineRangeChange: noop,
     editor: undefined,
-    setEditor: noop,
+    onEditorCreated: noop,
+    isSourcegraphDotCom: false,
+    globbing: false,
 }
 
 export const Default: Story = () => (

@@ -1,12 +1,14 @@
 import React, { useMemo, useState, useCallback } from 'react'
 
+import { EditorView } from '@codemirror/view'
 import { debounce } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import * as Monaco from 'monaco-editor'
 
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
+import { createDefaultSuggestions } from '@sourcegraph/search-ui'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
@@ -14,32 +16,37 @@ import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
-import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
-    sourcegraphSearchLanguageId: string
-    editor: Monaco.editor.IStandaloneCodeEditor | undefined
     queryInput: string
     lineRange: IHighlightLineRange | null
-    setEditor: (editor: Monaco.editor.IStandaloneCodeEditor) => void
+    onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
-    debouncedSetQueryInput: (value: string) => void
     onLineRangeChange: (lineRange: IHighlightLineRange | null) => void
     onFileSelected: (file: FileBlockInput) => void
+    isSourcegraphDotCom: boolean
+    globbing: boolean
 }
 
 function getFileSuggestionsQuery(queryInput: string): string {
     return `${queryInput} fork:yes type:path count:50`
 }
 
+const editorAttributes = [
+    EditorView.editorAttributes.of({
+        'data-testid': 'notebook-file-block-input',
+    }),
+    EditorView.contentAttributes.of({
+        'aria-label': 'File search input',
+    }),
+]
+
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
-> = ({ id, lineRange, editor, setEditor, onFileSelected, onLineRangeChange, ...props }) => {
-    useFocusMonacoEditorOnMount({ editor, isEditing: true })
-
+> = ({ id, lineRange, onFileSelected, onLineRangeChange, globbing, isSourcegraphDotCom, ...inputProps }) => {
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -85,6 +92,16 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
 
     const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
 
+    const queryCompletion = useMemo(
+        () =>
+            createDefaultSuggestions({
+                isSourcegraphDotCom,
+                globbing,
+                fetchSuggestions: fetchStreamSuggestions,
+            }),
+        [isSourcegraphDotCom, globbing]
+    )
+
     return (
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
@@ -95,14 +112,13 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
             </div>
             <SearchTypeSuggestionsInput<PathMatch>
                 id={id}
-                editor={editor}
-                setEditor={setEditor}
                 label="Find a file using a Sourcegraph search query"
                 queryPrefix="type:path"
                 fetchSuggestions={fetchFileSuggestions}
                 countSuggestions={countSuggestions}
                 renderSuggestions={renderSuggestions}
-                {...props}
+                extension={useMemo(() => [queryCompletion, editorAttributes], [queryCompletion])}
+                {...inputProps}
             />
             <div className="mt-2">
                 <Input

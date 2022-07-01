@@ -23,8 +23,6 @@ export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isM
     return (isMacPlatform && isMetaKey) || (!isMacPlatform && isCtrlKey)
 }
 
-export const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
-
 export function useNotebookEventHandlers({
     notebook,
     selectedBlockId,
@@ -81,11 +79,7 @@ export function useNotebookEventHandlers({
 
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (
-                event.key === 'Escape' &&
-                !isMonacoEditorDescendant(target) &&
-                target.tagName.toLowerCase() !== 'input'
-            ) {
+            } else if (event.key === 'Escape' && !isInputElement(target)) {
                 setSelectedBlockId(null)
             }
 

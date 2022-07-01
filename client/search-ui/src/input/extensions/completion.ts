@@ -227,136 +227,151 @@ export function createDefaultSuggestionSources(options: {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
     globbing: boolean
+    disableFilterCompletion?: true
+    disableSymbolCompletion?: true
 }): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
-    return [
-        // Static suggestions shown if the the current position is outside a
-        // filter value
-        createDefaultSource((context, _tokens, token) => {
-            // Default to the current cursor position (e.g. if the token is a
-            // whitespace, we want the suggestion to be inserted after it)
-            let from = context.position
+    const sources: SuggestionSource<CompletionResult | null, SuggestionContext>[] = []
 
-            if (token?.type === 'pattern') {
-                // If the token is a pattern (e.g. the start of a filter name),
-                // we want the suggestion to complete that name.
-                from = token.range.start
-            }
+    if (options.disableFilterCompletion !== true) {
+        sources.push(
+            // Static suggestions shown if the the current position is outside a
+            // filter value
+            createDefaultSource((context, _tokens, token) => {
+                // Default to the current cursor position (e.g. if the token is a
+                // whitespace, we want the suggestion to be inserted after it)
+                let from = context.position
 
-            return {
-                from,
-                options: FILTER_SUGGESTIONS,
-            }
-        }),
+                if (token?.type === 'pattern') {
+                    // If the token is a pattern (e.g. the start of a filter name),
+                    // we want the suggestion to complete that name.
+                    from = token.range.start
+                }
 
-        // Show symbol suggestions outside of filters
-        createDefaultSource(async (context, tokens, token) => {
-            if (!token || token.type !== 'pattern') {
-                return null
-            }
+                return {
+                    from,
+                    options: FILTER_SUGGESTIONS,
+                }
+            }),
+            // Show static filter value suggestions
+            createFilterSource((_context, _tokens, token, resolvedFilter) => {
+                if (!resolvedFilter?.definition.discreteValues) {
+                    return null
+                }
 
-            const results = await options.fetchSuggestions(getSuggestionQuery(tokens, token, 'symbol'), context.onAbort)
-            if (results.length === 0) {
-                return null
-            }
+                const { value } = token
+                const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
 
-            return {
-                from: token.range.start,
-                options: results
-                    .flatMap(result => {
-                        if (result.type === 'symbol') {
-                            const path = result.path
-                            return result.symbols.map(symbol => ({
-                                label: symbol.name,
-                                type: symbol.kind,
-                                apply: symbol.name + ' ',
-                                detail: `${startCase(symbol.kind.toLowerCase())} | ${basename(path)}`,
-                                info: result.repository,
-                            }))
+                if (insidePredicate) {
+                    return null
+                }
+
+                return {
+                    from: value?.range.start ?? token.range.end,
+                    options: resolvedFilter.definition
+                        .discreteValues(value, options.isSourcegraphDotCom)
+                        .map(({ label, insertText, asSnippet }) => {
+                            const apply = (insertText || label) + ' '
+                            return {
+                                label,
+                                apply: asSnippet ? snippet(apply) : apply,
+                            }
+                        }),
+                }
+            }),
+
+            // Show dynamic filter value suggestions
+            createFilterSource(async (context, tokens, token, resolvedFilter) => {
+                // On Sourcegraph.com, prompt only static suggestions (above) if there is no value to use for generating dynamic suggestions yet.
+                if (
+                    options.isSourcegraphDotCom &&
+                    (!token.value || (token.value.type === 'literal' && token.value.value === ''))
+                ) {
+                    return null
+                }
+
+                if (!resolvedFilter?.definition.suggestions) {
+                    return null
+                }
+
+                const results = await options.fetchSuggestions(
+                    getSuggestionQuery(tokens, token, resolvedFilter.definition.suggestions),
+                    context.onAbort
+                )
+                if (results.length === 0) {
+                    return null
+                }
+                const filteredResults = results
+                    .filter(match => match.type === resolvedFilter.definition.suggestions)
+                    .map(match => {
+                        switch (match.type) {
+                            case 'path':
+                                return {
+                                    label: match.path,
+                                    type: SymbolKind.FILE,
+                                    apply: regexInsertText(match.path, options) + ' ',
+                                    info: match.repository,
+                                }
+                            case 'repo':
+                                return {
+                                    label: match.repository,
+                                    type: 'repository',
+                                    apply:
+                                        repositoryInsertText(match, { ...options, filterValue: token.value?.value }) +
+                                        ' ',
+                                }
                         }
                         return null
                     })
-                    .filter(isDefined),
-            }
-        }),
+                    .filter(isDefined)
 
-        // Show static filter value suggestions
-        createFilterSource((_context, _tokens, token, resolvedFilter) => {
-            if (!resolvedFilter?.definition.discreteValues) {
-                return null
-            }
+                return {
+                    from: token.value?.range.start ?? token.range.end,
+                    filter: false,
+                    options: filteredResults,
+                }
+            })
+        )
+    }
 
-            const { value } = token
-            const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
-
-            if (insidePredicate) {
-                return null
-            }
-
-            return {
-                from: value?.range.start ?? token.range.end,
-                options: resolvedFilter.definition
-                    .discreteValues(value, options.isSourcegraphDotCom)
-                    .map(({ label, insertText, asSnippet }) => {
-                        const apply = (insertText || label) + ' '
-                        return {
-                            label,
-                            apply: asSnippet ? snippet(apply) : apply,
-                        }
-                    }),
-            }
-        }),
-
-        // Show dynamic filter value suggestions
-        createFilterSource(async (context, tokens, token, resolvedFilter) => {
-            // On Sourcegraph.com, prompt only static suggestions (above) if there is no value to use for generating dynamic suggestions yet.
-            if (
-                options.isSourcegraphDotCom &&
-                (!token.value || (token.value.type === 'literal' && token.value.value === ''))
-            ) {
-                return null
-            }
-
-            if (!resolvedFilter?.definition.suggestions) {
-                return null
-            }
-
-            const results = await options.fetchSuggestions(
-                getSuggestionQuery(tokens, token, resolvedFilter.definition.suggestions),
-                context.onAbort
-            )
-            if (results.length === 0) {
-                return null
-            }
-            const filteredResults = results
-                .filter(match => match.type === resolvedFilter.definition.suggestions)
-                .map(match => {
-                    switch (match.type) {
-                        case 'path':
-                            return {
-                                label: match.path,
-                                type: SymbolKind.FILE,
-                                apply: regexInsertText(match.path, options) + ' ',
-                                info: match.repository,
-                            }
-                        case 'repo':
-                            return {
-                                label: match.repository,
-                                type: 'repository',
-                                apply:
-                                    repositoryInsertText(match, { ...options, filterValue: token.value?.value }) + ' ',
-                            }
-                    }
+    if (options.disableSymbolCompletion !== true) {
+        sources.push(
+            // Show symbol suggestions outside of filters
+            createDefaultSource(async (context, tokens, token) => {
+                if (!token || token.type !== 'pattern') {
                     return null
-                })
-                .filter(isDefined)
+                }
 
-            return {
-                from: token.value?.range.start ?? token.range.end,
-                filter: false,
-                options: filteredResults,
-            }
-        }),
-    ]
+                const results = await options.fetchSuggestions(
+                    getSuggestionQuery(tokens, token, 'symbol'),
+                    context.onAbort
+                )
+                if (results.length === 0) {
+                    return null
+                }
+
+                return {
+                    from: token.range.start,
+                    options: results
+                        .flatMap(result => {
+                            if (result.type === 'symbol') {
+                                const path = result.path
+                                return result.symbols.map(symbol => ({
+                                    label: symbol.name,
+                                    type: symbol.kind,
+                                    apply: symbol.name + ' ',
+                                    detail: `${startCase(symbol.kind.toLowerCase())} | ${basename(path)}`,
+                                    info: result.repository,
+                                }))
+                            }
+                            return null
+                        })
+                        .filter(isDefined),
+                }
+            })
+        )
+    }
+
+    return sources
 }
 
 /**

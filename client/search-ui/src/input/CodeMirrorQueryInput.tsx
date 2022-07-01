@@ -4,7 +4,6 @@ import { startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import {
     EditorSelection,
-    EditorState,
     Extension,
     Facet,
     StateEffect,
@@ -12,7 +11,6 @@ import {
     Prec,
     RangeSetBuilder,
     MapMode,
-    ChangeSpec,
     Compartment,
 } from '@codemirror/state'
 import {
@@ -43,13 +41,11 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, createUpdateableField } from './extensions'
+import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
 import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
-
-const replacePattern = /[\n\r↵]+/g
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -90,7 +86,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // placeholder text properly. CodeMirror has built-in support for
     // placeholders.
 }) => {
-    const value = preventNewLine ? queryState.query.replace(replacePattern, ' ') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
     // reference that doesn't change across renders (and some hooks should only
@@ -126,6 +121,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         ]
 
         if (preventNewLine) {
+            // NOTE: If a submit handler is assigned to the query input then the pressing
+            // enter won't insert a line break anyway. In that case, this exnteions ensures
+            // that line breaks are stripped from pasted input.
             extensions.push(singleLine)
         } else {
             // Automatically enable line wrapping in multi-line mode
@@ -218,7 +216,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 onEditorCreated={editorCreated}
                 patternType={patternType}
                 interpretComments={interpretComments}
-                value={value}
+                value={queryState.query}
                 className={className}
                 extensions={extensions}
             />
@@ -358,36 +356,6 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 //
 // Sometimes it's not always obvious which type of extension to use to achieve a
 // certain goal (and I don't claim that the implementation below is optimal).
-
-// Enforces that the input won't span over multiple lines by replacing or
-// removing line breaks.
-// NOTE: If a submit handler is assigned to the query input then the pressing
-// enter won't insert a line break anyway. In that case, this filter ensures
-// that line breaks are stripped from pasted input.
-const singleLine = EditorState.transactionFilter.of(transaction => {
-    if (!transaction.docChanged) {
-        return transaction
-    }
-
-    const newText = transaction.newDoc.sliceString(0)
-    const changes: ChangeSpec[] = []
-
-    // new RegExp(...) creates a copy of the regular expression so that we have
-    // our own stateful copy for using `exec` below.
-    const lineBreakPattern = new RegExp(replacePattern)
-    let match: RegExpExecArray | null = null
-    while ((match = lineBreakPattern.exec(newText))) {
-        // Insert space for line breaks following non-whitespace characters
-        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
-            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
-        } else {
-            // Otherwise remove it
-            changes.push({ from: match.index, to: match.index + match[0].length })
-        }
-    }
-
-    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
-})
 
 // Instead of deriving extensions directly form props, these event handlers are
 // configured via a field. This means that their values can be updated via

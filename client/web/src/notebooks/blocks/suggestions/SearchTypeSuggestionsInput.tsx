@@ -1,25 +1,21 @@
-import { ReactElement, useCallback, useMemo } from 'react'
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 
-import classNames from 'classnames'
-import { noop } from 'lodash'
-import * as Monaco from 'monaco-editor'
+import { Extension } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { Observable, of } from 'rxjs'
 import { delay, startWith } from 'rxjs/operators'
 
 import { pluralize } from '@sourcegraph/common'
-import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery, toMonacoSelection } from '@sourcegraph/search-ui'
-import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { createQueryExampleFromString, SearchPatternType, updateQueryWithFilterAndExample } from '@sourcegraph/search'
+import { CodeMirrorQueryInput, SyntaxHighlightedSearchQuery, singleLine, changeListener } from '@sourcegraph/search-ui'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Label, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
+import { blockKeymap, focusEditor } from '../../codemirror-utils'
 
-import blockStyles from '../NotebookBlock.module.scss'
 import styles from './SearchTypeSuggestionsInput.module.scss'
 
 interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
@@ -27,16 +23,14 @@ interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
         Pick<BlockProps, 'onRunBlock'> {
     id: string
     label: string
-    sourcegraphSearchLanguageId: string
-    editor: Monaco.editor.IStandaloneCodeEditor | undefined
     queryPrefix: string
     queryInput: string
-    setEditor: (editor: Monaco.editor.IStandaloneCodeEditor) => void
+    onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
-    debouncedSetQueryInput: (value: string) => void
     fetchSuggestions: (query: string) => Observable<S[]>
     countSuggestions: (suggestions: S[]) => number
     renderSuggestions: (suggestions: S[]) => ReactElement
+    extension?: Extension
 }
 
 const LOADING = 'LOADING' as const
@@ -45,49 +39,46 @@ const QUERY_EXAMPLE = createQueryExampleFromString('{enter-regexp-pattern}')
 export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
     id,
     label,
-    editor,
-    sourcegraphSearchLanguageId,
     queryPrefix,
     queryInput,
-    isLightTheme,
-    setEditor,
     setQueryInput,
-    debouncedSetQueryInput,
+    isLightTheme,
     fetchSuggestions,
     countSuggestions,
     renderSuggestions,
-    ...props
+    onRunBlock,
+    onEditorCreated,
+    extension,
 }: SearchTypeSuggestionsInputProps<S>): ReactElement => {
-    useMonacoBlockInput({
-        editor,
-        id,
-        onInputChange: debouncedSetQueryInput,
-        preventNewLine: true,
-        ...props,
-    })
+    const [editor, setEditor] = useState<EditorView | null>(null)
+
+    const runBlock = useCallback(() => onRunBlock(id), [onRunBlock, id])
+    const onEditorCreatedLocal = useCallback(
+        (editor: EditorView) => {
+            setEditor(editor)
+            onEditorCreated(editor)
+        },
+        [onEditorCreated]
+    )
 
     const addExampleFilter = useCallback(
         (filterType: FilterType) => {
-            const { query, placeholderRange, filterRange } = updateQueryWithFilterAndExample(
-                queryInput,
-                filterType,
-                QUERY_EXAMPLE,
-                { singular: false, negate: false, emptyValue: false }
-            )
-            setQueryInput(query)
-            const textModel = editor?.getModel()
-            if (!editor || !textModel) {
-                return
-            }
-            // Focus the selection in the next run-loop, since we have to wait for the Monaco editor to update.
-            setTimeout(() => {
-                const selectionRange = toMonacoSelection(toMonacoRange(placeholderRange, textModel))
-                editor.setSelection(selectionRange)
-                editor.revealRange(toMonacoRange(filterRange, textModel))
+            if (editor) {
+                const { query, placeholderRange } = updateQueryWithFilterAndExample(
+                    queryInput,
+                    filterType,
+                    QUERY_EXAMPLE,
+                    { singular: false, negate: false, emptyValue: false }
+                )
                 editor.focus()
-            }, 0)
+                editor.dispatch({
+                    changes: { from: 0, to: editor.state.doc.length, insert: query },
+                    selection: { anchor: placeholderRange.start, head: placeholderRange.end },
+                    scrollIntoView: true,
+                })
+            }
         },
-        [editor, queryInput, setQueryInput]
+        [editor, queryInput]
     )
 
     const suggestions = useObservable(
@@ -111,35 +102,31 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
         return countSuggestions(suggestions)
     }, [suggestions, countSuggestions])
 
+    // Focus input on component creation
+    useEffect(() => {
+        if (editor) {
+            focusEditor(editor)
+        }
+    }, [editor])
+
     return (
         <div>
             <Label htmlFor={`${id}-search-type-query-input`}>{label}</Label>
-            <div
-                id={`${id}-search-type-query-input`}
-                className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}
-            >
+            <div id={`${id}-search-type-query-input`} className={styles.queryInputWrapper}>
                 <div className="d-flex">
                     <SyntaxHighlightedSearchQuery className={styles.searchTypeQueryPart} query={queryPrefix} />
                 </div>
-                <div className="flex-1">
-                    <MonacoEditor
-                        language={sourcegraphSearchLanguageId}
-                        value={queryInput}
-                        height={17}
-                        isLightTheme={isLightTheme}
-                        editorWillMount={noop}
-                        onEditorCreated={setEditor}
-                        options={{
-                            ...MONACO_BLOCK_INPUT_OPTIONS,
-                            wordWrap: 'off',
-                            scrollbar: {
-                                vertical: 'hidden',
-                                horizontal: 'hidden',
-                            },
-                        }}
-                        border={false}
-                    />
-                </div>
+                <CodeMirrorQueryInput
+                    value={queryInput}
+                    isLightTheme={isLightTheme}
+                    onEditorCreated={onEditorCreatedLocal}
+                    patternType={SearchPatternType.literal}
+                    interpretComments={true}
+                    extensions={useMemo(
+                        () => [blockKeymap({ runBlock }), changeListener(setQueryInput), singleLine, extension ?? []],
+                        [setQueryInput, runBlock, extension]
+                    )}
+                />
             </div>
             <div className="mt-1">
                 <Button

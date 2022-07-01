@@ -10,12 +10,14 @@ import classNames from 'classnames'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 
+import { changeListener, editorHeight } from '@sourcegraph/search-ui'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'
+import { focusEditor } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
@@ -79,17 +81,8 @@ const staticExtensions: Extension[] = [
             { tag: tags.url, class: styles.markdownCode },
         ])
     ),
+    editorHeight({ height: '60rem' }),
 ]
-
-function focusInput(editor: EditorView): void {
-    if (!editor.hasFocus) {
-        editor.focus()
-        editor.dispatch({
-            selection: { anchor: editor.state.doc.length },
-            scrollIntoView: true,
-        })
-    }
-}
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
     isEmbedded?: boolean
@@ -132,11 +125,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
                         run: runBlock,
                     },
                 ]),
-                EditorView.updateListener.of(update => {
-                    if (update.docChanged) {
-                        onInputChange(update.state.sliceDoc())
-                    }
-                }),
+                changeListener(onInputChange),
                 staticExtensions,
             ],
             [runBlock, onInputChange]
@@ -152,7 +141,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
 
         useEffect(() => {
             if (editor) {
-                focusInput(editor)
+                focusEditor(editor)
             }
         }, [isEditing, editor])
 
@@ -191,7 +180,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
                 'aria-label': 'Notebook markdown block',
                 isInputVisible: isEditing,
                 setIsInputVisible: setIsEditing,
-                focusInput: () => editor && focusInput(editor),
+                focusInput: () => editor && focusEditor(editor),
                 ...props,
             }),
             [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]

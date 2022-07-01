@@ -3,8 +3,6 @@
     background-color: var(--color-bg-1);
 
     :global(.cm-editor) {
-        max-height: 60rem;
-
         &:global(.cm-focused) {
             // Codemirror shows a focus ring by default. Since we handle that
             // differently, disable it here.
@@ -14,10 +12,6 @@
         :global(.cm-content) {
             font-family: var(--code-font-family);
             caret-color: var(--body-color);
-        }
-
-        :global(.cm-scroller) {
-            overflow-y: auto;
         }
     }
 
