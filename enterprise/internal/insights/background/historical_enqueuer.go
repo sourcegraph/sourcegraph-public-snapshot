@@ -415,7 +415,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 
-	log15.Debug("Fetching data series for to convert from just in time and backfill")
+	log15.Debug("fetching data series to convert from just in time and backfill")
 	foundSeries, err := h.dataSeriesStore.GetJustInTimeSearchSeriesToBackfill(ctx)
 	if err != nil {
 		log15.Error("unable to find series to convert to backfilled", "error", err)
@@ -423,7 +423,7 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 	}
 
 	for _, series := range foundSeries {
-		log15.Info("Loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
+		log15.Info("loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
 		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
 		if incrementErr != nil {
 			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID, "error", err)
