@@ -86,7 +86,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, qu
 	}
 
 	patternType := "regexp"
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)

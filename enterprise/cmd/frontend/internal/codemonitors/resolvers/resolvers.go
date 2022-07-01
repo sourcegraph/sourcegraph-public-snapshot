@@ -157,7 +157,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 
 		// Snapshot the state of the searched repos when the monitor is created so that
 		// we can distinguish new repos.
-		err = codemonitors.Snapshot(ctx, tx.db, args.Trigger.Query, m.ID, settings)
+		err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID, settings)
 		if err != nil {
 			return nil, err
 		}
@@ -546,7 +546,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.db, args.Trigger.Update.Query, monitorID, settings)
+			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID, settings)
 			if err != nil {
 				return nil, err
 			}

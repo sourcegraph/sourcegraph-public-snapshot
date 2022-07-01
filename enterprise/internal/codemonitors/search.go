@@ -10,7 +10,8 @@ import (
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -53,7 +54,7 @@ type gqlSettingsResponse struct {
 func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
 	defer func() {
-		span.LogFields(log.Error(err))
+		span.LogFields(otlog.Error(err))
 		span.Finish()
 	}()
 
@@ -107,8 +108,8 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func Search(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
@@ -183,8 +184,8 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 // Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
-func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return err
