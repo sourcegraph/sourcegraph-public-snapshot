@@ -213,12 +213,9 @@
                     }
 
                     :global(.cm-completionMatchedText) {
-                        color: var(--dark-text);
-                        background: var(--jb-search-match-bg);
-
-                        border-width: 1px 0;
-                        border-style: solid;
-                        border-color: var(--jb-search-match-bg);
+                        background-color: rgb(255, 222, 122);
+                        border: 1px solid rgb(225, 197, 117);
+                        color: rgb(50, 50, 50);
                         border-radius: 3px;
                     }
 

@@ -104,12 +104,10 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
-    root.style.setProperty('--dark-text', intelliJTheme.windowText)
 
     root.style.setProperty('--jb-completion-detail-color', isDarkTheme ? null : intelliJTheme['SplitPane.highlight'])
     root.style.setProperty('--jb-button-bg', intelliJTheme['Button.background'])
     root.style.setProperty('--jb-text-color', intelliJTheme.text)
-    root.style.setProperty('--jb-search-match-bg', intelliJTheme['SearchMatch.startBackground'] || '#ffd042')
     root.style.setProperty('--jb-hover-button-bg', intelliJTheme['ActionButton.hoverBackground'])
     root.style.setProperty('--jb-input-bg', intelliJTheme['TextField.background'])
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
