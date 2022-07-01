@@ -129,7 +129,7 @@ const (
 )
 
 // This is the compute command that corresponds to the execution for Code Insights.
-const insightsComputeCommand = "output"
+const insightsComputeCommand = "output.extra"
 
 // ComputeInsightCommandQuery will convert a standard Sourcegraph search query into a compute "map type" insight query. This command type will group by
 // certain fields. The original search query semantic should be preserved, although any new limitations or restrictions in Compute will apply.
