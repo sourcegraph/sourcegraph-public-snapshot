@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -351,6 +353,54 @@ func TestCommitIndexer_windowing(t *testing.T) {
 		}
 
 	})
+}
+
+func Test_IsEmptyRepoError(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		err  error
+		want autogold.Value
+	}{
+		{
+			err:  errors.New(emptyRepoErrCode),
+			want: autogold.Want("EmptyRepo", true),
+		},
+		{
+			err:  errors.Newf("Another message: %w", errors.New(emptyRepoErrCode)),
+			want: autogold.Want("NestedEmptyRepoError", true),
+		},
+		{
+			err:  errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", errors.New(emptyRepoErrCode))),
+			want: autogold.Want("DeepNestedError", true),
+		},
+		{
+			err:  errors.Newf("Another message: %w", errors.New("Not an empty repo")),
+			want: autogold.Want("NestedNotEmptyRepoError", false),
+		},
+		{
+			err:  errors.New("A different error"),
+			want: autogold.Want("NotEmptyRepo", false),
+		},
+		{
+			err:  nil,
+			want: autogold.Want("NotAnError", false),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := isCommitEmptyRepoError(tc.err)
+			tc.want.Equal(t, got)
+		})
+	}
+}
+
+func Test_getCommits_EmptyRepoError(t *testing.T) {
+
+}
+
+func TestCommitIndexer_EmptyRepoError(t *testing.T) {
+
 }
 
 func checkCommits(t *testing.T, want []*gitdomain.Commit, got []*gitdomain.Commit) {
