@@ -12,14 +12,22 @@ import org.jetbrains.annotations.Nullable;
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphProjectService implements PersistentStateComponent<SourcegraphProjectService> {
+    @Nullable
     public String url;
+    @Nullable
     public String accessToken;
+    @Nullable
     public String defaultBranch;
+    @Nullable
     public String remoteUrlReplacements;
-    public boolean isGlobbingEnabled;
+    @Nullable
+    public Boolean isGlobbingEnabled; // This needs to be a Boolean rather than a primitive: we need the "null" state
+    @Nullable
     public String lastSearchQuery;
     public boolean lastSearchCaseSensitive;
+    @Nullable
     public String lastSearchPatternType;
+    @Nullable
     public String lastSearchContextSpec;
 
     @NotNull
@@ -47,7 +55,8 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
         return remoteUrlReplacements;
     }
 
-    public boolean isGlobbingEnabled() {
+    @Nullable
+    public Boolean isGlobbingEnabled() {
         return this.isGlobbingEnabled;
     }
 

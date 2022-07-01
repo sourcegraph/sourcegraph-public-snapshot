@@ -26,38 +26,65 @@ public class ConfigUtil {
 
     @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
-        String url = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
-        if (url == null || url.length() == 0) {
-            return UserLevelConfig.getSourcegraphUrl();
+        String projectLevelUrl = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
+            return addSlashIfNeeded(projectLevelUrl);
         }
+
+        String applicationLevelUrl = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
+            return addSlashIfNeeded(applicationLevelUrl);
+        }
+
+        return addSlashIfNeeded(UserLevelConfig.getSourcegraphUrl());
+    }
+
+    @NotNull
+    private static String addSlashIfNeeded(@NotNull String url) {
         return url.endsWith("/") ? url : url + "/";
     }
 
     @Nullable
     public static String getAccessToken(Project project) {
-        return getProjectLevelConfig(project).getAccessToken();
+        String projectLevelAccessToken = getProjectLevelConfig(project).getAccessToken();
+        return projectLevelAccessToken != null ? projectLevelAccessToken : getApplicationLevelConfig().getAccessToken();
     }
 
-    @Nullable
+    @NotNull
     public static String getDefaultBranchName(@NotNull Project project) {
-        String defaultBranch = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
-        if (defaultBranch == null || defaultBranch.length() == 0) {
-            return UserLevelConfig.getDefaultBranchName();
+        String projectLevelDefaultBranchName = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
+        if (projectLevelDefaultBranchName != null && projectLevelDefaultBranchName.length() > 0) {
+            return projectLevelDefaultBranchName;
         }
-        return defaultBranch;
+
+        String applicationLevelDefaultBranchName = Objects.requireNonNull(SourcegraphApplicationService.getInstance()).getDefaultBranchName();
+        if (applicationLevelDefaultBranchName != null && applicationLevelDefaultBranchName.length() > 0) {
+            return applicationLevelDefaultBranchName;
+        }
+
+        String userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName();
+        return userLevelDefaultBranchName != null ? userLevelDefaultBranchName : "main";
     }
 
-    @Nullable
+    @NotNull
     public static String getRemoteUrlReplacements(@NotNull Project project) {
-        String replacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
-        if (replacements == null || replacements.length() == 0) {
-            return UserLevelConfig.getRemoteUrlReplacements();
+        String projectLevelReplacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
+        if (projectLevelReplacements != null && projectLevelReplacements.length() > 0) {
+            return projectLevelReplacements;
         }
-        return replacements;
+
+        String applicationLevelReplacements = Objects.requireNonNull(SourcegraphApplicationService.getInstance()).getRemoteUrlReplacements();
+        if (applicationLevelReplacements != null && applicationLevelReplacements.length() > 0) {
+            return applicationLevelReplacements;
+        }
+
+        String userLevelRemoteUrlReplacements = UserLevelConfig.getRemoteUrlReplacements();
+        return userLevelRemoteUrlReplacements != null ? userLevelRemoteUrlReplacements : "";
     }
 
     public static boolean isGlobbingEnabled(@NotNull Project project) {
-        return getProjectLevelConfig(project).isGlobbingEnabled();
+        Boolean projectLevelIsGlobbingEnabled = getProjectLevelConfig(project).isGlobbingEnabled();
+        return projectLevelIsGlobbingEnabled != null ? projectLevelIsGlobbingEnabled : getApplicationLevelConfig().isGlobbingEnabled();
     }
 
     @Nullable
@@ -95,6 +122,11 @@ public class ConfigUtil {
 
     public static void setInstallEventLogged(boolean value) {
         SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
+    }
+
+    @NotNull
+    private static SourcegraphApplicationService getApplicationLevelConfig() {
+        return Objects.requireNonNull(SourcegraphApplicationService.getInstance());
     }
 
     @NotNull
