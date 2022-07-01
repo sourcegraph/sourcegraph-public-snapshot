@@ -47,8 +47,27 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 
 Notable things about depot syncing:
 
+- Depot syncing using the `git p4` command to convert Perforce depots into git repositories.
 - It takes approximately one second to import one Perforce change into a Git commit, this translates to sync a Perforce depot with 1000 changes takes approximately 1000 seconds, which is about 17 minutes. It is possible to limit the maximum changes to import using `maxChanges` config option.
 - Rename of a Perforce depot will cause a re-import of the depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option.
+
+#### Using p4-fusion for faster syncing
+
+We support optionally using the [p4-fusion](https://github.com/salesforce/p4-fusion) tool:
+
+> A fast Perforce depot to Git repository converter using the Helix Core C/C++ API as an attempt to mitigate the performance bottlenecks in git-p4.py.
+
+To use it, you need to configure the `fusionClient` setting in your code host [config](#configuration), for example:
+
+```json
+{
+    ...
+    "fusionClient": {
+      "enabled": true,
+      "lookAhead": 1000
+    }
+}
+```
 
 ### Repository permissions
 
