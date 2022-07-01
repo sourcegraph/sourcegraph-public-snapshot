@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
 
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -24,6 +23,8 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 
 import { SearchContextForm } from './SearchContextForm'
+
+import { mdiMagnify } from '@mdi/js'
 
 export interface EditSearchContextPageProps
     extends RouteComponentProps<{ spec: Scalars['ID'] }>,
@@ -81,7 +82,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
                         className="mb-3"
                         path={[
                             {
-                                icon: MagnifyIcon,
+                                icon: mdiMagnify,
                                 to: '/search',
                                 ariaLabel: 'Code Search',
                             },

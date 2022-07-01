@@ -1,5 +1,6 @@
 import React, { useEffect, useState, HTMLAttributes } from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -77,7 +78,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildr
             <PageHeader
                 path={[
                     {
-                        icon: GithubIcon,
+                        icon: mdiGithub,
                         text: 'Complete your GitHub connection',
                     },
                 ]}
