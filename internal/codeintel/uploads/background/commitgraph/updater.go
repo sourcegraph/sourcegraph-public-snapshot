@@ -7,7 +7,6 @@ import (
 )
 
 type updater struct {
-	dbStore         DBStore
 	uploadSvc       UploadService
 	locker          Locker
 	gitserverClient GitserverClient

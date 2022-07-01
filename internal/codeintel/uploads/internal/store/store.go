@@ -30,6 +30,7 @@ type Store interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
 
 	// Repositories
+	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 

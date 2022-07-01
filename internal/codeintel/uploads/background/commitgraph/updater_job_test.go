@@ -16,7 +16,7 @@ func TestUpdater(t *testing.T) {
 	})
 
 	commitTime := time.Unix(1587396557, 0).UTC()
-	mockDBStore := NewMockDBStore()
+
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetDirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 	mockUploadSvc.GetOldestCommitDateFunc.SetDefaultReturn(commitTime, true, nil)
@@ -31,11 +31,10 @@ func TestUpdater(t *testing.T) {
 	}, nil)
 
 	updater := &updater{
-		dbStore:         mockDBStore,
 		uploadSvc:       mockUploadSvc,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
+		operations:      NewOperations(mockUploadSvc, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -65,8 +64,6 @@ func TestUpdater(t *testing.T) {
 }
 
 func TestUpdaterNoUploads(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetDirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 	mockUploadSvc.GetOldestCommitDateFunc.SetDefaultReturn(time.Time{}, false, nil)
@@ -80,11 +77,10 @@ func TestUpdaterNoUploads(t *testing.T) {
 	}, nil)
 
 	updater := &updater{
-		dbStore:         mockDBStore,
 		uploadSvc:       mockUploadSvc,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
+		operations:      NewOperations(mockUploadSvc, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -105,7 +101,6 @@ func TestUpdaterLocked(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetDirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 
-	mockDBStore := NewMockDBStore()
 	mockLocker := NewMockLocker()
 	mockLocker.LockFunc.SetDefaultReturn(false, nil, nil)
 
@@ -115,10 +110,10 @@ func TestUpdaterLocked(t *testing.T) {
 	}, nil)
 
 	updater := &updater{
-		dbStore:         mockDBStore,
+		uploadSvc:       mockUploadSvc,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
+		operations:      NewOperations(mockUploadSvc, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {

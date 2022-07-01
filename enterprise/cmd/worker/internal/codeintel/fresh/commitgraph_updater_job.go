@@ -55,12 +55,7 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 		return nil, err
 	}
 	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore))
-
-	dbStore, err := codeintel.InitDBStore()
-	if err != nil {
-		return nil, err
-	}
-	operations := commitgraph.NewOperations(dbStore, uploadSvc, observationContext)
+	operations := commitgraph.NewOperations(uploadSvc, observationContext)
 
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
@@ -68,6 +63,6 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 	}
 
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(dbStore, uploadSvc, locker, gitserverClient, operations),
+		commitgraph.NewUpdater(uploadSvc, locker, gitserverClient, operations),
 	}, nil
 }

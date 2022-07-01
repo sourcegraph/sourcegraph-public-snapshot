@@ -35,8 +35,9 @@ type service interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
 
 	// Repositories
-	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
+	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
 
 	// Uploads
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []Upload, totalCount int, err error)
@@ -175,6 +176,13 @@ func (s *Service) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx
 	defer endObservation(1, observation.Args{})
 
 	return s.store.SetRepositoryAsDirty(ctx, repositoryID, tx)
+}
+
+func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesMaxStaleAge.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetRepositoriesMaxStaleAge(ctx)
 }
 
 func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {

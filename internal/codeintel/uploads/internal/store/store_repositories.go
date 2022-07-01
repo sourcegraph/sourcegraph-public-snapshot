@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -54,4 +55,33 @@ SELECT ldr.repository_id, ldr.dirty_token
     INNER JOIN repo ON repo.id = ldr.repository_id
   WHERE ldr.dirty_token > ldr.update_token
     AND repo.deleted_at IS NULL
+`
+
+// GetRepositoriesMaxStaleAge returns the longest duration that a repository has been (currently) stale for. This method considers
+// only repositories that would be returned by DirtyRepositories. This method returns a duration of zero if there
+// are no stale repositories.
+func (s *store) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesMaxStaleAge.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	ageSeconds, ok, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(maxStaleAgeQuery)))
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, nil
+	}
+
+	return time.Duration(ageSeconds) * time.Second, nil
+}
+
+const maxStaleAgeQuery = `
+-- source: internal/codeintel/stores/dbstore/commits.go:MaxStaleAge
+SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
+    AND repo.deleted_at IS NULL
+  ORDER BY age DESC
+  LIMIT 1
 `

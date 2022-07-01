@@ -16,155 +16,6 @@ import (
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-// MockDBStore is a mock implementation of the DBStore interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph)
-// used for unit testing.
-type MockDBStore struct {
-	// MaxStaleAgeFunc is an instance of a mock function object controlling
-	// the behavior of the method MaxStaleAge.
-	MaxStaleAgeFunc *DBStoreMaxStaleAgeFunc
-}
-
-// NewMockDBStore creates a new mock of the DBStore interface. All methods
-// return zero values for all results, unless overwritten.
-func NewMockDBStore() *MockDBStore {
-	return &MockDBStore{
-		MaxStaleAgeFunc: &DBStoreMaxStaleAgeFunc{
-			defaultHook: func(context.Context) (r0 time.Duration, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockDBStore creates a new mock of the DBStore interface. All
-// methods panic on invocation, unless overwritten.
-func NewStrictMockDBStore() *MockDBStore {
-	return &MockDBStore{
-		MaxStaleAgeFunc: &DBStoreMaxStaleAgeFunc{
-			defaultHook: func(context.Context) (time.Duration, error) {
-				panic("unexpected invocation of MockDBStore.MaxStaleAge")
-			},
-		},
-	}
-}
-
-// NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
-// methods delegate to the given implementation, unless overwritten.
-func NewMockDBStoreFrom(i DBStore) *MockDBStore {
-	return &MockDBStore{
-		MaxStaleAgeFunc: &DBStoreMaxStaleAgeFunc{
-			defaultHook: i.MaxStaleAge,
-		},
-	}
-}
-
-// DBStoreMaxStaleAgeFunc describes the behavior when the MaxStaleAge method
-// of the parent MockDBStore instance is invoked.
-type DBStoreMaxStaleAgeFunc struct {
-	defaultHook func(context.Context) (time.Duration, error)
-	hooks       []func(context.Context) (time.Duration, error)
-	history     []DBStoreMaxStaleAgeFuncCall
-	mutex       sync.Mutex
-}
-
-// MaxStaleAge delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockDBStore) MaxStaleAge(v0 context.Context) (time.Duration, error) {
-	r0, r1 := m.MaxStaleAgeFunc.nextHook()(v0)
-	m.MaxStaleAgeFunc.appendCall(DBStoreMaxStaleAgeFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the MaxStaleAge method
-// of the parent MockDBStore instance is invoked and the hook queue is
-// empty.
-func (f *DBStoreMaxStaleAgeFunc) SetDefaultHook(hook func(context.Context) (time.Duration, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// MaxStaleAge method of the parent MockDBStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBStoreMaxStaleAgeFunc) PushHook(hook func(context.Context) (time.Duration, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreMaxStaleAgeFunc) SetDefaultReturn(r0 time.Duration, r1 error) {
-	f.SetDefaultHook(func(context.Context) (time.Duration, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreMaxStaleAgeFunc) PushReturn(r0 time.Duration, r1 error) {
-	f.PushHook(func(context.Context) (time.Duration, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreMaxStaleAgeFunc) nextHook() func(context.Context) (time.Duration, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreMaxStaleAgeFunc) appendCall(r0 DBStoreMaxStaleAgeFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreMaxStaleAgeFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreMaxStaleAgeFunc) History() []DBStoreMaxStaleAgeFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreMaxStaleAgeFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreMaxStaleAgeFuncCall is an object that describes an invocation of
-// method MaxStaleAge on an instance of MockDBStore.
-type DBStoreMaxStaleAgeFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 time.Duration
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreMaxStaleAgeFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreMaxStaleAgeFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph)
@@ -626,6 +477,10 @@ type MockUploadService struct {
 	// GetOldestCommitDateFunc is an instance of a mock function object
 	// controlling the behavior of the method GetOldestCommitDate.
 	GetOldestCommitDateFunc *UploadServiceGetOldestCommitDateFunc
+	// GetRepositoriesMaxStaleAgeFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetRepositoriesMaxStaleAge.
+	GetRepositoriesMaxStaleAgeFunc *UploadServiceGetRepositoriesMaxStaleAgeFunc
 	// UpdateUploadsVisibleToCommitsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// UpdateUploadsVisibleToCommits.
@@ -643,6 +498,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetOldestCommitDateFunc: &UploadServiceGetOldestCommitDateFunc{
 			defaultHook: func(context.Context, int) (r0 time.Time, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetRepositoriesMaxStaleAgeFunc: &UploadServiceGetRepositoriesMaxStaleAgeFunc{
+			defaultHook: func(context.Context) (r0 time.Duration, r1 error) {
 				return
 			},
 		},
@@ -668,6 +528,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetOldestCommitDate")
 			},
 		},
+		GetRepositoriesMaxStaleAgeFunc: &UploadServiceGetRepositoriesMaxStaleAgeFunc{
+			defaultHook: func(context.Context) (time.Duration, error) {
+				panic("unexpected invocation of MockUploadService.GetRepositoriesMaxStaleAge")
+			},
+		},
 		UpdateUploadsVisibleToCommitsFunc: &UploadServiceUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 				panic("unexpected invocation of MockUploadService.UpdateUploadsVisibleToCommits")
@@ -686,6 +551,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		GetOldestCommitDateFunc: &UploadServiceGetOldestCommitDateFunc{
 			defaultHook: i.GetOldestCommitDate,
+		},
+		GetRepositoriesMaxStaleAgeFunc: &UploadServiceGetRepositoriesMaxStaleAgeFunc{
+			defaultHook: i.GetRepositoriesMaxStaleAge,
 		},
 		UpdateUploadsVisibleToCommitsFunc: &UploadServiceUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: i.UpdateUploadsVisibleToCommits,
@@ -913,6 +781,115 @@ func (c UploadServiceGetOldestCommitDateFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceGetOldestCommitDateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadServiceGetRepositoriesMaxStaleAgeFunc describes the behavior when
+// the GetRepositoriesMaxStaleAge method of the parent MockUploadService
+// instance is invoked.
+type UploadServiceGetRepositoriesMaxStaleAgeFunc struct {
+	defaultHook func(context.Context) (time.Duration, error)
+	hooks       []func(context.Context) (time.Duration, error)
+	history     []UploadServiceGetRepositoriesMaxStaleAgeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepositoriesMaxStaleAge delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadService) GetRepositoriesMaxStaleAge(v0 context.Context) (time.Duration, error) {
+	r0, r1 := m.GetRepositoriesMaxStaleAgeFunc.nextHook()(v0)
+	m.GetRepositoriesMaxStaleAgeFunc.appendCall(UploadServiceGetRepositoriesMaxStaleAgeFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepositoriesMaxStaleAge method of the parent MockUploadService
+// instance is invoked and the hook queue is empty.
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) SetDefaultHook(hook func(context.Context) (time.Duration, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepositoriesMaxStaleAge method of the parent MockUploadService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) PushHook(hook func(context.Context) (time.Duration, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) SetDefaultReturn(r0 time.Duration, r1 error) {
+	f.SetDefaultHook(func(context.Context) (time.Duration, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) PushReturn(r0 time.Duration, r1 error) {
+	f.PushHook(func(context.Context) (time.Duration, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) nextHook() func(context.Context) (time.Duration, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) appendCall(r0 UploadServiceGetRepositoriesMaxStaleAgeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceGetRepositoriesMaxStaleAgeFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceGetRepositoriesMaxStaleAgeFunc) History() []UploadServiceGetRepositoriesMaxStaleAgeFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceGetRepositoriesMaxStaleAgeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceGetRepositoriesMaxStaleAgeFuncCall is an object that
+// describes an invocation of method GetRepositoriesMaxStaleAge on an
+// instance of MockUploadService.
+type UploadServiceGetRepositoriesMaxStaleAgeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 time.Duration
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceGetRepositoriesMaxStaleAgeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceGetRepositoriesMaxStaleAgeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UploadServiceUpdateUploadsVisibleToCommitsFunc describes the behavior

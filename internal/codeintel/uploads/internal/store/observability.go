@@ -12,13 +12,16 @@ type operations struct {
 	list *observation.Operation
 
 	// Commits
-	staleSourcedCommits       *observation.Operation
+	getStaleSourcedCommits    *observation.Operation
 	deleteSourcedCommits      *observation.Operation
 	updateSourcedCommits      *observation.Operation
-	setRepositoryAsDirty      *observation.Operation
-	getDirtyRepositories      *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
 	getOldestCommitDate       *observation.Operation
+
+	// Repositories
+	getRepositoriesMaxStaleAge *observation.Operation
+	setRepositoryAsDirty       *observation.Operation
+	getDirtyRepositories       *observation.Operation
 
 	// Uploads
 	getUploads                     *observation.Operation
@@ -69,13 +72,16 @@ func newOperations(observationContext *observation.Context) *operations {
 		list: op("List"),
 
 		// Commits
-		staleSourcedCommits:       op("StaleSourcedCommits"),
-		deleteSourcedCommits:      op("DeleteSourcedCommits"),
-		updateSourcedCommits:      op("UpdateSourcedCommits"),
-		setRepositoryAsDirty:      op("SetRepositoryAsDirty"),
-		getDirtyRepositories:      op("GetDirtyRepositories"),
 		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
 		getOldestCommitDate:       op("GetOldestCommitDate"),
+		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
+		deleteSourcedCommits:      op("DeleteSourcedCommits"),
+		updateSourcedCommits:      op("UpdateSourcedCommits"),
+
+		// Repositories
+		getRepositoriesMaxStaleAge: op("GetRepositoriesMaxStaleAge"),
+		getDirtyRepositories:       op("GetDirtyRepositories"),
+		setRepositoryAsDirty:       op("SetRepositoryAsDirty"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),

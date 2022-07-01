@@ -9,11 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-type DBStore interface {
-	MaxStaleAge(ctx context.Context) (_ time.Duration, err error)
-}
-
 type UploadService interface {
+	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	GetDirtyRepositories(ctx context.Context) (map[int]int, error)
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 	UpdateUploadsVisibleToCommits(

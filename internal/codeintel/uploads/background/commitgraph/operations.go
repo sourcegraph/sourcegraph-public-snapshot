@@ -15,7 +15,7 @@ type operations struct {
 	commitUpdate *observation.Operation
 }
 
-func NewOperations(dbStore DBStore, uploadSvc UploadService, observationContext *observation.Context) *operations {
+func NewOperations(uploadSvc UploadService, observationContext *observation.Context) *operations {
 	commitUpdate := observationContext.Operation(observation.Op{
 		Name: "codeintel.commitUpdater",
 		Metrics: metrics.NewREDMetrics(
@@ -41,7 +41,7 @@ func NewOperations(dbStore DBStore, uploadSvc UploadService, observationContext 
 		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
 		Help: "The maximum amount of time a repository has had a stale commit graph.",
 	}, func() float64 {
-		age, err := dbStore.MaxStaleAge(context.Background())
+		age, err := uploadSvc.GetRepositoriesMaxStaleAge(context.Background())
 		if err != nil {
 			log15.Error("Failed to determine stale commit graph age", "error", err)
 			return 0

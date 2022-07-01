@@ -931,7 +931,7 @@ func (s *store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	ctx, trace, endObservation := s.operations.writeVisibleUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.createTemporaryNearestUploadsTables(ctx); err != nil {
+	if err := s.createTemporaryNearestUploadsTables(ctx, tx); err != nil {
 		return err
 	}
 
@@ -1190,7 +1190,7 @@ SELECT
 	(SELECT COUNT(*) FROM del) AS num_del
 `
 
-func (s *store) createTemporaryNearestUploadsTables(ctx context.Context) error {
+func (s *store) createTemporaryNearestUploadsTables(ctx context.Context, tx *basestore.Store) error {
 	temporaryTableQueries := []string{
 		temporaryNearestUploadsTableQuery,
 		temporaryNearestUploadsLinksTableQuery,
@@ -1198,7 +1198,7 @@ func (s *store) createTemporaryNearestUploadsTables(ctx context.Context) error {
 	}
 
 	for _, temporaryTableQuery := range temporaryTableQueries {
-		if err := s.db.Exec(ctx, sqlf.Sprintf(temporaryTableQuery)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(temporaryTableQuery)); err != nil {
 			return err
 		}
 	}

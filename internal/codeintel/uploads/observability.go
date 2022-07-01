@@ -25,8 +25,9 @@ type operations struct {
 	deleteSourcedCommits      *observation.Operation
 
 	// Repositories
-	setRepositoryAsDirty *observation.Operation
-	getDirtyRepositories *observation.Operation
+	getRepositoriesMaxStaleAge *observation.Operation
+	getDirtyRepositories       *observation.Operation
+	setRepositoryAsDirty       *observation.Operation
 
 	// Uploads
 	getUploads                     *observation.Operation
@@ -84,8 +85,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Repositories
-		setRepositoryAsDirty: op("SetRepositoryAsDirty"),
-		getDirtyRepositories: op("GetDirtyRepositories"),
+		getRepositoriesMaxStaleAge: op("GetRepositoriesMaxStaleAge"),
+		getDirtyRepositories:       op("GetDirtyRepositories"),
+		setRepositoryAsDirty:       op("SetRepositoryAsDirty"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),

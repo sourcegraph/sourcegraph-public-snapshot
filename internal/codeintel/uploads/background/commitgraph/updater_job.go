@@ -23,7 +23,7 @@ import (
 func (u *updater) HandleUpdater(ctx context.Context) error {
 	repositoryIDs, err := u.uploadSvc.GetDirtyRepositories(ctx)
 	if err != nil {
-		return errors.Wrap(err, "dbstore.DirtyRepositories")
+		return errors.Wrap(err, "uploadSvc.DirtyRepositories")
 	}
 
 	var updateErr error
