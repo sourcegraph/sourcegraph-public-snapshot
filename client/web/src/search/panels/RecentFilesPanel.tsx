@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import { of } from 'rxjs'
@@ -14,6 +15,7 @@ import { RecentFilesFragment } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
 
+import { ComputeParseResult } from './computeResults'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
@@ -45,8 +47,6 @@ export const recentFilesFragment = gql`
     }
 `
 
-type ComputeParseResult = [{ kind: string; value: string }]
-
 export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     recentFilesFragment,
@@ -62,7 +62,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
-
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
     const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
     // Only update processed results when results are valid to prevent
@@ -100,10 +100,11 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         const newItemsToLoad = itemsToLoad + RECENT_FILES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
+        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentFiles: newItemsToLoad,
         })
-
+        setIsLoadingMore(false)
         if (data === undefined) {
             return
         }
@@ -111,6 +112,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         if (node === null || node.__typename !== 'User') {
             return
         }
+
         setRecentFiles(node.recentFilesLogs)
     }
 
@@ -124,25 +126,26 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                         </th>
                     </tr>
                 </thead>
-                <tbody>
-                    {processedResults?.map((recentFile, index) => (
-                        <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                {processedResults?.map((recentFile, index) => (
+                    <tbody key={index}>
+                        <tr className={styles.resultsTableRow}>
                             <td>
                                 <small>
                                     <Link
-                                        to={recentFile.url}
-                                        ref={getItemRef(index)}
-                                        onClick={logFileClicked}
-                                        data-testid="recent-files-item"
-                                    >
-                                        {recentFile.repoName} › {recentFile.filePath}
+                                            to={recentFile.url}
+                                            ref={getItemRef(index)}
+                                            onClick={logFileClicked}
+                                            data-testid="recent-files-item"
+                                        >
+                                        {recentFile.repoName}
                                     </Link>
                                 </small>
                             </td>
                         </tr>
-                    ))}
-                </tbody>
+                    </tbody>
+                ))}
             </table>
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent files</VisuallyHidden>}
             {recentFiles?.pageInfo.hasNextPage && (
                 <div>
                     <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
@@ -219,7 +222,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
             title="Recent files"
             state={processedResults ? (processedResults.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
-            populatedContent={gitSet.size > 0 ? gitFilesDisplay : contentDisplay}
+            populatedContent={(gitSet.size > 0 && !processedResults)? gitFilesDisplay : contentDisplay}
             emptyContent={emptyDisplay}
         />
     )
