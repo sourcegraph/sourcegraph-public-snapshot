@@ -7,7 +7,7 @@ import { SearchTemplatesBanner } from './SearchTemplatesBanner'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/batches/create/SearcTemplatesBanner',
+    title: 'web/batches/create/SearchTemplatesBanner',
     decorators: [decorator],
 }
 
