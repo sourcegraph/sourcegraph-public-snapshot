@@ -8,9 +8,9 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,7 +31,7 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 	}
 
 	// TODO - re-implement without importing cmd/frontend
-	firstSemverString, err := backend.GetFirstServiceVersion(ctx, db, "frontend")
+	firstSemverString, err := upgradestore.New(db, nil).GetFirstServiceVersion(ctx, "frontend")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log15.Warn("Skipping out-of-band migrations check (fresh instance)", "version", version.Version())
