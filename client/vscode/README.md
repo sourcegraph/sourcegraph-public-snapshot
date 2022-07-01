@@ -8,7 +8,7 @@ Sourcegraph’s code search allows you to find & fix things fast across all your
 
 Sourcegraph for VS Code allows you to search millions of open source repositories right from your VS Code IDE—for free. You can learn from helpful code examples, search best practices, and re-use code from millions of repositories across the open source universe.
 
-Plus, with a free Sourcegraph Cloud account, you can sync your own private and public repositories and search all of your code in a single view in VS Code. Sourcegraph’s Code Intelligence feature provides fast, cross-repository navigation with “Go to definition” and “Find references” features, allowing you to understand new code quickly and find answers in your code across codebases of any size.
+Sourcegraph’s Code Intelligence feature provides fast, cross-repository navigation with “Go to definition” and “Find references” features, allowing you to understand new code quickly and find answers in your code across codebases of any size.
 
 You can read more about Sourcegraph on our [website](https://about.sourcegraph.com/).
 
@@ -55,24 +55,12 @@ repo:sourcegraph/sourcegraph lang:go auth provider
 
 ### Creating an account
 
-In addition to searching open source code, you can create a Sourcegraph Cloud account to search your own private and public repositories. You can create an account and sync your repositories with the following steps:
+In addition to searching open source code, you can create a Sourcegraph account to search your own private and public repositories. You can create an account and sync your repositories with the following steps:
 
 1. Click the `Create an account` button in the sidebar of the Sourcegraph extension. You will be directed to sourcegraph.com in your browser.
-2. Create an account using your email or connect directly to your code host.
-3. Once you have created an account, navigate to Sourcegraph Cloud. Click on your profile icon in the navigation bar to go to `Your repositories`.
-4. Click `Manage repositories`. From here, you can add your repositories to be synced to Sourcegraph.
+2. Follow the instructions to create and configure your Sourcegraph instance
 
-### Connecting Sourcegraph Cloud account
-
-Once you have repositories synced to Sourcegraph, you can generate an access token to connect your VS Code extension back to your Sourcegraph Cloud account.
-
-1. Back in Sourcegraph Cloud, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
-2. Once you have generated a token, navigate back to the Sourcegraph extension. In the sidebar, under `Create an account`, click `Have an account?`.
-3. Copy and paste the generated token from step 4 into the input field in the sidebar.
-4. Alternatively, you can copy and paste the generated token from step 4 in this format: `“sourcegraph.accessToken": "e4234234123112312”` into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
-5. The Editor will be re loaded automatically to use the newly added token.
-
-### Connecting to a private Sourcegraph instance
+### Connecting to your Sourcegraph instance
 
 1.  In Sourcegraph, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
 2.  Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
