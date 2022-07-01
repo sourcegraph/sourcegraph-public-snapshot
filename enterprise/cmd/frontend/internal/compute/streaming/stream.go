@@ -8,6 +8,7 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,8 +24,9 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewComputeStreamHandler is an http handler which streams back compute results.
-func NewComputeStreamHandler(db database.DB) http.Handler {
+func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
 	return &streamHandler{
+		logger:              logger,
 		db:                  db,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
@@ -32,6 +34,7 @@ func NewComputeStreamHandler(db database.DB) http.Handler {
 }
 
 type streamHandler struct {
+	logger              log.Logger
 	db                  database.DB
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
