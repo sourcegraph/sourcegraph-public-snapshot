@@ -2,7 +2,7 @@ import { ReactElement } from 'react'
 
 import { mdiSourceBranch } from '@mdi/js'
 
-import { Icon, H4 } from '@sourcegraph/wildcard'
+import { Icon, H4, Badge } from '@sourcegraph/wildcard'
 
 import styles from './Descriptor.module.scss'
 
@@ -14,6 +14,8 @@ interface WorkspaceBaseFields {
     repository: {
         name: string
     }
+    ignored: boolean
+    unsupported: boolean
 }
 
 interface DescriptorProps<Workspace extends WorkspaceBaseFields> {
@@ -35,6 +37,8 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
             ) : null}
             {workspace && (
                 <div className="d-flex align-items-center text-muted text-monospace pt-1">
+                    {workspace.ignored && <Badge variant="secondary" className="mr-2">IGNORED</Badge>}
+                    {workspace.unsupported && <Badge variant="secondary" className="mr-2">UNSUPPORTED</Badge>}
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiSourceBranch} />
                     <small>{workspace.branch.displayName}</small>
                 </div>
