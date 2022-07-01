@@ -19,7 +19,7 @@ export function loadingIndicator({ timeout = DEFAULT_TIMEOUT }: { timeout?: numb
     return [
         ViewPlugin.fromClass(
             class {
-                private dom: HTMLSpanElement
+                public dom: HTMLSpanElement
                 private timeout: NodeJS.Timeout | null = null
 
                 constructor(public view: EditorView) {
