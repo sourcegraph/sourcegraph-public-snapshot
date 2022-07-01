@@ -172,9 +172,7 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchStartTime, "until", searchEndTime)
 	commits, err := i.getCommits(ctx, i.db, repoName, searchStartTime, searchEndTime, i.operations.getCommits)
 	if err != nil {
-		if !errors.Is(err, EmptyRepoErr) {
-			return false, errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
-		}
+		return false, errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
 
 	i.operations.countCommits.WithLabelValues().Add(float64(len(commits)))
@@ -199,10 +197,6 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 
 	return moreWindows, nil
 }
-
-var (
-	EmptyRepoErr = errors.New("empty repository")
-)
 
 const (
 	emptyRepoErrMessagePrefix = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
@@ -240,8 +234,13 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 	}
 
 	commits, err := gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
-	if err != nil && isCommitEmptyRepoError(err, after, until) {
-		return nil, errors.Wrap(EmptyRepoErr, err.Error())
+	if err != nil {
+		if isCommitEmptyRepoError(err, after, until) {
+			log15.Info("insights-job.background.CommitIndexer.getCommits: empty repo - metadata updated successfully", "repository", name)
+			err = nil
+		} else {
+			return nil, err
+		}
 	}
 	return commits, err
 }

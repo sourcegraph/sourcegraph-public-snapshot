@@ -443,7 +443,7 @@ func TestCommitIndexer_EmptyRepoError(t *testing.T) {
 		},
 		"empty-repo": {},
 	}
-	indexer.getCommits = mockCommitsWithError(EmptyRepoErr)
+	indexer.getCommits = mockCommitsWithError(nil)
 	indexer.allReposIterator = mockIterator([]string{"repo-one", "empty-repo"})
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
