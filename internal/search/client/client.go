@@ -75,6 +75,7 @@ func (s *searchClient) Execute(
 
 func (s *searchClient) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
+		Logger:       s.logger,
 		DB:           s.db,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,

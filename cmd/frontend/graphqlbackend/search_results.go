@@ -441,6 +441,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 
 func (r *searchResolver) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
+		Logger:       r.logger,
 		DB:           r.db,
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
