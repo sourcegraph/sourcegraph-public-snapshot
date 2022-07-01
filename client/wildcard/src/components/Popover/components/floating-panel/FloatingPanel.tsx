@@ -115,4 +115,4 @@ export const FloatingPanel = forwardRef((props, reference) => {
         </Component>,
         rootRender ?? document.body
     )
-}) as ForwardReferenceComponent<'div', PropsWithChildren<FloatingPanelProps>>
+}) as ForwardReferenceComponent<'div', PropsWithChildren<FloatingPanelProps>>;

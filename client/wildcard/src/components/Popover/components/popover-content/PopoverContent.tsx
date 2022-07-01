@@ -97,4 +97,4 @@ export const PopoverContent = forwardRef((props, reference) => {
             )}
         </FloatingPanel>
     )
-}) as ForwardReferenceComponent<'div', PopoverContentProps>
+}) as ForwardReferenceComponent<'div', PopoverContentProps>;

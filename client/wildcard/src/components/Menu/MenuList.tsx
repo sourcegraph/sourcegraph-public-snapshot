@@ -48,4 +48,4 @@ const Popover = React.forwardRef(({ popoverPosition, ...props }, reference) => (
         className={classNames('py-1', props.className)}
         keepInDOM={true}
     />
-)) as ForwardReferenceComponent<'div', PopoverProps>
+)) as ForwardReferenceComponent<'div', PopoverProps>;
