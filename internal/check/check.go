@@ -147,6 +147,9 @@ func DefaultEndpointProvider(service string) []*url.URL {
 // }
 //
 // The handler should only be used in frontend.
+//
+// While it is not necessary to add newlines to the JSON output, it is really
+// convenient for grepping from the command line.
 func NewAggregateHealthCheckHandler(endpointProvider func(service string) []*url.URL) http.Handler {
 	services := []string{"frontend", "searcher"}
 
