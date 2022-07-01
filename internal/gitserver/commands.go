@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -335,7 +334,7 @@ func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func (c *ClientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func (c *ClientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}

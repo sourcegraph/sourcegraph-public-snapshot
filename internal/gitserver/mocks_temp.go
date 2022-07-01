@@ -17,7 +17,6 @@ import (
 	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
-	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -225,7 +224,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ReadDirFunc: &ClientReadDirFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) (r0 []fs.FileInfo, r1 error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (r0 []fs.FileInfo, r1 error) {
 				return
 			},
 		},
@@ -392,7 +391,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ReadDirFunc: &ClientReadDirFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 				panic("unexpected invocation of MockClient.ReadDir")
 			},
 		},
@@ -2655,23 +2654,23 @@ func (c ClientP4ExecFuncCall) Results() []interface{} {
 // ClientReadDirFunc describes the behavior when the ReadDir method of the
 // parent MockClient instance is invoked.
 type ClientReadDirFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
 	history     []ClientReadDirFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) ReadDir(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 database.DB, v3 api.RepoName, v4 api.CommitID, v5 string, v6 bool) ([]fs.FileInfo, error) {
-	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.ReadDirFunc.appendCall(ClientReadDirFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
+func (m *MockClient) ReadDir(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 string, v5 bool) ([]fs.FileInfo, error) {
+	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReadDirFunc.appendCall(ClientReadDirFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ReadDir method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
 	f.defaultHook = hook
 }
 
@@ -2679,7 +2678,7 @@ func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, authz.SubR
 // ReadDir method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientReadDirFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+func (f *ClientReadDirFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2688,19 +2687,19 @@ func (f *ClientReadDirFunc) PushHook(hook func(context.Context, authz.SubRepoPer
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientReadDirFunc) SetDefaultReturn(r0 []fs.FileInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientReadDirFunc) PushReturn(r0 []fs.FileInfo, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientReadDirFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, database.DB, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *ClientReadDirFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2741,19 +2740,16 @@ type ClientReadDirFuncCall struct {
 	Arg1 authz.SubRepoPermissionChecker
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 database.DB
+	Arg2 api.RepoName
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.RepoName
+	Arg3 api.CommitID
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 api.CommitID
+	Arg4 string
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
-	Arg5 string
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 bool
+	Arg5 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []fs.FileInfo
@@ -2765,7 +2761,7 @@ type ClientReadDirFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientReadDirFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this

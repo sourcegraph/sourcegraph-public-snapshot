@@ -1046,7 +1046,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
 	// consistent with the FileInfo returned by lStat.
-	entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, db, repo, commitID, ".", false)
+	entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
 	}

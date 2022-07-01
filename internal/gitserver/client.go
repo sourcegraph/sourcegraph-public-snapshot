@@ -293,7 +293,7 @@ type Client interface {
 	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
 
 	// ReadDir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 }
 
 func (c *ClientImplementor) Addrs() []string {
