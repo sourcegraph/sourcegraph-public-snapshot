@@ -1,17 +1,18 @@
-import { FormattingOptions } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { ModificationOptions, modify } from 'jsonc-parser'
 
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
-const defaultFormattingOptions: FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 const setSearchContextLines: ConfigInsertionFunction = config => {
     const DEFAULT = 3 // a reasonable value that will be clearly different from the default 1
-    return { edits: setProperty(config, ['search.contextLines'], DEFAULT, defaultFormattingOptions) }
+    return { edits: modify(config, ['search.contextLines'], DEFAULT, defaultModificationOptions) }
 }
 
 const addSearchScopeToSettings: ConfigInsertionFunction = config => {
@@ -19,7 +20,7 @@ const addSearchScopeToSettings: ConfigInsertionFunction = config => {
         name: '<name>',
         value: '<partial query string that will be inserted when the scope is selected>',
     }
-    const edits = setProperty(config, ['search.scopes', -1], value, defaultFormattingOptions)
+    const edits = modify(config, ['search.scopes', -1], value, defaultModificationOptions)
     return { edits, selectText: '<name>' }
 }
 
@@ -28,7 +29,7 @@ const addQuickLinkToSettings: ConfigInsertionFunction = config => {
         name: '<human-readable name>',
         url: '<URL>',
     }
-    const edits = setProperty(config, ['quicklinks', -1], value, defaultFormattingOptions)
+    const edits = modify(config, ['quicklinks', -1], value, defaultModificationOptions)
     return { edits, selectText: '<name>' }
 }
 
