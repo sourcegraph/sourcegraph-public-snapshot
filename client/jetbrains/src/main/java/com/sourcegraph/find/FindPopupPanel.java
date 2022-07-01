@@ -80,7 +80,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         browserAndLoadingPanel.setState(wasServerAccessSuccessful
             ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
             : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
-        if (!authenticated) {
+        if (!wasServerAccessSuccessful) {
             selectionMetadataPanel.clearSelectionMetadataLabel();
             previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
         } else {
