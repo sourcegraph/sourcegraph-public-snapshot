@@ -10,7 +10,7 @@ exports[`FileDecorator renders after text content 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after"
-        data-placement="bottom"
+        data-state="closed"
       >
         src decoration
       </small>
@@ -29,13 +29,13 @@ exports[`FileDecorator renders both after text content and meter 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after"
-        data-placement="bottom"
+        data-state="closed"
       >
         src decoration
       </small>
       <meter
         class="test-file-decoration-meter meter ml-2"
-        data-placement="bottom"
+        data-state="closed"
         high="60"
         low="50"
         max="100"
@@ -58,7 +58,7 @@ exports[`FileDecorator renders meter 1`] = `
     >
       <meter
         class="test-file-decoration-meter meter"
-        data-placement="bottom"
+        data-state="closed"
         high="60"
         low="50"
         max="100"
@@ -81,7 +81,7 @@ exports[`FileDecorator respects active state 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after afterActive"
-        data-placement="bottom"
+        data-state="closed"
       >
         src decoration
       </small>

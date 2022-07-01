@@ -15,7 +15,6 @@ interface Props {
         username?: Maybe<string>
     }
     className?: string
-    ['data-tooltip']?: string
     targetID?: string
     alt?: string
     /**

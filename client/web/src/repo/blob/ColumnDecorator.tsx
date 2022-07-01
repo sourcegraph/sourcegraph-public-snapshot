@@ -13,6 +13,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ColumnDecorator.module.scss'
 
@@ -136,34 +137,37 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                 const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
                                 return (
-                                    <LinkOrSpan
+                                    <Tooltip
+                                        content={attachment.hoverMessage}
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
-                                        className={styles.item}
-                                        // eslint-disable-next-line react/forbid-dom-props
-                                        style={{ color: style.color }}
-                                        to={attachment.linkURL}
-                                        // Use target to open external URLs
-                                        target={
-                                            attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
-                                                ? '_blank'
-                                                : undefined
-                                        }
-                                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                                        rel="noreferrer noopener"
-                                        data-tooltip={attachment.hoverMessage || null}
-                                        onMouseEnter={selectRow}
-                                        onMouseLeave={deselectRow}
-                                        onFocus={selectRow}
-                                        onBlur={deselectRow}
                                     >
-                                        <span
-                                            className={styles.contents}
-                                            data-line-decoration-attachment-content={true}
-                                            data-contents={attachment.contentText || ''}
-                                        />
-                                    </LinkOrSpan>
+                                        <LinkOrSpan
+                                            className={styles.item}
+                                            // eslint-disable-next-line react/forbid-dom-props
+                                            style={{ color: style.color }}
+                                            to={attachment.linkURL}
+                                            // Use target to open external URLs
+                                            target={
+                                                attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
+                                                    ? '_blank'
+                                                    : undefined
+                                            }
+                                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                                            rel="noreferrer noopener"
+                                            onMouseEnter={selectRow}
+                                            onMouseLeave={deselectRow}
+                                            onFocus={selectRow}
+                                            onBlur={deselectRow}
+                                        >
+                                            <span
+                                                className={styles.contents}
+                                                data-line-decoration-attachment-content={true}
+                                                data-contents={attachment.contentText || ''}
+                                            />
+                                        </LinkOrSpan>
+                                    </Tooltip>
                                 )
                             }),
                             portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement

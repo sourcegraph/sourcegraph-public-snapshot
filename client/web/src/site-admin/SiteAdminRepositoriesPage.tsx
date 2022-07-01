@@ -9,7 +9,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -44,12 +44,11 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </small>
                 )}
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <small
-                        className="ml-2 text-muted"
-                        data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
-                    >
-                        <Icon as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
-                    </small>
+                    <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
+                        <small className="ml-2 text-muted">
+                            <Icon as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
+                        </small>
+                    </Tooltip>
                 )}
             </div>
 
@@ -60,15 +59,11 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </Button>
                 )}{' '}
                 {
-                    <Button
-                        to={`/${node.name}/-/settings`}
-                        data-tooltip="Repository settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
-                    </Button>
+                    <Tooltip content="Repository settings">
+                        <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                            <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                        </Button>
+                    </Tooltip>
                 }{' '}
             </div>
         </div>

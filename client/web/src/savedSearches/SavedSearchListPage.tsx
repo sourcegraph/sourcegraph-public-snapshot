@@ -16,7 +16,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { NamespaceProps } from '../namespaces'
@@ -85,27 +85,28 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Link>
                 </div>
                 <div>
-                    <Button
-                        className="test-edit-saved-search-button"
-                        to={`${this.props.match.path}/${this.props.savedSearch.id}`}
-                        data-tooltip="Saved search settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
-                    </Button>{' '}
-                    <Button
-                        className="test-delete-saved-search-button"
-                        onClick={this.onDelete}
-                        disabled={this.state.isDeleting}
-                        data-tooltip="Delete saved search"
-                        variant="danger"
-                        size="sm"
-                        aria-label="Delete saved search"
-                    >
-                        <Icon as={DeleteIcon} aria-hidden={true} />
-                    </Button>
+                    <Tooltip content="Saved search settings">
+                        <Button
+                            className="test-edit-saved-search-button"
+                            to={`${this.props.match.path}/${this.props.savedSearch.id}`}
+                            variant="secondary"
+                            size="sm"
+                            as={Link}
+                        >
+                            <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Delete saved search">
+                        <Button
+                            className="test-delete-saved-search-button"
+                            onClick={this.onDelete}
+                            disabled={this.state.isDeleting}
+                            variant="danger"
+                            size="sm"
+                        >
+                            <Icon as={DeleteIcon} aria-hidden={true} />
+                        </Button>
+                    </Tooltip>
                 </div>
                 {this.state.isDeleting && (
                     <VisuallyHidden aria-live="polite">{`Deleted saved search: ${this.props.savedSearch.description}`}</VisuallyHidden>
