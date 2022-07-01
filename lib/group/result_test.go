@@ -91,6 +91,24 @@ func TestResultErrorGroup(t *testing.T) {
 		require.ErrorIs(t, err, err1)
 	})
 
+	t.Run("WithFirstError", func(t *testing.T) {
+		t.Parallel()
+		g := NewWithResults[int]().WithErrors().WithFirstError()
+		synchronizer := make(chan struct{})
+		g.Go(func() (int, error) {
+			<-synchronizer
+			return 0, err1
+		})
+		g.Go(func() (int, error) {
+			defer close(synchronizer)
+			return 0, err2
+		})
+		res, err := g.Wait()
+		require.Len(t, res, 0)
+		require.ErrorIs(t, err, err2)
+		require.NotErrorIs(t, err, err1)
+	})
+
 	t.Run("wait error is all returned errors", func(t *testing.T) {
 		g := NewWithResults[int]().WithErrors()
 		g.Go(func() (int, error) { return 0, err1 })
@@ -202,6 +220,14 @@ func TestResultContextErrorGroup(t *testing.T) {
 		res, err := g.Wait()
 		require.Len(t, res, 0)
 		require.ErrorIs(t, err, context.Canceled)
+		require.ErrorIs(t, err, err1)
+	})
+
+	t.Run("WithCollectErrored", func(t *testing.T) {
+		g := NewWithResults[int]().WithContext(context.Background()).WithCollectErrored()
+		g.Go(func(context.Context) (int, error) { return 0, err1 })
+		res, err := g.Wait()
+		require.Len(t, res, 1) // errored value is collected
 		require.ErrorIs(t, err, err1)
 	})
 
