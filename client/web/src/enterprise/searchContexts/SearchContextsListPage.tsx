@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -72,7 +72,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                 <PageHeader
                     actions={
                         <Button to="/contexts/new" variant="primary" as={Link}>
-                            <Icon aria-hidden={true} as={PlusIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
                             Create search context
                         </Button>
                     }
