@@ -248,9 +248,9 @@ describe('[Code Insight] Dashboard', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/codeInsightDashboard001')
-        await driver.page.waitForSelector('[aria-label="dashboard context menu"]')
-        await driver.page.click('[aria-label="dashboard context menu"]')
-        await driver.page.click('[aria-label="configure dashboard"]')
+        await driver.page.waitForSelector('[data-testid="dashboard-context-menu"]')
+        await driver.page.click('[data-testid="dashboard-context-menu"]')
+        await driver.page.click('[data-testid="configure-dashboard"]')
 
         await driver.page.waitForSelector('form')
 
