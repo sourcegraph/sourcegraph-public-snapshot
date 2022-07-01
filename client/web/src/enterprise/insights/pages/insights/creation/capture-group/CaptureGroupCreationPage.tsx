@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react'
+import { FC, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { CodeInsightsPage, FormChangeEvent, SubmissionErrors } from '../../../../components'
 import { MinimalCaptureGroupInsightData } from '../../../../core'
 import { CodeInsightTrackType } from '../../../../pings'
 
@@ -17,13 +16,11 @@ import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-s
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
-    onSuccessfulCreation: (insight: MinimalCaptureGroupInsightData) => void
+    onSuccessfulCreation: () => void
     onCancel: () => void
 }
 
-export const CaptureGroupCreationPage: React.FunctionComponent<
-    React.PropsWithChildren<CaptureGroupCreationPageProps>
-> = props => {
+export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()
@@ -45,7 +42,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<
             { insightType: CodeInsightTrackType.CaptureGroupInsight }
         )
 
-        onSuccessfulCreation(insight)
+        onSuccessfulCreation()
     }
 
     const handleCancel = (): void => {
