@@ -244,17 +244,18 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 
 	symbols := []result.Symbol{}
 
-	parse, err := s.createParser()
+	parser, err := s.createParser()
 	if err != nil {
 		return nil, errors.Wrap(err, "create parser")
 	}
+	defer parser.Close()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
 	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")
-		allSymbols, err := parse(path, contents)
+		allSymbols, err := parser.Parse(path, contents)
 		if err != nil {
 			return err
 		}
@@ -263,12 +264,12 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
-				if symbol.Line < 0 || symbol.Line >= len(lines) {
+				if symbol.Line < 1 || symbol.Line > len(lines) {
 					log15.Warn("ctags returned an invalid line number", "path", path, "line", symbol.Line, "len(lines)", len(lines), "symbol", symbol.Name)
 					continue
 				}
 
-				character := strings.Index(lines[symbol.Line], symbol.Name)
+				character := strings.Index(lines[symbol.Line-1], symbol.Name)
 				if character == -1 {
 					// Could not find the symbol in the line. ctags doesn't always return the right line.
 					character = 0
@@ -277,7 +278,7 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 				symbols = append(symbols, result.Symbol{
 					Name:      symbol.Name,
 					Path:      path,
-					Line:      symbol.Line,
+					Line:      symbol.Line - 1,
 					Character: character,
 					Kind:      symbol.Kind,
 					Parent:    symbol.Parent,

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -73,7 +74,9 @@ func SetupRockskip(observationContext *observation.Context, gitserverClient symb
 
 	db := mustInitializeCodeIntelDB(logger)
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(logger, config.Ctags) }
+	createParser := func() (ctags.Parser, error) {
+		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags)
+	}
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -104,34 +107,6 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
 		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
 	}
-}
-
-func createParserWithConfig(log log.Logger, config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
-	logger := log.Scoped("parser", "ctags parser")
-
-	parser, err := symbolsParser.SpawnCtags(logger, config)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-		entries, err := parser.Parse(path, bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		symbols = []rockskip.Symbol{}
-		for _, entry := range entries {
-			symbols = append(symbols, rockskip.Symbol{
-				Name:   entry.Name,
-				Parent: entry.Parent,
-				Kind:   entry.Kind,
-				Line:   entry.Line - 1,
-			})
-		}
-
-		return symbols, nil
-	}, nil
 }
 
 func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
