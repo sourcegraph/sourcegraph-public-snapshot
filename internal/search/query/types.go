@@ -354,7 +354,7 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 func (p Parameters) RepoContainsCommitAfter() (value string) {
 	nodes := toNodes(p)
 
-	// Look for values values of repohascommitafter:
+	// Look for values of repohascommitafter:
 	value = p.FindValue(FieldRepoHasCommitAfter)
 
 	// Look for values of repo:contains.commit.after()
