@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import styles from './CreationUILayout.module.scss'
+import styles from './CreationUiLayout.module.scss'
 
 export const CreationUiLayout = forwardRef((props, reference) => {
     const { as: Component = 'div', className, ...attributes } = props
