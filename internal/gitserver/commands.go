@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -300,7 +299,7 @@ func (c *ClientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-func (c *ClientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
+func (c *ClientImplementor) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
 		return nil, err
@@ -335,15 +334,7 @@ func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func (c *ClientImplementor) ReadDir(
-	ctx context.Context,
-	db database.DB,
-	checker authz.SubRepoPermissionChecker,
-	repo api.RepoName,
-	commit api.CommitID,
-	path string,
-	recurse bool,
-) ([]fs.FileInfo, error) {
+func (c *ClientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}
@@ -361,7 +352,7 @@ func (c *ClientImplementor) ReadDir(
 	if path != "" {
 		// Trailing slash is necessary to ls-tree under the dir (not just
 		// to list the dir's tree entry in its parent dir).
-		path = filepath.Clean(util.Rel(path)) + "/"
+		path = filepath.Clean(rel(path)) + "/"
 	}
 	files, err := c.lsTree(ctx, repo, commit, path, recurse)
 
@@ -433,10 +424,10 @@ type objectInfo gitdomain.OID
 
 func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 
-// LStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
-// returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
-// TODO(sashaostrikov): make private when git.Stat is moved here as well
-func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+// lStat returns a FileInfo describing the named file at commit. If the file is a
+// symbolic link, the returned FileInfo describes the symbolic link. lStat makes
+// no attempt to follow the link.
+func (c *ClientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -446,7 +437,7 @@ func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPerm
 		return nil, err
 	}
 
-	path = filepath.Clean(util.Rel(path))
+	path = filepath.Clean(rel(path))
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
@@ -672,7 +663,7 @@ type Hunk struct {
 }
 
 // BlameFile returns Git blame information about a file.
-func (c *ClientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+func (c *ClientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag("repo", repo)
 	span.SetTag("path", path)
@@ -1355,7 +1346,7 @@ func (c *ClientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	span.SetTag("Name", name)
 	defer span.Finish()
 
-	name = util.Rel(name)
+	name = rel(name)
 	br, err := c.newBlobReader(ctx, repo, commit, name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
@@ -1449,9 +1440,9 @@ func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 		return nil, err
 	}
 
-	path = util.Rel(path)
+	path = rel(path)
 
-	fi, err := c.LStat(ctx, checker, repo, commit, path)
+	fi, err := c.lStat(ctx, checker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -2580,4 +2571,17 @@ func (c *ClientImplementor) showRef(ctx context.Context, repo api.RepoName, args
 		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
 	}
 	return refs, nil
+}
+
+// rel strips the leading "/" prefix from the path string, effectively turning
+// an absolute path into one relative to the root directory. A path that is just
+// "/" is treated specially, returning just ".".
+//
+// The elements in a file path are separated by slash ('/', U+002F) characters,
+// regardless of host operating system convention.
+func rel(path string) string {
+	if path == "/" {
+		return "."
+	}
+	return strings.TrimPrefix(path, "/")
 }
