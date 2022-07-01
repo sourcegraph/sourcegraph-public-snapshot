@@ -118,15 +118,15 @@ const maxWindowsPerRepo = 25
 // This method will absorb any errors that occur during execution and skip any remaining windows.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
 func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
-	windowsProccssed := 0
+	windowsProcessed := 0
 	additionalWindows := true
 	// It is important that the window size stays consistent during processing
 	// so that it can correctly determine the time the repository has been indexed though
 	windowDuration := conf.Get().InsightsCommitIndexerWindowDuration
-	for additionalWindows && windowsProccssed < maxWindowsPerRepo {
+	for additionalWindows && windowsProcessed < maxWindowsPerRepo {
 		var err error
 		additionalWindows, err = i.indexNextWindow(name, id, windowDuration)
-		windowsProccssed++
+		windowsProcessed++
 		if err != nil {
 			log15.Error(err.Error())
 			return nil
