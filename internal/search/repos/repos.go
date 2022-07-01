@@ -10,11 +10,10 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -53,7 +52,6 @@ func (r *Resolved) String() string {
 type Resolver struct {
 	DB   database.DB
 	Opts search.RepoOptions
-	Log  log.Logger
 }
 
 func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
@@ -158,7 +156,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.Log, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -423,7 +421,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
-func computeExcludedRepos(ctx context.Context, logger log.Logger, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
+func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
@@ -449,7 +447,7 @@ func computeExcludedRepos(ctx context.Context, logger log.Logger, db database.DB
 		return ExcludedRepos{}, nil
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, logger, db, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, db, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
 	}
@@ -834,7 +832,7 @@ func (e MissingLockfileIndexing) Error() string {
 // Get all private repos for the the current actor. On sourcegraph.com, those are
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
-func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
@@ -864,7 +862,7 @@ func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 	})
 
 	if err != nil {
-		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int("user-id", int(userID)))
+		log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

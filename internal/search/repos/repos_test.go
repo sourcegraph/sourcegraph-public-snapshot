@@ -371,7 +371,7 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := Resolver{Log: logtest.Scoped(t), Opts: tc.opts, DB: db}
+			r := Resolver{Opts: tc.opts, DB: db}
 
 			var pages []Resolved
 			err := r.Paginate(ctx, func(page *Resolved) error {

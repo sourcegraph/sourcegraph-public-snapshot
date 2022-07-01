@@ -8,8 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -23,12 +21,11 @@ import (
 
 // NewResolver returns a new Resolver that uses the given database
 func NewResolver(db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: db, log: log.Scoped("codeMonitorResolver", "")}
+	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	db  edb.EnterpriseDB
-	log log.Logger
+	db edb.EnterpriseDB
 }
 
 func (r *Resolver) Now() time.Time {
@@ -158,8 +155,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 
 		// Snapshot the state of the searched repos when the monitor is created so that
 		// we can distinguish new repos.
-		logger := r.log.Scoped("CreateCodeMonitor", "")
-		err = codemonitors.Snapshot(ctx, logger, tx.db, args.Trigger.Query, m.ID, settings)
+		err = codemonitors.Snapshot(ctx, tx.db, args.Trigger.Query, m.ID, settings)
 		if err != nil {
 			return nil, err
 		}
@@ -548,8 +544,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			logger := r.log.Scoped("updateCodeMonitor", "")
-			err = codemonitors.Snapshot(ctx, logger, r.db, args.Trigger.Update.Query, monitorID, settings)
+			err = codemonitors.Snapshot(ctx, r.db, args.Trigger.Update.Query, monitorID, settings)
 			if err != nil {
 				return nil, err
 			}
@@ -643,8 +638,7 @@ func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
 		return nil, err
 	}
 	return &Resolver{
-		db:  edb.NewEnterpriseDB(tx),
-		log: r.log,
+		db: edb.NewEnterpriseDB(tx),
 	}, nil
 }
 

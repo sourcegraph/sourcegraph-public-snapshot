@@ -36,7 +36,7 @@ func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics cod
 		Metrics:              metrics.workerMetrics,
 		MaximumRuntimePerJob: time.Minute,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db, log: log.Scoped("queryRunner", "")}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
 }
 
@@ -128,8 +128,7 @@ func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Stor
 }
 
 type queryRunner struct {
-	db  edb.EnterpriseDB
-	log log.Logger
+	db edb.EnterpriseDB
 }
 
 func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
@@ -176,7 +175,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
-	results, searchErr := codemonitors.Search(ctx, r.log, r.db, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, r.db, query, m.ID, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)

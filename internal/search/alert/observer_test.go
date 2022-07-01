@@ -39,7 +39,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 	}
 	for _, test := range cases {
 		multiErr := errors.Append(nil, test.errors...)
-		haveAlert, _ := (&Observer{Log: logtest.Scoped(t)}).errorToAlert(context.Background(), multiErr)
+		haveAlert, _ := (&Observer{}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title, test.wantAlertTitle)
@@ -77,7 +77,6 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 			Query:         q,
 			UserSettings:  &schema.Settings{},
 		},
-		Log: logtest.Scoped(t),
 	}
 
 	alert := sr.alertForNoResolvedRepos(context.Background(), q)
