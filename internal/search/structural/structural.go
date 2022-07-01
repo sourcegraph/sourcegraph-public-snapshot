@@ -169,6 +169,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
+			clients.Logger,
 			page.RepoRevs,
 			clients.Zoekt,
 			search.TextRequest,
