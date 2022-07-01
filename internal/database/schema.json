@@ -14702,12 +14702,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "repo_description_idx",
+          "Name": "repo_description_trgm_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX repo_description_idx ON repo USING btree (description)",
+          "IndexDefinition": "CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
