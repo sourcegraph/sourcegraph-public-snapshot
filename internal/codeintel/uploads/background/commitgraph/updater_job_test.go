@@ -81,6 +81,7 @@ func TestUpdaterNoUploads(t *testing.T) {
 
 	updater := &updater{
 		dbStore:         mockDBStore,
+		uploadSvc:       mockUploadSvc,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
 		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
