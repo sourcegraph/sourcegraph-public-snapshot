@@ -44,9 +44,9 @@ type workHandler struct {
 	search       func(context.Context, string) (*query.GqlSearchResponse, error)
 	searchStream func(context.Context, string) (*streaming.TabulationResult, error)
 
-	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
-	computeSearchStream func(context.Context, string) (*streaming.ComputeTabulationResult, error)
-	computeTextSearch   func(context.Context, string) (*streaming.ComputeTabulationResult, error)
+	computeSearch          func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearchStream    func(context.Context, string) (*streaming.ComputeTabulationResult, error)
+	computeTextExtraSearch func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 }
 
 type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
@@ -382,7 +382,7 @@ func (r *workHandler) mappingComputeHandler(ctx context.Context, job *Job, serie
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
 
-	recordings, err := r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeTextSearch)
+	recordings, err := r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeTextExtraSearch)
 	if err != nil {
 		return err
 	}

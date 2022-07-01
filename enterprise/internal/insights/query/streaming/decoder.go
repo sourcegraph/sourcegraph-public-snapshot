@@ -190,11 +190,11 @@ func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *Com
 	}, ctr
 }
 
-func ComputeTextDecoder() (client.ComputeTextStreamDecoder, *ComputeTabulationResult) {
+func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulationResult) {
 	ctr := &ComputeTabulationResult{
 		RepoCounts: make(map[string]*ComputeMatch),
 	}
-	getRepoCounts := func(matchContext compute.Text) *ComputeMatch {
+	getRepoCounts := func(matchContext compute.TextExtra) *ComputeMatch {
 		var v *ComputeMatch
 		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
 			return got
@@ -204,7 +204,7 @@ func ComputeTextDecoder() (client.ComputeTextStreamDecoder, *ComputeTabulationRe
 		return v
 	}
 
-	return client.ComputeTextStreamDecoder{
+	return client.ComputeTextExtraStreamDecoder{
 		OnProgress: func(progress *streamapi.Progress) {
 			if !progress.Done {
 				return
@@ -222,7 +222,7 @@ func ComputeTextDecoder() (client.ComputeTextStreamDecoder, *ComputeTabulationRe
 				}
 			}
 		},
-		OnResult: func(results []compute.Text) {
+		OnResult: func(results []compute.TextExtra) {
 			for _, result := range results {
 				vals := strings.Split(result.Value, "\n")
 				for _, val := range vals {

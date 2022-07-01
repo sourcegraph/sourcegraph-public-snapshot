@@ -103,9 +103,9 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 			}
 			return streamResults, nil
 		},
-		computeTextSearch: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
+		computeTextExtraSearch: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
 			decoder, streamResults := streaming.ComputeTextDecoder()
-			err := streaming.ComputeTextStream(ctx, query, decoder)
+			err := streaming.ComputeTextExtraStream(ctx, query, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.ComputeText")
 			}

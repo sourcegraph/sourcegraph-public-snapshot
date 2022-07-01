@@ -29,7 +29,7 @@ data: {}`
 	alertCount := 0
 	errorCount := 0
 	unknownCount := 0
-	decoder := ComputeTextStreamDecoder{
+	decoder := ComputeTextExtraStreamDecoder{
 		OnResult: func(results []compute.Text) {
 			resultCount += len(results)
 		},
