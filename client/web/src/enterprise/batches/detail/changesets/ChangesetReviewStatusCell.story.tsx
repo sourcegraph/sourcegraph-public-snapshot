@@ -1,17 +1,43 @@
-import { storiesOf } from '@storybook/react'
-import { capitalize } from 'lodash'
+import { Meta, DecoratorFn, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ChangesetReviewState } from '../../../../graphql-operations'
 
 import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 
-const { add } = storiesOf('web/batches/ChangesetReviewStatusCell', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-for (const state of Object.values(ChangesetReviewState)) {
-    add(capitalize(state), () => (
-        <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={state} />}</WebStory>
-    ))
+const config: Meta = {
+    title: 'web/batches/ChangesetReviewStatusCell',
+    decorators: [decorator],
 }
+
+export default config
+
+export const Approved: Story = () => (
+    <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.APPROVED} />}</WebStory>
+)
+
+export const ChangesRequested: Story = () => (
+    <WebStory>
+        {props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.CHANGES_REQUESTED} />}
+    </WebStory>
+)
+
+ChangesRequested.storyName = 'Changes_requested'
+
+export const Pending: Story = () => (
+    <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.PENDING} />}</WebStory>
+)
+
+export const Commented: Story = () => (
+    <WebStory>
+        {props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.COMMENTED} />}
+    </WebStory>
+)
+
+export const Dismissed: Story = () => (
+    <WebStory>
+        {props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.DISMISSED} />}
+    </WebStory>
+)

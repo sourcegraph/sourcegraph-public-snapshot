@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, DecoratorFn, Story } from '@storybook/react'
 import classNames from 'classnames'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -8,12 +8,18 @@ import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNo
 
 import styles from './PreviewList.module.scss'
 
-const { add } = storiesOf('web/batches/preview/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
-))
+)
+const config: Meta = {
+    title: 'web/batches/preview/HiddenChangesetApplyPreviewNode',
+    decorators: [decorator],
+}
 
-export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {
-    'Import changeset': {
+export default config
+
+const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {
+    importChangeset: {
         __typename: 'HiddenChangesetApplyPreview',
         targets: {
             __typename: 'HiddenApplyPreviewTargetsAttach',
@@ -24,7 +30,7 @@ export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetA
             },
         },
     },
-    'Create changeset': {
+    createChangeset: {
         __typename: 'HiddenChangesetApplyPreview',
         targets: {
             __typename: 'HiddenApplyPreviewTargetsAttach',
@@ -37,12 +43,22 @@ export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetA
     },
 }
 
-for (const storyName of Object.keys(hiddenChangesetApplyPreviewStories)) {
-    add(storyName, () => (
-        <WebStory>
-            {props => (
-                <HiddenChangesetApplyPreviewNode {...props} node={hiddenChangesetApplyPreviewStories[storyName]} />
-            )}
-        </WebStory>
-    ))
-}
+export const ImportChangeset: Story = () => (
+    <WebStory>
+        {props => (
+            <HiddenChangesetApplyPreviewNode {...props} node={hiddenChangesetApplyPreviewStories.importChangeset} />
+        )}
+    </WebStory>
+)
+
+ImportChangeset.storyName = 'Import changeset'
+
+export const CreateChangeset: Story = () => (
+    <WebStory>
+        {props => (
+            <HiddenChangesetApplyPreviewNode {...props} node={hiddenChangesetApplyPreviewStories.createChangeset} />
+        )}
+    </WebStory>
+)
+
+CreateChangeset.storyName = 'Create changeset'

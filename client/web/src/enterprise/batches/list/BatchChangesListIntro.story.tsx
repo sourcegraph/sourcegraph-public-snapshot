@@ -1,13 +1,17 @@
 import { radios } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { Meta, DecoratorFn, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-const { add } = storiesOf('web/batches/list/BatchChangesListIntro', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const config: Meta = {
+    title: 'web/batches/list/BatchChangesListIntro',
+    decorators: [decorator],
+}
+
+export default config
 
 enum LicensingState {
     Licensed = 'Licensed',
@@ -26,10 +30,32 @@ function stateToInput(state: LicensingState): boolean | undefined {
     }
 }
 
-for (const state of Object.values(LicensingState)) {
-    add(state, () => (
-        <WebStory>
-            {() => <BatchChangesListIntro isLicensed={stateToInput(radios('licensed', LicensingState, state))} />}
-        </WebStory>
-    ))
-}
+export const Licensed: Story = () => (
+    <WebStory>
+        {() => (
+            <BatchChangesListIntro
+                isLicensed={stateToInput(radios('licensed', LicensingState, LicensingState.Licensed))}
+            />
+        )}
+    </WebStory>
+)
+
+export const Unlicensed: Story = () => (
+    <WebStory>
+        {() => (
+            <BatchChangesListIntro
+                isLicensed={stateToInput(radios('licensed', LicensingState, LicensingState.Unlicensed))}
+            />
+        )}
+    </WebStory>
+)
+
+export const Loading: Story = () => (
+    <WebStory>
+        {() => (
+            <BatchChangesListIntro
+                isLicensed={stateToInput(radios('licensed', LicensingState, LicensingState.Loading))}
+            />
+        )}
+    </WebStory>
+)

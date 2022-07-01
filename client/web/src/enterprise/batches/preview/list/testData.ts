@@ -1,35 +1,91 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
-import classNames from 'classnames'
-import { of } from 'rxjs'
-
-import { WebStory } from '../../../../components/WebStory'
+// We decided to export these functions and variables in seperate file because they will be treated as stories if we leave them the way they were
 import {
     ChangesetSpecOperation,
-    ChangesetState,
     ChangesetSpecType,
+    ChangesetState,
+    HiddenChangesetApplyPreviewFields,
+    Maybe,
+    Scalars,
     VisibleChangesetApplyPreviewFields,
+    VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
 
-import { baseChangesetSpec, testRepo } from './testData'
-import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
-
-import styles from './PreviewList.module.scss'
-
-const decorator: DecoratorFn = story => (
-    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
-)
-
-const config: Meta = {
-    title: 'web/batches/preview/VisibleChangesetApplyPreviewNode',
-    decorators: [decorator],
+export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {
+    'Import changeset': {
+        __typename: 'HiddenChangesetApplyPreview',
+        targets: {
+            __typename: 'HiddenApplyPreviewTargetsAttach',
+            changesetSpec: {
+                __typename: 'HiddenChangesetSpec',
+                id: 'someidh1',
+                type: ChangesetSpecType.EXISTING,
+            },
+        },
+    },
+    'Create changeset': {
+        __typename: 'HiddenChangesetApplyPreview',
+        targets: {
+            __typename: 'HiddenApplyPreviewTargetsAttach',
+            changesetSpec: {
+                __typename: 'HiddenChangesetSpec',
+                id: 'someidh2',
+                type: ChangesetSpecType.BRANCH,
+            },
+        },
+    },
 }
 
-export default config
+export const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }
 
-const visibleChangesetApplyPreviewNodeStories = (
+export function baseChangesetSpec(
+    id: number,
+    published: Maybe<Scalars['PublishedValue']>,
+    overrides: Partial<VisibleChangesetSpecFields> = {}
+): VisibleChangesetSpecFields {
+    return {
+        __typename: 'VisibleChangesetSpec',
+        id: 'someidv2' + id.toString() + String(published) + JSON.stringify(overrides),
+        type: ChangesetSpecType.EXISTING,
+        description: {
+            __typename: 'GitBranchChangesetDescription',
+            baseRepository: testRepo,
+            baseRef: 'master',
+            headRef: 'cool-branch',
+            body: 'Body text',
+            commits: [
+                {
+                    subject: 'This is the first line of the commit message',
+                    body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
+                    author: {
+                        avatarURL: null,
+                        displayName: 'john',
+                        email: 'john@test.not',
+                        user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
+                    },
+                },
+            ],
+            diffStat: {
+                __typename: 'DiffStat',
+                added: 10,
+                changed: 8,
+                deleted: 2,
+            },
+            title: 'Add prettier to repository',
+            published,
+        },
+        forkTarget: null,
+        ...overrides,
+    }
+}
+
+export const visibleChangesetApplyPreviewNodeStories = (
     publicationStateSet: boolean
 ): Record<string, VisibleChangesetApplyPreviewFields> => ({
-    ImportChangeset: {
+    'Import changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.IMPORT],
         delta: {
@@ -56,7 +112,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    CreateChangesetPublished: {
+    'Create changeset published': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
         delta: {
@@ -73,7 +129,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             changesetSpec: baseChangesetSpec(1, publicationStateSet ? true : null),
         },
     },
-    CreateChangesetDraft: {
+    'Create changeset draft': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH_DRAFT],
         delta: {
@@ -90,7 +146,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             changesetSpec: baseChangesetSpec(2, publicationStateSet ? 'draft' : null),
         },
     },
-    CreateChangesetNotPublished: {
+    'Create changeset not published': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [],
         delta: {
@@ -107,7 +163,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             changesetSpec: baseChangesetSpec(3, publicationStateSet ? false : null),
         },
     },
-    UpdateChangesetTitle: {
+    'Update changeset title': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UPDATE],
         delta: {
@@ -162,7 +218,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    UpdateChangesetBody: {
+    'Update changeset body': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UPDATE],
         delta: {
@@ -217,7 +273,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    UndraftChangeset: {
+    'Undraft changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UNDRAFT],
         delta: {
@@ -272,7 +328,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    ReopenChangeset: {
+    'Reopen changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.REOPEN, ChangesetSpecOperation.UPDATE],
         delta: {
@@ -327,7 +383,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    CloseChangeset: {
+    'Close changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.CLOSE, ChangesetSpecOperation.DETACH],
         delta: {
@@ -358,7 +414,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    DetachChangeset: {
+    'Detach changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.DETACH],
         delta: {
@@ -389,7 +445,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    ChangeBaseRef: {
+    'Change base ref': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UPDATE],
         delta: {
@@ -444,7 +500,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    ChangeDiff: {
+    'Change diff': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UPDATE],
         delta: {
@@ -499,7 +555,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    UpdateCommitMessage: {
+    'Update commit message': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH],
         delta: {
@@ -554,7 +610,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    UpdateCommitAuthor: {
+    'Update commit author': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH],
         delta: {
@@ -609,7 +665,7 @@ const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
-    ForkedRepo: {
+    'Forked repo': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
         delta: {
@@ -660,307 +716,3 @@ And the more explanatory body. And the more explanatory body. And the more expla
         },
     },
 })
-
-const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
-
-const stories = visibleChangesetApplyPreviewNodeStories(true)
-
-export const ImportChangeset: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.ImportChangeset}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-ImportChangeset.storyName = 'Import changeset'
-
-export const CreateChangesetPublished: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.CreateChangesetPublished}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-CreateChangesetPublished.storyName = 'Create changeset published'
-
-export const CreateChangesetDraft: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.CreateChangesetDraft}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-CreateChangesetDraft.storyName = 'Create changeset draft'
-
-export const CreateChangesetNotPublished: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.CreateChangesetNotPublished}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-CreateChangesetNotPublished.storyName = 'Create changeset not published'
-
-export const UpdateChangesetTitle: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.UpdateChangesetTitle}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-UpdateChangesetTitle.storyName = 'Update changeset tittle'
-
-export const UpdateChangesetBody: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.UpdateChangesetBody}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-UpdateChangesetBody.storyName = 'Update changeset body'
-
-export const UndraftChangeset: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.UndraftChangeset}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-UndraftChangeset.storyName = 'Undraft changeset'
-
-export const ReopenChangeset: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.ReopenChangeset}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-ReopenChangeset.storyName = 'Reopen changeset'
-
-export const CloseChangeset: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.CloseChangeset}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-CloseChangeset.storyName = 'Close changeset'
-
-export const DetachChangeset: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.DetachChangeset}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-DetachChangeset.storyName = 'Detach changeset'
-
-export const ChangeBaseRef: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.ChangeBaseRef}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-ChangeBaseRef.storyName = 'Change base ref'
-
-export const ChangeDiff: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.ChangeDiff}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-ChangeDiff.storyName = 'Change diff'
-
-export const UpdateCommitMessage: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.UpdateCommitMessage}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-UpdateCommitMessage.storyName = 'Update commit message'
-
-export const UpdateCommitAuthor: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.UpdateCommitAuthor}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-UpdateCommitAuthor.storyName = 'Update commit author'
-
-export const ForkedRepo: Story = () => (
-    <WebStory>
-        {props => (
-            <VisibleChangesetApplyPreviewNode
-                {...props}
-                node={stories.ForkedRepo}
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </WebStory>
-)
-
-ForkedRepo.storyName = 'Forked repo'
