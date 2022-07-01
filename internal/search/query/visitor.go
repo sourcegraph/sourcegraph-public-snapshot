@@ -82,3 +82,35 @@ func VisitPredicate(nodes []Node, f func(field, name, value string)) {
 		}
 	})
 }
+
+// PredicatePointer is a pointer to a type that implements Predicate.
+// This is useful so we can construct the zero-value of the non-pointer
+// type T rather than getting the zero value of the pointer type,
+// which is a nil pointer.
+type predicatePointer[T any] interface {
+	Predicate
+	*T
+}
+
+// VisitTypedPredicate visits every predicate of the type given to the callback function. The callback
+// will be called with a value of the predicate with its fields populated with its parsed arguments.
+func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pred PT, negated bool)) {
+	var zeroPred PT
+	VisitField(nodes, zeroPred.Field(), func(value string, negated bool, annotation Annotation) {
+		if !annotation.Labels.IsSet(IsPredicate) {
+			return // skip non-predicates
+		}
+
+		predName, predArgs := ParseAsPredicate(value)
+		if predName != zeroPred.Name() { // NOTE(camdencheek): we don't handle aliases here
+			return // skip unrequested predicates
+		}
+
+		newPred := PT(new(T))
+		err := newPred.ParseParams(predArgs)
+		if err != nil {
+			panic(err) // should already be validated
+		}
+		f(newPred, negated)
+	})
+}

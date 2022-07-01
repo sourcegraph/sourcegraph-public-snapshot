@@ -13,7 +13,7 @@ exports[`SearchStatsPage limitHit 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="mdi-icon iconInline mr-2"
+          class="iconInline mr-2"
           fill="currentColor"
           height="24"
           role="img"
@@ -27,6 +27,7 @@ exports[`SearchStatsPage limitHit 1`] = `
          Code statistics 
         <small
           class="text-uppercase ml-2"
+          data-state="closed"
         >
           Experimental
         </small>
@@ -88,7 +89,7 @@ exports[`SearchStatsPage renders 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="mdi-icon iconInline mr-2"
+          class="iconInline mr-2"
           fill="currentColor"
           height="24"
           role="img"
@@ -102,6 +103,7 @@ exports[`SearchStatsPage renders 1`] = `
          Code statistics 
         <small
           class="text-uppercase ml-2"
+          data-state="closed"
         >
           Experimental
         </small>

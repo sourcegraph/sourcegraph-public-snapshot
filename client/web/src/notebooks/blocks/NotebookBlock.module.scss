@@ -21,20 +21,3 @@
 .selected-not-focused {
     border: 1px solid var(--border-color);
 }
-
-.monaco-wrapper {
-    :global(.monaco-editor) {
-        // Override our :focus-visible style, which gets applied to the textarea
-        :global(.inputarea.focus-visible) {
-            box-shadow: none;
-        }
-    }
-
-    :global(.monaco-mouse-cursor-text) {
-        /* Hack: remove focus ring around Monaco editor cursor */
-        &:focus-within,
-        &:focus-visible {
-            box-shadow: none;
-        }
-    }
-}

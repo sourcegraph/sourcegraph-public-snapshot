@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,6 +20,7 @@ type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
+	log         log.Logger
 }
 
 type SearchImplementer interface {
@@ -36,6 +38,7 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 
 	inputs, err := run.NewSearchInputs(
 		ctx,
+		args.log,
 		db,
 		args.Version,
 		args.PatternType,
@@ -55,8 +58,9 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 	return &searchResolver{
 		db:           db,
 		SearchInputs: inputs,
-		zoekt:        search.Indexed(),
+		zoekt:        search.Indexed(log.Scoped("searchResolver", "")),
 		searcherURLs: search.SearcherURLs(),
+		log:          log.Scoped("searchResolver", "search resolver for BatchSearchImplementer"),
 	}, nil
 }
 
@@ -71,6 +75,7 @@ type searchResolver struct {
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
+	log          log.Logger
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings

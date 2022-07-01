@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -11,7 +11,6 @@ import styles from '../CodeMonitorForm.module.scss'
 
 export interface ActionEditorProps {
     title: React.ReactNode
-    label: string // Similar to title, but for string-only labels
     subtitle: string
     disabled: boolean
     completed: boolean
@@ -45,7 +44,6 @@ export interface ActionEditorProps {
 
 export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<ActionEditorProps>> = ({
     title,
-    label,
     subtitle,
     disabled,
     completed,
@@ -69,11 +67,25 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
     _testStartOpen = false,
 }) => {
     const [expanded, setExpanded] = useState(_testStartOpen)
-    const toggleExpanded = useCallback(() => {
-        if (!disabled) {
-            setExpanded(expanded => !expanded)
+
+    // Focus card (or edit button) when collapsing the card.
+    // Since the card starts collapsed, don't do it on the first render.
+    const isFirstRender = useRef(true)
+    const collapsedCard = useRef<HTMLDivElement & HTMLButtonElement>(null)
+    const editLink = useRef<HTMLButtonElement>(null)
+    useEffect((): void => {
+        if (!isFirstRender.current && !expanded) {
+            if (completed) {
+                editLink.current?.focus()
+            } else {
+                collapsedCard.current?.focus()
+            }
         }
-    }, [disabled])
+        isFirstRender.current = false
+
+        // Only focus when card is collapsed, not when anything else changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expanded])
 
     const submitHandler: React.FormEventHandler = useCallback(
         event => {
@@ -226,7 +238,8 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                         disabled && styles.btnDisabled
                     )}
                     disabled={disabled}
-                    onClick={toggleExpanded}
+                    onClick={() => setExpanded(true)}
+                    ref={collapsedCard}
                 >
                     <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
@@ -254,7 +267,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                                         data-testid={`enable-action-toggle-collapsed-${idName}`}
                                     />
                                 </div>
-                                <Button variant="link" className="p-0">
+                                <Button variant="link" className="p-0" ref={editLink}>
                                     Edit
                                 </Button>
                             </div>

@@ -17,6 +17,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -40,12 +41,13 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db database.DB) http.Handler {
+func StreamHandler(logger log.Logger, db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
-		searchClient:        client.NewSearchClient(db, search.Indexed(), search.SearcherURLs()),
+		searchClient:        client.NewSearchClient(log.Scoped("StreamHandler", ""), db, search.Indexed(log.Scoped("streamHandler", "")), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+		log:                 logger,
 	}
 }
 
@@ -54,6 +56,7 @@ type streamHandler struct {
 	searchClient        client.SearchClient
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
+	log                 log.Logger
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -126,7 +129,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		Limit:        limit,
 		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 		DisplayLimit: displayLimit,
-		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
+		RepoNamer:    streamclient.RepoNamer(ctx, h.log, h.db),
 	}
 
 	var wgLogLatency sync.WaitGroup

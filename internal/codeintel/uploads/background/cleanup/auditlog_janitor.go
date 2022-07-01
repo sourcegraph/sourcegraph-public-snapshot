@@ -8,7 +8,7 @@ import (
 )
 
 func (j *janitor) HandleAuditLog(ctx context.Context) (err error) {
-	count, err := j.dbStore.DeleteOldAuditLogs(ctx, ConfigInst.AuditLogMaxAge, time.Now())
+	count, err := j.uploadSvc.DeleteOldAuditLogs(ctx, ConfigInst.AuditLogMaxAge, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DeleteOldAuditLogs")
 	}

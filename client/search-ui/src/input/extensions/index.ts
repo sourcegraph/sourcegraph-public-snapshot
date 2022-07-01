@@ -1,5 +1,5 @@
 /* eslint-disable jsdoc/check-indentation */
-import { Extension, StateEffect, StateEffectType, StateField } from '@codemirror/state'
+import { ChangeSpec, EditorState, Extension, StateEffect, StateEffectType, StateField } from '@codemirror/state'
 import { EditorView, ViewUpdate } from '@codemirror/view'
 import { Observable } from 'rxjs'
 
@@ -21,6 +21,36 @@ export const changeListener = (callback: (value: string) => void): Extension =>
         }
     })
 
+const replacePattern = /[\n\r↵]+/g
+/**
+ * An extension that enforces that the input will be single line. Consecutive
+ * line breaks will be replaces by a single space.
+ */
+export const singleLine = EditorState.transactionFilter.of(transaction => {
+    if (!transaction.docChanged) {
+        return transaction
+    }
+
+    const newText = transaction.newDoc.sliceString(0)
+    const changes: ChangeSpec[] = []
+
+    // new RegExp(...) creates a copy of the regular expression so that we have
+    // our own stateful copy for using `exec` below.
+    const lineBreakPattern = new RegExp(replacePattern)
+    let match: RegExpExecArray | null = null
+    while ((match = lineBreakPattern.exec(newText))) {
+        // Insert space for line breaks following non-whitespace characters
+        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
+            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
+        } else {
+            // Otherwise remove it
+            changes.push({ from: match.index, to: match.index + match[0].length })
+        }
+    }
+
+    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
+})
+
 /**
  * Creates a search query suggestions extension with default suggestion sources
  * and cancable requests.
@@ -29,16 +59,22 @@ export const createDefaultSuggestions = ({
     isSourcegraphDotCom,
     globbing,
     fetchSuggestions,
+    disableFilterCompletion,
+    disableSymbolCompletion,
 }: {
     isSourcegraphDotCom: boolean
     globbing: boolean
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+    disableSymbolCompletion?: true
+    disableFilterCompletion?: true
 }): Extension =>
     searchQueryAutocompletion(
         createDefaultSuggestionSources({
             fetchSuggestions: createCancelableFetchSuggestions(fetchSuggestions),
             globbing,
             isSourcegraphDotCom,
+            disableSymbolCompletion,
+            disableFilterCompletion,
         })
     )
 
@@ -81,4 +117,26 @@ export function createUpdateableField<T>(
     })
 
     return [field, (editor, newValue) => editor.dispatch({ effects: [fieldEffect.of(newValue)] }), fieldEffect]
+}
+
+/**
+ * Sets the height and/or max height of the editor, with corresponding overflow
+ * behavior. The values can be any valid CSS unit.
+ */
+export function editorHeight({
+    height = null,
+    maxHeight = null,
+}: {
+    height?: string | null
+    maxHeight?: string | null
+}): Extension {
+    return EditorView.theme({
+        '&': {
+            height,
+            maxHeight,
+        },
+        '.cm-scroller': {
+            overflow: 'auto',
+        },
+    })
 }

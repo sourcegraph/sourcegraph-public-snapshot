@@ -4,8 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -18,12 +19,13 @@ import (
 
 // NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewFilterJob(child job.Job) job.Job {
-	return &subRepoPermsFilterJob{child: child}
+func NewFilterJob(logger sglog.Logger, child job.Job) job.Job {
+	return &subRepoPermsFilterJob{child: child, log: logger}
 }
 
 type subRepoPermsFilterJob struct {
 	child job.Job
+	log   sglog.Logger
 }
 
 func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -39,7 +41,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
+		event.Results, err = applySubRepoFiltering(ctx, s.log, checker, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -65,7 +67,7 @@ func (s *subRepoPermsFilterJob) Tags() []log.Field {
 
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+func applySubRepoFiltering(ctx context.Context, logger sglog.Logger, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}
@@ -117,6 +119,6 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
-	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
+	logger.Warn("Applying sub-repo permissions to search results", sglog.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
 }
