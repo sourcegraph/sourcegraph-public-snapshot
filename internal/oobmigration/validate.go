@@ -30,7 +30,6 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 		return nil
 	}
 
-	// TODO - re-implement without importing cmd/frontend
 	firstSemverString, err := upgradestore.New(db, nil).GetFirstServiceVersion(ctx, "frontend")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
