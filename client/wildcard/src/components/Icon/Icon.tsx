@@ -44,35 +44,44 @@ interface HiddenIconProps extends BaseIconProps {
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
 // eslint-disable-next-line react/display-name
-export const Icon = React.forwardRef(({ children, className, size, role = 'img', ...props }, reference) => {
-    const iconStyle = classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)
+export const Icon = React.forwardRef(
+    ({ children, className, size, role = 'img', inline = true, ...props }, reference) => {
+        const iconStyle = classNames(inline && styles.iconInline, size === 'md' && styles.iconInlineMd, className)
 
-    if (props.svgPath) {
-        const { svgPath, height = 24, width = 24, viewBox = '0 0 24 24', fill = 'currentColor', ...attributes } = props
+        if (props.svgPath) {
+            const {
+                svgPath,
+                height = 24,
+                width = 24,
+                viewBox = '0 0 24 24',
+                fill = 'currentColor',
+                ...attributes
+            } = props
+
+            return (
+                <svg
+                    ref={reference}
+                    className={iconStyle}
+                    role={role}
+                    height={height}
+                    width={width}
+                    viewBox={viewBox}
+                    fill={fill}
+                    {...attributes}
+                >
+                    <path d={svgPath} />
+                </svg>
+            )
+        }
+
+        const { as: IconComponent = 'svg', ...attributes } = props
 
         return (
-            <svg
-                ref={reference}
-                className={iconStyle}
-                role={role}
-                height={height}
-                width={width}
-                viewBox={viewBox}
-                fill={fill}
-                {...attributes}
-            >
-                <path d={svgPath} />
-            </svg>
+            <IconComponent ref={reference} className={iconStyle} role={role} {...attributes}>
+                {children}
+            </IconComponent>
         )
     }
-
-    const { as: IconComponent = 'svg', ...attributes } = props
-
-    return (
-        <IconComponent ref={reference} className={iconStyle} role={role} {...attributes}>
-            {children}
-        </IconComponent>
-    )
-}) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
+) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
 
 Icon.displayName = 'Icon'
