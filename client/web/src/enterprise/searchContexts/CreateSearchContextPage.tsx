@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react'
 
+import { mdiMagnify } from '@mdi/js'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -22,8 +23,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { parseSearchURLQuery } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
-
-import { mdiMagnify } from '@mdi/js'
 
 export interface CreateSearchContextPageProps
     extends RouteComponentProps,

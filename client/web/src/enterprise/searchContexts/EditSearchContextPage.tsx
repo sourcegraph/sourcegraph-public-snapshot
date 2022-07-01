@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiMagnify } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -23,8 +24,6 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 
 import { SearchContextForm } from './SearchContextForm'
-
-import { mdiMagnify } from '@mdi/js'
 
 export interface EditSearchContextPageProps
     extends RouteComponentProps<{ spec: Scalars['ID'] }>,

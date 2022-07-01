@@ -4,11 +4,11 @@ import classNames from 'classnames'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
-import { Icon } from '../../Icon'
+import { Icon, IconType } from '../../Icon'
 
 import styles from './Breadcrumb.module.scss'
 
-export type BreadcrumbIcon = React.ComponentType<{ className?: string }> | string
+export type BreadcrumbIcon = IconType
 export type BreadcrumbText = React.ReactNode
 
 type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
@@ -40,6 +40,7 @@ export const Breadcrumb: React.FunctionComponent<BreadcrumbProps> = ({
             <LinkOrSpan className={styles.path} to={to} aria-label={children ? ariaLabel : undefined}>
                 {icon && (
                     <Icon
+                        inline={false}
                         className={styles.icon}
                         svgPath={typeof icon === 'string' ? icon : undefined}
                         as={typeof icon !== 'string' ? icon : undefined}

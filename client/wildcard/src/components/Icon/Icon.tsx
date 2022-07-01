@@ -9,17 +9,26 @@ import { ICON_SIZES } from './constants'
 
 import styles from './Icon.module.scss'
 
+type PathIcon = string
+type CustomIcon = ComponentType<{ className?: string }>
+export type IconType = PathIcon | CustomIcon
+
 interface BaseIconProps extends SVGProps<SVGSVGElement> {
     /**
      * Provide a custom `svgPath` to build an SVG.
      *
      * If using a Material Design icon, simply import the path from '@mdj/js'.
      */
-    svgPath?: string
+    svgPath?: PathIcon
     /**
      * The variant style of the icon. defaults to 'sm'
      */
     size?: typeof ICON_SIZES[number]
+    /**
+     * If the icon should be styled to scale according to the surrounding text.
+     * Defaults to `true`.
+     */
+    inline?: boolean
     className?: string
     role?: AriaRole
 }

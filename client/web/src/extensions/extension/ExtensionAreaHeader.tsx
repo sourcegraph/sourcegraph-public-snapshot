@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react'
 
 import { mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
