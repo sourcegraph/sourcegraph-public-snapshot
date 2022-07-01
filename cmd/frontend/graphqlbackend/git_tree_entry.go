@@ -226,15 +226,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := gitserver.NewClient(r.db).ReadDir(
-		ctx,
-		r.db,
-		authz.DefaultSubRepoPermsChecker,
-		r.commit.repoResolver.RepoName(),
-		api.CommitID(r.commit.OID()),
-		path.Dir(r.Path()),
-		false,
-	)
+	entries, err := gitserver.NewClient(r.db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}

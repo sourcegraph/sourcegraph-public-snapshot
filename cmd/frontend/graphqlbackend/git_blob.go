@@ -13,11 +13,11 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 		StartLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	hunks, err := gitserver.NewClient(r.db).BlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient(r.db).BlameFile(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.OID()),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
-	}, authz.DefaultSubRepoPermsChecker)
+	})
 	if err != nil {
 		return nil, err
 	}
