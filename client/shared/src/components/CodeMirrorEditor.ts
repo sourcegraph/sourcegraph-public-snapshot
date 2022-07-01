@@ -19,7 +19,7 @@ export function useCodeMirror(
         }
 
         const view = new EditorView({
-            state: EditorState.create({ doc: value ?? '', extensions }),
+            state: EditorState.create({ extensions }),
             parent: container,
         })
         setView(view)
@@ -31,18 +31,20 @@ export function useCodeMirror(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [container])
 
-    // Update editor value if necessary
+    // Update editor value if necessary. This also sets the intial value of the
+    // editor. Doing this instead of setting the initial value when the state is
+    // created ensures that extensions have a chance to modify the document.
     useEffect(() => {
-        const currentValue = view?.state.doc.toString() ?? ''
-        if (view && currentValue !== value) {
-            view.dispatch({
-                changes: { from: 0, to: currentValue.length, insert: value ?? '' },
-            })
+        if (view) {
+            const currentValue = view.state.sliceDoc() ?? ''
+
+            if (currentValue !== value) {
+                view.dispatch({
+                    changes: { from: 0, to: currentValue.length, insert: value ?? '' },
+                })
+            }
         }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value])
+    }, [value, view])
 
     useEffect(() => {
         if (view && extensions) {
