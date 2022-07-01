@@ -32,6 +32,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     className={styles.addBlockButton}
                     onClick={() => addBlock({ type: 'md', input: { text: '', initialFocusInput: true } })}
                     data-testid="add-md-block"
+                    aria-label="Add markdown"
                 >
                     <Icon aria-hidden={true} as={LanguageMarkdownOutlineIcon} size="sm" />
                 </Button>
@@ -41,6 +42,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     className={styles.addBlockButton}
                     onClick={() => addBlock({ type: 'query', input: { query: '', initialFocusInput: true } })}
                     data-testid="add-query-block"
+                    aria-label="Add query"
                 >
                     <Icon aria-hidden={true} as={MagnifyIcon} size="sm" />
                 </Button>
@@ -50,6 +52,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     className={styles.addBlockButton}
                     onClick={() => addBlock({ type: 'file', input: EMPTY_FILE_BLOCK_INPUT })}
                     data-testid="add-file-block"
+                    aria-label="Add code"
                 >
                     <Icon aria-hidden={true} as={CodeTagsIcon} size="sm" />
                 </Button>
@@ -59,6 +62,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     className={styles.addBlockButton}
                     onClick={() => addBlock({ type: 'symbol', input: EMPTY_SYMBOL_BLOCK_INPUT })}
                     data-testid="add-symbol-block"
+                    aria-label="Add symbol"
                 >
                     <Icon aria-hidden={true} as={FunctionIcon} size="sm" />
                 </Button>
@@ -69,6 +73,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                         className={styles.addBlockButton}
                         onClick={() => addBlock({ type: 'compute', input: '' })}
                         data-testid="add-compute-block"
+                        aria-label="Add compute block"
                     >
                         {/* // TODO: Fix icon */}
                         <Icon aria-hidden={true} as={LaptopIcon} size="sm" />

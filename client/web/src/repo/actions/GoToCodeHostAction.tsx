@@ -257,6 +257,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
         onClick,
         onAuxClick: onClick,
         className: 'btn-icon test-go-to-code-host',
+        'aria-label': descriptiveText,
     }
 
     if (hijackLink) {
