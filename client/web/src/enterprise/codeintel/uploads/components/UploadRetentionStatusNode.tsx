@@ -58,21 +58,13 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                                 .map(hash => hash.slice(0, 7))
                                 .join(', ')}
                             <Tooltip content="This upload is retained to service code-intel queries for commit(s) with applicable retention policies.">
-                                <Icon
-                                    className="ml-1"
-                                    aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
-                                    svgPath={mdiInformationOutline}
-                                />
+                                <Icon className="ml-1" aria-hidden={true} svgPath={mdiInformationOutline} />
                             </Tooltip>
                         </>
                     )}
                     {!match.configurationPolicy && (
                         <Tooltip content="Uploads at the tip of the default branch are always retained indefinitely.">
-                            <Icon
-                                className="ml-1"
-                                aria-label="Uploads at the tip of the default branch are always retained indefinitely."
-                                svgPath={mdiInformationOutline}
-                            />
+                            <Icon className="ml-1" aria-hidden={true} svgPath={mdiInformationOutline} />
                         </Tooltip>
                     )}
                 </div>
@@ -101,11 +93,7 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
                         ))
                         .reduce((previous, current) => [previous, ', ', current])}
                     <Tooltip content="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries.">
-                        <Icon
-                            className="ml-1"
-                            aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
-                            svgPath={mdiInformationOutline}
-                        />
+                        <Icon className="ml-1" aria-hidden={true} svgPath={mdiInformationOutline} />
                     </Tooltip>
                 </div>
             </div>

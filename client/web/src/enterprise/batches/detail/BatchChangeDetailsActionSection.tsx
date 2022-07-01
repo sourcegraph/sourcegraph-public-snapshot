@@ -52,7 +52,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
     }, [batchChangeID, deleteBatchChange, history, batchChangeNamespaceURL])
     if (batchChangeClosed) {
         return (
-            <Tooltip content="Deleting this batch change is a final action.">
+            <Tooltip content="Deleting this batch change is a final action." placement="left">
                 <Button
                     className="test-batches-delete-btn"
                     onClick={onDeleteBatchChange}
@@ -61,7 +61,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     variant="danger"
                 >
                     {isErrorLike(isDeleting) && (
-                        <Tooltip content={isDeleting.message}>
+                        <Tooltip content={isDeleting.message} placement="left">
                             <Icon aria-hidden={true} svgPath={mdiInformation} />
                         </Tooltip>
                     )}

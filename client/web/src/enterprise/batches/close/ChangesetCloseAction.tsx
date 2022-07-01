@@ -14,10 +14,7 @@ export const ChangesetCloseActionClose: React.FunctionComponent<React.PropsWithC
 }) => (
     <div className={classNames(className, iconClassNames, styles.changesetCloseActionCloseFlash)}>
         <Tooltip content="This changeset will be closed on the code host when the batch change is closed.">
-            <Icon
-                svgPath={mdiCloseCircleOutline}
-                aria-label="This changeset will be closed on the code host when the batch change is closed."
-            />
+            <Icon aria-hidden={true} svgPath={mdiCloseCircleOutline} />
         </Tooltip>
         <span className="text-muted">Will close</span>
     </div>
@@ -27,10 +24,7 @@ export const ChangesetCloseActionKept: React.FunctionComponent<React.PropsWithCh
 }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will NOT be closed on the code host when the batch change is closed.">
-            <Icon
-                svgPath={mdiPlayCircleOutline}
-                aria-label="This changeset will NOT be closed on the code host when the batch change is closed."
-            />
+            <Icon aria-hidden={true} svgPath={mdiPlayCircleOutline} />
         </Tooltip>
         <span className="text-muted">Kept open</span>
     </div>

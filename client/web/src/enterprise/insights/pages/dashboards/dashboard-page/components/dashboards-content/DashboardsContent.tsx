@@ -117,8 +117,8 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                         outline={true}
                         variant="secondary"
                         disabled={addRemovePermissions.disabled}
-                        aria-label="add or remove insights"
                         onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                        data-testid="add-or-remove-insights"
                     >
                         Add or remove insights
                     </Button>

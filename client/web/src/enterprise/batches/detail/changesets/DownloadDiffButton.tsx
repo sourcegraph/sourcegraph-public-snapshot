@@ -77,7 +77,6 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
         <Tooltip content="This is the changeset diff created when src batch preview|apply executed the batch change">
             <Button
                 className="mb-1"
-                aria-label="Download generated diff"
                 onClick={loadDiff}
                 disabled={state === DownloadState.LOADING}
                 outline={true}

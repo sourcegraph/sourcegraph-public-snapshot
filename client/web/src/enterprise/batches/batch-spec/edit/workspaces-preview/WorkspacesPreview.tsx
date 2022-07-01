@@ -223,8 +223,8 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     !isReadOnly && (
                         <Tooltip content="The workspaces previewed below may not be up-to-date.">
                             <Icon
+                                aria-hidden={true}
                                 className={classNames('text-muted ml-1', styles.warningIcon)}
-                                aria-label="The workspaces previewed below may not be up-to-date."
                                 svgPath={mdiAlert}
                             />
                         </Tooltip>

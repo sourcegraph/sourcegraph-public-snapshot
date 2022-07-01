@@ -54,10 +54,7 @@ export const RequestLink: React.FunctionComponent<React.PropsWithChildren<Reques
             <span className="text-muted">
                 Received your request{' '}
                 <Tooltip content="Requests are documented and contribute to our precise support roadmap">
-                    <Icon
-                        svgPath={mdiInformationOutline}
-                        aria-label="Requests are documented and contribute to our precise support roadmap"
-                    />
+                    <Icon svgPath={mdiInformationOutline} aria-hidden={true} />
                 </Tooltip>
             </span>
         ) : (

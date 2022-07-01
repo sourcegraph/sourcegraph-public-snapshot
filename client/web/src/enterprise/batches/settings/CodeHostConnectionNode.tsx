@@ -103,7 +103,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                             <Tooltip content="This code host has credentials connected.">
                                 <Icon
                                     className="text-success test-code-host-connection-node-enabled"
-                                    aria-label="This code host has credentials connected."
+                                    aria-hidden={true}
                                     svgPath={mdiCheckCircleOutline}
                                 />
                             </Tooltip>
@@ -112,7 +112,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                             <Tooltip content="This code host does not have credentials configured.">
                                 <Icon
                                     className="text-danger test-code-host-connection-node-disabled"
-                                    aria-label="This code host does not have credentials configured."
+                                    aria-hidden={true}
                                     svgPath={mdiCheckboxBlankCircleOutline}
                                 />
                             </Tooltip>

@@ -83,7 +83,7 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
                 <Tooltip content={lastUpdatedAt.message}>
-                    <Icon aria-label={lastUpdatedAt.message} className="ml-2 small" svgPath={mdiAlertCircle} />
+                    <Icon aria-hidden={true} className="ml-2 small" svgPath={mdiAlertCircle} />
                 </Tooltip>
             )}
             <Tooltip content={tooltipText}>

@@ -139,7 +139,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             <Link
                                 to={createLinkUrl({ ...location, hash: anchor })}
                                 className={classNames('ml-2', styles.headerPath)}
-                                aria-label="Pin diff"
                             >
                                 #
                             </Link>

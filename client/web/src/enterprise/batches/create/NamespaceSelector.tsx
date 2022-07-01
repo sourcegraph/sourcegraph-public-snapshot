@@ -46,7 +46,7 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
                 <>
                     <strong className="text-nowrap mb-2">Namespace</strong>
                     <Tooltip content="Coming soon">
-                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                        <Icon aria-hidden={true} className="ml-1" svgPath={mdiInformationOutline} />
                     </Tooltip>
                 </>
             }

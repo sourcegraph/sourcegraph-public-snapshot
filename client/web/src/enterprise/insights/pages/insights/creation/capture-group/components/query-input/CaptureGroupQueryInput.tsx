@@ -18,11 +18,7 @@ export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, CaptureGroupQ
     <InsightQueryInput {...props} ref={reference} patternType={SearchPatternType.regexp}>
         <Tooltip content="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input.">
             <Button variant="icon" className={styles.regexButton} disabled={true}>
-                <Icon
-                    svgPath={mdiRegex}
-                    size="md"
-                    aria-label="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
-                />
+                <Icon svgPath={mdiRegex} size="md" aria-hidden={true} />
             </Button>
         </Tooltip>
     </InsightQueryInput>

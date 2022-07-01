@@ -137,7 +137,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                                 <Tooltip content="This executor missed at least three heartbeats.">
                                     <Icon
                                         className="text-warning mr-2"
-                                        aria-label="This executor missed at least three heartbeats."
+                                        aria-hidden={true}
                                         svgPath={mdiCheckboxBlankCircle}
                                     />
                                 </Tooltip>

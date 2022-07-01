@@ -171,7 +171,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 <strong className="d-block mb-2">
                     Visibility
                     <Tooltip content="Coming soon">
-                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                        <Icon aria-hidden={true} className="ml-1" svgPath={mdiInformationOutline} />
                     </Tooltip>
                 </strong>
                 <div className="form-group mb-1">

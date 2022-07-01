@@ -78,7 +78,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Re
                 )}
                 {isErrorLike(update) && (
                     <Tooltip content={update.message}>
-                        <Icon className="text-danger mr-2" aria-label={update.message} svgPath={mdiAlertCircle} />
+                        <Icon className="text-danger mr-2" aria-hidden={true} svgPath={mdiAlertCircle} />
                     </Tooltip>
                 )}
                 <Button

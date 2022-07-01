@@ -68,7 +68,7 @@ export const MonitorLogNode: React.FunctionComponent<
                             <Icon
                                 svgPath={mdiAlertCircle}
                                 className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
-                                aria-label="One or more runs of this code monitor have an error"
+                                aria-hidden={true}
                             />
                         </Tooltip>
                     ) : (
@@ -76,7 +76,7 @@ export const MonitorLogNode: React.FunctionComponent<
                             <Icon
                                 svgPath={mdiCheckBold}
                                 className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
-                                aria-label="Monitor running as normal"
+                                aria-hidden={true}
                             />
                         </Tooltip>
                     )}

@@ -1,10 +1,20 @@
 import React from 'react'
 
+import { mdiDotsVertical } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Position, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Position,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../core/types'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
@@ -40,10 +50,10 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                     variant="icon"
                     outline={true}
                     className={classNames(className, styles.triggerButton)}
-                    aria-label="dashboard context menu"
+                    data-testid="dashboard-context-menu"
                 >
                     <VisuallyHidden>Dashboard options</VisuallyHidden>
-                    <DotsVerticalIcon size={16} />
+                    <Icon svgPath={mdiDotsVertical} aria-label="Dashboard options" />
                 </MenuButton>
             </Tooltip>
 
@@ -55,8 +65,8 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                             outline={true}
                             disabled={menuPermissions.configure.disabled}
                             className={styles.menuItem}
-                            aria-label="configure dashboard"
                             onSelect={() => onSelect(DashboardMenuAction.Configure)}
+                            data-testid="configure-dashboard"
                         >
                             Configure dashboard
                         </MenuItem>
@@ -70,6 +80,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                         className={styles.menuItem}
                         onSelect={() => onSelect(DashboardMenuAction.CopyLink)}
                         outline={true}
+                        data-testid="copy-link"
                     >
                         Copy link
                     </MenuItem>
@@ -86,6 +97,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                             className={classNames(styles.menuItem, styles.menuItemDanger)}
                             onSelect={() => onSelect(DashboardMenuAction.Delete)}
                             outline={true}
+                            data-testid="delete"
                         >
                             Delete
                         </MenuItem>

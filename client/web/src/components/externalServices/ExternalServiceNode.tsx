@@ -64,7 +64,6 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                         <Button
                             className="test-edit-external-service-button"
                             to={`${routingPrefix}/external-services/${node.id}`}
-                            aria-label="External service settings"
                             variant="secondary"
                             size="sm"
                             as={Link}
@@ -77,7 +76,6 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             className="test-delete-external-service-button"
                             onClick={onDelete}
                             disabled={isDeleting === true}
-                            aria-label="Delete external service"
                             variant="danger"
                             size="sm"
                         >
