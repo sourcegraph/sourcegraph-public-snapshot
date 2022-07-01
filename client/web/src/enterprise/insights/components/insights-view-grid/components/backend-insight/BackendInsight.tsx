@@ -17,7 +17,7 @@ import {
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
 import { SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
@@ -104,7 +104,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
-                const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
+                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
