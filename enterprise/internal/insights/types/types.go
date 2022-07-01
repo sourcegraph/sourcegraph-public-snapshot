@@ -120,10 +120,9 @@ const (
 type GenerationMethod string
 
 const (
-	Search         GenerationMethod = "search"
-	SearchCompute  GenerationMethod = "search-compute"
-	LanguageStats  GenerationMethod = "language-stats"
-	MappingCompute GenerationMethod = "mapping-compute"
+	Search        GenerationMethod = "search"
+	SearchCompute GenerationMethod = "search-compute"
+	LanguageStats GenerationMethod = "language-stats"
 )
 
 type DirtyQuery struct {
