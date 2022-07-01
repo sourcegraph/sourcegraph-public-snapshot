@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiMessageTextOutline, mdiSettings, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
@@ -90,7 +90,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         size="sm"
                         as={Link}
                     >
-                        <Icon aria-hidden={true} svgPath={mdiSettings} /> Settings
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                     </Button>{' '}
                     <Button
                         className="test-delete-saved-search-button"
