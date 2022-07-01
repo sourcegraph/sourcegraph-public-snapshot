@@ -164,8 +164,8 @@ describe('[Code Insight] Dashboard', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
 
-        await driver.page.waitForSelector('[aria-label="add dashboard button"]')
-        await driver.page.click('[aria-label="add dashboard button"]')
+        await driver.page.waitForSelector('[data-testid="add-dashboard-button"]')
+        await driver.page.click('[data-testid="add-dashboard-button"]')
         await driver.page.waitForSelector('form')
 
         await driver.page.type('[name="name"]', 'New test dashboard')
@@ -286,7 +286,7 @@ describe('[Code Insight] Dashboard', () => {
 
         expect(driver.page.url()).toBe(`${driver.sourcegraphBaseUrl}/insights/dashboards/codeInsightDashboard001`)
 
-        await driver.page.click('[aria-label="add or remove insights"]')
+        await driver.page.click('[data-testid="add-or-remove-insights"]')
         await driver.page.waitForSelector('form')
 
         await driver.page.click('input[value="insight_003"]')
