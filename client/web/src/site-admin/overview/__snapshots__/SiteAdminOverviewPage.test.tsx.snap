@@ -99,7 +99,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="iconInline"
               fill="currentColor"
               height="24"
               role="img"
@@ -327,7 +327,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="iconInline"
               fill="currentColor"
               height="24"
               role="img"
