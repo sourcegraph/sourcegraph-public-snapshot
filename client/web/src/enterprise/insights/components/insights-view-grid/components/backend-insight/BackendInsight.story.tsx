@@ -53,7 +53,13 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     },
     dashboardReferenceCount: 0,
     isFrozen: false,
-    seriesDisplayOptions: {},
+    seriesDisplayOptions: {
+        limit: 20,
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
+    },
     dashboards: [],
     seriesCount: 2,
 }
@@ -159,8 +165,11 @@ const mockInsightAPIResponse = ({
                         id: 'searchInsights.insight.mock_backend_insight_id',
                         filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                         seriesDisplayOptions: {
-                            limit: undefined,
-                            sortOptions: undefined,
+                            limit: 20,
+                            sortOptions: {
+                                direction: SeriesSortDirection.DESC,
+                                mode: SeriesSortMode.RESULT_COUNT,
+                            },
                         },
                     },
                 },
@@ -177,8 +186,11 @@ const mockInsightAPIResponse = ({
                     id: 'searchInsights.insight.mock_backend_insight_id',
                     filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                     seriesDisplayOptions: {
-                        limit: undefined,
-                        sortOptions: undefined,
+                        limit: 20,
+                        sortOptions: {
+                            direction: SeriesSortDirection.DESC,
+                            mode: SeriesSortMode.RESULT_COUNT,
+                        },
                     },
                 },
             },
@@ -324,8 +336,11 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -608,8 +623,11 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -892,8 +910,11 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
