@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute/streaming"
@@ -13,7 +15,7 @@ import (
 )
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.ComputeResolver = resolvers.NewResolver(db)
+	enterpriseServices.ComputeResolver = resolvers.NewResolver(log.Scoped("computeResolver", ""), db)
 	enterpriseServices.NewComputeStreamHandler = func() http.Handler { return streaming.NewComputeStreamHandler(db) }
 	return nil
 }

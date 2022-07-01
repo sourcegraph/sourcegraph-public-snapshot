@@ -11,6 +11,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -342,6 +343,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	resolver := &searchResolver{
 		db:           db,
+		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
 		zoekt:        z,
 	}
@@ -579,6 +581,7 @@ func TestEvaluateAnd(t *testing.T) {
 
 			resolver := &searchResolver{
 				db:           db,
+				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
 				zoekt:        z,
 			}
@@ -685,6 +688,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
+				logger:       logtest.Scoped(t),
 			}
 
 			ctx := context.Background()
