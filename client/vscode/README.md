@@ -60,7 +60,6 @@ In addition to searching open source code, you can create a Sourcegraph account 
 1. Click the `Create an account` button in the sidebar of the Sourcegraph extension. You will be directed to sourcegraph.com in your browser.
 2. Follow the instructions to create and configure your Sourcegraph instance
 
-
 ### Connecting to your Sourcegraph instance
 
 1.  In Sourcegraph, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
