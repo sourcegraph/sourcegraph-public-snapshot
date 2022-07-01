@@ -1501,10 +1501,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@codemirror/autocomplete@^0.20.0", "@codemirror/autocomplete@^0.20.1":
-  version "0.20.1"
-  resolved "https://registry.npmjs.org/@codemirror/autocomplete/-/autocomplete-0.20.1.tgz#d9aa5cfc111469f9f014e80d239916bb0c21edf9"
-  integrity sha512-rWDAkE1Qn9O4LsV8tAm/KlzzqdQLaIxqDOLhVYja3rKQIWebD3dixIzg9BAKpjt+0dIaDwtIp3yinD9MefgbQQ==
+"@codemirror/autocomplete@^0.20.0", "@codemirror/autocomplete@^0.20.3":
+  version "0.20.3"
+  resolved "https://registry.npmjs.org/@codemirror/autocomplete/-/autocomplete-0.20.3.tgz#affe2d7e2b2e0be42ee1ac5fb74a1c84a6f1bfd7"
+  integrity sha512-lYB+NPGP+LEzAudkWhLfMxhTrxtLILGl938w+RcFrGdrIc54A+UgmCoz+McE3IYRFp4xyQcL4uFJwo+93YdgHw==
   dependencies:
     "@codemirror/language" "^0.20.0"
     "@codemirror/state" "^0.20.0"
@@ -1576,10 +1576,10 @@
     "@codemirror/language" "^0.20.0"
     "@lezer/json" "^0.16.0"
 
-"@codemirror/lang-markdown@^0.20.0":
-  version "0.20.0"
-  resolved "https://registry.npmjs.org/@codemirror/lang-markdown/-/lang-markdown-0.20.0.tgz#527554ccfc328a583d81c3d92b1098d4e5b7fba7"
-  integrity sha512-r345c4CJ9BgoC6W3aSS97fTsRQnLFZPm/Q1ssRyens0ubcVf3i/nWvmg1rlDDIZ7ljyLt5K863aLrko00S6BaA==
+"@codemirror/lang-markdown@^0.20.1":
+  version "0.20.1"
+  resolved "https://registry.npmjs.org/@codemirror/lang-markdown/-/lang-markdown-0.20.1.tgz#62cb43e44439d84664c0103fad7e934c85a3197f"
+  integrity sha512-m9pAxcreEf5X2S6l+1a07rvac117DHCmOPRPp0/jih1Byif33LkLrSRObrNym/QyeTMEoE6dwLEutYisGrGaUg==
   dependencies:
     "@codemirror/lang-html" "^0.20.0"
     "@codemirror/language" "^0.20.0"
@@ -1599,16 +1599,17 @@
     "@lezer/common" "^0.15.5"
     "@lezer/lr" "^0.15.0"
 
-"@codemirror/language@^0.20.0":
-  version "0.20.0"
-  resolved "https://registry.npmjs.org/@codemirror/language/-/language-0.20.0.tgz#959967901e780c1612934cf5d6df3d7b7e5bf9f0"
-  integrity sha512-lPsF5Y2ZFd5lZ9+7HXTxu57Po3dms3+7q2iAffzrbis2wyJo0lzi/j2312EKStEzwd0pGGpvrUk2dEd333N2jw==
+"@codemirror/language@^0.20.0", "@codemirror/language@^0.20.2":
+  version "0.20.2"
+  resolved "https://registry.npmjs.org/@codemirror/language/-/language-0.20.2.tgz#31c3712eac2251810986272dcd6a50510e0c1529"
+  integrity sha512-WB3Bnuusw0xhVvhBocieYKwJm04SOk5bPoOEYksVHKHcGHFOaYaw+eZVxR4gIqMMcGzOIUil0FsCmFk8yrhHpw==
   dependencies:
     "@codemirror/state" "^0.20.0"
     "@codemirror/view" "^0.20.0"
     "@lezer/common" "^0.16.0"
     "@lezer/highlight" "^0.16.0"
     "@lezer/lr" "^0.16.0"
+    style-mod "^4.0.0"
 
 "@codemirror/lint@^0.20.0":
   version "0.20.2"
@@ -1633,10 +1634,10 @@
   dependencies:
     "@codemirror/text" "^0.19.0"
 
-"@codemirror/state@^0.20.0":
-  version "0.20.0"
-  resolved "https://registry.npmjs.org/@codemirror/state/-/state-0.20.0.tgz#3343d209169813b0152b77361cd78bea01549a73"
-  integrity sha512-R3XrAWCS5Xm9lx+4pDET4EUPEg+8bDfAa5zoOFIhx+VChsfew9Vy33dAjCXS5ES4Q8UecW4WM4UudmUFpZ+86A==
+"@codemirror/state@^0.20.0", "@codemirror/state@^0.20.1":
+  version "0.20.1"
+  resolved "https://registry.npmjs.org/@codemirror/state/-/state-0.20.1.tgz#de5c6dc0de3e216eaa3a9ee9391c926b766f6b46"
+  integrity sha512-ms0tlV5A02OK0pFvTtSUGMLkoarzh1F8mr6jy1cD7ucSC2X/VLHtQCxfhdSEGqTYlQF2hoZtmLv+amqhdgbwjQ==
 
 "@codemirror/stream-parser@^0.19.2":
   version "0.19.8"
@@ -1666,10 +1667,10 @@
     style-mod "^4.0.0"
     w3c-keyname "^2.2.4"
 
-"@codemirror/view@^0.20.0", "@codemirror/view@^0.20.2", "@codemirror/view@^0.20.4":
-  version "0.20.4"
-  resolved "https://registry.npmjs.org/@codemirror/view/-/view-0.20.4.tgz#5d988b929103f8148ec92512b937a3a8601bcc72"
-  integrity sha512-6yprcc0/39EzI6y9Jm/J5F9lFzQik0yj8gE3CO/wOCQ4vd3Drol114mMK91LGtKrfoS0MFKVGulw0TdfN49Bfw==
+"@codemirror/view@^0.20.0", "@codemirror/view@^0.20.2", "@codemirror/view@^0.20.7":
+  version "0.20.7"
+  resolved "https://registry.npmjs.org/@codemirror/view/-/view-0.20.7.tgz#1d0acc740f71f92abef4b437c030d4e6c39ab6dc"
+  integrity sha512-pqEPCb9QFTOtHgAH5XU/oVy9UR/Anj6r+tG5CRmkNVcqSKEPmBU05WtN/jxJCFZBXf6HumzWC9ydE4qstO3TxQ==
   dependencies:
     "@codemirror/state" "^0.20.0"
     style-mod "^4.0.0"
