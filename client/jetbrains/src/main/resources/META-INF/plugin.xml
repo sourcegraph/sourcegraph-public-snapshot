@@ -65,15 +65,17 @@
             <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
         </action>
         <action
-            id="sourcegraph.openSearch"
+            id="sourcegraph.openFindPopup"
             class="com.sourcegraph.find.OpenFindAction"
-            text="Open Sourcegraph Search View"
-            description="Open Sourcegraph search view"
+            text="Find on Sourcegraph..."
+            description="Search all your repos on Sourcegraph"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt a" keymap="$default"/>
+            <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
+
         <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
-            <reference ref="sourcegraph.openSearch"/>
+            <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
             <reference ref="sourcegraph.searchRepository"/>
             <reference ref="sourcegraph.openFile"/>
