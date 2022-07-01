@@ -6,7 +6,7 @@
 
 ![sourcegraph com_github com_golang_go_-_blob_src_net_http_request go_L855_6](https://user-images.githubusercontent.com/989826/126650657-cef98203-1505-4848-aab6-57acda1ec35f.png)
 
-**Features**
+**Features** 
 
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
 - Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
