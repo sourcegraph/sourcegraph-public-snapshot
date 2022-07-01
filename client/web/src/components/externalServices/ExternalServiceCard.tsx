@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
-import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Icon, Link, H3, Text } from '@sourcegraph/wildcard'
@@ -51,7 +51,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
                         <small>
                             {' '}
                             by
-                            <Icon as={AccountIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiAccount} />
                             <Link to={namespace.url}>{namespace.namespaceName}</Link>
                         </small>
                     )}

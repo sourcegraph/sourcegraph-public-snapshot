@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -103,7 +103,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon as={AddIcon} aria-hidden={true} /> New organization
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
                                 </Button>
                             </div>
                         ))}

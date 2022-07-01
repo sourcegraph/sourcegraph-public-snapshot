@@ -1,9 +1,8 @@
 import React from 'react'
 
+import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 import kebabCase from 'lodash/kebabCase'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import { useRouteMatch } from 'react-router-dom'
 
 import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel, H2, H3 } from '@sourcegraph/wildcard'
@@ -69,7 +68,7 @@ export const SidebarCollapseItems: React.FunctionComponent<
                     <span>
                         {CollapseItemIcon && <Icon className="mr-1" as={CollapseItemIcon} aria-hidden={true} />} {label}
                     </span>
-                    <Icon aria-hidden={true} className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} className={styles.chevron} svgPath={isOpen ? mdiMenuUp : mdiMenuDown} />
                 </CollapseHeader>
                 <CollapsePanel id={kebabCase(label)} className="border-top">
                     {children}

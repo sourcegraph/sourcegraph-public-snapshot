@@ -1,11 +1,9 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from 'react'
 
+import { mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import { action } from '@storybook/addon-actions'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
@@ -42,7 +40,7 @@ export const GitHub: Story = () => (
             return (
                 <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                     <PopoverTrigger as={Button} id={targetID} aria-label="Github">
-                        <Icon as={GithubIcon} aria-hidden="true" />
+                        <Icon aria-hidden="true" svgPath={mdiGithub} />
                     </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""
@@ -72,7 +70,7 @@ export const GitLab: Story = () => (
             return (
                 <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                     <PopoverTrigger as={Button} id={targetID} aria-label="Gitlab">
-                        <Icon as={GitlabIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiGitlab} />
                     </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""
@@ -139,7 +137,7 @@ export const BitbucketServer: Story = () => (
             return (
                 <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                     <PopoverTrigger as={Button} id={targetID} aria-label="Bitbucket">
-                        <Icon as={BitbucketIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiBitbucket} />
                     </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""

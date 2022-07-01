@@ -1,10 +1,9 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
+import { mdiCodeJson, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
@@ -276,7 +275,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             as={Link}
                             className="ml-1"
                         >
-                            <Icon as={CodeJsonIcon} aria-hidden={true} /> Search dependencies{' '}
+                            <Icon aria-hidden={true} svgPath={mdiCodeJson} /> Search dependencies{' '}
                             <Badge variant="info" className={classNames('text-uppercase')}>
                                 NEW
                             </Badge>
@@ -303,7 +302,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 className="ml-1"
                                 aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} aria-hidden={true} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />
                             </Button>
                         )}
                     </ButtonGroup>

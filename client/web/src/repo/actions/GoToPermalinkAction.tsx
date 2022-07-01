@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiLink } from '@mdi/js'
 import * as H from 'history'
-import LinkIcon from 'mdi-react/LinkIcon'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -68,7 +68,7 @@ export class GoToPermalinkAction extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
-                    <Icon as={LinkIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiLink} />
                     <span>Permalink (with full Git commit SHA)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -83,7 +83,7 @@ export class GoToPermalinkAction extends React.PureComponent<
                 data-tooltip="Permalink (with full Git commit SHA)"
                 aria-label="Permalink (with full Git commit SHA)"
             >
-                <Icon as={LinkIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiLink} />
             </RepoHeaderActionButtonLink>
         )
     }

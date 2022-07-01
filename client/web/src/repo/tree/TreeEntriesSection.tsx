@@ -1,9 +1,8 @@
 import React from 'react'
 
+import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { identity } from 'lodash'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -51,7 +50,7 @@ const TreeEntry: React.FunctionComponent<
             <span>
                 <Icon
                     className="mr-1"
-                    as={isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
+                    svgPath={isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
                     aria-hidden={true}
                 />
                 {name}
