@@ -9,7 +9,6 @@ import styles from './SearchTemplatesBanner.module.scss'
 export const SearchTemplatesBanner: React.FunctionComponent = () => (
     <Card className={styles.banner}>
         <CardBody className="d-flex justify-content-between align-items-center">
-            {/* <div className="d-flex justify-content-between align-items-center"> */}
             <CodeInsightsBatchesIcon className={styles.icon} />
             <div className="flex-grow-1 justify-content-between align-items-center">
                 <H4 className="mb-1">You are creating a Batch Change from a Code Search</H4>
@@ -17,7 +16,6 @@ export const SearchTemplatesBanner: React.FunctionComponent = () => (
                     Let Sourcegraph help you refactoring your code by preparing a Batch Change from your search query
                 </Text>
             </div>
-            {/* </div> */}
         </CardBody>
     </Card>
 )
