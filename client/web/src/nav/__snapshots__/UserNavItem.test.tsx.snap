@@ -30,7 +30,7 @@ exports[`UserNavItem simple 1`] = `
         </div>
         <svg
           aria-hidden="true"
-          class="mdi-icon iconInline"
+          class="iconInline"
           fill="currentColor"
           height="24"
           role="img"

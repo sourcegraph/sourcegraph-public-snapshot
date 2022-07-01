@@ -10,15 +10,17 @@ import React, {
     useLayoutEffect,
 } from 'react'
 
+import {
+    mdiBookPlusOutline,
+    mdiChevronUp,
+    mdiDelete,
+    mdiMagnify,
+    mdiFileDocumentOutline,
+    mdiCodeBrackets,
+    mdiTextBox,
+} from '@mdi/js'
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
-import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import TextBoxIcon from 'mdi-react/TextBoxIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -82,7 +84,7 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
 }
 
 export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Icon as={BookPlusOutlineIcon} aria-hidden={true} />
+    <Icon aria-hidden={true} svgPath={mdiBookPlusOutline} />
 )
 
 export interface NotepadContainerProps {
@@ -343,7 +345,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon aria-hidden={true} as={ChevronUpIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiChevronUp} />
                 </span>
             </Button>
             {open && (
@@ -434,7 +436,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
                         >
-                            <Icon aria-hidden={true} as={DeleteIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
                         </Button>
                     </div>
                 </>
@@ -464,7 +466,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                         addEntry(entry)
                     }}
                 >
-                    <Icon aria-hidden={true} as={SearchIcon} /> Add search
+                    <Icon aria-hidden={true} svgPath={mdiMagnify} /> Add search
                 </Button>
             )
             break
@@ -482,7 +484,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                             addEntry(entry, 'file')
                         }}
                     >
-                        <Icon aria-hidden={true} as={FileDocumentOutlineIcon} /> Add as file
+                        <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -496,7 +498,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                                 addEntry(entry, 'range')
                             }}
                         >
-                            <Icon aria-hidden={true} as={CodeBracketsIcon} /> Add as range{' '}
+                            <Icon aria-hidden={true} svgPath={mdiCodeBrackets} /> Add as range{' '}
                             {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
@@ -582,7 +584,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
-                        <Icon aria-hidden={true} as={TextBoxIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiTextBox} />
                     </Button>
                     <Button
                         aria-label={deletionLabel}
@@ -594,7 +596,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             onDelete(entry)
                         }}
                     >
-                        <Icon aria-hidden={true} as={DeleteIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </span>
             </div>
@@ -636,7 +638,7 @@ function getUIComponentsForEntry(
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon aria-label="Search" as={SearchIcon} />,
+                icon: <Icon aria-label="Search" svgPath={mdiMagnify} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -650,7 +652,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon aria-label="File" as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: <Icon aria-label="File" svgPath={entry.lineRange ? mdiCodeBrackets : mdiFileDocumentOutline} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}
