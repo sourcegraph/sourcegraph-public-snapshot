@@ -22,10 +22,13 @@ interface FormSeriesInputProps {
     /** Show all validation error of all fields within the form. */
     showValidationErrorsOnMount?: boolean
 
-    /** Code Insight repositories field string value - repo1, repo2, ... */
+    /**
+     * Code Insight repositories field string value - repo1, repo2, ...
+     * This prop is used in order to generate a proper link for the query preview button.
+     */
     repositories: string
 
-    /** Enable autofocus behavior of first input of form. */
+    /** Enable autofocus behavior of the first input element of series form. */
     autofocus?: boolean
 
     /** Enable cancel button. */
@@ -125,7 +128,12 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
                 repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                message={<QueryFieldDescription />}
+                message={
+                    <span>
+                        Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed,{' '}
+                        <Code>repo:</Code> will be added automatically.
+                    </span>
+                }
                 className="mt-4"
                 {...getDefaultInputProps(queryField)}
             />
@@ -157,10 +165,3 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
         </Card>
     )
 }
-
-const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <span>
-        Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed, <Code>repo:</Code> will be
-        added automatically.
-    </span>
-)
