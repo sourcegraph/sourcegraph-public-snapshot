@@ -3,6 +3,7 @@ package perforce
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
@@ -361,7 +362,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 				// Grant access to specified paths
 				for _, depot := range depots {
 					srp := getSubRepoPerms(depot)
-					srp.PathIncludes = append(srp.PathIncludes, match.pattern)
+					srp.PathIncludes = append(srp.PathIncludes, convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)...)
 
 					var i int
 					for _, exclude := range srp.PathExcludes {
@@ -391,7 +392,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 					srp.PathIncludes = nil
 				}
 
-				srp.PathExcludes = append(srp.PathExcludes, match.pattern)
+				srp.PathExcludes = append(srp.PathExcludes, convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)...)
 
 				var i int
 				for _, include := range srp.PathIncludes {
@@ -402,7 +403,8 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 						i++
 						continue
 					}
-					if match.Match(includeGlob.original) {
+					checkWithDepotAdded := !strings.HasPrefix(includeGlob.pattern, "//") && match.Match(string(depot)+includeGlob.pattern)
+					if match.Match(includeGlob.original) || checkWithDepotAdded {
 						srp.PathIncludes = append(srp.PathIncludes[:i], srp.PathIncludes[i+1:]...)
 					} else {
 						i++
@@ -444,6 +446,50 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 			return nil
 		},
 	}
+}
+
+func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, patternsToGlob map[string]globMatch) []string {
+	if !strings.Contains(match.pattern, "**") && !strings.Contains(match.pattern, "*") {
+		return []string{match.pattern}
+	}
+	trimmedRule := strings.TrimPrefix(match.pattern, "//")
+	trimmedDepot := strings.TrimSuffix(strings.TrimPrefix(string(depot), "//"), "/")
+	parts := strings.Split(trimmedRule, "/")
+	newRules := make([]string, 0, len(parts))
+	depotOnlyMatchesDoubleWildcard := true
+	for i := range parts {
+		maybeDepotMatch := strings.Join(parts[:i+1], "/")
+		maybePathRule := strings.Join(parts[i+1:], "/")
+		depotMatchGlob, err := glob.Compile(maybeDepotMatch, '/')
+		if err != nil {
+			log15.Warn(fmt.Sprintf("error compiling %s to glob: %v", maybeDepotMatch, err))
+			continue
+		}
+		if depotMatchGlob.Match(trimmedDepot) {
+			// special case: depot match ends with **
+			if strings.HasSuffix(maybeDepotMatch, "**") {
+				if maybePathRule == "" {
+					maybePathRule = "**"
+				} else {
+					maybePathRule = fmt.Sprintf("**/%s", maybePathRule)
+				}
+			}
+			if maybeDepotMatch != "**" {
+				depotOnlyMatchesDoubleWildcard = false
+				newGlobMatch, err := convertToGlobMatch(maybePathRule)
+				if err != nil {
+					log15.Warn(fmt.Sprintf("error converting to glob match: %s\n", err))
+				}
+				patternsToGlob[newGlobMatch.pattern] = newGlobMatch
+			}
+			newRules = append(newRules, maybePathRule)
+		}
+	}
+	if depotOnlyMatchesDoubleWildcard {
+		// in this case, the original rule will work fine, so no need to convert.
+		return []string{match.pattern}
+	}
+	return newRules
 }
 
 // allUsersScanner converts `p4 protects` to a map of users within the protection rules.
