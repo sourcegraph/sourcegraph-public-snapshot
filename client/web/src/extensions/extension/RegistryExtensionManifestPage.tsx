@@ -3,7 +3,6 @@ import * as React from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import EyeIcon from 'mdi-react/EyeIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
