@@ -35,7 +35,11 @@ If this does not solve your problem, please reach out directly to your Sourcegra
 
 ## Accuracy considerations for an insight query returning a large result set
 
-If you create an insight with a search query that returns a large result set that exceeds the search timeout (generally when there are over 1,000,000 results), non-historical data points may report undercounted numbers. This behaviour is tracked in [this issue](https://github.com/sourcegraph/sourcegraph/issues/37859). This is because non-historical data points are recorded with a global search query as opposed to per-repo queries we run for backfilling. For a large result set (e.g. a query for `test` with millions of results) the global query will be disadvantaged by the global search timeout. You can find more information on search timeouts in the [docs](https://docs.sourcegraph.com/code_search/how-to/exhaustive#timeouts). In this case, you may want to try:
+If you create an insight with a search query that returns a large result set that exceeds the search timeout (generally when there are over 1,000,000 results), non-historical data points may report undercounted numbers. This behaviour is tracked in [this issue](https://github.com/sourcegraph/sourcegraph/issues/37859). This is because non-historical data points are recorded with a global search query as opposed to per-repo queries we run for backfilling. For a large result set (e.g. a query for `test` with millions of results) the global query will be disadvantaged by the global search timeout. You can find more information on search timeouts in the [docs](https://docs.sourcegraph.com/code_search/how-to/exhaustive#timeouts). 
+
+You can determine if this issue may be affecting your query by just running the query in the Search UI on `/search` with a `count:all` – if your search is returning `x results in 60s` (or the upper limit max timeout is configured to) then the search will time out on insights as well. Note that the duration could be more or less `60s`, e.g. you could encounter `60.02s` as well. 
+
+In this case, you may want to try:
 * Using a more granular query
 * Changing your site configuration so that the timeout is increased, provided your instance setup allows it. [More information on timeouts](https://docs.sourcegraph.com/code_search/how-to/exhaustive#timeouts).
 
