@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -454,7 +455,7 @@ func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPerm
 		if err != nil {
 			return nil, err
 		}
-		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
+		return &fileutil.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
 	}
 
 	fis, err := c.lsTree(ctx, repo, commit, path, false)
@@ -610,14 +611,14 @@ func (c *ClientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 			sys = objectInfo(oid)
 		}
 
-		fis[i] = &util.FileInfo{
+		fis[i] = &fileutil.FileInfo{
 			Name_: name, // full path relative to root (not just basename)
 			Mode_: mode,
 			Size_: size,
 			Sys_:  sys,
 		}
 	}
-	util.SortFileInfosByName(fis)
+	fileutil.SortFileInfosByName(fis)
 
 	return fis, nil
 }
