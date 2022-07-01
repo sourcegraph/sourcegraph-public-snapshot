@@ -3,15 +3,18 @@ package group
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestStreamGroup(t *testing.T) {
+	t.Parallel()
 	sleepReturn := func(d time.Duration, r int) func() int {
 		return func() int {
 			time.Sleep(d)
@@ -64,9 +67,44 @@ func TestStreamGroup(t *testing.T) {
 		g.Wait()
 		require.Equal(t, expected, results)
 	})
+
+	t.Run("limit", func(t *testing.T) {
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				currentConcurrent := atomic.NewInt64(0)
+				errCount := atomic.NewInt64(0)
+				taskCount := maxConcurrent * 10
+
+				expected := make([]int, taskCount)
+				got := make([]int, 0, taskCount)
+
+				g := NewWithStreaming[int]().WithMaxConcurrency(maxConcurrent)
+
+				cb := func(i int) { got = append(got, i) }
+				for i := 0; i < taskCount; i++ {
+					i := i
+					expected[i] = i
+					g.Go(func() int {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							errCount.Inc()
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return i
+					}, cb)
+				}
+				g.Wait()
+				require.Equal(t, int64(0), errCount.Load())
+				require.Equal(t, expected, got)
+			})
+		}
+	})
 }
 
 func TestErrorStreamGroup(t *testing.T) {
+	t.Parallel()
 	err1 := errors.New("error1")
 	err2 := errors.New("error2")
 
@@ -136,9 +174,47 @@ func TestErrorStreamGroup(t *testing.T) {
 		require.ErrorIs(t, errs, err1)
 		require.ErrorIs(t, errs, err2)
 	})
+
+	t.Run("limit", func(t *testing.T) {
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				currentConcurrent := atomic.NewInt64(0)
+				taskCount := maxConcurrent * 10
+
+				expected := make([]int, taskCount)
+				got := make([]int, 0, taskCount)
+				var errs error
+
+				g := NewWithStreaming[int]().WithErrors().WithMaxConcurrency(maxConcurrent)
+
+				cb := func(i int, err error) {
+					got = append(got, i)
+					errs = errors.Append(errs, err)
+				}
+				for i := 0; i < taskCount; i++ {
+					i := i
+					expected[i] = i
+					g.Go(func() (int, error) {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							return 0, errors.Newf("expected at most %d concurrent calls", maxConcurrent)
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return i, nil
+					}, cb)
+				}
+				g.Wait()
+				require.NoError(t, errs)
+				require.Equal(t, expected, got)
+			})
+		}
+	})
 }
 
 func TestContextErrorStreamGroup(t *testing.T) {
+	t.Parallel()
 	err1 := errors.New("error1")
 	err2 := errors.New("error2")
 	bgctx := context.Background()
@@ -232,6 +308,44 @@ func TestContextErrorStreamGroup(t *testing.T) {
 		require.Equal(t, results, []int{0})
 		// should call callback with context error
 		require.ErrorIs(t, errs, context.DeadlineExceeded)
+	})
+
+	t.Run("limit", func(t *testing.T) {
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				ctx := context.Background()
+				currentConcurrent := atomic.NewInt64(0)
+				taskCount := maxConcurrent * 10
+
+				expected := make([]int, taskCount)
+				got := make([]int, 0, taskCount)
+				var errs error
+
+				g := NewWithStreaming[int]().WithContext(ctx).WithMaxConcurrency(maxConcurrent)
+
+				cb := func(_ context.Context, i int, err error) {
+					got = append(got, i)
+					errs = errors.Append(errs, err)
+				}
+				for i := 0; i < taskCount; i++ {
+					i := i
+					expected[i] = i
+					g.Go(func(context.Context) (int, error) {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							return 0, errors.Newf("expected at most %d concurrent calls", maxConcurrent)
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return i, nil
+					}, cb)
+				}
+				g.Wait()
+				require.NoError(t, errs)
+				require.Equal(t, expected, got)
+			})
+		}
 	})
 }
 

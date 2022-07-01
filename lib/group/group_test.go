@@ -2,50 +2,59 @@ package group
 
 import (
 	"context"
-	"sync/atomic"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGroup(t *testing.T) {
+	t.Parallel()
 	t.Run("basic", func(t *testing.T) {
 		g := New()
-		var completed int64 = 0
+		completed := atomic.NewInt64(0)
 		for i := 0; i < 100; i++ {
 			g.Go(func() {
 				time.Sleep(10 * time.Millisecond)
-				atomic.AddInt64(&completed, 1)
+				completed.Inc()
 			})
 		}
 		g.Wait()
-		require.Equal(t, completed, int64(100))
+		require.Equal(t, completed.Load(), int64(100))
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := New().WithMaxConcurrency(1)
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				g := New().WithMaxConcurrency(maxConcurrent)
 
-		currentConcurrent := int64(0)
-		errCount := int64(0)
-		for i := 0; i < 10; i++ {
-			g.Go(func() {
-				cur := atomic.AddInt64(&currentConcurrent, 1)
-				if cur > 1 {
-					atomic.AddInt64(&errCount, 1)
+				currentConcurrent := atomic.NewInt64(0)
+				errCount := atomic.NewInt64(0)
+				taskCount := maxConcurrent * 10
+				for i := 0; i < taskCount; i++ {
+					g.Go(func() {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							errCount.Inc()
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+					})
 				}
-				time.Sleep(time.Millisecond)
-				atomic.AddInt64(&currentConcurrent, -1)
+				g.Wait()
+				require.Equal(t, int64(0), errCount.Load())
 			})
 		}
-		g.Wait()
-		require.Equal(t, int64(0), errCount)
 	})
 }
 
 func TestErrorGroup(t *testing.T) {
+	t.Parallel()
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
@@ -71,21 +80,27 @@ func TestErrorGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := New().WithErrors().WithMaxConcurrency(1)
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				g := New().WithErrors().WithMaxConcurrency(maxConcurrent)
 
-		currentConcurrent := int64(0)
-		for i := 0; i < 10; i++ {
-			g.Go(func() error {
-				cur := atomic.AddInt64(&currentConcurrent, 1)
-				if cur > 1 {
-					return errors.New("expected no more than 1 concurrent goroutine")
+				currentConcurrent := atomic.NewInt64(0)
+				taskCount := maxConcurrent * 10
+				for i := 0; i < taskCount; i++ {
+					g.Go(func() error {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							return errors.Newf("expected no more than %d concurrent goroutine", maxConcurrent)
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return nil
+					})
 				}
-				time.Sleep(time.Millisecond)
-				atomic.AddInt64(&currentConcurrent, -1)
-				return nil
+				require.NoError(t, g.Wait())
 			})
 		}
-		require.NoError(t, g.Wait())
 	})
 }
 
@@ -163,21 +178,27 @@ func TestContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		ctx := context.Background()
-		g := New().WithContext(ctx).WithMaxConcurrency(1)
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				t.Parallel()
+				ctx := context.Background()
+				g := New().WithContext(ctx).WithMaxConcurrency(maxConcurrent)
 
-		currentConcurrent := int64(0)
-		for i := 0; i < 10; i++ {
-			g.Go(func(context.Context) error {
-				cur := atomic.AddInt64(&currentConcurrent, 1)
-				if cur > 1 {
-					return errors.New("expected no more than 1 concurrent goroutine")
+				currentConcurrent := atomic.NewInt64(0)
+				for i := 0; i < 100; i++ {
+					g.Go(func(context.Context) error {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							return errors.Newf("expected no more than %d concurrent goroutine", maxConcurrent)
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return nil
+					})
 				}
-				time.Sleep(time.Millisecond)
-				atomic.AddInt64(&currentConcurrent, -1)
-				return nil
+				require.NoError(t, g.Wait())
 			})
 		}
-		require.NoError(t, g.Wait())
 	})
 }

@@ -3,16 +3,18 @@ package group
 import (
 	"context"
 	"sort"
-	"sync/atomic"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestResultGroup(t *testing.T) {
+	t.Parallel()
 	t.Run("basic", func(t *testing.T) {
 		g := NewWithResults[int]()
 		expected := []int{}
@@ -29,28 +31,39 @@ func TestResultGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := NewWithResults[int]().WithMaxConcurrency(1)
+		t.Parallel()
+		for _, maxConcurrent := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrent), func(t *testing.T) {
+				g := NewWithResults[int]().WithMaxConcurrency(maxConcurrent)
 
-		currentConcurrent := int64(0)
-		errCount := int64(0)
-		for i := 0; i < 10; i++ {
-			g.Go(func() int {
-				cur := atomic.AddInt64(&currentConcurrent, 1)
-				if cur > 1 {
-					atomic.AddInt64(&errCount, 1)
+				currentConcurrent := atomic.NewInt64(0)
+				errCount := atomic.NewInt64(0)
+				taskCount := maxConcurrent * 10
+				expected := make([]int, taskCount)
+				for i := 0; i < taskCount; i++ {
+					i := i
+					expected[i] = i
+					g.Go(func() int {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrent) {
+							errCount.Inc()
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return i
+					})
 				}
-				time.Sleep(time.Millisecond)
-				atomic.AddInt64(&currentConcurrent, -1)
-				return 0
+				res := g.Wait()
+				sort.Ints(res)
+				require.Equal(t, expected, res)
+				require.Equal(t, int64(0), errCount.Load())
 			})
 		}
-		res := g.Wait()
-		require.Len(t, res, 10)
-		require.Equal(t, int64(0), errCount)
 	})
 }
 
 func TestResultErrorGroup(t *testing.T) {
+	t.Parallel()
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
@@ -90,27 +103,34 @@ func TestResultErrorGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		g := NewWithResults[int]().WithErrors().WithMaxConcurrency(1)
+		for _, maxConcurrency := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrency), func(t *testing.T) {
+				t.Parallel()
+				g := NewWithResults[int]().WithErrors().WithMaxConcurrency(maxConcurrency)
 
-		currentConcurrent := int64(0)
-		for i := 0; i < 10; i++ {
-			g.Go(func() (int, error) {
-				cur := atomic.AddInt64(&currentConcurrent, 1)
-				if cur > 1 {
-					return 0, errors.New("expected no more than 1 concurrent goroutine")
+				currentConcurrent := atomic.NewInt64(0)
+				taskCount := maxConcurrency * 10
+				for i := 0; i < taskCount; i++ {
+					g.Go(func() (int, error) {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrency) {
+							return 0, errors.Newf("expected no more than %d concurrent goroutine", maxConcurrency)
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return 0, nil
+					})
 				}
-				time.Sleep(time.Millisecond)
-				atomic.AddInt64(&currentConcurrent, -1)
-				return 0, nil
+				res, err := g.Wait()
+				require.Len(t, res, taskCount)
+				require.NoError(t, err)
 			})
 		}
-		res, err := g.Wait()
-		require.Len(t, res, 10)
-		require.NoError(t, err)
 	})
 }
 
 func TestResultContextErrorGroup(t *testing.T) {
+	t.Parallel()
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
@@ -145,6 +165,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("context cancel propagates", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		g := NewWithResults[int]().WithContext(ctx)
 		g.Go(func(ctx context.Context) (int, error) {
@@ -158,6 +179,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("cancel unblocks limiter", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 		g := NewWithResults[int]().WithContext(ctx).WithMaxConcurrency(0)
@@ -168,6 +190,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("CancelOnError", func(t *testing.T) {
+		t.Parallel()
 		g := NewWithResults[int]().WithContext(context.Background()).WithCancelOnError()
 		g.Go(func(ctx context.Context) (int, error) {
 			<-ctx.Done()
@@ -183,6 +206,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("WithFirstError", func(t *testing.T) {
+		t.Parallel()
 		g := NewWithResults[int]().WithContext(context.Background()).WithCancelOnError().WithFirstError()
 		g.Go(func(ctx context.Context) (int, error) {
 			<-ctx.Done()
@@ -198,23 +222,34 @@ func TestResultContextErrorGroup(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		ctx := context.Background()
-		g := NewWithResults[int]().WithContext(ctx).WithMaxConcurrency(1)
+		t.Parallel()
+		for _, maxConcurrency := range []int{1, 10, 100} {
+			t.Run(strconv.Itoa(maxConcurrency), func(t *testing.T) {
+				t.Parallel()
+				ctx := context.Background()
+				g := NewWithResults[int]().WithContext(ctx).WithMaxConcurrency(maxConcurrency)
 
-		currentConcurrent := int64(0)
-		for i := 0; i < 10; i++ {
-			g.Go(func(context.Context) (int, error) {
-				cur := atomic.AddInt64(&currentConcurrent, 1)
-				if cur > 1 {
-					return 0, errors.New("expected no more than 1 concurrent goroutine")
+				currentConcurrent := atomic.NewInt64(0)
+				taskCount := maxConcurrency * 10
+				expected := make([]int, taskCount)
+				for i := 0; i < taskCount; i++ {
+					i := i
+					expected[i] = i
+					g.Go(func(context.Context) (int, error) {
+						cur := currentConcurrent.Inc()
+						if cur > int64(maxConcurrency) {
+							return 0, errors.Newf("expected no more than %d concurrent goroutines", maxConcurrency)
+						}
+						time.Sleep(time.Millisecond)
+						currentConcurrent.Dec()
+						return i, nil
+					})
 				}
-				time.Sleep(time.Millisecond)
-				atomic.AddInt64(&currentConcurrent, -1)
-				return 0, nil
+				res, err := g.Wait()
+				sort.Ints(res)
+				require.Equal(t, expected, res)
+				require.NoError(t, err)
 			})
 		}
-		res, err := g.Wait()
-		require.Len(t, res, 10)
-		require.NoError(t, err)
 	})
 }
