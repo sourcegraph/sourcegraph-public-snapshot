@@ -3,7 +3,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 

@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+import { mdiPuzzleOutline } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
@@ -7,8 +8,6 @@ import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 import { ActionButtonDescriptor } from '../util/contributions'
 
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
-
-import { mdiPuzzleOutline } from '@mdi/js'
 
 export interface ExtensionsAreaHeaderProps extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {
     isPrimaryHeader: boolean

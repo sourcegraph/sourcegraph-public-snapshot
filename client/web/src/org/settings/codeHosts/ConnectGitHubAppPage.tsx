@@ -3,7 +3,6 @@ import React, { useEffect, useState, HTMLAttributes } from 'react'
 import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, Link, PageHeader, LoadingSpinner, H3, Text } from '@sourcegraph/wildcard'
