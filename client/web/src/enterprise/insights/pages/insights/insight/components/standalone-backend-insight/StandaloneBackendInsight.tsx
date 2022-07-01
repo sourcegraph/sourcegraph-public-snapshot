@@ -95,7 +95,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             skip: !wasEverVisible,
             onCompleted: data => {
-                const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
+                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
