@@ -67,6 +67,11 @@ export const USERS_STATISTICS = gql`
                     activity {
                         ...AnalyticsStatItemFragment
                     }
+                    frequencies {
+                        daysUsed
+                        frequency
+                        percentage
+                    }
                 }
             }
             productSubscription {

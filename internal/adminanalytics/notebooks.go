@@ -1,6 +1,8 @@
 package adminanalytics
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -55,4 +57,23 @@ func (s *Notebooks) BlockRuns() (*AnalyticsFetcher, error) {
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:BlockRuns",
 	}, nil
+}
+
+func (s *Notebooks) CacheAll(ctx context.Context) error {
+	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Creations, s.BlockRuns, s.Views}
+	for _, buildFetcher := range fetcherBuilders {
+		fetcher, err := buildFetcher()
+		if err != nil {
+			return err
+		}
+
+		if _, err := fetcher.GetNodes(ctx, false); err != nil {
+			return err
+		}
+
+		if _, err := fetcher.GetSummary(ctx, false); err != nil {
+			return err
+		}
+	}
+	return nil
 }

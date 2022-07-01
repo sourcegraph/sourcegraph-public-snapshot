@@ -5967,6 +5967,24 @@ type AnalyticsNotebooksResults {
 }
 
 """
+Users frequency by days used.
+"""
+type AnalyticsUsersFrequencyItem {
+    """
+    Number of days used
+    """
+    daysUsed: Int!
+    """
+    Number of users.
+    """
+    frequency: Int!
+    """
+    Percentage of users from total frequencies.
+    """
+    percentage: Float!
+}
+
+"""
 Users' analytics.
 """
 type AnalyticsUsersResult {
@@ -5974,6 +5992,10 @@ type AnalyticsUsersResult {
     Users' activity analytics.
     """
     activity: AnalyticsStatItem!
+    """
+    Frequency of usage by day.
+    """
+    frequencies: [AnalyticsUsersFrequencyItem!]!
 }
 
 """

@@ -1,6 +1,8 @@
 package adminanalytics
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -58,4 +60,23 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 		summaryQuery: summaryQuery,
 		group:        "Search:FileOpens",
 	}, nil
+}
+
+func (s *Search) CacheAll(ctx context.Context) error {
+	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Searches, s.FileViews, s.FileOpens}
+	for _, buildFetcher := range fetcherBuilders {
+		fetcher, err := buildFetcher()
+		if err != nil {
+			return err
+		}
+
+		if _, err := fetcher.GetNodes(ctx, false); err != nil {
+			return err
+		}
+
+		if _, err := fetcher.GetSummary(ctx, false); err != nil {
+			return err
+		}
+	}
+	return nil
 }

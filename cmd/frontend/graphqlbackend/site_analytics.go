@@ -147,3 +147,19 @@ func (r *siteAnalyticsUsersResolver) Activity(ctx context.Context) (*siteAnalyti
 
 	return &siteAnalyticsStatItemResolver{fetcher}, nil
 }
+
+func (r *siteAnalyticsUsersResolver) Frequencies(ctx context.Context) ([]*adminanalytics.UsersFrequencyNode, error) {
+	fetcher, err := r.store.Frequency()
+
+	if err != nil {
+		return nil, err
+	}
+
+	frequenceis, err := fetcher.GetFrequencies(ctx, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return frequenceis, nil
+}

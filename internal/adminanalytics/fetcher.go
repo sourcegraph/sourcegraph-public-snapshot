@@ -2,6 +2,7 @@ package adminanalytics
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -28,25 +29,18 @@ type AnalyticsNode struct {
 	Data AnalyticsNodeData
 }
 
-func (n *AnalyticsNode) Date() string {
-	return n.Data.Date.Format(time.RFC3339)
-}
+func (n *AnalyticsNode) Date() string { return n.Data.Date.Format(time.RFC3339) }
 
-func (n *AnalyticsNode) Count() int32 {
-	return n.Data.Count
-}
+func (n *AnalyticsNode) Count() int32 { return n.Data.Count }
 
-func (n *AnalyticsNode) UniqueUsers() int32 {
-	return n.Data.UniqueUsers
-}
+func (n *AnalyticsNode) UniqueUsers() int32 { return n.Data.UniqueUsers }
 
-func (n *AnalyticsNode) RegisteredUsers() int32 {
-	return n.Data.RegisteredUsers
-}
+func (n *AnalyticsNode) RegisteredUsers() int32 { return n.Data.RegisteredUsers }
 
 func (f *AnalyticsFetcher) GetNodes(ctx context.Context, cache bool) ([]*AnalyticsNode, error) {
+	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "nodes")
 	if cache == true {
-		if nodes, err := getNodesFromCache(f); err == nil {
+		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
 			return nodes, nil
 		}
 	}
@@ -61,23 +55,16 @@ func (f *AnalyticsFetcher) GetNodes(ctx context.Context, cache bool) ([]*Analyti
 
 	nodes := make([]*AnalyticsNode, 0)
 	for rows.Next() {
-		var date time.Time
-		var count, uniqueUsers, registeredUsers int32
+		var data AnalyticsNodeData
 
-		if err := rows.Scan(&date, &count, &uniqueUsers, &registeredUsers); err != nil {
+		if err := rows.Scan(&data.Date, &data.Count, &data.UniqueUsers, &data.RegisteredUsers); err != nil {
 			return nil, err
 		}
 
-		nodes = append(nodes, &AnalyticsNode{
-			AnalyticsNodeData{
-				Date:            date,
-				Count:           count,
-				UniqueUsers:     uniqueUsers,
-				RegisteredUsers: registeredUsers,
-			}})
+		nodes = append(nodes, &AnalyticsNode{data})
 	}
 
-	if _, err := setNodesToCache(f, nodes); err != nil {
+	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
 		return nil, err
 	}
 
@@ -94,39 +81,29 @@ type AnalyticsSummary struct {
 	Data AnalyticsSummaryData
 }
 
-func (s *AnalyticsSummary) TotalCount() (int32, error) {
-	return s.Data.TotalCount, nil
-}
+func (s *AnalyticsSummary) TotalCount() int32 { return s.Data.TotalCount }
 
-func (s *AnalyticsSummary) TotalUniqueUsers() (int32, error) {
-	return s.Data.TotalUniqueUsers, nil
-}
+func (s *AnalyticsSummary) TotalUniqueUsers() int32 { return s.Data.TotalUniqueUsers }
 
-func (s *AnalyticsSummary) TotalRegisteredUsers() (int32, error) {
-	return s.Data.TotalRegisteredUsers, nil
-}
+func (s *AnalyticsSummary) TotalRegisteredUsers() int32 { return s.Data.TotalRegisteredUsers }
 
 func (f *AnalyticsFetcher) GetSummary(ctx context.Context, cache bool) (*AnalyticsSummary, error) {
+	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "summary")
 	if cache == true {
-		if summary, err := getSummaryFromCache(f); err == nil {
+		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
 			return summary, nil
 		}
 	}
 
-	var totalCount, totalUniqueUsers, totalRegisteredUsers int32
+	var data AnalyticsSummaryData
 
-	if err := f.db.QueryRowContext(ctx, f.summaryQuery.Query(sqlf.PostgresBindVar), f.summaryQuery.Args()...).Scan(&totalCount, &totalUniqueUsers, &totalRegisteredUsers); err != nil {
+	if err := f.db.QueryRowContext(ctx, f.summaryQuery.Query(sqlf.PostgresBindVar), f.summaryQuery.Args()...).Scan(&data.TotalCount, &data.TotalUniqueUsers, &data.TotalRegisteredUsers); err != nil {
 		return nil, err
 	}
 
-	summary := &AnalyticsSummary{
-		AnalyticsSummaryData{
-			TotalCount:           totalCount,
-			TotalUniqueUsers:     totalUniqueUsers,
-			TotalRegisteredUsers: totalRegisteredUsers,
-		}}
+	summary := &AnalyticsSummary{data}
 
-	if _, err := setSummaryToCache(f, summary); err != nil {
+	if _, err := setItemToCache(cacheKey, summary); err != nil {
 		return nil, err
 	}
 

@@ -23,6 +23,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LineChart, ParentSize, Series } from '../../charts'
+import { BarChart } from '../../charts/components/bar-chart/BarChart'
 import {
     AnalyticsDateRange,
     SearchStatisticsResult,
@@ -38,7 +39,7 @@ import { SEARCH_STATISTICS, NOTEBOOKS_STATISTICS, USERS_STATISTICS } from './que
 
 import styles from './index.module.scss'
 
-interface CalculatorProps {
+interface TimeSavedCalculatorProps {
     color: string
     label: string
     value: number
@@ -46,7 +47,7 @@ interface CalculatorProps {
     description?: string
 }
 
-const TimeSavedCalculator: React.FunctionComponent<CalculatorProps> = ({
+const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorProps> = ({
     color,
     value,
     description,
@@ -88,18 +89,48 @@ const TimeSavedCalculator: React.FunctionComponent<CalculatorProps> = ({
     )
 }
 
+interface ChartContainerProps {
+    className?: string
+    title?: string
+    labelX?: string
+    labelY?: string
+    children: (width: number) => React.ReactNode
+}
+
+const ChartContainer: React.FunctionComponent<ChartContainerProps> = ({
+    className,
+    title,
+    children,
+    labelX,
+    labelY,
+}) => (
+    <div className={className}>
+        {title && <Text className='text-center'>{title}</Text>}
+        <div className="d-flex">
+            {labelY && <span className={styles.chartYLabel}>{labelY}</span>}
+            <ParentSize>{({ width }) => children(width)}</ParentSize>
+        </div>
+        {labelX && <div className={styles.chartXLabel}>{labelX}</div>}
+    </div>
+)
+
+interface FrequencyDatum {
+    label: string
+    value: number
+}
+
 interface StandardDatum {
     date: Date
     value: number
 }
 
-interface ChatLegendItemProps {
+interface ValueLegendItemProps {
     color: string
     description: string
     value: number
 }
 
-const ChartLegendItem: React.FunctionComponent<ChatLegendItemProps> = ({ value, color, description }) => (
+const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description }) => (
     <div className="d-flex flex-column align-items-center mr-3 justify-content-center">
         <span style={{ color }} className={styles.count}>
             {formatNumber(value)}
@@ -108,25 +139,25 @@ const ChartLegendItem: React.FunctionComponent<ChatLegendItemProps> = ({ value, 
     </div>
 )
 
-interface ChartLegendListProps {
+interface ValueLegendListProps {
     className?: string
-    items: (ChatLegendItemProps & { position?: 'left' | 'right' })[]
+    items: (ValueLegendItemProps & { position?: 'left' | 'right' })[]
 }
 
-const ChartLegendList: React.FunctionComponent<ChartLegendListProps> = ({ items, className }) => (
+const ValueLegendList: React.FunctionComponent<ValueLegendListProps> = ({ items, className }) => (
     <div className={classNames('d-flex justify-content-between', className)}>
         <div className="d-flex justify-content-left">
             {items
                 .filter(item => item.position !== 'right')
                 .map(item => (
-                    <ChartLegendItem key={item.description} {...item} />
+                    <ValueLegendItem key={item.description} {...item} />
                 ))}
         </div>
         <div className="d-flex justify-content-right">
             {items
                 .filter(item => item.position === 'right')
                 .map(item => (
-                    <ChartLegendItem key={item.description} {...item} />
+                    <ValueLegendItem key={item.description} {...item} />
                 ))}
         </div>
     </div>
@@ -134,7 +165,7 @@ const ChartLegendList: React.FunctionComponent<ChartLegendListProps> = ({ items,
 
 interface HorizontalSelect<T> {
     onChange: (value: T) => void
-    selected: T
+    value: T
     label: string
     className?: string
     items: { label: string; value: T; disabled?: boolean }[]
@@ -143,7 +174,7 @@ interface HorizontalSelect<T> {
 const HorizontalSelect = <T extends string>({
     items,
     label,
-    selected,
+    value,
     onChange,
     className,
 }: React.PropsWithChildren<HorizontalSelect<T>>): JSX.Element => (
@@ -154,67 +185,16 @@ const HorizontalSelect = <T extends string>({
         className={classNames('d-flex align-items-center m-0', className)}
         labelClassName="mb-0"
         selectClassName="ml-2"
+        value={value}
         onChange={value => onChange(value.target.value as T)}
     >
         {items.map(({ value, label, disabled }) => (
-            <option key={label} value={value} selected={selected === value} disabled={disabled}>
+            <option key={label} value={value} disabled={disabled}>
                 {label}
             </option>
         ))}
     </Select>
 )
-
-interface ChartStatItem {
-    name: string
-    color: string
-    totalCount: number
-    series?: StandardDatum[]
-    legendPosition?: 'left' | 'right'
-}
-
-interface ChartProps {
-    stats: ChartStatItem[]
-    labelY?: string
-    labelX?: string
-    className?: string
-}
-
-const Chart: React.FunctionComponent<ChartProps> = ({ stats, labelY, labelX, className }) => {
-    const series: Series<StandardDatum>[] = useMemo(
-        () =>
-            stats
-                .filter(item => item.series)
-                .map(item => ({
-                    id: item.name,
-                    name: item.name,
-                    data: item.series as StandardDatum[],
-                    color: item.color,
-                    getXValue: datum => datum.date,
-                    getYValue: datum => datum.value,
-                })),
-        [stats]
-    )
-    const legendList = useMemo(
-        () =>
-            stats.map(item => ({
-                value: item.totalCount,
-                color: item.color,
-                description: item.name,
-                position: item.legendPosition,
-            })),
-        [stats]
-    )
-    return (
-        <div className={className}>
-            <ChartLegendList className="mb-3" items={legendList} />
-            <div className="d-flex mr-1">
-                {labelY && <span className={styles.chartYLabel}>{labelY}</span>}
-                <ParentSize>{({ width }) => <LineChart width={width} height={400} series={series} />}</ParentSize>
-            </div>
-            {labelX && <div className={styles.chartXLabel}>{labelX}</div>}
-        </div>
-    )
-}
 
 interface ToggleGroupProps<T> {
     selected: T
@@ -250,7 +230,73 @@ const ToggleSelect = <T extends any>({
     </ButtonGroup>
 )
 
-function fillWithEmptyDatum(datums: StandardDatum[], dateRange: AnalyticsDateRange): StandardDatum[] {
+const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
+    <H2 className="mb-4 d-flex align-items-center">
+        <Icon
+            className="mr-1"
+            color="var(--link-color)"
+            svgPath={mdiChartLineVariant}
+            size="sm"
+            aria-label="Search Statistics"
+        />
+        {children}
+    </H2>
+)
+
+export const AnalyticsComingSoon: React.FunctionComponent<RouteComponentProps<{}>> = props => {
+    const title = useMemo(() => {
+        const title = props.match.path.split('/').filter(Boolean)[2] ?? 'Overview'
+        return upperFirst(title.replace('-', ' '))
+    }, [props.match.path])
+    return (
+        <>
+            <AnalyticsPageTitle>Analytics / {title}</AnalyticsPageTitle>
+
+            <div className="d-flex flex-column justify-content-center align-items-center p-5">
+                <Icon
+                    svgPath={mdiChartTimelineVariantShimmer}
+                    aria-label="Home analytics icon"
+                    className={classNames(styles.largeIcon, 'm-3')}
+                />
+                <H3>Coming soon</H3>
+                <Text>We are working on making this live.</Text>
+            </div>
+        </>
+    )
+}
+
+function buildFrequencyDatum(
+    datums: { daysUsed: number; frequency: number }[],
+    min: number,
+    max: number,
+    isGradual = true
+): FrequencyDatum[] {
+    console.log('isGradual', isGradual)
+    const result: FrequencyDatum[] = []
+    for (let days = min; days <= max; ++days) {
+        const index = datums.findIndex(datum => datum.daysUsed >= days)
+        if (isGradual || days === max) {
+            result.push({
+                label: `${days} days`,
+                value: index >= 0 ? datums.slice(index).reduce((sum, datum) => sum + datum.frequency, 0) : 0,
+            })
+        } else if (index >= 0 && datums[index].daysUsed === days) {
+            result.push({
+                label: `${days} days`,
+                value: datums[index].frequency,
+            })
+        } else {
+            result.push({
+                label: `${days}+ days`,
+                value: 0,
+            })
+        }
+    }
+
+    return result
+}
+
+function buildStandardDatum(datums: StandardDatum[], dateRange: AnalyticsDateRange): StandardDatum[] {
     // Generates 0 value series for dates that don't exist in the original data
     const [to, daysOffset] =
         dateRange === AnalyticsDateRange.LAST_THREE_MONTHS
@@ -273,19 +319,6 @@ function fillWithEmptyDatum(datums: StandardDatum[], dateRange: AnalyticsDateRan
     return newDatums
 }
 
-const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
-    <H2 className="mb-4 d-flex align-items-center">
-        <Icon
-            className="mr-1"
-            color="var(--link-color)"
-            svgPath={mdiChartLineVariant}
-            size="sm"
-            aria-label="Search Statistics"
-        />
-        {children}
-    </H2>
-)
-
 export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
     const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
@@ -294,53 +327,83 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             dateRange,
         },
     })
-    const [stats, timeSavedStats] = useMemo(() => {
+    const [stats, legends] = useMemo(() => {
         if (!data) {
             return []
         }
         const { searches, fileViews, fileOpens } = data.site.analytics.search
-        const stats: ChartStatItem[] = [
+        const stats: Series<StandardDatum>[] = [
             {
-                ...searches.summary,
-                totalCount: searches.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                id: 'searches',
                 name: eventAggregation === 'count' ? 'Searches' : 'Users searched',
                 color: 'var(--cyan)',
-                series: fillWithEmptyDatum(
+                data: buildStandardDatum(
                     searches.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
                     dateRange
                 ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
             },
             {
-                ...fileViews.summary,
-                totalCount: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                id: 'fileViews',
                 name: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
-                series: fillWithEmptyDatum(
+                data: buildStandardDatum(
                     fileViews.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
                     dateRange
                 ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
             },
             {
-                ...fileOpens.summary,
-                totalCount: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                id: 'fileOpens',
                 name: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
-                series: fillWithEmptyDatum(
+                data: buildStandardDatum(
                     fileOpens.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
                     dateRange
                 ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
             },
         ]
-        const timeSavedStats = [
+
+        const legends: ValueLegendListProps['items'] = [
+            {
+                value: searches.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Searches' : 'Users searched',
+                color: 'var(--cyan)',
+            },
+            {
+                value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
+                color: 'var(--orange)',
+            },
+            {
+                value: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
+                color: 'var(--body-color)',
+            },
+        ]
+        return [stats, legends]
+    }, [data, eventAggregation, dateRange])
+
+    const timeSavedStats = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { searches, fileViews, fileOpens } = data.site.analytics.search
+
+        return [
             {
                 label: 'Searches,\nfile views\n& file opens',
                 color: 'var(--purple)',
@@ -350,11 +413,10 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 value: searches.summary.totalCount + fileViews.summary.totalCount + fileOpens.summary.totalCount,
             },
         ]
-        return [stats, timeSavedStats]
-    }, [data, eventAggregation, dateRange])
+    }, [data])
 
     if (error) {
-        return <div>Something went wrong! :( Please, try again later. </div>
+        throw error
     }
 
     if (loading) {
@@ -365,13 +427,12 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         <>
             <AnalyticsPageTitle>Analytics / Search</AnalyticsPageTitle>
 
-            <Card className="p-2">
+            <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2">
                     <HorizontalSelect<AnalyticsDateRange>
-                        selected={dateRange}
+                        value={dateRange}
                         label="Date&nbsp;range"
                         onChange={setDateRange}
-                        className="mr-2"
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -379,26 +440,36 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                             { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
                         ]}
                     />
-                    <ToggleSelect<typeof eventAggregation>
-                        selected={eventAggregation}
-                        onChange={setEventAggregation}
-                        items={[
-                            { tooltip: 'total # of actions triggered', label: 'Totals', value: 'count' },
-                            {
-                                tooltip: 'unique # of users triggered',
-                                label: 'Uniques',
-                                value: 'uniqueUsers',
-                            },
-                        ]}
-                    />
                 </div>
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {stats && (
-                    <Chart
-                        className="ml-4"
-                        labelX="Time"
-                        labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
-                        stats={stats}
-                    />
+                    <div>
+                        <ChartContainer
+                            title={eventAggregation === 'count' ? 'User activity by day' : 'Unique users by day'}
+                            labelX="Time"
+                            labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
+                        >
+                            {width => <LineChart width={width} height={300} series={stats} />}
+                        </ChartContainer>
+                        <div className="d-flex justify-content-end align-items-stretch mb-2">
+                            <ToggleSelect<typeof eventAggregation>
+                                selected={eventAggregation}
+                                onChange={setEventAggregation}
+                                items={[
+                                    {
+                                        tooltip: 'total # of actions triggered',
+                                        label: 'Totals',
+                                        value: 'count',
+                                    },
+                                    {
+                                        tooltip: 'unique # of users triggered',
+                                        label: 'Uniques',
+                                        value: 'uniqueUsers',
+                                    },
+                                ]}
+                            />
+                        </div>
+                    </div>
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {timeSavedStats?.map(timeSavedStatItem => (
@@ -420,46 +491,67 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
             },
         }
     )
-    const [stats, timeSavedStats] = useMemo(() => {
+    const [stats, legends] = useMemo(() => {
         if (!data) {
             return []
         }
         const { creations, views, blockRuns } = data.site.analytics.notebooks
-        const stats: ChartStatItem[] = [
+        const stats: Series<StandardDatum>[] = [
             {
-                ...creations.summary,
-                totalCount: creations.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                id: 'creations',
                 name: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
-                series: fillWithEmptyDatum(
+                data: buildStandardDatum(
                     creations.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
                     dateRange
                 ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
             },
             {
-                ...views.summary,
-                totalCount: views.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                id: 'views',
                 name: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
-                series: fillWithEmptyDatum(
+                data: buildStandardDatum(
                     views.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
                     dateRange
                 ),
-            },
-            {
-                ...blockRuns.summary,
-                totalCount: blockRuns.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                name: eventAggregation === 'count' ? 'Block runs' : 'Users ran blocks',
-                color: 'var(--body-color)',
-                legendPosition: 'right',
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
             },
         ]
+        const legends: ValueLegendListProps['items'] = [
+            {
+                value: creations.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
+                color: 'var(--cyan)',
+            },
+            {
+                value: views.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
+                color: 'var(--orange)',
+            },
+            {
+                value: blockRuns.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Block runs' : 'Users ran blocks',
+                color: 'var(--body-color)',
+                position: 'right',
+            },
+        ]
+
+        return [stats, legends]
+    }, [data, dateRange, eventAggregation])
+
+    const timeSavedStats = useMemo(() => {
+        if (!data) {
+            return []
+        }
         const timeSavedStats = [
             {
                 label: 'Views',
@@ -467,14 +559,14 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 minPerItem: 5,
                 description:
                     'Notebooks reduce the time it takes to create living documentation and share it. Each notebook view accounts for time saved by both creators and consumers of notebooks.',
-                value: views.summary.totalCount,
+                value: data.site.analytics.notebooks.views.summary.totalCount,
             },
         ]
-        return [stats, timeSavedStats]
-    }, [data, dateRange, eventAggregation])
+        return timeSavedStats
+    }, [data])
 
     if (error) {
-        return <div>Something went wrong! :( Please, try again later. </div>
+        throw error
     }
 
     if (loading) {
@@ -485,13 +577,12 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         <>
             <AnalyticsPageTitle>Analytics / Notebooks</AnalyticsPageTitle>
 
-            <Card className="p-2 position-relative">
+            <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2">
                     <HorizontalSelect<AnalyticsDateRange>
-                        selected={dateRange}
+                        value={dateRange}
                         label="Date&nbsp;range"
                         onChange={setDateRange}
-                        className="mr-2"
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -499,55 +590,42 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                             { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
                         ]}
                     />
-                    <ToggleSelect<typeof eventAggregation>
-                        selected={eventAggregation}
-                        onChange={setEventAggregation}
-                        items={[
-                            { tooltip: 'total # of actions triggered', label: 'Totals', value: 'count' },
-                            {
-                                tooltip: 'unique # of users triggered',
-                                label: 'Uniques',
-                                value: 'uniqueUsers',
-                            },
-                        ]}
-                    />
                 </div>
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {stats && (
-                    <Chart
-                        className="ml-4"
-                        stats={stats}
-                        labelX="Time"
-                        labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
-                    />
+                    <div>
+                        <ChartContainer
+                            title={eventAggregation === 'count' ? 'User activity by day' : 'Unique users by day'}
+                            labelX="Time"
+                            labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
+                        >
+                            {width => <LineChart width={width} height={300} series={stats} />}
+                        </ChartContainer>
+                        <div className="d-flex justify-content-end align-items-stretch mb-2">
+                            <ToggleSelect<typeof eventAggregation>
+                                selected={eventAggregation}
+                                onChange={setEventAggregation}
+                                items={[
+                                    {
+                                        tooltip: 'total # of actions triggered',
+                                        label: 'Totals',
+                                        value: 'count',
+                                    },
+                                    {
+                                        tooltip: 'unique # of users triggered',
+                                        label: 'Uniques',
+                                        value: 'uniqueUsers',
+                                    },
+                                ]}
+                            />
+                        </div>
+                    </div>
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {timeSavedStats?.map(timeSavedStatItem => (
                     <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
                 ))}
             </Card>
-        </>
-    )
-}
-
-export const AnalyticsComingSoon: React.FunctionComponent<RouteComponentProps<{}>> = props => {
-    const title = useMemo(() => {
-        // eslint-disable-next-line unicorn/prefer-array-find
-        const title = props.match.path.split('/').filter(Boolean)[2] ?? 'Overview'
-        return upperFirst(title.replace('-', ' '))
-    }, [props.match.path])
-    return (
-        <>
-            <AnalyticsPageTitle>Analytics / {title}</AnalyticsPageTitle>
-
-            <div className="d-flex flex-column justify-content-center align-items-center p-5">
-                <Icon
-                    svgPath={mdiChartTimelineVariantShimmer}
-                    aria-label="Home analytics icon"
-                    className={classNames(styles.largeIcon, 'm-3')}
-                />
-                <H3>Coming soon</H3>
-                <Text>We are working on making this live.</Text>
-            </div>
         </>
     )
 }
@@ -560,44 +638,63 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
             dateRange,
         },
     })
-    const [stats] = useMemo(() => {
+    const [frequencies, legends] = useMemo(() => {
         if (!data) {
             return []
         }
-        const { activity } = data.site.analytics.users
-        const stats: ChartStatItem[] = [
+        const { users } = data.site.analytics
+        const legends: ValueLegendListProps['items'] = [
             {
-                ...activity.summary,
-                totalCount: activity.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: users.activity.summary.totalUniqueUsers,
+                description: 'Active users',
+                color: 'var(--purple)',
+            },
+            {
+                value: data.users.totalCount,
+                description: 'Registered Users',
+                color: 'var(--body-color)',
+                position: 'right',
+            },
+            {
+                value: data.site.productSubscription.license?.userCount ?? 0,
+                description: 'Users licenses',
+                color: 'var(--body-color)',
+                position: 'right',
+            },
+        ]
+
+        const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, 1, 30)
+
+        return [frequencies, legends]
+    }, [data])
+
+    const activities = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { users } = data.site.analytics
+        const activities: Series<StandardDatum>[] = [
+            {
+                id: 'activity',
                 name: eventAggregation === 'count' ? 'Activities' : 'Active users',
                 color: eventAggregation === 'count' ? 'var(--cyan)' : 'var(--purple)',
-                series: fillWithEmptyDatum(
-                    activity.nodes.map(node => ({
+                data: buildStandardDatum(
+                    users.activity.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
                     dateRange
                 ),
-            },
-            {
-                totalCount: data.users.totalCount,
-                name: 'Registered Users',
-                color: 'var(--body-color)',
-                legendPosition: 'right',
-            },
-            {
-                totalCount: data.site.productSubscription.license?.userCount ?? 0,
-                name: 'Users licenses',
-                color: 'var(--body-color)',
-                legendPosition: 'right',
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
             },
         ]
 
-        return [stats]
+        return activities
     }, [data, eventAggregation, dateRange])
 
     if (error) {
-        return <div>Something went wrong! :( Please, try again later. </div>
+        throw error
     }
 
     if (loading) {
@@ -607,13 +704,12 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
     return (
         <>
             <AnalyticsPageTitle>Analytics / Users</AnalyticsPageTitle>
-            <Card className="p-2">
+            <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2">
                     <HorizontalSelect<AnalyticsDateRange>
                         label="Date&nbsp;range"
-                        selected={dateRange}
+                        value={dateRange}
                         onChange={setDateRange}
-                        className="mr-2"
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -621,26 +717,50 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                             { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
                         ]}
                     />
-                    <ToggleSelect<typeof eventAggregation>
-                        selected={eventAggregation}
-                        onChange={setEventAggregation}
-                        items={[
-                            { tooltip: 'total # of actions triggered', label: 'Totals', value: 'count' },
-                            {
-                                tooltip: 'unique # of users triggered',
-                                label: 'Uniques',
-                                value: 'uniqueUsers',
-                            },
-                        ]}
-                    />
                 </div>
-                {stats && (
-                    <Chart
-                        className="ml-4"
-                        labelX="Time"
-                        labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
-                        stats={stats}
-                    />
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
+                {activities && (
+                    <div>
+                        <ChartContainer
+                            title={eventAggregation === 'count' ? 'User activity by day' : 'Unique users by day'}
+                            labelX="Time"
+                            labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
+                        >
+                            {width => <LineChart width={width} height={300} series={activities} />}
+                        </ChartContainer>
+                        <div className="d-flex justify-content-end align-items-stretch mb-2">
+                            <ToggleSelect<typeof eventAggregation>
+                                selected={eventAggregation}
+                                onChange={setEventAggregation}
+                                items={[
+                                    {
+                                        tooltip: 'total # of actions triggered',
+                                        label: 'Totals',
+                                        value: 'count',
+                                    },
+                                    {
+                                        tooltip: 'unique # of users triggered',
+                                        label: 'Uniques',
+                                        value: 'uniqueUsers',
+                                    },
+                                ]}
+                            />
+                        </div>
+                    </div>
+                )}
+                {frequencies && (
+                    <ChartContainer title="Frequency of use" labelX="Days used" labelY="Users">
+                        {width => (
+                            <BarChart
+                                width={width}
+                                height={300}
+                                data={frequencies}
+                                getDatumName={datum => datum.label}
+                                getDatumValue={datum => datum.value}
+                                getDatumColor={() => 'var(--oc-blue-2)'}
+                            />
+                        )}
+                    </ChartContainer>
                 )}
             </Card>
         </>

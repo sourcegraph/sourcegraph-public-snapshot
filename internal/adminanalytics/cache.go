@@ -3,7 +3,6 @@ package adminanalytics
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -16,23 +15,20 @@ import (
 )
 
 var (
-	pool = redispool.Store
+	pool     = redispool.Store
+	scopeKey = "adminanalytics:"
 )
 
-func getCacheKey(f *AnalyticsFetcher, data string) string {
-	return fmt.Sprintf("adminanalytics:%s:%s:%s", f.group, f.dateRange, data)
-}
-
-func getNodesFromCache(f *AnalyticsFetcher) ([]*AnalyticsNode, error) {
+func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
 	rdb := pool.Get()
 	defer rdb.Close()
 
-	data, err := redis.String(rdb.Do("GET", getCacheKey(f, "nodes")))
+	data, err := redis.String(rdb.Do("GET", scopeKey+cacheKey))
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*AnalyticsNode, 0)
+	nodes := make([]*K, 0)
 
 	if err = json.Unmarshal([]byte(data), &nodes); err != nil {
 		return nodes, err
@@ -41,16 +37,16 @@ func getNodesFromCache(f *AnalyticsFetcher) ([]*AnalyticsNode, error) {
 	return nodes, nil
 }
 
-func getSummaryFromCache(f *AnalyticsFetcher) (*AnalyticsSummary, error) {
+func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	rdb := pool.Get()
 	defer rdb.Close()
 
-	data, err := redis.String(rdb.Do("GET", getCacheKey(f, "summary")))
+	data, err := redis.String(rdb.Do("GET", scopeKey+cacheKey))
 	if err != nil {
 		return nil, err
 	}
 
-	var summary AnalyticsSummary
+	var summary T
 
 	if err = json.Unmarshal([]byte(data), &summary); err != nil {
 		return &summary, err
@@ -74,42 +70,39 @@ func setDataToCache(key string, data string) (bool, error) {
 	return true, nil
 }
 
-func setNodesToCache(f *AnalyticsFetcher, nodes []*AnalyticsNode) (bool, error) {
+func setArrayToCache[T interface{}](cacheKey string, nodes []*T) (bool, error) {
 	data, err := json.Marshal(nodes)
 	if err != nil {
 		return false, err
 	}
 
-	return setDataToCache(getCacheKey(f, "nodes"), string(data))
+	return setDataToCache(scopeKey+cacheKey, string(data))
 }
 
-func setSummaryToCache(f *AnalyticsFetcher, summary *AnalyticsSummary) (bool, error) {
+func setItemToCache[T interface{}](cacheKey string, summary *T) (bool, error) {
 	data, err := json.Marshal(summary)
 	if err != nil {
 		return false, err
 	}
 
-	return setDataToCache(getCacheKey(f, "summary"), string(data))
+	return setDataToCache(scopeKey+cacheKey, string(data))
 }
 
 var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
 
+type CacheAll interface {
+	CacheAll(ctx context.Context) error
+}
+
 func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 	for _, dateRange := range dateRanges {
-		searchStore := Search{DateRange: dateRange, DB: db}
-
-		fetcherBuilders := []func() (*AnalyticsFetcher, error){searchStore.Searches, searchStore.FileViews, searchStore.FileOpens}
-		for _, buildFetcher := range fetcherBuilders {
-			fetcher, err := buildFetcher()
-			if err != nil {
-				return err
-			}
-
-			if _, err := fetcher.GetNodes(ctx, false); err != nil {
-				return err
-			}
-
-			if _, err := fetcher.GetSummary(ctx, false); err != nil {
+		stores := []CacheAll{
+			&Search{DateRange: dateRange, DB: db},
+			&Users{DateRange: dateRange, DB: db},
+			&Notebooks{DateRange: dateRange, DB: db},
+		}
+		for _, store := range stores {
+			if err := store.CacheAll(ctx); err != nil {
 				return err
 			}
 		}
@@ -131,7 +124,7 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 	const delay = 24 * time.Hour
 	for {
 		if err := refreshAnalyticsCache(ctx, db); err != nil {
-			logger.Error("Error refreshing admin analytics cache", "err", err)
+			logger.Error("Error refreshing admin analytics cache", log.Error(err))
 		}
 
 		// Randomize sleep to prevent thundering herds.
