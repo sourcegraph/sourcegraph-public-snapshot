@@ -168,6 +168,7 @@ CREATE TABLE insight_series (
     generated_from_capture_groups boolean DEFAULT false NOT NULL,
     generation_method text NOT NULL,
     just_in_time boolean DEFAULT false NOT NULL,
+    group_by text,
     backfill_attempts integer DEFAULT 0 NOT NULL
 );
 

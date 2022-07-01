@@ -21,6 +21,7 @@ func TestGet(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+	groupByRepo := "repo"
 
 	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 									VALUES (1, 'test title', 'test description', 'unique-1', false),
@@ -38,10 +39,10 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +108,7 @@ func TestGet(t *testing.T) {
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
 				IsFrozen:            false,
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              2,
@@ -128,6 +130,7 @@ func TestGet(t *testing.T) {
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
 				IsFrozen:            true,
+				GroupBy:             &groupByRepo,
 			},
 		}
 
@@ -186,6 +189,7 @@ func TestGet(t *testing.T) {
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
 				IsFrozen:            false,
+				GroupBy:             &groupByRepo,
 			},
 		}
 
@@ -243,6 +247,7 @@ func TestGet(t *testing.T) {
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
 				IsFrozen:            false,
+				GroupBy:             &groupByRepo,
 			},
 		}
 
@@ -256,6 +261,7 @@ func TestGetAll(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+	groupByRepo := "repo"
 	ctx := context.Background()
 
 	// First test the method on an empty database.
@@ -281,9 +287,9 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
-		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
-		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
-				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search')`, now)
+		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
+		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
+				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo')`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -366,6 +372,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              2,
@@ -406,6 +413,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              3,
@@ -479,6 +487,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -532,6 +541,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -585,6 +595,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              3,
@@ -617,6 +628,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+	groupByRepo := "repo"
 
 	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id)
 									VALUES (1, 'test title', 'test description', 'unique-1'),
@@ -628,10 +640,10 @@ func TestGetAllOnDashboard(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
-                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -689,6 +701,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              1,
@@ -731,6 +744,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              3,
@@ -786,6 +800,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              1,
@@ -841,6 +856,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue: 1,
 				PresentationType:    types.PresentationType("LINE"),
 				GenerationMethod:    types.GenerationMethod("search"),
+				GroupBy:             &groupByRepo,
 			},
 			{
 				ViewID:              3,
@@ -874,6 +890,7 @@ func TestCreateSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
+	groupByRepo := "repo"
 
 	store := NewInsightStore(insightsDB)
 	store.Now = func() time.Time {
@@ -894,6 +911,7 @@ func TestCreateSeries(t *testing.T) {
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
+			GroupBy:            &groupByRepo,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -914,6 +932,7 @@ func TestCreateSeries(t *testing.T) {
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
+			GroupBy:            &groupByRepo,
 		}
 
 		log15.Info("values", "want", want, "got", got)
@@ -1194,6 +1213,7 @@ func TestUpdateViewSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+	groupByRepo := "repo"
 	ctx := context.Background()
 
 	store := NewInsightStore(insightsDB)
@@ -1222,6 +1242,7 @@ func TestUpdateViewSeries(t *testing.T) {
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
+			GroupBy:            &groupByRepo,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1498,6 +1519,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
+	groupByRepo := "repo"
 	ctx := context.Background()
 
 	store := NewInsightStore(insightsDB)
@@ -1527,6 +1549,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
+			GroupBy:            &groupByRepo,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
