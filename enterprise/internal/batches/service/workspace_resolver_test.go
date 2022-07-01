@@ -22,13 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -125,7 +125,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				return nil, errors.Newf("unknown commit: %s", commit)
 			}
 			if hasBatchIgnore {
-				return &util.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
+				return &fileutil.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
 			}
 			return nil, os.ErrNotExist
 		})
