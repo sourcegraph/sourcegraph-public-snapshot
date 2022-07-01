@@ -3,10 +3,16 @@ import { useMemo } from 'react'
 import { of } from 'rxjs'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { authenticatedUser } from '../../auth'
+import { AuthenticatedUser } from '../../auth'
+import { RecentFilesFragment } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
+
+import { HomePanelsFetchMore } from './HomePanels'
+
+export type ComputeParseResult = [{ kind: string; value: string }]
 
 interface Props extends TelemetryProps {
     className?: string
@@ -14,9 +20,10 @@ interface Props extends TelemetryProps {
     recentFilesFragment: RecentFilesFragment | null
     fetchMore: HomePanelsFetchMore
 }
-export type ComputeParseResult = [{ kind: string; value: string }]
 
-export function useComputeParseResult(query: string): ComputeParseResult {
+export const computeResultsAccess: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+}) => {
     const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
     const gitRecentFiles = useObservable(
         useMemo(
@@ -45,8 +52,6 @@ export function useComputeParseResult(query: string): ComputeParseResult {
                 }
             }
         }
-
-        return gitSet
     }, [gitRecentFiles])
 
 }
