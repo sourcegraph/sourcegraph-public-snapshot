@@ -57,7 +57,7 @@ We support optionally using the [p4-fusion](https://github.com/salesforce/p4-fus
 
 > A fast Perforce depot to Git repository converter using the Helix Core C/C++ API as an attempt to mitigate the performance bottlenecks in git-p4.py.
 
-To use it, you need to configure the `fusionClient` setting in your code host [config](#configuration), for example:
+To use it, configure the `fusionClient` setting in your code host [config](#configuration), for example:
 
 ```json
 {
