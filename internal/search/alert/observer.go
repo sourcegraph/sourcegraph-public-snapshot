@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -36,6 +36,7 @@ type Observer struct {
 	mu    sync.Mutex
 	alert *search.Alert
 	err   error
+	Log   log.Logger
 }
 
 // reposExist returns true if one or more repos resolve. If the attempt
@@ -43,7 +44,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
+	repositoryResolver := &searchrepos.Resolver{DB: o.Db, Log: o.Log}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -222,12 +223,16 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		log15.Error("Errors during search", "error", o.err)
+		o.Log.Error("Errors during search", log.Error(o.err))
 		return o.alert, nil
 	}
 
 	return o.alert, o.err
 }
+
+type alertKind string
+
+const luckySearchQueries alertKind = "lucky-search-queries"
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
@@ -242,6 +247,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	var (
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
+		lErr *ErrLuckyQueries
 	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
@@ -278,6 +284,24 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}
 		a.Priority = 6
 		return a, nil
+	}
+
+	var unindexedLockfile *searchrepos.MissingLockfileIndexing
+	if errors.As(err, &unindexedLockfile) {
+		repo := unindexedLockfile.RepoName()
+		revs := unindexedLockfile.RevNames()
+
+		return search.AlertForUnindexedLockfile(repo, revs), nil
+	}
+
+	if errors.As(err, &lErr) {
+		return &search.Alert{
+			PrometheusType:  "lucky_search_notice",
+			Title:           "Showing additional results for similar queries",
+			Kind:            string(luckySearchQueries),
+			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
+			ProposedQueries: lErr.ProposedQueries,
+		}, nil
 	}
 
 	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
@@ -353,6 +377,14 @@ type errOverRepoLimit struct {
 
 func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
+}
+
+type ErrLuckyQueries struct {
+	ProposedQueries []*search.ProposedQuery
+}
+
+func (e *ErrLuckyQueries) Error() string {
+	return "We were able to find more results by slightly modifying your query"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err

@@ -203,7 +203,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                         </>
                     ) : (
                         <>
-                            <Icon role="img" as={DeleteIcon} aria-hidden={true} /> Delete
+                            <Icon as={DeleteIcon} aria-hidden={true} /> Delete
                         </>
                     )}
                 </Button>
@@ -419,13 +419,11 @@ const FeatureFlagOverridesHeader: FunctionComponent<
 
     return (
         <>
-            {type === 'FeatureFlagBoolean' && (
-                <AddFeatureFlagOverride
-                    name={name}
-                    value={(value as FeatureFlagBooleanValue).value}
-                    onOverrideAdded={onOverrideAdded}
-                />
-            )}
+            <AddFeatureFlagOverride
+                name={name}
+                value={type === 'FeatureFlagBoolean' ? (value as FeatureFlagBooleanValue).value : false}
+                onOverrideAdded={onOverrideAdded}
+            />
             <div className="mr-auto">{count}</div>
         </>
     )

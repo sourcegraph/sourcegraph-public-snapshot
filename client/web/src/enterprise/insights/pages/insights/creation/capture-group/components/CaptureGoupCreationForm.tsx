@@ -230,7 +230,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                     type="submit"
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"

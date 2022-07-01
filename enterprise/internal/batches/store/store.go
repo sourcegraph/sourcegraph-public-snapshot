@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -62,6 +64,7 @@ func RandomID() (string, error) {
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
+	logger log.Logger
 	*basestore.Store
 	key                encryption.Key
 	now                func() time.Time
@@ -70,15 +73,16 @@ type Store struct {
 }
 
 // New returns a new Store backed by the given database.
-func New(db dbutil.DB, observationContext *observation.Context, key encryption.Key) *Store {
+func New(db database.DB, observationContext *observation.Context, key encryption.Key) *Store {
 	return NewWithClock(db, observationContext, key, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
+func NewWithClock(db database.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		Store:              basestore.NewWithDB(db, sql.TxOptions{}),
+		logger:             observationContext.Logger,
+		Store:              basestore.NewWithHandle(db.Handle()),
 		key:                key,
 		now:                clock,
 		operations:         newOperations(observationContext),
@@ -98,19 +102,16 @@ func (s *Store) Clock() func() time.Time { return s.now }
 // instantiated with.
 // It's here for legacy reason to pass the database.DB to a repos.Store while
 // repos.Store doesn't accept a basestore.TransactableHandle yet.
-func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
 
 var _ basestore.ShareableStore = &Store{}
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
+		logger:             s.logger,
 		Store:              s.Store.With(other),
 		key:                s.key,
 		operations:         s.operations,
@@ -128,6 +129,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
+		logger:             s.logger,
 		Store:              txBase,
 		key:                s.key,
 		operations:         s.operations,
@@ -138,12 +140,12 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 // Repos returns a database.RepoStore using the same connection as this store.
 func (s *Store) Repos() database.RepoStore {
-	return database.ReposWith(s)
+	return database.ReposWith(s.logger, s)
 }
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
 func (s *Store) ExternalServices() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s.observationContext.Logger, s)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
@@ -169,6 +171,7 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 
 type operations struct {
 	createBatchChange      *observation.Operation
+	upsertBatchChange      *observation.Operation
 	updateBatchChange      *observation.Operation
 	deleteBatchChange      *observation.Operation
 	countBatchChanges      *observation.Operation
@@ -187,8 +190,10 @@ type operations struct {
 	deleteBatchSpec         *observation.Operation
 	countBatchSpecs         *observation.Operation
 	getBatchSpec            *observation.Operation
+	getBatchSpecDiffStat    *observation.Operation
 	getNewestBatchSpec      *observation.Operation
 	listBatchSpecs          *observation.Operation
+	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
 	getBulkOperation        *observation.Operation
@@ -211,6 +216,7 @@ type operations struct {
 	getChangesetSpec                         *observation.Operation
 	listChangesetSpecs                       *observation.Operation
 	deleteExpiredChangesetSpecs              *observation.Operation
+	deleteUnattachedExpiredChangesetSpecs    *observation.Operation
 	getRewirerMappings                       *observation.Operation
 	listChangesetSpecsWithConflictingHeadRef *observation.Operation
 	deleteChangesetSpecs                     *observation.Operation
@@ -261,9 +267,6 @@ type operations struct {
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
 
-	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
-	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
-
 	listBatchSpecExecutionCacheEntries     *observation.Operation
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
 	createBatchSpecExecutionCacheEntry     *observation.Operation
@@ -302,6 +305,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		singletonOperations = &operations{
 			createBatchChange:      op("CreateBatchChange"),
+			upsertBatchChange:      op("UpsertBatchChange"),
 			updateBatchChange:      op("UpdateBatchChange"),
 			deleteBatchChange:      op("DeleteBatchChange"),
 			countBatchChanges:      op("CountBatchChanges"),
@@ -320,8 +324,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpec:         op("DeleteBatchSpec"),
 			countBatchSpecs:         op("CountBatchSpecs"),
 			getBatchSpec:            op("GetBatchSpec"),
+			getBatchSpecDiffStat:    op("GetBatchSpecDiffStat"),
 			getNewestBatchSpec:      op("GetNewestBatchSpec"),
 			listBatchSpecs:          op("ListBatchSpecs"),
+			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
 			getBulkOperation:        op("GetBulkOperation"),
@@ -344,6 +350,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetSpec:                         op("GetChangesetSpec"),
 			listChangesetSpecs:                       op("ListChangesetSpecs"),
 			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			deleteUnattachedExpiredChangesetSpecs:    op("DeleteUnattachedExpiredChangesetSpecs"),
 			deleteChangesetSpecs:                     op("DeleteChangesetSpecs"),
 			getRewirerMappings:                       op("GetRewirerMappings"),
 			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
@@ -393,9 +400,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
-
-			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
-			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 
 			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
 			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),

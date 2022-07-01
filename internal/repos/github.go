@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/tidwall/gjson"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -29,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -211,11 +212,11 @@ func newGithubSource(
 	urn := svc.URN()
 
 	var (
-		v3ClientLogger = log.Scoped("source.github.v3", "github v3 client for github source")
+		v3ClientLogger = log.Scoped("source", "github client for github source")
 		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli)
 		v4Client       = github.NewV4Client(urn, apiURL, token, cli)
 
-		searchClientLogger = log.Scoped("search.github.v3", "github v3 client for search")
+		searchClientLogger = log.Scoped("search", "github client for search")
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
 	)
 
@@ -238,7 +239,7 @@ func newGithubSource(
 		if err != nil {
 			return nil, errors.Wrap(err, "parse api.github.com")
 		}
-		client := github.NewV3Client(log.Scoped("dotcom-app.github.v3", "github v3 client for Sourcegraph Cloud GitHub app"),
+		client := github.NewV3Client(log.Scoped("dotcom-app", "github client for Sourcegraph Cloud GitHub app"),
 			urn, apiURL, auther, nil)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)

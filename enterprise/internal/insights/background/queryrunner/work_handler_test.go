@@ -10,20 +10,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/hexops/autogold"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/hexops/autogold"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 )
 
 func TestGenerateComputeRecordings(t *testing.T) {
@@ -402,16 +403,15 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 
 		handler := workHandler{
-			baseWorkerStore:     nil,
-			insightsStore:       nil,
-			metadadataStore:     nil,
-			limiter:             nil,
-			mu:                  sync.RWMutex{},
-			seriesCache:         nil,
-			computeSearchStream: mocked,
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -474,7 +474,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -534,7 +534,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -591,7 +591,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -642,7 +642,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -686,7 +686,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -695,7 +695,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 	})
 
-	t.Run("compute stream job returns error event", func(t *testing.T) {
+	t.Run("compute stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 		job := Job{
 			SeriesID:        "testseries1",
@@ -725,16 +725,58 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
 		if err == nil {
 			t.Error("Expected error but received nil")
 		}
-		var streamingErr StreamingError
-		if !errors.As(err, &streamingErr) {
-			t.Errorf("Expected StreamingError, got %v", err)
+		if strings.Contains(err.Error(), "terminal") {
+			t.Errorf("Expected retryable error, got %v", err)
+		}
+	})
+
+	t.Run("compute stream job returns terminal error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"not terminal", "invalid query"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on compute stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var terminalError TerminalStreamingError
+		if !errors.As(err, &terminalError) {
+			t.Errorf("Expected terminal error, got %v", err)
 		}
 	})
 
@@ -768,7 +810,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -1092,7 +1134,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		}
 	})
 
-	t.Run("search stream job returns error event", func(t *testing.T) {
+	t.Run("search stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 		job := Job{
 			SeriesID:        "testseries1",
@@ -1126,9 +1168,54 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
-		var streamingErr StreamingError
-		if !errors.As(err, &streamingErr) {
-			t.Errorf("Expected StreamingError, got %v", err)
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		if strings.Contains(err.Error(), "terminal") {
+			t.Errorf("Expected retryable error, got %v", err)
+		}
+	})
+
+	t.Run("search stream job returns retryable error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"retryable event", "invalid query"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var terminalError TerminalStreamingError
+		if !errors.As(err, &terminalError) {
+			t.Errorf("Expected terminal error, got %v", err)
 		}
 	})
 
@@ -1349,7 +1436,8 @@ func mockComputeSearch(results []computeSearch) func(context.Context, string) ([
 }
 
 func TestGetSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {

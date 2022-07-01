@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -13,9 +13,14 @@ import {
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
 
-const { add } = storiesOf('web/batches/settings/CodeHostConnectionNode', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/CodeHostConnectionNode',
+    decorators: [decorator],
+}
+
+export default config
 
 const checkCredResult = (): CheckBatchChangesCredentialResult => ({
     checkBatchChangesCredential: {
@@ -30,7 +35,7 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
 
-add('Overview', () => (
+export const Overview: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -65,4 +70,4 @@ add('Overview', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)

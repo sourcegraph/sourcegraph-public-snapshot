@@ -216,7 +216,8 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                                         className={classNames(
                                             hoverOverlayStyle.action,
                                             actionItemClassName,
-                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`,
+                                            index !== 0 && 'ml-1'
                                         )}
                                         iconClassName={iconClassName}
                                         pressedClassName={actionItemPressedClassName}
@@ -244,7 +245,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                         onKeyPress={onCopyLink}
                         type="button"
                     >
-                        <Icon className="mr-1" as={CopyLinkIcon} />
+                        <Icon className="mr-1" as={CopyLinkIcon} aria-hidden={true} />
                         <span className="inline-block">{copyLinkText}</span>
                     </button>
                 )}

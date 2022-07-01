@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -17,14 +19,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestSearchResultsStatsLanguages(t *testing.T) {
+	logger := logtest.Scoped(t)
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
-	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+	gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -50,7 +52,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		}
 		return wantCommitID, nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		oid := gitdomain.OID{} // empty is OK for this test
@@ -116,7 +118,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 				return test.getFiles, nil
 			}
 
-			langs, err := searchResultsStatsLanguages(context.Background(), database.NewMockDB(), test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), logger, database.NewMockDB(), test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

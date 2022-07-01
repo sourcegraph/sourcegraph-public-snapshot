@@ -140,9 +140,6 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-is-invalid')
 
             await driver.page.type('.test-trigger-input', ' type:diff')
-            await driver.page.waitForSelector('.test-is-invalid')
-
-            await driver.page.type('.test-trigger-input', ' repo:test')
             await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(

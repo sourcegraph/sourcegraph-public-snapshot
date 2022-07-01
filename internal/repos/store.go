@@ -12,13 +12,14 @@ import (
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Store interface {
@@ -110,8 +111,8 @@ type store struct {
 }
 
 // NewStore instantiates and returns a new Store with given database handle.
-func NewStore(logger log.Logger, db database.DB, txOpts sql.TxOptions) Store {
-	s := basestore.NewWithDB(db, txOpts)
+func NewStore(logger log.Logger, db database.DB) Store {
+	s := basestore.NewWithHandle(db.Handle())
 	return &store{
 		Store:  s,
 		Logger: logger,
@@ -120,7 +121,7 @@ func NewStore(logger log.Logger, db database.DB, txOpts sql.TxOptions) Store {
 }
 
 func (s *store) RepoStore() database.RepoStore {
-	return database.ReposWith(s)
+	return database.ReposWith(s.Logger, s)
 }
 
 func (s *store) GitserverReposStore() database.GitserverRepoStore {
@@ -128,7 +129,7 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 }
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s.Logger, s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }

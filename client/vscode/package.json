@@ -2,10 +2,10 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.3",
+  "version": "2.2.6",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
-  "sideEffects": false,
+  "sideEffects": true,
   "license": "Apache-2.0",
   "icon": "images/logo.png",
   "repository": {
@@ -23,7 +23,7 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onStartupFinished"
   ],
   "main": "./dist/node/main.js",
   "browser": "./dist/webworker/main.js",
@@ -69,7 +69,7 @@
         {
           "id": "sourcegraph-view",
           "title": "Sourcegraph",
-          "icon": "images/logo.svg"
+          "icon": "images/logomark_dark.svg"
         }
       ]
     },
@@ -220,17 +220,24 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
+    "vscode:prepublish": "yarn build",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
+    "build:esbuild:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp esbuild",
+    "watch:esbuild": "NODE_ENV=development WATCH=true yarn task:gulp esbuild",
     "build": "NODE_ENV=production yarn task:gulp webpack",
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "NODE_ENV=production TARGET_TYPE=webworker yarn task:gulp webpack",
     "build:test": "NODE_ENV=production TARGET_TYPE=webworker IS_TEST=true yarn task:gulp webpack",
-    "watch": "yarn check:version && yarn task:gulp watchWebpack",
+    "watch": "yarn task:gulp watchWebpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack",
     "watch:test": "NODE_ENV=development TARGET_TYPE=webworker IS_TEST=true yarn task:gulp watchWebpack",
     "test-integration": "TS_NODE_PROJECT=tests/tsconfig.json mocha --parallel=$CI --retries=2 ./tests/**/*.test.ts",
-    "check:version": "ts-node ./scripts/version-check.ts",
-    "release": "ts-node ./scripts/release.ts"
+    "release": "ts-node ./scripts/publish.ts",
+    "release:major": "VSCE_RELEASE_TYPE=major ts-node ./scripts/release.ts",
+    "release:minor": "VSCE_RELEASE_TYPE=minor ts-node ./scripts/release.ts",
+    "release:patch": "VSCE_RELEASE_TYPE=patch ts-node ./scripts/release.ts",
+    "release:pre": "VSCE_RELEASE_TYPE=prerelease ts-node ./scripts/release.ts"
   }
 }

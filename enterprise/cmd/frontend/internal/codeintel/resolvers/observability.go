@@ -7,9 +7,10 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type operations struct {
@@ -39,7 +40,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
+				return observation.EmitForDefault
 			},
 		})
 	}

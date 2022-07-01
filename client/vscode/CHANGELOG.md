@@ -2,15 +2,43 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release
-
-### Changes
+### Future Plans
 
 - Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
 
+## Unreleased
+
+### Changes
+
 ### Fixes
 
-- Optimize build size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+## 2.2.6
+
+### Changes
+
+- Remove notification to add Sourcegraph extension to the workspace [issues/37772](https://github.com/sourcegraph/sourcegraph/issues/37772)
+
+### Fixes
+
+-
+
+## 2.2.5
+
+### Changes
+
+- Update Sourcegraph logo in sidebar [issues/37710](https://github.com/sourcegraph/sourcegraph/issues/37710)
+- Sourcegraph extension is now listed in [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph) [issues/36477](https://github.com/sourcegraph/sourcegraph/issues/36477)
+- Sourcegraph extension is now available for installation in all Gitpod VS Code Workspaces [issues/37760](https://github.com/sourcegraph/sourcegraph/issues/37760)
+
+## 2.2.4
+
+### Changes
+
+- Optimize package size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+
+### Fixes
+
+- Check if default branch exists when opening files [issues/36743](https://github.com/sourcegraph/sourcegraph/issues/36743)
 
 ## 2.2.3
 

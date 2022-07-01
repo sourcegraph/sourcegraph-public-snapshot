@@ -7,7 +7,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
     href="https://example.com/bar"
     tabindex="0"
   >
-     t 
+     t
   </a>
 </DocumentFragment>
 `;
@@ -21,7 +21,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
     tabindex="0"
     target="_blank"
   >
-     primary 
+     primary
   </a>
 </DocumentFragment>
 `;
@@ -35,7 +35,7 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
     tabindex="0"
     target="_blank"
   >
-     t 
+     t
     <openinnewicon />
   </a>
 </DocumentFragment>
@@ -43,54 +43,48 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
 
 exports[`ActionItem actionItem variant 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-label="d"
     class="test-action-item"
     data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
     <img
       alt="d"
       src="u"
     />
-     g: t 
-  </a>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem non-actionItem variant 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-label="d"
     class="test-action-item"
     data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
     <img
       alt="d"
       src="u"
     />
-     g: t 
-  </a>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem non-pressed actionItem 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-pressed="false"
     class="test-action-item"
     data-action-item-pressed="false"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
-     b 
-  </a>
+     b
+  </button>
 </DocumentFragment>
 `;
 
@@ -110,193 +104,142 @@ exports[`ActionItem noop command 1`] = `
 
 exports[`ActionItem pressed toggle actionItem 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-pressed="true"
     class="test-action-item"
     data-action-item-pressed="true"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
-     b 
-  </a>
+     b
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-label="d"
     class="test-action-item"
     data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
     <img
       alt="d"
       src="u"
     />
-     g: t 
-  </a>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command 2`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-label="d"
     class="test-action-item"
     data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
     <img
       alt="d"
       src="u"
     />
-     g: t 
-  </a>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
-  <div
-    class="container"
+  <button
+    aria-label="d"
+    class="test-action-item"
+    data-tooltip="d"
+    type="button"
   >
     <div
       class="disabledTooltip"
       data-tooltip="d"
       tabindex="0"
     />
-    <a
-      aria-label="d"
-      class="test-action-item disabled"
-      data-tooltip="d"
-      disabled=""
-      href=""
-      role="button"
-      tabindex="-1"
-    >
-      <img
-        alt="d"
-        src="u"
-      />
-       g: t 
-    </a>
-  </div>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command with error with showInlineError 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-label="Error: x"
     class="test-action-item"
     data-tooltip="Error: x"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
     <img
       alt="d"
       src="u"
     />
-     g: t 
-  </a>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
-  <div
-    class="container"
+  <button
+    aria-label="d"
+    class="test-action-item actionItemLoading"
+    data-tooltip="d"
+    disabled=""
+    type="button"
   >
     <div
       class="disabledTooltip"
       data-tooltip="d"
       tabindex="0"
     />
-    <a
-      aria-label="d"
-      class="test-action-item actionItemLoading disabled"
-      data-tooltip="d"
-      disabled=""
-      href=""
-      role="button"
-      tabindex="-1"
+     g: t
+    <div
+      class="loader"
+      data-testid="action-item-spinner"
     >
-      <img
-        alt="d"
-        src="u"
-      />
-       g: t 
       <div
-        class="loader"
-        data-testid="action-item-spinner"
-      >
-        <div
-          class="loadingSpinner"
-        />
-      </div>
-    </a>
-  </div>
+        class="loadingSpinner"
+      />
+    </div>
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
-  <div
-    class="container"
+  <button
+    aria-label="d"
+    class="test-action-item"
+    data-tooltip="d"
+    type="button"
   >
-    <div
-      class="disabledTooltip"
-      data-tooltip="d"
-      tabindex="0"
+    <img
+      alt="d"
+      src="u"
     />
-    <a
-      aria-label="d"
-      class="test-action-item actionItemLoading disabled"
-      data-tooltip="d"
-      disabled=""
-      href=""
-      role="button"
-      tabindex="-1"
-    >
-      <img
-        alt="d"
-        src="u"
-      />
-       g: t 
-      <div
-        class="loader"
-        data-testid="action-item-spinner"
-      >
-        <div
-          class="loadingSpinner"
-        />
-      </div>
-    </a>
-  </div>
+     g: t
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem title element 1`] = `
 <DocumentFragment>
-  <a
+  <button
     aria-label="d"
     class="test-action-item"
     data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+    type="button"
   >
     <span>
       t2
     </span>
-     
-  </a>
+
+  </button>
 </DocumentFragment>
 `;

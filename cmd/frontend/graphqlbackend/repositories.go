@@ -8,6 +8,8 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -103,6 +105,7 @@ func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptio
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
+	logger      log.Logger
 	db          database.DB
 	opt         database.ReposListOptions
 	cloned      bool
@@ -143,7 +146,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			listCtx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
 			var err error
-			indexed, err = search.Indexed().List(listCtx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+			indexed, err = search.Indexed(log.Scoped("compute", "")).List(listCtx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 			if err != nil {
 				r.err = err
 				return
@@ -172,7 +175,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.NewRepos(r.db).List(ctx, opt2)
+			repos, err := backend.NewRepos(r.logger, r.db).List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return

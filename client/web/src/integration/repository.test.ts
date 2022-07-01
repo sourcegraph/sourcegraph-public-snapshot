@@ -1244,6 +1244,7 @@ describe('Repository', () => {
                                             email: 'alice@sourcegraph.test',
                                             avatarURL: null,
                                             user: null,
+                                            __typename: 'Person',
                                         },
                                         count: 1,
                                         commits: {
@@ -1254,9 +1255,12 @@ describe('Repository', () => {
                                                     url: `/${repositoryName}/-/commit/${'1'.repeat(40)}`,
                                                     subject: 'Commit message 1',
                                                     author: { date: subDays(new Date(), 1).toISOString() },
+                                                    __typename: 'GitCommit',
                                                 },
                                             ],
+                                            __typename: 'GitCommitConnection',
                                         },
+                                        __typename: 'RepositoryContributor',
                                     },
                                     {
                                         person: {
@@ -1265,6 +1269,7 @@ describe('Repository', () => {
                                             email: 'jack@sourcegraph.test',
                                             avatarURL: null,
                                             user: null,
+                                            __typename: 'Person',
                                         },
                                         count: 1,
                                         commits: {
@@ -1275,9 +1280,12 @@ describe('Repository', () => {
                                                     url: `/${repositoryName}/-/commit/${'2'.repeat(40)}`,
                                                     subject: 'Commit message 2',
                                                     author: { date: subDays(new Date(), 2).toISOString() },
+                                                    __typename: 'GitCommit',
                                                 },
                                             ],
+                                            __typename: 'GitCommitConnection',
                                         },
+                                        __typename: 'RepositoryContributor',
                                     },
                                     {
                                         person: {
@@ -1286,6 +1294,7 @@ describe('Repository', () => {
                                             email: 'jill@sourcegraph.test',
                                             avatarURL: null,
                                             user: null,
+                                            __typename: 'Person',
                                         },
                                         count: 1,
                                         commits: {
@@ -1296,14 +1305,19 @@ describe('Repository', () => {
                                                     url: `/${repositoryName}/-/commit/${'3'.repeat(40)}`,
                                                     subject: 'Commit message 3',
                                                     author: { date: subDays(new Date(), 3).toISOString() },
+                                                    __typename: 'GitCommit',
                                                 },
                                             ],
+                                            __typename: 'GitCommitConnection',
                                         },
+                                        __typename: 'RepositoryContributor',
                                     },
                                 ],
                                 totalCount: 3,
                                 pageInfo: { hasNextPage: false },
+                                __typename: 'RepositoryContributorConnection',
                             },
+                            __typename: 'Repository',
                         },
                     }),
                 })

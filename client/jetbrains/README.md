@@ -1,6 +1,6 @@
 <!-- Plugin description -->
 
-# Sourcegraph for JetBrains IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
+# Sourcegraph for JetBrains IDEs
 
 - Instantly search in all open source repos and your private code.
 - Peek into any remote repo in the IDE, without checking it out.
@@ -9,7 +9,7 @@
 
 <!-- Plugin description end -->
 
-## Supported IDEs
+## Supported IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
 
 The plugin works with all JetBrains IDEs, including:
 
@@ -105,8 +105,8 @@ See [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client
 
 Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/intellij/jcef.html) web view features built into the JetBrains platform. To enable debugging tools for this view, please follow these steps:
 
-1. Open Search Everywhere: (On macOS via `cmd+shift+o`)
-2. Select the "Actions" tab
+1. [Enable JetBrains internal mode](https://plugins.jetbrains.com/docs/intellij/enabling-internal.html)
+2. Open Search Everywhere and the "Actions" tab: (On macOS via `cmd+shift+a`)
 3. Search for "Registry..." and open it
 4. Search for an option called `ide.browser.jcef.debug.port`
 5. Change the default value to an open port (e.g. `9222`)

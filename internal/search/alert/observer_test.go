@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -37,7 +39,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 	}
 	for _, test := range cases {
 		multiErr := errors.Append(nil, test.errors...)
-		haveAlert, _ := (&Observer{}).errorToAlert(context.Background(), multiErr)
+		haveAlert, _ := (&Observer{Log: logtest.Scoped(t)}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title, test.wantAlertTitle)
@@ -47,7 +49,8 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 }
 
 func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &search.Alert{
@@ -68,12 +71,13 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	sr := Observer{
-		Db: database.NewDB(db),
+		Db: db,
 		SearchInputs: &run.SearchInputs{
 			OriginalQuery: searchQuery,
 			Query:         q,
 			UserSettings:  &schema.Settings{},
 		},
+		Log: logtest.Scoped(t),
 	}
 
 	alert := sr.alertForNoResolvedRepos(context.Background(), q)

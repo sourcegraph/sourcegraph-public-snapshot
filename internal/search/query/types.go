@@ -30,16 +30,19 @@ type SearchType int
 
 const (
 	SearchTypeRegex SearchType = iota
-	SearchTypeLiteralDefault
+	SearchTypeLiteral
 	SearchTypeStructural
 	SearchTypeLucky
+	SearchTypeStandard
 )
 
 func (s SearchType) String() string {
 	switch s {
+	case SearchTypeStandard:
+		return "standard"
 	case SearchTypeRegex:
 		return "regex"
-	case SearchTypeLiteralDefault:
+	case SearchTypeLiteral:
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
@@ -324,6 +327,27 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 			include = append(include, v)
 		}
 	})
+	return include, exclude
+}
+
+func (p Parameters) RepoContainsFile() (include, exclude []string) {
+	nodes := toNodes(p)
+	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+		if negated {
+			exclude = append(exclude, pred.Pattern)
+		} else {
+			include = append(include, pred.Pattern)
+		}
+	})
+
 	return include, exclude
 }
 

@@ -25,13 +25,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
 	"github.com/inconshreveable/log15"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type CommitFilter struct {
@@ -46,7 +44,7 @@ type DataFrameFilter interface {
 	FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan
 }
 
-func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db dbutil.DB) DataFrameFilter {
+func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db edb.InsightsDB) DataFrameFilter {
 	if enabled {
 		return &CommitFilter{
 			store:         NewCommitStore(db),

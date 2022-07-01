@@ -8,7 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -22,9 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -36,7 +36,7 @@ type workHandler struct {
 	insightsStore   *store.Store
 	repoStore       discovery.RepoStore
 	metadadataStore *store.InsightStore
-	limiter         *rate.Limiter
+	limiter         *ratelimit.InstrumentedLimiter
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
@@ -46,6 +46,7 @@ type workHandler struct {
 
 	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
 	computeSearchStream func(context.Context, string) (*streaming.ComputeTabulationResult, error)
+	computeTextSearch   func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 }
 
 type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
@@ -175,13 +176,15 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 	return recordings, nil
 }
 
-func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
-	streamResults, err := r.computeSearchStream(ctx, job.SearchQuery)
+type streamComputeProvider func(context.Context, string) (*streaming.ComputeTabulationResult, error)
+
+func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time, provider streamComputeProvider) (_ []store.RecordSeriesPointArgs, err error) {
+	streamResults, err := provider(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
 	}
 	if len(streamResults.Errors) > 0 {
-		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
+		return nil, classifiedError(streamResults.Errors, types.SearchCompute)
 	}
 	if len(streamResults.Alerts) > 0 {
 		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
@@ -199,6 +202,11 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 
 		for capturedValue, count := range match.ValueCounts {
 			capture := capturedValue
+			if len(capture) == 0 {
+				// there seems to be some behavior where empty string values get returned from the compute API. We will just skip them. If there are future changes
+				// to fix this, we will automatically pick up any new results without changes here.
+				continue
+			}
 			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
 		}
 	}
@@ -305,7 +313,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		return nil, StreamingError{Messages: tr.Errors}
+		return nil, classifiedError(tr.Errors, types.Search)
 	}
 	if len(tr.Alerts) > 0 {
 		return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
@@ -352,13 +360,29 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
 
-	computeDelegate := r.generateComputeRecordingsStream
+	computeDelegate := func(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
+		return r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeSearchStream)
+	}
 	useGraphQL := conf.Get().InsightsComputeGraphql
 	if useGraphQL != nil && *useGraphQL {
 		computeDelegate = r.generateComputeRecordings
 	}
 
 	recordings, err := computeDelegate(ctx, job, recordTime)
+	if err != nil {
+		return err
+	}
+
+	err = r.persistRecordings(ctx, job, series, recordings)
+	return err
+}
+
+func (r *workHandler) mappingComputeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
+
+	recordings, err := r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeTextSearch)
 	if err != nil {
 		return err
 	}
@@ -383,6 +407,8 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		}
 	}
 
+	// Newly queued queries should be scoped to correct repos however leaving filtering
+	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
 	filteredRecordings, err := filterRecordingsBySeriesRepos(ctx, r.repoStore, series, recordings)
 	if err != nil {
 		return errors.Wrap(err, "filterRecordingsBySeriesRepos")
@@ -452,8 +478,9 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	handlersByType := map[types.GenerationMethod]insightsHandler{
-		types.SearchCompute: r.computeHandler,
-		types.Search:        r.searchHandler,
+		types.SearchCompute:  r.computeHandler,
+		types.MappingCompute: r.mappingComputeHandler,
+		types.Search:         r.searchHandler,
 	}
 
 	executableHandler, ok := handlersByType[series.GenerationMethod]

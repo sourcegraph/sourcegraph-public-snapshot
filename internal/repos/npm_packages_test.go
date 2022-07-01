@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -45,7 +47,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmDependency{NpmPackage: pkg, Version: dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmPackageVersion{NpmPackageName: pkg, Version: dep.Version}).PackageVersionSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -67,7 +69,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmDependency{NpmPackage: pkg, Version: deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmPackageVersion{NpmPackageName: pkg, Version: deps[0].Version}).PackageVersionSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -78,7 +80,8 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	depsSvc := livedependencies.TestService(db, nil)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
@@ -100,7 +103,7 @@ var testDependencies = []string{
 var testDependencyRepos = func() []dependencies.Repo {
 	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(depStr)
+		dep, err := reposource.ParseNpmPackageVersion(depStr)
 		if err != nil {
 			panic(err.Error())
 		}

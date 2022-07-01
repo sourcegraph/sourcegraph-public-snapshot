@@ -12,6 +12,8 @@ import {
     Prec,
     RangeSetBuilder,
     MapMode,
+    ChangeSpec,
+    Compartment,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -28,27 +30,26 @@ import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
+import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { searchQueryAutocompletion, createDefaultSuggestionSources } from './extensions/completion'
+import { createDefaultSuggestions, createUpdateableField } from './extensions'
 import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
 
-const replacePattern = /[\n\r↵]/g
+const replacePattern = /[\n\r↵]+/g
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -67,6 +68,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onChange,
     onSubmit,
     autoFocus,
+    onFocus,
     onBlur,
     isSourcegraphDotCom,
     globbing,
@@ -79,16 +81,22 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
+    // Used by the VSCode extension (which doesn't use this component directly,
+    // but added for future compatibility)
+    fetchStreamSuggestions = defaultFetchStreamSuggestions,
+    onCompletionItemSelected,
+    // Not supported:
+    // editorClassName: This only seems to be used by MonacoField to position
+    // placeholder text properly. CodeMirror has built-in support for
+    // placeholders.
 }) => {
-    const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
+    const value = preventNewLine ? queryState.query.replace(replacePattern, ' ') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
     // reference that doesn't change across renders (and some hooks should only
     // run when a prop changes, not the editor).
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
-
-    const hasSubmitHandler = onSubmit !== undefined
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
@@ -101,44 +109,21 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const autocompletion = useMemo(
         () =>
-            searchQueryAutocompletion(
-                createDefaultSuggestionSources({
-                    fetchSuggestions: createCancelableFetchSuggestions(query =>
-                        fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec))
-                    ),
-                    globbing,
-                    isSourcegraphDotCom,
-                })
-            ),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom]
+            createDefaultSuggestions({
+                fetchSuggestions: query =>
+                    fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
+                globbing,
+                isSourcegraphDotCom,
+            }),
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
     )
 
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
             EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
-            EditorView.updateListener.of((update: ViewUpdate) => {
-                if (update.docChanged) {
-                    onChange({
-                        // Looks like Text overwrites toString somehow
-                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                        query: update.state.doc.toString(),
-                        changeSource: QueryChangeSource.userInput,
-                    })
-                }
-                if (onBlur && update.focusChanged && !update.view.hasFocus) {
-                    onBlur()
-                }
-            }),
+            callbacksField,
             autocompletion,
         ]
-
-        if (hasSubmitHandler) {
-            extensions.push(Prec.high(notifyOnEnter))
-        }
-
-        if (onHandleFuzzyFinder) {
-            extensions.push(keymap.of([{ key: 'Mod-k', run: () => (onHandleFuzzyFinder(true), true) }]))
-        }
 
         if (preventNewLine) {
             extensions.push(singleLine)
@@ -155,26 +140,22 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             extensions.push(EditorView.editable.of(false))
         }
         return extensions
-    }, [
-        ariaLabel,
-        autocompletion,
-        onBlur,
-        onChange,
-        onHandleFuzzyFinder,
-        hasSubmitHandler,
-        placeholder,
-        preventNewLine,
-        editorOptions,
-    ])
+    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions])
 
-    // We use an effect + field to configure the submission handler so that we
-    // don't reconfigure the whole editor should the 'onSubmit' handler change
-    // because of the changed query.
+    // Update callback functions via effects. This avoids reconfiguring the
+    // whole editor when a callback changes.
     useEffect(() => {
-        if (editor && onSubmit) {
-            editor.dispatch({ effects: [setNotifyHandler.of(onSubmit)] })
+        if (editor) {
+            setCallbacks(editor, {
+                onChange,
+                onSubmit,
+                onFocus,
+                onBlur,
+                onCompletionItemSelected,
+                onHandleFuzzyFinder,
+            })
         }
-    }, [editor, onSubmit])
+    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
@@ -197,31 +178,27 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             return
         }
 
-        switch (queryState.changeSource) {
-            case QueryChangeSource.userInput:
-                // Don't react to user input
-                break
-            case QueryChangeSource.searchTypes:
-            case QueryChangeSource.searchReference: {
-                // Select the specified range (most of the time this will be a
-                // placeholder filter value).
-                const selectionRange = queryState.selectionRange
-                editor.dispatch({
-                    selection: EditorSelection.range(selectionRange.start, selectionRange.end),
-                    scrollIntoView: true,
-                })
+        if (queryState.changeSource === QueryChangeSource.userInput) {
+            // Don't react to user input
+            return
+        }
+
+        editor.dispatch({
+            selection: queryState.selectionRange
+                ? // Select the specified range (most of the time this will be a
+                  // placeholder filter value).
+                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
+                : // Place the cursor at the end of the query.
+                  EditorSelection.cursor(editor.state.doc.length),
+            scrollIntoView: true,
+        })
+
+        if (queryState.hint) {
+            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
                 editor.focus()
-                if (queryState.showSuggestions) {
-                    startCompletion(editor)
-                }
-                break
             }
-            default: {
-                // Place the cursor at the end of the query.
-                editor.dispatch({
-                    selection: EditorSelection.cursor(editor.state.doc.length),
-                    scrollIntoView: true,
-                })
+            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
+                startCompletion(editor)
             }
         }
     }, [editor, queryState])
@@ -265,12 +242,17 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * "Core" codemirror query input component. Provides the basic behavior such as
  * theming, syntax highlighting and token info.
  */
-const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<CodeMirrorQueryInputProps>> = React.memo(
+export const CodeMirrorQueryInput: React.FunctionComponent<
+    React.PropsWithChildren<CodeMirrorQueryInputProps>
+> = React.memo(
     ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
         // This is using state instead of a ref because `useRef` doesn't cause a
         // re-render when the ref is attached, but we need that so that
         // `useCodeMirror` is called again and the editor is actually created.
+        // See https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node
         const [container, setContainer] = useState<HTMLDivElement | null>(null)
+        const externalExtensions = useMemo(() => new Compartment(), [])
+        const themeExtension = useMemo(() => new Compartment(), [])
 
         const editor = useCodeMirror(
             container,
@@ -280,19 +262,22 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
                     keymap.of(historyKeymap),
                     keymap.of(defaultKeymap),
                     history(),
-                    EditorView.darkTheme.of(isLightTheme === false),
+                    themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
-                    tokenHighlight,
+                    querySyntaxHighlighting,
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
-                    ...extensions,
+                    externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
                 // transaction since there is no need to re-initialize all
                 // extensions
+                // The extensions passed in via `extensions` are update via a
+                // compartment
+                // The theme (`isLightTheme`) is also updated via a compartment
                 // eslint-disable-next-line react-hooks/exhaustive-deps
-                [isLightTheme, extensions]
+                [themeExtension, externalExtensions]
             )
         )
 
@@ -310,7 +295,23 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
             editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
         }, [editor, patternType, interpretComments])
 
-        return <div ref={setContainer} className={classNames(styles.root, className)} id="monaco-query-input" />
+        // Update theme if it changes
+        useEffect(() => {
+            editor?.dispatch({ effects: [themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false))] })
+        }, [editor, themeExtension, isLightTheme])
+
+        // Update external extensions if they changed
+        useEffect(() => {
+            editor?.dispatch({ effects: [externalExtensions.reconfigure(extensions)] })
+        }, [editor, externalExtensions, extensions])
+
+        return (
+            <div
+                ref={setContainer}
+                className={classNames(styles.root, className)}
+                data-test-id="codemirror-query-input"
+            />
+        )
     }
 )
 
@@ -358,37 +359,108 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
 // Sometimes it's not always obvious which type of extension to use to achieve a
 // certain goal (and I don't claim that the implementation below is optimal).
 
-// Enforces that the input won't split over multiple lines (basically prevents
-// Enter from inserting a new line)
-const singleLine = EditorState.transactionFilter.of(transaction => (transaction.newDoc.lines > 1 ? [] : transaction))
+// Enforces that the input won't span over multiple lines by replacing or
+// removing line breaks.
+// NOTE: If a submit handler is assigned to the query input then the pressing
+// enter won't insert a line break anyway. In that case, this filter ensures
+// that line breaks are stripped from pasted input.
+const singleLine = EditorState.transactionFilter.of(transaction => {
+    if (!transaction.docChanged) {
+        return transaction
+    }
 
-// Binds a function to the Enter key. Instead of using keymap directly, this is
-// configured via a state field that contains the event handler. This way the
-// event handler can be updated without having to reconfigure the whole editor.
-// The event handler must be set via the setNotifyHandler effect.
-const setNotifyHandler = StateEffect.define<() => void>()
-const notifyOnEnter = StateField.define<() => void>({
-    create() {
-        return () => {}
-    },
-    update(value, transaction) {
-        const effect = transaction.effects.find((effect): effect is StateEffect<() => void> =>
-            effect.is(setNotifyHandler)
-        )
-        return effect ? effect.value : value
-    },
-    provide(field) {
-        return keymap.of([
+    const newText = transaction.newDoc.sliceString(0)
+    const changes: ChangeSpec[] = []
+
+    // new RegExp(...) creates a copy of the regular expression so that we have
+    // our own stateful copy for using `exec` below.
+    const lineBreakPattern = new RegExp(replacePattern)
+    let match: RegExpExecArray | null = null
+    while ((match = lineBreakPattern.exec(newText))) {
+        // Insert space for line breaks following non-whitespace characters
+        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
+            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
+        } else {
+            // Otherwise remove it
+            changes.push({ from: match.index, to: match.index + match[0].length })
+        }
+    }
+
+    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
+})
+
+// Instead of deriving extensions directly form props, these event handlers are
+// configured via a field. This means that their values can be updated via
+// transactions instead of having to reconfigure the whole editor. This is
+// especially useful if the event handlers are not stable across re-renders.
+// Instead of creating a separate field for every handler, all handlers are set
+// via a single field to keep complexity manageable.
+const [callbacksField, setCallbacks] = createUpdateableField<
+    Pick<
+        MonacoQueryInputProps,
+        'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
+    >
+>(
+    callbacks => [
+        Prec.high(
+            keymap.of([
+                {
+                    key: 'Enter',
+                    run: view => {
+                        const { onSubmit } = view.state.field(callbacks)
+                        if (onSubmit) {
+                            onSubmit()
+                            return true
+                        }
+                        return false
+                    },
+                },
+            ])
+        ),
+        keymap.of([
             {
-                key: 'Enter',
+                key: 'Mod-k',
                 run: view => {
-                    view.state.field(field)?.()
-                    return true
+                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
+                    if (onHandleFuzzyFinder) {
+                        onHandleFuzzyFinder(true)
+                        return true
+                    }
+                    return false
                 },
             },
-        ])
-    },
-})
+        ]),
+        EditorView.updateListener.of((update: ViewUpdate) => {
+            const { onChange, onFocus, onBlur, onCompletionItemSelected } = update.state.field(callbacks)
+
+            if (update.docChanged) {
+                onChange({
+                    query: update.state.sliceDoc(),
+                    changeSource: QueryChangeSource.userInput,
+                })
+            }
+
+            // The focus and blur event handlers are implemented via state update handlers
+            // because it appears that binding them as DOM event handlers triggers them at
+            // the moment they are bound if the editor is already in that state ((not)
+            // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
+            if (update.focusChanged) {
+                if (update.view.hasFocus) {
+                    onFocus?.()
+                } else {
+                    onBlur?.()
+                }
+            }
+            if (
+                onCompletionItemSelected &&
+                update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
+            ) {
+                onCompletionItemSelected()
+            }
+        }),
+    ],
+    { onChange: () => {} }
+)
 
 // Defines decorators for syntax highlighting
 type StyleNames = keyof typeof styles
@@ -431,7 +503,7 @@ const decoratedToDecoration = (token: DecoratedToken): Decoration => {
 // use our existing query parser (instead of using CodeMirror's language
 // support). That's not to say that we couldn't properly integrate with
 // CodeMirror's language system with more effort.
-const tokenHighlight = EditorView.decorations.compute([decoratedTokens], state => {
+const querySyntaxHighlighting = EditorView.decorations.compute([decoratedTokens], state => {
     const tokens = state.facet(decoratedTokens)
     const builder = new RangeSetBuilder<Decoration>()
     for (const token of tokens) {
@@ -446,20 +518,22 @@ const highlightFocusedFilter = ViewPlugin.define(
     () => ({
         decorations: Decoration.none,
         update(update) {
-            if (update.focusChanged && !update.view.hasFocus) {
-                this.decorations = Decoration.none
-            } else if (update.docChanged || update.selectionSet || update.focusChanged) {
-                const query = update.state.facet(parsedQuery)
-                const position = update.state.selection.main.head
-                const focusedFilter = query.tokens.find(
-                    (token): token is Filter =>
-                        // Inclusive end so that the filter is highlighed when
-                        // the cursor is positioned directly after the value
-                        token.type === 'filter' && token.range.start <= position && token.range.end >= position
-                )
-                this.decorations = focusedFilter
-                    ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-                    : Decoration.none
+            if (update.docChanged || update.selectionSet || update.focusChanged) {
+                if (update.view.hasFocus) {
+                    const query = update.state.facet(parsedQuery)
+                    const position = update.state.selection.main.head
+                    const focusedFilter = query.tokens.find(
+                        (token): token is Filter =>
+                            // Inclusive end so that the filter is highlighed when
+                            // the cursor is positioned directly after the value
+                            token.type === 'filter' && token.range.start <= position && token.range.end >= position
+                    )
+                    this.decorations = focusedFilter
+                        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+                        : Decoration.none
+                } else {
+                    this.decorations = Decoration.none
+                }
             }
         },
     }),
@@ -468,7 +542,8 @@ const highlightFocusedFilter = ViewPlugin.define(
     }
 )
 
-// Tooltip information.
+// Extension for providing token information. This includes showing a popover on
+// hover and highlighting the hovered token.
 function tokenInfo(): Extension[] {
     const setHighlighedTokenPosition = StateEffect.define<number | null>()
     const highlightedTokenPosition = StateField.define<number | null>({

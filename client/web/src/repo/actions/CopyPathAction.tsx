@@ -39,7 +39,7 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
 
     return (
         <Button variant="icon" className="p-2" data-tooltip={label} aria-label={label} onClick={onClick} size="sm">
-            <Icon role="img" className={styles.copyIcon} as={ContentCopyIcon} aria-hidden={true} />
+            <Icon className={styles.copyIcon} as={ContentCopyIcon} aria-hidden={true} />
         </Button>
     )
 }

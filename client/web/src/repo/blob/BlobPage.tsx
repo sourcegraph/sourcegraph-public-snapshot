@@ -377,6 +377,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     telemetryService={props.telemetryService}
                     location={props.location}
                     disableStatusBar={false}
+                    disableDecorations={false}
                 />
             )}
         </>

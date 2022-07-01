@@ -60,6 +60,11 @@
       "type": "number",
       "default": -1
     },
+    "RedirectUnsupportedBrowser": {
+      "description": "Prompts user to install new browser for non es5",
+      "type": "boolean",
+      "default": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -991,6 +996,11 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "executors.frontendURL": {
+      "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
+      "type": "string",
+      "examples": ["https://sourcegraph.example.com"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
@@ -1131,7 +1141,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
+          "description": "Determines what tracing provider to enable. Supports \"opentracing\" (\"datadog\" support is deprecated)",
           "type": "string",
           "enum": ["datadog", "opentracing"],
           "default": "opentracing"
@@ -1803,7 +1813,7 @@
           "type": "boolean"
         },
         "allowOrgs": {
-          "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
           "default": [],
           "type": "array",
           "items": {
@@ -1812,7 +1822,7 @@
           }
         },
         "allowOrgsMap": {
-          "description": "Restricts new logins to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
           "default": {},
           "type": "object",
           "additionalProperties": {
@@ -1877,7 +1887,7 @@
           "!go": { "pointer": true }
         },
         "allowGroups": {
-          "description": "Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
           "default": [],
           "type": "array",
           "items": {
@@ -1885,6 +1895,11 @@
             "minLength": 1
           },
           "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+        },
+        "tokenRefreshWindowMinutes": {
+          "description": "Time in minutes before token expiry when we should attempt to refresh it",
+          "default": 10,
+          "type": "integer"
         }
       }
     },

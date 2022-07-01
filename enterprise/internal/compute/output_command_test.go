@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func Test_output(t *testing.T) {
@@ -51,12 +51,12 @@ train(commuter, lightrail)`).
 }
 
 func fileMatch(content string) result.Match {
-	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+	gitserver.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
 		File: result.File{
-			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
+			Repo: types.MinimalRepo{Name: "my/awesome/repo", ID: api.RepoID(11)},
 			Path: "my/awesome/path.ml",
 		},
 	}
@@ -74,7 +74,7 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 		computeQuery, _ := Parse(q)
 		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {
@@ -116,5 +116,25 @@ func TestRun(t *testing.T) {
 	autogold.Want(
 		"substitute language",
 		"OCaml\n").
+		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
+}
+
+func TestRunOutputRepoMetadata(t *testing.T) {
+	test := func(q string, m result.Match) *Text {
+		defer gitserver.ResetMocks()
+		computeQuery, _ := Parse(q)
+		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
+		if err != nil {
+			t.Error(err)
+		}
+		return res.(*Text)
+	}
+
+	autogold.Want(
+		"verify repo metadata exists",
+		&Text{
+			Value: "OCaml\n", Kind: "output", RepositoryID: 11,
+			Repository: "my/awesome/repo",
+		}).
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
 }

@@ -49,7 +49,7 @@ func add(database db.Database, migrationName, upMigrationFileTemplate, downMigra
 		parents = append(parents, leaf.ID)
 	}
 
-	files, err := makeMigrationFilenames(database, int(time.Now().UTC().Unix()))
+	files, err := makeMigrationFilenames(database, int(time.Now().UTC().Unix()), migrationName)
 	if err != nil {
 		return err
 	}

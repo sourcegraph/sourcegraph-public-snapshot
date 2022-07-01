@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -265,8 +266,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
 					return ci.ghUserEmails, ci.ghUserEmailsErr
 				}
-				githubsvc.MockGetAuthenticatedUserOrgs = func(ctx context.Context) ([]*githubsvc.Org, error) {
-					return ci.ghUserOrgs, ci.ghUserOrgsErr
+				githubsvc.MockGetAuthenticatedUserOrgs.FnMock = func(ctx context.Context) ([]*githubsvc.Org, bool, int, error) {
+					return ci.ghUserOrgs, false, 1, ci.ghUserOrgsErr
 				}
 				githubsvc.MockGetAuthenticatedUserTeams = func(ctx context.Context, page int) ([]*githubsvc.Team, bool, int, error) {
 					return ci.ghUserTeams, false, 0, ci.ghUserTeamsErr
@@ -287,8 +288,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				defer func() {
 					auth.MockGetAndSaveUser = nil
 					githubsvc.MockGetAuthenticatedUserEmails = nil
-					githubsvc.MockGetAuthenticatedUserOrgs = nil
 					githubsvc.MockGetAuthenticatedUserTeams = nil
+					githubsvc.MockGetAuthenticatedUserOrgs.FnMock = nil
 				}()
 
 				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
@@ -380,6 +381,44 @@ func TestSessionIssuerHelper_CreateCodeHostConnection(t *testing.T) {
 
 func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {
 	createCodeHostConnectionHelper(t, true)
+}
+
+func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
+	// mock calls to get user orgs
+	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = make(map[int][]*githubsvc.Org, 2)
+	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock[1] = generate100Orgs(1)
+	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock[2] = generate100Orgs(101)
+
+	defer func() {
+		githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = nil
+	}()
+
+	s := &sessionIssuerHelper{
+		CodeHost:     nil,
+		clientID:     "clientID",
+		allowSignup:  true,
+		allowOrgs:    []string{"1337"},
+		allowOrgsMap: nil,
+	}
+
+	allowed := s.verifyUserOrgs(context.Background(), nil)
+	if allowed {
+		t.Fatal("User doesn't have an org he is allowed into, but verifyUserOrgs returned true")
+	}
+
+	s.allowOrgs = append(s.allowOrgs, "123")
+
+	allowed = s.verifyUserOrgs(context.Background(), nil)
+	if !allowed {
+		t.Fatal("User has an org he is allowed into, but verifyUserOrgs returned false")
+	}
+}
+
+func generate100Orgs(startIdx int) (orgs []*githubsvc.Org) {
+	for i := startIdx; i < startIdx+100; i++ {
+		orgs = append(orgs, &githubsvc.Org{Login: strconv.Itoa(i)})
+	}
+	return
 }
 
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {

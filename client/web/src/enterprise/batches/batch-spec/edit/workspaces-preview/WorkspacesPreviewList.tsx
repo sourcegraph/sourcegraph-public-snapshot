@@ -82,6 +82,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
             {connectionOrCached && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
+                        centered={true}
                         noSummaryIfAllNodesVisible={true}
                         first={WORKSPACES_PER_PAGE_COUNT}
                         connection={connectionOrCached}
@@ -90,7 +91,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
                         hasNextPage={hasNextPage}
                         emptyElement={<span className="text-muted">No workspaces found</span>}
                     />
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                 </SummaryContainer>
             )}
         </ConnectionContainer>

@@ -125,7 +125,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 		//
 		// When updating an existing subscription, craft the params to replace the existing subscription
 		// item (otherwise the invoice would include both the existing and updated subscription items).
-		subToUpdate, err := productSubscriptionByID(ctx, r.DB, *args.SubscriptionToUpdate)
+		subToUpdate, err := productSubscriptionByID(ctx, r.logger, r.DB, *args.SubscriptionToUpdate)
 		if err != nil {
 			return nil, err
 		}

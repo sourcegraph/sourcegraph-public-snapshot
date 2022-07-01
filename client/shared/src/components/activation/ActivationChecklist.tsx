@@ -1,11 +1,8 @@
 import * as React from 'react'
 
+import { mdiChevronDown, mdiChevronRight, mdiCheckCircle, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
 import classNames from 'classnames'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -28,30 +25,23 @@ export const ActivationChecklistItem: React.FunctionComponent<
         <div className="d-flex align-items-center">
             <span className={styles.iconContainer}>
                 <Icon
-                    role="img"
                     className={classNames(styles.icon, styles.iconDown)}
-                    as={ChevronDownIcon}
                     aria-hidden={true}
+                    svgPath={mdiChevronDown}
                 />
                 <Icon
-                    role="img"
                     className={classNames(styles.icon, styles.iconRight)}
-                    as={ChevronRightIcon}
                     aria-hidden={true}
+                    svgPath={mdiChevronRight}
                 />
             </span>
             <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
-                <Icon role="img" className="text-success" as={CheckCircleIcon} aria-label="Completed" />
+                <Icon className="text-success" aria-label="Completed" svgPath={mdiCheckCircle} />
             ) : (
-                <Icon
-                    role="img"
-                    className="text-muted"
-                    as={CheckboxBlankCircleOutlineIcon}
-                    aria-label="Not completed"
-                />
+                <Icon className="text-muted" aria-label="Not completed" svgPath={mdiCheckboxBlankCircleOutline} />
             )}
         </div>
     </div>

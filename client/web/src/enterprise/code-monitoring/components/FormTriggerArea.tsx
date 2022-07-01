@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
@@ -12,7 +13,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Code, H2, H3 } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H3 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -53,14 +54,12 @@ const ValidQueryChecklistItem: React.FunctionComponent<
             <div className="d-flex align-items-center mb-1">
                 {checked ? (
                     <Icon
-                        role="img"
                         className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
                         as={CheckIcon}
                     />
                 ) : (
                     <Icon
-                        role="img"
                         className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
                         aria-hidden={true}
                         as={RadioboxBlankIcon}
@@ -75,7 +74,6 @@ const ValidQueryChecklistItem: React.FunctionComponent<
 
                         <span data-tooltip={hint} data-placement="bottom" className="d-inline-flex">
                             <Icon
-                                role="img"
                                 className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
                                 aria-hidden={true}
                                 as={HelpCircleIcon}
@@ -100,10 +98,18 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     isLightTheme,
     isSourcegraphDotCom,
 }) => {
-    const [showQueryForm, setShowQueryForm] = useState(startExpanded)
-    const toggleQueryForm: React.FormEventHandler = useCallback(event => {
-        event.preventDefault()
-        setShowQueryForm(show => !show)
+    const [expanded, setExpanded] = useState(startExpanded)
+
+    // Focus card when collapsing
+    const collapsedCard = useRef<HTMLButtonElement>(null)
+    const closeCard = useCallback((): void => {
+        setExpanded(false)
+
+        // Use timeout to wait for render to complete after calling setExpanded
+        // so that collapsedCard is rendered and can be focused.
+        setTimeout(() => {
+            collapsedCard.current?.focus()
+        }, 0)
     }, [])
 
     const [isValidQuery, setIsValidQuery] = useState(false)
@@ -112,8 +118,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
     const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () => isValidQuery && hasTypeDiffOrCommitFilter && hasRepoFilter && hasValidPatternTypeFilter,
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
+        () =>
+            isValidQuery &&
+            hasTypeDiffOrCommitFilter &&
+            (!isSourcegraphDotCom || hasRepoFilter) &&
+            hasValidPatternTypeFilter,
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
@@ -179,20 +189,20 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setTriggerCompleted(true)
             onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
+        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setQueryState({ query })
         },
-        [setShowQueryForm, query]
+        [closeCard, query]
     )
 
     const derivedInputClassName = useMemo(() => {
@@ -207,8 +217,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <H3 as={H2}>Trigger</H3>
-            {showQueryForm && (
+            <H3>Trigger</H3>
+            {expanded && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
@@ -252,8 +262,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 >
                                     Preview results{' '}
                                     <Icon
-                                        role="img"
-                                        aria-hidden={true}
+                                        aria-label="Open in new window"
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
                                         as={OpenInNewIcon}
                                     />
@@ -280,15 +289,18 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
-                            <li>
-                                <ValidQueryChecklistItem
-                                    checked={hasRepoFilter}
-                                    hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
-                                    dataTestid="repo-checkbox"
-                                >
-                                    Contains a <Code>repo:</Code> filter
-                                </ValidQueryChecklistItem>
-                            </li>
+                            {/* Enforce repo filter on sourcegraph.com because otherwise it's too easy to generate a lot of load */}
+                            {isSourcegraphDotCom && (
+                                <li>
+                                    <ValidQueryChecklistItem
+                                        checked={hasRepoFilter}
+                                        hint="The repo: filter is required to narrow down your search."
+                                        dataTestid="repo-checkbox"
+                                    >
+                                        Contains a <Code>repo:</Code> filter
+                                    </ValidQueryChecklistItem>
+                                </li>
+                            )}
                             <li>
                                 <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                     Is a valid search query
@@ -313,16 +325,17 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     </div>
                 </Card>
             )}
-            {!showQueryForm && (
+            {!expanded && (
                 <Card
                     data-testid="trigger-button"
                     as={Button}
                     className={classNames('test-trigger-button', cardBtnClassName)}
-                    aria-label="Edit trigger: When there are new search results"
-                    onClick={toggleQueryForm}
+                    onClick={() => setExpanded(true)}
+                    ref={collapsedCard}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
+                            <VisuallyHidden>Edit trigger: </VisuallyHidden>
                             <div
                                 className={classNames(
                                     'font-weight-bold',
@@ -347,7 +360,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                             )}
                         </div>
                         {triggerCompleted && (
-                            <Button variant="link" as="div">
+                            <Button variant="link" as="div" className="p-0">
                                 Edit
                             </Button>
                         )}

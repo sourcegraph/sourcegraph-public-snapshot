@@ -9,17 +9,18 @@ import (
 	"path"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertPythonParsesPlaceholder() *reposource.PythonDependency {
-	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
+func assertPythonParsesPlaceholder() *reposource.PythonPackageVersion {
+	placeholder, err := reposource.ParsePackageVersion("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -34,8 +35,8 @@ func NewPythonPackagesSyncer(
 ) VCSSyncer {
 	placeholder := assertPythonParsesPlaceholder()
 
-	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
+	return &vcsPackagesSyncer{
+		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
 		placeholder: placeholder,
@@ -45,31 +46,31 @@ func NewPythonPackagesSyncer(
 	}
 }
 
-// pythonPackagesSyncer implements dependenciesSource
+// pythonPackagesSyncer implements packagesSource
 type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
-func (pythonPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParsePythonDependency(dep)
+func (pythonPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+	return reposource.ParsePackageVersion(dep)
 }
 
-func (pythonPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParsePythonDependencyFromRepoName(repoName)
+func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+	return reposource.ParsePythonPackageFromRepoName(repoName)
 }
 
-func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	f, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	dep := reposource.NewPythonDependency(name, version)
+	dep := reposource.NewPythonPackageVersion(name, version)
 	dep.PackageURL = f.URL
 	return dep, nil
 }
 
-func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	packageURL := dep.(*reposource.PythonDependency).PackageURL
+func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
+	packageURL := dep.(*reposource.PythonPackageVersion).PackageURL
 
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {

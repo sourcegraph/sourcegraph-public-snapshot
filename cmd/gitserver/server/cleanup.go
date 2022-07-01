@@ -21,6 +21,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -29,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 //go:embed sg_maintenance.sh
@@ -84,7 +85,7 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
-var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "0", "the maximum number of repos not assigned to this shard we delete in one run"))
+var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -907,17 +908,11 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-// maybeCorruptStderrRe matches stderr lines from git which indicate there
-// might be repository corruption.
-//
-// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
-// context.
-var maybeCorruptStderrRe = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
-
 func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
-	if !maybeCorruptStderrRe.MatchString(stderr) {
+	if !stdErrIndicatesCorruption(stderr) {
 		return
 	}
+
 	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
 
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
@@ -929,6 +924,28 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
 }
+
+// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
+// that there might be repository corruption.
+func stdErrIndicatesCorruption(stderr string) bool {
+	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
+}
+
+var (
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// that a repository's packfiles or commit objects might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+	// context.
+	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// git's supplemental commit-graph might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
+	// context.
+	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
+)
 
 // gitIsNonBareBestEffort returns true if the repository is not a bare
 // repo. If we fail to check or the repository is bare we return false.

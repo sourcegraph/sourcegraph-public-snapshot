@@ -1,13 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import {
+    mdiCardTextOutline,
+    mdiFileDocumentEditOutline,
+    mdiAccountEdit,
+    mdiCheckboxBlankCircle,
+    mdiChevronDown,
+    mdiChevronRight,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import AccountEditIcon from 'mdi-react/AccountEditIcon'
-import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -77,7 +79,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -127,10 +129,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The commit message changed"
                             aria-label="The commit message changed"
-                            as={CardTextOutlineIcon}
+                            svgPath={mdiCardTextOutline}
                         />
                         <span className="text-nowrap">Message</span>
                     </div>
@@ -143,10 +144,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The diff changed"
                             aria-label="The diff changed"
-                            as={FileDocumentEditOutlineIcon}
+                            svgPath={mdiFileDocumentEditOutline}
                         />
                         <span className="text-nowrap">Diff</span>
                     </div>
@@ -159,10 +159,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The commit author details changed"
                             aria-label="The commit author details changed"
-                            as={AccountEditIcon}
+                            svgPath={mdiAccountEdit}
                         />
                         <span className="text-nowrap">Author</span>
                     </div>
@@ -186,7 +185,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -301,10 +300,9 @@ const ExpandedSection: React.FunctionComponent<
                     {node.delta.diffChanged && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
+                                svgPath={mdiCheckboxBlankCircle}
                             />
                         </small>
                     )}
@@ -317,10 +315,9 @@ const ExpandedSection: React.FunctionComponent<
                     {(node.delta.titleChanged || node.delta.bodyChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
+                                svgPath={mdiCheckboxBlankCircle}
                             />
                         </small>
                     )}
@@ -335,10 +332,9 @@ const ExpandedSection: React.FunctionComponent<
                         node.delta.commitMessageChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
+                                svgPath={mdiCheckboxBlankCircle}
                             />
                         </small>
                     )}

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiMagnify, mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -71,7 +70,7 @@ type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
 
 const MemoizedWorkspacesPreview: React.FunctionComponent<
     React.PropsWithChildren<MemoizedWorkspacesPreviewProps>
-> = React.memo(({ isReadOnly, batchSpec, editor, workspacesPreview }) => {
+> = React.memo(function MemoizedWorkspacesPreview({ isReadOnly, batchSpec, editor, workspacesPreview }) {
     const { debouncedCode, excludeRepo, isServerStale } = editor
     const {
         resolutionState,
@@ -146,7 +145,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
             onClick={() => preview(debouncedCode)}
         >
-            <Icon role="img" aria-hidden={true} className="mr-1" as={SearchIcon} />
+            <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
             {error ? 'Retry preview' : 'Preview workspaces'}
         </Button>
     )
@@ -193,22 +192,42 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         </>
     )
 
+    const totalCount = useMemo(() => {
+        if (shouldShowConnection) {
+            if (cachedWorkspacesPreview && (showCached || !connection?.nodes.length)) {
+                return (
+                    <span className={styles.totalCount}>
+                        Displaying {cachedWorkspacesPreview.nodes.length} of {cachedWorkspacesPreview.totalCount}
+                    </span>
+                )
+            }
+            if (connection) {
+                return (
+                    <span className={styles.totalCount}>
+                        Displaying {connection.nodes.length} of {connection?.totalCount}
+                    </span>
+                )
+            }
+        }
+        return null
+    }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
+
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
             <WorkspacesListHeader>
-                Workspaces {isReadOnly ? '' : 'preview '}
+                <span>Workspaces {isReadOnly ? '' : 'preview '}</span>
                 {(isServerStale || resolutionState === 'CANCELED' || !hasPreviewed) &&
                     shouldShowConnection &&
                     !isWorkspacesPreviewInProgress &&
                     !isReadOnly && (
                         <Icon
-                            role="img"
                             className={classNames('text-muted ml-1', styles.warningIcon)}
                             data-tooltip="The workspaces previewed below may not be up-to-date."
-                            as={WarningIcon}
                             aria-label="The workspaces previewed below may not be up-to-date."
+                            svgPath={mdiAlert}
                         />
                     )}
+                {totalCount}
             </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (

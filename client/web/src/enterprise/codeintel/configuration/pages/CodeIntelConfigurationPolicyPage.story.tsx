@@ -30,6 +30,7 @@ const policy: CodeIntelligenceConfigurationPolicyFields = {
     indexCommitMaxAgeHours: 672,
     indexIntermediateCommits: true,
     repository: null,
+    lockfileIndexingEnabled: true,
 }
 
 const repoResult = {

@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type Output struct {
@@ -70,7 +70,7 @@ func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath
 		if onlyPath {
 			return m.Path, true, nil
 		}
-		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
+		contentBytes, err := gitserver.NewClient(db).ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
 		}
@@ -117,5 +117,16 @@ func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Resul
 		return &Text{Value: outputPattern, Kind: "output"}, nil
 	}
 
-	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
+	text, err := output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
+	if err != nil {
+		return nil, err
+	}
+	return enrichTextWithRepoMetadata(text, r), nil
+}
+
+func enrichTextWithRepoMetadata(text *Text, r result.Match) *Text {
+	text.RepositoryID = int32(r.RepoName().ID)
+	text.Repository = string(r.RepoName().Name)
+
+	return text
 }

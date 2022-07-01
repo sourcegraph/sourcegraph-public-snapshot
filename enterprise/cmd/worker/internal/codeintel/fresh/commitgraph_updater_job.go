@@ -6,16 +6,18 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type commitGraphUpdaterJob struct{}
@@ -36,7 +38,7 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 
 func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "commit graph job routines"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -51,7 +53,7 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 	if err != nil {
 		return nil, err
 	}
-	locker := locker.NewWithDB(workerDb, "codeintel")
+	locker := locker.NewWith(database.NewDB(logger, workerDb), "codeintel")
 
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {

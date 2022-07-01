@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 
@@ -14,6 +14,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
+import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
@@ -69,18 +70,24 @@ if (!window.context) {
 }
 window.context.allowSignup = true
 
-const { add } = storiesOf('web/search/home/SearchPage', module)
-    .addParameters({
+const decorator: DecoratorFn = Story => {
+    useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
+    return <Story />
+}
+
+const config: Meta = {
+    title: 'web/search/home/SearchPage',
+    decorators: [decorator],
+    parameters: {
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
         chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
-    })
-    .addDecorator(Story => {
-        useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
-        return <Story />
-    })
+    },
+}
+
+export default config
 
 function getMocks({
     enableSavedSearches,
@@ -118,7 +125,7 @@ function getMocks({
     ]
 }
 
-add('Cloud with panels', () => (
+export const CloudWithPanels: Story = () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
@@ -134,9 +141,11 @@ add('Cloud with panels', () => (
             )
         }}
     </WebStory>
-))
+)
 
-add('Cloud with panels and collaborators', () => (
+CloudWithPanels.storyName = 'Cloud with panels'
+
+export const CloudWithPanelsAndCollaborators: Story = () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
@@ -153,15 +162,23 @@ add('Cloud with panels and collaborators', () => (
             )
         }}
     </WebStory>
-))
+)
 
-add('Cloud marketing home', () => (
+CloudWithPanelsAndCollaborators.storyName = 'Cloud with panels and collaborators'
+
+export const CloudMarketingHome: Story = () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
+        {webProps => (
+            <MockedFeatureFlagsProvider overrides={{}}>
+                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />
+            </MockedFeatureFlagsProvider>
+        )}
     </WebStory>
-))
+)
 
-add('Server with panels', () => (
+CloudMarketingHome.storyName = 'Cloud marketing home'
+
+export const ServerWithPanels: Story = () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
@@ -177,4 +194,6 @@ add('Server with panels', () => (
             )
         }}
     </WebStory>
-))
+)
+
+ServerWithPanels.storyName = 'Server with panels'

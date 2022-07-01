@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -60,7 +62,7 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
+			searchContext, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantSearchContextName, searchContext.Name)
 		})
@@ -100,7 +102,7 @@ func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
+			searchContext, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantSearchContextName, searchContext.Name)
 		})
@@ -136,7 +138,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
+			_, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.Error(t, err)
 			assert.Equal(t, tt.wantErr, err.Error())
 		})
@@ -177,7 +179,7 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
+			_, err := ResolveSearchContextSpec(context.Background(), logtest.Scoped(t), db, tt.searchContextSpec)
 			require.Error(t, err)
 			assert.Equal(t, tt.wantErr, err.Error())
 		})
@@ -233,7 +235,8 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 	r := db.Repos()
 
@@ -272,7 +275,8 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
@@ -392,7 +396,8 @@ func TestCreatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -493,7 +498,8 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -577,7 +583,8 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})

@@ -15,6 +15,9 @@ import (
 	"github.com/lib/pq"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -147,7 +149,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		}
 
 		q := sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`)
-		_, err := s.Handle().DB().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err := s.Handle().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -710,7 +712,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				q := sqlf.Sprintf("DELETE FROM repo")
-				_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -971,7 +973,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		var jobCount int
 		for i := 0; i < 10; i++ {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
-			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
 				t.Fatal(err)
 			}
 			if jobCount == len(services) {
@@ -1004,7 +1006,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		var jobsCompleted int
 		for i := 0; i < 10; i++ {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
-			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)
 			}
 			if jobsCompleted == len(services) {
@@ -1438,7 +1440,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		var userID int32
 		q := sqlf.Sprintf("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id")
-		err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
+		err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
 			Scan(&userID)
 		if err != nil {
 			t.Fatal(err)
@@ -1578,7 +1580,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			pq.Array([]string{database.TagAllowUserExternalServicePrivate}),
 			userID,
 		)
-		_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1599,7 +1601,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		// Confirm that there are two relationships
 		assertSourceCount(ctx, t, store, 2)
 		q = sqlf.Sprintf("UPDATE users SET tags = '{}' WHERE id = %s", userID)
-		_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1849,6 +1851,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -1862,7 +1865,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 		}
 
 		// create fake user
-		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+		user, err := database.UsersWith(logger, store).Create(ctx, database.NewUser{
 			Email:                 "Email",
 			Username:              "Username",
 			DisplayName:           "DisplayName",
@@ -1965,6 +1968,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 
 func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -1978,7 +1982,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 		}
 
 		// create fake user
-		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+		user, err := database.UsersWith(logger, store).Create(ctx, database.NewUser{
 			Email:                 "Email",
 			Username:              "Username",
 			DisplayName:           "DisplayName",
@@ -2057,7 +2061,6 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 
 		repoIdx := 0
 
-		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
@@ -2084,7 +2087,7 @@ func assertSourceCount(ctx context.Context, t *testing.T, store repos.Store, wan
 	t.Helper()
 	var rowCount int
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos")
-	if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
+	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {
@@ -2096,7 +2099,7 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store
 	t.Helper()
 	var rowCount int
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_at is not null")
-	if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
+	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {
@@ -2142,7 +2145,7 @@ func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 				}
 
 				// Run the syncer, which should find the repo with non-empty last_error and delete it
-				err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
+				err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(200, 1)))
 				if err != nil {
 					t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
 				}
@@ -2184,7 +2187,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		// Run the syncer, which should return an error due to hitting the rate limit
-		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(1, 1))
+		err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(1, 1)))
 		if err == nil {
 			t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
 		}

@@ -5,6 +5,10 @@
     background-color: var(--subtle-bg);
     align-items: center;
     flex-shrink: 0;
+    cursor: default;
+
+    border-bottom: 1px solid var(--jb-border-color);
+    border-top: 1px solid var(--jb-border-color);
 }
 
 .progress-count {

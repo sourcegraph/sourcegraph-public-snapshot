@@ -83,7 +83,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                 data-tooltip="Show sidebar"
                 aria-label="Show sidebar"
             >
-                <Icon role="img" as={ChevronDoubleRightIcon} aria-hidden={true} />
+                <Icon as={ChevronDoubleRightIcon} aria-hidden={true} />
             </Button>
         )
     }
@@ -98,7 +98,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
                 <Tabs
-                    className="w-100 test-repo-revision-sidebar pr-3 h-25 flex-grow-1"
+                    className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
                     defaultIndex={persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
@@ -113,12 +113,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                                 data-placement="right"
                                 aria-label="Hide sidebar"
                             >
-                                <Icon
-                                    role="img"
-                                    className={styles.closeIcon}
-                                    as={ChevronDoubleLeftIcon}
-                                    aria-hidden={true}
-                                />
+                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} aria-hidden={true} />
                             </Button>
                         }
                     >

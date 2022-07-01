@@ -26,8 +26,8 @@ func TestEvalStepCondition(t *testing.T) {
 		},
 		PreviousStep: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+			Stdout: "this is previous step's stdout",
+			Stderr: "this is previous step's stderr",
 		},
 		Steps: StepsContext{
 			Changes: testChanges,
@@ -91,8 +91,8 @@ func TestRenderStepTemplate(t *testing.T) {
 		},
 		PreviousStep: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+			Stdout: "this is previous step's stdout",
+			Stderr: "this is previous step's stderr",
 		},
 		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
@@ -100,8 +100,8 @@ func TestRenderStepTemplate(t *testing.T) {
 		},
 		Step: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is current step's stdout"),
-			Stderr: bytes.NewBufferString("this is current step's stderr"),
+			Stdout: "this is current step's stdout",
+			Stderr: "this is current step's stderr",
 		},
 		Steps:      StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
 		Repository: *testRepo1,
@@ -235,8 +235,8 @@ func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
 		PreviousStep: execution.StepResult{
 			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+			Stdout: "this is previous step's stdout",
+			Stderr: "this is previous step's stderr",
 		},
 		Outputs:    map[string]any{},
 		Repository: *testRepo1,

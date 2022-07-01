@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -16,6 +18,7 @@ import (
 
 type Mapper struct {
 	MapJob func(job job.Job) job.Job
+	Log    log.Logger
 
 	// Search Jobs (leaf nodes)
 	MapCommitSearchJob              func(*commit.SearchJob) *commit.SearchJob
@@ -30,7 +33,9 @@ type Mapper struct {
 	MapZoektRepoSubsetTextSearchJob func(*zoekt.RepoSubsetTextSearchJob) *zoekt.RepoSubsetTextSearchJob
 
 	// Repo pager Job (pre-step for some Search Jobs)
-	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
+	MapRepoPagerJob          func(*repoPagerJob) *repoPagerJob
+	MapFeelingLuckySearchJob func(*FeelingLuckySearchJob) *FeelingLuckySearchJob
+	MapGeneratedSearchJob    func(*generatedSearchJob) *generatedSearchJob
 
 	// Expression Jobs
 	MapAndJob func(children []job.Job) []job.Job
@@ -118,6 +123,18 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
+	case *FeelingLuckySearchJob:
+		if m.MapFeelingLuckySearchJob != nil {
+			j = m.MapFeelingLuckySearchJob(j)
+		}
+		return j
+
+	case *generatedSearchJob:
+		if m.MapGeneratedSearchJob != nil {
+			j = m.MapGeneratedSearchJob(j)
+		}
+		return j
+
 	case *repoPagerJob:
 		child := m.Map(j.child)
 		j.child = child
@@ -196,14 +213,14 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		if m.MapLimitJob != nil {
 			inputs, child = m.MapAlertJob(inputs, child)
 		}
-		return NewAlertJob(inputs, child)
+		return NewAlertJob(m.Log, inputs, child)
 
 	case *subRepoPermsFilterJob:
 		child := m.Map(j.child)
 		if m.MapSubRepoPermsFilterJob != nil {
 			child = m.MapSubRepoPermsFilterJob(child)
 		}
-		return NewFilterJob(child)
+		return NewFilterJob(m.Log, child)
 
 	case *NoopJob:
 		return j
@@ -213,7 +230,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 	}
 }
 
-func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
+func MapAtom(logger log.Logger, j job.Job, f func(job.Job) job.Job) job.Job {
 	mapper := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch typedJob := currentJob.(type) {
@@ -233,6 +250,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 				return currentJob
 			}
 		},
+		Log: logger,
 	}
 	return mapper.Map(j)
 }

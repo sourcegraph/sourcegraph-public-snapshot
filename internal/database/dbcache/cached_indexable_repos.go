@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -36,8 +36,9 @@ func (c *cachedRepos) repos() ([]types.MinimalRepo, bool) {
 
 var globalReposCache = reposCache{}
 
-func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
+func NewIndexableReposLister(logger log.Logger, store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
+		logger:     logger,
 		store:      store,
 		reposCache: &globalReposCache,
 	}
@@ -52,7 +53,8 @@ type reposCache struct {
 // IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
-	store database.RepoStore
+	logger log.Logger
+	store  database.RepoStore
 	*reposCache
 }
 
@@ -95,7 +97,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 
 		_, err := s.refreshCache(newCtx, onlyPublic)
 		if err != nil {
-			log15.Error("Refreshing indexable repos cache", "error", err)
+			s.logger.Error("Refreshing indexable repos cache", log.Error(err))
 		}
 	}()
 	return repos, nil

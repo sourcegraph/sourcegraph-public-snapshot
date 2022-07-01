@@ -10,6 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -19,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -39,6 +40,7 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 //
 // Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
+	logger       log.Logger
 	db           database.DB
 	repoResolver *RepositoryResolver
 
@@ -82,7 +84,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.db, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		r.commit, r.commitErr = gitserver.NewClient(r.db).GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -255,7 +257,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	defer span.Finish()
 	span.SetTag("path", path)
 
-	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stat, err := gitserver.NewClient(r.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -279,7 +281,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +299,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -325,6 +327,21 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		after:         args.After,
 		repo:          r.repoResolver,
 	}, nil
+}
+
+func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
+	Base *string
+}) (*RepositoryComparisonResolver, error) {
+	oidString := string(r.oid)
+	base := oidString + "~"
+	if args.Base != nil {
+		base = *args.Base
+	}
+	return NewRepositoryComparison(ctx, r.db, r.repoResolver, &RepositoryComparisonInput{
+		Base:         &base,
+		Head:         &oidString,
+		FetchMissing: false,
+	})
 }
 
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {

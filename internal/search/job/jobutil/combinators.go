@@ -171,51 +171,6 @@ func (t *TimeoutJob) Tags() []log.Field {
 	}
 }
 
-// NewLimitJob creates a new job that is canceled after the result limit
-// is hit. Whenever an event is sent down the stream, the result count
-// is incremented by the number of results in that event, and if it reaches
-// the limit, the context is canceled.
-func NewLimitJob(limit int, child job.Job) job.Job {
-	if _, ok := child.(*NoopJob); ok {
-		return child
-	}
-	return &LimitJob{
-		limit: limit,
-		child: child,
-	}
-}
-
-type LimitJob struct {
-	child job.Job
-	limit int
-}
-
-func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, l)
-	defer func() { finish(alert, err) }()
-
-	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
-	defer cancel()
-
-	alert, err = l.child.Run(ctx, clients, s)
-	if errors.Is(err, context.Canceled) {
-		// Ignore context canceled errors
-		err = nil
-	}
-	return alert, err
-
-}
-
-func (l *LimitJob) Name() string {
-	return "LimitJob"
-}
-
-func (l *LimitJob) Tags() []log.Field {
-	return []log.Field{
-		log.Int("limit", l.limit),
-	}
-}
-
 func NewNoopJob() *NoopJob {
 	return &NoopJob{}
 }

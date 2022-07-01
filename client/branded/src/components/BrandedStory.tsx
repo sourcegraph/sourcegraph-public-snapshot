@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
@@ -35,8 +36,10 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
-                    <DeprecatedTooltip />
-                    <Children isLightTheme={isLightTheme} />
+                    <CompatRouter>
+                        <DeprecatedTooltip />
+                        <Children isLightTheme={isLightTheme} />
+                    </CompatRouter>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>

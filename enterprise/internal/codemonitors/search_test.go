@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,53 +30,55 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.SearchJob{}),
-			&run.RepoSearchJob{},
+			jobutil.NewParallelJob(&run.RepoSearchJob{Log: logtest.Scoped(t)}, &commit.SearchJob{Log: logtest.Scoped(t)}),
+			&run.RepoSearchJob{Log: logtest.Scoped(t)},
 			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.SearchJob{}),
-			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
+			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{Log: logtest.Scoped(t)}),
 		}
 
 		for _, j := range erroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(j, nil)
+				_, err := addCodeMonitorHook(logtest.Scoped(t), j, nil)
 				require.Error(t, err)
 			})
 		}
 	})
 
 	t.Run("error on multiple commit search jobs", func(t *testing.T) {
-		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.SearchJob{}, &commit.SearchJob{}), nil)
+		_, err := addCodeMonitorHook(logtest.Scoped(t), jobutil.NewAndJob(&commit.SearchJob{Log: logtest.Scoped(t)}, &commit.SearchJob{Log: logtest.Scoped(t)}), nil)
 		require.Error(t, err)
 	})
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewLimitJob(1000, &commit.SearchJob{}),
-			&commit.SearchJob{},
-			jobutil.NewTimeoutJob(0, &commit.SearchJob{}),
+			jobutil.NewLimitJob(1000, &commit.SearchJob{Log: logtest.Scoped(t)}),
+			&commit.SearchJob{Log: logtest.Scoped(t)},
+			jobutil.NewTimeoutJob(0, &commit.SearchJob{Log: logtest.Scoped(t)}),
 		}
 
 		for _, j := range nonErroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(j, nil)
+				_, err := addCodeMonitorHook(logtest.Scoped(t), j, nil)
 				require.NoError(t, err)
 			})
 		}
 	})
 
 	t.Run("no errors on allowed queries", func(t *testing.T) {
+		log := logtest.Scoped(t)
+
 		test := func(t *testing.T, input string) {
 			plan, err := query.Pipeline(query.InitRegexp(input))
 			require.NoError(t, err)
 			inputs := &run.SearchInputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteralDefault,
+				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewPlanJob(inputs, plan)
+			j, err := jobutil.NewPlanJob(log, inputs, plan)
 			require.NoError(t, err)
-			addCodeMonitorHook(j, nil)
+			addCodeMonitorHook(log, j, nil)
 		}
 
 		queries := []string{
@@ -104,6 +108,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		Repo    *types.Repo
 		Monitor *edb.Monitor
 	}
+	logger := logtest.Scoped(t)
 	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
@@ -118,7 +123,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	fixtures := populateFixtures(edb.NewEnterpriseDB(db))
 	ctx := context.Background()
 
