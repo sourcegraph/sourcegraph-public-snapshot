@@ -250,4 +250,4 @@ describe('DashboardsContent', () => {
 
         await waitFor(() => sinon.assert.calledOnce(mockCopyURL))
     })
-});
+})
