@@ -240,7 +240,10 @@ var unsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
-	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+	ext := filepath.Base(repoCommitPath.Path)
+	if strings.Index(ext, ".") >= 0 {
+		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+	}
 
 	langName, ok := extToLang[ext]
 	if !ok {
