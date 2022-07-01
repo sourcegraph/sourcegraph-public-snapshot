@@ -2,6 +2,8 @@ import React, { createRef, useCallback, useEffect, useMemo, useState } from 'rea
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
+import { isAnyDropdownOpen } from '../GlobalKeyboardListeners'
+
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
 import { PathSearchResult } from './PathSearchResult'
@@ -82,16 +84,12 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             const target = event.target as HTMLElement
 
             // We only want to handle keydown events on the search box
-            if (
-                (target.nodeName !== 'TEXTAREA' || !target.className.includes('inputarea')) &&
-                target.nodeName !== 'BODY'
-            ) {
+            if (!target.className.includes('cm-content') && target.nodeName !== 'BODY') {
                 return
             }
 
             // Ignore events when the autocomplete dropdown is open
-            const isAutocompleteOpen = document.querySelector('.monaco-list.element-focused') !== null
-            if (isAutocompleteOpen) {
+            if (isAnyDropdownOpen()) {
                 return
             }
 

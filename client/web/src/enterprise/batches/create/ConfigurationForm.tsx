@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import LockIcon from 'mdi-react/LockIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -174,8 +173,8 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     <Icon
                         aria-label="Coming soon"
                         data-tooltip="Coming soon"
-                        as={InfoCircleOutlineIcon}
                         className="ml-1"
+                        svgPath={mdiInformationOutline}
                     />
                 </strong>
                 <div className="form-group mb-1">
@@ -197,7 +196,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         disabled={true}
                         label={
                             <>
-                                Private <Icon aria-hidden={true} className="text-warning" as={LockIcon} />
+                                Private <Icon aria-hidden={true} className="text-warning" svgPath={mdiLock} />
                             </>
                         }
                         aria-label="Private"

@@ -30,9 +30,6 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
          */
         onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
 
-        /** A tooltip to display when the user hovers or focuses this element. */
-        ['data-tooltip']?: string
-
         /**
          * If given, the element is treated as a toggle with the boolean indicating its state.
          * Applies `aria-pressed`.
@@ -64,7 +61,6 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         disabled,
         disabledClassName,
         pressed,
-        'data-tooltip': tooltip,
         onSelect,
         children,
         id,
@@ -99,8 +95,6 @@ export const ButtonLink = React.forwardRef((props, reference) => {
     const commonProps = {
         // `.disabled` will only be selected if the `.btn` class is applied as well
         className: classNames(className, disabled && ['disabled', disabledClassName]),
-        'data-tooltip': tooltip,
-        'aria-label': tooltip,
         role: typeof pressed === 'boolean' ? 'button' : undefined,
         'aria-pressed': pressed,
         tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,

@@ -63,6 +63,10 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		indexedIgnore, unindexedSearch, err := parseGitDiffNameStatus(out)
 		if err != nil {
+			logger.Debug("parseGitDiffNameStatus failed",
+				log.String("indexed", string(indexed)),
+				log.Binary("out", out),
+				log.Error(err))
 			return nil, false, err
 		}
 
@@ -72,7 +76,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("indexedIgnorePaths", len(indexedIgnore)),
 			log.Int("unindexedSearchPaths", len(unindexedSearch)))
 
-		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
+		ok, err = zoektSearchIgnorePaths(ctx, s.Log, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			return nil, false, err
 		} else if !ok {
@@ -92,7 +96,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 //
 // If we did not search the correct commit or we don't know if we did, ok is
 // false.
-func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (ok bool, err error) {
+func zoektSearchIgnorePaths(ctx context.Context, logger log.Logger, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (ok bool, err error) {
 	qText, err := zoektCompile(&p.PatternInfo)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to compile query for zoekt")
@@ -104,7 +108,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	))
 
 	k := zoektutil.ResultCountFactor(1, int32(p.Limit), false)
-	opts := zoektutil.SearchOpts(ctx, k, int32(p.Limit), nil)
+	opts := zoektutil.SearchOpts(ctx, logger, k, int32(p.Limit), nil)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}
@@ -277,6 +281,10 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 // A and B respectively. It expects to be parsing the output of the command
 // git diff -z --name-status --no-renames A B.
 func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error) {
+	if len(out) == 0 {
+		return nil, nil, nil
+	}
+
 	slices := bytes.Split(bytes.TrimRight(out, "\x00"), []byte{0})
 	if len(slices)%2 != 0 {
 		return nil, nil, errors.New("uneven pairs")

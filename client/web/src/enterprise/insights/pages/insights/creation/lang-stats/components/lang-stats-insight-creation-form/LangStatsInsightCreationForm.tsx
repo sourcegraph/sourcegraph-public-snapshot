@@ -79,7 +79,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
             onSubmit={handleSubmit}
             onReset={onFormReset}
         >
-            {/* 
+            {/*
                 a11y-ignore
                 Rule: aria-allowed-role ARIA - role should be appropriate for the element
                 Error occurs as a result of using `role=combobox` on `textarea` element.
@@ -138,7 +138,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
                     alwaysShowLabel={true}
                     data-testid="insight-save-button"
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     type="submit"
                     disabled={submitting || !creationPermission?.available}
                     className="mr-2 mb-2"

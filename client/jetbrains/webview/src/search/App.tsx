@@ -21,12 +21,13 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
+import { EventLogger } from '../telemetry/EventLogger'
 
+import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
@@ -45,6 +46,7 @@ interface Props {
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
+    telemetryService: EventLogger
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -61,6 +63,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onOpen,
     initialSearch,
     initialAuthenticatedUser,
+    telemetryService,
 }: Props) => {
     const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(initialAuthenticatedUser)
@@ -178,8 +181,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             setMatches([])
             setLastSearch(nextSearch)
             saveLastSearch(nextSearch)
+            telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query]
+        [lastSearch, userQueryState.query, telemetryService]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)
@@ -219,6 +223,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <GlobalKeyboardListeners />
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div className={styles.root} onMouseDown={preventAll}>
                 <div className={styles.searchBoxContainer}>
@@ -256,7 +261,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             settingsCascade={settingsCascade}
                             globbing={isGlobbingEnabled}
                             isLightTheme={!isDarkTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            telemetryService={telemetryService}
                             platformContext={platformContext}
                             className=""
                             containerClassName=""

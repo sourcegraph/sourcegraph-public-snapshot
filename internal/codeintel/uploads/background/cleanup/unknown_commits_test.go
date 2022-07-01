@@ -10,11 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func init() {
@@ -93,7 +92,7 @@ type updateInvocation struct {
 	Delete       bool
 }
 
-var testSourcedCommits = []dbstore.SourcedCommits{
+var testSourcedCommits = []shared.SourcedCommits{
 	{RepositoryID: 1, RepositoryName: "foo", Commits: []string{"foo-x", "foo-y", "foo-z"}},
 	{RepositoryID: 2, RepositoryName: "bar", Commits: []string{"bar-x", "bar-y", "bar-z"}},
 	{RepositoryID: 3, RepositoryName: "baz", Commits: []string{"baz-x", "baz-y", "baz-z"}},
@@ -103,17 +102,19 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	dbStore := NewMockDBStore()
 	dbStore.TransactFunc.SetDefaultReturn(dbStore, nil)
 	dbStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	dbStore.StaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 
-	lsifStore := NewMockLSIFStore()
+	uploadSvc := NewMockUploadService()
+	uploadSvc.StaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
+	autoIndexingSvc := NewMockAutoIndexingService()
 	janitor := newJanitor(
 		dbStore,
-		lsifStore,
+		uploadSvc,
+		autoIndexingSvc,
 		newMetrics(&observation.TestContext),
 	)
 
@@ -122,14 +123,14 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	}
 
 	var sanitizedCalls []updateInvocation
-	for _, call := range dbStore.UpdateSourcedCommitsFunc.History() {
+	for _, call := range uploadSvc.UpdateSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
 			Delete:       false,
 		})
 	}
-	for _, call := range dbStore.DeleteSourcedCommitsFunc.History() {
+	for _, call := range uploadSvc.DeleteSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,

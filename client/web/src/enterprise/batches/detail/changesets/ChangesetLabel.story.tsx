@@ -1,14 +1,19 @@
-import { storiesOf } from '@storybook/react'
+import { Story, DecoratorFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetLabel } from './ChangesetLabel'
 
-const { add } = storiesOf('web/batches/ChangesetLabel', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('Various labels', () => (
+const config: Meta = {
+    title: 'web/batches/ChangesetLabel',
+    decorators: [decorator],
+}
+
+export default config
+
+export const VariousLabels: Story = () => (
     <WebStory>
         {() => (
             <>
@@ -47,4 +52,6 @@ add('Various labels', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+VariousLabels.storyName = 'Various labels'

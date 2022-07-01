@@ -16,19 +16,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
-	// Do not add initialization here, do all setup in sg.Before.
+	// Do not add initialization here, do all setup in sg.Before - this is a necessary
+	// workaround because we don't have control over the bash completion flag, which is
+	// part of urfave/cli internals.
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
 		batchCompletionMode = true
 	}
+
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
-		out := std.NewOutput(os.Stdout, false)
-		out.WriteFailuref(err.Error())
+		// We want to prefer an already-initialized std.Out no matter what happens,
+		// because that can be configured (e.g. with '--disable-output-detection'). Only
+		// if something went horribly wrong and std.Out is not yet initialized should we
+		// attempt an initialization here.
+		if std.Out == nil {
+			std.Out = std.NewOutput(os.Stdout, false)
+		}
+		std.Out.WriteFailuref(err.Error())
 		os.Exit(1)
 	}
 }
@@ -139,6 +149,12 @@ var sg = &cli.App{
 			std.Out = std.NewOutput(cmd.App.Writer, verbose)
 		}
 
+		// Initialize context
+		cmd.Context, err = usershell.Context(cmd.Context)
+		if err != nil {
+			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
+		}
+
 		// Set up analytics and hooks for each command.
 		if !disableAnalytics {
 			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
@@ -226,11 +242,11 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
-		setupCommandV2,
 
 		// Company
 		teammateCommand,
 		rfcCommand,
+		adrCommand,
 		liveCommand,
 		opsCommand,
 		auditCommand,

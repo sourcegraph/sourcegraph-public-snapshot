@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { animated } from 'react-spring'
 
 import {
@@ -112,11 +112,11 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
             data-tooltip={props.disabledTooltip}
             aria-label={props.disabledTooltip}
             tabIndex={0}
-            as={InfoCircleOutlineIcon}
+            svgPath={mdiInformationOutline}
         />
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
-            <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
+            <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
 
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>

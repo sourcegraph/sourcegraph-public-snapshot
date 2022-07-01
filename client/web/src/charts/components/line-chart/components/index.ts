@@ -1,5 +1,3 @@
 export { Tooltip, TooltipContent } from './tooltip'
 export { LegendList, LegendItem } from './legend-list/LegendList'
-export { AxisBottom, AxisLeft } from './axis/Axis'
-export { Tick } from './axis/Tick'
 export { PointGlyph } from './PointGlyph'

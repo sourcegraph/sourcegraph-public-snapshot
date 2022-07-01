@@ -8,6 +8,21 @@ import { queryBatchSpecs as _queryBatchSpecs } from './backend'
 import { BatchSpecsPage } from './BatchSpecsPage'
 import { NODES, successNode } from './testData'
 
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/specs/BatchSpecsPage',
+    decorators: [decorator],
+    parameters: {
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
+        },
+    },
+}
+
+export default config
+
 const NOW = () => addDays(new Date(), 1)
 
 const queryBatchSpecs: typeof _queryBatchSpecs = () =>
@@ -31,21 +46,6 @@ const queryNoBatchSpecs: typeof _queryBatchSpecs = () =>
         },
         nodes: [],
     })
-
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
-const config: Meta = {
-    title: 'web/batches/settings/specs/BatchSpecsPage',
-    decorators: [decorator],
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-            disableSnapshot: false,
-        },
-    },
-}
-
-export default config
 
 export const ListOfSpecs: Story = () => (
     <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}</WebStory>

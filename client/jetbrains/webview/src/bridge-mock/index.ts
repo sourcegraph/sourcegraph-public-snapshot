@@ -52,6 +52,8 @@ function handleRequest(
                     instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
+                    anonymousUserId: 'test',
+                    pluginVersion: '1.2.3',
                 })
             )
             break
@@ -131,6 +133,12 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
+            onSuccessCallback('null')
+            break
+        }
+
+        case 'windowClose': {
+            console.log('Closing window')
             onSuccessCallback('null')
             break
         }

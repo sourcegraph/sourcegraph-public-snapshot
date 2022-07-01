@@ -1,10 +1,10 @@
-import { Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { BranchMerge } from './Branch'
 
-const config = {
+const config: Meta = {
     title: 'web/batches/Branch',
 }
 

@@ -7,6 +7,8 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -18,19 +20,21 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
+func NewAlertJob(logger sglog.Logger, inputs *run.SearchInputs, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &alertJob{
 		inputs: inputs,
 		child:  child,
+		log:    logger,
 	}
 }
 
 type alertJob struct {
 	inputs *run.SearchInputs
 	child  job.Job
+	log    sglog.Logger
 }
 
 func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -45,6 +49,7 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	ao := searchalert.Observer{
 		Db:           clients.DB,
 		SearchInputs: j.inputs,
+		Log:          j.log,
 		HasResults:   countingStream.Count() > 0,
 	}
 	if err != nil {

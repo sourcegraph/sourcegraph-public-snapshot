@@ -699,7 +699,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
-				skip:  skipStream & skipGraphQL,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  "Structural, index only, backcompat, nonzero result",
@@ -1336,6 +1336,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
+
+		t.Skip("TODO: Re-enable with lockfile indexing added")
 
 		// We are adding another GitHub external service here to make sure we don't
 		// pollute the other integration tests running earlier.

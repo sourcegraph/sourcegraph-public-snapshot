@@ -19,8 +19,6 @@ Indexes:
 Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
-Referenced by:
-    TABLE "batch_spec_workspace_execution_jobs" CONSTRAINT "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
 
 ```
 
@@ -148,7 +146,6 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  cancel                  | boolean                  |           | not null | false
- access_token_id         | bigint                   |           |          | 
  queued_at               | timestamp with time zone |           |          | now()
  user_id                 | integer                  |           |          | 
 Indexes:
@@ -159,7 +156,6 @@ Indexes:
     "batch_spec_workspace_execution_jobs_state" btree (state)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
-    "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
 
 ```
 
@@ -673,28 +669,35 @@ Indexes:
 
 # Table "public.codeintel_lockfile_references"
 ```
-     Column      |           Type           | Collation | Nullable |                          Default                          
------------------+--------------------------+-----------+----------+-----------------------------------------------------------
- id              | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
- repository_name | text                     |           | not null | 
- revspec         | text                     |           | not null | 
- package_scheme  | text                     |           | not null | 
- package_name    | text                     |           | not null | 
- package_version | text                     |           | not null | 
- repository_id   | integer                  |           |          | 
- commit_bytea    | bytea                    |           |          | 
- last_check_at   | timestamp with time zone |           |          | 
+          Column          |           Type           | Collation | Nullable |                          Default                          
+--------------------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id                       | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
+ repository_name          | text                     |           | not null | 
+ revspec                  | text                     |           | not null | 
+ package_scheme           | text                     |           | not null | 
+ package_name             | text                     |           | not null | 
+ package_version          | text                     |           | not null | 
+ repository_id            | integer                  |           |          | 
+ commit_bytea             | bytea                    |           |          | 
+ last_check_at            | timestamp with time zone |           |          | 
+ depends_on               | integer[]                |           |          | '{}'::integer[]
+ resolution_lockfile      | text                     |           |          | 
+ resolution_repository_id | integer                  |           |          | 
+ resolution_commit_bytea  | bytea                    |           |          | 
 Indexes:
     "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfile_references_repository_name_revspec_package" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version)
+    "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)
     "codeintel_lockfile_references_last_check_at" btree (last_check_at)
     "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
+    "codeintel_lockfiles_references_depends_on" gin (depends_on gin__int_ops)
 
 ```
 
 Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
 
 **commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
+
+**depends_on**: IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.
 
 **last_check_at**: Timestamp when background job last checked this row for repository resolution
 
@@ -708,6 +711,12 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
 
 **repository_name**: Encodes `reposource.PackageDependency.RepoName`. A name that is &#34;globally unique&#34; for a Sourcegraph instance. Used in `repo:...` queries.
 
+**resolution_commit_bytea**: Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.
+
+**resolution_lockfile**: Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.
+
+**resolution_repository_id**: ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.
+
 **revspec**: Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.
 
 # Table "public.codeintel_lockfiles"
@@ -718,9 +727,10 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
  repository_id                    | integer   |           | not null | 
  commit_bytea                     | bytea     |           | not null | 
  codeintel_lockfile_reference_ids | integer[] |           | not null | 
+ lockfile                         | text      |           |          | 
 Indexes:
     "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfiles_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea)
+    "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
     "codeintel_lockfiles_codeintel_lockfile_reference_ids" gin (codeintel_lockfile_reference_ids gin__int_ops)
 
 ```
@@ -730,6 +740,8 @@ Associates a repository-commit pair with the set of repository-level dependencie
 **codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**lockfile**: Relative path of a lockfile in the given repository and the given commit.
 
 # Table "public.configuration_policies_audit_logs"
 ```
@@ -1208,6 +1220,7 @@ Indexes:
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_processable_priority_id" btree (priority, id) WHERE state = 'queued'::text OR state = 'errored'::text
+    "insights_query_runner_jobs_series_id_state" btree (series_id, state)
     "insights_query_runner_jobs_state_btree" btree (state)
     "process_after_insights_query_runner_jobs_idx" btree (process_after)
 Referenced by:
@@ -1295,6 +1308,7 @@ Tracks the last time repository was checked for lockfile indexing.
  protected                   | boolean                  |           | not null | false
  repository_patterns         | text[]                   |           |          | 
  last_resolved_at            | timestamp with time zone |           |          | 
+ lockfile_indexing_enabled   | boolean                  |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -1310,6 +1324,8 @@ Triggers:
 **index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
+
+**lockfile_indexing_enabled**: Whether to index the lockfiles in the repositories matched by this policy
 
 **pattern**: A pattern used to match` names of the associated Git object type.
 
@@ -2462,15 +2478,17 @@ Responsible for storing permissions at a finer granularity than repo
 
 # Table "public.survey_responses"
 ```
-   Column   |           Type           | Collation | Nullable |                   Default                    
-------------+--------------------------+-----------+----------+----------------------------------------------
- id         | bigint                   |           | not null | nextval('survey_responses_id_seq'::regclass)
- user_id    | integer                  |           |          | 
- email      | text                     |           |          | 
- score      | integer                  |           | not null | 
- reason     | text                     |           |          | 
- better     | text                     |           |          | 
- created_at | timestamp with time zone |           | not null | now()
+     Column     |           Type           | Collation | Nullable |                   Default                    
+----------------+--------------------------+-----------+----------+----------------------------------------------
+ id             | bigint                   |           | not null | nextval('survey_responses_id_seq'::regclass)
+ user_id        | integer                  |           |          | 
+ email          | text                     |           |          | 
+ score          | integer                  |           | not null | 
+ reason         | text                     |           |          | 
+ better         | text                     |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ use_cases      | text[]                   |           |          | 
+ other_use_case | text                     |           |          | 
 Indexes:
     "survey_responses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2763,7 +2781,6 @@ Foreign-key constraints:
     j.created_at,
     j.updated_at,
     j.cancel,
-    j.access_token_id,
     j.queued_at,
     j.user_id,
     q.place_in_global_queue,

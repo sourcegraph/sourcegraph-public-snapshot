@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -45,6 +46,7 @@ type TextSearchJob struct {
 	UseFullDeadline bool
 
 	Features search.Features
+	Log      sglog.Logger
 }
 
 // Run calls the searcher service on a set of repositories.
@@ -89,6 +91,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		for _, repoAllRevs := range s.Repos {
+			repo := repoAllRevs.Repo // capture repo
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
@@ -99,24 +102,24 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 			}
 
 			for _, rev := range revSpecs {
+				rev := rev // capture rev
 				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
 				if err != nil {
 					return err
 				}
 
-				// Make a new repoRev for just the operation of searching this revspec.
-				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
 				g.Go(func() error {
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
-						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
+						tr.LogFields(log.String("repo", string(repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
+						s.Log.Warn("searchFilesInRepo failed", sglog.Error(err), sglog.String("repo", string(repo.Name)))
+
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,

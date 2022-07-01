@@ -8,8 +8,8 @@ import React, {
     useState,
 } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 // eslint-disable-next-line no-restricted-imports
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
@@ -313,7 +313,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                     className={styles.titleClose}
                     aria-label="Close"
                 >
-                    <Icon aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>

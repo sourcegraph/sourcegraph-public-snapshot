@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
+import { EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -18,19 +18,21 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { LoadingSpinner, useObservable, Icon, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
-import { parseFileBlockInput, serializeLineRange } from '../../serialize'
+import { focusEditor } from '../../codemirror-utils'
+import { parseFileBlockInput } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
+import { RepoFileSymbolLink } from '../RepoFileSymbolLink'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
@@ -42,8 +44,8 @@ interface NotebookFileBlockProps
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         ThemeProps {
-    sourcegraphSearchLanguageId: string
     isSourcegraphDotCom: boolean
+    globbing: boolean
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
@@ -64,7 +66,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         onBlockInputChange,
         ...props
     }) => {
-        const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+        const [editor, setEditor] = useState<EditorView | undefined>()
         const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
         const [fileQueryInput, setFileQueryInput] = useState(input.initialQueryInput ?? '')
         const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
@@ -89,7 +91,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             [input.filePath, input.repositoryName, input.revision, onFileSelected]
         )
 
-        const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+        const focusInput = useCallback(() => {
+            if (editor) {
+                focusEditor(editor)
+            }
+        }, [editor])
 
         const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
@@ -196,13 +202,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {showInputs && (
                     <NotebookFileBlockInputs
                         id={id}
-                        editor={editor}
-                        setEditor={setEditor}
+                        onEditorCreated={setEditor}
                         lineRange={input.lineRange}
                         onLineRangeChange={onLineRangeChange}
                         queryInput={fileQueryInput}
-                        setQueryInput={setFileQueryInput}
-                        debouncedSetQueryInput={debouncedSetFileQueryInput}
+                        setQueryInput={debouncedSetFileQueryInput}
                         onRunBlock={hideInputs}
                         onFileSelected={onFileSelected}
                         {...props}
@@ -216,6 +220,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
                     <div className={styles.highlightedFileWrapper}>
                         <CodeExcerpt
+                            className={styles.code}
                             repoName={input.repositoryName}
                             commitID={input.revision}
                             filePath={input.filePath}
@@ -243,22 +248,18 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
 
 const NotebookFileBlockHeader: React.FunctionComponent<
     React.PropsWithChildren<FileBlockInput & { fileURL: string }>
-> = ({ repositoryName, filePath, revision, lineRange, fileURL }) => (
-    <>
-        <div className="mr-2">
+> = ({ repositoryName, filePath, revision, fileURL }) => {
+    const repoAtRevisionURL = getRepositoryUrl(repositoryName, [revision])
+    return (
+        <>
             <Icon aria-hidden={true} as={FileDocumentIcon} />
-        </div>
-        <div className="d-flex flex-column">
-            <div className="mb-1 d-flex align-items-center">
-                <Link className={styles.headerFileLink} to={fileURL}>
-                    {filePath}
-                    {lineRange && <>#{serializeLineRange(lineRange)}</>}
-                </Link>
-            </div>
-            <small className="text-muted">
-                {repositoryName}
-                {revision && <>@{revision}</>}
-            </small>
-        </div>
-    </>
-)
+            <div className={styles.separator} />
+            <RepoFileSymbolLink
+                repoName={repositoryName}
+                repoURL={repoAtRevisionURL}
+                filePath={filePath}
+                fileURL={fileURL}
+            />
+        </>
+    )
+}

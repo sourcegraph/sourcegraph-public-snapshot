@@ -1,9 +1,7 @@
 import React from 'react'
 
+import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { SearchResultStyles as styles, LastSyncedIcon, ResultContainer } from '@sourcegraph/search-ui'
@@ -17,12 +15,16 @@ export interface RepoSearchResultProps {
     repoName: string
     onSelect: () => void
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
     result,
     onSelect,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -55,8 +57,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={SourceForkIcon}
                                     aria-label="Forked repository"
+                                    svgPath={mdiSourceFork}
                                 />
                             </div>
                             <div>
@@ -70,8 +72,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={ArchiveIcon}
                                     aria-label="Archived repository"
+                                    svgPath={mdiArchive}
                                 />
                             </div>
                             <div>
@@ -85,8 +87,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={LockIcon}
                                     aria-label="Private repository"
+                                    svgPath={mdiLock}
                                 />
                             </div>
                             <div>
@@ -111,6 +113,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     return (
         <ResultContainer
+            as={as}
+            index={index}
             icon={SourceRepositoryIcon}
             collapsible={false}
             defaultExpanded={true}

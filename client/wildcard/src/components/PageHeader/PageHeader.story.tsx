@@ -1,7 +1,6 @@
+import { mdiMagnify, mdiPlus } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -30,7 +29,7 @@ export const BasicHeader: Story = () => (
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
             <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
-                <Icon aria-hidden={true} as={SearchIcon} /> Button with icon
+                <Icon aria-hidden={true} svgPath={mdiMagnify} /> Button with icon
             </Button>
         }
     />
@@ -62,7 +61,7 @@ export const ComplexHeader: Story = () => (
                     Secondary
                 </Button>
                 <Button as={Link} to="/page" variant="primary" className="text-nowrap">
-                    <Icon aria-hidden={true} as={PlusIcon} /> Create
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create
                 </Button>
             </div>
         }

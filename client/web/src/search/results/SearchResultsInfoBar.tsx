@@ -349,7 +349,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     }
 
     return (
-        <div className={classNames(props.className, styles.searchResultsInfoBar)} data-testid="results-info-bar">
+        <aside
+            role="region"
+            aria-label="Search results information"
+            className={classNames(props.className, styles.searchResultsInfoBar)}
+            data-testid="results-info-bar"
+        >
             <div className={styles.row}>
                 <Button
                     className={classNames('d-flex d-lg-none', showFilters && 'active')}
@@ -380,16 +385,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         {actionItems => (
                             <>
                                 {actionItems.map(actionItem => (
-                                    <Button
+                                    <ActionItem
                                         {...props}
                                         {...actionItem}
                                         key={actionItem.action.id}
                                         showLoadingSpinnerDuringExecution={false}
                                         className="mr-2 text-decoration-none"
-                                        variant="secondary"
-                                        outline={true}
-                                        size="sm"
-                                        as={ActionItem}
+                                        actionItemStyleProps={{
+                                            actionItemVariant: 'secondary',
+                                            actionItemSize: 'sm',
+                                            actionItemOutline: true,
+                                        }}
                                     />
                                 ))}
                             </>
@@ -460,6 +466,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     )}
                 </ul>
             </div>
-        </div>
+        </aside>
     )
 }

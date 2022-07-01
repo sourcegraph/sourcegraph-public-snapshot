@@ -1,4 +1,5 @@
-import { storiesOf } from '@storybook/react'
+import { mdiCheck, mdiAlertCircle } from '@mdi/js'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -8,44 +9,51 @@ import { Icon, Text } from '@sourcegraph/wildcard'
 import { Timeline } from './Timeline'
 import { WebStory } from './WebStory'
 
-const { add } = storiesOf('web/Timeline', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className="container mt-3" style={{ maxWidth: 600 }}>
         {story()}
     </div>
-))
+)
 
-add('Basic', () => (
+const config: Meta = {
+    title: 'web/Timeline',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Basic: Story = () => (
     <WebStory>
         {() => (
             <Timeline
                 now={() => parseISO('2020-08-01T16:21:00+00:00')}
                 stages={[
                     {
-                        icon: <Icon as={CheckIcon} aria-label="Success" />,
+                        icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                         className: 'bg-success',
                         text: 'First event description',
                         date: '2020-06-15T11:15:00+00:00',
                     },
                     {
-                        icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                        icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                         className: 'bg-danger',
                         text: 'Second event description',
                         date: '2020-06-15T12:20:00+00:00',
                     },
                     {
-                        icon: <Icon as={CheckIcon} aria-label="Success" />,
+                        icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                         className: 'bg-success',
                         text: 'Third event description',
                         date: '2020-06-15T13:25:00+00:00',
                     },
                     {
-                        icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                        icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                         className: 'bg-danger',
                         text: 'Fourth event description',
                         date: '2020-06-15T14:30:00+00:00',
                     },
                     {
-                        icon: <Icon as={CheckIcon} aria-label="Success" />,
+                        icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                         className: 'bg-success',
                         text: 'Fifth event description',
                         date: '2020-06-15T15:35:00+00:00',
@@ -54,22 +62,22 @@ add('Basic', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Details', () => (
+export const Details: Story = () => (
     <WebStory>
         {() => (
             <Timeline
                 now={() => parseISO('2020-08-01T16:21:00+00:00')}
                 stages={[
                     {
-                        icon: <Icon as={CheckIcon} aria-label="Success" />,
+                        icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                         className: 'bg-success',
                         text: 'First event description',
                         date: '2020-06-15T11:15:00+00:00',
                     },
                     {
-                        icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                        icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                         className: 'bg-danger',
                         text: 'Second event description',
                         date: '2020-06-15T12:20:00+00:00',
@@ -93,9 +101,9 @@ add('Details', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Details, without durations', () => (
+export const DetailsWithoutDurations: Story = () => (
     <WebStory>
         {() => (
             <Timeline
@@ -116,7 +124,7 @@ add('Details, without durations', () => (
                         details: <Text className="m-0 p-0">HELLO THERE</Text>,
                     },
                     {
-                        icon: <Icon as={CheckIcon} aria-label="Success" />,
+                        icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                         className: 'bg-success',
                         text: 'Third event description',
                         date: '2020-06-15T13:25:00+00:00',
@@ -126,4 +134,6 @@ add('Details, without durations', () => (
             />
         )}
     </WebStory>
-))
+)
+
+DetailsWithoutDurations.storyName = 'Details, without durations'

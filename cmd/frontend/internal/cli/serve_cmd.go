@@ -189,7 +189,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
-	tracer.Init(conf.DefaultClient())
+	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

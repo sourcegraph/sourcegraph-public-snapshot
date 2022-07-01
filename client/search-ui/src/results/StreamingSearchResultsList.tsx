@@ -112,6 +112,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 case 'symbol':
                     return (
                         <FileSearchResult
+                            index={index}
                             location={location}
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
@@ -127,24 +128,29 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'commit':
                     return (
                         <CommitSearchResult
+                            index={index}
                             result={result}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'repo':
                     return (
                         <RepoSearchResult
+                            index={index}
                             result={result}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
             }
@@ -178,7 +184,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 </div>
             </div>
             <VirtualList<SearchMatch>
-                className="mt-2"
+                as="ol"
+                aria-label="Search results"
+                className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}

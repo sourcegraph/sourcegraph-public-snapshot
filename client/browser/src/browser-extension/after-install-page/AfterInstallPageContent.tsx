@@ -1,13 +1,7 @@
 import React, { VideoHTMLAttributes } from 'react'
 
+import { mdiOpenInNew, mdiGithub, mdiCheck, mdiGitlab, mdiBitbucket, mdiLock, mdiBookOpenPageVariant } from '@mdi/js'
 import classNames from 'classnames'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import LockIcon from 'mdi-react/LockIcon'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
@@ -61,7 +55,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <SourcegraphLogo className={styles.sourcegraphLogo} />
                 </Link>
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
-                    Browser extension docs <Icon as={ExternalLinkIcon} aria-hidden={true} />
+                    Browser extension docs <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                 </Link>
             </div>
 
@@ -106,26 +100,30 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                             <H2 className="mb-4">Make it work on your codehost</H2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
                                 <H3 className={classNames('mb-3', styles.codeHostTitles)}>
-                                    <Icon className={styles.codeHostLogo} as={GithubIcon} aria-hidden={true} />{' '}
+                                    <Icon className={styles.codeHostLogo} aria-hidden={true} svgPath={mdiGithub} />{' '}
                                     github.com
                                 </H3>
                                 <Text className="m-0">
-                                    <Icon as={CheckIcon} aria-hidden={true} /> No action required.Your extension works
-                                    here by default.
+                                    <Icon aria-hidden={true} svgPath={mdiCheck} /> No action required.Your extension
+                                    works here by default.
                                 </Text>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
                                 <H3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={GithubIcon} aria-hidden={true} />{' '}
+                                        <Icon className={styles.codeHostLogo} aria-hidden={true} svgPath={mdiGithub} />{' '}
                                         GitHub Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={GitlabIcon} aria-hidden={true} />{' '}
+                                        <Icon className={styles.codeHostLogo} aria-hidden={true} svgPath={mdiGitlab} />{' '}
                                         GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={BitbucketIcon} aria-hidden={true} />{' '}
+                                        <Icon
+                                            className={styles.codeHostLogo}
+                                            aria-hidden={true}
+                                            svgPath={mdiBitbucket}
+                                        />{' '}
                                         Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
@@ -168,7 +166,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                             <Text>By default, the browser extension works only for public code.</Text>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
-                                    <Icon as={LockIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiLock} />
                                 </div>
                                 <Text className="m-0 ml-3">
                                     To use the browser extension with your private repositories, you need to set up a{' '}
@@ -216,7 +214,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <H2 className="mb-4">Additional resources</H2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
-                            <Icon as={BookOpenPageVariantIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiBookOpenPageVariant} />
                         </div>
                         <Text className="m-0 ml-3">
                             Read the{' '}

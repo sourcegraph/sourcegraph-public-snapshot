@@ -10,6 +10,8 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/google/zoekt/stream"
+	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -23,7 +25,7 @@ func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolve
 
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: search.Indexed(),
+		client: search.Indexed(log.Scoped("repositoryTextSearchIndexResolver", "")),
 	}
 }
 
@@ -239,5 +241,5 @@ func (r *skippedIndexedResolver) Query() string {
 	// match. This is important because the indexed content (NOT-INDEXED: <reason>)
 	// is different from the on-disk content served by gitserver which leads to
 	// broken highlighting and problems with rendering content of binary files.
-	return fmt.Sprintf("r:^%s$@%s type:file select:file index:only patternType:regexp ^NOT-INDEXED:", r.repo.Name(), r.branch)
+	return fmt.Sprintf("r:^%s$@%s type:file select:file index:only patternType:regexp ^NOT-INDEXED:", regexp.QuoteMeta(r.repo.Name()), r.branch)
 }

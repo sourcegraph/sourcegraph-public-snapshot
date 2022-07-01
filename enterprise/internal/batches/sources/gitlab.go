@@ -73,7 +73,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 }
 
 func (s GitLabSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+	return GitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

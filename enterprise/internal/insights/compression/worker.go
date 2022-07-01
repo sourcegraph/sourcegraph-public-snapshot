@@ -18,11 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,7 +33,7 @@ type RepoStore interface {
 
 type CommitIndexer struct {
 	db                database.DB
-	limiter           *rate.Limiter
+	limiter           *ratelimit.InstrumentedLimiter
 	allReposIterator  func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
 	getCommits        func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
 	commitStore       CommitStore
@@ -62,7 +63,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 			Help:      "Counter of the number of repositories analyzed in the commit indexer.",
 		})
 
-	limiter := rate.NewLimiter(10, 1)
+	limiter := ratelimit.NewInstrumentedLimiter("CommitIndexer", rate.NewLimiter(10, 1))
 
 	operations := newOperations(observationContext)
 
@@ -206,7 +207,7 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 		before = until.Format(time.RFC3339)
 	}
 
-	return git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as

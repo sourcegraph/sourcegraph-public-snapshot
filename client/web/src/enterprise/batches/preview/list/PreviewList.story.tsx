@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { of, Observable } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -11,17 +11,18 @@ import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPrevie
 import { PreviewList } from './PreviewList'
 import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 
-const { add } = storiesOf('web/batches/preview', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-        },
-    })
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview',
+    decorators: [decorator],
+}
+
+export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('PreviewList', () => {
+export const PreviewListStory: Story = () => {
     const publicationStateSet = boolean('publication state set by spec file', false)
 
     const nodes: ChangesetApplyPreviewFields[] = [
@@ -63,4 +64,12 @@ add('PreviewList', () => {
             )}
         </WebStory>
     )
-})
+}
+
+PreviewListStory.parameters = {
+    chromatic: {
+        viewports: [320, 576, 978, 1440],
+    },
+}
+
+PreviewListStory.storyName = 'PreviewList'

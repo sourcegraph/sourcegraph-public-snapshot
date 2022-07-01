@@ -14,7 +14,7 @@ import (
 
 // NewJVMPackagesSource returns a new MavenSource from the given external
 // service.
-func NewJVMPackagesSource(svc *types.ExternalService) (*DependenciesSource, error) {
+func NewJVMPackagesSource(svc *types.ExternalService) (*PackagesSource, error) {
 	var c schema.JVMPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -25,7 +25,7 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*DependenciesSource, erro
 		configDeps = c.Maven.Dependencies
 	}
 
-	return &DependenciesSource{
+	return &PackagesSource{
 		svc:        svc,
 		configDeps: configDeps,
 		scheme:     dependencies.JVMPackagesScheme,
@@ -39,10 +39,10 @@ type jvmPackagesSource struct {
 	config *schema.JVMPackagesConnection
 }
 
-var _ dependenciesSource = &jvmPackagesSource{}
+var _ packagesSource = &jvmPackagesSource{}
 
-func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	mavenDependency, err := reposource.ParseMavenDependency(name + ":" + version)
+func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+	mavenDependency, err := reposource.ParseMavenPackageVersion(name + ":" + version)
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +54,10 @@ func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (repo
 	return mavenDependency, nil
 }
 
-func (jvmPackagesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseMavenDependency(dep)
+func (jvmPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+	return reposource.ParseMavenPackageVersion(dep)
 }
 
-func (jvmPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParseMavenDependencyFromRepoName(repoName)
+func (jvmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+	return reposource.ParseMavenPackageFromRepoName(repoName)
 }

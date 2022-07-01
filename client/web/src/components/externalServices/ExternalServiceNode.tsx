@@ -1,9 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiAccount, mdiCog, mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -53,7 +51,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                 <div>
                     {node.namespace && (
                         <>
-                            <Icon as={AccountIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiAccount} />
                             <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
                         </>
                     )}
@@ -68,7 +66,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Edit
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
                     </Button>{' '}
                     <Button
                         className="test-delete-external-service-button"
@@ -79,7 +77,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                         variant="danger"
                         size="sm"
                     >
-                        <Icon as={DeleteIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </div>
             </div>
