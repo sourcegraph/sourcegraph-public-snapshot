@@ -1,9 +1,8 @@
 import * as React from 'react'
 
+import { mdiClipboardPulseOutline, mdiInformationOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
@@ -51,7 +50,13 @@ export const StreamingProgressCount: React.FunctionComponent<
                 )}
                 data-testid="streaming-progress-count"
             >
-                <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
+                {/*
+                    Span wrapper needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
+                    Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+                 */}
+                <span className="position-relative">
+                    <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
+                </span>
                 <span aria-hidden={true}>{content}</span>
                 {progress.repositoriesCount !== undefined && (
                     <Tooltip
@@ -63,7 +68,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                     >
                         <Icon
                             className="ml-1"
-                            as={InformationOutlineIcon}
+                            svgPath={mdiInformationOutline}
                             tabIndex={0}
                             aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                                 'repository',
@@ -77,7 +82,7 @@ export const StreamingProgressCount: React.FunctionComponent<
             {showTrace && progress.trace && (
                 <small className="d-flex ml-2">
                     <Link to={progress.trace}>
-                        <Icon aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
+                        <Icon aria-hidden={true} className="mr-2" svgPath={mdiClipboardPulseOutline} />
                         View trace
                     </Link>
                 </small>

@@ -28,15 +28,10 @@ var goGenerateLinter = &linter{
 			return report.Err
 		}
 
-		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code -- . :!go.sum")).String()
+		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code --color=always -- . :!go.sum")).String()
 		if err != nil && strings.TrimSpace(diffOutput) != "" {
 			out.WriteWarningf("Uncommitted changes found after running go generate:")
-			if err := out.WriteCode("diff", diffOutput); err != nil {
-				// Simply write the output
-				out.Writef("Failed to pretty print diff: %s, dumping output instead:", err.Error())
-				out.Write(diffOutput)
-			}
-
+			out.Write(strings.TrimSpace(diffOutput))
 			// Reset repo state
 			root.Run(run.Bash(ctx, "git add . && git reset HEAD --hard")).Wait()
 		}

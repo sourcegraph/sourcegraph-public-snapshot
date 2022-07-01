@@ -110,6 +110,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		if c.Diff.Has(changed.DockerImages) {
+			// Build and scan docker images
 			testBuilds := operations.NewNamedSet("Test builds")
 			scanBuilds := operations.NewNamedSet("Scan test builds")
 			for _, image := range images.SourcegraphDockerImages {

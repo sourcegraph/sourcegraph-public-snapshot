@@ -1,5 +1,5 @@
 import { select } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
@@ -10,13 +10,19 @@ import { BatchSpecContextProvider } from '../BatchSpecContext'
 
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/ReadOnlyBatchSpecForm', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
         {story()}
     </div>
-))
+)
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute/ReadOnlyBatchSpecForm',
+    decorators: [decorator],
+}
 
-add('while executing', () => (
+export default config
+
+export const Executing: Story = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -33,9 +39,11 @@ add('while executing', () => (
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)
 
-add('after execution finishes', () => (
+Executing.storyName = 'while executing'
+
+export const ExecutionFinished: Story = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -58,9 +66,11 @@ add('after execution finishes', () => (
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)
 
-add('for a locally-executed spec', () => (
+ExecutionFinished.storyName = 'after execution finishes'
+
+export const LocallyExecutedSpec: Story = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -71,4 +81,6 @@ add('for a locally-executed spec', () => (
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)
+
+LocallyExecutedSpec.storyName = 'for a locally-executed spec'

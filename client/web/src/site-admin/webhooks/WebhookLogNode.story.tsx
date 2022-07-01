@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 
 import { Container } from '@sourcegraph/wildcard'
@@ -10,17 +10,23 @@ import { WebhookLogNode } from './WebhookLogNode'
 
 import gridStyles from './WebhookLogPage.module.scss'
 
-const { add } = storiesOf('web/site-admin/webhooks/WebhookLogNode', module)
-    .addDecorator(story => (
-        <Container>
-            <div className={classNames('p-3', 'container', gridStyles.logs)}>{story()}</div>
-        </Container>
-    ))
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <Container>
+        <div className={classNames('p-3', 'container', gridStyles.logs)}>{story()}</div>
+    </Container>
+)
+
+const config: Meta = {
+    title: 'web/site-admin/webhooks/WebhookLogNode',
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 // Most of the components of WebhookLogNode are more thoroughly tested elsewhere
 // in the storybook, so this is just a limited number of cases to ensure the
@@ -30,7 +36,7 @@ const { add } = storiesOf('web/site-admin/webhooks/WebhookLogNode', module)
 //
 // Some bonus knobs are provided for the tinkerers.
 
-add('collapsed', () => (
+export const Collapsed: Story = () => (
     <WebStory>
         {() => (
             <WebhookLogNode
@@ -42,10 +48,16 @@ add('collapsed', () => (
             />
         )}
     </WebStory>
-))
-add('expanded request', () => (
+)
+
+export const ExpandedRequest: Story = () => (
     <WebStory>{() => <WebhookLogNode node={webhookLogNode()} initiallyExpanded={true} />}</WebStory>
-))
-add('expanded response', () => (
+)
+
+ExpandedRequest.storyName = 'expanded request'
+
+export const ExpandedResponse: Story = () => (
     <WebStory>{() => <WebhookLogNode node={webhookLogNode()} initiallyExpanded={true} initialTabIndex={1} />}</WebStory>
-))
+)
+
+ExpandedResponse.storyName = 'expanded response'

@@ -487,12 +487,22 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                             .trim() === ''
                 )
             ) {
-                outputLines.push('stderr: This command did not produce any logs')
+                outputLines.push('stdout: This command did not produce any output')
             }
+
             if (step.exitCode !== null) {
                 outputLines.push(`\nstdout: \nstdout: Command exited with status ${step.exitCode}`)
             }
+
+            if (step.exitCode === 0) {
+                outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
+            }
+
+            if (step.exitCode !== null && step.exitCode !== 0) {
+                outputLines.push(`stderr: Command failed with status ${step.exitCode}`)
+            }
         }
+
         return outputLines
     }, [step.exitCode, step.outputLines])
 
@@ -564,7 +574,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         <ul className="mb-0">
                                             {step.outputVariables?.map(variable => (
                                                 <li key={variable.name}>
-                                                    {variable.name}: {variable.value}
+                                                    {variable.name}: {JSON.stringify(variable.value)}
                                                 </li>
                                             ))}
                                         </ul>

@@ -11,8 +11,18 @@ export enum QueryChangeSource {
      * Prevents fetching/showing suggestions on every component update.
      */
     userInput,
-    searchReference,
-    searchTypes,
+}
+
+/**
+ * These hints instruct the editor to perform certain actions alongside updating
+ * its value.
+ */
+export enum EditorHint {
+    Focus = 1,
+    /**
+     * Showing suggestions also implies focusing the input.
+     */
+    ShowSuggestions = 2 | Focus,
 }
 
 /**
@@ -21,23 +31,21 @@ export enum QueryChangeSource {
  */
 export type QueryState =
     | {
-          /** Used to know how a change comes to be. This needs to be defined as
-           * optional so that unknown sources can make changes. */
-          changeSource?: QueryChangeSource.userInput
+          changeSource: QueryChangeSource.userInput
           query: string
       }
     | {
-          /** Changes from the search side bar */
-          changeSource: QueryChangeSource.searchReference | QueryChangeSource.searchTypes
+          changeSource?: undefined
           query: string
+          /** A bit field to instruct the editor to perform this action in
+           * response to updating its state
+           */
+          hint?: EditorHint
           /** The query input will apply this selection */
-          selectionRange: CharacterRange
-          /** Ensure that newly added or updated filters are completely visible in
-           * the query input. */
-          revealRange: CharacterRange
-          /** Whether or not to trigger the completion popover. The popover is
-           * triggered at the end of the selection. */
-          showSuggestions?: boolean
+          selectionRange?: CharacterRange
+          /** Can be used to ensure that newly added or updated filters are
+           * completely visible in the query input. */
+          revealRange?: CharacterRange
       }
 
 export interface SubmitSearchParameters

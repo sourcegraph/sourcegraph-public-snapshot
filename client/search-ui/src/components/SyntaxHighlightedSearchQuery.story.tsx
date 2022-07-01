@@ -1,15 +1,20 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Text } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
-const { add } = storiesOf('search-ui/SyntaxHighlightedSearchQuery', module).addParameters({
-    chromatic: { viewports: [480] },
-})
+const config: Meta = {
+    title: 'search-ui/SyntaxHighlightedSearchQuery',
+    parameters: {
+        chromatic: { viewports: [480] },
+    },
+}
 
-add('SyntaxHighlightedSearchQuery', () => (
+export default config
+
+export const SyntaxHighlightedSearchQueryStory: Story = () => (
     <BrandedStory>
         {() => (
             <Text>
@@ -21,4 +26,6 @@ add('SyntaxHighlightedSearchQuery', () => (
             </Text>
         )}
     </BrandedStory>
-))
+)
+
+SyntaxHighlightedSearchQueryStory.storyName = 'SyntaxHighlightedSearchQuery'

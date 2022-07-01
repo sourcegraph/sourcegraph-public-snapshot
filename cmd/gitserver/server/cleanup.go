@@ -908,17 +908,11 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-// maybeCorruptStderrRe matches stderr lines from git which indicate there
-// might be repository corruption.
-//
-// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
-// context.
-var maybeCorruptStderrRe = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
-
 func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
-	if !maybeCorruptStderrRe.MatchString(stderr) {
+	if !stdErrIndicatesCorruption(stderr) {
 		return
 	}
+
 	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
 
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
@@ -930,6 +924,28 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
 }
+
+// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
+// that there might be repository corruption.
+func stdErrIndicatesCorruption(stderr string) bool {
+	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
+}
+
+var (
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// that a repository's packfiles or commit objects might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+	// context.
+	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// git's supplemental commit-graph might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
+	// context.
+	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
+)
 
 // gitIsNonBareBestEffort returns true if the repository is not a bare
 // repo. If we fail to check or the repository is bare we return false.

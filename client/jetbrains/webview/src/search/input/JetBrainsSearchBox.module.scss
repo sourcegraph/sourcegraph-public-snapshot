@@ -142,28 +142,4 @@
             float: right;
         }
     }
-
-    /* 
-        As we use the default `suggestLineHeight` value for the Monaco editor rendered by
-        the JetBrains SearchBox, override styles defined by MonacoQueryInput to ensure that
-        suggestion item content fits the container.
-    */
-    :global(.monaco-editor) {
-        width: 0 !important;
-
-        :global(.suggest-widget)
-            :global(.monaco-list)
-            :global(.monaco-list-row):global(.focused):global(.string-label)
-            > :global(.contents)
-            > :global(.main) {
-            max-height: 100%;
-
-            > :global(.right) {
-                &::after {
-                    height: 100%;
-                    margin-top: 0;
-                }
-            }
-        }
-    }
 }

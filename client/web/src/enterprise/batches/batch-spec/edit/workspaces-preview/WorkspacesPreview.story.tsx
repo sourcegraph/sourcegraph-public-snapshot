@@ -1,5 +1,5 @@
 import { boolean, select } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -22,12 +22,18 @@ import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
 
-const { add } = storiesOf(
-    'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview',
-    module
-).addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
+const decorator: DecoratorFn = story => (
+    <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>
+)
 
-add('unstarted', () => (
+const config: Meta = {
+    title: 'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Unstarted: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_CONNECTION_MOCKS)}>
@@ -45,9 +51,9 @@ add('unstarted', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('unstarted, with cached connection result', () => (
+export const UnstartedWithCachedConnectionResult: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -65,9 +71,11 @@ add('unstarted, with cached connection result', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('queued/in progress', () => {
+UnstartedWithCachedConnectionResult.storyName = 'unstarted, with cached connection result'
+
+export const QueuedInProgress: Story = () => {
     const inProgressResolution = mockWorkspaceResolutionStatus(
         select(
             'Status',
@@ -122,9 +130,11 @@ add('queued/in progress', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('queued/in progress, with cached connection result', () => {
+QueuedInProgress.storyName = 'queued/in progress'
+
+export const QueuedInProgressWithCachedConnectionResult: Story = () => {
     const inProgressResolution = mockWorkspaceResolutionStatus(
         select(
             'Status',
@@ -175,9 +185,11 @@ add('queued/in progress, with cached connection result', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('failed/errored', () => {
+QueuedInProgressWithCachedConnectionResult.storyName = 'queued/in progress, with cached connection result'
+
+export const FailedErrored: Story = () => {
     const failedResolution = mockWorkspaceResolutionStatus(
         select(
             'Status',
@@ -229,9 +241,11 @@ add('failed/errored', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('failed/errored, with cached connection result', () => {
+FailedErrored.storyName = 'failed/errored'
+
+export const FailedErroredWithCachedConnectionResult: Story = () => {
     const failedResolution = mockWorkspaceResolutionStatus(
         select(
             'Status',
@@ -283,9 +297,11 @@ add('failed/errored, with cached connection result', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('succeeded', () => (
+FailedErroredWithCachedConnectionResult.storyName = 'failed/errored, with cached connection result'
+
+export const Succeeded: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -311,9 +327,9 @@ add('succeeded', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('read-only', () => (
+export const ReadOnly: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -327,4 +343,6 @@ add('read-only', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ReadOnly.storyName = 'read-only'

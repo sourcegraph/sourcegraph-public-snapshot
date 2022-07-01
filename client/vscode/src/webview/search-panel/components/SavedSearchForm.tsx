@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
@@ -168,8 +168,8 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                 className="position-absolute cursor-pointer"
                 style={{ top: '1rem', right: '1rem' }}
                 onClick={props.onComplete}
-                as={CloseIcon}
                 aria-label="Close"
+                svgPath={mdiClose}
             />
             <Form onSubmit={handleSubmit}>
                 <Container className={styles.container}>

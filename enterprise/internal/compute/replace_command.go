@@ -57,7 +57,12 @@ func (c *Replace) Run(ctx context.Context, db database.DB, r result.Match) (Resu
 		if err != nil {
 			return nil, err
 		}
-		return replace(ctx, content, c.SearchPattern, c.ReplacePattern)
+
+		text, err := replace(ctx, content, c.SearchPattern, c.ReplacePattern)
+		if err != nil {
+			return nil, err
+		}
+		return enrichTextWithRepoMetadata(text, r), nil
 	}
 	return nil, nil
 }

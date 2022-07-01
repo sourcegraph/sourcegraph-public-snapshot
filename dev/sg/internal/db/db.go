@@ -7,12 +7,17 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getFSForPath(path string) func() (fs.FS, error) {
+func GetFSForPath(path string) func() (fs.FS, error) {
 	return func() (fs.FS, error) {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
+			if errors.Is(err, root.ErrNotInsideSourcegraph) {
+				return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
+			}
+
 			return nil, err
 		}
 
@@ -45,7 +50,7 @@ var (
 			"out_of_band_migrations",
 			"lsif_configuration_policies",
 		},
-		FS: getFSForPath("frontend"),
+		FS: GetFSForPath("frontend"),
 	}
 
 	codeIntelDatabase = Database{
@@ -58,13 +63,13 @@ var (
 			"lsif_data_apidocs_num_search_results_private",
 			"lsif_data_apidocs_num_search_results_public",
 		},
-		FS: getFSForPath("codeintel"),
+		FS: GetFSForPath("codeintel"),
 	}
 
 	codeInsightsDatabase = Database{
 		Name:            "codeinsights",
 		MigrationsTable: "codeinsights_schema_migrations",
-		FS:              getFSForPath("codeinsights"),
+		FS:              GetFSForPath("codeinsights"),
 	}
 
 	databases = []Database{
