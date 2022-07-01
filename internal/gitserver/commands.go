@@ -361,7 +361,7 @@ func (c *ClientImplementor) ReadDir(
 	if path != "" {
 		// Trailing slash is necessary to ls-tree under the dir (not just
 		// to list the dir's tree entry in its parent dir).
-		path = filepath.Clean(util.Rel(path)) + "/"
+		path = filepath.Clean(rel(path)) + "/"
 	}
 	files, err := c.lsTree(ctx, repo, commit, path, recurse)
 
@@ -446,7 +446,7 @@ func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPerm
 		return nil, err
 	}
 
-	path = filepath.Clean(util.Rel(path))
+	path = filepath.Clean(rel(path))
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
@@ -1355,7 +1355,7 @@ func (c *ClientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	span.SetTag("Name", name)
 	defer span.Finish()
 
-	name = util.Rel(name)
+	name = rel(name)
 	br, err := c.newBlobReader(ctx, repo, commit, name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
@@ -1449,7 +1449,7 @@ func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 		return nil, err
 	}
 
-	path = util.Rel(path)
+	path = rel(path)
 
 	fi, err := c.LStat(ctx, checker, repo, commit, path)
 	if err != nil {
@@ -2580,4 +2580,17 @@ func (c *ClientImplementor) showRef(ctx context.Context, repo api.RepoName, args
 		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
 	}
 	return refs, nil
+}
+
+// rel strips the leading "/" prefix from the path string, effectively turning
+// an absolute path into one relative to the root directory. A path that is just
+// "/" is treated specially, returning just ".".
+//
+// The elements in a file path are separated by slash ('/', U+002F) characters,
+// regardless of host operating system convention.
+func rel(path string) string {
+	if path == "/" {
+		return "."
+	}
+	return strings.TrimPrefix(path, "/")
 }
