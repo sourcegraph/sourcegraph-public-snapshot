@@ -412,7 +412,7 @@ describe('Repository', () => {
                 })
             }, 'Blob')
 
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             await driver.assertWindowLocation(`/${repositoryName}/-/blob/${clickedFileName}`)
 
             // Assert breadcrumb order
@@ -495,7 +495,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -528,7 +528,9 @@ describe('Repository', () => {
                 "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
             )
 
-            const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
+            const blobContent = await driver.page.evaluate(
+                () => document.querySelector('[data-testid="repo-blob"]')?.textContent
+            )
             assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
         })
 
@@ -560,7 +562,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -587,7 +589,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
