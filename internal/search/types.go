@@ -316,6 +316,7 @@ type RepoOptions struct {
 	MinusRepoFilters []string
 	Dependencies     []string
 	Dependents       []string
+	Description      []string
 
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
@@ -412,6 +413,10 @@ func (op *RepoOptions) String() string {
 		fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
 	} else {
 		b.WriteString("MinusRepoFilters: []\n")
+	}
+
+	if len(op.Description) > 0 {
+		fmt.Fprintf(&b, "Description: %q\n", op.Description)
 	}
 
 	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)

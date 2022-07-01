@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -390,6 +391,16 @@ func (p Parameters) Dependents() (dependents []string) {
 		}
 	})
 	return dependents
+}
+
+func (p Parameters) Description() (descriptionPatterns []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldRepo && name == "description" {
+			split := strings.Split(value, " ")
+			descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
+		}
+	})
+	return descriptionPatterns
 }
 
 func (p Parameters) MaxResults(defaultLimit int) int {
