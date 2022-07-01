@@ -37,6 +37,7 @@ type InsightViewSeries struct {
 	SeriesSortMode                *SeriesSortMode
 	SeriesSortDirection           *SeriesSortDirection
 	SeriesLimit                   *int32
+	GroupBy                       *string
 	BackfillAttempts              int32
 }
 
@@ -101,6 +102,7 @@ type InsightSeries struct {
 	GeneratedFromCaptureGroups bool
 	JustInTime                 bool
 	GenerationMethod           GenerationMethod
+	GroupBy                    *string
 	BackfillAttempts           int32
 }
 

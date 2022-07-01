@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { drop } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { useLocation } from 'react-router'
 
 import { Alert, Button, Icon } from '@sourcegraph/wildcard'
@@ -60,7 +60,7 @@ export const OrgMemberNotification: React.FunctionComponent<React.PropsWithChild
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>{message}</div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} aria-hidden={true} />
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )
