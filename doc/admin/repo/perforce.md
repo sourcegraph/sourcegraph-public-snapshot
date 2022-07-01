@@ -47,7 +47,7 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 
 Notable things about depot syncing:
 
-- Depot syncing using the `git p4` command to convert Perforce depots into git repositories.
+- Depot syncing uses the `git p4` command to convert Perforce depots into git repositories.
 - It takes approximately one second to import one Perforce change into a Git commit, this translates to sync a Perforce depot with 1000 changes takes approximately 1000 seconds, which is about 17 minutes. It is possible to limit the maximum changes to import using `maxChanges` config option.
 - Rename of a Perforce depot will cause a re-import of the depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option.
 
