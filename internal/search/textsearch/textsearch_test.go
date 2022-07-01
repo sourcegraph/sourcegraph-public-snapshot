@@ -403,7 +403,10 @@ func RunRepoSubsetTextSearch(
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err := zoektJob.Run(ctx, job.RuntimeClients{
+				Logger: logger,
+				Zoekt:  zoekt,
+			}, agg)
 			return err
 		})
 	}
@@ -417,7 +420,11 @@ func RunRepoSubsetTextSearch(
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, job.RuntimeClients{SearcherURLs: searcherURLs, Zoekt: zoekt}, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{
+			Logger:       logger,
+			SearcherURLs: searcherURLs,
+			Zoekt:        zoekt,
+		}, agg)
 		return err
 	})
 
