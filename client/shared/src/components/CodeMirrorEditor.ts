@@ -61,13 +61,25 @@ export function useCodeMirror(
 }
 
 /**
- * Extension for setting the height of the editor to a specific value.
+ * Sets the height and/or max height of the editor, with corresponding overflow
+ * behavior. The values can be any valid CSS unit.
  * Taken from https://codemirror.net/examples/styling/#overflow-and-scrolling
  */
-export function fixedHeightEditor(height: string): Extension {
+export function editorHeight({
+    height = null,
+    maxHeight = null,
+}: {
+    height?: string | null
+    maxHeight?: string | null
+}): Extension {
     return EditorView.theme({
-        '&': { height },
-        '.cm-scroller': { overflow: 'auto' },
+        '&': {
+            height,
+            maxHeight,
+        },
+        '.cm-scroller': {
+            overflow: 'auto',
+        },
     })
 }
 

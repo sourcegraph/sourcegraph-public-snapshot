@@ -9,7 +9,7 @@ import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
 import {
-    fixedHeightEditor,
+    editorHeight,
     useCodeMirror,
     defaultEditorTheme,
     jsonHighlighting,
@@ -49,7 +49,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 EditorView.editable.of(false),
                 json(),
                 foldGutter(),
-                fixedHeightEditor('300px'),
+                editorHeight({ height: '300px' }),
                 // This seems to be necessary to have properly rounded corners on
                 // the right side.
                 EditorView.theme({
