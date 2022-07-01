@@ -41,7 +41,7 @@ func (squirrel *SquirrelService) getDefStarlarkString(ctx context.Context, node 
 		}
 
 		if len(match.Captures) < 3 {
-			panic(match.Captures)
+			return nil, errors.Newf("expected 3 captures in starlark query, got %d", len(match.Captures))
 		}
 		path := getStringContents(swapNode(node, match.Captures[1].Node))
 		symbol := getStringContents(swapNode(node, match.Captures[2].Node))
@@ -59,7 +59,7 @@ func (squirrel *SquirrelService) getDefStarlarkString(ctx context.Context, node 
 		filename := pathComponents[1]
 
 		if !strings.HasPrefix(directory, "//") {
-			panic(directory)
+			return nil, errors.Newf("expected starlark directory to be prefixed with \"//\", got %q", directory)
 		}
 
 		destinationRepoCommitPath := types.RepoCommitPath{
