@@ -16,7 +16,6 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -78,7 +77,7 @@ import (
 // insights across all user settings, and determine for which dates they do not have data and attempt
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
-func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs featureflag.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_historical_enqueuer",
@@ -343,7 +342,7 @@ type historicalEnqueuer struct {
 	insightsStore         store.Interface
 	dataSeriesStore       store.DataSeriesStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
-	featureFlagStore      featureflag.Store
+	featureFlagStore      database.FeatureFlagStore
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	repoIterator func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
@@ -371,8 +370,13 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// are filtered at view time of an insight.
 	ctx = actor.WithInternalActor(ctx)
 
-	ctx = featureflag.WithFlags(ctx, h.featureFlagStore)
-	if featureflag.FromContext(ctx).GetBoolOr("code_insights_deprecate_jit", true) {
+	convertJITInsights := true
+	deprecateJITInsights, _ := h.featureFlagStore.GetFeatureFlag(ctx, "code_insights_deprecate_jit")
+	if deprecateJITInsights != nil {
+		convertJITInsights = deprecateJITInsights.Bool.Value
+	}
+
+	if convertJITInsights {
 		h.convertJustInTimeInsights(ctx)
 	}
 
