@@ -13,14 +13,14 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphProjectService implements PersistentStateComponent<SourcegraphProjectService> {
     public String url;
+    public String accessToken;
     public String defaultBranch;
     public String remoteUrlReplacements;
+    public boolean isGlobbingEnabled;
     public String lastSearchQuery;
     public boolean lastSearchCaseSensitive;
     public String lastSearchPatternType;
     public String lastSearchContextSpec;
-    public boolean isGlobbingEnabled;
-    public String accessToken;
 
     @NotNull
     public static SourcegraphProjectService getInstance(@NotNull Project project) {
@@ -33,6 +33,11 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     }
 
     @Nullable
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    @Nullable
     public String getDefaultBranchName() {
         return defaultBranch;
     }
@@ -40,6 +45,10 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Nullable
     public String getRemoteUrlReplacements() {
         return remoteUrlReplacements;
+    }
+
+    public boolean isGlobbingEnabled() {
+        return this.isGlobbingEnabled;
     }
 
     @Nullable
@@ -51,15 +60,6 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
         }
     }
 
-    public boolean isGlobbingEnabled() {
-        return this.isGlobbingEnabled;
-    }
-
-    @Nullable
-    public String getAccessToken() {
-        return accessToken;
-    }
-
     @Nullable
     @Override
     public SourcegraphProjectService getState() {
@@ -69,13 +69,13 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Override
     public void loadState(@NotNull SourcegraphProjectService settings) {
         this.url = settings.url;
+        this.accessToken = settings.accessToken;
         this.defaultBranch = settings.defaultBranch;
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
+        this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.lastSearchQuery = settings.lastSearchQuery != null ? settings.lastSearchQuery : "";
         this.lastSearchCaseSensitive = settings.lastSearchCaseSensitive;
         this.lastSearchPatternType = settings.lastSearchPatternType != null ? settings.lastSearchPatternType : "literal";
         this.lastSearchContextSpec = settings.lastSearchContextSpec != null ? settings.lastSearchContextSpec : "global";
-        this.isGlobbingEnabled = settings.isGlobbingEnabled;
-        this.accessToken = settings.accessToken;
     }
 }

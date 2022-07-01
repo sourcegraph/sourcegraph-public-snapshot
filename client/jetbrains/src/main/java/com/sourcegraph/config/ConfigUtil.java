@@ -17,11 +17,25 @@ public class ConfigUtil {
     public static JsonObject getConfigAsJson(@NotNull Project project) {
         JsonObject configAsJson = new JsonObject();
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
-        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
+        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
+        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
         return configAsJson;
+    }
+
+    @NotNull
+    public static String getSourcegraphUrl(@NotNull Project project) {
+        String url = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        if (url == null || url.length() == 0) {
+            return UserLevelConfig.getSourcegraphUrl();
+        }
+        return url.endsWith("/") ? url : url + "/";
+    }
+
+    @Nullable
+    public static String getAccessToken(Project project) {
+        return getProjectLevelConfig(project).getAccessToken();
     }
 
     @Nullable
@@ -42,13 +56,28 @@ public class ConfigUtil {
         return replacements;
     }
 
+    public static boolean isGlobbingEnabled(@NotNull Project project) {
+        return getProjectLevelConfig(project).isGlobbingEnabled();
+    }
+
+    @Nullable
+    public static Search getLastSearch(@NotNull Project project) {
+        return getProjectLevelConfig(project).getLastSearch();
+    }
+
+    public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
+        SourcegraphProjectService settings = getProjectLevelConfig(project);
+        settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
+        settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
+        settings.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
+        settings.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
+    }
+
     @NotNull
-    public static String getSourcegraphUrl(@NotNull Project project) {
-        String url = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
-        if (url == null || url.length() == 0) {
-            return UserLevelConfig.getSourcegraphUrl();
-        }
-        return url.endsWith("/") ? url : url + "/";
+    @Contract(pure = true)
+    public static String getPluginVersion() {
+        IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
+        return plugin != null ? plugin.getVersion() : "unknown";
     }
 
     @Nullable
@@ -66,35 +95,6 @@ public class ConfigUtil {
 
     public static void setInstallEventLogged(boolean value) {
         SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
-    }
-
-    @Nullable
-    public static Search getLastSearch(@NotNull Project project) {
-        return getProjectLevelConfig(project).getLastSearch();
-    }
-
-    public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
-        SourcegraphProjectService settings = getProjectLevelConfig(project);
-        settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
-        settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
-        settings.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
-        settings.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
-    }
-
-    public static boolean isGlobbingEnabled(@NotNull Project project) {
-        return getProjectLevelConfig(project).isGlobbingEnabled();
-    }
-
-    @Nullable
-    public static String getAccessToken(Project project) {
-        return getProjectLevelConfig(project).getAccessToken();
-    }
-
-    @NotNull
-    @Contract(pure = true)
-    public static String getPluginVersion() {
-        IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
-        return plugin != null ? plugin.getVersion() : "unknown";
     }
 
     @NotNull
