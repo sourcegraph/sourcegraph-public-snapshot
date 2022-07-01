@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiAlertCircle, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Button, Badge, Icon, H3 } from '@sourcegraph/wildcard'
@@ -130,15 +129,15 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
             )}
             <div className="align-self-center">
                 {serviceConfig.pending ? (
-                    <Icon className="mb-0 mr-2 text-info" as={AlertCircleIcon} aria-label="Pending" />
+                    <Icon className="mb-0 mr-2 text-info" aria-label="Pending" svgPath={mdiAlertCircle} />
                 ) : service?.warning || service?.lastSyncError ? (
                     <Icon
                         className="mb-0 mr-2 text-warning"
-                        as={AlertCircleIcon}
                         aria-label="Warning or last sync error"
+                        svgPath={mdiAlertCircle}
                     />
                 ) : service?.id ? (
-                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} aria-label="Success" />
+                    <Icon className="mb-0 mr-2 text-success" aria-label="Success" svgPath={mdiCheckCircle} />
                 ) : (
                     <Icon
                         className={classNames('mb-0 mr-2', styles.iconDashed)}

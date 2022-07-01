@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 
 import { ApolloError } from '@apollo/client'
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -239,7 +239,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 <div className={styles.header}>
                     <H3 className="mb-0">Find file</H3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
-                        <Icon className={styles.closeIcon} as={CloseIcon} aria-hidden={true} />
+                        <Icon className={styles.closeIcon} aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
                 <Input

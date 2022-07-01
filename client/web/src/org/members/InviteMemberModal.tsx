@@ -1,6 +1,7 @@
 import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
@@ -141,7 +142,7 @@ export const InvitedNotification: React.FunctionComponent<React.PropsWithChildre
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} aria-hidden={true} />
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )

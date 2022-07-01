@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -83,7 +82,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                 data-tooltip="Show sidebar"
                 aria-label="Show sidebar"
             >
-                <Icon as={ChevronDoubleRightIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
             </Button>
         )
     }
@@ -113,7 +112,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                                 data-placement="right"
                                 aria-label="Hide sidebar"
                             >
-                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} aria-hidden={true} />
+                                <Icon className={styles.closeIcon} aria-hidden={true} svgPath={mdiChevronDoubleLeft} />
                             </Button>
                         }
                     >

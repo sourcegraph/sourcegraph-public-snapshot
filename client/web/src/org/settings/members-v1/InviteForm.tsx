@@ -1,9 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiPlus, mdiEmailOpenOutline, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import AddIcon from 'mdi-react/AddIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import { map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -132,7 +130,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {loading === 'addUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon as={AddIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                                 )}{' '}
                                 Add member
                             </Button>
@@ -153,7 +151,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {loading === 'inviteUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon as={EmailOpenOutlineIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiEmailOpenOutline} />
                                 )}{' '}
                                 {emailInvitesEnabled
                                     ? viewerCanAddUserToOrganization
@@ -275,7 +273,7 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             <CopyableText label="Invitation URL" text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} aria-hidden={true} />
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )
