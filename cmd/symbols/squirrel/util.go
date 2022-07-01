@@ -349,9 +349,6 @@ func snippet(node *Node) string {
 	if end > uint32(len(node.Contents)) {
 		end = uint32(len(node.Contents))
 	}
-	if end < start {
-		start = end
-	}
 	ret := string(node.Contents[start:end])
 	ret = strings.ReplaceAll(ret, "\n", "\\n")
 	ret = strings.ReplaceAll(ret, "\t", "\\t")
