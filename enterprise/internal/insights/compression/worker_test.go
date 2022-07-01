@@ -395,12 +395,88 @@ func Test_IsEmptyRepoError(t *testing.T) {
 	}
 }
 
-func Test_getCommits_EmptyRepoError(t *testing.T) {
-
-}
-
 func TestCommitIndexer_EmptyRepoError(t *testing.T) {
+	ctx := context.Background()
+	commitStore := NewMockCommitStore()
 
+	maxHistorical := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC) }
+
+	indexer := CommitIndexer{
+		limiter:           ratelimit.NewInstrumentedLimiter("TestCommitIndexer", rate.NewLimiter(10, 1)),
+		commitStore:       commitStore,
+		maxHistoricalTime: maxHistorical,
+		background:        context.Background(),
+		operations:        ops,
+		clock:             clock,
+	}
+
+	// Testing a scenario with 3 repos
+	// "repo-one" has commits but has disabled indexing
+	// "really-big-repo" has commits and has enabled indexing, it should update
+	// "no-commits" has no commits but is enabled, and will not update the index but will update the metadata
+	commits := map[string][]*gitdomain.Commit{
+		"repo-one": {
+			commit("ref1", "2020-05-01T00:00:00+00:00"),
+			commit("ref2", "2020-05-10T00:00:00+00:00"),
+			commit("ref3", "2020-05-15T00:00:00+00:00"),
+			commit("ref4", "2020-05-20T00:00:00+00:00"),
+		},
+		"empty-repo": {},
+	}
+	indexer.getCommits = mockCommitsWithError(EmptyRepoErr)
+	indexer.allReposIterator = mockIterator([]string{"repo-one", "empty-repo"})
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        1,
+		Enabled:       true,
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        2,
+		Enabled:       true,
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	windowDuration := 0
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			InsightsCommitIndexerWindowDuration: windowDuration,
+		},
+	})
+	defer conf.Mock(nil)
+	err := indexer.indexAll(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Two repos get metadata
+	if got, want := len(commitStore.GetMetadataFunc.history), 2; got != want {
+		t.Errorf("got GetMetadata invocations: %v want %v", got, want)
+	}
+
+	// The two repos should call insert commits. Repo 2 is empty but its metadata is up to date.
+	if got, want := len(commitStore.InsertCommitsFunc.history), 2; got != want {
+		t.Errorf("got InsertCommits invocations: %v want %v", got, want)
+	} else {
+		calls := map[string]CommitStoreInsertCommitsFuncCall{
+			"repo-one":   commitStore.InsertCommitsFunc.history[0],
+			"empty-repo": commitStore.InsertCommitsFunc.history[1],
+		}
+		for repo, call := range calls {
+			// Check Indexed though is the clock time
+			if diff := cmp.Diff(clock(), call.Arg3); diff != "" {
+				t.Errorf("unexpected indexed though date/time")
+			}
+			// Check the correct commits
+			for i, got := range call.Arg2 {
+				if diff := cmp.Diff(commits[repo][i], got); diff != "" {
+					t.Errorf("unexpected commit\n%s", diff)
+				}
+			}
+		}
+	}
 }
 
 func checkCommits(t *testing.T, want []*gitdomain.Commit, got []*gitdomain.Commit) {
@@ -453,5 +529,11 @@ func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Contex
 			filteredCommits = append(filteredCommits, commit)
 		}
 		return filteredCommits, nil
+	}
+}
+
+func mockCommitsWithError(err error) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+		return nil, err
 	}
 }
