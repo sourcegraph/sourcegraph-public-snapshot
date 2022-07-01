@@ -165,6 +165,7 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph
   interfaces:
     - DBStore
+    - UploadService
     - GitserverClient
     - Locker
 - filename: internal/codeintel/uploads/background/expiration/mocks_test.go

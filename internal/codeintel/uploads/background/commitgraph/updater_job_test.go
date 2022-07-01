@@ -17,8 +17,9 @@ func TestUpdater(t *testing.T) {
 
 	commitTime := time.Unix(1587396557, 0).UTC()
 	mockDBStore := NewMockDBStore()
-	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
-	mockDBStore.GetOldestCommitDateFunc.SetDefaultReturn(commitTime, true, nil)
+	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc.GetDirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
+	mockUploadSvc.GetOldestCommitDateFunc.SetDefaultReturn(commitTime, true, nil)
 
 	mockLocker := NewMockLocker()
 	mockLocker.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
@@ -31,9 +32,10 @@ func TestUpdater(t *testing.T) {
 
 	updater := &updater{
 		dbStore:         mockDBStore,
+		uploadSvc:       mockUploadSvc,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      NewOperations(mockDBStore, &observation.TestContext),
+		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -57,15 +59,17 @@ func TestUpdater(t *testing.T) {
 		t.Fatalf("unexpected commit graph call count. want=%d have=%d", 1, len(mockGitserverClient.CommitGraphFunc.History()))
 	}
 	// Should calculate visible uploads with fetched graph
-	if len(mockDBStore.CalculateVisibleUploadsFunc.History()) != 1 {
-		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 1, len(mockDBStore.CalculateVisibleUploadsFunc.History()))
+	if len(mockUploadSvc.UpdateUploadsVisibleToCommitsFunc.History()) != 1 {
+		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 1, len(mockUploadSvc.UpdateUploadsVisibleToCommitsFunc.History()))
 	}
 }
 
 func TestUpdaterNoUploads(t *testing.T) {
 	mockDBStore := NewMockDBStore()
-	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
-	mockDBStore.GetOldestCommitDateFunc.SetDefaultReturn(time.Time{}, false, nil)
+
+	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc.GetDirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
+	mockUploadSvc.GetOldestCommitDateFunc.SetDefaultReturn(time.Time{}, false, nil)
 
 	mockLocker := NewMockLocker()
 	mockLocker.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
@@ -79,7 +83,7 @@ func TestUpdaterNoUploads(t *testing.T) {
 		dbStore:         mockDBStore,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      NewOperations(mockDBStore, &observation.TestContext),
+		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -91,15 +95,16 @@ func TestUpdaterNoUploads(t *testing.T) {
 		t.Fatalf("unexpected commit graph call count. want=%d have=%d", 0, len(mockGitserverClient.CommitGraphFunc.History()))
 	}
 	// Should calculate visible uploads with empty graph
-	if len(mockDBStore.CalculateVisibleUploadsFunc.History()) != 1 {
-		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 1, len(mockDBStore.CalculateVisibleUploadsFunc.History()))
+	if len(mockUploadSvc.UpdateUploadsVisibleToCommitsFunc.History()) != 1 {
+		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 1, len(mockUploadSvc.UpdateUploadsVisibleToCommitsFunc.History()))
 	}
 }
 
 func TestUpdaterLocked(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
+	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc.GetDirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 
+	mockDBStore := NewMockDBStore()
 	mockLocker := NewMockLocker()
 	mockLocker.LockFunc.SetDefaultReturn(false, nil, nil)
 
@@ -112,14 +117,14 @@ func TestUpdaterLocked(t *testing.T) {
 		dbStore:         mockDBStore,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      NewOperations(mockDBStore, &observation.TestContext),
+		operations:      NewOperations(mockDBStore, mockUploadSvc, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
 		t.Fatalf("unexpected error updating commit graph: %s", err)
 	}
 
-	if len(mockDBStore.CalculateVisibleUploadsFunc.History()) != 0 {
-		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 0, len(mockDBStore.CalculateVisibleUploadsFunc.History()))
+	if len(mockUploadSvc.UpdateUploadsVisibleToCommitsFunc.History()) != 0 {
+		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 0, len(mockUploadSvc.UpdateUploadsVisibleToCommitsFunc.History()))
 	}
 }

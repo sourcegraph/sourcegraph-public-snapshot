@@ -15,7 +15,7 @@ type operations struct {
 	commitUpdate *observation.Operation
 }
 
-func NewOperations(dbStore DBStore, observationContext *observation.Context) *operations {
+func NewOperations(dbStore DBStore, uploadSvc UploadService, observationContext *observation.Context) *operations {
 	commitUpdate := observationContext.Operation(observation.Op{
 		Name: "codeintel.commitUpdater",
 		Metrics: metrics.NewREDMetrics(
@@ -29,7 +29,7 @@ func NewOperations(dbStore DBStore, observationContext *observation.Context) *op
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
 	}, func() float64 {
-		dirtyRepositories, err := dbStore.DirtyRepositories(context.Background())
+		dirtyRepositories, err := uploadSvc.GetDirtyRepositories(context.Background())
 		if err != nil {
 			log15.Error("Failed to determine number of dirty repositories", "err", err)
 		}

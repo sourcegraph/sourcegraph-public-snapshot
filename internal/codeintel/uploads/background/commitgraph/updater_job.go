@@ -21,7 +21,7 @@ import (
 
 // HandleUpdater checks for dirty repositories and invokes the underlying updater on each one.
 func (u *updater) HandleUpdater(ctx context.Context) error {
-	repositoryIDs, err := u.dbStore.DirtyRepositories(ctx)
+	repositoryIDs, err := u.uploadSvc.GetDirtyRepositories(ctx)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DirtyRepositories")
 	}
@@ -91,8 +91,8 @@ func (u *updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, refDescriptions, ConfigInst.MaxAgeForNonStaleBranches, ConfigInst.MaxAgeForNonStaleTags, dirtyToken); err != nil {
-		return errors.Wrap(err, "dbstore.CalculateVisibleUploads")
+	if err := u.uploadSvc.UpdateUploadsVisibleToCommits(ctx, repositoryID, commitGraph, refDescriptions, ConfigInst.MaxAgeForNonStaleBranches, ConfigInst.MaxAgeForNonStaleTags, dirtyToken, time.Time{}); err != nil {
+		return errors.Wrap(err, "uploadSvc.UpdateUploadsVisibleToCommits")
 	}
 
 	return nil
@@ -110,7 +110,7 @@ func (u *updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
 func (u *updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
-	commitDate, ok, err := u.dbStore.GetOldestCommitDate(ctx, repositoryID)
+	commitDate, ok, err := u.uploadSvc.GetOldestCommitDate(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}

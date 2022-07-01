@@ -10,17 +10,21 @@ import (
 )
 
 type DBStore interface {
-	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	CalculateVisibleUploads(
+	MaxStaleAge(ctx context.Context) (_ time.Duration, err error)
+}
+
+type UploadService interface {
+	GetDirtyRepositories(ctx context.Context) (map[int]int, error)
+	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
+	UpdateUploadsVisibleToCommits(
 		ctx context.Context,
 		repositoryID int,
 		graph *gitdomain.CommitGraph,
 		refDescriptions map[string][]gitdomain.RefDescription,
 		maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration,
 		dirtyToken int,
+		now time.Time,
 	) error
-	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
-	MaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 }
 
 type Locker interface {

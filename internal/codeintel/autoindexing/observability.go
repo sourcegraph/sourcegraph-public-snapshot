@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	// Not used yet.
 	delete                      *observation.Operation
 	enqueue                     *observation.Operation
 	get                         *observation.Operation
@@ -17,7 +18,7 @@ type operations struct {
 	updateIndexingConfiguration *observation.Operation
 
 	deleteIndexesWithoutRepository *observation.Operation
-	staleSourcedCommits            *observation.Operation
+	getStaleSourcedCommits         *observation.Operation
 	updateSourcedCommits           *observation.Operation
 	deleteSourcedCommits           *observation.Operation
 	// temporary
@@ -54,9 +55,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		queueIndexForPackage:        op("QueueIndexForPackage"),
 		updateIndexingConfiguration: op("UpdateIndexingConfiguration"),
 
-		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
-		staleSourcedCommits:            op("StaleSourcedCommits"),
+		getStaleSourcedCommits:         op("GetStaleSourcedCommits"),
 		updateSourcedCommits:           op("UpdateSourcedCommits"),
 		deleteSourcedCommits:           op("DeleteSourcedCommits"),
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 	}
 }

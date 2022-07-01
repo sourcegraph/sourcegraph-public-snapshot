@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -43,17 +44,23 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	db, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+	locker := locker.NewWith(database.NewDB(logger, db), "codeintel")
+
+	lsifStore, err := codeintel.InitLSIFStore()
+	if err != nil {
+		return nil, err
+	}
+	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore))
+
 	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
-	operations := commitgraph.NewOperations(dbStore, observationContext)
-
-	workerDb, err := workerdb.Init()
-	if err != nil {
-		return nil, err
-	}
-	locker := locker.NewWith(database.NewDB(logger, workerDb), "codeintel")
+	operations := commitgraph.NewOperations(dbStore, uploadSvc, observationContext)
 
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
@@ -61,6 +68,6 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 	}
 
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(dbStore, locker, gitserverClient, operations),
+		commitgraph.NewUpdater(dbStore, uploadSvc, locker, gitserverClient, operations),
 	}, nil
 }
