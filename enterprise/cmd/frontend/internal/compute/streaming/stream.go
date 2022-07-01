@@ -80,7 +80,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	events, getResults := NewComputeStream(ctx, h.db, args.Query)
+	events, getResults := NewComputeStream(ctx, h.logger, h.db, args.Query)
 	events = batchEvents(events, 50*time.Millisecond)
 
 	// Store marshalled matches and flush periodically or when we go over
