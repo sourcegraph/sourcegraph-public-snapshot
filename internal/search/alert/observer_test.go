@@ -71,7 +71,8 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	sr := Observer{
-		Db: db,
+		Logger: logger,
+		Db:     db,
 		SearchInputs: &run.SearchInputs{
 			OriginalQuery: searchQuery,
 			Query:         q,
