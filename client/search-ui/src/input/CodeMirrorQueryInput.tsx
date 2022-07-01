@@ -512,7 +512,7 @@ const highlightFocusedFilter = ViewPlugin.define(
 
 // Extension for providing token information. This includes showing a popover on
 // hover and highlighting the hovered token.
-function tokenInfo(): Extension[] {
+function tokenInfo(): Extension {
     const setHighlighedTokenPosition = StateEffect.define<number | null>()
     const highlightedTokenPosition = StateField.define<number | null>({
         create() {
@@ -681,7 +681,7 @@ const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
     [MarkerSeverity.Warning]: Decoration.mark({ class: styles.diagnosticWarning }),
     [MarkerSeverity.Error]: Decoration.mark({ class: styles.diagnosticError }),
 }
-const queryDiagnostic: Extension[] = [
+const queryDiagnostic: Extension = [
     // Compute diagnostics when query changes
     diagnostics.compute([parsedQuery], state => {
         const query = state.facet(parsedQuery)
