@@ -7,8 +7,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
-
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -86,7 +85,6 @@ type getRepoIndexOptsFn func(repoID int32) (*RepoIndexOptions, error)
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
-	log log.Logger,
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions getRepoIndexOptsFn,
 	getSearchContextRevisions func(repoID int32) ([]string, error),
@@ -97,7 +95,7 @@ func GetIndexOptions(
 	// future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
 	results := make([][]byte, len(repos))
-	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(log, c)
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
 
 	for i := range repos {
 		sema <- struct{}{}
@@ -203,7 +201,7 @@ func getIndexOptions(
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
-func siteConfigRevisionsRuleFunc(logger log.Logger, c *schema.SiteConfiguration) revsRuleFunc {
+func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}
@@ -215,7 +213,7 @@ func siteConfigRevisionsRuleFunc(logger log.Logger, c *schema.SiteConfiguration)
 		case rule.Name != "":
 			namePattern, err := regexp.Compile(rule.Name)
 			if err != nil {
-				logger.Error("error compiling regex from search.index.revisions", log.String("regex", rule.Name), log.Error(err))
+				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
 				continue
 			}
 
