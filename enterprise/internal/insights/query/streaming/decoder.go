@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
@@ -130,7 +129,7 @@ type ComputeTabulationResult struct {
 
 const capturedValueMaxLength = 100
 
-func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
+func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
 	ctr := &ComputeTabulationResult{
 		RepoCounts: make(map[string]*ComputeMatch),
 	}
@@ -173,65 +172,6 @@ func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *Com
 						}
 						current.ValueCounts[value] += 1
 					}
-				}
-			}
-		},
-		OnAlert: func(ea *streamhttp.EventAlert) {
-			if ea.Title == "No repositories found" {
-				// If we hit a case where we don't find a repository we don't want to error, just
-				// complete our search.
-			} else {
-				ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
-			}
-		},
-		OnError: func(eventError *streamhttp.EventError) {
-			ctr.Errors = append(ctr.Errors, eventError.Message)
-		},
-	}, ctr
-}
-
-func ComputeTextDecoder() (client.ComputeTextStreamDecoder, *ComputeTabulationResult) {
-	ctr := &ComputeTabulationResult{
-		RepoCounts: make(map[string]*ComputeMatch),
-	}
-	getRepoCounts := func(matchContext compute.Text) *ComputeMatch {
-		var v *ComputeMatch
-		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
-			return got
-		}
-		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
-		ctr.RepoCounts[matchContext.Repository] = v
-		return v
-	}
-
-	return client.ComputeTextStreamDecoder{
-		OnProgress: func(progress *streamapi.Progress) {
-			if !progress.Done {
-				return
-			}
-			// Skipped elements are built progressively for a Progress update until it is Done, so
-			// we want to register its contents only once it is done.
-			for _, skipped := range progress.Skipped {
-				// ShardTimeout is a specific skipped event that we want to retry on. Currently
-				// we only retry on Alert events so this is why we add it there. This behaviour will
-				// be uniformised eventually.
-				if skipped.Reason == streamapi.ShardTimeout {
-					ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
-				} else {
-					ctr.SkippedReasons = append(ctr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
-				}
-			}
-		},
-		OnResult: func(results []compute.Text) {
-			for _, result := range results {
-				vals := strings.Split(result.Value, "\n")
-				for _, val := range vals {
-					current := getRepoCounts(result)
-					value := val
-					if len(value) > capturedValueMaxLength {
-						value = value[:capturedValueMaxLength]
-					}
-					current.ValueCounts[value] += 1
 				}
 			}
 		},

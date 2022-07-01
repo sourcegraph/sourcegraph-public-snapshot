@@ -96,18 +96,10 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		},
 		computeSearch: query.ComputeSearch,
 		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
-			decoder, streamResults := streaming.MatchContextComputeDecoder()
+			decoder, streamResults := streaming.ComputeDecoder()
 			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Compute")
-			}
-			return streamResults, nil
-		},
-		computeTextSearch: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
-			decoder, streamResults := streaming.ComputeTextDecoder()
-			err := streaming.ComputeTextStream(ctx, query, decoder)
-			if err != nil {
-				return nil, errors.Wrap(err, "streaming.ComputeText")
 			}
 			return streamResults, nil
 		},

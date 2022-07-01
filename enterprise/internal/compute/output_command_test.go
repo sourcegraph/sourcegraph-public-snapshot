@@ -56,7 +56,7 @@ func fileMatch(content string) result.Match {
 	}
 	return &result.FileMatch{
 		File: result.File{
-			Repo: types.MinimalRepo{Name: "my/awesome/repo", ID: api.RepoID(11)},
+			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
 			Path: "my/awesome/path.ml",
 		},
 	}
@@ -116,25 +116,5 @@ func TestRun(t *testing.T) {
 	autogold.Want(
 		"substitute language",
 		"OCaml\n").
-		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
-}
-
-func TestRunOutputRepoMetadata(t *testing.T) {
-	test := func(q string, m result.Match) *Text {
-		defer gitserver.ResetMocks()
-		computeQuery, _ := Parse(q)
-		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
-		if err != nil {
-			t.Error(err)
-		}
-		return res.(*Text)
-	}
-
-	autogold.Want(
-		"verify repo metadata exists",
-		&Text{
-			Value: "OCaml\n", Kind: "output", RepositoryID: 11,
-			Repository: "my/awesome/repo",
-		}).
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
 }
