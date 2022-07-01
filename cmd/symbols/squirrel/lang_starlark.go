@@ -2,7 +2,6 @@ package squirrel
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -16,37 +15,13 @@ func (squirrel *SquirrelService) getDefStarlark(ctx context.Context, node Node) 
 	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 	switch node.Type() {
 	case "identifier":
-		return squirrel.getDefStarlarkIdentifier(ctx, node)
+		return starlarkBindingNamed(node.Node.Content(node.Contents), swapNode(node, getRoot(node.Node)))
 	case "string":
 		return squirrel.getDefStarlarkString(ctx, node)
 	default:
 		return nil, nil
 
 	}
-}
-
-func (squirrel *SquirrelService) getDefStarlarkIdentifier(ctx context.Context, node Node) (ret *Node, err error) {
-	symbol := node.Node.Content(node.Contents)
-	root := Node{
-		RepoCommitPath: node.RepoCommitPath,
-		Node:           getRoot(node.Node),
-		Contents:       node.Contents,
-		LangSpec:       node.LangSpec,
-	}
-	exports, err := starlarkBindingNamed(symbol, root)
-	if err != nil {
-		return nil, err
-	}
-	if exports != nil {
-		return &Node{
-			RepoCommitPath: node.RepoCommitPath,
-			Node:           exports,
-			Contents:       node.Contents,
-			LangSpec:       node.LangSpec,
-		}, nil
-	}
-	fmt.Println(node)
-	return nil, nil
 }
 
 func (squirrel *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (ret *Node, err error) {
@@ -97,28 +72,18 @@ func (squirrel *SquirrelService) getDefStarlarkString(ctx context.Context, node 
 		if err != nil {
 			return nil, err
 		}
-		exports, err := starlarkBindingNamed(symbol, *destinationRoot)
-		if err != nil {
-			return nil, err
-		}
-		return &Node{
-			RepoCommitPath: destinationRepoCommitPath,
-			Node:           exports,
-			//Node:           nil,
-			Contents: node.Contents,
-			LangSpec: node.LangSpec,
-		}, nil
+		return starlarkBindingNamed(symbol, *destinationRoot)
 	}
 }
 
-func starlarkBindingNamed(name string, node Node) (*sitter.Node, error) {
+func starlarkBindingNamed(name string, node Node) (*Node, error) {
 	captures, err := allCaptures(starlarkExportQuery, node)
 	if err != nil {
 		return nil, err
 	}
 	for _, capture := range captures {
 		if capture.Node.Content(capture.Contents) == name {
-			return capture.Node, nil
+			return swapNodePtr(node, capture.Node), nil
 		}
 	}
 	return nil, nil
