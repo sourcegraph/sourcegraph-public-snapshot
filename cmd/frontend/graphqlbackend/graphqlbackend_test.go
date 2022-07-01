@@ -17,8 +17,6 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -107,7 +105,7 @@ func TestResolverTo(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error opening file: %s", err)
 		}
-		blobEntry := &GitTreeEntryResolver{db: db, stat: blobStat, log: logtest.Scoped(t)}
+		blobEntry := &GitTreeEntryResolver{db: db, stat: blobStat}
 		if _, isBlob := blobEntry.ToGitBlob(); !isBlob {
 			t.Errorf("expected blobEntry to be blob")
 		}
@@ -119,7 +117,7 @@ func TestResolverTo(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error opening directory: %s", err)
 		}
-		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat, log: logtest.Scoped(t)}
+		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat}
 		if _, isBlob := treeEntry.ToGitBlob(); isBlob {
 			t.Errorf("expected treeEntry to be tree, but is blob")
 		}

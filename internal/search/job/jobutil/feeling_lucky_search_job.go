@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -26,10 +24,10 @@ import (
 // queries that alter its interpretation (e.g., search literally for quotes or
 // not, attempt to search the pattern as a regexp, and so on). There is no
 // random choice when applying rules.
-func NewFeelingLuckySearchJob(logger sglog.Logger, initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
+func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
-		generators = append(generators, NewGenerator(logger, inputs, b, rules))
+		generators = append(generators, NewGenerator(inputs, b, rules))
 	}
 	return &FeelingLuckySearchJob{
 		initialJob: initialJob,
@@ -134,7 +132,7 @@ type next func() (job.Job, next)
 // generation is exhausted. Currently it implements a simple strategy that tries
 // to apply rule transforms in order, and generates jobs for transforms that
 // apply successfully.
-func NewGenerator(logger sglog.Logger, inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
+func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
 	var n func(i int) next // i keeps track of rule index in the continuation
 	n = func(i int) next {
 		if i >= len(rules) {
@@ -148,7 +146,7 @@ func NewGenerator(logger sglog.Logger, inputs *run.SearchInputs, seed query.Basi
 				return nil, n(i + 1)
 			}
 
-			child, err := NewBasicJob(logger, inputs, *generated)
+			child, err := NewBasicJob(inputs, *generated)
 			if err != nil {
 				// Generated invalid job, go to next rule.
 				return nil, n(i + 1)

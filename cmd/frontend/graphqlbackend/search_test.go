@@ -13,8 +13,6 @@ import (
 	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -347,7 +345,6 @@ func BenchmarkSearchResults(b *testing.B) {
 				UserSettings: &schema.Settings{},
 			},
 			zoekt: z,
-			log:   logtest.Scoped(b),
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -420,7 +417,7 @@ func zoektRPC(t testing.TB, s zoekt.Streamer) zoekt.Streamer {
 		t.Fatal(err)
 	}
 	ts := httptest.NewServer(srv)
-	cl := backend.ZoektDial(logtest.Scoped(t), strings.TrimPrefix(ts.URL, "http://"))
+	cl := backend.ZoektDial(strings.TrimPrefix(ts.URL, "http://"))
 	t.Cleanup(func() {
 		cl.Close()
 		ts.Close()

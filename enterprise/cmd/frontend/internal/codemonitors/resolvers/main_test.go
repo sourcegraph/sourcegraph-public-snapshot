@@ -11,8 +11,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -142,14 +140,14 @@ func newTestResolver(t *testing.T, db database.DB) *Resolver {
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	return newResolverWithClock(t, db, clock)
+	return newResolverWithClock(db, clock)
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
-func newResolverWithClock(t *testing.T, db database.DB, clock func() time.Time) *Resolver {
+func newResolverWithClock(db database.DB, clock func() time.Time) *Resolver {
 	mockDB := edb.NewMockEnterpriseDBFrom(edb.NewEnterpriseDB(db))
 	mockDB.CodeMonitorsFunc.SetDefaultReturn(edb.CodeMonitorsWithClock(db, clock))
-	return &Resolver{db: mockDB, log: logtest.Scoped(t)}
+	return &Resolver{db: mockDB}
 }
 
 func marshalDateTime(t testing.TB, ts time.Time) string {

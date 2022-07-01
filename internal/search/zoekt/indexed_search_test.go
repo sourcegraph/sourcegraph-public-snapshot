@@ -15,8 +15,6 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -288,7 +286,6 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed, unindexed, err := PartitionRepos(
 				context.Background(),
-				logtest.Scoped(t),
 				tt.args.repos,
 				zoekt,
 				search.TextRequest,
@@ -418,7 +415,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			indexed, unindexed := zoektIndexedRepos(logtest.Scoped(t), zoektRepos, tc.repos, nil)
+			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
 			if diff := cmp.Diff(repoRevsSliceToMap(tc.indexed), indexed.RepoRevs); diff != "" {
 				t.Error("unexpected indexed:", diff)
@@ -558,7 +555,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		indexed, unindexed := zoektIndexedRepos(logtest.Scoped(t), zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:   indexed.RepoRevs,
 			Unindexed: unindexed,

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -45,7 +43,6 @@ func (inputs SearchInputs) DefaultLimit() int {
 
 func NewSearchInputs(
 	ctx context.Context,
-	logger log.Logger,
 	db database.DB,
 	version string,
 	patternType *string,
@@ -73,7 +70,7 @@ func NewSearchInputs(
 	// Beta: create a step to replace each context in the query with its repository query if any.
 	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
-		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, logger, db, context)
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
 		if err != nil {
 			return "", err
 		}

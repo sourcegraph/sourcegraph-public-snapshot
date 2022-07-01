@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -40,7 +39,6 @@ func TestSexp(t *testing.T) {
           NoopJob)))))
 `).Equal(t, fmt.Sprintf("\n%s\n", PrettySexp(
 		NewFilterJob(
-			logtest.Scoped(t),
 			NewLimitJob(
 				100,
 				NewTimeoutJob(
@@ -105,7 +103,6 @@ flowchart TB
           15([NoopJob])
           `).Equal(t, fmt.Sprintf("\n%s", PrettyMermaid(
 		NewFilterJob(
-			logtest.Scoped(t),
 			NewLimitJob(
 				100,
 				NewTimeoutJob(
@@ -156,7 +153,6 @@ func TestPrettyJSON(t *testing.T) {
   "value": "SubRepoPermissions"
 }`).Equal(t, fmt.Sprintf("\n%s", PrettyJSON(
 		NewFilterJob(
-			logtest.Scoped(t),
 			NewLimitJob(
 				100,
 				NewTimeoutJob(
@@ -172,14 +168,13 @@ func TestPrettyJSON(t *testing.T) {
 							NewNoopJob(),
 							NewNoopJob()))))))))
 	test := func(input string) string {
-		log := logtest.Scoped(t)
 		q, _ := query.ParseLiteral(input)
 		b, _ := query.ToBasicQuery(q)
 		inputs := &run.SearchInputs{
 			UserSettings: &schema.Settings{},
 			Protocol:     search.Streaming,
 		}
-		j, _ := NewBasicJob(log, inputs, b)
+		j, _ := NewBasicJob(inputs, b)
 		return PrettyJSONVerbose(j)
 	}
 
@@ -226,8 +221,7 @@ func TestPrettyJSON(t *testing.T) {
               "ArchivedSet": false,
               "NoArchived": true,
               "OnlyArchived": false
-            },
-            "Log": {}
+            }
           }
         },
         {
@@ -261,8 +255,7 @@ func TestPrettyJSON(t *testing.T) {
                   "Features": {
                     "ContentBasedLangFilters": false,
                     "HybridSearch": false
-                  },
-                  "Log": {}
+                  }
                 }
               }
             },
@@ -296,8 +289,7 @@ func TestPrettyJSON(t *testing.T) {
                   "ContentBasedLangFilters": false,
                   "HybridSearch": false
                 },
-                "Mode": 0,
-                "Log": {}
+                "Mode": 0
               }
             }
           ]

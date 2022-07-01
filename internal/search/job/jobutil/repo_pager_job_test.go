@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -20,7 +18,6 @@ func Test_setRepos(t *testing.T) {
 		RepoRevs: map[api.RepoID]*search.RepositoryRevisions{
 			1: {Repo: types.MinimalRepo{Name: "indexed"}},
 		},
-		Log: logtest.Scoped(t),
 	}
 	unindexed := []*search.RepositoryRevisions{
 		{Repo: types.MinimalRepo{Name: "unindexed"}},
@@ -28,7 +25,7 @@ func Test_setRepos(t *testing.T) {
 
 	// Test function
 	test := func(job job.Job) string {
-		job = setRepos(logtest.Scoped(t), job, indexed, unindexed)
+		job = setRepos(job, indexed, unindexed)
 		return "\n" + PrettyJSONVerbose(job)
 	}
 
@@ -47,8 +44,7 @@ func Test_setRepos(t *testing.T) {
               },
               "Revs": null
             }
-          },
-          "Log": {}
+          }
         },
         "Query": null,
         "Typ": "",
@@ -74,15 +70,14 @@ func Test_setRepos(t *testing.T) {
         "Features": {
           "ContentBasedLangFilters": false,
           "HybridSearch": false
-        },
-        "Log": {}
+        }
       }
     }
   ]
 }`).Equal(t, test(
 		NewParallelJob(
 			&zoekt.RepoSubsetTextSearchJob{},
-			&searcher.TextSearchJob{Log: logtest.Scoped(t)},
+			&searcher.TextSearchJob{},
 		),
 	))
 }

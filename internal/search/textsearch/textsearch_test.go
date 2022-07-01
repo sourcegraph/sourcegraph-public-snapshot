@@ -13,9 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -97,7 +94,6 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 
 	matches, common, err := RunRepoSubsetTextSearch(
 		context.Background(),
-		logtest.Scoped(t),
 		patternInfo,
 		repoRevs,
 		q,
@@ -127,7 +123,6 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	// that should be checked earlier.
 	_, _, err = RunRepoSubsetTextSearch(
 		context.Background(),
-		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/no-rev@dev"),
 		q,
@@ -198,7 +193,6 @@ func TestSearchFilesInReposStream(t *testing.T) {
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
-		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
 		q,
@@ -277,7 +271,6 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
-		logtest.Scoped(t),
 		patternInfo,
 		repos,
 		q,
@@ -339,7 +332,6 @@ func mkRepos(names ...string) []types.MinimalRepo {
 // RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
 func RunRepoSubsetTextSearch(
 	ctx context.Context,
-	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
 	repos []*search.RepositoryRevisions,
 	q query.Q,
@@ -358,7 +350,6 @@ func RunRepoSubsetTextSearch(
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		context.Background(),
-		logger,
 		repos,
 		zoekt,
 		search.TextRequest,
@@ -412,7 +403,6 @@ func RunRepoSubsetTextSearch(
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
 		searcherJob := &searcher.TextSearchJob{
-			Log:             logger,
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

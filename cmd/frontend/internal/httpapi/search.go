@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/google/zoekt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -21,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -69,7 +66,7 @@ type searchIndexerServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, logger log.Logger, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
+		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -77,8 +74,6 @@ type searchIndexerServer struct {
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
 	MinLastChangedDisabled bool
-
-	log log.Logger
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -203,7 +198,6 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	}
 
 	b := searchbackend.GetIndexOptions(
-		h.log,
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
@@ -243,7 +237,7 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 			}
 		}
 
-		indexable, err = h.Indexers.ReposSubset(r.Context(), h.log, opt.Hostname, indexed, indexable)
+		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)
 		if err != nil {
 			return err
 		}

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -18,7 +16,6 @@ import (
 
 type Mapper struct {
 	MapJob func(job job.Job) job.Job
-	Log    log.Logger
 
 	// Search Jobs (leaf nodes)
 	MapCommitSearchJob              func(*commit.SearchJob) *commit.SearchJob
@@ -213,14 +210,14 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		if m.MapLimitJob != nil {
 			inputs, child = m.MapAlertJob(inputs, child)
 		}
-		return NewAlertJob(m.Log, inputs, child)
+		return NewAlertJob(inputs, child)
 
 	case *subRepoPermsFilterJob:
 		child := m.Map(j.child)
 		if m.MapSubRepoPermsFilterJob != nil {
 			child = m.MapSubRepoPermsFilterJob(child)
 		}
-		return NewFilterJob(m.Log, child)
+		return NewFilterJob(child)
 
 	case *NoopJob:
 		return j
@@ -230,7 +227,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 	}
 }
 
-func MapAtom(logger log.Logger, j job.Job, f func(job.Job) job.Job) job.Job {
+func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 	mapper := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch typedJob := currentJob.(type) {
@@ -250,7 +247,6 @@ func MapAtom(logger log.Logger, j job.Job, f func(job.Job) job.Job) job.Job {
 				return currentJob
 			}
 		},
-		Log: logger,
 	}
 	return mapper.Map(j)
 }

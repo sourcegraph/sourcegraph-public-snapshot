@@ -7,9 +7,8 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -61,21 +60,21 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
+func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
 	if !policy.ShouldTrace(ctx) {
 		return false, nil
 	}
 
 	spanContext = make(map[string]string)
 	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
-		logger.Warn("Error injecting span context into map: %s", log.Error(err))
+		log15.Warn("Error injecting span context into map: %s", err)
 		return true, nil
 	}
 	return true, spanContext
 }
 
-func SearchOpts(ctx context.Context, logger log.Logger, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx, logger)
+func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
 		Trace:       shouldTrace,
 		SpanContext: spanContext,

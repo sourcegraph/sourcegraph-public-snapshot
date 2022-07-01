@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -22,7 +21,7 @@ var ErrNoResults = errors.New("no results returned for predicate")
 
 // Expand takes a query plan, and replaces any predicates with their expansion. The returned plan
 // is guaranteed to be predicate-free.
-func Expand(ctx context.Context, logger log.Logger, clients job.RuntimeClients, inputs *run.SearchInputs, oldPlan query.Plan) (_ query.Plan, err error) {
+func Expand(ctx context.Context, clients job.RuntimeClients, inputs *run.SearchInputs, oldPlan query.Plan) (_ query.Plan, err error) {
 	tr, ctx := trace.New(ctx, "ExpandPredicates", "")
 	defer func() {
 		tr.SetError(err)
@@ -39,7 +38,7 @@ func Expand(ctx context.Context, logger log.Logger, clients job.RuntimeClients, 
 		q := q
 		g.Go(func() error {
 			predicatePlan, err := Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				predicateJob, err := jobutil.NewPlanJob(logger, inputs, plan)
+				predicateJob, err := jobutil.NewPlanJob(inputs, plan)
 				if err != nil {
 					return nil, err
 				}

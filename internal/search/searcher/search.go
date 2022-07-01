@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
-
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -46,7 +45,6 @@ type TextSearchJob struct {
 	UseFullDeadline bool
 
 	Features search.Features
-	Log      sglog.Logger
 }
 
 // Run calls the searcher service on a set of repositories.
@@ -115,8 +113,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(log.String("repo", string(repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
-						s.Log.Warn("searchFilesInRepo failed", sglog.Error(err), sglog.String("repo", string(repo.Name)))
-
+						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repo.Name)
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
