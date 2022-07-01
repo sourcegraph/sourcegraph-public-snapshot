@@ -358,38 +358,61 @@ func TestCommitIndexer_windowing(t *testing.T) {
 func Test_IsEmptyRepoError(t *testing.T) {
 	t.Parallel()
 
+	defaultDate := time.Date(2022, 07, 01, 12, 12, 12, 10, time.UTC)
+	defaultError := generateEmptyRepoErrorMessage(defaultDate, nil)
+
 	testCases := []struct {
-		err  error
-		want autogold.Value
+		err   error
+		after time.Time
+		until *time.Time
+		want  autogold.Value
 	}{
 		{
-			err:  errors.New(emptyRepoErrCode),
-			want: autogold.Want("EmptyRepo", true),
+			err:   errors.New(defaultError),
+			after: defaultDate,
+			until: nil,
+			want:  autogold.Want("EmptyRepo", true),
 		},
 		{
-			err:  errors.Newf("Another message: %w", errors.New(emptyRepoErrCode)),
-			want: autogold.Want("NestedEmptyRepoError", true),
+			err:   errors.Newf("Another message: %w", defaultError),
+			after: defaultDate,
+			until: nil,
+			want:  autogold.Want("NestedEmptyRepoError", true),
 		},
 		{
-			err:  errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", errors.New(emptyRepoErrCode))),
-			want: autogold.Want("DeepNestedError", true),
+			err:   errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", defaultError)),
+			after: defaultDate,
+			until: nil,
+			want:  autogold.Want("DeepNestedError", true),
 		},
 		{
-			err:  errors.Newf("Another message: %w", errors.New("Not an empty repo")),
-			want: autogold.Want("NestedNotEmptyRepoError", false),
+			err:   errors.Newf("Another message: %w", errors.New("Not an empty repo")),
+			after: time.Now(),
+			until: nil,
+			want:  autogold.Want("NestedNotEmptyRepoError", false),
 		},
 		{
-			err:  errors.New("A different error"),
-			want: autogold.Want("NotEmptyRepo", false),
+			err:   errors.New(generateEmptyRepoErrorMessage(defaultDate, &defaultDate)),
+			after: defaultDate,
+			until: &defaultDate,
+			want:  autogold.Want("EmptyRepoUntil", true),
 		},
 		{
-			err:  nil,
-			want: autogold.Want("NotAnError", false),
+			err:   errors.New("A different error"),
+			after: time.Now(),
+			until: nil,
+			want:  autogold.Want("NotEmptyRepo", false),
+		},
+		{
+			err:   nil,
+			after: time.Now(),
+			until: nil,
+			want:  autogold.Want("NotAnError", false),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := isCommitEmptyRepoError(tc.err)
+			got := isCommitEmptyRepoError(tc.err, tc.after, tc.until)
 			tc.want.Equal(t, got)
 		})
 	}

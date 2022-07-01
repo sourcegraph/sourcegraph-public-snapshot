@@ -204,12 +204,24 @@ var (
 	EmptyRepoErr = errors.New("empty repository")
 )
 
-const emptyRepoErrCode = `exit status 129`
+const (
+	emptyRepoErrMessagePrefix = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
+	emptyRepoErrMessageSuffix = ` --date-order] failed (output: ""): exit status 128`
+)
 
-func isCommitEmptyRepoError(err error) bool {
+func generateEmptyRepoErrorMessage(after time.Time, until *time.Time) string {
+	fullEmptyRepoErrMessage := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
+	if until != nil {
+		fullEmptyRepoErrMessage += " --before=" + until.Format(time.RFC3339Nano)
+	}
+	return fullEmptyRepoErrMessage + emptyRepoErrMessageSuffix
+}
+
+func isCommitEmptyRepoError(err error, after time.Time, until *time.Time) bool {
+	emptyRepoErrMessage := generateEmptyRepoErrorMessage(after, until)
 	unwrappedErr := err
 	for unwrappedErr != nil {
-		if strings.Contains(err.Error(), emptyRepoErrCode) {
+		if strings.Contains(err.Error(), emptyRepoErrMessage) {
 			return true
 		}
 		unwrappedErr = errors.Unwrap(unwrappedErr)
@@ -228,7 +240,7 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 	}
 
 	commits, err := gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
-	if err != nil && isCommitEmptyRepoError(err) {
+	if err != nil && isCommitEmptyRepoError(err, after, until) {
 		return nil, errors.Wrap(EmptyRepoErr, err.Error())
 	}
 	return commits, err
