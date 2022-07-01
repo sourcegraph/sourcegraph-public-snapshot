@@ -7,7 +7,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
+import { createDefaultEditSeries } from '../../components/form-series/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
 

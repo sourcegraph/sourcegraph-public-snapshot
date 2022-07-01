@@ -1,4 +1,4 @@
-import React, { FormEventHandler, RefObject, useMemo } from 'react'
+import { FC, FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Checkbox, Input, Link, useObservable } from '@sourcegraph/wildcard'
@@ -17,7 +17,7 @@ import {
 } from '../../../../../components'
 import { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
-import { CreateInsightFormFields, EditableDataSeries } from '../types'
+import { CreateInsightFormFields } from '../types'
 
 import { FormSeries } from './form-series/FormSeries'
 
@@ -44,22 +44,6 @@ interface CreationSearchInsightFormProps {
     insight?: Insight
 
     onCancel: () => void
-
-    /**
-     * Handler to listen latest value form particular series edit form
-     * Used to get information for live preview chart.
-     */
-    onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
-
-    /**
-     * Handlers for CRUD operation over series. Add, delete, update and cancel
-     * series edit form.
-     */
-    onEditSeriesRequest: (seriesId?: string) => void
-    onEditSeriesCommit: (editedSeries: EditableDataSeries) => void
-    onEditSeriesCancel: (seriesId: string) => void
-    onSeriesRemove: (seriesId: string) => void
-
     onFormReset: () => void
 }
 
@@ -67,9 +51,7 @@ interface CreationSearchInsightFormProps {
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
  */
-export const SearchInsightCreationForm: React.FunctionComponent<
-    React.PropsWithChildren<CreationSearchInsightFormProps>
-> = props => {
+export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = props => {
     const {
         mode,
         innerRef,
@@ -88,11 +70,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<
         dashboardReferenceCount,
         insight,
         onCancel,
-        onSeriesLiveChange,
-        onEditSeriesRequest,
-        onEditSeriesCommit,
-        onEditSeriesCancel,
-        onSeriesRemove,
         onFormReset,
     } = props
 
@@ -164,14 +141,9 @@ export const SearchInsightCreationForm: React.FunctionComponent<
                 innerRef={series.input.ref}
             >
                 <FormSeries
-                    series={series.input.value}
+                    seriesField={series}
                     repositories={repositories.input.value}
                     showValidationErrorsOnMount={submitted}
-                    onLiveChange={onSeriesLiveChange}
-                    onEditSeriesRequest={onEditSeriesRequest}
-                    onEditSeriesCommit={onEditSeriesCommit}
-                    onEditSeriesCancel={onEditSeriesCancel}
-                    onSeriesRemove={onSeriesRemove}
                 />
             </FormGroup>
 

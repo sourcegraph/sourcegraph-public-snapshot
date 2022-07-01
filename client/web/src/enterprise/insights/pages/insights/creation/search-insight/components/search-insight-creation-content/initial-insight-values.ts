@@ -1,6 +1,5 @@
 import { CreateInsightFormFields } from '../../types'
-
-import { createDefaultEditSeries } from './hooks/use-editable-series'
+import { createDefaultEditSeries } from '../form-series/hooks/use-editable-series'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight

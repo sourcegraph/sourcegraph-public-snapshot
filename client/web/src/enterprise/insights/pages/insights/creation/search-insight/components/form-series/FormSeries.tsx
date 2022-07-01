@@ -4,79 +4,27 @@ import classNames from 'classnames'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
-import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
+import { LimitedAccessLabel, useFieldAPI } from '../../../../../../components'
+import { useUiFeatures } from '../../../../../../hooks'
 import { EditableDataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
 import { SeriesCard } from './components/series-card/SeriesCard'
+import { useEditableSeries } from './hooks/use-editable-series'
 
 import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
-    /**
-     * Show all validation error for all forms and fields within the series forms.
-     */
-    showValidationErrorsOnMount: boolean
-
-    /**
-     * Controlled value (series - chart lines) for series input component.
-     */
-    series?: EditableDataSeries[]
-
-    /**
-     * Code Insight repositories field string value - repo1, repo2, ...
-     */
+    seriesField: useFieldAPI<EditableDataSeries[]>
     repositories: string
-
-    /**
-     * Live change series handler while user typing in active series form.
-     * Used by consumers to get latest values from series inputs and pass
-     * them tp live preview chart.
-     */
-    onLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
-
-    /**
-     * Handler that runs every time user clicked edit on particular
-     * series card.
-     */
-    onEditSeriesRequest: (seriesId?: string) => void
-
-    /**
-     * Handler that runs every time use clicked commit (done) in
-     * series edit form.
-     */
-    onEditSeriesCommit: (editedSeries: EditableDataSeries) => void
-
-    /**
-     * Handler that runs every time use canceled (click cancel) in
-     * series edit form.
-     */
-    onEditSeriesCancel: (seriesId: string) => void
-
-    /**
-     * Handler that runs every time use removed (click remove) in
-     * series card.
-     */
-    onSeriesRemove: (seriesId: string) => void
+    showValidationErrorsOnMount: boolean
 }
 
-/**
- * Renders form series (sub-form) for series (chart lines) creation code insight form.
- */
 export const FormSeries: React.FunctionComponent<React.PropsWithChildren<FormSeriesProps>> = props => {
-    const {
-        series = [],
-        showValidationErrorsOnMount,
-        repositories,
-        onEditSeriesRequest,
-        onEditSeriesCommit,
-        onEditSeriesCancel,
-        onSeriesRemove,
-        onLiveChange,
-    } = props
+    const { seriesField, showValidationErrorsOnMount, repositories } = props
 
     const { licensed } = useUiFeatures()
+    const { series, changeSeries, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries(seriesField)
 
     return (
         <ul data-testid="form-series" className="list-unstyled d-flex flex-column">
@@ -90,18 +38,18 @@ export const FormSeries: React.FunctionComponent<React.PropsWithChildren<FormSer
                         cancel={series.length > 1}
                         autofocus={series.length > 1}
                         repositories={repositories}
-                        onSubmit={onEditSeriesCommit}
-                        onCancel={() => onEditSeriesCancel(line.id)}
+                        onSubmit={editCommit}
+                        onCancel={() => cancelEdit(line.id)}
                         className={classNames('p-3', styles.formSeriesItem)}
-                        onChange={(seriesValues, valid) => onLiveChange({ ...line, ...seriesValues }, valid, index)}
+                        onChange={(seriesValues, valid) => changeSeries(seriesValues, valid, index)}
                     />
                 ) : (
                     line && (
                         <SeriesCard
                             key={line.id}
                             disabled={index >= 10}
-                            onEdit={() => onEditSeriesRequest(line.id)}
-                            onRemove={() => onSeriesRemove(line.id)}
+                            onEdit={() => editRequest(line.id)}
+                            onRemove={() => deleteSeries(line.id)}
                             className={styles.formSeriesItem}
                             {...line}
                         />
@@ -116,7 +64,7 @@ export const FormSeries: React.FunctionComponent<React.PropsWithChildren<FormSer
             <Button
                 data-testid="add-series-button"
                 type="button"
-                onClick={() => onEditSeriesRequest()}
+                onClick={() => editRequest()}
                 variant="link"
                 disabled={!licensed ? series.length >= 10 : false}
                 className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}

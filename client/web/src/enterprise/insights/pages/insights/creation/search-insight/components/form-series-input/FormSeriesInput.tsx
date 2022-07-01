@@ -1,49 +1,26 @@
-import React from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { Button, Card, Input, Code } from '@sourcegraph/wildcard'
 
-import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
-import { useField } from '../../../../../../components/form/hooks/useField'
-import { useForm, ValidationResult } from '../../../../../../components/form/hooks/useForm'
-import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
-import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { searchQueryValidator } from '../../../capture-group/utils/search-query-validator'
+import { getDefaultInputProps, useField, InsightQueryInput, useForm } from '../../../../../../components'
 import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
 import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
 
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
-
-const requiredNameField = createRequiredValidator('Name is a required field for data series.')
-const validQuery = (value: string | undefined, validity: ValidityState | null | undefined): ValidationResult => {
-    const result = createRequiredValidator('Query is a required field for data series.')(value, validity)
-    if (result) {
-        return result
-    }
-    const { isNotContext, isNotRepo } = searchQueryValidator(value || '', true)
-
-    if (!isNotContext) {
-        return 'The `context:` filter is not supported; instead, run over all repositories and use the `context:` on the filter panel after creation'
-    }
-
-    if (!isNotRepo) {
-        return 'Do not include a `repo:` filter; add targeted repositories above, or filter repos on the filter panel after creation'
-    }
-}
+import { requiredNameField, validQuery } from './validators'
 
 interface FormSeriesInputProps {
+    series: EditableDataSeries
+
     /** Series index. */
     index: number
 
-    /**
-     * Show all validation error of all fields within the form.
-     */
+    /** Show all validation error of all fields within the form. */
     showValidationErrorsOnMount?: boolean
-
-    series: EditableDataSeries
 
     /** Code Insight repositories field string value - repo1, repo2, ... */
     repositories: string
@@ -67,7 +44,7 @@ interface FormSeriesInputProps {
     onChange?: (formValues: EditableDataSeries, valid: boolean) => void
 }
 
-export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<FormSeriesInputProps>> = props => {
+export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
     const {
         index,
         series,
@@ -137,6 +114,7 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
                 autoFocus={autofocus}
                 placeholder="Example: Function component"
                 message="Name shown in the legend and tooltip"
+                onFocus={() => console.log(`Field title with ${nameField.input.value} has got focus`)}
                 {...getDefaultInputProps(nameField)}
             />
 
