@@ -357,6 +357,7 @@
     "@apollo/client": "^3.5.0",
     "@codemirror/autocomplete": "^0.20.1",
     "@codemirror/commands": "^0.20.0",
+    "@codemirror/lang-json": "^0.20",
     "@codemirror/lang-markdown": "^0.20.0",
     "@codemirror/language": "^0.20.0",
     "@codemirror/state": "^0.20.0",
