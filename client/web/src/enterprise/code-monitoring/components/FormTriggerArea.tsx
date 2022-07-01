@@ -1,11 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import CheckIcon from 'mdi-react/CheckIcon'
-import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 
 import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
@@ -56,13 +53,13 @@ const ValidQueryChecklistItem: React.FunctionComponent<
                     <Icon
                         className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
-                        as={CheckIcon}
+                        svgPath={mdiCheck}
                     />
                 ) : (
                     <Icon
                         className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
                         aria-hidden={true}
-                        as={RadioboxBlankIcon}
+                        svgPath={mdiRadioboxBlank}
                     />
                 )}
 
@@ -72,12 +69,12 @@ const ValidQueryChecklistItem: React.FunctionComponent<
                     <>
                         <span className="sr-only"> {hint}</span>
 
-                        <Tooltip content={hint}>
-                            <span data-placement="bottom" className="d-inline-flex">
+                        <Tooltip content={hint} placement="bottom">
+                            <span className="d-inline-flex">
                                 <Icon
                                     className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
                                     aria-hidden={true}
-                                    as={HelpCircleIcon}
+                                    svgPath={mdiHelpCircle}
                                 />
                             </span>
                         </Tooltip>
@@ -100,10 +97,18 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     isLightTheme,
     isSourcegraphDotCom,
 }) => {
-    const [showQueryForm, setShowQueryForm] = useState(startExpanded)
-    const toggleQueryForm: React.FormEventHandler = useCallback(event => {
-        event.preventDefault()
-        setShowQueryForm(show => !show)
+    const [expanded, setExpanded] = useState(startExpanded)
+
+    // Focus card when collapsing
+    const collapsedCard = useRef<HTMLButtonElement>(null)
+    const closeCard = useCallback((): void => {
+        setExpanded(false)
+
+        // Use timeout to wait for render to complete after calling setExpanded
+        // so that collapsedCard is rendered and can be focused.
+        setTimeout(() => {
+            collapsedCard.current?.focus()
+        }, 0)
     }, [])
 
     const [isValidQuery, setIsValidQuery] = useState(false)
@@ -183,20 +188,20 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setTriggerCompleted(true)
             onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
+        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setQueryState({ query })
         },
-        [setShowQueryForm, query]
+        [closeCard, query]
     )
 
     const derivedInputClassName = useMemo(() => {
@@ -212,7 +217,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     return (
         <>
             <H3>Trigger</H3>
-            {showQueryForm && (
+            {expanded && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
@@ -258,7 +263,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     <Icon
                                         aria-label="Open in new window"
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
-                                        as={OpenInNewIcon}
+                                        svgPath={mdiOpenInNew}
                                     />
                                 </Link>
                             </div>
@@ -319,12 +324,13 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     </div>
                 </Card>
             )}
-            {!showQueryForm && (
+            {!expanded && (
                 <Card
                     data-testid="trigger-button"
                     as={Button}
                     className={classNames('test-trigger-button', cardBtnClassName)}
-                    onClick={toggleQueryForm}
+                    onClick={() => setExpanded(true)}
+                    ref={collapsedCard}
                 >
                     <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>

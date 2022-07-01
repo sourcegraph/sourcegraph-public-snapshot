@@ -1568,6 +1568,14 @@
     "@codemirror/view" "^0.20.0"
     "@lezer/javascript" "^0.16.0"
 
+"@codemirror/lang-json@^0.20":
+  version "0.20.0"
+  resolved "https://registry.npmjs.org/@codemirror/lang-json/-/lang-json-0.20.0.tgz#0cef6c3db35a4d9107896312b444d41f77cda0b4"
+  integrity sha512-Dj9iW3larS3HDdzd8+GXP5+7EUG7SeQexy0mh7l3N/n7vicIY+9AxRPZ1H6nsVI97uZpYIm8OZWG/eUzCdksdA==
+  dependencies:
+    "@codemirror/language" "^0.20.0"
+    "@lezer/json" "^0.16.0"
+
 "@codemirror/lang-markdown@^0.20.0":
   version "0.20.0"
   resolved "https://registry.npmjs.org/@codemirror/lang-markdown/-/lang-markdown-0.20.0.tgz#527554ccfc328a583d81c3d92b1098d4e5b7fba7"
@@ -2798,6 +2806,14 @@
   version "0.16.0"
   resolved "https://registry.npmjs.org/@lezer/javascript/-/javascript-0.16.0.tgz#712c3bc098bfc91b381a386551a86e9d4baf95eb"
   integrity sha512-kDcwX3QMFKVd7VJwlYTeTNtcj3/gXQEDa7cQzXXsFMvTGV/RTDq0r8agTpZu0zBc1RUZkVILusd1Cluz3STRqw==
+  dependencies:
+    "@lezer/highlight" "^0.16.0"
+    "@lezer/lr" "^0.16.0"
+
+"@lezer/json@^0.16.0":
+  version "0.16.0"
+  resolved "https://registry.npmjs.org/@lezer/json/-/json-0.16.0.tgz#f841fd7557fac8eac14c4dd52cb0e36abd9e8164"
+  integrity sha512-Aqsi+qclD1f27tKGV9nND29WRXur8kfVnbPf5gUms3SNTY5mRIADnXy9/5dQxKlPkVHSuS1RCUJvA0+mdNQtsQ==
   dependencies:
     "@lezer/highlight" "^0.16.0"
     "@lezer/lr" "^0.16.0"

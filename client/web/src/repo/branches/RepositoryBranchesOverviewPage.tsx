@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { mdiChevronRight } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -157,7 +157,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <Icon as={ChevronRightIcon} aria-hidden={true} />
+                                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                                         </Link>
                                     )}
                                 </ul>

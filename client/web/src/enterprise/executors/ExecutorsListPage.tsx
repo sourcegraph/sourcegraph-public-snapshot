@@ -2,7 +2,6 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCheckboxBlankCircle } from '@mdi/js'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
@@ -132,7 +131,11 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                     <div>
                         <H4 className="mb-0">
                             {node.active ? (
-                                <Icon aria-hidden={true} className="text-success mr-2" as={CheckboxBlankCircleIcon} />
+                                <Icon
+                                    aria-hidden={true}
+                                    className="text-success mr-2"
+                                    svgPath={mdiCheckboxBlankCircle}
+                                />
                             ) : (
                                 <Tooltip content="This executor missed at least three heartbeats.">
                                     <Icon

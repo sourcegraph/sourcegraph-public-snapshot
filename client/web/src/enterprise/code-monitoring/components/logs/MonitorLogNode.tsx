@@ -1,10 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiCheckBold } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -89,7 +88,7 @@ export const MonitorLogNode: React.FunctionComponent<
                         rel="noopener noreferrer"
                         onClick={clickCatcher}
                     >
-                        Monitor details <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                        Monitor details <Icon role="img" aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                 </Button>
                 <span className="text-nowrap mr-2">

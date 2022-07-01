@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import prettyBytes from 'pretty-bytes'
 import { Observable } from 'rxjs'
 
@@ -107,7 +106,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         onClick={toggleExpand}
                         size="sm"
                     >
-                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
+                        <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (

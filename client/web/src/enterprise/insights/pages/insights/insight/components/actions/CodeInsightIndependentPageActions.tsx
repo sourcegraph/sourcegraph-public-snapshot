@@ -1,6 +1,6 @@
 import { FunctionComponent, useRef, useState } from 'react'
 
-import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
+import { mdiLinkVariant } from '@mdi/js'
 import { useHistory } from 'react-router'
 
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -43,7 +43,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
         <div className={styles.container}>
             <Tooltip content={isCopied ? 'Copied!' : undefined}>
                 <Button variant="secondary" ref={copyLinkButtonReference} onClick={handleCopyLinkClick}>
-                    <Icon aria-hidden={true} as={LinkVariantIcon} /> Copy link
+                    <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
                 </Button>
             </Tooltip>
             <Button variant="danger" onClick={handleDeleteClick}>

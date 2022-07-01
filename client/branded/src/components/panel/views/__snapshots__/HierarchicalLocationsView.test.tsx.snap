@@ -72,7 +72,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0"
+                  class="iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -89,7 +89,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   data-testid="result-container-header"
                 >
                   <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                    class="titleInner"
                   >
                     <a
                       class="anchorLink"
@@ -114,9 +114,13 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <small>
-                  1 match
-                </small>
+                <span
+                  class="d-flex align-items-center"
+                >
+                  <small>
+                    1 match
+                  </small>
+                </span>
               </div>
               <div
                 class="fileMatchChildren"
@@ -333,7 +337,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0"
+                  class="iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -350,7 +354,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   data-testid="result-container-header"
                 >
                   <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                    class="titleInner"
                   >
                     <a
                       class="anchorLink"
@@ -377,9 +381,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <small>
-                  2 matches
-                </small>
+                <span
+                  class="d-flex align-items-center"
+                >
+                  <small>
+                    2 matches
+                  </small>
+                </span>
               </div>
               <div
                 class="fileMatchChildren"
@@ -550,7 +558,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0"
+                  class="iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -567,7 +575,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   data-testid="result-container-header"
                 >
                   <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                    class="titleInner"
                   >
                     <a
                       class="anchorLink"
@@ -592,9 +600,13 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <small>
-                  1 match
-                </small>
+                <span
+                  class="d-flex align-items-center"
+                >
+                  <small>
+                    1 match
+                  </small>
+                </span>
               </div>
               <div
                 class="fileMatchChildren"

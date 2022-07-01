@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiShieldCheck } from '@mdi/js'
 import classNames from 'classnames'
-import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -12,9 +12,9 @@ export const EncryptedDataIcon: React.FunctionComponent<React.PropsWithChildren<
     ...rest
 }) => (
     <Icon
-        as={ShieldCheckIcon}
         className={classNames('text-muted', styles.iconInside, className)}
         aria-label="Encrypted Data"
+        svgPath={mdiShieldCheck}
         {...rest}
     />
 )
