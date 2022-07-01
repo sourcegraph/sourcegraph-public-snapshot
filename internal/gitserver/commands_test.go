@@ -1034,7 +1034,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for symlink := range symlinks {
-		fi, err := client.LStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		fi, err := client.lStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}

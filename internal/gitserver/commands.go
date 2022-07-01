@@ -433,10 +433,10 @@ type objectInfo gitdomain.OID
 
 func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 
-// LStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
-// returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
-// TODO(sashaostrikov): make private when git.Stat is moved here as well
-func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+// lStat returns a FileInfo describing the named file at commit. If the file is a
+// symbolic link, the returned FileInfo describes the symbolic link. lStat makes
+// no attempt to follow the link.
+func (c *ClientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -1451,7 +1451,7 @@ func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 
 	path = rel(path)
 
-	fi, err := c.LStat(ctx, checker, repo, commit, path)
+	fi, err := c.lStat(ctx, checker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
