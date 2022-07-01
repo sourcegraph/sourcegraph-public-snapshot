@@ -29,7 +29,7 @@ var checkCanReachGitserver = check.Check{
 
 var checkCanReachSearcher = check.Check{
 	Name:     "check_can_reach_searcher",
-	Interval: time.Second,
+	Interval: time.Minute,
 	Run: func(ctx context.Context) (any, error) {
 		addrs, err := search.SearcherURLs().Endpoints()
 		if err != nil {

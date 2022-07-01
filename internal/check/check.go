@@ -98,25 +98,23 @@ func errString(err error) string {
 	return err.Error()
 }
 
-// NewHealthCheckHandler returns a handler that serves a page just like /vars
-// but filtered for health checks. Each service should expose a /checks
-// endpoint. All /checks endpoints are aggregated by ServeHealthCheckAggregate
-func (hc *HealthChecker) NewHealthCheckHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		fmt.Fprintf(w, "{\n")
-		first := true
-		for _, check := range hc.Checks {
-			if !first {
-				fmt.Fprintf(w, ",\n")
-			}
-			first = false
-
-			v := expvar.Get(check.Name)
-			fmt.Fprintf(w, "%q: %s", check.Name, v.String())
+// ServeHTTP serves a page just like /vars but filtered for health checks. Each
+// service should expose a /checks endpoint. All /checks endpoints are
+// aggregated by ServeHealthCheckAggregate
+func (hc *HealthChecker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Fprintf(w, "{\n")
+	first := true
+	for _, check := range hc.Checks {
+		if !first {
+			fmt.Fprintf(w, ",\n")
 		}
-		fmt.Fprintf(w, "\n}\n")
-	})
+		first = false
+
+		v := expvar.Get(check.Name)
+		fmt.Fprintf(w, "%q: %s", check.Name, v.String())
+	}
+	fmt.Fprintf(w, "\n}\n")
 }
 
 // TODO: How can we reach ALL frontends?

@@ -298,7 +298,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc.NewHealthCheckHandler())
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc)
 	if err != nil {
 		return err
 	}
@@ -352,7 +352,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, newHealthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -369,7 +369,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
-		newHealthCheckHandler,
+		healthCheckHandler,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,
