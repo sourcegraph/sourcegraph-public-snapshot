@@ -1,14 +1,19 @@
-import React from 'react'
+import { FC } from 'react'
 
-import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { styles } from '../../../../../../components/creation-ui-kit'
-import { useAsyncInsightTitleValidator } from '../../../../../../components/form/hooks/use-async-insight-title-validator'
-import { useField } from '../../../../../../components/form/hooks/useField'
-import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { Insight } from '../../../../../../core/types'
+import {
+    CreationUiLayout,
+    CreationUIForm,
+    CreationUIPreview,
+    useAsyncInsightTitleValidator,
+    useField,
+    FormChangeEvent,
+    SubmissionErrors,
+    useForm,
+    createRequiredValidator,
+} from '../../../../../../components'
+import { Insight } from '../../../../../../core'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
@@ -21,6 +26,7 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
     threshold: 3,
     dashboardReferenceCount: 0,
 }
+
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 
 export interface LangStatsInsightCreationContentProps {
@@ -42,9 +48,7 @@ export interface LangStatsInsightCreationContentProps {
     onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
 }
 
-export const LangStatsInsightCreationContent: React.FunctionComponent<
-    React.PropsWithChildren<LangStatsInsightCreationContentProps>
-> = props => {
+export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
         initialValues = {},
@@ -106,8 +110,9 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<
     const hasFilledValue = values.repository !== '' || values.title !== ''
 
     return (
-        <div data-testid="code-stats-insight-creation-page-content" className={classNames(styles.content, className)}>
-            <LangStatsInsightCreationForm
+        <CreationUiLayout data-testid="code-stats-insight-creation-page-content" className={className}>
+            <CreationUIForm
+                as={LangStatsInsightCreationForm}
                 mode={mode}
                 innerRef={ref}
                 handleSubmit={handleSubmit}
@@ -118,18 +123,17 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<
                 threshold={threshold}
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
-                className={styles.contentForm}
                 insight={insight}
                 onCancel={onCancel}
                 onFormReset={handleFormReset}
             />
 
-            <LangStatsInsightLivePreview
+            <CreationUIPreview
+                as={LangStatsInsightLivePreview}
                 repository={repository.meta.value}
                 threshold={threshold.meta.value}
                 disabled={!allFieldsForPreviewAreValid}
-                className={styles.contentLivePreview}
             />
-        </div>
+        </CreationUiLayout>
     )
 }

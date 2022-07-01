@@ -6,15 +6,19 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
-import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
-import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
-import { useFieldAPI } from '../../../../../components/form/hooks/useField'
-import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import {
+    CodeInsightTimeStepPicker,
+    CodeInsightDashboardsVisibility,
+    FormGroup,
+    getDefaultInputProps,
+    useFieldAPI,
+    Form,
+    FORM_ERROR,
+    RepositoriesField,
+    LimitedAccessLabel,
+} from '../../../../../components'
 import { Insight } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks/use-ui-features'
+import { useUiFeatures } from '../../../../../hooks'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
