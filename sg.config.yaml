@@ -46,6 +46,7 @@ env:
   SRC_PROF_SERVICES: |
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
+      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver", "Host": "127.0.0.1:6068" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
