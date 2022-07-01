@@ -196,7 +196,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         if (connection?.nodes?.length) {
             // Available changesets are all changesets that the user can view.
             setVisible(
-                false,
+                true,
                 connection.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
             )
         }
