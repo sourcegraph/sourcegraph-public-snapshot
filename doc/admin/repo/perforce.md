@@ -69,6 +69,8 @@ To use it, configure the `fusionClient` setting in your code host [config](#conf
 }
 ```
 
+Details of all fields can be seen in [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a296019877c36c8e6b641e14ffa711372316788f/-/blob/schema/perforce.schema.json?L89)
+
 ### Repository permissions
 
 <span class="badge badge-note">Sourcegraph 3.26+</span>
