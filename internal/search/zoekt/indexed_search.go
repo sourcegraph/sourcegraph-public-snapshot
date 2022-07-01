@@ -592,7 +592,7 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
