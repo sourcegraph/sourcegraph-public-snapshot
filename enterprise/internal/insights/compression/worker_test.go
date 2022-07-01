@@ -434,10 +434,6 @@ func TestCommitIndexer_EmptyRepoError(t *testing.T) {
 		clock:             clock,
 	}
 
-	// Testing a scenario with 3 repos
-	// "repo-one" has commits but has disabled indexing
-	// "really-big-repo" has commits and has enabled indexing, it should update
-	// "no-commits" has no commits but is enabled, and will not update the index but will update the metadata
 	commits := map[string][]*gitdomain.Commit{
 		"repo-one": {
 			commit("ref1", "2020-05-01T00:00:00+00:00"),
