@@ -118,25 +118,3 @@ export function createUpdateableField<T>(
 
     return [field, (editor, newValue) => editor.dispatch({ effects: [fieldEffect.of(newValue)] }), fieldEffect]
 }
-
-/**
- * Sets the height and/or max height of the editor, with corresponding overflow
- * behavior. The values can be any valid CSS unit.
- */
-export function editorHeight({
-    height = null,
-    maxHeight = null,
-}: {
-    height?: string | null
-    maxHeight?: string | null
-}): Extension {
-    return EditorView.theme({
-        '&': {
-            height,
-            maxHeight,
-        },
-        '.cm-scroller': {
-            overflow: 'auto',
-        },
-    })
-}

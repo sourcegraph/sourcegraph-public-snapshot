@@ -1,12 +1,19 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-import { isEmpty, noop } from 'lodash'
-import * as Monaco from 'monaco-editor'
+import { json } from '@codemirror/lang-json'
+import { foldGutter } from '@codemirror/language'
+import { EditorView } from '@codemirror/view'
+import { isEmpty } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
-import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import {
+    editorHeight,
+    useCodeMirror,
+    defaultEditorTheme,
+    jsonHighlighting,
+} from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildcard'
 
@@ -18,7 +25,7 @@ interface Props extends RouteComponentProps, ThemeProps {}
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ isLightTheme }) => {
     const latestPing = useObservable(
         useMemo(
             () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }),
@@ -31,28 +38,33 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
 
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
+    const [jsonEditorContainer, setJSONEditorContainer] = useState<HTMLDivElement | null>(null)
 
-    const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
-        readOnly: true,
-        minimap: {
-            enabled: false,
-        },
-        lineNumbers: 'off',
-        fontSize: 14,
-        glyphMargin: false,
-        overviewRulerBorder: false,
-        rulers: [],
-        overviewRulerLanes: 0,
-        wordBasedSuggestions: false,
-        quickSuggestions: false,
-        fixedOverflowWidgets: true,
-        renderLineHighlight: 'none',
-        contextmenu: false,
-        links: false,
-        // Display the cursor as a 1px line.
-        cursorStyle: 'line',
-        cursorWidth: 1,
-    }
+    useCodeMirror(
+        jsonEditorContainer,
+        useMemo(() => JSON.stringify(latestPing, undefined, 4), [latestPing]),
+        useMemo(
+            () => [
+                EditorView.darkTheme.of(isLightTheme === false),
+                EditorView.editable.of(false),
+                json(),
+                foldGutter(),
+                editorHeight({ height: '300px' }),
+                // This seems to be necessary to have properly rounded corners on
+                // the right side.
+                EditorView.theme({
+                    '.cm-scroller': {
+                        borderTopRightRadius: 'var(--border-radius)',
+                        borderBottomRightRadius: 'var(--border-radius)',
+                    },
+                }),
+                defaultEditorTheme,
+                jsonHighlighting,
+            ],
+            [isLightTheme]
+        )
+    )
+
     return (
         <div className="site-admin-pings-page">
             <PageTitle title="Pings - Admin" />
@@ -70,15 +82,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
             ) : isEmpty(latestPing) ? (
                 <Text>No recent ping data to display.</Text>
             ) : (
-                <MonacoEditor
-                    {...props}
-                    language="json"
-                    options={options}
-                    height={300}
-                    editorWillMount={noop}
-                    value={JSON.stringify(latestPing, undefined, 4)}
-                    className="mb-3"
-                />
+                <div ref={setJSONEditorContainer} className="mb-1 border rounded" />
             )}
             <H3>Critical telemetry</H3>
             <Text>
