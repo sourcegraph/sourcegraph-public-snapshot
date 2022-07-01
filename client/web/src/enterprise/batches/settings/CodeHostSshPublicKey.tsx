@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { Button, TextArea, Link, Icon, Label, Text } from '@sourcegraph/wildcard'
 
@@ -55,7 +55,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildr
                 <Label htmlFor={LABEL_ID}>{label}</Label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
-                        <Icon aria-hidden={true} as={ContentCopyIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
                         {copied ? 'Copied!' : 'Copy'}
                     </Button>
                 )}

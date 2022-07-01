@@ -6,7 +6,6 @@ exports[`RepoFileLink renders 1`] = `
     class=""
   >
     <a
-      aria-label="Repository example.com/my/repo"
       class="anchorLink"
       href="https://example.com"
     >
@@ -19,7 +18,6 @@ exports[`RepoFileLink renders 1`] = `
     </span>
      
     <a
-      aria-label="File path my/file"
       class="anchorLink"
       href="/file?subtree=true"
     >

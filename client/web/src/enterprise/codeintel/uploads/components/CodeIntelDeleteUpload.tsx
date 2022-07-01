@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import DeleteIcon from 'mdi-react/DeleteIcon'
+import { mdiDelete } from '@mdi/js'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,6 +32,6 @@ export const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<Co
                     : 'Delete this upload immediately'
             }
         >
-            <Icon aria-hidden={true} as={DeleteIcon} /> Delete upload
+            <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete upload
         </Button>
     )

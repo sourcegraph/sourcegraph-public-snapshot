@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,6 +33,7 @@ type SearchJob struct {
 	Limit                int
 	IncludeModifiedFiles bool
 	Concurrency          int
+	Log                  sglog.Logger
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
@@ -94,7 +96,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts, Log: j.Log}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		bounded := goroutine.NewBounded(j.Concurrency)
 

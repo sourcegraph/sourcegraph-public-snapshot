@@ -61,6 +61,12 @@ var Ubuntu = []category{
 				Fix:   aptGetInstall("jq"),
 			},
 			{
+				Name:        "universal-ctags",
+				Description: "Required by the symbols service",
+				Check:       checkAction(check.Combine(check.InPath("ctags"), check.CommandOutputContains("ctags --help", "+interactive"))),
+				Fix:         aptGetInstall("universal-ctags"),
+			},
+			{
 				Name:  "curl",
 				Check: checkAction(check.InPath("curl")),
 				Fix:   aptGetInstall("curl"),

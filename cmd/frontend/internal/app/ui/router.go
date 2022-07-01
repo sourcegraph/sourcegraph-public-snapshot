@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -304,7 +306,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(sglog.Scoped("Router", "Streaming search"), db))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())

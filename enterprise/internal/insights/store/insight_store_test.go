@@ -2302,3 +2302,77 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		autogold.Want("TotalCount", totalCount).Equal(t, 2)
 	})
 }
+
+func TestIncrementBackfillAttempts(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+
+	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+									VALUES (1, 'test title', 'test description', 'unique-1', false),
+									       (2, 'test title 2', 'test description 2', 'unique-2', true)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// assign some global grants just so the test can immediately fetch the created views
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_grants (insight_view_id, global)
+									VALUES (1, true),
+									       (2, true)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method,backfill_attempts)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search',0),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search',1),
+									('series-id-3', 'query-3', $1, $1, $1, $1, $1, $1, null, 'search',2);`, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
+									VALUES (1, 1, 'label1', 'color1'),
+											(1, 2, 'label2', 'color2'),
+											(2, 2, 'second-label-2', 'second-color-2'),
+											(2, 3, 'label3', 'color-2');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	store := NewInsightStore(insightsDB)
+
+	all, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, series := range all {
+		store.IncrementBackfillAttempts(context.Background(), series)
+	}
+
+	cases := []struct {
+		seriesID string
+		want     autogold.Value
+	}{
+		{"series-id-1", autogold.Want("update 0", int32(1))},
+		{"series-id-2", autogold.Want("increment 1", int32(2))},
+		{"series-id-3", autogold.Want("increment 2", int32(3))},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			series, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: tc.seriesID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got := series[0].BackfillAttempts
+			tc.want.Equal(t, got)
+
+		})
+	}
+
+}

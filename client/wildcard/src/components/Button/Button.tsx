@@ -49,6 +49,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
  * Tips:
  * - Avoid using button styling for links where possible. Buttons should typically trigger an action, links should navigate to places.
  */
+// eslint-disable-next-line react/display-name
 export const Button = React.forwardRef(
     (
         {
@@ -66,7 +67,6 @@ export const Button = React.forwardRef(
         },
         reference
     ) => {
-        const tooltip = attributes['data-tooltip']
         const { isBranded } = useWildcardTheme()
 
         const brandedButtonClassname = classNames(
@@ -76,7 +76,7 @@ export const Button = React.forwardRef(
             size && getButtonSize({ size })
         )
 
-        const buttonComponent = (
+        return (
             <Component
                 ref={reference}
                 className={classNames(isBranded && brandedButtonClassname, className)}
@@ -87,24 +87,6 @@ export const Button = React.forwardRef(
                 {children}
             </Component>
         )
-
-        // Disabled elements don't fire mouse events, but the `Tooltip` relies on mouse
-        // events. This restores the tooltip behavior for disabled buttons by rendering an
-        // invisible `div` with the tooltip on top of the button, in the case that it is
-        // disabled. See https://stackoverflow.com/a/3100395 for more.
-        if (disabled && tooltip) {
-            return (
-                <div className={styles.container}>
-                    {/* We set a tabIndex for the tooltip-producing div so that keyboard
-                        users can still trigger it. */}
-                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-                    <div className={styles.disabledTooltip} data-tooltip={tooltip} tabIndex={0} />
-                    {buttonComponent}
-                </div>
-            )
-        }
-
-        return buttonComponent
     }
 ) as ForwardReferenceComponent<'button', ButtonProps>
 

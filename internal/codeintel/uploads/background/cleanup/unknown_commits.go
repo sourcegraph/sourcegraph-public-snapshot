@@ -13,9 +13,6 @@ import (
 )
 
 func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
-	tx, err := j.dbStore.Transact(ctx)
-	defer func() { err = tx.Done(err) }()
-
 	staleUploads, err := j.uploadSvc.StaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
@@ -28,7 +25,7 @@ func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
 
 	batch := mergeSourceCommits(staleUploads, staleIndexes)
 	for _, sourcedCommits := range batch {
-		if err := j.handleSourcedCommits(ctx, tx, sourcedCommits); err != nil {
+		if err := j.handleSourcedCommits(ctx, sourcedCommits); err != nil {
 			return err
 		}
 	}
@@ -67,9 +64,9 @@ type SourcedCommits struct {
 	Commits        []string
 }
 
-func (j *janitor) handleSourcedCommits(ctx context.Context, tx DBStore, sc SourcedCommits) error {
+func (j *janitor) handleSourcedCommits(ctx context.Context, sc SourcedCommits) error {
 	for _, commit := range sc.Commits {
-		if err := j.handleCommit(ctx, tx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
+		if err := j.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
 			return err
 		}
 	}
@@ -77,9 +74,9 @@ func (j *janitor) handleSourcedCommits(ctx context.Context, tx DBStore, sc Sourc
 	return nil
 }
 
-func (j *janitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int, repositoryName, commit string) error {
+func (j *janitor) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string) error {
 	var shouldDelete bool
-	_, err := gitserver.NewClient(database.NewDBWith(j.logger, tx)).ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserver.NewClient(database.NewDBWith(j.logger, j.dbStore)).ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false
