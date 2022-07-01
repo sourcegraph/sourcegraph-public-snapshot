@@ -32,12 +32,12 @@ type mockParser struct{}
 func (mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
 	symbols := []*ctags.Entry{}
 
-	for _, line := range strings.Split(string(bytes), "\n") {
+	for lineNumber, line := range strings.Split(string(bytes), "\n") {
 		if line == "" {
 			continue
 		}
 
-		symbols = append(symbols, &ctags.Entry{Name: line})
+		symbols = append(symbols, &ctags.Entry{Name: line, Line: lineNumber + 1})
 	}
 
 	return symbols, nil
