@@ -1,6 +1,7 @@
 package check
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"expvar"
@@ -32,7 +33,13 @@ type HealthChecker struct {
 	Checks []Check
 }
 
-const timeout = time.Second * 60
+const (
+	timeout = time.Second * 60
+
+	ok      = "OK"
+	fail    = "FAIL"
+	pending = "PENDING"
+)
 
 func (hc *HealthChecker) Init() {
 	for _, check := range hc.Checks {
@@ -46,7 +53,7 @@ func (hc *HealthChecker) Init() {
 			m := expvar.NewMap(c.Name)
 
 			status := new(expvar.String)
-			status.Set("PENDING")
+			status.Set(pending)
 			m.Set("status", status)
 
 			out := new(expvar.String)
@@ -68,9 +75,9 @@ func (hc *HealthChecker) Init() {
 
 				res, err := c.Run(ctx)
 				if err != nil {
-					status.Set("FAIL")
+					status.Set(fail)
 				} else {
-					status.Set("OK")
+					status.Set(ok)
 				}
 
 				lastRun.Set(time.Now().Format(time.RFC3339))
@@ -91,11 +98,9 @@ func errString(err error) string {
 	return err.Error()
 }
 
-type NewHealthChecksHandler func() http.Handler
-
 // NewHealthCheckHandler returns a handler that serves a page just like /vars
 // but filtered for health checks. Each service should expose a /checks
-// endpoint. All /checks endpoints are aggregates by ServeHealthCheckAggregate
+// endpoint. All /checks endpoints are aggregated by ServeHealthCheckAggregate
 func (hc *HealthChecker) NewHealthCheckHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -114,23 +119,36 @@ func (hc *HealthChecker) NewHealthCheckHandler() http.Handler {
 	})
 }
 
-// NewAggregateHealthCheckHandler should only be called in frontend.
-func NewAggregateHealthCheckHandler() http.Handler {
-	services := []string{"frontend"}
-
-	// TODO: How can we reach ALL frontends?
-	endpoints := func(service string) []*url.URL {
-		switch service {
-		case "frontend":
-			u, err := url.Parse(internalapi.Client.URL)
-			if err != nil {
-				return nil
-			}
-			return []*url.URL{u.ResolveReference(&url.URL{Path: "/.internal/checks"})}
-		default:
+// TODO: How can we reach ALL frontends?
+func DefaultEndpointProvider(service string) []*url.URL {
+	switch service {
+	case "frontend":
+		u, err := url.Parse(internalapi.Client.URL)
+		if err != nil {
 			return nil
 		}
+		return []*url.URL{u.ResolveReference(&url.URL{Path: "/.internal/checks"})}
+	default:
+		return nil
 	}
+}
+
+// NewAggregateHealthCheckHandler returns a JSON with the high-level structure
+// {
+//     <service1>: {
+//         <address1>: {
+//             <check1-name> : <check1-data>,
+//             <check2-name> : <check2-data>
+//         },
+//         <address2>: ...
+//     },
+//     <service2>: ...
+//     ...
+// }
+//
+// The handler should only be used in frontend.
+func NewAggregateHealthCheckHandler(endpointProvider func(service string) []*url.URL) http.Handler {
+	services := []string{"frontend", "searcher"}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -145,10 +163,16 @@ func NewAggregateHealthCheckHandler() http.Handler {
 			}
 			firstService = false
 
+			endpoints := endpointProvider(service)
+			if len(endpoints) == 0 {
+				fmt.Fprintf(w, "%q: %q", service, fail+": no endpoints discovered")
+				continue
+			}
+
 			fmt.Fprintf(w, "%q: {\n", service)
 
 			firstEndpoint := true
-			for _, endpoint := range endpoints(service) {
+			for _, endpoint := range endpoints {
 				if !firstEndpoint {
 					fmt.Fprintf(w, ",\n")
 				}
@@ -167,7 +191,7 @@ func NewAggregateHealthCheckHandler() http.Handler {
 				defer res.Body.Close()
 
 				if res.StatusCode != 200 {
-					fmt.Fprintf(w, "%q: %q\n", endpoint.Host, "unreachable")
+					fmt.Fprintf(w, "%q: %q\n", endpoint.Host, fail+": unreachable")
 					continue
 				}
 
@@ -177,10 +201,10 @@ func NewAggregateHealthCheckHandler() http.Handler {
 					return
 				}
 
-				fmt.Fprintf(w, "%q: %s\n", endpoint.Host, b)
+				fmt.Fprintf(w, "%q: %s", endpoint.Host, bytes.TrimSpace(b))
 			}
 
-			fmt.Fprintf(w, "\n}\n")
+			fmt.Fprintf(w, "\n}")
 		}
 	})
 }

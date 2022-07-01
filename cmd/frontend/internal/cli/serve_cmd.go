@@ -140,7 +140,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 
 	hc := &check.HealthChecker{Checks: []check.Check{
 		checkCanReachGitserver,
-		checkDummy,
+		checkCanReachSearcher,
 	}}
 	hc.Init()
 
@@ -149,7 +149,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
 		Name:    "aggregate checks",
 		Path:    "/aggregate-checks",
-		Handler: check.NewAggregateHealthCheckHandler(),
+		Handler: check.NewAggregateHealthCheckHandler(check.DefaultEndpointProvider),
 	}).Start()
 
 	sqlDB, err := InitDB(logger)
