@@ -16,6 +16,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Remove references to creating an account on cloud, or configuring a cloud account [pull/38071](https://github.com/sourcegraph/sourcegraph/pull/38071)
+
 ### Fixes
 
 ## 2.2.6
