@@ -36,7 +36,7 @@ export const FormSeries: React.FunctionComponent<React.PropsWithChildren<FormSer
                         showValidationErrorsOnMount={showValidationErrorsOnMount}
                         index={index + 1}
                         cancel={series.length > 1}
-                        autofocus={series.length > 1}
+                        autofocus={line.autofocus}
                         repositories={repositories}
                         onSubmit={editCommit}
                         onCancel={() => cancelEdit(line.id)}

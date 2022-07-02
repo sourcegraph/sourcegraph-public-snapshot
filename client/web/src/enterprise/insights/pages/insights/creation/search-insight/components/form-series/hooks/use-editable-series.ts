@@ -15,6 +15,7 @@ export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): E
 const DEFAULT_EDITABLE_SERIES = {
     valid: false,
     edit: false,
+    autofocus: false,
     name: '',
     query: '',
     stroke: DEFAULT_DATA_SERIES_COLOR,
@@ -79,7 +80,7 @@ export function useEditableSeries(series: useFieldAPI<EditableDataSeries[]>): Us
         const index = newEditSeries.findIndex(series => series.id === seriesId)
 
         if (index !== -1) {
-            newEditSeries[index] = { ...seriesValue[index], edit: true }
+            newEditSeries[index] = { ...seriesValue[index], edit: true, autofocus: true }
 
             const newSeriesID = newEditSeries[index].id
 
@@ -92,7 +93,7 @@ export function useEditableSeries(series: useFieldAPI<EditableDataSeries[]>): Us
                 })
             }
         } else {
-            newEditSeries.push(createDefaultEditSeries({ edit: true }))
+            newEditSeries.push(createDefaultEditSeries({ edit: true, autofocus: true }))
         }
 
         series.meta.setState(state => ({ ...state, value: newEditSeries }))
