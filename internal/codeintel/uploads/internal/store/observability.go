@@ -22,6 +22,7 @@ type operations struct {
 	getRepositoriesMaxStaleAge *observation.Operation
 	setRepositoryAsDirty       *observation.Operation
 	getDirtyRepositories       *observation.Operation
+	repoName                   *observation.Operation
 
 	// Uploads
 	getUploads                     *observation.Operation
@@ -82,6 +83,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRepositoriesMaxStaleAge: op("GetRepositoriesMaxStaleAge"),
 		getDirtyRepositories:       op("GetDirtyRepositories"),
 		setRepositoryAsDirty:       op("SetRepositoryAsDirty"),
+		repoName:                   op("RepoName"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),

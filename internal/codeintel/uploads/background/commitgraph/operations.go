@@ -7,24 +7,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
-	commitUpdate *observation.Operation
-}
+type operations struct{}
 
 func NewOperations(uploadSvc UploadService, observationContext *observation.Context) *operations {
-	commitUpdate := observationContext.Operation(observation.Op{
-		Name: "codeintel.commitUpdater",
-		Metrics: metrics.NewREDMetrics(
-			observationContext.Registerer,
-			"codeintel_commit_graph_processor",
-			metrics.WithCountHelp("Total number of method invocations."),
-		),
-	})
-
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
@@ -50,7 +38,5 @@ func NewOperations(uploadSvc UploadService, observationContext *observation.Cont
 		return float64(age) / float64(time.Second)
 	}))
 
-	return &operations{
-		commitUpdate: commitUpdate,
-	}
+	return &operations{}
 }

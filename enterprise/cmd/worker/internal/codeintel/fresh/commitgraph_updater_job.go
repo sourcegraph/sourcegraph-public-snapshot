@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,31 +37,23 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 }
 
 func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
-	locker := locker.NewWith(database.NewDB(logger, db), "codeintel")
-
 	lsifStore, err := codeintel.InitLSIFStore()
 	if err != nil {
 		return nil, err
 	}
 	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore))
-	operations := commitgraph.NewOperations(uploadSvc, observationContext)
 
-	gitserverClient, err := codeintel.InitGitserverClient()
-	if err != nil {
-		return nil, err
-	}
+	operations := commitgraph.NewOperations(uploadSvc, &observation.Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	})
 
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(uploadSvc, locker, gitserverClient, operations),
+		commitgraph.NewUpdater(uploadSvc, operations),
 	}, nil
 }

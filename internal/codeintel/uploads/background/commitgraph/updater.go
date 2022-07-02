@@ -7,10 +7,8 @@ import (
 )
 
 type updater struct {
-	uploadSvc       UploadService
-	locker          Locker
-	gitserverClient GitserverClient
-	operations      *operations
+	uploadSvc  UploadService
+	operations *operations
 }
 
 var (
@@ -19,7 +17,7 @@ var (
 )
 
 func (u *updater) Handle(ctx context.Context) error {
-	if err := u.HandleUpdater(ctx); err != nil {
+	if err := u.HandleUpdateDirtyRepositories(ctx); err != nil {
 		return err
 	}
 
