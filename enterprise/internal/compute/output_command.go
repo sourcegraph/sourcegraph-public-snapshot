@@ -20,6 +20,7 @@ type Output struct {
 	Separator     string
 	Selector      string
 	TypeValue     string
+	Kind          string
 }
 
 func (c *Output) ToSearchPattern() string {
@@ -96,6 +97,24 @@ func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath
 	}
 }
 
+func toTextResult(ctx context.Context, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (Result, error) {
+	if selector != "" {
+		// Don't run the search pattern over the search result content
+		// when there's an explicit `select:` value.
+		return &Text{Value: outputPattern, Kind: "output"}, nil
+	}
+
+	return output(ctx, content, matchPattern, outputPattern, separator)
+}
+
+func toTextExtraResult(text *Text, r result.Match) *TextExtra {
+	return &TextExtra{
+		Text:         *text,
+		RepositoryID: int32(r.RepoName().ID),
+		Repository:   string(r.RepoName().Name),
+	}
+}
+
 func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
 	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
 	content, ok, err := resultContent(ctx, db, r, onlyPath)
@@ -111,11 +130,15 @@ func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Resul
 		return nil, err
 	}
 
-	if c.Selector != "" {
-		// Don't run the search pattern over the search result content
-		// when there's an explicit `select:` value.
-		return &Text{Value: outputPattern, Kind: "output"}, nil
+	result, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
+	if err != nil {
+		return nil, err
 	}
 
-	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
+	switch c.Kind {
+	case "output.extra":
+		return toTextExtraResult(result.(*Text), r), nil
+	default:
+		return result, nil
+	}
 }
