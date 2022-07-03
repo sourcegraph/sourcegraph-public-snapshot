@@ -37,6 +37,7 @@ type InsightViewSeries struct {
 	SeriesSortMode                *SeriesSortMode
 	SeriesSortDirection           *SeriesSortDirection
 	SeriesLimit                   *int32
+	GroupBy                       *string
 	BackfillAttempts              int32
 }
 
@@ -101,6 +102,7 @@ type InsightSeries struct {
 	GeneratedFromCaptureGroups bool
 	JustInTime                 bool
 	GenerationMethod           GenerationMethod
+	GroupBy                    *string
 	BackfillAttempts           int32
 }
 
@@ -118,10 +120,9 @@ const (
 type GenerationMethod string
 
 const (
-	Search         GenerationMethod = "search"
-	SearchCompute  GenerationMethod = "search-compute"
-	LanguageStats  GenerationMethod = "language-stats"
-	MappingCompute GenerationMethod = "mapping-compute"
+	Search        GenerationMethod = "search"
+	SearchCompute GenerationMethod = "search-compute"
+	LanguageStats GenerationMethod = "language-stats"
 )
 
 type DirtyQuery struct {

@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import CheckIcon from 'mdi-react/CheckIcon'
-import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 
 import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
@@ -56,13 +53,13 @@ const ValidQueryChecklistItem: React.FunctionComponent<
                     <Icon
                         className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
-                        as={CheckIcon}
+                        svgPath={mdiCheck}
                     />
                 ) : (
                     <Icon
                         className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
                         aria-hidden={true}
-                        as={RadioboxBlankIcon}
+                        svgPath={mdiRadioboxBlank}
                     />
                 )}
 
@@ -76,7 +73,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<
                             <Icon
                                 className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
                                 aria-hidden={true}
-                                as={HelpCircleIcon}
+                                svgPath={mdiHelpCircle}
                             />
                         </span>
                     </>
@@ -264,7 +261,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     <Icon
                                         aria-label="Open in new window"
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
-                                        as={OpenInNewIcon}
+                                        svgPath={mdiOpenInNew}
                                     />
                                 </Link>
                             </div>

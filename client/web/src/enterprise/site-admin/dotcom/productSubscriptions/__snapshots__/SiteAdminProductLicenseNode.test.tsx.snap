@@ -92,7 +92,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="iconInline"
               fill="currentColor"
               height="24"
               role="img"
@@ -199,7 +199,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="iconInline"
               fill="currentColor"
               height="24"
               role="img"

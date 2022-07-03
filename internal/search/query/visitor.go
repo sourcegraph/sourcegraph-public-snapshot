@@ -95,7 +95,7 @@ type predicatePointer[T any] interface {
 // VisitTypedPredicate visits every predicate of the type given to the callback function. The callback
 // will be called with a value of the predicate with its fields populated with its parsed arguments.
 func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pred PT, negated bool)) {
-	var zeroPred PT
+	zeroPred := PT(new(T))
 	VisitField(nodes, zeroPred.Field(), func(value string, negated bool, annotation Annotation) {
 		if !annotation.Labels.IsSet(IsPredicate) {
 			return // skip non-predicates

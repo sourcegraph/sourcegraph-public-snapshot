@@ -29,10 +29,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix an issue where updating the title or body of a Bitbucket Cloud pull request opened by a batch change could fail when the pull request was not on a fork of the target repository. [#37585](https://github.com/sourcegraph/sourcegraph/issues/37585)
 - A bug where some complex `repo:` regexes only returned a subset of repository results. [#37925](https://github.com/sourcegraph/sourcegraph/pull/37925)
+- Fix a bug with bad code insights chart data points links. [38102](https://github.com/sourcegraph/sourcegraph/pull/38102)
 
 ### Removed
 
 - The direct DataDog trace export integration has been removed. ([#37654](https://github.com/sourcegraph/sourcegraph/pull/37654))
+- Removed the deprecated git exec forwarder. [#38092](https://github.com/sourcegraph/sourcegraph/pull/38092)
 
 ## 3.41.0
 
