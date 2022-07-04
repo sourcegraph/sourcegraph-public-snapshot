@@ -31,7 +31,7 @@ const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem,
     { name: 'update go imports', code: goImportsSample },
     { name: 'apply a regex', code: regexSample },
     { name: 'apply many comby patterns', code: manyCombySample },
-    { name: 'multiple changesets in a monorepo', code: monorepoDynamicSample },
+    { name: 'monorepo example', code: monorepoDynamicSample },
 ]
 
 const LIBRARY_PANE_DEFAULT_COLLAPSED = 'batch-changes.ssbc-library-pane-default-collapsed'
