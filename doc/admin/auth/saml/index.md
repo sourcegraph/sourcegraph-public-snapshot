@@ -120,24 +120,35 @@ Use the following filters to restrict how users can create accounts and sign in 
     }
   ```
 
-  **Groups with special characters**
+  * Groups with special characters
 
-  Special characters such as the `&` (ampersand) will be encoded in the XML document, the format used by SAML. For example, if you have a group `Dogs & cats` set in your Identity Provider, it will show up as `Dogs &amp; cats` in the XML assertions. This is expected - just avoid using the encoded character when adding a group name to the `allowGroups` array. 
+  Special characters such as the `&` (ampersand) will be encoded in the XML document, the format used by SAML. For example, if you have a group `Dogs & cats` set in your Identity Provider, it will show up as `Dogs &amp; cats` in the XML assertions.
 
-  _Insted of `&amp;`_
+  This is expected - just avoid using the encoded character when adding a group name to the `allowGroups` array.
+
+  _Instead of_
   ```json
     {
-      "allowGroups": ["Dogs &amp; cats"] // wrong
+      "allowGroups":
+      [
+        "Dogs &amp; cats", // wrong
+        "Dogs &gt; cats", // wrong
+        "Cats &lt; dogs" // wrong
+      ]
     }
   ```
 
-  _Use `&`_
+  _Use_
   ```json
     {
-      "allowGroups": ["Dogs & cats"] // correct
+      "allowGroups":
+      [
+        "Dogs & cats", // correct
+        "Dogs > cats", // correct
+        "Cats < dogs" // correct
+      ]
     }
   ```
-
 
 See [SAML troubleshooting](#troubleshooting) for more tips.
 
