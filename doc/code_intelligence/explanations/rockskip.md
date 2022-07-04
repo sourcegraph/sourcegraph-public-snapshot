@@ -74,9 +74,9 @@ For all deployments, make sure that:
 
 1. Visit your repository in the Sourcegraph UI
 1. Click on the branch selector, click **Commits**, and select the second most recent commit (this avoids routing the request to Zoekt)
-1. Open the symbols sidebar to kick off indexing (it's ok to see a loading spinner, that probably means indexing is in progress)
+1. Open the symbols sidebar to kick off indexing. You can expect to see a loading spinner for 5s then an error message saying that indexing is in progress with the estimated time remaining.
 
-**Step 3:** Check the indexing status by following the [instructions below](#how-do-i-check-the-indexing-status).
+**Step 3:** Wait for indexing to complete. You can check the status as before by refreshing the page, opening the symbols sidebar, and looking at the error message. If you are interested in more technical details about the status, see the [instructions below](#how-do-i-check-the-indexing-status).
 
 **Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
 
@@ -96,7 +96,9 @@ Rockskip heavily relies on gitserver for data. Rockskip issues very long-running
 
 ## How do I check the indexing status?
 
-The symbols container responds to GET requests on the `localhost:3184/status` endpoint with the following info:
+The easiest way to check the status of a single repository is to open the symbols sidebar and wait 5s for an error message to appear with the estimated time remaining.
+
+For more info, the symbols container responds to GET requests on the `localhost:3184/status` endpoint with the following info:
 
 - Repository count
 - Size of the symbols table in Postgres
