@@ -6,7 +6,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { ResultContainer } from './ResultContainer'
@@ -28,24 +28,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     as,
     index,
 }) => {
-    /**
-     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
-     * We want to do it on mouse enter as browser window size might change after the element has been
-     * loaded initially
-     */
-    const [titleReference, truncated, checkTruncation] = useIsTruncated()
-
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <Tooltip content={(truncated && displayRepoName(getRepoMatchLabel(result))) || null} placement="bottom">
-                <span
-                    onMouseEnter={checkTruncation}
-                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    ref={titleReference}
-                >
-                    <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
-                </span>
-            </Tooltip>
+            <span className={classNames('test-search-result-label', styles.titleInner)}>
+                <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+            </span>
         </div>
     )
 

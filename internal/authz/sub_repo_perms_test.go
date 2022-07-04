@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -304,7 +304,7 @@ func TestSubRepoEnabled(t *testing.T) {
 func TestRepoContentFromFileInfo(t *testing.T) {
 	repo := api.RepoName("my-repo")
 	t.Run("adding trailing slash to directory", func(t *testing.T) {
-		fi := &util.FileInfo{
+		fi := &fileutil.FileInfo{
 			Name_: "app",
 			Mode_: fs.ModeDir,
 		}
@@ -316,7 +316,7 @@ func TestRepoContentFromFileInfo(t *testing.T) {
 		assert.Equal(t, expected, rc)
 	})
 	t.Run("doesn't add trailing slash if not directory", func(t *testing.T) {
-		fi := &util.FileInfo{
+		fi := &fileutil.FileInfo{
 			Name_: "my-file.txt",
 		}
 		rc := repoContentFromFileInfo(repo, fi)

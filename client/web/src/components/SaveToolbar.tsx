@@ -1,9 +1,7 @@
 import * as React from 'react'
 
+import { mdiAlertCircle, mdiCheck, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -51,7 +49,7 @@ export const SaveToolbar: React.FunctionComponent<
         <>
             {error && willShowError() && (
                 <div className={styles.error} role="alert">
-                    <Icon className={styles.errorIcon} as={AlertCircleIcon} aria-hidden={true} />
+                    <Icon className={styles.errorIcon} aria-hidden={true} svgPath={mdiAlertCircle} />
                     {error.message}
                 </div>
             )}
@@ -64,7 +62,7 @@ export const SaveToolbar: React.FunctionComponent<
                     variant="success"
                     size="sm"
                 >
-                    <Icon style={{ marginRight: '0.1em' }} as={CheckIcon} aria-hidden={true} /> Save changes
+                    <Icon style={{ marginRight: '0.1em' }} aria-hidden={true} svgPath={mdiCheck} /> Save changes
                 </Button>
                 <Button
                     disabled={disabled}
@@ -74,7 +72,7 @@ export const SaveToolbar: React.FunctionComponent<
                     variant="secondary"
                     size="sm"
                 >
-                    <Icon as={CloseIcon} aria-hidden={true} /> Discard
+                    <Icon aria-hidden={true} svgPath={mdiClose} /> Discard
                 </Button>
                 {children}
                 {saving && (

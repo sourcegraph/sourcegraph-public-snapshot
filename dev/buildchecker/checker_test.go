@@ -57,6 +57,13 @@ func TestCheckBuilds(t *testing.T) {
 		State:     buildkite.String("running"),
 		StartedAt: buildkite.NewTimestamp(time.Now()),
 	}
+	scheduledBuild := buildkite.Build{
+		Number:    buildkite.Int(5),
+		Commit:    buildkite.String("a"),
+		State:     buildkite.String("failed"),
+		StartedAt: buildkite.NewTimestamp(time.Now()),
+		Source:    buildkite.String("scheduled"),
+	}
 
 	tests := []struct {
 		name       string
@@ -82,6 +89,10 @@ func TestCheckBuilds(t *testing.T) {
 		name:       "should skip leading running builds to lock",
 		builds:     append([]buildkite.Build{runningBuild}, failSet...),
 		wantLocked: true,
+	}, {
+		name:       "should not locked because of scheduled build",
+		builds:     []buildkite.Build{failSet[0], scheduledBuild},
+		wantLocked: false,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

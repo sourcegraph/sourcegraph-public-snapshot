@@ -11,10 +11,9 @@ import (
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -50,17 +49,9 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
-// A Pager implements paginated repository resolution.
-type Pager interface {
-	// Paginate calls the given callback with each page of resolved repositories. If the callback
-	// returns an error, Paginate will abort and return that error.
-	Paginate(context.Context, *search.RepoOptions, func(*Resolved) error) error
-}
-
 type Resolver struct {
 	DB   database.DB
 	Opts search.RepoOptions
-	Log  log.Logger
 }
 
 func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
@@ -165,7 +156,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.Log, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -430,7 +421,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
-func computeExcludedRepos(ctx context.Context, logger log.Logger, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
+func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
@@ -456,7 +447,7 @@ func computeExcludedRepos(ctx context.Context, logger log.Logger, db database.DB
 		return ExcludedRepos{}, nil
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, logger, db, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, db, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
 	}
@@ -871,7 +862,7 @@ func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 	})
 
 	if err != nil {
-		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int("user-id", int(userID)))
+		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

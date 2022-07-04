@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback } from 'react'
 
+import { mdiArrowLeft } from '@mdi/js'
 import * as H from 'history'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, throwError } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
@@ -105,7 +105,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
             ) : (
                 <>
                     <Button to={productSubscription.url} className="mb-3" variant="link" size="sm" as={Link}>
-                        <Icon aria-hidden={true} as={ArrowLeftIcon} /> Subscription
+                        <Icon aria-hidden={true} svgPath={mdiArrowLeft} /> Subscription
                     </Button>
                     <H2>Upgrade or change subscription {productSubscription.name}</H2>
                     <ProductSubscriptionForm
