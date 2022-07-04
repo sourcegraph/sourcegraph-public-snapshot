@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -24,8 +24,7 @@ import (
 )
 
 type Observer struct {
-	Logger log.Logger
-	Db     database.DB
+	Db database.DB
 
 	// Inputs are used to generate alert messages based on the query.
 	*run.SearchInputs
@@ -223,7 +222,7 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		o.Logger.Warn("Errors during search", log.Error(o.err))
+		log15.Error("Errors during search", "error", o.err)
 		return o.alert, nil
 	}
 

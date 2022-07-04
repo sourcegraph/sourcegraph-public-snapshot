@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -287,7 +286,6 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed, unindexed, err := PartitionRepos(
 				context.Background(),
-				logtest.Scoped(t),
 				tt.args.repos,
 				zoekt,
 				search.TextRequest,
