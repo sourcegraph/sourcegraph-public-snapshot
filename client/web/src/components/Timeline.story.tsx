@@ -1,8 +1,6 @@
 import { mdiCheck, mdiAlertCircle } from '@mdi/js'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { parseISO } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 
 import { Icon, Text } from '@sourcegraph/wildcard'
 
@@ -90,7 +88,7 @@ export const Details: Story = () => (
                         expandedByDefault: true,
                     },
                     {
-                        icon: <CheckIcon />,
+                        icon: <Icon svgPath={mdiCheck} inline={false} aria-label="Success" />,
                         className: 'bg-success',
                         text: 'Third event description',
                         date: '2020-06-15T13:25:00+00:00',
@@ -111,13 +109,13 @@ export const DetailsWithoutDurations: Story = () => (
                 showDurations={false}
                 stages={[
                     {
-                        icon: <CheckIcon />,
+                        icon: <Icon svgPath={mdiCheck} inline={false} aria-label="Success" />,
                         className: 'bg-success',
                         text: 'First event description',
                         date: '2020-06-15T11:15:00+00:00',
                     },
                     {
-                        icon: <AlertCircleIcon />,
+                        icon: <Icon svgPath={mdiAlertCircle} inline={false} aria-label="Failed" />,
                         className: 'bg-danger',
                         text: 'Second event description',
                         date: '2020-06-15T12:20:00+00:00',

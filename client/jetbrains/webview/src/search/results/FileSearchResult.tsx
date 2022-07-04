@@ -88,8 +88,8 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
                         <>
                             {lines.length} {lines.length > 1 ? 'matches' : 'match'}
                             <InfoDivider />
-                            <SearchResultStar />
-                            {formattedRepositoryStarCount}
+                            <SearchResultStar aria-label={`${match.repoStars} stars`} />
+                            <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </>
                     )
                 }

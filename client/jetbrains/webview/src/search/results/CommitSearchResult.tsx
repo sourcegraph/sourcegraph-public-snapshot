@@ -39,8 +39,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                                 <Code className={styles.commitOid}>{match.oid.slice(0, 7)}</Code>{' '}
                                 <Timestamp date={match.authorDate} noAbout={true} strict={true} />
                                 <InfoDivider />
-                                <SearchResultStar />
-                                {formattedRepositoryStarCount}
+                                <SearchResultStar aria-label={`${match.repoStars} stars`} />
+                                <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                             </>
                         )
                     }

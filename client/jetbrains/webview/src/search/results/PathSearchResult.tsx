@@ -30,8 +30,8 @@ export const PathSearchResult: React.FunctionComponent<Props> = ({ match, select
                     infoColumn={
                         formattedRepositoryStarCount && (
                             <>
-                                <SearchResultStar />
-                                {formattedRepositoryStarCount}
+                                <SearchResultStar aria-label={`${match.repoStars} stars`} />
+                                <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                             </>
                         )
                     }

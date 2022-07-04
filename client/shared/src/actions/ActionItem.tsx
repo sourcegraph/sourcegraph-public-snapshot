@@ -1,14 +1,14 @@
 import * as React from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
-import { LoadingSpinner, Button, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, ButtonLink, ButtonLinkProps, WildcardThemeContext, Icon } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
@@ -336,7 +336,12 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             >
                 {content}{' '}
                 {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                    <OpenInNewIcon className={this.props.iconClassName} />
+                    <Icon
+                        className={this.props.iconClassName}
+                        svgPath={mdiOpenInNew}
+                        inline={false}
+                        aria-hidden={true}
+                    />
                 )}
                 {showLoadingSpinner && (
                     <div className={styles.loader} data-testid="action-item-spinner">

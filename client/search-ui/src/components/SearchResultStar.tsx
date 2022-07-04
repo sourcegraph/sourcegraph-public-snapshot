@@ -1,9 +1,19 @@
+import { mdiStar } from '@mdi/js'
 import classNames from 'classnames'
-import { MdiReactIconProps } from 'mdi-react'
-import StarIcon from 'mdi-react/StarIcon'
+
+import { Icon, IconProps } from '@sourcegraph/wildcard'
 
 import styles from './SearchResultStar.module.scss'
 
-export const SearchResultStar: React.FunctionComponent<MdiReactIconProps> = ({ className, ...props }) => (
-    <StarIcon className={classNames(styles.star, className)} {...props} />
+export const SearchResultStar: React.FunctionComponent<React.PropsWithoutRef<IconProps>> = ({
+    className,
+    ...props
+}) => (
+    <Icon
+        className={classNames(styles.star, className)}
+        {...props}
+        svgPath={mdiStar}
+        inline={false}
+        aria-hidden={true}
+    />
 )
