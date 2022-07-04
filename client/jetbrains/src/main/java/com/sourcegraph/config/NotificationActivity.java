@@ -16,7 +16,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     @Override
     public void runActivity(@NotNull Project project) {
         String url = ConfigUtil.getSourcegraphUrl(project);
-        if (ConfigUtil.isUrlNotificationDismissed(project) || (url.length() != 0 && !url.startsWith("https://sourcegraph.com"))) {
+        if (ConfigUtil.isUrlNotificationDismissed() || (url.length() != 0 && !url.startsWith("https://sourcegraph.com"))) {
             return;
         }
         // Display notification
@@ -38,7 +38,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 notification.expire();
-                ConfigUtil.setUrlNotificationDismissed(project, true);
+                ConfigUtil.setUrlNotificationDismissed(true);
             }
         };
         notification.setIcon(Icons.Logo);

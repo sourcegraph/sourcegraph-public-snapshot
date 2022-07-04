@@ -104,7 +104,7 @@ public class SettingsConfigurable implements Configurable {
         String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
         mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
         mySettingsComponent.setGlobbingEnabled(ConfigUtil.isGlobbingEnabled(project));
-        mySettingsComponent.setUrlNotificationDismissedEnabled(settings.isUrlNotificationDismissed());
+        mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     }
 
     @Override

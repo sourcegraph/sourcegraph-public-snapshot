@@ -29,8 +29,6 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     public String lastSearchPatternType;
     @Nullable
     public String lastSearchContextSpec;
-    public boolean isGlobbingEnabled;
-    public boolean isUrlNotificationDismissed;
 
     @NotNull
     public static SourcegraphProjectService getInstance(@NotNull Project project) {
@@ -71,10 +69,6 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
         }
     }
 
-    public boolean isUrlNotificationDismissed() {
-        return this.isUrlNotificationDismissed;
-    }
-
     @Nullable
     @Override
     public SourcegraphProjectService getState() {
@@ -92,6 +86,5 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
         this.lastSearchCaseSensitive = settings.lastSearchCaseSensitive;
         this.lastSearchPatternType = settings.lastSearchPatternType != null ? settings.lastSearchPatternType : "literal";
         this.lastSearchContextSpec = settings.lastSearchContextSpec != null ? settings.lastSearchContextSpec : "global";
-        this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     }
 }
