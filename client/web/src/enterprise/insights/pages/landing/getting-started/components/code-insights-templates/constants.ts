@@ -1,8 +1,9 @@
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 
+import { DATA_SERIES_COLORS } from '../../../../../constants'
 import { InsightType } from '../../../../../core'
 import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
-import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights/creation/search-insight'
+import { SearchInsightURLValues } from '../../../../insights/creation/search-insight'
 
 export interface TemplateSection {
     title: string

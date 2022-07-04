@@ -1,12 +1,10 @@
 import { renderError } from '@sourcegraph/branded/src/components/alerts'
 import { dedupeWhitespace } from '@sourcegraph/common'
 
-import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
+import { getSanitizedRepositories, createRequiredValidator, EditableDataSeries } from '../../../../../../components'
 import { Validator } from '../../../../../../components/form/hooks/useField'
 import { AsyncValidator } from '../../../../../../components/form/hooks/utils/use-async-validation'
-import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { fetchRepositories } from '../../../../../../core/backend/gql-backend/methods/get-built-in-insight-data/utils/fetch-repositories'
-import { EditableDataSeries } from '../../types'
 
 export const repositoriesFieldValidator: Validator<string> = value => {
     if (value !== undefined && dedupeWhitespace(value).trim() === '') {

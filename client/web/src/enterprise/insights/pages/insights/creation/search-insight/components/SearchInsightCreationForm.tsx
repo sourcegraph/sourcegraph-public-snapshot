@@ -5,6 +5,7 @@ import { Button, Checkbox, Input, Link, useObservable } from '@sourcegraph/wildc
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import {
+    FormSeries,
     LimitedAccessLabel,
     CodeInsightDashboardsVisibility,
     CodeInsightTimeStepPicker,
@@ -18,8 +19,6 @@ import {
 import { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateInsightFormFields } from '../types'
-
-import { FormSeries } from './form-series/FormSeries'
 
 interface CreationSearchInsightFormProps {
     /** This component might be used in edit or creation insight case. */

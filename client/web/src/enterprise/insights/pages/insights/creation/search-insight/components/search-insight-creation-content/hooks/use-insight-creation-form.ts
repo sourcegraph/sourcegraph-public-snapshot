@@ -7,8 +7,9 @@ import {
     SubmissionErrors,
     useForm,
     createRequiredValidator,
+    EditableDataSeries,
 } from '../../../../../../../components'
-import { CreateInsightFormFields, EditableDataSeries, InsightStep } from '../../../types'
+import { CreateInsightFormFields, InsightStep } from '../../../types'
 import { INITIAL_INSIGHT_VALUES } from '../initial-insight-values'
 import {
     repositoriesExistValidator,

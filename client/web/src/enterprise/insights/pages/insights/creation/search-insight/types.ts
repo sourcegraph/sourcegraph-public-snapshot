@@ -1,12 +1,6 @@
-import { SearchBasedInsightSeries } from '../../../../core'
+import { EditableDataSeries } from '../../../../components/creation-ui/form-series/types'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
-
-export interface EditableDataSeries extends SearchBasedInsightSeries {
-    valid: boolean
-    edit: boolean
-    autofocus: boolean
-}
 
 export interface CreateInsightFormFields {
     /** Code Insight series setting (name of line, line query, color) */

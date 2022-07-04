@@ -8,12 +8,13 @@ import {
     CreationUIPreview,
     FormChangeEvent,
     SubmissionErrors,
+    createDefaultEditSeries,
+    EditableDataSeries,
 } from '../../../../../../components'
 import { Insight } from '../../../../../../core'
 import { LineChartLivePreview, LivePreviewSeries } from '../../../LineChartLivePreview'
-import { CreateInsightFormFields, EditableDataSeries } from '../../types'
+import { CreateInsightFormFields } from '../../types'
 import { getSanitizedSeries } from '../../utils/insight-sanitizer'
-import { createDefaultEditSeries } from '../form-series/hooks/use-editable-series'
 import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
 
 import { useInsightCreationForm } from './hooks/use-insight-creation-form'
