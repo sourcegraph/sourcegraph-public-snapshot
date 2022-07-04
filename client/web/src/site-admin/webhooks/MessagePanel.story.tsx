@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-const object = {
+const messagePanelObject = {
     JSON: { headers: HEADERS_JSON, body: BODY_JSON },
     plain: { headers: HEADERS_PLAIN, body: BODY_PLAIN },
 }
@@ -29,8 +29,8 @@ export const JSONRequest: Story = () => (
         {() => (
             <MessagePanel
                 message={{
-                    headers: object.JSON.headers,
-                    body: object.JSON.body,
+                    headers: messagePanelObject.JSON.headers,
+                    body: messagePanelObject.JSON.body,
                 }}
                 requestOrStatusCode={{
                     method: 'POST',
@@ -49,8 +49,8 @@ export const JSONResponse: Story = () => (
         {() => (
             <MessagePanel
                 message={{
-                    headers: object.JSON.headers,
-                    body: object.JSON.body,
+                    headers: messagePanelObject.JSON.headers,
+                    body: messagePanelObject.JSON.body,
                 }}
                 requestOrStatusCode={number('status code', 200, {
                     min: 100,
@@ -68,8 +68,8 @@ export const PlainRequest: Story = () => (
         {() => (
             <MessagePanel
                 message={{
-                    headers: object.plain.headers,
-                    body: object.plain.body,
+                    headers: messagePanelObject.plain.headers,
+                    body: messagePanelObject.plain.body,
                 }}
                 requestOrStatusCode={{
                     method: 'POST',
@@ -88,8 +88,8 @@ export const PlainResponse: Story = () => (
         {() => (
             <MessagePanel
                 message={{
-                    headers: object.plain.headers,
-                    body: object.plain.body,
+                    headers: messagePanelObject.plain.headers,
+                    body: messagePanelObject.plain.body,
                 }}
                 requestOrStatusCode={number('status code', 200, {
                     min: 100,

@@ -14,30 +14,22 @@ const config: Meta = {
 
 export default config
 
-export const Approved: Story = () => (
-    <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.APPROVED} />}</WebStory>
+const Template: Story<{ reviewState: ChangesetReviewState }> = ({ reviewState }) => (
+    <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={reviewState} />}</WebStory>
 )
 
-export const ChangesRequested: Story = () => (
-    <WebStory>
-        {props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.CHANGES_REQUESTED} />}
-    </WebStory>
-)
+export const Approved = Template.bind({})
+Approved.args = { reviewState: ChangesetReviewState.APPROVED }
 
+export const ChangesRequested = Template.bind({})
+ChangesRequested.args = { reviewState: ChangesetReviewState.CHANGES_REQUESTED }
 ChangesRequested.storyName = 'Changes_requested'
 
-export const Pending: Story = () => (
-    <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.PENDING} />}</WebStory>
-)
+export const Commented = Template.bind({})
+Commented.args = { reviewState: ChangesetReviewState.COMMENTED }
 
-export const Commented: Story = () => (
-    <WebStory>
-        {props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.COMMENTED} />}
-    </WebStory>
-)
+export const Pending = Template.bind({})
+Pending.args = { reviewState: ChangesetReviewState.PENDING }
 
-export const Dismissed: Story = () => (
-    <WebStory>
-        {props => <ChangesetReviewStatusCell {...props} reviewState={ChangesetReviewState.DISMISSED} />}
-    </WebStory>
-)
+export const Dismissed = Template.bind({})
+Dismissed.args = { reviewState: ChangesetReviewState.DISMISSED }

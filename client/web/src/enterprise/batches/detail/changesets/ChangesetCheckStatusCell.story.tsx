@@ -14,14 +14,15 @@ const config: Meta = {
 
 export default config
 
-export const Pending: Story = () => (
-    <WebStory>{props => <ChangesetCheckStatusCell {...props} checkState={ChangesetCheckState.PENDING} />}</WebStory>
+const Template: Story<{ checkState: ChangesetCheckState }> = ({ checkState }) => (
+    <WebStory>{props => <ChangesetCheckStatusCell {...props} checkState={checkState} />}</WebStory>
 )
 
-export const Passed: Story = () => (
-    <WebStory>{props => <ChangesetCheckStatusCell {...props} checkState={ChangesetCheckState.PASSED} />}</WebStory>
-)
+export const Pending = Template.bind({})
+Pending.args = { checkState: ChangesetCheckState.PENDING }
 
-export const Failed: Story = () => (
-    <WebStory>{props => <ChangesetCheckStatusCell {...props} checkState={ChangesetCheckState.FAILED} />}</WebStory>
-)
+export const Passed = Template.bind({})
+Passed.args = { checkState: ChangesetCheckState.PASSED }
+
+export const Failed = Template.bind({})
+Failed.args = { checkState: ChangesetCheckState.FAILED }

@@ -13,44 +13,36 @@ const config: Meta = {
 
 export default config
 
-export const Unpublished: Story = () => (
-    <WebStory>
-        {() => <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className="d-flex text-muted" />}
-    </WebStory>
+const Template: Story<{ state: ChangesetState }> = ({ state }) => (
+    <WebStory>{() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}</WebStory>
 )
 
-export const Failed: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.FAILED} className="d-flex text-muted" />}</WebStory>
-)
+export const Unpublished = Template.bind({})
+Unpublished.args = { state: ChangesetState.UNPUBLISHED }
 
-export const Retrying: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.RETRYING} className="d-flex text-muted" />}</WebStory>
-)
+export const Failed = Template.bind({})
+Failed.args = { state: ChangesetState.FAILED }
 
-export const Scheduled: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.SCHEDULED} className="d-flex text-muted" />}</WebStory>
-)
+export const Retrying = Template.bind({})
+Retrying.args = { state: ChangesetState.RETRYING }
 
-export const Processing: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.PROCESSING} className="d-flex text-muted" />}</WebStory>
-)
+export const Scheduled = Template.bind({})
+Scheduled.args = { state: ChangesetState.SCHEDULED }
 
-export const Open: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.OPEN} className="d-flex text-muted" />}</WebStory>
-)
+export const Processing = Template.bind({})
+Processing.args = { state: ChangesetState.PROCESSING }
 
-export const Draft: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.DRAFT} className="d-flex text-muted" />}</WebStory>
-)
+export const Open = Template.bind({})
+Open.args = { state: ChangesetState.OPEN }
 
-export const Closed: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.CLOSED} className="d-flex text-muted" />}</WebStory>
-)
+export const Draft = Template.bind({})
+Draft.args = { state: ChangesetState.DRAFT }
 
-export const Merged: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.MERGED} className="d-flex text-muted" />}</WebStory>
-)
+export const Closed = Template.bind({})
+Closed.args = { state: ChangesetState.CLOSED }
 
-export const Deleted: Story = () => (
-    <WebStory>{() => <ChangesetStatusCell state={ChangesetState.DELETED} className="d-flex text-muted" />}</WebStory>
-)
+export const Merged = Template.bind({})
+Merged.args = { state: ChangesetState.MERGED }
+
+export const Deleted = Template.bind({})
+Deleted.args = { state: ChangesetState.DELETED }

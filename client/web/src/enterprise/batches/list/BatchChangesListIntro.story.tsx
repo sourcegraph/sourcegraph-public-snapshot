@@ -30,32 +30,17 @@ function stateToInput(state: LicensingState): boolean | undefined {
     }
 }
 
-export const Licensed: Story = () => (
+const Template: Story<{ state: LicensingState }> = ({ state }) => (
     <WebStory>
-        {() => (
-            <BatchChangesListIntro
-                isLicensed={stateToInput(radios('licensed', LicensingState, LicensingState.Licensed))}
-            />
-        )}
+        {() => <BatchChangesListIntro isLicensed={stateToInput(radios('licensed', LicensingState, state))} />}
     </WebStory>
 )
 
-export const Unlicensed: Story = () => (
-    <WebStory>
-        {() => (
-            <BatchChangesListIntro
-                isLicensed={stateToInput(radios('licensed', LicensingState, LicensingState.Unlicensed))}
-            />
-        )}
-    </WebStory>
-)
+export const Licensed = Template.bind({})
+Licensed.args = { state: LicensingState.Licensed }
 
-export const Loading: Story = () => (
-    <WebStory>
-        {() => (
-            <BatchChangesListIntro
-                isLicensed={stateToInput(radios('licensed', LicensingState, LicensingState.Loading))}
-            />
-        )}
-    </WebStory>
-)
+export const Unlicensed = Template.bind({})
+Unlicensed.args = { state: LicensingState.Unlicensed }
+
+export const Loading = Template.bind({})
+Loading.args = { state: LicensingState.Loading }
