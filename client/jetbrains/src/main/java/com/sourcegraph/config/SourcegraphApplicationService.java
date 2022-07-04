@@ -12,6 +12,15 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
     @Nullable
+    public String url;
+    @Nullable
+    public String accessToken;
+    @Nullable
+    public String defaultBranch;
+    @Nullable
+    public String remoteUrlReplacements;
+    public boolean isGlobbingEnabled; // This can be a primitive boolean, we need no "null" state
+    @Nullable
     public String anonymousUserId;
     public boolean isInstallEventLogged;
 
@@ -19,6 +28,30 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     public static SourcegraphApplicationService getInstance() {
         return ApplicationManager.getApplication()
             .getService(SourcegraphApplicationService.class);
+    }
+
+    @Nullable
+    public String getSourcegraphUrl() {
+        return url;
+    }
+
+    @Nullable
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    @Nullable
+    public String getDefaultBranchName() {
+        return defaultBranch;
+    }
+
+    @Nullable
+    public String getRemoteUrlReplacements() {
+        return remoteUrlReplacements;
+    }
+
+    public boolean isGlobbingEnabled() {
+        return this.isGlobbingEnabled;
     }
 
     @Nullable
@@ -37,7 +70,12 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     }
 
     @Override
-    public void loadState(@NotNull SourcegraphApplicationService config) {
-        this.anonymousUserId = config.anonymousUserId;
+    public void loadState(@NotNull SourcegraphApplicationService settings) {
+        this.url = settings.url;
+        this.accessToken = settings.accessToken;
+        this.defaultBranch = settings.defaultBranch;
+        this.remoteUrlReplacements = settings.remoteUrlReplacements;
+        this.isGlobbingEnabled = settings.isGlobbingEnabled;
+        this.anonymousUserId = settings.anonymousUserId;
     }
 }
