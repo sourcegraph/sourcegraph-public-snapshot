@@ -24,10 +24,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
-    private final String NO_PREVIEW_AVAILABLE_TEXT = "No preview available";
-    @SuppressWarnings("FieldCanBeLocal") // It's nicer to have these here at the top
-    private final String LOADING_TEXT = "Loading...";
-
     private final Project project;
     private JComponent editorComponent;
     private PreviewContent previewContent;
@@ -37,7 +33,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         super(new BorderLayout());
 
         this.project = project;
-        this.getEmptyText().setText(NO_PREVIEW_AVAILABLE_TEXT);
+        setState(State.NO_PREVIEW_AVAILABLE);
     }
 
     @Nullable
@@ -46,22 +42,14 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     }
 
     public void setContent(@Nullable PreviewContent previewContent) {
-        if (previewContent == null) {
-            setLoading(false);
-            clearContent();
+        String fileContent = previewContent != null ? previewContent.getContent() : null;
+        if (previewContent == null || fileContent == null) {
+            setState(State.NO_PREVIEW_AVAILABLE);
             return;
         }
 
         if (editorComponent != null && previewContent.equals(this.previewContent)) {
-            return;
-        }
-
-        String fileContent = previewContent.getContent();
-
-        /* If no content, just show "No preview available" */
-        if (fileContent == null) {
-            setLoading(false);
-            clearContent();
+            setState(State.PREVIEW_AVAILABLE);
             return;
         }
 
@@ -89,6 +77,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
         ((EditorImpl) editor).installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
 
+        setState(State.PREVIEW_AVAILABLE);
+
         editorComponent = editor.getComponent();
         add(editorComponent, BorderLayout.CENTER);
         validate();
@@ -96,8 +86,15 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
     }
 
-    public void setLoading(boolean isLoading) {
-        getEmptyText().setText(isLoading ? LOADING_TEXT : NO_PREVIEW_AVAILABLE_TEXT);
+    public void setState(@NotNull State state) {
+        if (editorComponent != null) {
+            editorComponent.setVisible(state == State.PREVIEW_AVAILABLE);
+        }
+        if (state == State.LOADING) {
+            getEmptyText().setText("Loading...");
+        } else if (state == State.NO_PREVIEW_AVAILABLE) {
+            getEmptyText().setText("No preview available");
+        }
     }
 
     private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
@@ -116,16 +113,6 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         }
     }
 
-    public void clearContent() {
-        if (editorComponent != null) {
-            previewContent = null;
-            remove(editorComponent);
-            validate();
-            repaint();
-            editorComponent = null;
-        }
-    }
-
     @Override
     public void dispose() {
         if (editor != null) {
@@ -133,13 +120,16 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         }
     }
 
+    @NotNull
     private ActionGroup createActionGroup() {
         DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new DumbAwareAction("Open File in Editor", "Open File in Editor", Icons.Logo) {
+        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.Logo) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 try {
-                    getPreviewContent().openInEditorOrBrowser();
+                    if (getPreviewContent() != null) {
+                        getPreviewContent().openInEditorOrBrowser();
+                    }
                 } catch (Exception ex) {
                     Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
                     logger.error("Error opening file in editor: " + ex.getMessage());
@@ -149,6 +139,12 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
         group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
         return group;
+    }
+
+    public enum State {
+        LOADING,
+        PREVIEW_AVAILABLE,
+        NO_PREVIEW_AVAILABLE,
     }
 
     class SimpleEditorFileAction extends DumbAwareAction {
@@ -172,5 +168,4 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             action.actionPerformedFromPreviewContent(project, getPreviewContent(), start, end);
         }
     }
-
 }

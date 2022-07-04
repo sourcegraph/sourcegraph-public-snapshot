@@ -1,15 +1,15 @@
 package com.sourcegraph.website;
 
 import com.intellij.openapi.diagnostic.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 
 public class OpenFile extends FileAction {
-
     @Override
-    void handleFileUri(String uri) {
+    void handleFileUri(@NotNull String uri) {
         Logger logger = Logger.getInstance(this.getClass());
 
         // Open the URL in the browser.
