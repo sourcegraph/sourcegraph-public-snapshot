@@ -22,6 +22,8 @@ export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element'>, 
      * outside the dom tree.
      */
     rootRender?: HTMLElement | null
+
+    forceHidden?: boolean
 }
 
 /**
@@ -45,6 +47,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         targetPadding,
         constraint,
         rootRender,
+        forceHidden,
         ...otherProps
     } = props
 
@@ -72,6 +75,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
             constrainToScrollParents,
             overflowToScrollParents,
             flipping,
+            forceHidden,
         })
 
         return unsubscribe
@@ -90,6 +94,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constrainToScrollParents,
         overflowToScrollParents,
         flipping,
+        forceHidden,
     ])
 
     if (strategy === Strategy.Absolute) {

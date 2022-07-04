@@ -226,3 +226,5 @@ enum Strategy {
 ```
 
 - **_targetPadding_** (optional) - Adds space/padding between target and popover elements
+
+- **_keepInDOM_** (optional) - By default `PopoverContent` element is removed from DOM when tooltip is hidden. If it's `true`, `PopoverContent` element will be kept in DOM but is hidden with CSS rule `visibility=hidden`. This prop is useful when `PopoverContent` children need this behavior to work. Ex: `@sourcegraph/wildcard` `MenuList` component need this to fix [focus state issue](https://github.com/sourcegraph/sourcegraph/issues/36350).

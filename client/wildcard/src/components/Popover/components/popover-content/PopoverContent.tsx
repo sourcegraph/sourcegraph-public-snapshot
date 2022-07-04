@@ -17,6 +17,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     isOpen?: boolean
     focusLocked?: boolean
     autoFocus?: boolean
+    keepInDOM?: boolean
 }
 
 export const PopoverContent = forwardRef((props, reference) => {
@@ -28,9 +29,11 @@ export const PopoverContent = forwardRef((props, reference) => {
         as: Component = 'div',
         role = 'dialog',
         'aria-modal': ariaModel = true,
+        keepInDOM = false,
+        // we should let FloatingPanel to control its `hidden` attribute
+        hidden,
         ...otherProps
     } = props
-
     const { isOpen: isOpenContext, targetElement, tailElement, anchor, setOpen } = useContext(PopoverContext)
     const { renderRoot } = useContext(PopoverRoot)
 
@@ -68,7 +71,7 @@ export const PopoverContent = forwardRef((props, reference) => {
         return () => setFocusLock(false)
     }, [autoFocus, focusLocked, tooltipElement])
 
-    if (!isOpenContext && !isOpen) {
+    if (!keepInDOM && !isOpenContext && !isOpen) {
         return null
     }
 
@@ -83,6 +86,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             aria-modal={ariaModel}
             rootRender={renderRoot}
             className={classNames(styles.popover, otherProps.className)}
+            forceHidden={keepInDOM && !isOpenContext && !isOpen}
         >
             {focusLocked ? (
                 <FocusLock disabled={!focusLock} returnFocus={true}>
