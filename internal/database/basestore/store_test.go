@@ -18,7 +18,8 @@ import (
 )
 
 func TestTransaction(t *testing.T) {
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 
@@ -65,7 +66,8 @@ func TestTransaction(t *testing.T) {
 }
 
 func TestConcurrentTransactions(t *testing.T) {
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 	ctx := context.Background()
@@ -110,7 +112,8 @@ func TestConcurrentTransactions(t *testing.T) {
 }
 
 func TestSavepoints(t *testing.T) {
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 
 	NumSavepointTests := 10
@@ -136,7 +139,8 @@ func TestSavepoints(t *testing.T) {
 }
 
 func TestSetLocal(t *testing.T) {
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 

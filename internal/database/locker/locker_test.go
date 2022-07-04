@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -15,7 +17,9 @@ func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+
+	db := dbtest.NewDB(logger, t)
 	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}))
 	locker := NewWith(handle, "test")
 
@@ -58,7 +62,8 @@ func TestLockBlockingAcquire(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}))
 	locker := NewWith(handle, "test")
 
@@ -115,7 +120,8 @@ func TestLockBadTransactionState(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}))
 	locker := NewWith(handle, "test")
 

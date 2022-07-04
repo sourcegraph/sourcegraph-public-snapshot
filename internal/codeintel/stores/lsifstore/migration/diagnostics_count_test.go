@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -18,7 +20,8 @@ import (
 )
 
 func TestDiagnosticsCountMigrator(t *testing.T) {
-	db := stores.NewCodeIntelDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
 	migrator := NewDiagnosticsCountMigrator(store, 250)
 	serializer := lsifstore.NewSerializer()

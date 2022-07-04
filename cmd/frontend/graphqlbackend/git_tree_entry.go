@@ -23,11 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -192,7 +192,7 @@ func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
-	if submoduleInfo, ok := r.stat.Sys().(git.Submodule); ok {
+	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
 		return &gitSubmoduleResolver{submodule: submoduleInfo}
 	}
 	return nil
@@ -223,15 +223,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := gitserver.NewClient(r.db).ReadDir(
-		ctx,
-		r.db,
-		authz.DefaultSubRepoPermsChecker,
-		r.commit.repoResolver.RepoName(),
-		api.CommitID(r.commit.OID()),
-		path.Dir(r.Path()),
-		false,
-	)
+	entries, err := gitserver.NewClient(r.db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}

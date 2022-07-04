@@ -12,11 +12,13 @@
     }
 
     &__preview {
-        display: flex;
+        display: block;
         width: fit-content;
         padding: 0.25rem;
         border-radius: 0.25rem;
         background-color: var(--color-bg-2);
+        white-space: normal;
+        word-break: break-all;
     }
 
     &__visibility {

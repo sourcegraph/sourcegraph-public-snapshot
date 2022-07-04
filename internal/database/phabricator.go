@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -26,6 +26,7 @@ type PhabricatorStore interface {
 }
 
 type phabricatorStore struct {
+	logger log.Logger
 	*basestore.Store
 }
 
@@ -140,7 +141,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		},
 	}
 	for {
-		svcs, err := ExternalServicesWith(p).List(ctx, opt)
+		svcs, err := ExternalServicesWith(p.logger, p).List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}
@@ -160,7 +161,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 			case *schema.PhabricatorConnection:
 				conn = c
 			default:
-				log15.Error("phabricator.GetByName", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
+				p.logger.Error("phabricator.GetByName", log.Error(errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)))
 				continue
 			}
 

@@ -14,11 +14,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
@@ -77,6 +80,12 @@ func TestParseIncludePattern(t *testing.T) {
 			exact: []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/sourcegraph-atom"},
 		},
 
+		// Ensure we don't lose foo/.*. In the past we returned exact for bar only.
+		`(^foo/.+$|^bar$)`:     {regexp: `(^foo/.+$|^bar$)`},
+		`^foo/.+$|^bar$`:       {regexp: `^foo/.+$|^bar$`},
+		`((^foo/.+$)|(^bar$))`: {regexp: `((^foo/.+$)|(^bar$))`},
+		`((^foo/.+)|(^bar$))`:  {regexp: `((^foo/.+)|(^bar$))`},
+
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {
 			exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"},
 		},
@@ -95,6 +104,10 @@ func TestParseIncludePattern(t *testing.T) {
 		// Recognize perl character class shorthand syntax.
 		`\s`: {regexp: `\s`},
 	}
+
+	tr, _ := trace.New(context.Background(), "", "")
+	defer tr.Finish()
+
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
 		if err != nil {
@@ -109,7 +122,7 @@ func TestParseIncludePattern(t *testing.T) {
 		if regexp != want.regexp {
 			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
 		}
-		if qs, err := parsePattern(pattern, false); err != nil {
+		if qs, err := parsePattern(tr, pattern, false); err != nil {
 			t.Fatal(pattern, err)
 		} else {
 			if testing.Verbose() {
@@ -138,7 +151,8 @@ func TestRepos_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -190,7 +204,8 @@ func TestRepos_Delete(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -224,7 +239,8 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -307,7 +323,8 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -345,7 +362,8 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -395,7 +413,8 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	reposToAdd := []types.Repo{
 		{
@@ -523,7 +542,8 @@ func TestRepoStore_Metadata(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 

@@ -21,12 +21,12 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
+import { EventLogger } from '../telemetry/EventLogger'
 
+import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
@@ -44,7 +44,8 @@ interface Props {
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
-    initialAuthenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser | null
+    telemetryService: EventLogger
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -60,10 +61,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewClear,
     onOpen,
     initialSearch,
-    initialAuthenticatedUser,
+    authenticatedUser,
+    telemetryService,
 }: Props) => {
-    const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(initialAuthenticatedUser)
+    const authState = authenticatedUser !== null ? 'success' : 'failure'
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>
@@ -83,22 +84,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     const settingsCascade: SettingsCascadeOrError =
         useObservable(useMemo(() => initializeSourcegraphSettings(requestGraphQL).settings, [requestGraphQL])) ||
         EMPTY_SETTINGS_CASCADE
-
-    useEffect(() => {
-        setAuthState('validating')
-        getAuthenticatedUser(instanceURL, accessToken)
-            .then(authenticatedUser => {
-                setAuthState(authenticatedUser ? 'success' : 'failure')
-                if (accessToken) {
-                    console.warn(`No authenticated user with access token “${accessToken || ''}”`)
-                }
-                setAuthenticatedUser(authenticatedUser)
-            })
-            .catch(() => {
-                setAuthState('failure')
-                console.warn(`Failed to validate authentication with access token “${accessToken || ''}”`)
-            })
-    }, [instanceURL, accessToken])
 
     const platformContext = {
         requestGraphQL,
@@ -178,16 +163,17 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             setMatches([])
             setLastSearch(nextSearch)
             saveLastSearch(nextSearch)
+            telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query]
+        [lastSearch, userQueryState.query, telemetryService]
     )
 
-    const [didInitialSubmit, setDidInitialSubmit] = useState(false)
+    const [lastInitialSubmitUser, setLastInitialSubmitUser] = useState<AuthenticatedUser | null>(null)
     useEffect(() => {
-        if (didInitialSubmit) {
+        if (lastInitialSubmitUser === authenticatedUser) {
             return
         }
-        setDidInitialSubmit(true)
+        setLastInitialSubmitUser(authenticatedUser)
         if (initialSearch !== null) {
             onSubmit({
                 caseSensitive: initialSearch.caseSensitive,
@@ -196,7 +182,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 forceNewSearch: true,
             })
         }
-    }, [initialSearch, onSubmit, didInitialSubmit])
+    }, [initialSearch, onSubmit, lastInitialSubmitUser, authenticatedUser])
 
     const statusBar = useMemo(
         () => <StatusBar progress={progress} progressState={progressState} authState={authState} />,
@@ -219,6 +205,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <GlobalKeyboardListeners />
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div className={styles.root} onMouseDown={preventAll}>
                 <div className={styles.searchBoxContainer}>
@@ -256,7 +243,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             settingsCascade={settingsCascade}
                             globbing={isGlobbingEnabled}
                             isLightTheme={!isDarkTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            telemetryService={telemetryService}
                             platformContext={platformContext}
                             className=""
                             containerClassName=""

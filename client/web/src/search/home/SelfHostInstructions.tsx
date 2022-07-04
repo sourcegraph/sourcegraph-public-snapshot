@@ -17,7 +17,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
     telemetryService,
 }) => {
     const dockerCommand =
-        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.40.2'
+        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.41.0'
 
     const copyTooltip = 'Copy command'
     const copyCompletedTooltip = 'Copied!'
@@ -53,11 +53,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     <li>Your code never leaves your server</li>
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
-                <Link
-                    to="https://docs.sourcegraph.com/cloud/cloud_ent_on-prem_comparison"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <Link to="/help/cloud/cloud_ent_on-prem_comparison" target="_blank" rel="noopener noreferrer">
                     Learn more about self-hosted vs. cloud features <Icon aria-hidden={true} as={OpenInNewIcon} />
                 </Link>
             </div>

@@ -11,7 +11,7 @@ import (
 type DBStore interface {
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
-	SelectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) ([]int, error)
+	SelectRepositoriesForLockfileIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) ([]int, error)
 }
 
 type PolicyMatcher interface {

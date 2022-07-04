@@ -81,8 +81,6 @@ const (
 )
 
 type CommitSearcher struct {
-	// Logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this Logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
 	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree

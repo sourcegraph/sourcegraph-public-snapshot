@@ -52,6 +52,8 @@ function handleRequest(
                     instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
+                    anonymousUserId: 'test',
+                    pluginVersion: '1.2.3',
                 })
             )
             break
@@ -60,6 +62,12 @@ function handleRequest(
         case 'getTheme': {
             const theme: Theme = isDarkTheme ? dark : light
             onSuccessCallback(JSON.stringify(theme))
+            break
+        }
+
+        case 'previewLoading': {
+            codeDetailsNode.innerHTML = 'Loading...'
+            onSuccessCallback('null')
             break
         }
 
@@ -125,6 +133,12 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
+            onSuccessCallback('null')
+            break
+        }
+
+        case 'windowClose': {
+            console.log('Closing window')
             onSuccessCallback('null')
             break
         }

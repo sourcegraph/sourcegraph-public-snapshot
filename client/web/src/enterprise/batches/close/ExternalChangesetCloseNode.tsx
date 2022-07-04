@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -68,7 +67,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {willClose ? (
                 <ChangesetCloseActionClose className={styles.externalChangesetCloseNodeAction} />
@@ -110,7 +109,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

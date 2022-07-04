@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { Observable, of } from 'rxjs'
 
@@ -14,15 +14,21 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
-const { add } = storiesOf('web/enterprise/searchContexts/SearchContextsListTab', module)
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <div className="p-3 container" style={{ position: 'static' }}>
+        {story()}
+    </div>
+)
+
+const config: Meta = {
+    title: 'web/enterprise/searchContexts/SearchContextsListTab',
+    decorators: [decorator],
+    parameters: {
         chromatic: { viewports: [1200], disableSnapshot: false },
-    })
-    .addDecorator(story => (
-        <div className="p-3 container" style={{ position: 'static' }}>
-            {story()}
-        </div>
-    ))
+    },
+}
+
+export default config
 
 const defaultProps: SearchContextsListTabProps = {
     authenticatedUser: null,
@@ -92,61 +98,55 @@ const propsWithContexts: SearchContextsListTabProps = {
         }),
 }
 
-add('default', () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>, {})
+export const Default: Story = () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>
 
-add(
-    'with SourcegraphDotCom disabled',
-    () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} isSourcegraphDotCom={false} />}</WebStory>,
-    {}
+export const WithSourcegraphDotComDisabled: Story = () => (
+    <WebStory>{() => <SearchContextsListTab {...propsWithContexts} isSourcegraphDotCom={false} />}</WebStory>
 )
 
-add(
-    'with 1 auto-defined context',
-    () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>,
-    {}
+WithSourcegraphDotComDisabled.storyName = 'with SourcegraphDotCom disabled'
+
+export const With1AutoDefinedContext: Story = () => (
+    <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>
 )
 
-add(
-    'with 2 auto-defined contexts',
-    () => (
-        <WebStory>
-            {() => (
-                <SearchContextsListTab
-                    {...propsWithContexts}
-                    fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(2)}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+With1AutoDefinedContext.storyName = 'with 1 auto-defined context'
+
+export const With2AutoDefinedContexts: Story = () => (
+    <WebStory>
+        {() => (
+            <SearchContextsListTab
+                {...propsWithContexts}
+                fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(2)}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'with 3 auto-defined contexts',
-    () => (
-        <WebStory>
-            {() => (
-                <SearchContextsListTab
-                    {...propsWithContexts}
-                    fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(3)}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+With2AutoDefinedContexts.storyName = 'with 2 auto-defined contexts'
+
+export const With3AutoDefinedContexts: Story = () => (
+    <WebStory>
+        {() => (
+            <SearchContextsListTab
+                {...propsWithContexts}
+                fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(3)}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'with 4 auto-defined contexts',
-    () => (
-        <WebStory>
-            {() => (
-                <SearchContextsListTab
-                    {...propsWithContexts}
-                    fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(4)}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+With3AutoDefinedContexts.storyName = 'with 3 auto-defined contexts'
+
+export const With4AutoDefinedContexts: Story = () => (
+    <WebStory>
+        {() => (
+            <SearchContextsListTab
+                {...propsWithContexts}
+                fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(4)}
+            />
+        )}
+    </WebStory>
 )
+
+With4AutoDefinedContexts.storyName = 'with 4 auto-defined contexts'

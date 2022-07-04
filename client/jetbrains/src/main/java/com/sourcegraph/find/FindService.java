@@ -6,17 +6,8 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.popup.ActiveIcon;
-import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
-import com.intellij.openapi.ui.popup.JBPopup;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.ex.WindowManagerEx;
-import com.intellij.ui.popup.AbstractPopup;
 import com.intellij.util.ui.UIUtil;
-import com.sourcegraph.Icons;
-import org.cef.browser.CefBrowser;
-import org.cef.handler.CefKeyboardHandler;
-import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -29,24 +20,18 @@ import static java.awt.event.WindowEvent.WINDOW_GAINED_FOCUS;
 public class FindService implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
-    private JBPopup popup;
+    private FindPopupDialog popup;
     private static final Logger logger = Logger.getInstance(FindService.class);
 
     public FindService(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
-        mainPanel = new FindPopupPanel(project);
+        mainPanel = new FindPopupPanel(project, this);
     }
 
     synchronized public void showPopup() {
-        if (popup == null || popup.isDisposed()) {
-            popup = createPopup();
-            popup.showCenteredInCurrentWindow(project);
-            registerOutsideClickListener();
-        } else {
-            popup.setUiVisible(true);
-        }
+        createOrShowPopup();
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
@@ -56,77 +41,47 @@ public class FindService implements Disposable {
     }
 
     public void hidePopup() {
-        popup.setUiVisible(false);
+        popup.hide();
         hideMaterialUiOverlay();
     }
 
     @NotNull
-    private JBPopup createPopup() {
-        ComponentPopupBuilder builder = JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
-            .setTitle("Sourcegraph")
-            .setTitleIcon(new ActiveIcon(Icons.Logo))
-            .setProject(project)
-            .setModalContext(false)
-            .setCancelOnClickOutside(true)
-            .setRequestFocus(true)
-            .setCancelKeyEnabled(false)
-            .setResizable(true)
-            .setMovable(true)
-            .setLocateWithinScreenBounds(false)
-            .setFocusable(true)
-            .setCancelOnWindowDeactivation(false)
-            .setCancelOnClickOutside(true)
-            .setBelongsToGlobalPopupStack(true)
-            .setNormalWindowLevel(true);
+    private void createOrShowPopup() {
+        if (popup != null) {
+            if (!popup.isVisible()) {
+                popup.show();
+            }
+        } else {
+            popup = new FindPopupDialog(project, mainPanel);
 
-        // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
-        // work around this, we add a manual listener to both the global key handler (since the editor component seems
-        // to work around the default swing event hands long) and the browser panel which seems to handle events in a
-        // separate queue.
-        registerGlobalKeyListeners();
-        registerJBCefClientKeyListeners();
+            // We add a manual listener to the global key handler since the editor component seems to work around the
+            // default Swing event handler.
+            registerGlobalKeyListeners();
 
-        return builder.createPopup();
+            // We also need to detect when the main IDE frame or another popup inside the project gets focus and close
+            // the Sourcegraph window accordingly.
+            registerOutsideClickListener();
+        }
     }
 
     private void registerGlobalKeyListeners() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
             .addKeyEventDispatcher(e -> {
-                if (e.getID() != KeyEvent.KEY_PRESSED || popup.isDisposed() || !popup.isVisible() || !popup.isFocused()) {
+                if (e.getID() != KeyEvent.KEY_PRESSED || popup != null && (popup.isDisposed() || !popup.isVisible())) {
                     return false;
                 }
 
-                return handleKeyPress(false, e.getKeyCode(), e.getModifiersEx());
+                return handleKeyPress(e.getKeyCode(), e.getModifiersEx());
             });
     }
 
-    private void registerJBCefClientKeyListeners() {
-        if (mainPanel.getBrowser() == null) {
-            logger.error("Browser panel is null");
-            return;
-        }
-
-        mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
-            @Override
-            public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
-                return false;
-            }
-
-            @Override
-            public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                return handleKeyPress(true, event.windows_key_code, event.modifiers);
-            }
-        }, mainPanel.getBrowser().getCefBrowser());
-    }
-
-    private boolean handleKeyPress(boolean isWebView, int keyCode, int modifiers) {
+    private boolean handleKeyPress(int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
             ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
         }
 
-
-        if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
+        if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
@@ -154,13 +109,13 @@ public class FindService implements Disposable {
                     return;
                 }
 
-                // Detect if we're focusing the Sourcegraph popup
-                if (popup instanceof AbstractPopup) {
-                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
+                if (!this.popup.isVisible()) {
+                    return;
+                }
 
-                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
-                        return;
-                    }
+                // Detect if we're focusing the Sourcegraph popup
+                if (windowEvent.getComponent().equals(this.popup.getWindow())) {
+                    return;
                 }
 
                 // Detect if the newly focused window is a parent of the project root window
@@ -188,7 +143,7 @@ public class FindService implements Disposable {
     @Override
     public void dispose() {
         if (popup != null) {
-            popup.dispose();
+            popup.getWindow().dispose();
         }
 
         mainPanel.dispose();

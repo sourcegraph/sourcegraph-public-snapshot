@@ -294,6 +294,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/jetbrains -s build"),
 	)
@@ -384,6 +385,14 @@ func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
+			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
+			// Because we run tests concurrently, the following must hold to avoid connection issues:
+			//
+			//   GOMAXPROCS * TESTDB_MAXOPENCONNS < 200
+			//
+			// We aim a bit below the threshold to be safe.
+			bk.Env("GOMAXPROCS", "10"),
+			bk.Env("TESTDB_MAXOPENCONNS", "15"),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
 				TestReports: &bk.TestReportOpts{
@@ -551,6 +560,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.Skip("Disabled because flaky"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),

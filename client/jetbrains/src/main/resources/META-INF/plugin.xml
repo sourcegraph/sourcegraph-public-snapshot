@@ -6,10 +6,11 @@
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
-    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
+        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
+        <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationService"/>
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"
@@ -19,6 +20,7 @@
         />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
+        <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
     </extensions>
 
     <actions>
@@ -63,15 +65,17 @@
             <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
         </action>
         <action
-            id="sourcegraph.openSearch"
+            id="sourcegraph.openFindPopup"
             class="com.sourcegraph.find.OpenFindAction"
-            text="Open Sourcegraph Search View"
-            description="Open Sourcegraph search view"
+            text="Find on Sourcegraph..."
+            description="Search all your repos on Sourcegraph"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt a" keymap="$default"/>
+            <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
+
         <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
-            <reference ref="sourcegraph.openSearch"/>
+            <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
             <reference ref="sourcegraph.searchRepository"/>
             <reference ref="sourcegraph.openFile"/>

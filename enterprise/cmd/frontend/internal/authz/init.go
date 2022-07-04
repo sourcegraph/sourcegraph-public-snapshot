@@ -34,7 +34,7 @@ var clock = timeutil.Now
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
-		return edb.NewAuthzStore(db, clock)
+		return edb.NewAuthzStore(observationContext.Logger, db, clock)
 	}
 
 	extsvcStore := db.ExternalServices()

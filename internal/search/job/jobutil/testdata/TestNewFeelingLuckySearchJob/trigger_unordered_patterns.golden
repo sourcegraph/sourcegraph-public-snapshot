@@ -4,7 +4,7 @@
     "ProposedQuery": {
       "Description": "AND patterns together",
       "Query": "context:global (parse AND func)",
-      "PatternType": 1
+      "PatternType": 3
     }
   }
 }

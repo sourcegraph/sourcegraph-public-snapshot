@@ -30,14 +30,14 @@ func TestParse(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			deps, err := parse(lockFile, f)
+			deps, _, err := parse(lockFile, f)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			got := make([]string, 0, len(deps))
 			for _, dep := range deps {
-				got = append(got, dep.PackageManagerSyntax())
+				got = append(got, dep.PackageVersionSyntax())
 			}
 
 			sort.Strings(got)

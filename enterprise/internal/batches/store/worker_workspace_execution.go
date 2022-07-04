@@ -69,9 +69,6 @@ func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHand
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
 		logger:             log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter {
-			return tx.DatabaseDB().AccessTokens().HardDeleteByID
-		},
 	}
 }
 
@@ -86,19 +83,18 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 
 	logger log.Logger
 
-	accessTokenDeleterForTX func(tx *Store) accessTokenHardDeleter
-
 	observationContext *observation.Context
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 
 	t := true
 	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 		Cancel:         &t,
 		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		WorkerHostname: executorName,
+		ExcludeRank:    true,
 	})
 	if err != nil {
 		return nil, err
@@ -111,22 +107,10 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 	return ids, nil
 }
 
-type accessTokenHardDeleter func(context.Context, int64) error
-
-// deleteAccessToken tries to delete the associated internal access
-// token. If the token cannot be found it does *not* return an error.
-func deleteAccessToken(ctx context.Context, deleteToken accessTokenHardDeleter, tokenID int64) error {
-	err := deleteToken(ctx, tokenID)
-	if err != nil && err != database.ErrAccessTokenNotFound {
-		return err
-	}
-	return nil
-}
-
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
@@ -139,8 +123,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		}
 		// If we failed to mark the job as final, we fall back to the
 		// non-wrapped functions so that the job does get marked as
-		// final/errored if, e.g., deleting the access token failed.
-		// This may leave behind an access token.
+		// final/errored if, e.g., parsing the logs failed.
 		err = tx.Done(err)
 		if err != nil {
 			s.logger.Error("marking job as final failed, falling back to base method", log.Int("id", id), log.Error(err))
@@ -149,12 +132,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
-	if err != nil {
-		return false, err
-	}
-
-	err = deleteAccessToken(ctx, s.accessTokenDeleterForTX(tx), job.AccessTokenID)
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, err
 	}
@@ -199,7 +177,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context,
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
@@ -214,8 +192,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 		// If we failed to mark the job as completed, we fall back to the
 		// non-wrapped store method so that the job is marked as
-		// failed if, e.g., deleting the access token failed.
-		// This may leave behind an access token.
+		// failed if, e.g., parsing the logs failed.
 		err = tx.Done(err)
 		if err != nil {
 			s.logger.Error("Marking job complete failed, falling back to failure", log.Int("id", id), log.Error(err))
@@ -224,7 +201,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, errors.Wrap(err, "loading batch spec workspace execution job")
 	}
@@ -322,11 +299,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		for _, spec := range specs {
 			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
 		}
-	}
-
-	err = deleteAccessToken(ctx, s.accessTokenDeleterForTX(tx), job.AccessTokenID)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to delete internal access token")
 	}
 
 	if err = s.setChangesetSpecIDs(ctx, tx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {

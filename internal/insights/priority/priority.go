@@ -15,8 +15,9 @@ const (
 // FromTimeInterval calculates a Priority value for an insight by deriving a value based on a time range. This value will rank more recent data points
 // higher priority than older ones. This can be useful for backfilling and ensuring multiple insights backfill at roughly the same rate.
 func FromTimeInterval(from time.Time, to time.Time) Priority {
+	minPriority := High + 1
 	days := to.Sub(from).Hours() / 24
-	return Priority(days)
+	return Priority(days + float64(minPriority))
 }
 
 func (p Priority) LowerBy(val int) Priority {

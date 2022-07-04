@@ -8,20 +8,21 @@ declare global {
     interface Window {
         initializeSourcegraph: () => Promise<void>
         callJava: (request: Request) => Promise<object>
-        callJS: (action: ActionName, data: string, callback: (result: string) => void) => void
+        callJS: (action: ActionName, data: string, callback: (result: string) => void) => Promise<void>
     }
 }
 
 export interface Theme {
     isDarkTheme: boolean
     intelliJTheme: { [key: string]: string }
-    syntaxTheme: { [key: string]: string }
 }
 
 export interface PluginConfig {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
+    anonymousUserId: string
+    pluginVersion: string
 }
 
 export interface Search {

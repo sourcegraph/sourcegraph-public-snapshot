@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -155,7 +157,7 @@ func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next
 				ProposedQuery: &search.ProposedQuery{
 					Description: rules[i].description,
 					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLiteralDefault,
+					PatternType: query.SearchTypeLucky,
 				},
 			}
 
@@ -276,7 +278,7 @@ func unquotePatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -305,7 +307,7 @@ func unorderedPatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -347,7 +349,7 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 }
 
 func langPatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteralDefault)
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
 	if err != nil {
 		return nil
 	}
@@ -385,7 +387,7 @@ func langPatterns(b query.Basic) *query.Basic {
 	var pattern query.Node
 	if len(newPattern) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
 		if err != nil {
 			return nil
 		}
@@ -399,7 +401,7 @@ func langPatterns(b query.Basic) *query.Basic {
 }
 
 func typePatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteralDefault)
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
 	if err != nil {
 		return nil
 	}
@@ -444,7 +446,7 @@ func typePatterns(b query.Basic) *query.Basic {
 	var pattern query.Node
 	if len(newPattern) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
 		if err != nil {
 			return nil
 		}
@@ -462,8 +464,25 @@ type generatedSearchJob struct {
 	ProposedQuery *search.ProposedQuery
 }
 
-func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (*search.Alert, error) {
+func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
+	stream := streaming.NewResultCountingStream(parentStream)
 	alert, err := g.Child.Run(ctx, clients, stream)
+
+	resultCount := stream.Count()
+	if resultCount == 0 {
+		return nil, nil
+	}
+
+	var resultCountString string
+	if resultCount == limits.DefaultMaxSearchResultsStreaming {
+		resultCountString = fmt.Sprintf("%d+ results", resultCount)
+	} else if resultCount == 1 {
+		resultCountString = fmt.Sprintf("1 result")
+	} else {
+		resultCountString = fmt.Sprintf("%d results", resultCount)
+	}
+
+	g.ProposedQuery.Description = fmt.Sprintf("%s (%s)", g.ProposedQuery.Description, resultCountString)
 	err = errors.Append(err, &alertobserver.ErrLuckyQueries{
 		ProposedQueries: []*search.ProposedQuery{g.ProposedQuery},
 	})

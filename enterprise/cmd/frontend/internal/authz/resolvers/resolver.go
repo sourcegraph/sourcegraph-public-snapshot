@@ -424,6 +424,59 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}, nil
 }
 
+var jobStatuses = map[string]bool{
+	"queued":     true,
+	"processing": true,
+	"completed":  true,
+	"canceled":   true,
+	"errored":    true,
+	"failed":     true,
+}
+
+func (r *Resolver) BitbucketProjectPermissionJobs(ctx context.Context, args *graphqlbackend.BitbucketProjectPermissionJobsArgs) (graphqlbackend.BitbucketProjectsPermissionJobsResolver, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	loweredAndTrimmedStatus := strings.ToLower(strings.TrimSpace(getOrDefault(args.Status)))
+	if loweredAndTrimmedStatus != "" && !jobStatuses[loweredAndTrimmedStatus] {
+		return nil, errors.New("Please provide one of the following job statuses: queued, processing, completed, canceled, errored, failed")
+	}
+	args.Status = &loweredAndTrimmedStatus
+
+	jobs, err := r.db.BitbucketProjectPermissions().ListJobs(ctx, convertJobsArgsToOpts(args))
+	if err != nil {
+		return nil, errors.Wrap(err, "getting a list of Bitbucket Projects permission sync jobs")
+	}
+	return NewBitbucketProjectsPermissionJobsResolver(jobs), nil
+}
+
+func convertJobsArgsToOpts(args *graphqlbackend.BitbucketProjectPermissionJobsArgs) database.ListJobsOptions {
+	if args == nil {
+		return database.ListJobsOptions{}
+	}
+
+	return database.ListJobsOptions{
+		ProjectKeys: getOrDefault(args.ProjectKeys),
+		State:       getOrDefault(args.Status),
+		Count:       getOrDefault(args.Count),
+	}
+}
+
+// getOrDefault accepts a pointer of a type T and returns dereferenced value if the pointer
+// is not nil, or zero-value for the given type otherwise
+func getOrDefault[T any](ptr *T) T {
+	var result T
+	if ptr == nil {
+		return result
+	} else {
+		return *ptr
+	}
+}
+
 type permissionsInfoResolver struct {
 	perms        authz.Perms
 	syncedAt     time.Time

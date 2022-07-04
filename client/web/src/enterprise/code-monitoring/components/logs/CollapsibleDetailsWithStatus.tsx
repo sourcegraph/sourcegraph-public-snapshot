@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
@@ -49,9 +48,9 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<
     }, [status])
 
     return (
-        <div className={styles.wrapper}>
+        <li className={styles.wrapper}>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon aria-hidden={true} className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} className="mr-2" svgPath={expanded ? mdiChevronDown : mdiChevronRight} />
                 <span>{title}</span>
                 <Badge variant={statusBadge} className="ml-2 text-uppercase">
                     {statusText}
@@ -59,6 +58,6 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<
             </Button>
 
             {expanded && <pre className={styles.message}>{message}</pre>}
-        </div>
+        </li>
     )
 }

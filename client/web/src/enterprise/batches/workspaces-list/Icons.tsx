@@ -1,8 +1,6 @@
 import React from 'react'
 
-import ContentSaveEditOutlineIcon from 'mdi-react/ContentSaveEditOutlineIcon'
-import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
+import { mdiContentSave, mdiContentSaveEditOutline, mdiDelete } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
@@ -13,7 +11,7 @@ export const CachedIcon: React.FunctionComponent<React.PropsWithChildren<unknown
     <Icon
         data-tooltip="A cached result was found for this workspace."
         aria-label="A cached result was found for this workspace."
-        as={ContentSaveIcon}
+        svgPath={mdiContentSave}
     />
 )
 
@@ -25,7 +23,7 @@ export const PartiallyCachedIcon: React.FunctionComponent<React.PropsWithChildre
             className={styles.partiallyCachedIcon}
             data-tooltip={label}
             aria-label={label}
-            as={ContentSaveEditOutlineIcon}
+            svgPath={mdiContentSaveEditOutline}
         />
     )
 }
@@ -34,6 +32,6 @@ export const ExcludeIcon: React.FunctionComponent<React.PropsWithChildren<unknow
     <Icon
         data-tooltip="Your batch spec was modified to exclude this workspace. Preview again to update."
         aria-label="Your batch spec was modified to exclude this workspace. Preview again to update."
-        as={DeleteIcon}
+        svgPath={mdiDelete}
     />
 )

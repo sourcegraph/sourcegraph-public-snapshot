@@ -1,4 +1,4 @@
-// This file is a fork from SearachBox.tsx and contains JetBrains specific UI changes
+// This file is a fork from SearchBox.tsx and contains JetBrains specific UI changes
 /* eslint-disable no-restricted-imports */
 
 import React, { useCallback, useState } from 'react'
@@ -99,10 +99,11 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
+                            /* eslint-disable-next-line no-restricted-syntax */
                             {...props}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
-                            className={styles.searchBoxContextDropdown}
+                            className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
                             menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
                         />
@@ -118,11 +119,13 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         <Search />
                     </div>
                     <LazyMonacoQueryInput
+                        /* eslint-disable-next-line no-restricted-syntax */
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
+                        editorComponent="codemirror6"
                     />
                     <JetBrainsToggles
                         patternType={props.patternType}

@@ -1,11 +1,9 @@
 import { FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiArrowExpand, mdiArrowCollapse, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual, noop } from 'lodash'
-import ArrowCollapseIcon from 'mdi-react/ArrowCollapseIcon'
-import ArrowExpandIcon from 'mdi-react/ArrowExpandIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
@@ -59,8 +57,6 @@ interface DrillDownInsightFilters {
 
     className?: string
 
-    showSeriesDisplayOptions: boolean
-
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
@@ -83,7 +79,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalValues,
         className,
         visualMode,
-        showSeriesDisplayOptions,
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
@@ -152,7 +147,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     if (isPreviewMode) {
         return (
             <header className={classNames(className, styles.header)}>
-                <H4 className={styles.heading}>Filter repositories</H4>
+                <H4 className={styles.heading}>Filters</H4>
 
                 <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
@@ -163,7 +158,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     onClick={() => onVisualModeChange(FilterSectionVisualMode.HorizontalSections)}
                     aria-label="Switch to horizontal mode"
                 >
-                    <Icon as={ArrowExpandIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiArrowExpand} />
                 </Button>
             </header>
         )
@@ -173,7 +168,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filter repositories</H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
                     disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
@@ -192,31 +187,29 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         onClick={() => onVisualModeChange(FilterSectionVisualMode.Preview)}
                         aria-label="Switch to preview mode"
                     >
-                        <Icon as={ArrowCollapseIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiArrowCollapse} />
                     </Button>
                 )}
             </header>
             <hr className={styles.headerSeparator} />
 
-            <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
-                {showSeriesDisplayOptions && (
-                    <FilterCollapseSection
-                        open={isHorizontalMode || activeSection === FilterSection.SortFilter}
-                        title="Sort & Limit"
-                        aria-label="sort and limit filter section"
-                        preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
-                        withSeparators={!isHorizontalMode}
-                        onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
-                    >
-                        <SortFilterSeriesPanel
-                            limit={seriesDisplayOptions.limit}
-                            selectedOption={seriesDisplayOptions.sortOptions}
-                            onChange={handleSeriesDisplayOptionsChange}
-                        />
-                    </FilterCollapseSection>
-                )}
-
+            <div className={classNames({ [styles.panelsHorizontalMode]: isHorizontalMode })}>
+                <FilterCollapseSection
+                    open={isHorizontalMode || activeSection === FilterSection.SortFilter}
+                    title="Data series"
+                    aria-label="sort and limit filter section"
+                    preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
+                    hasActiveFilter={hasSeriesDisplayOptionsChanged}
+                    withSeparators={!isHorizontalMode}
+                    className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
+                    onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
+                >
+                    <SortFilterSeriesPanel
+                        limit={seriesDisplayOptions.limit}
+                        selectedOption={seriesDisplayOptions.sortOptions}
+                        onChange={handleSeriesDisplayOptionsChange}
+                    />
+                </FilterCollapseSection>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"
@@ -344,7 +337,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         disabled={(!hasFiltersChanged && !hasSeriesDisplayOptionsChanged) || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
-                        <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlus} />
                         Save as new view
                     </Button>
                 </div>

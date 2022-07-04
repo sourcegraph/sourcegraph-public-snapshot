@@ -1,9 +1,3 @@
-.grid {
-    display: grid;
-    grid-template-columns: [name] minmax(auto, 1fr) [lastrun] min-content [end];
-    align-items: center;
-}
-
 .empty {
     margin-top: -1rem; // Remove default summary view margin
 }

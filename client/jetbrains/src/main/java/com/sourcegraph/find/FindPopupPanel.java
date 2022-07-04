@@ -1,14 +1,10 @@
 package com.sourcegraph.find;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.KeyboardShortcut;
-import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.PopupBorder;
-import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
@@ -18,25 +14,22 @@ import com.sourcegraph.browser.SourcegraphJBCefBrowser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.util.Objects;
+import java.util.Date;
 
 /**
  * Inspired by <a href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
-public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
+public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     private final SourcegraphJBCefBrowser browser;
     private final PreviewPanel previewPanel;
     private final BrowserAndLoadingPanel browserAndLoadingPanel;
-    private JLabel selectionMetadataLabel;
-    private JLabel externalLinkLabel;
-    private JLabel openShortcutLabel;
+    private final SelectionMetadataPanel selectionMetadataPanel;
+    private final FooterPanel footerPanel;
+    private Date lastPreviewUpdate;
 
-    public FindPopupPanel(@NotNull Project project) {
-        super(new BorderLayout());
+    public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
+        super();
 
         setPreferredSize(JBUI.size(1200, 800));
         setBorder(PopupBorder.Factory.create(true, true));
@@ -45,38 +38,34 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         Splitter splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
         add(splitter, BorderLayout.CENTER);
 
+        selectionMetadataPanel = new SelectionMetadataPanel();
         previewPanel = new PreviewPanel(project);
-        JPanel bottomPanel = createBottomPanel();
+        footerPanel = new FooterPanel();
 
-        browserAndLoadingPanel = new BrowserAndLoadingPanel();
-        JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this);
+        BorderLayoutPanel bottomPanel = new BorderLayoutPanel();
+        bottomPanel.add(selectionMetadataPanel, BorderLayout.NORTH);
+        bottomPanel.add(previewPanel, BorderLayout.CENTER);
+        bottomPanel.add(footerPanel, BorderLayout.SOUTH);
+
+        browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
+        JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
         if (browser != null) {
             browserAndLoadingPanel.setBrowser(browser);
         }
-        splitter.setFirstComponent(browserAndLoadingPanel);
+
+        // The border is needed because without it, window and splitter resize don't work because the JCEF
+        // doesn't properly pass the mouse events to Swing.
+        // 4px is the minimum amount to make it work for the window resize, and 5px for the splitter.
+        BorderLayoutPanel topPanel = new BorderLayoutPanel();
+        topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+        topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
+        topPanel.setMinimumSize(JBUI.size(750, 200));
+
+        splitter.setFirstComponent(topPanel);
         splitter.setSecondComponent(bottomPanel);
-    }
 
-    @NotNull
-    private BorderLayoutPanel createBottomPanel() {
-        BorderLayoutPanel bottomPanel = new BorderLayoutPanel();
-        JPanel selectionMetadataPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 10));
-
-        selectionMetadataLabel = new JLabel();
-        externalLinkLabel = new JLabel("", AllIcons.Ide.External_link_arrow, SwingConstants.LEFT);
-        externalLinkLabel.setVisible(false);
-        KeyboardShortcut altEnterShortcut = new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_DOWN_MASK), null);
-        String altEnterShortcutText = KeymapUtil.getShortcutText(altEnterShortcut);
-        openShortcutLabel = new JLabel(altEnterShortcutText);
-        openShortcutLabel.setVisible(false);
-
-        selectionMetadataPanel.add(selectionMetadataLabel);
-        selectionMetadataPanel.add(externalLinkLabel);
-        selectionMetadataPanel.add(openShortcutLabel);
-        bottomPanel.add(selectionMetadataPanel, BorderLayout.NORTH);
-        bottomPanel.add(previewPanel, BorderLayout.CENTER);
-        return bottomPanel;
+        lastPreviewUpdate = new Date();
     }
 
     @Nullable
@@ -89,6 +78,46 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return previewPanel;
     }
 
+    public void indicateAuthenticationStatus(boolean wasServerAccessSuccessful, boolean authenticated) {
+        browserAndLoadingPanel.setState(wasServerAccessSuccessful
+            ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
+            : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
+        if (!wasServerAccessSuccessful) {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        } else {
+            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
+        }
+    }
+
+    public void indicateLoadingIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.LOADING);
+            footerPanel.setPreviewContent(null);
+        }
+    }
+
+    public void setPreviewContentIfInTime(@NotNull PreviewContent previewContent) {
+        if (lastPreviewUpdate.before(previewContent.getReceivedDateTime())) {
+            this.lastPreviewUpdate = previewContent.getReceivedDateTime();
+            selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
+            previewPanel.setContent(previewContent);
+            footerPanel.setPreviewContent(previewContent);
+        }
+    }
+
+    public void clearPreviewContentIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        }
+    }
+
     @Override
     public void dispose() {
         if (browser != null) {
@@ -96,49 +125,5 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         }
 
         previewPanel.dispose();
-    }
-
-    public void setPreviewContent(@NotNull PreviewContent previewContent) {
-        previewPanel.setContent(previewContent);
-    }
-
-    public void clearPreviewContent() {
-        previewPanel.setContent(null);
-    }
-
-    public void setBrowserVisible(boolean visible) {
-        browserAndLoadingPanel.setBrowserVisible(visible);
-    }
-
-    public void clearSelectionMetadataLabel() {
-        selectionMetadataLabel.setText("");
-        externalLinkLabel.setVisible(false);
-        openShortcutLabel.setVisible(false);
-    }
-
-    public void setSelectionMetadataLabel(@NotNull PreviewContent previewContent) {
-        String metadataText = getMetadataText(previewContent);
-        selectionMetadataLabel.setText(metadataText);
-        externalLinkLabel.setVisible(!previewContent.opensInEditor());
-        openShortcutLabel.setToolTipText("Press " + openShortcutLabel.getText() + " to open the selected file" +
-            (previewContent.opensInEditor() ? " in the editor." : " in your browser."));
-        openShortcutLabel.setVisible(true);
-    }
-
-    @NotNull
-    private String getMetadataText(@NotNull PreviewContent previewContent) {
-        if (Objects.equals(previewContent.getResultType(), "file") || Objects.equals(previewContent.getResultType(), "path")) {
-            return previewContent.getRepoUrl() + ":" + previewContent.getPath();
-        } else if (Objects.equals(previewContent.getResultType(), "repo")) {
-            return previewContent.getRepoUrl();
-        } else if (Objects.equals(previewContent.getResultType(), "symbol")) {
-            return previewContent.getSymbolName() + " (" + previewContent.getSymbolContainerName() + ")";
-        } else if (Objects.equals(previewContent.getResultType(), "diff")) {
-            return previewContent.getCommitMessagePreview() != null ? previewContent.getCommitMessagePreview() : "";
-        } else if (Objects.equals(previewContent.getResultType(), "commit")) {
-            return previewContent.getCommitMessagePreview() != null ? previewContent.getCommitMessagePreview() : "";
-        } else {
-            return "";
-        }
     }
 }

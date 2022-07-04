@@ -488,6 +488,7 @@ func GitServer() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
 
+			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerRepoManagement, provisioningIndicatorsOptions),

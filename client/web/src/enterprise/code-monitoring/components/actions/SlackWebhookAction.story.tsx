@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -9,9 +9,14 @@ import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/SlackWebhookAction', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/SlackWebhookAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -29,7 +34,7 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-add('SlackWebhookAction', () => (
+export const SlackWebhookActionStory: Story = () => (
     <WebStory>
         {() => (
             <>
@@ -63,4 +68,6 @@ add('SlackWebhookAction', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+SlackWebhookActionStory.storyName = 'SlackWebhookAction'

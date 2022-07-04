@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,7 +20,8 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	isEmpty, err := db.SavedSearches().IsEmpty(ctx)
 	if err != nil {
@@ -61,7 +64,8 @@ func TestSavedSearchesCreate(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
@@ -100,7 +104,8 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
@@ -142,7 +147,8 @@ func TestSavedSearchesDelete(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
@@ -181,7 +187,8 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
@@ -224,7 +231,8 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
@@ -268,7 +276,8 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
