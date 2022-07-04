@@ -23,6 +23,10 @@ func findConsecutiveFailures(
 	var consecutiveFailures int
 	var build buildkite.Build
 	for buildsScanned, build = range builds {
+		if isBuildScheduled(build) {
+			// we do not consider scheduled builds like Healthcheck
+			continue
+		}
 		if isBuildPassed(build) {
 			// If we find a passed build we are done
 			return
