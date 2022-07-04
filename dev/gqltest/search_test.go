@@ -1500,7 +1500,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"python/urllib3",
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("lockfile indexing failed to clone dependency repos: %s", err)
 		}
 
 		for _, tc := range []struct {
