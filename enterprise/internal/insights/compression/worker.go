@@ -236,7 +236,7 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 	commits, err := gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		if isCommitEmptyRepoError(err, after, until) {
-			log15.Info("insights-job.background.CommitIndexer.getCommits: empty repo - metadata updated successfully", "repository", name)
+			log15.Info("insights-job.background.CommitIndexer.getCommits: empty repo - updating success metadata", "repository", name)
 			err = nil
 		} else {
 			return nil, err
