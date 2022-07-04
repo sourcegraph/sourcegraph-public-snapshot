@@ -31,7 +31,7 @@ func TestSavedSearches(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
-	savedSearches, err := (&schemaResolver{db: db}).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)))
+	savedSearches, err := newSchemaResolver(db).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 		UID: userID,
 	})
 
-	savedSearch, err := (&schemaResolver{db: db}).savedSearchByID(ctx, ssID)
+	savedSearch, err := newSchemaResolver(db).savedSearchByID(ctx, ssID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 		UID: adminID,
 	})
 
-	_, err := (&schemaResolver{db: db}).savedSearchByID(ctx, ssID)
+	_, err := newSchemaResolver(db).savedSearchByID(ctx, ssID)
 	t.Log(err)
 	if err == nil {
 		t.Fatal("expected an error")
@@ -161,7 +161,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	userID := MarshalUserID(key)
-	savedSearches, err := (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
+	savedSearches, err := newSchemaResolver(db).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -189,7 +189,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure create saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
+	_, err = newSchemaResolver(db).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -232,7 +232,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	userID := MarshalUserID(key)
-	savedSearches, err := (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
+	savedSearches, err := newSchemaResolver(db).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -266,7 +266,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure update saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
+	_, err = newSchemaResolver(db).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -359,7 +359,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 			db.SavedSearchesFunc.SetDefaultReturn(savedSearches)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-			_, err := (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
+			_, err := newSchemaResolver(db).UpdateSavedSearch(ctx, &struct {
 				ID          graphql.ID
 				Description string
 				Query       string
@@ -409,7 +409,7 @@ func TestDeleteSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	firstSavedSearchGraphqlID := graphql.ID("U2F2ZWRTZWFyY2g6NTI=")
-	_, err := (&schemaResolver{db: db}).DeleteSavedSearch(ctx, &struct {
+	_, err := newSchemaResolver(db).DeleteSavedSearch(ctx, &struct {
 		ID graphql.ID
 	}{ID: firstSavedSearchGraphqlID})
 	if err != nil {
