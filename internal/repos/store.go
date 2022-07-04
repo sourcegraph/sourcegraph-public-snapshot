@@ -731,7 +731,7 @@ func (s *store) ListSyncJobs(ctx context.Context, opt SyncJobsListOptions) ([]Sy
 	if opt.State != "" {
 		query = sqlf.Sprintf(q, sqlf.Sprintf("state = %s", opt.State))
 	} else {
-		query = sqlf.Sprintf(q, "1")
+		query = sqlf.Sprintf(q, "TRUE")
 	}
 
 	rows, err := s.Query(ctx, query)
