@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
@@ -380,7 +380,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon as={AddIcon} aria-hidden={true} /> Add repositories
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add repositories
                             </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
                             <Button
@@ -389,7 +389,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon as={AddIcon} aria-hidden={true} /> Add repositories
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add repositories
                             </Button>
                         ) : (
                             <Button
@@ -398,7 +398,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon as={AddIcon} aria-hidden={true} /> Connect code hosts
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Connect code hosts
                             </Button>
                         )}
                     </span>

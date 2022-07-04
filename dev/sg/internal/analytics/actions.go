@@ -56,6 +56,11 @@ func Reset() error {
 	if err != nil {
 		return err
 	}
+
+	if _, err := os.Stat(p); os.IsNotExist(err) {
+		// don't have to remove something that doesn't exist
+		return nil
+	}
 	return os.Remove(p)
 }
 

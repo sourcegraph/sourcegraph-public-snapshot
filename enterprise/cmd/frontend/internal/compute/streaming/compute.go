@@ -3,6 +3,8 @@ package streaming
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
@@ -33,7 +35,7 @@ func toComputeResult(ctx context.Context, db database.DB, cmd compute.Command, m
 	return out, nil
 }
 
-func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
+func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
 	computeQuery, err := compute.Parse(query)
 	if err != nil {
 		return nil, func() (*search.Alert, error) { return nil, err }
@@ -84,7 +86,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	}
 
 	patternType := "regexp"
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)

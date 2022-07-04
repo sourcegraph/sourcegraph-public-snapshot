@@ -15,6 +15,7 @@ func TestUpdateEmail(t *testing.T) {
 	uid2 := insertTestUser(ctx, t, db, "u2", false)
 	ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
 	fixtures := s.insertTestMonitor(ctx1, t)
+	_ = s.insertTestMonitor(ctx2, t) // user2 also has monitors
 
 	ea, err := s.CreateEmailAction(ctx1, fixtures.monitor.ID, &EmailActionArgs{
 		Priority: "NORMAL",
