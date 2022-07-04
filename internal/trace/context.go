@@ -6,8 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log/otfields"
 	"github.com/uber/jaeger-client-go"
-	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
-	"go.opentelemetry.io/otel/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
@@ -47,20 +46,11 @@ func CopyContext(ctx context.Context, from context.Context) context.Context {
 // ID returns a trace ID, if any, found in the given context. If you need both trace and
 // span ID, use trace.Context.
 func ID(ctx context.Context) string {
-	span := opentracing.SpanFromContext(ctx)
+	span := Context(ctx)
 	if span == nil {
 		return ""
 	}
-	return IDFromSpan(span)
-}
-
-// IDFromSpan returns a trace ID, if any, found in the given span.
-func IDFromSpan(span opentracing.Span) string {
-	traceCtx := ContextFromSpan(span)
-	if traceCtx == nil {
-		return ""
-	}
-	return traceCtx.TraceID
+	return span.TraceID
 }
 
 // Context retrieves the full trace context, if any, from context - this includes
@@ -70,12 +60,8 @@ func Context(ctx context.Context) *otfields.TraceContext {
 	if span == nil {
 		return nil
 	}
-	return ContextFromSpan(span)
-}
 
-// Context retrieves the full trace context, if any, from the span - this includes
-// both TraceID and SpanID.
-func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
+	// try Jaeger ("opentracing") span
 	if jaegerSpan, ok := span.Context().(jaeger.SpanContext); ok {
 		return &otfields.TraceContext{
 			TraceID: jaegerSpan.TraceID().String(),
@@ -83,15 +69,14 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 		}
 	}
 
-	// We need to retrieve the bridged OpenTracing context as an OpenTelemetry context,
-	// and then get trace details. To do so, we use a no-op bridge tracer.
-	otelCtx := otelbridge.NewBridgeTracer().ContextWithSpanHook(context.Background(), span)
-	if otelSpan := trace.SpanFromContext(otelCtx).SpanContext(); otelSpan.IsValid() {
+	// try bridged OpenTelemetry span
+	if otelSpan := oteltrace.SpanFromContext(ctx).SpanContext(); otelSpan.IsValid() {
 		return &otfields.TraceContext{
 			TraceID: otelSpan.TraceID().String(),
 			SpanID:  otelSpan.SpanID().String(),
 		}
 	}
 
+	// no span found
 	return nil
 }
