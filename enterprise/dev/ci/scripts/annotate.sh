@@ -24,8 +24,8 @@ generate_grafana_link() {
 }
 
 print_heading() {
-    logs="[view Grafana logs]($(generate_grafana_link))"
-    output="[view job output](#$BUILDKITE_JOB_ID)"
+    logs="[View Grafana logs]($(generate_grafana_link))"
+    output="[View job output](#$BUILDKITE_JOB_ID)"
     printf "**%s** &bull; %s &bull; %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
 }
 
