@@ -2,11 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import FileCodeIcon from 'mdi-react/FileCodeIcon'
 
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { RecentFilesFragment } from '../../graphql-operations'
@@ -20,6 +19,7 @@ import { ShowMoreButton } from './ShowMoreButton'
 import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
+import { mdiFileCode } from "@mdi/js";
 
 interface Props extends TelemetryProps {
     className?: string
@@ -88,7 +88,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
 
     const emptyDisplay = (
         <EmptyPanelContainer className="align-items-center text-muted">
-            <FileCodeIcon className="mb-2" size="2rem" />
+            <Icon className="mb-2" svgPath={mdiFileCode} inline={false} aria-hidden={true} height="2rem" width="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
         </EmptyPanelContainer>
     )

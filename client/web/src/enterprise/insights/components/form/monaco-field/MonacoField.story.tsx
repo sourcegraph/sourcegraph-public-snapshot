@@ -1,11 +1,11 @@
 import { Meta } from '@storybook/react'
-import RegexIcon from 'mdi-react/RegexIcon'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 
 import * as Monaco from '.'
+import { mdiRegex } from "@mdi/js";
 
 export default {
     title: 'web/insights/form/MonacoField',
@@ -35,9 +35,8 @@ export const SimpleMonacoField = () => (
         <Monaco.Root>
             <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegraph/* " />
             <Button variant="icon" disabled={true}>
-                <RegexIcon
-                    size={21}
-                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
+                <Icon
+                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input." svgPath={mdiRegex} inline={false} aria-hidden={true} height={21} width={21}
                 />
             </Button>
         </Monaco.Root>
@@ -45,9 +44,8 @@ export const SimpleMonacoField = () => (
         <Monaco.Root>
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" />
             <Button variant="icon" disabled={true}>
-                <RegexIcon
-                    size={21}
-                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
+                <Icon
+                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input." svgPath={mdiRegex} inline={false} aria-hidden={true} height={21} width={21}
                 />
             </Button>
         </Monaco.Root>
@@ -55,9 +53,8 @@ export const SimpleMonacoField = () => (
         <Monaco.Root>
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-valid" />
             <Button variant="icon" disabled={true}>
-                <RegexIcon
-                    size={21}
-                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
+                <Icon
+                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input." svgPath={mdiRegex} inline={false} aria-hidden={true} height={21} width={21}
                 />
             </Button>
         </Monaco.Root>
@@ -65,9 +62,8 @@ export const SimpleMonacoField = () => (
         <Monaco.Root>
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-invalid" />
             <Button variant="icon" disabled={true}>
-                <RegexIcon
-                    size={21}
-                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
+                <Icon
+                    data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input." svgPath={mdiRegex} inline={false} aria-hidden={true} height={21} width={21}
                 />
             </Button>
         </Monaco.Root>

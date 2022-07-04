@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import {
     Link,
@@ -13,8 +12,7 @@ import {
     MenuLink,
     MenuList,
     Position,
-    Checkbox,
-} from '@sourcegraph/wildcard'
+    Checkbox, Icon } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
@@ -25,6 +23,7 @@ import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
+import { mdiDotsVertical } from "@mdi/js";
 
 export interface InsightCardMenuProps {
     insight: Insight
@@ -73,9 +72,8 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                             aria-label="Insight options"
                             outline={true}
                         >
-                            <DotsVerticalIcon
-                                className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
-                                size={16}
+                            <Icon
+                                className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })} svgPath={mdiDotsVertical} inline={false} aria-hidden={true} height={16} width={16}
                             />
                         </MenuButton>
                         <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insightID}`}>

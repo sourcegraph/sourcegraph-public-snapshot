@@ -1,10 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import AddIcon from 'mdi-react/AddIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
 
@@ -19,6 +15,7 @@ import { OrganizationFields } from '../graphql-operations'
 import { orgURL } from '../org'
 
 import { deleteOrganization, fetchAllOrganizations } from './backend'
+import { mdiSettings, mdiAccount, mdiDelete, mdiAdd } from "@mdi/js";
 
 interface OrgNodeProps {
     /**
@@ -72,7 +69,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon aria-hidden={true} svgPath={mdiSettings} /> Settings
                     </Button>{' '}
                     <Button
                         to={`${orgURL(node.name)}/settings/members`}
@@ -81,7 +78,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={AccountIcon} aria-hidden={true} />{' '}
+                        <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                         {node.members && (
                             <>
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}
@@ -96,7 +93,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         aria-label="Delete organization"
                     >
-                        <Icon as={DeleteIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </div>
             </div>
@@ -128,7 +125,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <H2 className="mb-0">Organizations</H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <Icon as={AddIcon} aria-hidden={true} /> Create organization
+                    <Icon aria-hidden={true} svgPath={mdiAdd} /> Create organization
                 </Button>
             </div>
             <Text>

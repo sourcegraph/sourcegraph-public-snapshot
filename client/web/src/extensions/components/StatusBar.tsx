@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Observable, Subscription, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 import { tabbable } from 'tabbable'
@@ -21,6 +19,7 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 
 import styles from './StatusBar.module.scss'
+import { mdiChevronLeft, mdiChevronRight } from "@mdi/js";
 
 interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
@@ -168,7 +167,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         variant="link"
                         aria-label="Scroll left"
                     >
-                        <Icon as={ChevronLeftIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronLeft} />
                     </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
@@ -205,7 +204,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         variant="link"
                         aria-label="Scroll right"
                     >
-                        <Icon as={ChevronRightIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     </Button>
                 )}
             </ErrorBoundary>

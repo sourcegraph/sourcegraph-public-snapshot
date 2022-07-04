@@ -1,7 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -31,6 +30,7 @@ import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
 import { NOTEPAD_CTA_ID, NotepadCTA } from './NotepadCta'
 
 import styles from './NotebooksListPageHeader.module.scss'
+import { mdiChevronDown } from "@mdi/js";
 
 const LOADING = 'loading' as const
 
@@ -113,7 +113,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
                         Create notebook
                     </Button>
                     <MenuButton variant="primary" className={styles.dropdownButton}>
-                        <Icon as={ChevronDownIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         <VisuallyHidden>Actions</VisuallyHidden>
                     </MenuButton>
                 </ButtonGroup>

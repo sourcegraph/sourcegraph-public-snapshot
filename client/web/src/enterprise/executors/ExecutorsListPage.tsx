@@ -2,7 +2,6 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCheckboxBlankCircle } from '@mdi/js'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
@@ -20,6 +19,7 @@ import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { queryExecutors as defaultQueryExecutors } from './useExecutors'
+import { mdiMapSearch } from "@mdi/js";
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -211,7 +211,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
 
 export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
-        <MapSearchIcon className="mb-2" />
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
         No executors found.
     </Text>

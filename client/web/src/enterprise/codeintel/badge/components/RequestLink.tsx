@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 
 import classNames from 'classnames'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
@@ -12,6 +11,7 @@ import {
 } from '../hooks/useCodeIntelStatus'
 
 import styles from './RequestLink.module.scss'
+import { mdiInfoCircleOutline } from "@mdi/js";
 
 export interface RequestLinkProps {
     indexerName: string
@@ -53,9 +53,8 @@ export const RequestLink: React.FunctionComponent<React.PropsWithChildren<Reques
         data.languages.includes(language) || requested ? (
             <span className="text-muted">
                 Received your request{' '}
-                <InfoCircleOutlineIcon
-                    size={16}
-                    data-tooltip="Requests are documented and contribute to our precise support roadmap"
+                <Icon
+                    data-tooltip="Requests are documented and contribute to our precise support roadmap" svgPath={mdiInfoCircleOutline} inline={false} aria-hidden={true} height={16} width={16}
                 />
             </span>
         ) : (

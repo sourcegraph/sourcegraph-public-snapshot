@@ -4,10 +4,9 @@ import { useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Modal, H3 } from '@sourcegraph/wildcard'
+import { Button, Input, Modal, H3, Icon } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -15,6 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { ADD_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
 
 import styles from './InviteMemberModal.module.scss'
+import { mdiClose } from "@mdi/js";
 
 export interface AddMemberToOrgModalProps {
     orgName: string
@@ -78,7 +78,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<
                         <H3>{title}</H3>
                         <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
                             <VisuallyHidden>Close</VisuallyHidden>
-                            <CloseIcon />
+                            <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                         </Button>
                     </div>
                     {error && <ErrorAlert className={styles.alert} error={error} />}

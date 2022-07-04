@@ -4,8 +4,6 @@ import { EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -38,6 +36,7 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
 import styles from './NotebookSymbolBlock.module.scss'
+import { mdiOpenInNew, mdiInformationOutline } from "@mdi/js";
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
@@ -123,7 +122,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -276,8 +275,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
                 >
                     <Icon
                         aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
-                        as={InformationOutlineIcon}
-                        className="ml-1"
+                        className="ml-1" svgPath={mdiInformationOutline}
                     />
                 </Tooltip>
             )}

@@ -1,9 +1,8 @@
 import React, { DOMAttributes, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
-import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
 import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
 import { Insight, InsightFilters } from '../../../../../../core'
@@ -20,6 +19,7 @@ import {
 import { parseSeriesDisplayOptions } from '../drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './DrillDownFiltersPopover.module.scss'
+import { mdiFilterOutline } from "@mdi/js";
 
 const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
 interface DrillDownFiltersPopoverProps {
@@ -96,7 +96,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                     [styles.filterButtonActive]: isFiltered,
                 })}
             >
-                <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
+                <Icon className={styles.filterIcon} svgPath={mdiFilterOutline} inline={false} aria-hidden={true} height="1rem" width="1rem" />
             </PopoverTrigger>
 
             <PopoverContent

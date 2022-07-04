@@ -2,7 +2,6 @@ import React, { useMemo, useState, useCallback } from 'react'
 
 import { EditorView } from '@codemirror/view'
 import { debounce } from 'lodash'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { createDefaultSuggestions } from '@sourcegraph/search-ui'
@@ -18,6 +17,7 @@ import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestions
 import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookFileBlockInputs.module.scss'
+import { mdiInfoCircleOutline } from "@mdi/js";
 
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
@@ -106,7 +106,7 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <Icon aria-hidden={true} as={InfoCircleOutlineIcon} /> To automatically select a file, copy a
+                    <Icon aria-hidden={true} svgPath={mdiInfoCircleOutline} /> To automatically select a file, copy a
                     Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>

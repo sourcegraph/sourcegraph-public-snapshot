@@ -2,8 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
@@ -14,6 +12,7 @@ import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operatio
 import { TriggerEvent } from './TriggerEvent'
 
 import styles from './MonitorLogNode.module.scss'
+import { mdiChevronDown, mdiChevronRight } from "@mdi/js";
 
 const clickCatcher = (event: React.MouseEvent<HTMLAnchorElement>): void => {
     event.stopPropagation()
@@ -58,9 +57,9 @@ export const MonitorLogNode: React.FunctionComponent<
                     aria-label="Expand code monitor"
                 >
                     {expanded ? (
-                        <ChevronDownIcon className="mr-2 flex-shrink-0" />
+                        <Icon className="mr-2 flex-shrink-0" svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
                     ) : (
-                        <ChevronRightIcon className="mr-2 flex-shrink-0" />
+                        <Icon className="mr-2 flex-shrink-0" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
                     )}
                     {hasError ? (
                         <Icon

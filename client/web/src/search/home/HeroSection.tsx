@@ -1,12 +1,12 @@
 import React from 'react'
 
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, H2 } from '@sourcegraph/wildcard'
+import { Link, H2, Icon } from '@sourcegraph/wildcard'
 
 import styles from './HeroSection.module.scss'
+import { mdiArrowRight } from "@mdi/js";
 
 export const HeroSection: React.FunctionComponent<React.PropsWithChildren<ThemeProps & TelemetryProps>> = ({
     isLightTheme,
@@ -38,7 +38,7 @@ export const HeroSection: React.FunctionComponent<React.PropsWithChildren<ThemeP
                     className={styles.link}
                     onClick={() => telemetryService.log('HomepageAboutSiteLinkClicked')}
                 >
-                    Learn more about Sourcegraph <ArrowRightIcon className="ml-2" />
+                    Learn more about Sourcegraph <Icon className="ml-2" svgPath={mdiArrowRight} inline={false} aria-hidden={true} />
                 </Link>
             </div>
         </div>

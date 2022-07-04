@@ -1,7 +1,6 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import {
@@ -24,6 +23,7 @@ import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistr
 import { extensionBannerIconURL } from './icons'
 
 import styles from './ExtensionRegistrySidenav.module.scss'
+import { mdiMenuDown } from "@mdi/js";
 
 const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
     all: 'Show all',
@@ -82,7 +82,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
             <Menu>
                 <MenuButton size="sm" variant="secondary" outline={true}>
-                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} aria-hidden={true} />
+                    {enablementFilterToLabel[enablementFilter]} <Icon aria-hidden={true} svgPath={mdiMenuDown} />
                 </MenuButton>
                 <MenuList>
                     <MenuItem onSelect={showAll} disabled={enablementFilter === 'all'}>

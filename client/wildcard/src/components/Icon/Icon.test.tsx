@@ -1,10 +1,11 @@
 import { mdiClose } from '@mdi/js'
 import { render } from '@testing-library/react'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { SourcegraphIcon } from '../SourcegraphIcon'
 
 import { Icon } from './Icon'
+import { mdiClose } from "@mdi/js";
+import { Icon } from "@sourcegraph/wildcard";
 
 describe('Icon', () => {
     describe('custom icons', () => {
@@ -21,12 +22,12 @@ describe('Icon', () => {
 
     describe('legacy mdi-react icons', () => {
         it('renders a simple inline icon correctly', () => {
-            const { asFragment } = render(<Icon as={CloseIcon} aria-hidden={true} />)
+            const { asFragment } = render(<Icon aria-hidden={true} svgPath={mdiClose} />)
             expect(asFragment()).toMatchSnapshot()
         })
 
         it('renders a medium icon correctly', () => {
-            const { asFragment } = render(<Icon as={CloseIcon} size="md" aria-label="Checkmark" />)
+            const { asFragment } = render(<Icon size="md" aria-label="Checkmark" svgPath={mdiClose} />)
             expect(asFragment()).toMatchSnapshot()
         })
     })

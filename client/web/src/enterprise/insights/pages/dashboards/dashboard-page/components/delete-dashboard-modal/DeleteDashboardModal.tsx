@@ -1,12 +1,11 @@
 import React from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Modal, H2 } from '@sourcegraph/wildcard'
+import { Button, Modal, H2, Icon } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CustomInsightDashboard } from '../../../../../core/types'
@@ -14,6 +13,7 @@ import { CustomInsightDashboard } from '../../../../../core/types'
 import { useDeleteDashboardHandler } from './hooks/use-delete-dashboard-handler'
 
 import styles from './DeleteDashobardModal.module.scss'
+import { mdiClose } from "@mdi/js";
 
 export interface DeleteDashboardModalProps {
     dashboard: CustomInsightDashboard
@@ -42,7 +42,7 @@ export const DeleteDashboardModal: React.FunctionComponent<
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
             <Button variant="icon" className={styles.closeButton} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
-                <CloseIcon />
+                <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
 
             <H2 className="text-danger">Delete ”{dashboard.title}”</H2>

@@ -1,10 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Menu, MenuButton, MenuItem, MenuList, H2 } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList, H2, Icon } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ParentSize, Series } from '../../../../../charts'
 import { WebStory } from '../../../../../components/WebStory'
@@ -13,6 +11,7 @@ import { SeriesChart } from '../chart'
 import { SeriesBasedChartTypes } from '../types'
 
 import * as Card from './InsightCard'
+import { mdiFilterOutline, mdiDotsVertical } from "@mdi/js";
 
 export default {
     title: 'web/insights/shared-components',
@@ -65,11 +64,11 @@ export const InsightCardShowcase: Story = () => (
                     subtitle="Subtitle chart description"
                 >
                     <Button variant="icon" className="p-1">
-                        <FilterOutlineIcon size="1rem" />
+                        <Icon svgPath={mdiFilterOutline} inline={false} aria-hidden={true} height="1rem" width="1rem" />
                     </Button>
                     <Menu>
                         <MenuButton variant="icon" className="p-1">
-                            <DotsVerticalIcon size={16} />
+                            <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} height={16} width={16} />
                         </MenuButton>
                         <MenuList>
                             <MenuItem onSelect={noop}>Create</MenuItem>
@@ -143,11 +142,11 @@ function InsightCardWithChart() {
         <Card.Root style={{ width: '400px', height: '400px' }}>
             <Card.Header title="Insight with chart" subtitle="CSS migration insight chart">
                 <Button variant="icon" className="p-1">
-                    <FilterOutlineIcon size="1rem" />
+                    <Icon svgPath={mdiFilterOutline} inline={false} aria-hidden={true} height="1rem" width="1rem" />
                 </Button>
                 <Menu>
                     <MenuButton variant="icon" className="p-1">
-                        <DotsVerticalIcon size={16} />
+                        <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} height={16} width={16} />
                     </MenuButton>
                     <MenuList>
                         <MenuItem onSelect={noop}>Create</MenuItem>

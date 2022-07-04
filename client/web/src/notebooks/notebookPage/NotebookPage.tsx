@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
@@ -54,6 +52,7 @@ import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
 
 import styles from './NotebookPage.module.scss'
+import { mdiCheckCircle, mdiClose } from "@mdi/js";
 
 interface NotebookPageProps
     extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
@@ -279,8 +278,8 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                     {isNotebookLoaded(latestNotebook) && (
                                         <>
-                                            <CheckCircleIcon
-                                                className={classNames('text-success m-1', styles.autoSaveIndicator)}
+                                            <Icon
+                                                className={classNames('text-success m-1', styles.autoSaveIndicator)} svgPath={mdiCheckCircle} inline={false} aria-hidden={true}
                                             />
                                             <span>
                                                 Last updated{' '}
@@ -360,7 +359,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"

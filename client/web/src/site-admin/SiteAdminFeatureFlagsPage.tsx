@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
@@ -9,7 +8,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Code, H3, Text } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Code, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -18,6 +17,7 @@ import { FeatureFlagFields, SearchPatternType, SearchVersion } from '../graphql-
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 
 import styles from './SiteAdminFeatureFlagsPage.module.scss'
+import { mdiChevronRight } from "@mdi/js";
 
 interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
@@ -281,7 +281,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
                 <Link to={`./feature-flags/configuration/${node.name}`} className="p-0">
-                    <ChevronRightIcon />
+                    <Icon svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
                 </Link>
             </span>
 

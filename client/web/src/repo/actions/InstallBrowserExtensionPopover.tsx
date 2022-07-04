@@ -2,7 +2,6 @@ import React from 'react'
 
 import classNames from 'classnames'
 import ExportIcon from 'mdi-react/ExportIcon'
-import PlusThickIcon from 'mdi-react/PlusThickIcon'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { ButtonLink, PopoverContent, Position, H3, Text } from '@sourcegraph/wildcard'
@@ -12,6 +11,7 @@ import { SourcegraphIcon } from '../../auth/icons'
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 import styles from './InstallBrowserExtensionPopover.module.scss'
+import { mdiPlusThick } from "@mdi/js";
 
 interface Props {
     url: string
@@ -59,7 +59,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<React.Props
                     )}
                 >
                     <SourcegraphIcon className={classNames('p-1', styles.logo)} />
-                    <PlusThickIcon className={styles.plusIcon} />
+                    <Icon className={styles.plusIcon} svgPath={mdiPlusThick} inline={false} aria-hidden={true} />
                     <Icon className={styles.logo} aria-hidden={true} />
                 </div>
 

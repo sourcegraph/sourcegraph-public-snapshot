@@ -2,8 +2,6 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import { chunk, upperFirst } from 'lodash'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Icon, Text } from '@sourcegraph/wildcard'
 
@@ -13,6 +11,7 @@ import { TourTask } from './TourTask'
 import { TourTaskType } from './types'
 
 import styles from './Tour.module.scss'
+import { mdiClose, mdiCheckCircle } from "@mdi/js";
 
 interface TourContentProps {
     title?: string
@@ -32,7 +31,7 @@ const Header: React.FunctionComponent<{ onClose: () => void; title?: string }> =
     <div className="d-flex justify-content-between align-items-start">
         <Text className={styles.title}>{title}</Text>
         <Button variant="icon" data-testid="tour-close-btn" onClick={onClose} aria-label="Close quick start">
-            <Icon as={CloseIcon} aria-hidden={true} /> {children}
+            <Icon aria-hidden={true} svgPath={mdiClose} /> {children}
         </Button>
     </div>
 )
@@ -43,9 +42,8 @@ const Footer: React.FunctionComponent<{ completedCount: number; totalCount: numb
 }) => (
     <Text alignment="right" className="mt-2 mb-0">
         <Icon
-            as={CheckCircleIcon}
             className={classNames('mr-1', completedCount === 0 ? 'text-muted' : 'text-success')}
-            aria-hidden={true}
+            aria-hidden={true} svgPath={mdiCheckCircle}
         />
         {completedCount} of {totalCount} completed
     </Text>
@@ -54,10 +52,9 @@ const Footer: React.FunctionComponent<{ completedCount: number; totalCount: numb
 const CompletedItem: React.FunctionComponent = ({ children }) => (
     <li className="d-flex align-items-start">
         <Icon
-            as={CheckCircleIcon}
             size="sm"
             className={classNames('text-success mr-1', styles.completedCheckIcon)}
-            aria-hidden={true}
+            aria-hidden={true} svgPath={mdiCheckCircle}
         />
         <span className="flex-1">{children}</span>
     </li>

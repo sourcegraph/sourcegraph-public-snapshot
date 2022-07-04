@@ -1,4 +1,3 @@
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -6,6 +5,7 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { Link, H3, createLinkUrl, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import styles from './QuerySuggestion.module.scss'
+import { mdiInformationOutline } from "@mdi/js";
 
 interface LuckySearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
@@ -20,9 +20,8 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                     <Icon
                         size="sm"
                         className="ml-1"
-                        as={InformationOutlineIcon}
                         tabIndex={0}
-                        aria-label="More information"
+                        aria-label="More information" svgPath={mdiInformationOutline}
                     />
                 </Tooltip>
             </H3>

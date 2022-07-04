@@ -1,9 +1,8 @@
 import React, { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { Link, H3, Icon } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -15,6 +14,7 @@ import { CodeIntelUploadOrIndexLastActivity } from '../../shared/components/Code
 import { CodeIntelUploadOrIndexRoot } from '../../shared/components/CodeIntelUploadOrIndexRoot'
 
 import styles from './CodeIntelUploadNode.module.scss'
+import { mdiChevronRight } from "@mdi/js";
 
 export interface CodeIntelUploadNodeProps {
     node: LsifUploadFields
@@ -58,7 +58,7 @@ export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<Code
         </span>
         <span>
             <Link to={`./uploads/${node.id}`}>
-                <ChevronRightIcon />
+                <Icon svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
             </Link>
         </span>
     </>

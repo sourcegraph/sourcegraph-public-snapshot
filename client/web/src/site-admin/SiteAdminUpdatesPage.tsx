@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
-import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
@@ -14,6 +13,7 @@ import { PageTitle } from '../components/PageTitle'
 import { fetchSiteUpdateCheck } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
+import { mdiCloudDownload } from "@mdi/js";
 
 interface Props extends TelemetryProps {}
 
@@ -49,7 +49,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
                             <Alert className={styles.alert} variant="success">
-                                <Icon as={CloudDownloadIcon} aria-hidden={true} /> Update available:{' '}
+                                <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Update available:{' '}
                                 <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
                             </Alert>
                         ) : (

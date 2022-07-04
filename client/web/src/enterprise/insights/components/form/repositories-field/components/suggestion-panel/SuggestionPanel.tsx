@@ -2,13 +2,13 @@ import React from 'react'
 
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import classNames from 'classnames'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SuggestionPanel.module.scss'
+import { mdiSourceRepository } from "@mdi/js";
 
 interface SuggestionsPanelProps {
     value: string | null
@@ -50,7 +50,7 @@ export const SuggestionsPanel: React.FunctionComponent<React.PropsWithChildren<S
         <ComboboxList className={classNames(styles.suggestionsList, className)}>
             {suggestions.map(suggestion => (
                 <ComboboxOption className={styles.suggestionsListItem} key={suggestion.id} value={suggestion.name}>
-                    <SourceRepositoryIcon className="mr-1" size="1rem" />
+                    <Icon className="mr-1" svgPath={mdiSourceRepository} inline={false} aria-hidden={true} height="1rem" width="1rem" />
                     <ComboboxOptionText />
                 </ComboboxOption>
             ))}

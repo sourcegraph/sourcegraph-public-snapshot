@@ -1,11 +1,10 @@
 import React, { useCallback, useContext, useState } from 'react'
 
 import * as H from 'history'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -27,6 +26,7 @@ import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
 import { PreviewSelectRow } from './PreviewSelectRow'
 
 import styles from './PreviewList.module.scss'
+import { mdiMagnify } from "@mdi/js";
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']
@@ -172,7 +172,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
 const EmptyPreviewSearchElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted row w-100">
         <div className="col-12 text-center">
-            <MagnifyIcon className="icon" />
+            <Icon className="icon" svgPath={mdiMagnify} inline={false} aria-hidden={true} />
             <div className="pt-2">No changesets matched the search.</div>
         </div>
     </div>

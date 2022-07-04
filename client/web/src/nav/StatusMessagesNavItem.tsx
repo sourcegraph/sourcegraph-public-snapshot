@@ -3,11 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
-import AlertIcon from 'mdi-react/AlertIcon'
 import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
-import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
-import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
@@ -28,6 +24,7 @@ import { StatusMessagesResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './StatusMessagesNavItem.module.scss'
+import { mdiInformationCircle, mdiAlert, mdiSync, mdiCloudOffOutline } from "@mdi/js";
 
 function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
     return requestGraphQL<StatusMessagesResult>(
@@ -88,13 +85,13 @@ interface StatusMessageEntryProps {
 function entryIcon(entryType: EntryType): JSX.Element {
     switch (entryType) {
         case 'error':
-            return <InformationCircleIcon size={14} className={classNames('text-danger', styles.icon)} />
+            return <Icon className={classNames('text-danger', styles.icon)} svgPath={mdiInformationCircle} inline={false} aria-hidden={true} height={14} width={14} />
         case 'warning':
-            return <AlertIcon size={14} className={classNames('text-warning', styles.icon)} />
+            return <Icon className={classNames('text-warning', styles.icon)} svgPath={mdiAlert} inline={false} aria-hidden={true} height={14} width={14} />
         case 'success':
             return <CheckboxCircleIcon size={14} className={classNames('text-success', styles.icon)} />
         case 'progress':
-            return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
+            return <Icon className={classNames('text-primary', styles.icon)} svgPath={mdiSync} inline={false} aria-hidden={true} height={14} width={14} />
         case 'not-active':
             return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
     }
@@ -421,9 +418,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             return (
                 <Icon
                     data-tooltip={codeHostMessage}
-                    as={CloudOffOutlineIcon}
                     size="md"
-                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })} svgPath={mdiCloudOffOutline}
                 />
             )
         }

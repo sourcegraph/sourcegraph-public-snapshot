@@ -1,14 +1,14 @@
 import React from 'react'
 
-import PlusIcon from 'mdi-react/PlusIcon'
 
-import { Button, Link, Card } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { ALL_INSIGHTS_DASHBOARD, InsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
+import { mdiPlus } from "@mdi/js";
 
 interface EmptyInsightDashboardProps {
     dashboard: InsightDashboard
@@ -37,7 +37,7 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<
 > = props => (
     <section className={styles.emptySection}>
         <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
-            <PlusIcon size="2rem" />
+            <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
             <span>Create an insight</span>
         </Card>
         {props.dashboard.id !== ALL_INSIGHTS_DASHBOARD.id && (
@@ -77,7 +77,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<
                     data-placement="right"
                     className={styles.itemCard}
                 >
-                    <PlusIcon size="2rem" />
+                    <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
                     <span>Add insights</span>
                 </Card>
             </Button>

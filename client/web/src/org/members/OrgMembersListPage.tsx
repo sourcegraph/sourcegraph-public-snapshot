@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -19,8 +18,7 @@ import {
     MenuItem,
     Position,
     PageSelector,
-    H3,
-} from '@sourcegraph/wildcard'
+    H3, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {
@@ -41,6 +39,7 @@ import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } fro
 import { getPaginatedItems, OrgMemberNotification } from './utils'
 
 import styles from './OrgMembersListPage.module.scss'
+import { mdiCog } from "@mdi/js";
 
 interface Props
     extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
@@ -135,7 +134,7 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                                 className={styles.memberMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
+                                <Icon svgPath={mdiCog} inline={false} aria-hidden={true} height={15} width={15} />
                                 <span aria-hidden={true}>
                                     <ChevronDown size={15} />
                                 </span>

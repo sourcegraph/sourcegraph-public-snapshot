@@ -1,7 +1,5 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
-import TickIcon from 'mdi-react/TickIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -14,6 +12,8 @@ import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 import { IconRadioButtons } from './IconRadioButtons'
 
 import styles from './FeedbackPrompt.module.scss'
+import { mdiClose, mdiTick } from "@mdi/js";
+import { Icon } from "@sourcegraph/wildcard";
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -105,11 +105,11 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
     return (
         <>
             <Button className={styles.close} onClick={onClose}>
-                <CloseIcon className={styles.icon} />
+                <Icon className={styles.icon} svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
-                    <TickIcon className={styles.successTick} />
+                    <Icon className={styles.successTick} svgPath={mdiTick} inline={false} aria-hidden={true} />
                     <H3>We‘ve received your feedback!</H3>
                     <Text className="d-inline">
                         Thank you for your help.

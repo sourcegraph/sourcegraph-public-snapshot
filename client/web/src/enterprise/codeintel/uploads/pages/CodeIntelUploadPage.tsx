@@ -3,7 +3,6 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
@@ -43,6 +42,7 @@ import {
 import { useDeleteLsifUpload } from '../hooks/useDeleteLsifUpload'
 
 import styles from './CodeIntelUploadPage.module.scss'
+import { mdiMapSearch } from "@mdi/js";
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -365,7 +365,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                 <UploadAuditLogTimeline logs={uploadOrError.auditLogs || []} />
                             ) : (
                                 <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
-                                    <MapSearchIcon className="mb-2" />
+                                    <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
                                     <br />
                                     This upload has no audit logs.
                                 </Text>

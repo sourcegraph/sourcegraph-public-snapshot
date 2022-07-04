@@ -1,18 +1,16 @@
 import React, { useCallback, useMemo } from 'react'
 
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import DomainIcon from 'mdi-react/DomainIcon'
-import LockIcon from 'mdi-react/LockIcon'
 import WebIcon from 'mdi-react/WebIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuItem, MenuList, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
 
 import styles from './NotebookShareOptionsDropdown.module.scss'
+import { mdiLock, mdiChevronUp, mdiChevronDown } from "@mdi/js";
 
 export interface ShareOption {
     namespaceType: 'User' | 'Org'
@@ -43,7 +41,7 @@ const ShareOptionComponent: React.FunctionComponent<
         }
         return (
             <>
-                <LockIcon className="mr-2" size="1.15rem" /> Private
+                <Icon className="mr-2" svgPath={mdiLock} inline={false} aria-hidden={true} height="1.15rem" width="1.15rem" /> Private
             </>
         )
     }
@@ -99,7 +97,7 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<
                         <span className="d-flex align-items-center">
                             <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
                         </span>
-                        <span className="ml-5">{isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}</span>
+                        <span className="ml-5">{isOpen ? <Icon svgPath={mdiChevronUp} inline={false} aria-hidden={true} /> : <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />}</span>
                     </MenuButton>
                     <MenuList>
                         {shareOptions.map(option => (

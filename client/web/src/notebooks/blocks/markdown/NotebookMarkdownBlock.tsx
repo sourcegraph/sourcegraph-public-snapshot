@@ -7,8 +7,6 @@ import { Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { classHighlighter, tags } from '@lezer/highlight'
 import classNames from 'classnames'
-import PencilIcon from 'mdi-react/PencilIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 
 import { changeListener } from '@sourcegraph/search-ui'
 import { useCodeMirror, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -26,6 +24,7 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookMarkdownBlock.module.scss'
+import { mdiPlayCircleOutline, mdiPencil } from "@mdi/js";
 
 const staticExtensions: Extension[] = [
     history(),
@@ -154,14 +153,14 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
                     ? {
                           type: 'button',
                           label: 'Render',
-                          icon: <Icon aria-hidden={true} as={PlayCircleOutlineIcon} />,
+                          icon: <Icon aria-hidden={true} svgPath={mdiPlayCircleOutline} />,
                           onClick: runBlock,
                           keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
                       }
                     : {
                           type: 'button',
                           label: 'Edit',
-                          icon: <Icon aria-hidden={true} as={PencilIcon} />,
+                          icon: <Icon aria-hidden={true} svgPath={mdiPencil} />,
                           onClick: editMarkdown,
                           keyboardShortcutLabel: '↵',
                       },

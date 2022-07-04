@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
-import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -22,6 +21,7 @@ import {
     SiteAdminAccessTokensVariables,
 } from '../graphql-operations'
 import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../settings/tokens/AccessTokenNode'
+import { mdiAdd } from "@mdi/js";
 
 interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'>, TelemetryProps {
     authenticatedUser: AuthenticatedUser
@@ -53,7 +53,7 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                     className={classNames('ml-2', !accessTokensEnabled && 'disabled')}
                     to={accessTokensEnabled ? `${authenticatedUser.settingsURL!}/tokens/new` : null}
                 >
-                    <Icon as={AddIcon} aria-hidden={true} /> Generate access token
+                    <Icon aria-hidden={true} svgPath={mdiAdd} /> Generate access token
                 </Button>
             </div>
             <Text>

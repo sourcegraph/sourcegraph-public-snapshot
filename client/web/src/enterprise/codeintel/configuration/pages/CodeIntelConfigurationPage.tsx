@@ -2,14 +2,13 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link, H3, Text } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -28,6 +27,7 @@ import { RetentionPolicyDescription } from '../components/RetentionPolicyDescrip
 import { queryPolicies as defaultQueryPolicies } from '../hooks/queryPolicies'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
+import { mdiChevronRight } from "@mdi/js";
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -146,7 +146,6 @@ export interface PoliciesNodeProps {
 export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
-    lockfileIndexingEnabled = false,
 }) => (
     <>
         <span className={styles.separator} />
@@ -209,7 +208,7 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
         <span className={classNames(styles.button, 'd-none d-md-inline')}>
             <Link to={`./configuration/${policy.id}`} className="p-0">
-                <ChevronRightIcon />
+                <Icon svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
             </Link>
         </span>
     </>

@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo, memo } from 'react'
 
 import classNames from 'classnames'
-import WarningIcon from 'mdi-react/WarningIcon'
 
 import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
@@ -26,6 +25,7 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExten
 
 import styles from './ExtensionCard.module.scss'
 import headerColorStyles from './ExtensionHeader.module.scss'
+import { mdiWarning } from "@mdi/js";
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -228,7 +228,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <Icon as={WarningIcon} aria-hidden={true} /> Invalid manifest
+                                    <Icon aria-hidden={true} svgPath={mdiWarning} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -237,7 +237,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <Icon as={WarningIcon} aria-hidden={true} /> No manifest
+                                <Icon aria-hidden={true} svgPath={mdiWarning} /> No manifest
                             </span>
                         )}
                     </div>

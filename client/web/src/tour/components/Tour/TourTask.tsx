@@ -1,8 +1,6 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
@@ -17,6 +15,7 @@ import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
 
 import styles from './Tour.module.scss'
+import { mdiCheckCircle, mdiHelpCircleOutline } from "@mdi/js";
 
 type TourTaskProps = TourTaskType & {
     variant?: 'small'
@@ -115,7 +114,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                         {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
                         <Text className={styles.title}>{title}</Text>
                         {completed === 100 && (
-                            <Icon as={CheckCircleIcon} size="sm" className="text-success" aria-label="Completed" />
+                            <Icon size="sm" className="text-success" aria-label="Completed" svgPath={mdiCheckCircle} />
                         )}
                         {typeof completed === 'number' && completed < 100 && (
                             <CircularProgressbar
@@ -187,19 +186,17 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                             {step.tooltip && (
                                 <Tooltip content={step.tooltip}>
                                     <Icon
-                                        as={HelpCircleOutlineIcon}
                                         size="sm"
                                         className={classNames('ml-1', styles.colorLink)}
-                                        aria-label={step.tooltip}
+                                        aria-label={step.tooltip} svgPath={mdiHelpCircleOutline}
                                     />
                                 </Tooltip>
                             )}
                             {(isMultiStep || !title) && step.isCompleted && (
                                 <Icon
-                                    as={CheckCircleIcon}
                                     size="md"
                                     className="text-success"
-                                    aria-label="Completed step"
+                                    aria-label="Completed step" svgPath={mdiCheckCircle}
                                 />
                             )}
                         </li>

@@ -2,8 +2,6 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
 import classNames from 'classnames'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import { Observable, of } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -40,6 +38,7 @@ import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import styles from './NotebookQueryBlock.module.scss'
+import { mdiPlayCircleOutline, mdiOpenInNew } from "@mdi/js";
 
 interface NotebookQueryBlockProps
     extends BlockProps<QueryBlock>,
@@ -111,7 +110,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 type: 'button',
                 label: isLoading ? 'Searching...' : 'Run search',
                 isDisabled: isLoading ?? false,
-                icon: <Icon aria-hidden={true} as={PlayCircleOutlineIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiPlayCircleOutline} />,
                 onClick: onRunBlock,
                 keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
             }
@@ -122,7 +121,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
                     url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
                 },
             ],

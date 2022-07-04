@@ -2,14 +2,14 @@ import React from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Menu, MenuButton, MenuItem, MenuList, Position, Checkbox } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuItem, MenuList, Position, Checkbox, Icon } from '@sourcegraph/wildcard'
 
 import { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 
 import styles from './StandaloneInsightContextMenu.module.scss'
+import { mdiDotsVertical } from "@mdi/js";
 
 export interface StandaloneInsightContextMenuProps {
     insight: Insight
@@ -37,9 +37,8 @@ export const StandaloneInsightContextMenu: React.FunctionComponent<StandaloneIns
                         aria-label="Insight options"
                         outline={true}
                     >
-                        <DotsVerticalIcon
-                            className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
-                            size={16}
+                        <Icon
+                            className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })} svgPath={mdiDotsVertical} inline={false} aria-hidden={true} height={16} width={16}
                         />
                     </MenuButton>
                     <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insight.id}`}>

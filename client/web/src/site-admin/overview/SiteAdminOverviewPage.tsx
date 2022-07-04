@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
@@ -19,6 +18,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
+import { mdiOpenInNew } from "@mdi/js";
 
 interface Props extends ActivationProps, ThemeProps {
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -267,7 +267,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                                             as={Link}
                                                         >
                                                             View all usage statistics{' '}
-                                                            <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                                         </Button>
                                                     </H3>
                                                 </div>

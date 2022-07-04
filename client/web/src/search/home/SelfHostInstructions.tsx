@@ -2,9 +2,6 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Code, H2 } from '@sourcegraph/wildcard'
@@ -12,6 +9,7 @@ import { Button, Link, Icon, Code, H2 } from '@sourcegraph/wildcard'
 import { MarketingBlock } from '../../components/MarketingBlock'
 
 import styles from './SelfHostInstructions.module.scss'
+import { mdiDownload, mdiOpenInNew, mdiContentCopy } from "@mdi/js";
 
 export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildren<TelemetryProps>> = ({
     telemetryService,
@@ -43,7 +41,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
         <div className={styles.wrapper}>
             <div className={styles.column}>
                 <H2>
-                    <Icon aria-hidden={true} className={classNames('mr-2', styles.downloadIcon)} as={DownloadIcon} />{' '}
+                    <Icon aria-hidden={true} className={classNames('mr-2', styles.downloadIcon)} svgPath={mdiDownload} />{' '}
                     Self-hosted deployment
                 </H2>
                 <ul className={styles.featureList}>
@@ -54,7 +52,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
                 <Link to="/help/cloud/cloud_ent_on-prem_comparison" target="_blank" rel="noopener noreferrer">
-                    Learn more about self-hosted vs. cloud features <Icon aria-hidden={true} as={OpenInNewIcon} />
+                    Learn more about self-hosted vs. cloud features <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                 </Link>
             </div>
 
@@ -71,7 +69,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                         aria-label="Copy Docker command to clipboard"
                         variant="link"
                     >
-                        <Icon aria-hidden={true} as={ContentCopyIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
                     </Button>
                     <Code className={styles.codeBlock}>{dockerCommand}</Code>
                 </MarketingBlock>
@@ -82,7 +80,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                         rel="noopener noreferrer"
                         className="mr-2"
                     >
-                        Learn how to deploy a server or cluster <Icon aria-hidden={true} as={OpenInNewIcon} />
+                        Learn how to deploy a server or cluster <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                     <Link
                         to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-self-hosted-install&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=self-hosted-install"

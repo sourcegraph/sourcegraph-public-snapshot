@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
@@ -14,6 +13,7 @@ import { PageRoutes } from '../../routes.constants'
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
 import navItemStyles from './NavItem.module.scss'
+import { mdiMenu } from "@mdi/js";
 
 interface NavBarProps {
     children: React.ReactNode
@@ -81,7 +81,7 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon as={MenuIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiMenu} />
                 <Icon as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>

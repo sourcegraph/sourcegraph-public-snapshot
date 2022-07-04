@@ -1,11 +1,11 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import LockIcon from 'mdi-react/LockIcon'
 
 import { Alert, AlertProps, Icon, H2, H5 } from '@sourcegraph/wildcard'
 
 import styles from './SiteAdminAlert.module.scss'
+import { mdiLock } from "@mdi/js";
 
 interface SiteAdminAlertProps {
     className?: string
@@ -22,7 +22,7 @@ export const SiteAdminAlert: React.FunctionComponent<React.PropsWithChildren<Sit
 }) => (
     <Alert className={classNames(styles.siteAdminAlert, className)} variant={variant}>
         <H5 as={H2}>
-            <Icon as={LockIcon} aria-hidden={true} /> Site admin
+            <Icon aria-hidden={true} svgPath={mdiLock} /> Site admin
         </H5>
         <div>{children}</div>
     </Alert>

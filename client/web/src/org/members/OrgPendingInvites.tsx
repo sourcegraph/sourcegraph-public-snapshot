@@ -4,8 +4,6 @@ import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
-import EmailIcon from 'mdi-react/EmailIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
@@ -19,8 +17,7 @@ import {
     MenuItem,
     Position,
     PageSelector,
-    H3,
-} from '@sourcegraph/wildcard'
+    H3, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {
@@ -47,6 +44,7 @@ import {
 } from './utils'
 
 import styles from './OrgPendingInvites.module.scss'
+import { mdiEmail, mdiCog } from "@mdi/js";
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
     onOrgGetStartedRefresh: () => void
@@ -182,7 +180,7 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
                                 data-tooltip={invite.recipient.displayName || invite.recipient.username}
                             />
                         )}
-                        {!invite.recipient && invite.recipientEmail && <EmailIcon className={styles.emailIcon} />}
+                        {!invite.recipient && invite.recipientEmail && <Icon className={styles.emailIcon} svgPath={mdiEmail} inline={false} aria-hidden={true} />}
                     </div>
                     <div className="d-flex flex-column">
                         {invite.recipient && (
@@ -226,7 +224,7 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
                                 className={styles.inviteMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
+                                <Icon svgPath={mdiCog} inline={false} aria-hidden={true} height={15} width={15} />
                                 <span aria-hidden={true}>
                                     <ChevronDown size={15} />
                                 </span>

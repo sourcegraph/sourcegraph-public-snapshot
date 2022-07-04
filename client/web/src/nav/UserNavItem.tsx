@@ -4,7 +4,6 @@ import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 // eslint-disable-next-line no-restricted-imports
 import { Tooltip } from 'reactstrap'
 
@@ -35,6 +34,7 @@ import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
+import { mdiOpenInNew } from "@mdi/js";
 
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     authenticatedUser: Pick<
@@ -272,7 +272,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 target="_blank"
                                 rel="noopener"
                             >
-                                Help <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
@@ -290,7 +290,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     target="_blank"
                                     rel="noopener"
                                 >
-                                    About Sourcegraph <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                    About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                             {codeHostIntegrationMessaging === 'browser-extension' && (
@@ -301,7 +301,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     target="_blank"
                                     rel="noopener"
                                 >
-                                    Browser extension <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                    Browser extension <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                         </MenuList>

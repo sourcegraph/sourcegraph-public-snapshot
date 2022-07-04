@@ -2,14 +2,14 @@ import React from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../core/types'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 
 import styles from './DashboardMenu.module.scss'
+import { mdiDotsVertical } from "@mdi/js";
 
 export enum DashboardMenuAction {
     CopyLink,
@@ -44,7 +44,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 aria-label="dashboard context menu"
             >
                 <VisuallyHidden>Dashboard options</VisuallyHidden>
-                <DotsVerticalIcon size={16} />
+                <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} height={16} width={16} />
             </MenuButton>
 
             <MenuList className={styles.menuList} position={Position.bottomEnd}>

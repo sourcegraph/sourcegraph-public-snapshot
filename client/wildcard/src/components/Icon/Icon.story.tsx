@@ -1,6 +1,5 @@
 import { mdiClose } from '@mdi/js'
 import { Story, Meta } from '@storybook/react'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -9,6 +8,8 @@ import { Icon } from '..'
 import { H3 } from '../..'
 import { SourcegraphIcon } from '../SourcegraphIcon'
 import { Code } from '../Typography'
+import { mdiClose } from "@mdi/js";
+import { Icon } from "@sourcegraph/wildcard";
 
 const config: Meta = {
     title: 'wildcard/Icon',
@@ -45,7 +46,7 @@ export const Simple: Story = () => (
         <H3>
             Legacy <Code>mdi-react</Code> Icon
         </H3>
-        <Icon as={CloseIcon} size="md" aria-label="Close" />
+        <Icon size="md" aria-label="Close" svgPath={mdiClose} />
 
         <H3>
             New <Code>@mdi/js</Code> Icon

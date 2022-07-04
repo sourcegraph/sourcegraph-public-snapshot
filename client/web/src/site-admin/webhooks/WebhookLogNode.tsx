@@ -13,6 +13,7 @@ import { MessagePanel } from './MessagePanel'
 import { StatusCode } from './StatusCode'
 
 import styles from './WebhookLogNode.module.scss'
+import { mdiChevronDown, mdiChevronRight } from "@mdi/js";
 
 export interface Props {
     node: WebhookLogFields
@@ -52,9 +53,9 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
             <span className={styles.smDetailsButton}>
                 <Button onClick={toggleExpanded} outline={true} variant="secondary">
                     {isExpanded ? (
-                        <Icon aria-hidden={true} as={ChevronDownIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-hidden={true} as={ChevronRightIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     )}{' '}
                     {isExpanded ? 'Hide' : 'Show'} details
                 </Button>
