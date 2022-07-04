@@ -83,18 +83,25 @@
         > button,
         > button:hover,
         > button:focus {
+            padding: 0.25rem 1rem;
             background: var(--jb-button-bg);
             border: 1px solid var(--jb-border-color);
-            border-radius: 0;
+            border-radius: 2px;
 
             &:focus {
                 border: 1px solid var(--input-focus-border-color);
                 box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
             }
+
+            > code {
+                font-family: inherit;
+                font-weight: normal;
+            }
         }
 
         > div {
             border-radius: 0;
+            padding: 0;
         }
     }
 
@@ -104,9 +111,47 @@
 
         > div {
             border: none;
+
+            &:first-child {
+                font-weight: 600;
+                color: var(--jb-text-color);
+                padding: 0.5rem 0.75rem;
+
+                > button {
+                    display: none;
+                }
+            }
+
+            &:last-child {
+                padding: 0.5rem 0.75rem;
+                background: #f2f2f2; // TODO: replace with variable
+                flex-direction: row-reverse;
+
+                > button {
+                    padding: 0.25rem 1rem;
+                    background: var(--jb-button-bg);
+                    border: 1px solid var(--jb-border-color);
+                    border-radius: 2px;
+                    color: var(--jb-text-color);
+                    font-weight: normal;
+
+                    &:hover,
+                    &:focus {
+                        text-decoration: none !important;
+                        color: var(--jb-text-color) !important;
+                    }
+                }
+            }
         }
 
         button[data-search-context-spec] {
+            padding-top: 0;
+            padding-bottom: 0;
+
+            > small:last-child {
+                color: #8b8b8b; // TODO: replace with variable
+            }
+
             &:hover {
                 background-color: var(--dropdown-link-hover-bg);
 
@@ -119,8 +164,13 @@
             &:focus {
                 background-color: var(--dropdown-link-active-bg);
 
-                > small {
+                > small,
+                > span {
                     color: var(--light-text);
+                }
+
+                > span {
+                    background-color: var(--dropdown-link-active-bg);
                 }
             }
         }
@@ -190,33 +240,58 @@
     }
 
     :global(.cm-editor) {
-        :global(.cm-tooltip),
-        :global(.cm-tooltip-autocomplete) {
+        :global(.cm-tooltip):global(.cm-tooltip-autocomplete) {
+            color: var(--jb-text-color);
             background-color: var(--dropdown-bg);
-        }
+            border-radius: 0;
 
-        :global(.cm-tooltip) {
-            margin-top: -2px;
-        }
+            &::after {
+                content: 'Press Tab to apply selection';
+                padding: 0.125rem 0.75rem;
+                display: block;
+                background: #f2f2f2; // TODO: replace with variable
+                color: #6c6c6c; // TODO: replace with variable
+                font-size: var(--code-font-size);
+            }
 
-        :global(.cm-tooltip-autocomplete) {
+            :global(.cm-completionInfo) {
+                padding: 0 0.25rem;
+                border: none;
+                border-radius: 0;
+                margin-top: -1px;
+                font-size: var(--code-font-size);
+                line-height: 1.2rem;
+            }
+
+            :global(.cm-completionLabel),
+            :global(.cm-completionMatchedText) {
+                font-weight: normal;
+            }
+
+            :global(.cm-completionMatchedText) {
+                background-color: rgb(255, 222, 122);
+                border: 1px solid rgb(225, 197, 117);
+                color: rgb(50, 50, 50);
+                border-radius: 3px;
+            }
+
+            :global(.cm-completionDetail) {
+                text-align: end;
+                font-style: normal;
+                color: #8b8b8b; // TODO: replace with variable
+            }
+
             > ul {
                 font-family: inherit;
 
                 > li {
                     align-items: center;
                     font-size: var(--code-font-size);
+                    padding: 0 0.125rem 0 0.75rem;
+                    border-width: 1px 0;
 
-                    :global(.cm-completionLabel),
-                    :global(.cm-completionMatchedText) {
-                        font-weight: normal;
-                    }
-
-                    :global(.cm-completionMatchedText) {
-                        background-color: rgb(255, 222, 122);
-                        border: 1px solid rgb(225, 197, 117);
-                        color: rgb(50, 50, 50);
-                        border-radius: 3px;
+                    > svg {
+                        padding-right: 0.25rem;
                     }
 
                     &:hover {
@@ -226,22 +301,15 @@
                     &[aria-selected],
                     &:focus {
                         background-color: var(--dropdown-link-active-bg) !important;
+                        border-color: #0068c1;
 
-                        :global(.cm-completionLabel) {
+                        :global(.cm-completionLabel),
+                        :global(.cm-completionDetail) {
                             color: var(--light-text);
                         }
 
                         :global(.completion-hint) {
-                            color: var(--light-text);
-                            border-color: var(--light-text);
-                        }
-
-                        :global(.cm-completionDetail) {
-                            color: var(--jb-completion-detail-color);
-                        }
-
-                        > svg path {
-                            fill: var(--light-text);
+                            display: none;
                         }
                     }
                 }

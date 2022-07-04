@@ -105,6 +105,7 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 
+    root.style.setProperty('--jb-text', intelliJTheme.text)
     root.style.setProperty('--jb-completion-detail-color', isDarkTheme ? null : intelliJTheme['SplitPane.highlight'])
     root.style.setProperty('--jb-button-bg', intelliJTheme['Button.background'])
     root.style.setProperty('--jb-text-color', intelliJTheme.text)
