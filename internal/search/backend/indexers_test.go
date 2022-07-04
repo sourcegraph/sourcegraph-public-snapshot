@@ -3,17 +3,12 @@ package backend
 import (
 	"context"
 	"fmt"
-
-	"github.com/sourcegraph/log"
-
 	"math/rand"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,7 +17,7 @@ func TestReposSubset(t *testing.T) {
 	var indexed map[string][]types.MinimalRepo
 	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
-		Indexed: func(ctx context.Context, logger log.Logger, k string) map[uint32]*zoekt.MinimalRepoListEntry {
+		Indexed: func(ctx context.Context, k string) map[uint32]*zoekt.MinimalRepoListEntry {
 			set := map[uint32]*zoekt.MinimalRepoListEntry{}
 			if indexed == nil {
 				return set
@@ -101,7 +96,7 @@ func TestReposSubset(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			indexed = tc.indexed
-			got, err := index.ReposSubset(ctx, logtest.Scoped(t), tc.hostname, index.Indexed(ctx, logtest.Scoped(t), tc.hostname), tc.repos)
+			got, err := index.ReposSubset(ctx, tc.hostname, index.Indexed(ctx, tc.hostname), tc.repos)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {

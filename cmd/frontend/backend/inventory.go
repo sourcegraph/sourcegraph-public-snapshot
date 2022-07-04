@@ -45,7 +45,7 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return gitserver.NewClient(db).ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
+			return gitserver.NewClient(db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return gitserver.NewClient(db).NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)

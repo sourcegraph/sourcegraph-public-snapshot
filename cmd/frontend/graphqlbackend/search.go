@@ -20,7 +20,6 @@ type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
-	log         log.Logger
 }
 
 type SearchImplementer interface {
@@ -30,7 +29,7 @@ type SearchImplementer interface {
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	settings, err := DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
 		return nil, err
@@ -38,7 +37,6 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 
 	inputs, err := run.NewSearchInputs(
 		ctx,
-		args.log,
 		db,
 		args.Version,
 		args.PatternType,
@@ -58,24 +56,24 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 	return &searchResolver{
 		db:           db,
 		SearchInputs: inputs,
-		zoekt:        search.Indexed(log.Scoped("searchResolver", "")),
+		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
-		log:          log.Scoped("searchResolver", "search resolver for BatchSearchImplementer"),
+		logger:       logger,
 	}, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewBatchSearchImplementer(ctx, r.db, args)
+	return NewBatchSearchImplementer(ctx, r.logger, r.db, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	SearchInputs *run.SearchInputs
 	db           database.DB
+	logger       log.Logger
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
-	log          log.Logger
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings

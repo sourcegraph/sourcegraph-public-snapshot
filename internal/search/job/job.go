@@ -7,7 +7,8 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -23,10 +24,11 @@ import (
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
 	Name() string
-	Tags() []log.Field
+	Tags() []otlog.Field
 }
 
 type RuntimeClients struct {
+	Logger       log.Logger
 	DB           database.DB
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map

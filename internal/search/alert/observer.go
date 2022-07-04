@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -36,7 +36,6 @@ type Observer struct {
 	mu    sync.Mutex
 	alert *search.Alert
 	err   error
-	Log   log.Logger
 }
 
 // reposExist returns true if one or more repos resolve. If the attempt
@@ -44,7 +43,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := &searchrepos.Resolver{DB: o.Db, Log: o.Log}
+	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -223,7 +222,7 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		o.Log.Error("Errors during search", log.Error(o.err))
+		log15.Error("Errors during search", "error", o.err)
 		return o.alert, nil
 	}
 
