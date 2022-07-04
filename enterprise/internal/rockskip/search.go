@@ -43,7 +43,6 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 
 			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip)).")
 			for _, status := range s.status.threadIdToThreadStatus {
-				fmt.Println(status.Name, fmt.Sprintf("indexing %s", args.Repo))
 				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
 					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
 				}
