@@ -2,6 +2,7 @@
 
 # Sourcegraph for JetBrains IDEs
 
+- **New:** Search with Sourcegraph directly from inside your JetBrains product.
 - Instantly search in all open source repos and your private code.
 - Peek into any remote repo in the IDE, without checking it out.
 - Create URLs to specific code blocks to share them with your teammates.
