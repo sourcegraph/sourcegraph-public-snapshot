@@ -114,21 +114,21 @@ func (p otelBridgeCloser) Close() error {
 // The main issue is that bridge.BridgeTracer currently supports injection /
 // extraction of only single carrier type which is opentracing.HTTPHeadersCarrier.
 // (see https://github.com/open-telemetry/opentelemetry-go/blob/main/bridge/opentracing/bridge.go#L626)
-type otelBridgeTracer struct{ bt *otelbridge.BridgeTracer }
+type otelBridgeTracer struct{ bridge *otelbridge.BridgeTracer }
 
 var _ opentracing.Tracer = &otelBridgeTracer{}
 
 func (b *otelBridgeTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	return b.bt.StartSpan(operationName, opts...)
+	return b.bridge.StartSpan(operationName, opts...)
 }
 
 // Inject wrapes the bridge tracer's Inject implementation, discarding the format provided
 // and treating everything as the opentracing.HTTPHeaders format, which is the only format
 // supported by the bridge tracer.
-func (b *otelBridgeTracer) Inject(sm opentracing.SpanContext, _ interface{}, carrier interface{}) error {
+func (b *otelBridgeTracer) Inject(span opentracing.SpanContext, _ interface{}, carrier interface{}) error {
 	// Inject HTTPHeaders carrier
 	otCarrier := opentracing.HTTPHeadersCarrier{}
-	err := b.bt.Inject(sm, opentracing.HTTPHeaders, otCarrier)
+	err := b.bridge.Inject(span, opentracing.HTTPHeaders, otCarrier)
 	if err != nil {
 		return err
 	}
@@ -158,10 +158,10 @@ func (b *otelBridgeTracer) Extract(format interface{}, carrier interface{}) (ope
 			return nil, err
 		}
 
-		return b.bt.Extract(opentracing.HTTPHeaders, otCarrier)
+		return b.bridge.Extract(opentracing.HTTPHeaders, otCarrier)
 	}
 
-	return b.bt.Extract(format, carrier)
+	return b.bridge.Extract(format, carrier)
 }
 
 // newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
