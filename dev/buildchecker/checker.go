@@ -45,8 +45,10 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 	var firstFailedBuildIndex int
 	for i, b := range builds {
 		if isBuildScheduled(b) {
-			// a Scheduled build like Healtcheck should not be considered as part of the set that determines whether
-			// main is locked
+			// a Scheduled build should not be considered as part of the set that determines whether
+			// main is locked.
+			// An exmaple of a scheduled build is the nightly release healthcheck build at:
+			// https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/d0b2e4ea-e2df-4fb5-b90e-db88fddb1b76
 			continue
 		}
 		if isBuildPassed(b) {
