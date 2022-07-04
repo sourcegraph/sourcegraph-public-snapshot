@@ -9,8 +9,8 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -172,7 +172,6 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 
 func PartitionRepos(
 	ctx context.Context,
-	logger log.Logger,
 	repos []*search.RepositoryRevisions,
 	zoektStreamer zoekt.Streamer,
 	typ search.IndexedRequestType,
@@ -213,20 +212,20 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			logger.Warn("zoektIndexedRepos failed", log.Error(err))
+			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
 		return nil, repos, ctx.Err()
 	}
 
-	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
+	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
 	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
-		otlog.Int("indexed.size", len(indexed.RepoRevs)),
-		otlog.Int("unindexed.size", len(unindexed)),
+		log.Int("indexed.size", len(indexed.RepoRevs)),
+		log.Int("unindexed.size", len(unindexed)),
 	)
 
 	// Disable unindexed search
@@ -568,17 +567,17 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Tags() []otlog.Field {
-	tags := []otlog.Field{
+func (z *RepoSubsetTextSearchJob) Tags() []log.Field {
+	tags := []log.Field{
 		trace.Stringer("query", z.Query),
-		otlog.String("type", string(z.Typ)),
-		otlog.Int32("fileMatchLimit", z.FileMatchLimit),
+		log.String("type", string(z.Typ)),
+		log.Int32("fileMatchLimit", z.FileMatchLimit),
 		trace.Stringer("select", z.Select),
 	}
 	// z.Repos is nil for un-indexed search
 	if z.Repos != nil {
-		tags = append(tags, otlog.Int("numRepoRevs", len(z.Repos.RepoRevs)))
-		tags = append(tags, otlog.Int("numBranchRepos", len(z.Repos.branchRepos)))
+		tags = append(tags, log.Int("numRepoRevs", len(z.Repos.RepoRevs)))
+		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
 	}
 	return tags
 }
@@ -593,7 +592,7 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
@@ -604,13 +603,13 @@ func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Tags() []otlog.Field {
-	return []otlog.Field{
+func (t *GlobalTextSearchJob) Tags() []log.Field {
+	return []log.Field{
 		trace.Stringer("query", t.GlobalZoektQuery.Query),
 		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
-		otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
-		otlog.String("type", string(t.ZoektArgs.Typ)),
-		otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
+		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+		log.String("type", string(t.ZoektArgs.Typ)),
+		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", t.ZoektArgs.Select),
 		trace.Stringer("repoOpts", &t.RepoOpts),
 	}
