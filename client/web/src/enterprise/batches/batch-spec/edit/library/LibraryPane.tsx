@@ -12,6 +12,9 @@ import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
 import minimalSample from './minimal.batch.yaml'
+import regexSample from './sed.batch.yaml'
+import manyCombySample from './many-comby.batch.yaml'
+import monorepoDynamicSample from './monorepo-dynamic.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
 
 import styles from './LibraryPane.module.scss'
@@ -21,11 +24,14 @@ interface LibraryItem {
     code: string
 }
 
-const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
+const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
     { name: 'hello world', code: helloWorldSample },
     { name: 'minimal', code: minimalSample },
     { name: 'modify with comby', code: combySample },
     { name: 'update go imports', code: goImportsSample },
+    { name: 'apply a regex', code: regexSample },
+    { name: 'apply many comby patterns', code: manyCombySample },
+    { name: 'multiple changesets in a monorepo', code: monorepoDynamicSample },
 ]
 
 const LIBRARY_PANE_DEFAULT_COLLAPSED = 'batch-changes.ssbc-library-pane-default-collapsed'
