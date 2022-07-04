@@ -88,9 +88,11 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// This test runs after all others because its adds a npm external service
-	// which expands the set of repositories in the instance. All previous tests
-	// assume only the repos from gqltest-github-search exist.
+	// This test runs after all others because its adds package hosts as
+	// external services and activates lockfile indexing for added
+	// repositories, both of which expand the set of repositories in the
+	// instance. All previous tests assume only the repos from
+	// gqltest-github-search exist.
 	//
 	// Adding and deleting the dependency repos external services in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
@@ -119,6 +121,7 @@ type searchClient interface {
 
 	Repository(repositoryName string) (*gqltestutil.Repository, error)
 	WaitForReposToBeCloned(repos ...string) error
+	WaitForReposToBeClonedWithin(timeout time.Duration, repos ...string) error
 
 	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
 	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
@@ -1471,8 +1474,12 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatalf("creating lockfile indexing policy failed: %s", err)
 		}
 
-		// Wait for dependencies to be cloned, which means we've successfully indexed the repositories above
-		err = client.WaitForReposToBeCloned(
+		// Wait for dependencies to be cloned, which means we've successfully
+		// indexed the repositories above.
+		// We wait longer than usual because there's a lag between setting up a
+		// policy and it being matched against repositories (up to 1 minute).
+		err = client.WaitForReposToBeClonedWithin(
+			5*time.Minute,
 			"npm/urql/core",
 			"npm/wonka",
 			"python/atomicwrites",
