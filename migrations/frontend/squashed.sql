@@ -383,6 +383,21 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
     END;
 $$;
 
+CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+    DECLARE
+        trans hstore;
+    BEGIN
+      FOREACH trans IN ARRAY arrayhstore
+      LOOP
+          internal := internal || hstore(trans->'column', trans->'new');
+      END LOOP;
+
+      RETURN internal;
+    END;
+$$;
+
 CREATE FUNCTION repo_block(reason text, at timestamp with time zone) RETURNS jsonb
     LANGUAGE sql IMMUTABLE STRICT
     AS $$
@@ -477,6 +492,12 @@ BEGIN
     NEW.first_version = NEW.version;
     RETURN NEW;
 END $$;
+
+CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
+    SFUNC = merge_audit_log_transitions,
+    STYPE = hstore,
+    INITCOND = ''
+);
 
 CREATE TABLE access_tokens (
     id bigint NOT NULL,
