@@ -22,6 +22,9 @@ export const SEARCH_STATISTICS = gql`
                     searches {
                         ...AnalyticsStatItemFragment
                     }
+                    resultClicks {
+                        ...AnalyticsStatItemFragment
+                    }
                     fileViews {
                         ...AnalyticsStatItemFragment
                     }

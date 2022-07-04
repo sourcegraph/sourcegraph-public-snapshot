@@ -1,7 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { mdiChartLineVariant, mdiChartTimelineVariantShimmer } from '@mdi/js'
+import { useEffect } from '@storybook/addons'
 import classNames from 'classnames'
 import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
 import { upperFirst } from 'lodash'
@@ -39,53 +40,103 @@ import { SEARCH_STATISTICS, NOTEBOOKS_STATISTICS, USERS_STATISTICS } from './que
 
 import styles from './index.module.scss'
 
-interface TimeSavedCalculatorProps {
+interface TimeSavedCalculatorGroupProps {
     color: string
-    label: string
     value: number
-    minPerItem: number
-    description?: string
+    label: string
+    description: string
+    items: {
+        label: string
+        value: number
+        minPerItem: number
+        description: string
+        percentage?: number
+    }[]
 }
 
-const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorProps> = ({
+const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroupProps> = ({
+    items,
     color,
     value,
     description,
-    minPerItem: minsPerCount,
     label,
 }) => {
-    const [minutesPerCount, setMinutesPerCount] = useState(minsPerCount)
-    const hoursSaved = useMemo(() => (value * minutesPerCount) / 60, [value, minutesPerCount])
+    const memoizedItems = useMemo(
+        () =>
+            items.map(item => ({
+                ...item,
+                hoursSaved: (item.minPerItem * item.value * (item.percentage ?? 100)) / 100,
+            })),
+        [items]
+    )
+
+    const totalSavedHours = useMemo(() => memoizedItems.reduce((sum, item) => sum + item.hoursSaved, 0), [
+        memoizedItems,
+    ])
     return (
-        <Card className="mb-3 p-4 d-flex justify-content-between flex-row" key={label}>
-            <div className={styles.calculatorInnerLeft}>
-                <Text as="span" style={{ color }} className={classNames(styles.count, 'text-center')}>
-                    {formatNumber(value)}
-                </Text>
-                <Input
-                    type="number"
-                    value={minutesPerCount}
-                    className={styles.calculatorInput}
-                    onChange={event => setMinutesPerCount(Number(event.target.value))}
-                />
-                <Text as="span" className={styles.count}>
-                    {formatNumber(hoursSaved)}
-                </Text>
-                <Text as="span">{label}</Text>
-                <Text as="span">
-                    minutes saved
-                    <br />
-                    per action
-                </Text>
-                <Text as="span">hours saved</Text>
+        <div>
+            <Card className="mb-3 p-4 d-flex flex-row">
+                <div className="d-flex flex-column align-items-center mr-5">
+                    <Text as="span" style={{ color }} alignment="center" className={styles.count}>
+                        {formatNumber(value)}
+                    </Text>
+                    <Text as="span" alignment="center" dangerouslySetInnerHTML={{ __html: label }} />
+                </div>
+                <div className="d-flex flex-column align-items-center mr-5">
+                    <Text as="span" className={styles.count}>
+                        {formatNumber(totalSavedHours)}
+                    </Text>
+                    <Text as="span" alignment="center">
+                        Hours saved
+                    </Text>
+                </div>
+                <div className="flex-1 d-flex flex-column m-0">
+                    <Text as="span" weight="bold">
+                        About this statistics
+                    </Text>
+                    <Text as="span" dangerouslySetInnerHTML={{ __html: description }} />
+                </div>
+            </Card>
+            <div className={styles.calculatorList}>
+                {memoizedItems.map(({ label, percentage, minPerItem, hoursSaved }) => (
+                    <React.Fragment key={label}>
+                        <Text
+                            className="text-nowrap d-flex align-items-center"
+                            dangerouslySetInnerHTML={{ __html: label }}
+                        />
+                        {percentage && (
+                            <div className="d-flex flex-column align-items-center justify-content-center">
+                                <Input
+                                    type="number"
+                                    value={percentage}
+                                    className={classNames(styles.calculatorInput, 'mb-1')}
+                                />
+                                <Text as="span">% of total</Text>
+                            </div>
+                        )}
+                        <div className="d-flex flex-column align-items-center justify-content-center">
+                            <Input
+                                type="number"
+                                value={minPerItem}
+                                className={classNames(styles.calculatorInput, 'mb-1')}
+                            />
+                            <Text as="span" className="text-nowrap">
+                                Minutes per
+                            </Text>
+                        </div>
+                        <div className="d-flex flex-column align-items-center justify-content-center">
+                            <Text as="span" weight="bold">
+                                {formatNumber(hoursSaved)}
+                            </Text>
+                            <Text as="span" alignment="center">
+                                hours saved
+                            </Text>
+                        </div>
+                        <Text dangerouslySetInnerHTML={{ __html: description }} className="d-flex align-items-center" />
+                    </React.Fragment>
+                ))}
             </div>
-            <div className="m-0 flex-1 d-flex flex-column justify-content-between">
-                <Text as="span" className="font-weight-bold">
-                    About this statistics
-                </Text>
-                <Text as="span">{description}</Text>
-            </div>
-        </Card>
+        </div>
     )
 }
 
@@ -105,7 +156,7 @@ const ChartContainer: React.FunctionComponent<ChartContainerProps> = ({
     labelY,
 }) => (
     <div className={className}>
-        {title && <Text className='text-center'>{title}</Text>}
+        {title && <Text alignment="center">{title}</Text>}
         <div className="d-flex">
             {labelY && <span className={styles.chartYLabel}>{labelY}</span>}
             <ParentSize>{({ width }) => children(width)}</ParentSize>
@@ -135,7 +186,9 @@ const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value,
         <span style={{ color }} className={styles.count}>
             {formatNumber(value)}
         </span>
-        <span className={classNames('text-center', styles.textWrap)}>{description}</span>
+        <Text as="span" alignment="center" className={styles.textWrap}>
+            {description}
+        </Text>
     </div>
 )
 
@@ -196,7 +249,7 @@ const HorizontalSelect = <T extends string>({
     </Select>
 )
 
-interface ToggleGroupProps<T> {
+interface ToggleSelectProps<T> {
     selected: T
     className?: string
     items: {
@@ -212,7 +265,7 @@ const ToggleSelect = <T extends any>({
     items,
     onChange,
     className,
-}: React.PropsWithChildren<ToggleGroupProps<T>>): JSX.Element => (
+}: React.PropsWithChildren<ToggleSelectProps<T>>): JSX.Element => (
     <ButtonGroup className={className}>
         {items.map(({ tooltip, label, value }) => (
             <Tooltip key={label} content={tooltip} placement="top">
@@ -331,7 +384,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         if (!data) {
             return []
         }
-        const { searches, fileViews, fileOpens } = data.site.analytics.search
+        const { searches, fileViews, fileOpens, resultClicks } = data.site.analytics.search
         const stats: Series<StandardDatum>[] = [
             {
                 id: 'searches',
@@ -339,6 +392,20 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 color: 'var(--cyan)',
                 data: buildStandardDatum(
                     searches.nodes.map(node => ({
+                        date: new Date(node.date),
+                        value: node[eventAggregation],
+                    })),
+                    dateRange
+                ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
+            },
+            {
+                id: 'resultClicks',
+                name: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
+                color: 'var(--purple)',
+                data: buildStandardDatum(
+                    resultClicks.nodes.map(node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
                     })),
@@ -384,6 +451,12 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 color: 'var(--cyan)',
             },
             {
+                value: resultClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
+                color: 'var(--purple)',
+            },
+
+            {
                 value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
@@ -392,27 +465,52 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 value: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
+                position: 'right',
             },
         ]
         return [stats, legends]
     }, [data, eventAggregation, dateRange])
 
-    const timeSavedStats = useMemo(() => {
+    const calculatorProps = useMemo(() => {
         if (!data) {
-            return []
+            return
         }
         const { searches, fileViews, fileOpens } = data.site.analytics.search
 
-        return [
-            {
-                label: 'Searches,\nfile views\n& file opens',
-                color: 'var(--purple)',
-                minPerItem: 5,
-                description:
-                    'Each search or file view represents a developer solving a code use problem, getting information an active incident, or other use case. ',
-                value: searches.summary.totalCount + fileViews.summary.totalCount + fileOpens.summary.totalCount,
-            },
-        ]
+        const totalCount = searches.summary.totalCount + fileViews.summary.totalCount + fileOpens.summary.totalCount
+        return {
+            label: 'Searches, file views<br/>& file opens',
+            color: 'var(--purple)',
+            description:
+                'Each search or file view represents a developer solving a code use problem, getting information an active incident, or other use case.',
+            value: totalCount,
+            items: [
+                {
+                    label: 'Advanced searches',
+                    minPerItem: 5,
+                    description:
+                        'These searches are uniquely serviced by Sourcegraph and would  require ad-hoc scripting to accomplish otherwise.  They typically answer a very specific and valuable question such as find all projects utlizing log4j. ',
+                    percentage: 3,
+                    value: totalCount,
+                },
+                {
+                    label: 'Global searches',
+                    minPerItem: 5,
+                    description:
+                        "Searches that leverage Sourcegraph's ability to quickly and confidently query all of your company's code across code hosts, without locally cloning repositories or complex scripting.",
+                    percentage: 22,
+                    value: totalCount,
+                },
+                {
+                    label: 'Core workflow',
+                    minPerItem: 5,
+                    description:
+                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision. ',
+                    percentage: 75,
+                    value: totalCount,
+                },
+            ],
+        }
     }, [data])
 
     if (error) {
@@ -472,9 +570,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     </div>
                 )}
                 <H3 className="my-3">Time saved</H3>
-                {timeSavedStats?.map(timeSavedStatItem => (
-                    <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
-                ))}
+                {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
             </Card>
         </>
     )
@@ -622,9 +718,6 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                     </div>
                 )}
                 <H3 className="my-3">Time saved</H3>
-                {timeSavedStats?.map(timeSavedStatItem => (
-                    <TimeSavedCalculator key={timeSavedStatItem.label} {...timeSavedStatItem} />
-                ))}
             </Card>
         </>
     )

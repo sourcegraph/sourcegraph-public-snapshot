@@ -26,6 +26,21 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
+func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchResultClicked"})
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Search:ResultClicked",
+	}, nil
+}
+
 func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"ViewBlob"})
 	if err != nil {

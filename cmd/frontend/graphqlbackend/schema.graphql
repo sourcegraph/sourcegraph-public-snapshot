@@ -5935,11 +5935,15 @@ Search analytics.
 """
 type AnalyticsSearchResult {
     """
-    Searches analytics.
+    Searches analytics
     """
     searches: AnalyticsStatItem!
     """
-    File view analytics.
+    Search result click analytics
+    """
+    resultClicks: AnalyticsStatItem!
+    """
+    File view analytics
     """
     fileViews: AnalyticsStatItem!
     """

@@ -3,13 +3,10 @@
     font-weight: bold;
 }
 
-.calculator-inner-left {
+.calculator-list {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    column-gap: 4rem;
-    margin-right: 4rem;
-    white-space: pre-wrap;
-    text-align: center;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr 1fr 1fr 4fr;
 }
 
 .calculator-input {

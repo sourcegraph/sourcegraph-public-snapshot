@@ -64,6 +64,16 @@ func (r *siteAnalyticsSearchResolver) Searches(ctx context.Context) (*siteAnalyt
 	return &siteAnalyticsStatItemResolver{fetcher}, nil
 }
 
+func (r *siteAnalyticsSearchResolver) ResultClicks(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.ResultClicks()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
 func (r *siteAnalyticsSearchResolver) FileViews(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
 	fetcher, err := r.store.FileViews()
 
