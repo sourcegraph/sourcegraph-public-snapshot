@@ -122,7 +122,10 @@ func (b *otelBridgeTracer) StartSpan(operationName string, opts ...opentracing.S
 	return b.bt.StartSpan(operationName, opts...)
 }
 
-func (b *otelBridgeTracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
+// Inject wrapes the bridge tracer's Inject implementation, discarding the format provided
+// and treating everything as the opentracing.HTTPHeaders format, which is the only format
+// supported by the bridge tracer.
+func (b *otelBridgeTracer) Inject(sm opentracing.SpanContext, _ interface{}, carrier interface{}) error {
 	// Inject HTTPHeaders carrier
 	otCarrier := opentracing.HTTPHeadersCarrier{}
 	err := b.bt.Inject(sm, opentracing.HTTPHeaders, otCarrier)
