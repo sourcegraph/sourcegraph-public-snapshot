@@ -122,7 +122,7 @@ Use the following filters to restrict how users can create accounts and sign in 
 
   * Groups with special characters
 
-  Special characters such as the `&` (ampersand) will be encoded in the XML document, the format used by SAML. For example, if you have a group `Dogs & cats` set in your Identity Provider, it will show up as `Dogs &amp; cats` in the XML assertions.
+  Special characters such as the `&` (ampersand) will be encoded in the XML document, the format used by SAML. For example, if you have a group `Dogs & cats` set in your Identity Provider, it will be shown as `Dogs &amp; cats` in the XML assertions.
 
   This is expected - just avoid using the encoded character when adding a group name to the `allowGroups` array.
 
