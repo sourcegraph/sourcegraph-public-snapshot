@@ -6,6 +6,10 @@
 
 set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
+annotate_soft_failure() {
+  ./enterprise/dev/ci/scripts/annotates.sh -t 'warning' -s 'Build stopped due to ⚠️Soft-Failure' -m < "```exit code $1```"
+}
+
 if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" ]]; then
   exit 0
 fi
@@ -22,6 +26,7 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   IFS=' ' read -ra codes <<<"$SOFT_FAIL_EXIT_CODES"
   for code in "${codes[@]}"; do
     if [ "$code" == "$BUILDKITE_COMMAND_EXIT_STATUS" ]; then
+        annotate_soft_failure $code
       # If the Buildkite exit code is a soft fail, do nothing either.
       exit 0
     fi
