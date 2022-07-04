@@ -46,6 +46,7 @@ type GetUploadsOptions struct {
 	LastRetentionScanBefore *time.Time
 	AllowExpired            bool
 	AllowDeletedRepo        bool
+	AllowDeletedUpload      bool
 	OldestFirst             bool
 	Limit                   int
 	Offset                  int

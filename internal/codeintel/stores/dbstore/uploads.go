@@ -539,7 +539,7 @@ FROM (
 JOIN lsif_uploads_audit_logs au ON au.upload_id = s.upload_id
 `
 
-var rankedDependencyCandidateCTEQuery = `
+const rankedDependencyCandidateCTEQuery = `
 SELECT
 	p.dump_id as pkg_id,
 	r.dump_id as ref_id,
@@ -560,7 +560,7 @@ WHERE
 	%s
 `
 
-var rankedDependentCandidateCTEQuery = `
+const rankedDependentCandidateCTEQuery = `
 SELECT
 	p.dump_id as pkg_id,
 	p.scheme as scheme,
@@ -1216,7 +1216,7 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 	return int(affected), nil
 }
 
-var updateReferenceCountsQuery = `
+const updateReferenceCountsQuery = `
 -- source: internal/codeintel/stores/dbstore/uploads.go:UpdateReferenceCounts
 WITH
 -- Select the set of package identifiers provided by the target upload list. This
