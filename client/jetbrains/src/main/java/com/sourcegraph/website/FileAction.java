@@ -11,15 +11,16 @@ import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public abstract class FileAction extends DumbAwareAction {
-
-    abstract void handleFileUri(String uri);
+    abstract void handleFileUri(@NotNull String uri);
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
+    public void actionPerformed(@NotNull AnActionEvent e) {
         // Get project, editor, document, file, and position information.
         final Project project = e.getProject();
         if (project == null) {
@@ -52,7 +53,11 @@ public abstract class FileAction extends DumbAwareAction {
         handleFileUri(uri);
     }
 
-    public void actionPerformedFromPreviewContent(Project project, PreviewContent previewContent, LogicalPosition start, LogicalPosition end) {
+    public void actionPerformedFromPreviewContent(@NotNull Project project, @Nullable PreviewContent previewContent, @Nullable LogicalPosition start, @Nullable LogicalPosition end) {
+        if (previewContent == null) {
+            return;
+        }
+
         if (previewContent.getRepoUrl().isEmpty()) {
             return;
         }

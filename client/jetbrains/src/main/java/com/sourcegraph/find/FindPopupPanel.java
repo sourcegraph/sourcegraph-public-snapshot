@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.PopupBorder;
-import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
@@ -21,15 +20,16 @@ import java.util.Date;
 /**
  * Inspired by <a href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
-public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
+public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     private final SourcegraphJBCefBrowser browser;
     private final PreviewPanel previewPanel;
     private final BrowserAndLoadingPanel browserAndLoadingPanel;
     private final SelectionMetadataPanel selectionMetadataPanel;
+    private final FooterPanel footerPanel;
     private Date lastPreviewUpdate;
 
     public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
-        super(new BorderLayout());
+        super();
 
         setPreferredSize(JBUI.size(1200, 800));
         setBorder(PopupBorder.Factory.create(true, true));
@@ -40,12 +40,14 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
 
         selectionMetadataPanel = new SelectionMetadataPanel();
         previewPanel = new PreviewPanel(project);
+        footerPanel = new FooterPanel();
 
         BorderLayoutPanel bottomPanel = new BorderLayoutPanel();
         bottomPanel.add(selectionMetadataPanel, BorderLayout.NORTH);
         bottomPanel.add(previewPanel, BorderLayout.CENTER);
+        bottomPanel.add(footerPanel, BorderLayout.SOUTH);
 
-        browserAndLoadingPanel = new BrowserAndLoadingPanel();
+        browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
         JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
         if (browser != null) {
@@ -76,15 +78,25 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return previewPanel;
     }
 
-    public void setBrowserVisible(boolean visible) {
-        browserAndLoadingPanel.setBrowserVisible(visible);
+    public void indicateAuthenticationStatus(boolean wasServerAccessSuccessful, boolean authenticated) {
+        browserAndLoadingPanel.setState(wasServerAccessSuccessful
+            ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
+            : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
+        if (!wasServerAccessSuccessful) {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        } else {
+            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
+        }
     }
 
     public void indicateLoadingIfInTime(@NotNull Date date) {
         if (lastPreviewUpdate.before(date)) {
             selectionMetadataPanel.clearSelectionMetadataLabel();
-            previewPanel.setLoading(true);
-            previewPanel.clearContent();
+            previewPanel.setState(PreviewPanel.State.LOADING);
+            footerPanel.setPreviewContent(null);
         }
     }
 
@@ -93,6 +105,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
             this.lastPreviewUpdate = previewContent.getReceivedDateTime();
             selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
             previewPanel.setContent(previewContent);
+            footerPanel.setPreviewContent(previewContent);
         }
     }
 
@@ -100,7 +113,8 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         if (lastPreviewUpdate.before(date)) {
             this.lastPreviewUpdate = date;
             selectionMetadataPanel.clearSelectionMetadataLabel();
-            previewPanel.setContent(null);
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
         }
     }
 
