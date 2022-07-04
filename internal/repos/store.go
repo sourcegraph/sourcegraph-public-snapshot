@@ -92,7 +92,7 @@ type Store interface {
 	// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
 	// ListSyncJobs returns all sync jobs.
-	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
+	ListSyncJobs(ctx context.Context, opt SyncJobsListOptions) ([]SyncJob, error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -703,9 +703,14 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT id from due EXCEPT SELECT id from busy
 `
 
-func (s *store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
-	q := sqlf.Sprintf(`
-		SELECT
+type SyncJobsListOptions struct {
+	State string
+}
+
+func (s *store) ListSyncJobs(ctx context.Context, opt SyncJobsListOptions) ([]SyncJob, error) {
+	q := `
+	-- source: internal/repos/store.go:Store.ListSyncJobs
+	SELECT
 			id,
 			state,
 			failure_message,
@@ -718,8 +723,18 @@ func (s *store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 			external_service_id,
 			next_sync_at
 		FROM external_service_sync_jobs_with_next_sync_at
-	`)
-	rows, err := s.Query(ctx, q)
+	WHERE (%s)
+	ORDER BY queued_at ASC
+	`
+
+	var query *sqlf.Query
+	if opt.State != "" {
+		query = sqlf.Sprintf(q, sqlf.Sprintf("state = %s", opt.State))
+	} else {
+		query = sqlf.Sprintf(q, "1")
+	}
+
+	rows, err := s.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
