@@ -97,6 +97,7 @@ func TestStreamGroup(t *testing.T) {
 				}
 				g.Wait()
 				require.Equal(t, int64(0), errCount.Load())
+				require.Equal(t, int64(0), currentConcurrent.Load())
 				require.Equal(t, expected, got)
 			})
 		}
@@ -207,6 +208,7 @@ func TestErrorStreamGroup(t *testing.T) {
 				}
 				g.Wait()
 				require.NoError(t, errs)
+				require.Equal(t, int64(0), currentConcurrent.Load())
 				require.Equal(t, expected, got)
 			})
 		}
@@ -343,6 +345,7 @@ func TestContextErrorStreamGroup(t *testing.T) {
 				}
 				g.Wait()
 				require.NoError(t, errs)
+				require.Equal(t, int64(0), currentConcurrent.Load())
 				require.Equal(t, expected, got)
 			})
 		}

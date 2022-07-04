@@ -57,6 +57,7 @@ func TestResultGroup(t *testing.T) {
 				sort.Ints(res)
 				require.Equal(t, expected, res)
 				require.Equal(t, int64(0), errCount.Load())
+				require.Equal(t, int64(0), currentConcurrent.Load())
 			})
 		}
 	})
@@ -142,6 +143,7 @@ func TestResultErrorGroup(t *testing.T) {
 				res, err := g.Wait()
 				require.Len(t, res, taskCount)
 				require.NoError(t, err)
+				require.Equal(t, int64(0), currentConcurrent.Load())
 			})
 		}
 	})
@@ -275,6 +277,7 @@ func TestResultContextErrorGroup(t *testing.T) {
 				sort.Ints(res)
 				require.Equal(t, expected, res)
 				require.NoError(t, err)
+				require.Equal(t, int64(0), currentConcurrent.Load())
 			})
 		}
 	})

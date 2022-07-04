@@ -5,7 +5,6 @@ package group
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -27,7 +26,7 @@ type Group interface {
 	// until the goroutine has been started.
 	Go(func())
 
-	// Wait blocks until all goroutines started with Go() have completed
+	// Wait blocks until all goroutines started with Go() have completed.
 	Wait()
 
 	// Configuration methods. See interface definitions for details.
@@ -304,7 +303,7 @@ func recoverPanic() {
 		if err, ok := val.(error); ok {
 			log.Scoped("internal", "group").Error("recovered from panic", log.Error(err))
 		} else {
-			log.Scoped("internal", "group").Error("recovered from panic", log.Error(errors.New(fmt.Sprintf("%#v", val))))
+			log.Scoped("internal", "group").Error("recovered from panic", log.Error(errors.Errorf("%#v", val)))
 		}
 	}
 }
