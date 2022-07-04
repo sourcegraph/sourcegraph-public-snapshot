@@ -2165,6 +2165,8 @@ github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWii
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
 github.com/sourcegraph/log v0.0.0-20220624171236-65ffd0d64796 h1:5AokOCDfHmhsHUiztLMAJ3+hBSaGWLqBgN7BdlAyxME=
 github.com/sourcegraph/log v0.0.0-20220624171236-65ffd0d64796/go.mod h1:zWEPlKrWBUVpko/tOgDS+qrp7BmzaCcmUrh9+ver1iQ=
+github.com/sourcegraph/log v0.0.0-20220630091133-9e50e760eceb h1:GSHKGxgY56eKzxw+CdlczrIP78MVjutgTVkuOLyfz2U=
+github.com/sourcegraph/log v0.0.0-20220630091133-9e50e760eceb/go.mod h1:A+9F6IicYvBbl2aT0R81lMraKcXjVfdfw352yPe2yJI=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=

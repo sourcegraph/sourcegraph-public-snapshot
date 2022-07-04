@@ -21,7 +21,7 @@ require (
 	github.com/muesli/termenv v0.9.0
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20220621231153-3bee7082c87e
+	github.com/sourcegraph/log v0.0.0-20220630091133-9e50e760eceb
 	github.com/stretchr/testify v1.7.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
