@@ -479,7 +479,7 @@ func testStoreListSyncJobs(store repos.Store) func(*testing.T) {
 		require.Len(t, list(""), 10)
 
 		// start processing a few of them
-		_, err = store.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs SET state = 'processing' WHERE id IN ($1, $2, $3)",
+		_, err = store.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs SET state = 'processing' WHERE external_service_id IN ($1, $2, $3)",
 			services[0].ID,
 			services[1].ID,
 			services[2].ID,
