@@ -21,7 +21,7 @@ const jetbrainsWorkspacePath = path.resolve(rootPath, 'client', 'jetbrains')
 const webviewSourcePath = path.resolve(jetbrainsWorkspacePath, 'webview', 'src')
 
 // Build artifacts are put directly into the JetBrains resources folder
-const distPath = path.resolve(jetbrainsWorkspacePath, 'src', 'main', 'resources', 'dist')
+const distributionPath = path.resolve(jetbrainsWorkspacePath, 'src', 'main', 'resources', 'dist')
 
 const extensionHostWorker = /main\.worker\.ts$/
 
@@ -41,7 +41,7 @@ const webviewConfig = {
   },
   devtool: 'source-map',
   output: {
-    path: distPath,
+    path: distributionPath,
     filename: '[name].js',
   },
   plugins: [

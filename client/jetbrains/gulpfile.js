@@ -21,6 +21,7 @@ const {
   watchCSSModulesTypings,
 } = require('../shared/gulpfile')
 
+const buildScripts = require('./scripts/build')
 const createWebpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -68,6 +69,10 @@ async function watchWebpack() {
   })
 }
 
+async function esbuild() {
+  await buildScripts.build()
+}
+
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
 const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
 
@@ -89,4 +94,4 @@ const watch = gulp.series(
   gulp.parallel(watchGenerators, watchWebpack)
 )
 
-module.exports = { build, watch, webpack, watchWebpack }
+module.exports = { build, watch, webpack, watchWebpack, esbuild }
