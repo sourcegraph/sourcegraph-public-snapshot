@@ -16,17 +16,17 @@ print_usage() {
 generate_grafana_query() {
     expression=$(echo "{app=\"buildkite\", build=\"$BUILDKITE_BUILD_NUMBER\", job=\"$BUILDKITE_JOB_ID\"}" | sed 's/\"/\\"/g')
     # On Darwin use gdate
-    begin=$(gdate -d '1 hour ago' "+%s")
-    end=$(gdate "+%s")
+    begin=$(date -d '1 hour ago' "+%s")
+    end=$(date "+%s")
     payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":"%s"}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
 
-    echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo $payload | jq -s -R -r @uri)"
+    echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo "$payload" | jq -s -R -r @uri)"
 }
 
 print_heading() {
     logs="[grafana logs]($(generate_grafana_query))"
     output="[job output](#$BUILDKITE_JOB_ID)"
-    printf "**%s** &bull; %s &bull; %s\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID"
+    printf "**%s** &bull; %s &bull; %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
 }
 
 if [ $# -eq 0 ]; then
