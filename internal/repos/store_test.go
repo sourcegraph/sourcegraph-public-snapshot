@@ -523,9 +523,10 @@ func testStoreSetSyncJobState(store repos.Store) func(*testing.T) {
 		}
 
 		// list them, they should be all in queued state
-		require.Len(t, list("queued"), 10)
+		jobs := list("queued")
+		require.Len(t, jobs, 10)
 
-		err = store.SetSyncJobState(ctx, "processing", services[0].ID, services[1].ID, services[2].ID)
+		err = store.SetSyncJobState(ctx, "processing", int64(jobs[0].ID), int64(jobs[1].ID), int64(jobs[2].ID))
 		require.NoError(t, err)
 
 		require.Len(t, list("queued"), 7)
