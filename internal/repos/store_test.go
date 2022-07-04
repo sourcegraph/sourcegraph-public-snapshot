@@ -492,6 +492,47 @@ func testStoreListSyncJobs(store repos.Store) func(*testing.T) {
 	}
 }
 
+func testStoreSetSyncJobState(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		clock := timeutil.NewFakeClock(time.Now(), 0)
+		now := clock.Now()
+
+		t.Cleanup(func() {
+			q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
+			_, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			require.NoError(t, err)
+		})
+
+		// create 10 external services
+		services := generateExternalServices(10, mkExternalServices(now)...)
+		err := store.ExternalServiceStore().Upsert(ctx, services...)
+		require.NoError(t, err)
+
+		// enqueue them
+		err = store.EnqueueSyncJobs(ctx, false)
+		require.NoError(t, err)
+
+		// list helper
+		list := func(state string) []repos.SyncJob {
+			jobs, err := store.ListSyncJobs(ctx, repos.SyncJobsListOptions{
+				State: state,
+			})
+			require.NoError(t, err)
+			return jobs
+		}
+
+		// list them, they should be all in queued state
+		require.Len(t, list("queued"), 10)
+
+		err = store.SetSyncJobState(ctx, "processing", services[0].ID, services[1].ID, services[2].ID)
+		require.NoError(t, err)
+
+		require.Len(t, list("queued"), 7)
+		require.Len(t, list("processing"), 3)
+	}
+}
+
 func mkRepos(n int, base ...*types.Repo) types.Repos {
 	if len(base) == 0 {
 		return nil

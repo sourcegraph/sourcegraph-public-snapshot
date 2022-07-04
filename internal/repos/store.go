@@ -93,6 +93,8 @@ type Store interface {
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context, opt SyncJobsListOptions) ([]SyncJob, error)
+	// SetSyncJobState updates the state of one or more sync jobs.
+	SetSyncJobState(ctx context.Context, state string, ids ...int64) (err error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -740,6 +742,21 @@ func (s *store) ListSyncJobs(ctx context.Context, opt SyncJobsListOptions) ([]Sy
 	}
 	defer rows.Close()
 	return scanJobs(rows)
+}
+
+func (s *store) SetSyncJobState(ctx context.Context, state string, ids ...int64) (err error) {
+	list := make([]*sqlf.Query, len(ids))
+	for i, id := range ids {
+		list[i] = sqlf.Sprintf("%d", id)
+	}
+
+	q := sqlf.Sprintf(`
+	-- source: internal/repos/store.go:Store.SetJobState
+		UPDATE external_service_sync_jobs
+		SET state = %s
+		WHERE id IN (%s)
+	`, state, sqlf.Join(list, ", "))
+	return s.Exec(ctx, q)
 }
 
 func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
