@@ -1,4 +1,3 @@
-// We decided to export these functions and variables in seperate file because they will be treated as stories if we leave them the way they were
 import {
     ChangesetSpecOperation,
     ChangesetSpecType,

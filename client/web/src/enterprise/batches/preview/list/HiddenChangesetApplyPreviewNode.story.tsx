@@ -5,7 +5,7 @@ import { WebStory } from '../../../../components/WebStory'
 import { HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
-import { hiddenChangesetApplyPreviewStories } from './testData'
+import { hiddenChangesetApplyPreviewStories } from './storyData'
 
 import styles from './PreviewList.module.scss'
 

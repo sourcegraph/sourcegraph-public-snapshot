@@ -5,7 +5,7 @@ import { of } from 'rxjs'
 import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
-import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './testData'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
 import styles from './PreviewList.module.scss'
 

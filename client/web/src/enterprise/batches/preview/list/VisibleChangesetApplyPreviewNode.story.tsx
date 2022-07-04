@@ -5,7 +5,7 @@ import { of } from 'rxjs'
 import { WebStory } from '../../../../components/WebStory'
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
-import { visibleChangesetApplyPreviewNodeStories } from './testData'
+import { visibleChangesetApplyPreviewNodeStories } from './storyData'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
 import styles from './PreviewList.module.scss'

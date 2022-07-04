@@ -8,7 +8,7 @@ import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { filterPublishableIDs } from '../utils'
 
 import { PreviewList } from './PreviewList'
-import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './testData'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
