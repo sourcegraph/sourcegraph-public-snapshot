@@ -159,19 +159,20 @@ type Settings struct {
 
 // ExternalService represents a complete external service record.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool
-	CloudDefault    bool
+	ID                int64
+	Kind              string
+	DisplayName       string
+	Config            string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	DeletedAt         time.Time
+	LastSyncAt        time.Time
+	NextSyncAt        time.Time
+	SyncUsingWebhooks bool
+	NamespaceUserID   int32
+	NamespaceOrgID    int32
+	Unrestricted      bool
+	CloudDefault      bool
 }
 
 func cmp(a, b string) int {

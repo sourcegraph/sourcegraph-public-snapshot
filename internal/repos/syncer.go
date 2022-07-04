@@ -583,6 +583,16 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
+		if !svc.SyncUsingWebhooks {
+			w, err := CreateSyncWebhook(string(sourced.Name))
+			if err != nil {
+				return err
+			}
+			webhook := w.(Payload)
+			fmt.Printf("webhook:%+v\n", webhook)
+			fmt.Printf("config:%+v\n", webhook.Config)
+		}
+
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
