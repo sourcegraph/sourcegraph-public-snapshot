@@ -6003,6 +6003,20 @@ type AnalyticsUsersResult {
 }
 
 """
+Users' analytics.
+"""
+type AnalyticsCodeIntelResult {
+    """
+    "GoToRef" click
+    """
+    referenceClicks: AnalyticsStatItem!
+    """
+    "GoToDef" click
+    """
+    definitionClicks: AnalyticsStatItem!
+}
+
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6018,6 +6032,10 @@ type Analytics {
     Users statistics.
     """
     users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
+    """
+    Code-intelligence statistics.
+    """
+    codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
 }
 
 """

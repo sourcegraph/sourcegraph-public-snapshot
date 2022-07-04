@@ -78,7 +78,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/search',
         },
         {
-            label: 'Code intel (soon)',
+            label: 'Code intel',
             to: '/site-admin/analytics/code-intel',
         },
         {
@@ -117,7 +117,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics'), 'AnalyticsCodeIntelPage'),
         exact: true,
     },
     {

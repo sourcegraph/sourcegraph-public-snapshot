@@ -173,3 +173,37 @@ func (r *siteAnalyticsUsersResolver) Frequencies(ctx context.Context) ([]*admina
 
 	return frequenceis, nil
 }
+
+
+
+/* Code-intel Analytics */
+
+func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
+	DateRange *string
+}) (*siteAnalyticsCodeIntelResolver, error) {
+	return &siteAnalyticsCodeIntelResolver{store: &adminanalytics.CodeIntel{DateRange: *args.DateRange, DB: r.db}}, nil
+}
+
+type siteAnalyticsCodeIntelResolver struct {
+	store *adminanalytics.CodeIntel
+}
+
+func (r *siteAnalyticsCodeIntelResolver) ReferenceClicks(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.ReferenceClicks()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
+func (r *siteAnalyticsCodeIntelResolver) DefinitionClicks(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.DefinitionClicks()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}

@@ -89,3 +89,21 @@ export const USERS_STATISTICS = gql`
     }
     ${analyticsStatItemFragment}
 `
+
+export const CODEINTEL_STATISTICS = gql`
+    query CodeIntelStatistics($dateRange: AnalyticsDateRange!) {
+        site {
+            analytics {
+                codeIntel(dateRange: $dateRange) {
+                    referenceClicks {
+                        ...AnalyticsStatItemFragment
+                    }
+                    definitionClicks {
+                        ...AnalyticsStatItemFragment
+                    }
+                }
+            }
+        }
+    }
+    ${analyticsStatItemFragment}
+`

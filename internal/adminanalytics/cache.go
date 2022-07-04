@@ -100,6 +100,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 			&Search{DateRange: dateRange, DB: db},
 			&Users{DateRange: dateRange, DB: db},
 			&Notebooks{DateRange: dateRange, DB: db},
+			&CodeIntel{DateRange: dateRange, DB: db},
 		}
 		for _, store := range stores {
 			if err := store.CacheAll(ctx); err != nil {

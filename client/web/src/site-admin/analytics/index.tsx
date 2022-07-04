@@ -2,7 +2,6 @@
 import React, { useMemo, useState } from 'react'
 
 import { mdiChartLineVariant, mdiChartTimelineVariantShimmer } from '@mdi/js'
-import { useEffect } from '@storybook/addons'
 import classNames from 'classnames'
 import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
 import { upperFirst } from 'lodash'
@@ -33,10 +32,12 @@ import {
     NotebooksStatisticsVariables,
     UsersStatisticsResult,
     UsersStatisticsVariables,
+    CodeIntelStatisticsResult,
+    CodeIntelStatisticsVariables,
 } from '../../graphql-operations'
 
 import { formatNumber } from './format-number'
-import { SEARCH_STATISTICS, NOTEBOOKS_STATISTICS, USERS_STATISTICS } from './queries'
+import { SEARCH_STATISTICS, NOTEBOOKS_STATISTICS, USERS_STATISTICS, CODEINTEL_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
@@ -543,9 +544,9 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 {stats && (
                     <div>
                         <ChartContainer
-                            title={eventAggregation === 'count' ? 'User activity by day' : 'Unique users by day'}
+                            title={eventAggregation === 'count' ? 'Activity by day' : 'Unique users by day'}
                             labelX="Time"
-                            labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
+                            labelY={eventAggregation === 'count' ? 'Activity' : 'Unique users'}
                         >
                             {width => <LineChart width={width} height={300} series={stats} />}
                         </ChartContainer>
@@ -691,9 +692,9 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 {stats && (
                     <div>
                         <ChartContainer
-                            title={eventAggregation === 'count' ? 'User activity by day' : 'Unique users by day'}
+                            title={eventAggregation === 'count' ? 'Activity by day' : 'Unique users by day'}
                             labelX="Time"
-                            labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
+                            labelY={eventAggregation === 'count' ? 'Activity' : 'Unique users'}
                         >
                             {width => <LineChart width={width} height={300} series={stats} />}
                         </ChartContainer>
@@ -815,9 +816,9 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 {activities && (
                     <div>
                         <ChartContainer
-                            title={eventAggregation === 'count' ? 'User activity by day' : 'Unique users by day'}
+                            title={eventAggregation === 'count' ? 'Activity by day' : 'Unique users by day'}
                             labelX="Time"
-                            labelY={eventAggregation === 'count' ? 'User activity' : 'Unique users'}
+                            labelY={eventAggregation === 'count' ? 'Activity' : 'Unique users'}
                         >
                             {width => <LineChart width={width} height={300} series={activities} />}
                         </ChartContainer>
@@ -855,6 +856,134 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                         )}
                     </ChartContainer>
                 )}
+            </Card>
+        </>
+    )
+}
+
+export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+    const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const { data, error, loading } = useQuery<CodeIntelStatisticsResult, CodeIntelStatisticsVariables>(
+        CODEINTEL_STATISTICS,
+        {
+            variables: {
+                dateRange,
+            },
+        }
+    )
+    const [stats, legends] = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { referenceClicks, definitionClicks } = data.site.analytics.codeIntel
+        const stats: Series<StandardDatum>[] = [
+            {
+                id: 'references',
+                name:
+                    eventAggregation === 'count' ? '"Find references" clicked' : 'Users who clicked "Find references"',
+                color: 'var(--cyan)',
+                data: buildStandardDatum(
+                    referenceClicks.nodes.map(node => ({
+                        date: new Date(node.date),
+                        value: node[eventAggregation],
+                    })),
+                    dateRange
+                ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
+            },
+            {
+                id: 'definitions',
+                name:
+                    eventAggregation === 'count'
+                        ? '"Go to definition" clicked'
+                        : 'Users who clicked "Go to definition"',
+                color: 'var(--orange)',
+                data: buildStandardDatum(
+                    definitionClicks.nodes.map(node => ({
+                        date: new Date(node.date),
+                        value: node[eventAggregation],
+                    })),
+                    dateRange
+                ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
+            },
+        ]
+        const legends: ValueLegendListProps['items'] = [
+            {
+                value: referenceClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'References views' : 'Users using references',
+                color: 'var(--cyan)',
+            },
+            {
+                value: definitionClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Definitions' : 'Users using definitions',
+                color: 'var(--orange)',
+            },
+        ]
+
+        return [stats, legends]
+    }, [data, dateRange, eventAggregation])
+
+    if (error) {
+        throw error
+    }
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    return (
+        <>
+            <AnalyticsPageTitle>Analytics / Code intel</AnalyticsPageTitle>
+
+            <Card className="p-3 position-relative">
+                <div className="d-flex justify-content-end align-items-stretch mb-2">
+                    <HorizontalSelect<AnalyticsDateRange>
+                        value={dateRange}
+                        label="Date&nbsp;range"
+                        onChange={setDateRange}
+                        items={[
+                            { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
+                            { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
+                            { value: AnalyticsDateRange.LAST_THREE_MONTHS, label: 'Last 3 months' },
+                            { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
+                        ]}
+                    />
+                </div>
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
+                {stats && (
+                    <div>
+                        <ChartContainer
+                            title={eventAggregation === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            labelX="Time"
+                            labelY={eventAggregation === 'count' ? 'Activity' : 'Unique users'}
+                        >
+                            {width => <LineChart width={width} height={300} series={stats} />}
+                        </ChartContainer>
+                        <div className="d-flex justify-content-end align-items-stretch mb-2">
+                            <ToggleSelect<typeof eventAggregation>
+                                selected={eventAggregation}
+                                onChange={setEventAggregation}
+                                items={[
+                                    {
+                                        tooltip: 'total # of actions triggered',
+                                        label: 'Totals',
+                                        value: 'count',
+                                    },
+                                    {
+                                        tooltip: 'unique # of users triggered',
+                                        label: 'Uniques',
+                                        value: 'uniqueUsers',
+                                    },
+                                ]}
+                            />
+                        </div>
+                    </div>
+                )}
+                <H3 className="my-3">Time saved</H3>
             </Card>
         </>
     )
