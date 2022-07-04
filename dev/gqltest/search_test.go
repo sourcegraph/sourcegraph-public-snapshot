@@ -1478,8 +1478,9 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 		// indexed the repositories above.
 		// We wait longer than usual because there's a lag between setting up a
 		// policy and it being matched against repositories (up to 1 minute).
+		timeout := 200 * time.Second // 3min20s to be sure we have 1min for lockfile indexing to start and then some.
 		err = client.WaitForReposToBeClonedWithin(
-			5*time.Minute,
+			timeout,
 			"npm/urql/core",
 			"npm/wonka",
 			"python/atomicwrites",
