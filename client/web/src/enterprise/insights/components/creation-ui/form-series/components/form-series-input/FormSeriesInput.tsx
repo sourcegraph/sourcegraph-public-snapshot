@@ -5,8 +5,8 @@ import { noop } from 'rxjs'
 
 import { Button, Card, Input, Code } from '@sourcegraph/wildcard'
 
-import { getDefaultInputProps, useField, InsightQueryInput, useForm } from '../../../../../../components'
-import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../../../../constants'
+import { getDefaultInputProps, useField, InsightQueryInput, useForm } from '../../../../form'
 import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
 
@@ -117,7 +117,6 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
                 autoFocus={autofocus}
                 placeholder="Example: Function component"
                 message="Name shown in the legend and tooltip"
-                onFocus={() => console.log(`Field title with ${nameField.input.value} has got focus`)}
                 {...getDefaultInputProps(nameField)}
             />
 

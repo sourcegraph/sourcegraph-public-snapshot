@@ -1,5 +1,5 @@
-import { createRequiredValidator, ValidationResult } from '../../../../../../components'
-import { searchQueryValidator } from '../../../capture-group/utils/search-query-validator'
+import { searchQueryValidator } from '../../../../../pages/insights/creation/capture-group/utils/search-query-validator'
+import { createRequiredValidator, ValidationResult } from '../../../../form'
 
 export const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 

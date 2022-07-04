@@ -2,9 +2,10 @@ import { useState } from 'react'
 
 import * as uuid from 'uuid'
 
-import { useFieldAPI } from '../../../../../../../components'
 import { DEFAULT_DATA_SERIES_COLOR } from '../../../constants'
-import { EditableDataSeries } from '../../../types'
+import { useFieldAPI } from '../../form'
+
+import { EditableDataSeries } from './types'
 
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
     id: `runtime-series.${uuid.v4()}`,
@@ -174,11 +175,11 @@ export function useEditableSeries(series: useFieldAPI<EditableDataSeries[]>): Us
 }
 
 /** Helper replace element in array by index and return new array. */
-export function replace<Element>(list: Element[], index: number, newElement: Element): Element[] {
+function replace<Element>(list: Element[], index: number, newElement: Element): Element[] {
     return [...list.slice(0, index), newElement, ...list.slice(index + 1)]
 }
 
 /** Helper remove element from array by index. */
-export function remove<Element>(list: Element[], index: number): Element[] {
+function remove<Element>(list: Element[], index: number): Element[] {
     return [...list.slice(0, index), ...list.slice(index + 1)]
 }

@@ -4,13 +4,13 @@ import classNames from 'classnames'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { LimitedAccessLabel, useFieldAPI } from '../../../../../../components'
-import { useUiFeatures } from '../../../../../../hooks'
-import { EditableDataSeries } from '../../types'
-import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
+import { useUiFeatures } from '../../../hooks'
+import { LimitedAccessLabel, useFieldAPI } from '../../index'
 
+import { FormSeriesInput } from './components/form-series-input/FormSeriesInput'
 import { SeriesCard } from './components/series-card/SeriesCard'
-import { useEditableSeries } from './hooks/use-editable-series'
+import { EditableDataSeries } from './types'
+import { useEditableSeries } from './use-editable-series'
 
 import styles from './FormSeries.module.scss'
 
