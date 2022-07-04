@@ -13,19 +13,19 @@ print_usage() {
   printf "  echo \"your markdown\" | annotate.sh -m -s my-section"
 }
 
-generate_grafana_query() {
+generate_grafana_link() {
     expression=$(echo "{app=\"buildkite\", build=\"$BUILDKITE_BUILD_NUMBER\", job=\"$BUILDKITE_JOB_ID\"}" | sed 's/\"/\\"/g')
     # On Darwin use gdate
-    begin=$(date -d '1 hour ago' "+%s")
-    end=$(date "+%s")
+    begin=$(date -d '1 hour ago' "+%s")000
+    end=$(date "+%s")000
     payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":"%s"}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
 
     echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo "$payload" | jq -s -R -r @uri)"
 }
 
 print_heading() {
-    logs="[grafana logs]($(generate_grafana_query))"
-    output="[job output](#$BUILDKITE_JOB_ID)"
+    logs="[view Grafana logs]($(generate_grafana_link))"
+    output="[view job output](#$BUILDKITE_JOB_ID)"
     printf "**%s** &bull; %s &bull; %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
 }
 
