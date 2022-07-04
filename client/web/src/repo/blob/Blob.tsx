@@ -420,7 +420,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, nextPopoverClose, props.history]
+            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
         )
     )
 
