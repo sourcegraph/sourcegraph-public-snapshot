@@ -13,7 +13,6 @@ export type FeatureFlagName =
     | 'ab-email-verification-alert'
     | 'hide-run-batch-spec-for-mi'
     | 'contrast-compliant-syntax-highlighting'
-    | 'core-workflow-improvements'
 
 interface OrgFlagOverride {
     orgID: string
