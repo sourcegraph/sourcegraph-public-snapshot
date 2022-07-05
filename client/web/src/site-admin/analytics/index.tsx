@@ -1052,19 +1052,17 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 <div className={classNames(styles.border, 'mb-3')} />
                 <ul className="mb-3 pl-3">
                     <Text as="li">
-                        {browserExtensionInstallPercentage}% of users have installed the browser extension.{' '}
-                        <AnchorLink href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank">
+                        <b>{browserExtensionInstallPercentage}%</b> of users have installed the browser extension.{' '}
+                        <AnchorLink to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank">
                             Promote installation of the browser extesion to increase value.
                         </AnchorLink>
                     </Text>
-                </ul>
-                <ul className="mb-3 pl-3">
                     {reposSummary && (
                         <Text as="li">
-                            {reposSummary.preciseCodeIntelCount} of your {reposSummary.totalCount} repositories have
-                            precise code intel.{' '}
+                            <b>{reposSummary.preciseCodeIntelCount}</b> of your <b>{reposSummary.totalCount}</b>{' '}
+                            repositories have precise code intel.{' '}
                             <AnchorLink
-                                href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
+                                to="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
                                 target="_blank"
                             >
                                 Learn how to improve precise code intel coverage.
@@ -1072,7 +1070,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         </Text>
                     )}
                 </ul>
-                <Text className="font-italic">
+                <Text className="font-italic text-center">
                     * All events are actually entries from this instance's event_logs table.{' '}
                 </Text>
             </Card>

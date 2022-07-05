@@ -23,10 +23,10 @@ func (r *Repos) Summary(ctx context.Context, cache bool) (*ReposSummary, error) 
 	query := sqlf.Sprintf(`
 	SELECT
 		COUNT(DISTINCT repo.id) as total_repo_count,
-		COUNT(DISTINCT lsif_indexes.repository_id) as lsif_index_repo_count
+		COUNT(DISTINCT lsif_uploads.repository_id) as lsif_index_repo_count
 	FROM
 		repo
-		LEFT JOIN lsif_indexes ON lsif_indexes.repository_id = repo.id
+		LEFT JOIN lsif_uploads ON lsif_uploads.repository_id = repo.id
 	`)
 	var data ReposSummaryData
 
