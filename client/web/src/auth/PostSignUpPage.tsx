@@ -71,7 +71,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
 
     const debug = new URLSearchParams(location.search).get('debug')
 
-    const goToSearch = useCallback((): void => navigate(getReturnTo(location)), [navigate, location])
+    const goToSearch = (): void => navigate(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
