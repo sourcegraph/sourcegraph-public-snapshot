@@ -101,7 +101,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
-            skip: !wasEverVisible,
+            skip: !wasEverVisible || (insightData && (!insightData.isFetchingHistoricalData || !isVisible)),
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
