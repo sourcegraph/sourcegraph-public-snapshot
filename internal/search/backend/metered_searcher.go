@@ -38,7 +38,7 @@ func NewMeteredSearcher(logger sglog.Logger, hostname string, z zoekt.Streamer) 
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
-		log:      logger,
+		log:      logger.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
 	}
 }
 
@@ -104,7 +104,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
 		} else {
-			m.log.Warn("meteredSearcher: Error injecting new span context into map:", sglog.Error(err))
+			m.log.Warn("error injecting new span context into map", sglog.Error(err))
 		}
 	}
 
