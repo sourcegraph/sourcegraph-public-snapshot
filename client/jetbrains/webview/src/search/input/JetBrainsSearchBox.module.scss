@@ -181,15 +181,24 @@
         :global(button.disabled.dropdown-item) {
             padding: 0 0.75rem;
 
-            > small:last-child {
+            > small:not(:first-child),
+            > span {
                 color: var(--jb-inactive-text-color);
+            }
+
+            > span {
+                background: inherit;
             }
 
             &:hover {
                 background-color: var(--dropdown-link-hover-bg);
 
-                > small {
+                > small:first-child {
                     color: var(--dropdown-link-color);
+                }
+
+                > span {
+                    background-color: var(--dropdown-link-hover-bg);
                 }
             }
 
@@ -273,6 +282,11 @@
     }
 
     :global(.cm-editor) {
+        :global(.cm-content),
+        :global(.cm-scroller) {
+            font-family: inherit;
+        }
+
         :global(.cm-tooltip):global(.cm-tooltip-autocomplete) {
             color: var(--jb-text-color);
             background-color: var(--dropdown-bg);
@@ -284,7 +298,7 @@
                 content: 'Press Tab to apply selection';
                 padding: 0.125rem 0.75rem;
                 display: block;
-                background: var(--subtle-bg);
+                background: var(--jb-tooltip-bg);
                 color: var(--jb-inactive-text-color);
                 font-size: var(--code-font-size);
             }
