@@ -178,15 +178,21 @@ func NewAggregateHealthCheckHandler(endpointProvider func(service string) []*url
 					fmt.Fprintf(w, ",\n")
 				}
 				firstEndpoint = false
-				req, err := http.NewRequest("GET", endpoint.String(), nil)
+
+				// We can set aggressive timeouts, because the checks' results are cached on the
+				// server.
+				ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+				defer cancel()
+
+				req, err := http.NewRequestWithContext(ctx, "GET", endpoint.String(), nil)
 				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
 				res, err := httpcli.InternalDoer.Do(req)
 				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 				defer res.Body.Close()
@@ -198,7 +204,7 @@ func NewAggregateHealthCheckHandler(endpointProvider func(service string) []*url
 
 				b, err := io.ReadAll(res.Body)
 				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
