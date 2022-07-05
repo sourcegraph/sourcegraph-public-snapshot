@@ -303,6 +303,24 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 
+// NewSimpleChecker is exposed for testing and allows creation of a simple
+// checker based on the rules provided. The rules are expected to be in glob
+// format.
+func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+	getter := NewMockSubRepoPermissionsGetter()
+	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+		return map[api.RepoName]SubRepoPermissions{
+			repo: {
+				PathIncludes: includes,
+				PathExcludes: excludes,
+			},
+		}, nil
+	})
+	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
+	getter.RepoIdSupportedFunc.SetDefaultReturn(true, nil)
+	return NewSubRepoPermsClient(getter)
+}
+
 // ActorPermissions returns the level of access the given actor has for the requested
 // content.
 //
