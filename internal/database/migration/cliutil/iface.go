@@ -3,6 +3,7 @@ package cliutil
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -16,6 +17,7 @@ type Runner interface {
 }
 
 type Store interface {
+	basestore.ShareableStore
 	WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
 	Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error)
 }

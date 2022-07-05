@@ -3,12 +3,14 @@ package runner
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 )
 
 type Store interface {
+	basestore.ShareableStore
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 

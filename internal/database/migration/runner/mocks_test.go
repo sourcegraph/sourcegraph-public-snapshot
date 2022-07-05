@@ -10,6 +10,7 @@ import (
 	"context"
 	"sync"
 
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	definition "github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	schemas "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	storetypes "github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
@@ -29,6 +30,9 @@ type MockStore struct {
 	// DownFunc is an instance of a mock function object controlling the
 	// behavior of the method Down.
 	DownFunc *StoreDownFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *StoreHandleFunc
 	// IndexStatusFunc is an instance of a mock function object controlling
 	// the behavior of the method IndexStatus.
 	IndexStatusFunc *StoreIndexStatusFunc
@@ -65,6 +69,11 @@ func NewMockStore() *MockStore {
 		},
 		DownFunc: &StoreDownFunc{
 			defaultHook: func(context.Context, definition.Definition) (r0 error) {
+				return
+			},
+		},
+		HandleFunc: &StoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -120,6 +129,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Down")
 			},
 		},
+		HandleFunc: &StoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockStore.Handle")
+			},
+		},
 		IndexStatusFunc: &StoreIndexStatusFunc{
 			defaultHook: func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
 				panic("unexpected invocation of MockStore.IndexStatus")
@@ -165,6 +179,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		DownFunc: &StoreDownFunc{
 			defaultHook: i.Down,
+		},
+		HandleFunc: &StoreHandleFunc{
+			defaultHook: i.Handle,
 		},
 		IndexStatusFunc: &StoreIndexStatusFunc{
 			defaultHook: i.IndexStatus,
@@ -493,6 +510,104 @@ func (c StoreDownFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDownFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreHandleFunc describes the behavior when the Handle method of the
+// parent MockStore instance is invoked.
+type StoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []StoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(StoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *StoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreHandleFunc) appendCall(r0 StoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreHandleFuncCall objects describing the
+// invocations of this function.
+func (f *StoreHandleFunc) History() []StoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreHandleFuncCall is an object that describes an invocation of method
+// Handle on an instance of MockStore.
+type StoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
