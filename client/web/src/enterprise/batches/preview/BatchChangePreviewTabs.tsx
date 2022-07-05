@@ -1,7 +1,6 @@
 import React from 'react'
 
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
 import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -59,7 +58,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name="previewchangesets">
                     <span>
-                        <Icon aria-hidden={true} className="text-muted mr-1" as={SourceBranchIcon} />
+                        <Icon aria-hidden={true} className="text-muted mr-1" svgPath={mdiSourceBranch} />
                         <span className="text-content" data-tab-content="Preview changesets">
                             Preview changesets
                         </span>{' '}
@@ -70,7 +69,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 </BatchChangeTab>
                 <BatchChangeTab index={1} name="spec">
                     <span>
-                        <Icon aria-hidden={true} className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                        <Icon aria-hidden={true} className="text-muted mr-1" svgPath={mdiFileDocument} />{' '}
                         <span className="text-content" data-tab-content="Spec">
                             Spec
                         </span>

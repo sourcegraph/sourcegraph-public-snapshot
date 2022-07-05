@@ -1,7 +1,6 @@
 package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -11,7 +10,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
 import org.jetbrains.annotations.Nullable;
@@ -19,8 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 public abstract class SearchActionBase extends DumbAwareAction {
     public void actionPerformedMode(AnActionEvent e, String mode) {
@@ -50,22 +47,14 @@ public abstract class SearchActionBase extends DumbAwareAction {
             return; // nothing to query
         }
 
-        // Build the URL that we will open.
-        String uri;
-        String productName = ApplicationInfo.getInstance().getVersionName();
-        String productVersion = ApplicationInfo.getInstance().getFullVersion();
-
-        uri = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
-            + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)
-            + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
-            + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
-            + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
-
+        String remoteUrl = null;
+        String branchName = null;
         if (mode.equals("search.repository")) {
-            uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteUrl, StandardCharsets.UTF_8)
-                + "&search_branch=" + URLEncoder.encode(repoInfo.branchName, StandardCharsets.UTF_8);
+            remoteUrl = repoInfo.branchName;
+            branchName = repoInfo.remoteUrl;
         }
+
+        String uri = URLBuilder.buildEditorSearchUrl(project, q, remoteUrl, branchName);
 
         // Open the URL in the browser.
         try {

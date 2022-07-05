@@ -1,11 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
@@ -66,19 +64,19 @@ export const MonitorLogNode: React.FunctionComponent<
                     )}
                     {hasError ? (
                         <Icon
-                            as={AlertCircleIcon}
                             className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
                             aria-label="One or more runs of this code monitor have an error"
                             data-tooltip="One or more runs of this code monitor have an error"
                             data-placement="top"
+                            svgPath={mdiAlertCircle}
                         />
                     ) : (
                         <Icon
-                            as={CheckBoldIcon}
                             className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
                             aria-label="Monitor running as normal"
                             data-tooltip="Monitor running as normal"
                             data-placement="top"
+                            svgPath={mdiCheckBold}
                         />
                     )}
                     {monitor.description}
@@ -90,7 +88,7 @@ export const MonitorLogNode: React.FunctionComponent<
                         rel="noopener noreferrer"
                         onClick={clickCatcher}
                     >
-                        Monitor details <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                        Monitor details <Icon role="img" aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                 </Button>
                 <span className="text-nowrap mr-2">

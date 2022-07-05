@@ -1,15 +1,19 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { Observable, timer } from 'rxjs'
+import { Observable, Subscription, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
+import { tabbable } from 'tabbable'
+import { useMergeRefs } from 'use-callback-ref'
 
+import { isDefined } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
+import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Badge, Button, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
@@ -18,7 +22,7 @@ import { useCarousel } from '../../components/useCarousel'
 
 import styles from './StatusBar.module.scss'
 
-interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
     statusBarItemClassName?: string
@@ -38,6 +42,9 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
 
     /** If specified, this text will be displayed in a badge left of the status bar items */
     badgeText?: string
+
+    /** If true, the status bar will be focusable through the command palette. */
+    isBlobPage?: boolean
 }
 
 export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBarProps>> = ({
@@ -50,7 +57,10 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
     statusBarRef,
     hideWhileInitializing,
     badgeText,
+    isBlobPage,
 }) => {
+    const mergedReferences = useMergeRefs([statusBarRef].filter(isDefined))
+
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
     // Wait a generous amount of time on top of initial extension loading
@@ -70,6 +80,54 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
             [uri, extensionsController]
         )
     )
+
+    // Add "focus status bar" action to command palette.
+    useEffect(() => {
+        const subscription = new Subscription()
+
+        // Only when one status bar is rendered (i.e. is blob page).
+        if (isBlobPage) {
+            extensionsController.extHostAPI
+                .then(extensionHostAPI => {
+                    subscription.add(
+                        syncRemoteSubscription(
+                            extensionHostAPI.registerContributions({
+                                menus: {
+                                    commandPalette: [
+                                        {
+                                            action: 'focusStatusBar',
+                                        },
+                                    ],
+                                },
+                                actions: [
+                                    {
+                                        id: 'focusStatusBar',
+                                        title: 'Focus status bar',
+                                        command: 'focusStatusBar',
+                                    },
+                                ],
+                            })
+                        )
+                    )
+
+                    subscription.add(
+                        extensionsController.registerCommand({
+                            command: 'focusStatusBar',
+                            run: () => {
+                                const statusBarElement = mergedReferences.current
+                                if (statusBarElement) {
+                                    tabbable(statusBarElement)[0]?.focus()
+                                }
+                                return Promise.resolve()
+                            },
+                        })
+                    )
+                })
+                .catch(error => console.error('Error registering "Focus status bar" command', error))
+        }
+
+        return () => subscription.unsubscribe()
+    }, [extensionsController, isBlobPage, mergedReferences])
 
     const {
         carouselReference,
@@ -91,7 +149,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
-            ref={statusBarRef}
+            ref={mergedReferences}
         >
             <ErrorBoundary
                 location={location}

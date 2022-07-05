@@ -11,38 +11,587 @@ import (
 	"sync"
 	"time"
 
-	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
+
+// MockAutoIndexingService is a mock implementation of the
+// AutoIndexingService interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup)
+// used for unit testing.
+type MockAutoIndexingService struct {
+	// DeleteIndexesWithoutRepositoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteIndexesWithoutRepository.
+	DeleteIndexesWithoutRepositoryFunc *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc
+	// DeleteSourcedCommitsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteSourcedCommits.
+	DeleteSourcedCommitsFunc *AutoIndexingServiceDeleteSourcedCommitsFunc
+	// StaleSourcedCommitsFunc is an instance of a mock function object
+	// controlling the behavior of the method StaleSourcedCommits.
+	StaleSourcedCommitsFunc *AutoIndexingServiceStaleSourcedCommitsFunc
+	// UpdateSourcedCommitsFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateSourcedCommits.
+	UpdateSourcedCommitsFunc *AutoIndexingServiceUpdateSourcedCommitsFunc
+}
+
+// NewMockAutoIndexingService creates a new mock of the AutoIndexingService
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockAutoIndexingService() *MockAutoIndexingService {
+	return &MockAutoIndexingService{
+		DeleteIndexesWithoutRepositoryFunc: &AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc{
+			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
+				return
+			},
+		},
+		DeleteSourcedCommitsFunc: &AutoIndexingServiceDeleteSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		StaleSourcedCommitsFunc: &AutoIndexingServiceStaleSourcedCommitsFunc{
+			defaultHook: func(context.Context, time.Duration, int, time.Time) (r0 []shared.SourcedCommits, r1 error) {
+				return
+			},
+		},
+		UpdateSourcedCommitsFunc: &AutoIndexingServiceUpdateSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockAutoIndexingService creates a new mock of the
+// AutoIndexingService interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
+	return &MockAutoIndexingService{
+		DeleteIndexesWithoutRepositoryFunc: &AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc{
+			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+				panic("unexpected invocation of MockAutoIndexingService.DeleteIndexesWithoutRepository")
+			},
+		},
+		DeleteSourcedCommitsFunc: &AutoIndexingServiceDeleteSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (int, error) {
+				panic("unexpected invocation of MockAutoIndexingService.DeleteSourcedCommits")
+			},
+		},
+		StaleSourcedCommitsFunc: &AutoIndexingServiceStaleSourcedCommitsFunc{
+			defaultHook: func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+				panic("unexpected invocation of MockAutoIndexingService.StaleSourcedCommits")
+			},
+		},
+		UpdateSourcedCommitsFunc: &AutoIndexingServiceUpdateSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
+				panic("unexpected invocation of MockAutoIndexingService.UpdateSourcedCommits")
+			},
+		},
+	}
+}
+
+// NewMockAutoIndexingServiceFrom creates a new mock of the
+// MockAutoIndexingService interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingService {
+	return &MockAutoIndexingService{
+		DeleteIndexesWithoutRepositoryFunc: &AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc{
+			defaultHook: i.DeleteIndexesWithoutRepository,
+		},
+		DeleteSourcedCommitsFunc: &AutoIndexingServiceDeleteSourcedCommitsFunc{
+			defaultHook: i.DeleteSourcedCommits,
+		},
+		StaleSourcedCommitsFunc: &AutoIndexingServiceStaleSourcedCommitsFunc{
+			defaultHook: i.StaleSourcedCommits,
+		},
+		UpdateSourcedCommitsFunc: &AutoIndexingServiceUpdateSourcedCommitsFunc{
+			defaultHook: i.UpdateSourcedCommits,
+		},
+	}
+}
+
+// AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc describes the
+// behavior when the DeleteIndexesWithoutRepository method of the parent
+// MockAutoIndexingService instance is invoked.
+type AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc struct {
+	defaultHook func(context.Context, time.Time) (map[int]int, error)
+	hooks       []func(context.Context, time.Time) (map[int]int, error)
+	history     []AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteIndexesWithoutRepository delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) DeleteIndexesWithoutRepository(v0 context.Context, v1 time.Time) (map[int]int, error) {
+	r0, r1 := m.DeleteIndexesWithoutRepositoryFunc.nextHook()(v0, v1)
+	m.DeleteIndexesWithoutRepositoryFunc.appendCall(AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteIndexesWithoutRepository method of the parent
+// MockAutoIndexingService instance is invoked and the hook queue is empty.
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteIndexesWithoutRepository method of the parent
+// MockAutoIndexingService instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (map[int]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) PushReturn(r0 map[int]int, r1 error) {
+	f.PushHook(func(context.Context, time.Time) (map[int]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (map[int]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) appendCall(r0 AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall objects
+// describing the invocations of this function.
+func (f *AutoIndexingServiceDeleteIndexesWithoutRepositoryFunc) History() []AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall is an object
+// that describes an invocation of method DeleteIndexesWithoutRepository on
+// an instance of MockAutoIndexingService.
+type AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int]int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceDeleteIndexesWithoutRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceDeleteSourcedCommitsFunc describes the behavior when
+// the DeleteSourcedCommits method of the parent MockAutoIndexingService
+// instance is invoked.
+type AutoIndexingServiceDeleteSourcedCommitsFunc struct {
+	defaultHook func(context.Context, int, string, time.Duration, time.Time) (int, error)
+	hooks       []func(context.Context, int, string, time.Duration, time.Time) (int, error)
+	history     []AutoIndexingServiceDeleteSourcedCommitsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteSourcedCommits delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) DeleteSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Duration, v4 time.Time) (int, error) {
+	r0, r1 := m.DeleteSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DeleteSourcedCommitsFunc.appendCall(AutoIndexingServiceDeleteSourcedCommitsFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteSourcedCommits
+// method of the parent MockAutoIndexingService instance is invoked and the
+// hook queue is empty.
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteSourcedCommits method of the parent MockAutoIndexingService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Duration, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) appendCall(r0 AutoIndexingServiceDeleteSourcedCommitsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceDeleteSourcedCommitsFuncCall objects describing the
+// invocations of this function.
+func (f *AutoIndexingServiceDeleteSourcedCommitsFunc) History() []AutoIndexingServiceDeleteSourcedCommitsFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceDeleteSourcedCommitsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceDeleteSourcedCommitsFuncCall is an object that
+// describes an invocation of method DeleteSourcedCommits on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceDeleteSourcedCommitsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Duration
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceDeleteSourcedCommitsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceDeleteSourcedCommitsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceStaleSourcedCommitsFunc describes the behavior when
+// the StaleSourcedCommits method of the parent MockAutoIndexingService
+// instance is invoked.
+type AutoIndexingServiceStaleSourcedCommitsFunc struct {
+	defaultHook func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)
+	hooks       []func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)
+	history     []AutoIndexingServiceStaleSourcedCommitsFuncCall
+	mutex       sync.Mutex
+}
+
+// StaleSourcedCommits delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) StaleSourcedCommits(v0 context.Context, v1 time.Duration, v2 int, v3 time.Time) ([]shared.SourcedCommits, error) {
+	r0, r1 := m.StaleSourcedCommitsFunc.nextHook()(v0, v1, v2, v3)
+	m.StaleSourcedCommitsFunc.appendCall(AutoIndexingServiceStaleSourcedCommitsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the StaleSourcedCommits
+// method of the parent MockAutoIndexingService instance is invoked and the
+// hook queue is empty.
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StaleSourcedCommits method of the parent MockAutoIndexingService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) PushHook(hook func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) SetDefaultReturn(r0 []shared.SourcedCommits, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) PushReturn(r0 []shared.SourcedCommits, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+		return r0, r1
+	})
+}
+
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) nextHook() func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) appendCall(r0 AutoIndexingServiceStaleSourcedCommitsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceStaleSourcedCommitsFuncCall objects describing the
+// invocations of this function.
+func (f *AutoIndexingServiceStaleSourcedCommitsFunc) History() []AutoIndexingServiceStaleSourcedCommitsFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceStaleSourcedCommitsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceStaleSourcedCommitsFuncCall is an object that
+// describes an invocation of method StaleSourcedCommits on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceStaleSourcedCommitsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.SourcedCommits
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceStaleSourcedCommitsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceStaleSourcedCommitsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceUpdateSourcedCommitsFunc describes the behavior when
+// the UpdateSourcedCommits method of the parent MockAutoIndexingService
+// instance is invoked.
+type AutoIndexingServiceUpdateSourcedCommitsFunc struct {
+	defaultHook func(context.Context, int, string, time.Time) (int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, error)
+	history     []AutoIndexingServiceUpdateSourcedCommitsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateSourcedCommits delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) UpdateSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+	r0, r1 := m.UpdateSourcedCommitsFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateSourcedCommitsFunc.appendCall(AutoIndexingServiceUpdateSourcedCommitsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateSourcedCommits
+// method of the parent MockAutoIndexingService instance is invoked and the
+// hook queue is empty.
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateSourcedCommits method of the parent MockAutoIndexingService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) appendCall(r0 AutoIndexingServiceUpdateSourcedCommitsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceUpdateSourcedCommitsFuncCall objects describing the
+// invocations of this function.
+func (f *AutoIndexingServiceUpdateSourcedCommitsFunc) History() []AutoIndexingServiceUpdateSourcedCommitsFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceUpdateSourcedCommitsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceUpdateSourcedCommitsFuncCall is an object that
+// describes an invocation of method UpdateSourcedCommits on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceUpdateSourcedCommitsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceUpdateSourcedCommitsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceUpdateSourcedCommitsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup)
 // used for unit testing.
 type MockDBStore struct {
-	// DeleteOldAuditLogsFunc is an instance of a mock function object
-	// controlling the behavior of the method DeleteOldAuditLogs.
-	DeleteOldAuditLogsFunc *DBStoreDeleteOldAuditLogsFunc
-	// DeleteUploadsStuckUploadingFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteUploadsStuckUploading.
-	DeleteUploadsStuckUploadingFunc *DBStoreDeleteUploadsStuckUploadingFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *DBStoreDoneFunc
-	// GetUploadsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUploads.
-	GetUploadsFunc *DBStoreGetUploadsFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *DBStoreHandleFunc
-	// HardDeleteUploadByIDFunc is an instance of a mock function object
-	// controlling the behavior of the method HardDeleteUploadByID.
-	HardDeleteUploadByIDFunc *DBStoreHardDeleteUploadByIDFunc
-	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
-	// controlling the behavior of the method SoftDeleteExpiredUploads.
-	SoftDeleteExpiredUploadsFunc *DBStoreSoftDeleteExpiredUploadsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *DBStoreTransactFunc
@@ -52,38 +601,13 @@ type MockDBStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
-		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
-			defaultHook: func(context.Context, time.Duration, time.Time) (r0 int, r1 error) {
-				return
-			},
-		},
-		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
-			defaultHook: func(context.Context, time.Time) (r0 int, r1 error) {
-				return
-			},
-		},
 		DoneFunc: &DBStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
 				return
 			},
 		},
-		GetUploadsFunc: &DBStoreGetUploadsFunc{
-			defaultHook: func(context.Context, dbstore.GetUploadsOptions) (r0 []dbstore.Upload, r1 int, r2 error) {
-				return
-			},
-		},
 		HandleFunc: &DBStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
-				return
-			},
-		},
-		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
-			defaultHook: func(context.Context, ...int) (r0 error) {
-				return
-			},
-		},
-		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -99,39 +623,14 @@ func NewMockDBStore() *MockDBStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockDBStore() *MockDBStore {
 	return &MockDBStore{
-		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
-			defaultHook: func(context.Context, time.Duration, time.Time) (int, error) {
-				panic("unexpected invocation of MockDBStore.DeleteOldAuditLogs")
-			},
-		},
-		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
-			defaultHook: func(context.Context, time.Time) (int, error) {
-				panic("unexpected invocation of MockDBStore.DeleteUploadsStuckUploading")
-			},
-		},
 		DoneFunc: &DBStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockDBStore.Done")
 			},
 		},
-		GetUploadsFunc: &DBStoreGetUploadsFunc{
-			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
-				panic("unexpected invocation of MockDBStore.GetUploads")
-			},
-		},
 		HandleFunc: &DBStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockDBStore.Handle")
-			},
-		},
-		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
-			defaultHook: func(context.Context, ...int) error {
-				panic("unexpected invocation of MockDBStore.HardDeleteUploadByID")
-			},
-		},
-		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (int, error) {
-				panic("unexpected invocation of MockDBStore.SoftDeleteExpiredUploads")
 			},
 		},
 		TransactFunc: &DBStoreTransactFunc{
@@ -146,253 +645,16 @@ func NewStrictMockDBStore() *MockDBStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 	return &MockDBStore{
-		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
-			defaultHook: i.DeleteOldAuditLogs,
-		},
-		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
-			defaultHook: i.DeleteUploadsStuckUploading,
-		},
 		DoneFunc: &DBStoreDoneFunc{
 			defaultHook: i.Done,
 		},
-		GetUploadsFunc: &DBStoreGetUploadsFunc{
-			defaultHook: i.GetUploads,
-		},
 		HandleFunc: &DBStoreHandleFunc{
 			defaultHook: i.Handle,
-		},
-		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
-			defaultHook: i.HardDeleteUploadByID,
-		},
-		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: i.SoftDeleteExpiredUploads,
 		},
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: i.Transact,
 		},
 	}
-}
-
-// DBStoreDeleteOldAuditLogsFunc describes the behavior when the
-// DeleteOldAuditLogs method of the parent MockDBStore instance is invoked.
-type DBStoreDeleteOldAuditLogsFunc struct {
-	defaultHook func(context.Context, time.Duration, time.Time) (int, error)
-	hooks       []func(context.Context, time.Duration, time.Time) (int, error)
-	history     []DBStoreDeleteOldAuditLogsFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteOldAuditLogs delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDBStore) DeleteOldAuditLogs(v0 context.Context, v1 time.Duration, v2 time.Time) (int, error) {
-	r0, r1 := m.DeleteOldAuditLogsFunc.nextHook()(v0, v1, v2)
-	m.DeleteOldAuditLogsFunc.appendCall(DBStoreDeleteOldAuditLogsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DeleteOldAuditLogs
-// method of the parent MockDBStore instance is invoked and the hook queue
-// is empty.
-func (f *DBStoreDeleteOldAuditLogsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteOldAuditLogs method of the parent MockDBStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *DBStoreDeleteOldAuditLogsFunc) PushHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDeleteOldAuditLogsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, time.Time) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDeleteOldAuditLogsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, time.Time) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreDeleteOldAuditLogsFunc) nextHook() func(context.Context, time.Duration, time.Time) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDeleteOldAuditLogsFunc) appendCall(r0 DBStoreDeleteOldAuditLogsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreDeleteOldAuditLogsFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreDeleteOldAuditLogsFunc) History() []DBStoreDeleteOldAuditLogsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDeleteOldAuditLogsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDeleteOldAuditLogsFuncCall is an object that describes an
-// invocation of method DeleteOldAuditLogs on an instance of MockDBStore.
-type DBStoreDeleteOldAuditLogsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Duration
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDeleteOldAuditLogsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDeleteOldAuditLogsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreDeleteUploadsStuckUploadingFunc describes the behavior when the
-// DeleteUploadsStuckUploading method of the parent MockDBStore instance is
-// invoked.
-type DBStoreDeleteUploadsStuckUploadingFunc struct {
-	defaultHook func(context.Context, time.Time) (int, error)
-	hooks       []func(context.Context, time.Time) (int, error)
-	history     []DBStoreDeleteUploadsStuckUploadingFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteUploadsStuckUploading delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) DeleteUploadsStuckUploading(v0 context.Context, v1 time.Time) (int, error) {
-	r0, r1 := m.DeleteUploadsStuckUploadingFunc.nextHook()(v0, v1)
-	m.DeleteUploadsStuckUploadingFunc.appendCall(DBStoreDeleteUploadsStuckUploadingFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DeleteUploadsStuckUploading method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) SetDefaultHook(hook func(context.Context, time.Time) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteUploadsStuckUploading method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) PushHook(hook func(context.Context, time.Time) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) nextHook() func(context.Context, time.Time) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) appendCall(r0 DBStoreDeleteUploadsStuckUploadingFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreDeleteUploadsStuckUploadingFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreDeleteUploadsStuckUploadingFunc) History() []DBStoreDeleteUploadsStuckUploadingFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDeleteUploadsStuckUploadingFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDeleteUploadsStuckUploadingFuncCall is an object that describes an
-// invocation of method DeleteUploadsStuckUploading on an instance of
-// MockDBStore.
-type DBStoreDeleteUploadsStuckUploadingFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDeleteUploadsStuckUploadingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDeleteUploadsStuckUploadingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreDoneFunc describes the behavior when the Done method of the parent
@@ -496,116 +758,6 @@ func (c DBStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// DBStoreGetUploadsFunc describes the behavior when the GetUploads method
-// of the parent MockDBStore instance is invoked.
-type DBStoreGetUploadsFunc struct {
-	defaultHook func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
-	hooks       []func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
-	history     []DBStoreGetUploadsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploads delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockDBStore) GetUploads(v0 context.Context, v1 dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
-	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
-	m.GetUploadsFunc.appendCall(DBStoreGetUploadsFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetUploads method of
-// the parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploads method of the parent MockDBStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBStoreGetUploadsFunc) PushHook(hook func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreGetUploadsFunc) SetDefaultReturn(r0 []dbstore.Upload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreGetUploadsFunc) PushReturn(r0 []dbstore.Upload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *DBStoreGetUploadsFunc) nextHook() func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreGetUploadsFunc) appendCall(r0 DBStoreGetUploadsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreGetUploadsFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreGetUploadsFunc) History() []DBStoreGetUploadsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreGetUploadsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreGetUploadsFuncCall is an object that describes an invocation of
-// method GetUploads on an instance of MockDBStore.
-type DBStoreGetUploadsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 dbstore.GetUploadsOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.Upload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreGetUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreGetUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
 // DBStoreHandleFunc describes the behavior when the Handle method of the
 // parent MockDBStore instance is invoked.
 type DBStoreHandleFunc struct {
@@ -702,227 +854,6 @@ func (c DBStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// DBStoreHardDeleteUploadByIDFunc describes the behavior when the
-// HardDeleteUploadByID method of the parent MockDBStore instance is
-// invoked.
-type DBStoreHardDeleteUploadByIDFunc struct {
-	defaultHook func(context.Context, ...int) error
-	hooks       []func(context.Context, ...int) error
-	history     []DBStoreHardDeleteUploadByIDFuncCall
-	mutex       sync.Mutex
-}
-
-// HardDeleteUploadByID delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDBStore) HardDeleteUploadByID(v0 context.Context, v1 ...int) error {
-	r0 := m.HardDeleteUploadByIDFunc.nextHook()(v0, v1...)
-	m.HardDeleteUploadByIDFunc.appendCall(DBStoreHardDeleteUploadByIDFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the HardDeleteUploadByID
-// method of the parent MockDBStore instance is invoked and the hook queue
-// is empty.
-func (f *DBStoreHardDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, ...int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// HardDeleteUploadByID method of the parent MockDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *DBStoreHardDeleteUploadByIDFunc) PushHook(hook func(context.Context, ...int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreHardDeleteUploadByIDFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreHardDeleteUploadByIDFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...int) error {
-		return r0
-	})
-}
-
-func (f *DBStoreHardDeleteUploadByIDFunc) nextHook() func(context.Context, ...int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreHardDeleteUploadByIDFunc) appendCall(r0 DBStoreHardDeleteUploadByIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreHardDeleteUploadByIDFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreHardDeleteUploadByIDFunc) History() []DBStoreHardDeleteUploadByIDFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreHardDeleteUploadByIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreHardDeleteUploadByIDFuncCall is an object that describes an
-// invocation of method HardDeleteUploadByID on an instance of MockDBStore.
-type DBStoreHardDeleteUploadByIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c DBStoreHardDeleteUploadByIDFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreHardDeleteUploadByIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBStoreSoftDeleteExpiredUploadsFunc describes the behavior when the
-// SoftDeleteExpiredUploads method of the parent MockDBStore instance is
-// invoked.
-type DBStoreSoftDeleteExpiredUploadsFunc struct {
-	defaultHook func(context.Context) (int, error)
-	hooks       []func(context.Context) (int, error)
-	history     []DBStoreSoftDeleteExpiredUploadsFuncCall
-	mutex       sync.Mutex
-}
-
-// SoftDeleteExpiredUploads delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockDBStore) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
-	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
-	m.SoftDeleteExpiredUploadsFunc.appendCall(DBStoreSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// SoftDeleteExpiredUploads method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SoftDeleteExpiredUploads method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) appendCall(r0 DBStoreSoftDeleteExpiredUploadsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreSoftDeleteExpiredUploadsFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreSoftDeleteExpiredUploadsFunc) History() []DBStoreSoftDeleteExpiredUploadsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreSoftDeleteExpiredUploadsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreSoftDeleteExpiredUploadsFuncCall is an object that describes an
-// invocation of method SoftDeleteExpiredUploads on an instance of
-// MockDBStore.
-type DBStoreSoftDeleteExpiredUploadsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreTransactFunc describes the behavior when the Transact method of
@@ -1029,414 +960,31 @@ func (c DBStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// MockLSIFStore is a mock implementation of the LSIFStore interface (from
-// the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup)
-// used for unit testing.
-type MockLSIFStore struct {
-	// ClearFunc is an instance of a mock function object controlling the
-	// behavior of the method Clear.
-	ClearFunc *LSIFStoreClearFunc
-	// DoneFunc is an instance of a mock function object controlling the
-	// behavior of the method Done.
-	DoneFunc *LSIFStoreDoneFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *LSIFStoreTransactFunc
-}
-
-// NewMockLSIFStore creates a new mock of the LSIFStore interface. All
-// methods return zero values for all results, unless overwritten.
-func NewMockLSIFStore() *MockLSIFStore {
-	return &MockLSIFStore{
-		ClearFunc: &LSIFStoreClearFunc{
-			defaultHook: func(context.Context, ...int) (r0 error) {
-				return
-			},
-		},
-		DoneFunc: &LSIFStoreDoneFunc{
-			defaultHook: func(error) (r0 error) {
-				return
-			},
-		},
-		TransactFunc: &LSIFStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 LSIFStore, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockLSIFStore creates a new mock of the LSIFStore interface. All
-// methods panic on invocation, unless overwritten.
-func NewStrictMockLSIFStore() *MockLSIFStore {
-	return &MockLSIFStore{
-		ClearFunc: &LSIFStoreClearFunc{
-			defaultHook: func(context.Context, ...int) error {
-				panic("unexpected invocation of MockLSIFStore.Clear")
-			},
-		},
-		DoneFunc: &LSIFStoreDoneFunc{
-			defaultHook: func(error) error {
-				panic("unexpected invocation of MockLSIFStore.Done")
-			},
-		},
-		TransactFunc: &LSIFStoreTransactFunc{
-			defaultHook: func(context.Context) (LSIFStore, error) {
-				panic("unexpected invocation of MockLSIFStore.Transact")
-			},
-		},
-	}
-}
-
-// NewMockLSIFStoreFrom creates a new mock of the MockLSIFStore interface.
-// All methods delegate to the given implementation, unless overwritten.
-func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
-	return &MockLSIFStore{
-		ClearFunc: &LSIFStoreClearFunc{
-			defaultHook: i.Clear,
-		},
-		DoneFunc: &LSIFStoreDoneFunc{
-			defaultHook: i.Done,
-		},
-		TransactFunc: &LSIFStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
-	}
-}
-
-// LSIFStoreClearFunc describes the behavior when the Clear method of the
-// parent MockLSIFStore instance is invoked.
-type LSIFStoreClearFunc struct {
-	defaultHook func(context.Context, ...int) error
-	hooks       []func(context.Context, ...int) error
-	history     []LSIFStoreClearFuncCall
-	mutex       sync.Mutex
-}
-
-// Clear delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLSIFStore) Clear(v0 context.Context, v1 ...int) error {
-	r0 := m.ClearFunc.nextHook()(v0, v1...)
-	m.ClearFunc.appendCall(LSIFStoreClearFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Clear method of the
-// parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreClearFunc) SetDefaultHook(hook func(context.Context, ...int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Clear method of the parent MockLSIFStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *LSIFStoreClearFunc) PushHook(hook func(context.Context, ...int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreClearFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreClearFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...int) error {
-		return r0
-	})
-}
-
-func (f *LSIFStoreClearFunc) nextHook() func(context.Context, ...int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreClearFunc) appendCall(r0 LSIFStoreClearFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreClearFuncCall objects describing
-// the invocations of this function.
-func (f *LSIFStoreClearFunc) History() []LSIFStoreClearFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreClearFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreClearFuncCall is an object that describes an invocation of
-// method Clear on an instance of MockLSIFStore.
-type LSIFStoreClearFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c LSIFStoreClearFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreClearFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// LSIFStoreDoneFunc describes the behavior when the Done method of the
-// parent MockLSIFStore instance is invoked.
-type LSIFStoreDoneFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []LSIFStoreDoneFuncCall
-	mutex       sync.Mutex
-}
-
-// Done delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLSIFStore) Done(v0 error) error {
-	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(LSIFStoreDoneFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Done method of the
-// parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreDoneFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockLSIFStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *LSIFStoreDoneFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDoneFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDoneFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *LSIFStoreDoneFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDoneFunc) appendCall(r0 LSIFStoreDoneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDoneFuncCall objects describing
-// the invocations of this function.
-func (f *LSIFStoreDoneFunc) History() []LSIFStoreDoneFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDoneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDoneFuncCall is an object that describes an invocation of method
-// Done on an instance of MockLSIFStore.
-type LSIFStoreDoneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDoneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDoneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// LSIFStoreTransactFunc describes the behavior when the Transact method of
-// the parent MockLSIFStore instance is invoked.
-type LSIFStoreTransactFunc struct {
-	defaultHook func(context.Context) (LSIFStore, error)
-	hooks       []func(context.Context) (LSIFStore, error)
-	history     []LSIFStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLSIFStore) Transact(v0 context.Context) (LSIFStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(LSIFStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreTransactFunc) SetDefaultHook(hook func(context.Context) (LSIFStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockLSIFStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *LSIFStoreTransactFunc) PushHook(hook func(context.Context) (LSIFStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreTransactFunc) SetDefaultReturn(r0 LSIFStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (LSIFStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreTransactFunc) PushReturn(r0 LSIFStore, r1 error) {
-	f.PushHook(func(context.Context) (LSIFStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreTransactFunc) nextHook() func(context.Context) (LSIFStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreTransactFunc) appendCall(r0 LSIFStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreTransactFunc) History() []LSIFStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreTransactFuncCall is an object that describes an invocation of
-// method Transact on an instance of MockLSIFStore.
-type LSIFStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 LSIFStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // MockUploadService is a mock implementation of the UploadService interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup)
 // used for unit testing.
 type MockUploadService struct {
-	// DeleteIndexesWithoutRepositoryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteIndexesWithoutRepository.
-	DeleteIndexesWithoutRepositoryFunc *UploadServiceDeleteIndexesWithoutRepositoryFunc
+	// DeleteOldAuditLogsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteOldAuditLogs.
+	DeleteOldAuditLogsFunc *UploadServiceDeleteOldAuditLogsFunc
 	// DeleteSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteSourcedCommits.
 	DeleteSourcedCommitsFunc *UploadServiceDeleteSourcedCommitsFunc
+	// DeleteUploadsStuckUploadingFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteUploadsStuckUploading.
+	DeleteUploadsStuckUploadingFunc *UploadServiceDeleteUploadsStuckUploadingFunc
 	// DeleteUploadsWithoutRepositoryFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteUploadsWithoutRepository.
 	DeleteUploadsWithoutRepositoryFunc *UploadServiceDeleteUploadsWithoutRepositoryFunc
+	// HardDeleteExpiredUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method HardDeleteExpiredUploads.
+	HardDeleteExpiredUploadsFunc *UploadServiceHardDeleteExpiredUploadsFunc
+	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method SoftDeleteExpiredUploads.
+	SoftDeleteExpiredUploadsFunc *UploadServiceSoftDeleteExpiredUploadsFunc
 	// StaleSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method StaleSourcedCommits.
 	StaleSourcedCommitsFunc *UploadServiceStaleSourcedCommitsFunc
@@ -1449,13 +997,18 @@ type MockUploadService struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
-		DeleteIndexesWithoutRepositoryFunc: &UploadServiceDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
+		DeleteOldAuditLogsFunc: &UploadServiceDeleteOldAuditLogsFunc{
+			defaultHook: func(context.Context, time.Duration, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
 		DeleteSourcedCommitsFunc: &UploadServiceDeleteSourcedCommitsFunc{
-			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (r0 int, r1 int, r2 int, r3 error) {
+			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		DeleteUploadsStuckUploadingFunc: &UploadServiceDeleteUploadsStuckUploadingFunc{
+			defaultHook: func(context.Context, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -1464,13 +1017,23 @@ func NewMockUploadService() *MockUploadService {
 				return
 			},
 		},
+		HardDeleteExpiredUploadsFunc: &UploadServiceHardDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
 		StaleSourcedCommitsFunc: &UploadServiceStaleSourcedCommitsFunc{
-			defaultHook: func(context.Context, time.Duration, int, time.Time) (r0 []shared.SourcedCommits, r1 error) {
+			defaultHook: func(context.Context, time.Duration, int, time.Time) (r0 []shared1.SourcedCommits, r1 error) {
 				return
 			},
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 int, r2 error) {
+			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -1481,14 +1044,19 @@ func NewMockUploadService() *MockUploadService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockUploadService() *MockUploadService {
 	return &MockUploadService{
-		DeleteIndexesWithoutRepositoryFunc: &UploadServiceDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
-				panic("unexpected invocation of MockUploadService.DeleteIndexesWithoutRepository")
+		DeleteOldAuditLogsFunc: &UploadServiceDeleteOldAuditLogsFunc{
+			defaultHook: func(context.Context, time.Duration, time.Time) (int, error) {
+				panic("unexpected invocation of MockUploadService.DeleteOldAuditLogs")
 			},
 		},
 		DeleteSourcedCommitsFunc: &UploadServiceDeleteSourcedCommitsFunc{
-			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
+			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockUploadService.DeleteSourcedCommits")
+			},
+		},
+		DeleteUploadsStuckUploadingFunc: &UploadServiceDeleteUploadsStuckUploadingFunc{
+			defaultHook: func(context.Context, time.Time) (int, error) {
+				panic("unexpected invocation of MockUploadService.DeleteUploadsStuckUploading")
 			},
 		},
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
@@ -1496,13 +1064,23 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.DeleteUploadsWithoutRepository")
 			},
 		},
+		HardDeleteExpiredUploadsFunc: &UploadServiceHardDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockUploadService.HardDeleteExpiredUploads")
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockUploadService.SoftDeleteExpiredUploads")
+			},
+		},
 		StaleSourcedCommitsFunc: &UploadServiceStaleSourcedCommitsFunc{
-			defaultHook: func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+			defaultHook: func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error) {
 				panic("unexpected invocation of MockUploadService.StaleSourcedCommits")
 			},
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
 				panic("unexpected invocation of MockUploadService.UpdateSourcedCommits")
 			},
 		},
@@ -1514,14 +1092,23 @@ func NewStrictMockUploadService() *MockUploadService {
 // overwritten.
 func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
-		DeleteIndexesWithoutRepositoryFunc: &UploadServiceDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: i.DeleteIndexesWithoutRepository,
+		DeleteOldAuditLogsFunc: &UploadServiceDeleteOldAuditLogsFunc{
+			defaultHook: i.DeleteOldAuditLogs,
 		},
 		DeleteSourcedCommitsFunc: &UploadServiceDeleteSourcedCommitsFunc{
 			defaultHook: i.DeleteSourcedCommits,
 		},
+		DeleteUploadsStuckUploadingFunc: &UploadServiceDeleteUploadsStuckUploadingFunc{
+			defaultHook: i.DeleteUploadsStuckUploading,
+		},
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: i.DeleteUploadsWithoutRepository,
+		},
+		HardDeleteExpiredUploadsFunc: &UploadServiceHardDeleteExpiredUploadsFunc{
+			defaultHook: i.HardDeleteExpiredUploads,
+		},
+		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: i.SoftDeleteExpiredUploads,
 		},
 		StaleSourcedCommitsFunc: &UploadServiceStaleSourcedCommitsFunc{
 			defaultHook: i.StaleSourcedCommits,
@@ -1532,37 +1119,37 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	}
 }
 
-// UploadServiceDeleteIndexesWithoutRepositoryFunc describes the behavior
-// when the DeleteIndexesWithoutRepository method of the parent
-// MockUploadService instance is invoked.
-type UploadServiceDeleteIndexesWithoutRepositoryFunc struct {
-	defaultHook func(context.Context, time.Time) (map[int]int, error)
-	hooks       []func(context.Context, time.Time) (map[int]int, error)
-	history     []UploadServiceDeleteIndexesWithoutRepositoryFuncCall
+// UploadServiceDeleteOldAuditLogsFunc describes the behavior when the
+// DeleteOldAuditLogs method of the parent MockUploadService instance is
+// invoked.
+type UploadServiceDeleteOldAuditLogsFunc struct {
+	defaultHook func(context.Context, time.Duration, time.Time) (int, error)
+	hooks       []func(context.Context, time.Duration, time.Time) (int, error)
+	history     []UploadServiceDeleteOldAuditLogsFuncCall
 	mutex       sync.Mutex
 }
 
-// DeleteIndexesWithoutRepository delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockUploadService) DeleteIndexesWithoutRepository(v0 context.Context, v1 time.Time) (map[int]int, error) {
-	r0, r1 := m.DeleteIndexesWithoutRepositoryFunc.nextHook()(v0, v1)
-	m.DeleteIndexesWithoutRepositoryFunc.appendCall(UploadServiceDeleteIndexesWithoutRepositoryFuncCall{v0, v1, r0, r1})
+// DeleteOldAuditLogs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadService) DeleteOldAuditLogs(v0 context.Context, v1 time.Duration, v2 time.Time) (int, error) {
+	r0, r1 := m.DeleteOldAuditLogsFunc.nextHook()(v0, v1, v2)
+	m.DeleteOldAuditLogsFunc.appendCall(UploadServiceDeleteOldAuditLogsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// DeleteIndexesWithoutRepository method of the parent MockUploadService
-// instance is invoked and the hook queue is empty.
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+// SetDefaultHook sets function that is called when the DeleteOldAuditLogs
+// method of the parent MockUploadService instance is invoked and the hook
+// queue is empty.
+func (f *UploadServiceDeleteOldAuditLogsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteIndexesWithoutRepository method of the parent MockUploadService
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+// DeleteOldAuditLogs method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceDeleteOldAuditLogsFunc) PushHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1570,20 +1157,20 @@ func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (map[int]int, error) {
+func (f *UploadServiceDeleteOldAuditLogsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) PushReturn(r0 map[int]int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (map[int]int, error) {
+func (f *UploadServiceDeleteOldAuditLogsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (map[int]int, error) {
+func (f *UploadServiceDeleteOldAuditLogsFunc) nextHook() func(context.Context, time.Duration, time.Time) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1596,37 +1183,39 @@ func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) nextHook() func(contex
 	return hook
 }
 
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) appendCall(r0 UploadServiceDeleteIndexesWithoutRepositoryFuncCall) {
+func (f *UploadServiceDeleteOldAuditLogsFunc) appendCall(r0 UploadServiceDeleteOldAuditLogsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// UploadServiceDeleteIndexesWithoutRepositoryFuncCall objects describing
-// the invocations of this function.
-func (f *UploadServiceDeleteIndexesWithoutRepositoryFunc) History() []UploadServiceDeleteIndexesWithoutRepositoryFuncCall {
+// History returns a sequence of UploadServiceDeleteOldAuditLogsFuncCall
+// objects describing the invocations of this function.
+func (f *UploadServiceDeleteOldAuditLogsFunc) History() []UploadServiceDeleteOldAuditLogsFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadServiceDeleteIndexesWithoutRepositoryFuncCall, len(f.history))
+	history := make([]UploadServiceDeleteOldAuditLogsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadServiceDeleteIndexesWithoutRepositoryFuncCall is an object that
-// describes an invocation of method DeleteIndexesWithoutRepository on an
-// instance of MockUploadService.
-type UploadServiceDeleteIndexesWithoutRepositoryFuncCall struct {
+// UploadServiceDeleteOldAuditLogsFuncCall is an object that describes an
+// invocation of method DeleteOldAuditLogs on an instance of
+// MockUploadService.
+type UploadServiceDeleteOldAuditLogsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 time.Time
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[int]int
+	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1634,13 +1223,13 @@ type UploadServiceDeleteIndexesWithoutRepositoryFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UploadServiceDeleteIndexesWithoutRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c UploadServiceDeleteOldAuditLogsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadServiceDeleteIndexesWithoutRepositoryFuncCall) Results() []interface{} {
+func (c UploadServiceDeleteOldAuditLogsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1648,24 +1237,24 @@ func (c UploadServiceDeleteIndexesWithoutRepositoryFuncCall) Results() []interfa
 // DeleteSourcedCommits method of the parent MockUploadService instance is
 // invoked.
 type UploadServiceDeleteSourcedCommitsFunc struct {
-	defaultHook func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)
-	hooks       []func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)
+	defaultHook func(context.Context, int, string, time.Duration, time.Time) (int, int, error)
+	hooks       []func(context.Context, int, string, time.Duration, time.Time) (int, int, error)
 	history     []UploadServiceDeleteSourcedCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteSourcedCommits delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadService) DeleteSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Duration, v4 time.Time) (int, int, int, error) {
-	r0, r1, r2, r3 := m.DeleteSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DeleteSourcedCommitsFunc.appendCall(UploadServiceDeleteSourcedCommitsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+func (m *MockUploadService) DeleteSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Duration, v4 time.Time) (int, int, error) {
+	r0, r1, r2 := m.DeleteSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DeleteSourcedCommitsFunc.appendCall(UploadServiceDeleteSourcedCommitsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the DeleteSourcedCommits
 // method of the parent MockUploadService instance is invoked and the hook
 // queue is empty.
-func (f *UploadServiceDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)) {
+func (f *UploadServiceDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1674,7 +1263,7 @@ func (f *UploadServiceDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceDeleteSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)) {
+func (f *UploadServiceDeleteSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1682,20 +1271,20 @@ func (f *UploadServiceDeleteSourcedCommitsFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceDeleteSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 int, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
-		return r0, r1, r2, r3
+func (f *UploadServiceDeleteSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceDeleteSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 int, r3 error) {
-	f.PushHook(func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
-		return r0, r1, r2, r3
+func (f *UploadServiceDeleteSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *UploadServiceDeleteSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
+func (f *UploadServiceDeleteSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Duration, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1752,10 +1341,7 @@ type UploadServiceDeleteSourcedCommitsFuncCall struct {
 	Result1 int
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
-	Result2 int
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1767,7 +1353,119 @@ func (c UploadServiceDeleteSourcedCommitsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceDeleteSourcedCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadServiceDeleteUploadsStuckUploadingFunc describes the behavior when
+// the DeleteUploadsStuckUploading method of the parent MockUploadService
+// instance is invoked.
+type UploadServiceDeleteUploadsStuckUploadingFunc struct {
+	defaultHook func(context.Context, time.Time) (int, error)
+	hooks       []func(context.Context, time.Time) (int, error)
+	history     []UploadServiceDeleteUploadsStuckUploadingFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUploadsStuckUploading delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadService) DeleteUploadsStuckUploading(v0 context.Context, v1 time.Time) (int, error) {
+	r0, r1 := m.DeleteUploadsStuckUploadingFunc.nextHook()(v0, v1)
+	m.DeleteUploadsStuckUploadingFunc.appendCall(UploadServiceDeleteUploadsStuckUploadingFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteUploadsStuckUploading method of the parent MockUploadService
+// instance is invoked and the hook queue is empty.
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) SetDefaultHook(hook func(context.Context, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUploadsStuckUploading method of the parent MockUploadService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) PushHook(hook func(context.Context, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) nextHook() func(context.Context, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) appendCall(r0 UploadServiceDeleteUploadsStuckUploadingFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceDeleteUploadsStuckUploadingFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceDeleteUploadsStuckUploadingFunc) History() []UploadServiceDeleteUploadsStuckUploadingFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceDeleteUploadsStuckUploadingFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceDeleteUploadsStuckUploadingFuncCall is an object that
+// describes an invocation of method DeleteUploadsStuckUploading on an
+// instance of MockUploadService.
+type UploadServiceDeleteUploadsStuckUploadingFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceDeleteUploadsStuckUploadingFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceDeleteUploadsStuckUploadingFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UploadServiceDeleteUploadsWithoutRepositoryFunc describes the behavior
@@ -1882,19 +1580,237 @@ func (c UploadServiceDeleteUploadsWithoutRepositoryFuncCall) Results() []interfa
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UploadServiceHardDeleteExpiredUploadsFunc describes the behavior when the
+// HardDeleteExpiredUploads method of the parent MockUploadService instance
+// is invoked.
+type UploadServiceHardDeleteExpiredUploadsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []UploadServiceHardDeleteExpiredUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// HardDeleteExpiredUploads delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadService) HardDeleteExpiredUploads(v0 context.Context) (int, error) {
+	r0, r1 := m.HardDeleteExpiredUploadsFunc.nextHook()(v0)
+	m.HardDeleteExpiredUploadsFunc.appendCall(UploadServiceHardDeleteExpiredUploadsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// HardDeleteExpiredUploads method of the parent MockUploadService instance
+// is invoked and the hook queue is empty.
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HardDeleteExpiredUploads method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) appendCall(r0 UploadServiceHardDeleteExpiredUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceHardDeleteExpiredUploadsFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceHardDeleteExpiredUploadsFunc) History() []UploadServiceHardDeleteExpiredUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceHardDeleteExpiredUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceHardDeleteExpiredUploadsFuncCall is an object that describes
+// an invocation of method HardDeleteExpiredUploads on an instance of
+// MockUploadService.
+type UploadServiceHardDeleteExpiredUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceHardDeleteExpiredUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceHardDeleteExpiredUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceSoftDeleteExpiredUploadsFunc describes the behavior when the
+// SoftDeleteExpiredUploads method of the parent MockUploadService instance
+// is invoked.
+type UploadServiceSoftDeleteExpiredUploadsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []UploadServiceSoftDeleteExpiredUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// SoftDeleteExpiredUploads delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadService) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
+	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
+	m.SoftDeleteExpiredUploadsFunc.appendCall(UploadServiceSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SoftDeleteExpiredUploads method of the parent MockUploadService instance
+// is invoked and the hook queue is empty.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SoftDeleteExpiredUploads method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) appendCall(r0 UploadServiceSoftDeleteExpiredUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceSoftDeleteExpiredUploadsFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) History() []UploadServiceSoftDeleteExpiredUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceSoftDeleteExpiredUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceSoftDeleteExpiredUploadsFuncCall is an object that describes
+// an invocation of method SoftDeleteExpiredUploads on an instance of
+// MockUploadService.
+type UploadServiceSoftDeleteExpiredUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // UploadServiceStaleSourcedCommitsFunc describes the behavior when the
 // StaleSourcedCommits method of the parent MockUploadService instance is
 // invoked.
 type UploadServiceStaleSourcedCommitsFunc struct {
-	defaultHook func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)
-	hooks       []func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)
+	defaultHook func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error)
+	hooks       []func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error)
 	history     []UploadServiceStaleSourcedCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // StaleSourcedCommits delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadService) StaleSourcedCommits(v0 context.Context, v1 time.Duration, v2 int, v3 time.Time) ([]shared.SourcedCommits, error) {
+func (m *MockUploadService) StaleSourcedCommits(v0 context.Context, v1 time.Duration, v2 int, v3 time.Time) ([]shared1.SourcedCommits, error) {
 	r0, r1 := m.StaleSourcedCommitsFunc.nextHook()(v0, v1, v2, v3)
 	m.StaleSourcedCommitsFunc.appendCall(UploadServiceStaleSourcedCommitsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -1903,7 +1819,7 @@ func (m *MockUploadService) StaleSourcedCommits(v0 context.Context, v1 time.Dura
 // SetDefaultHook sets function that is called when the StaleSourcedCommits
 // method of the parent MockUploadService instance is invoked and the hook
 // queue is empty.
-func (f *UploadServiceStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)) {
+func (f *UploadServiceStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error)) {
 	f.defaultHook = hook
 }
 
@@ -1912,7 +1828,7 @@ func (f *UploadServiceStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceStaleSourcedCommitsFunc) PushHook(hook func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error)) {
+func (f *UploadServiceStaleSourcedCommitsFunc) PushHook(hook func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1920,20 +1836,20 @@ func (f *UploadServiceStaleSourcedCommitsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceStaleSourcedCommitsFunc) SetDefaultReturn(r0 []shared.SourcedCommits, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+func (f *UploadServiceStaleSourcedCommitsFunc) SetDefaultReturn(r0 []shared1.SourcedCommits, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceStaleSourcedCommitsFunc) PushReturn(r0 []shared.SourcedCommits, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+func (f *UploadServiceStaleSourcedCommitsFunc) PushReturn(r0 []shared1.SourcedCommits, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceStaleSourcedCommitsFunc) nextHook() func(context.Context, time.Duration, int, time.Time) ([]shared.SourcedCommits, error) {
+func (f *UploadServiceStaleSourcedCommitsFunc) nextHook() func(context.Context, time.Duration, int, time.Time) ([]shared1.SourcedCommits, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1981,7 +1897,7 @@ type UploadServiceStaleSourcedCommitsFuncCall struct {
 	Arg3 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.SourcedCommits
+	Result0 []shared1.SourcedCommits
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2003,24 +1919,24 @@ func (c UploadServiceStaleSourcedCommitsFuncCall) Results() []interface{} {
 // UpdateSourcedCommits method of the parent MockUploadService instance is
 // invoked.
 type UploadServiceUpdateSourcedCommitsFunc struct {
-	defaultHook func(context.Context, int, string, time.Time) (int, int, error)
-	hooks       []func(context.Context, int, string, time.Time) (int, int, error)
+	defaultHook func(context.Context, int, string, time.Time) (int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, error)
 	history     []UploadServiceUpdateSourcedCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateSourcedCommits delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadService) UpdateSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, int, error) {
-	r0, r1, r2 := m.UpdateSourcedCommitsFunc.nextHook()(v0, v1, v2, v3)
-	m.UpdateSourcedCommitsFunc.appendCall(UploadServiceUpdateSourcedCommitsFuncCall{v0, v1, v2, v3, r0, r1, r2})
-	return r0, r1, r2
+func (m *MockUploadService) UpdateSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+	r0, r1 := m.UpdateSourcedCommitsFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateSourcedCommitsFunc.appendCall(UploadServiceUpdateSourcedCommitsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the UpdateSourcedCommits
 // method of the parent MockUploadService instance is invoked and the hook
 // queue is empty.
-func (f *UploadServiceUpdateSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
+func (f *UploadServiceUpdateSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -2029,7 +1945,7 @@ func (f *UploadServiceUpdateSourcedCommitsFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceUpdateSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
+func (f *UploadServiceUpdateSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2037,20 +1953,20 @@ func (f *UploadServiceUpdateSourcedCommitsFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceUpdateSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, int, error) {
-		return r0, r1, r2
+func (f *UploadServiceUpdateSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceUpdateSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, time.Time) (int, int, error) {
-		return r0, r1, r2
+func (f *UploadServiceUpdateSourcedCommitsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
 	})
 }
 
-func (f *UploadServiceUpdateSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Time) (int, int, error) {
+func (f *UploadServiceUpdateSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2101,10 +2017,7 @@ type UploadServiceUpdateSourcedCommitsFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -2116,5 +2029,5 @@ func (c UploadServiceUpdateSourcedCommitsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceUpdateSourcedCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1}
 }

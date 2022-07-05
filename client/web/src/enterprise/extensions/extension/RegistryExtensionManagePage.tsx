@@ -1,9 +1,9 @@
 import * as React from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -194,7 +194,8 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                     <LoadingSpinner />
                                 ) : (
                                     <span className="text-success ml-2">
-                                        <Icon aria-hidden={true} as={CheckCircleIcon} /> Updated extension successfully.
+                                        <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Updated extension
+                                        successfully.
                                     </span>
                                 ))}
                         </div>

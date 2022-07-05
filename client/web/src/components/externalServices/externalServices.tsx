@@ -1,7 +1,6 @@
 import React from 'react'
 
-import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { Edit, JSONPath, ModificationOptions, modify } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -83,10 +82,12 @@ export interface AddExternalServiceOptions {
     defaultConfig: string
 }
 
-const defaultFormattingOptions: FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 /**
@@ -95,7 +96,7 @@ const defaultFormattingOptions: FormattingOptions = {
  * `"COMMENT_SENTINEL": true` appears in the JSON.
  */
 function editWithComment(config: string, path: JSONPath, value: any, comment: string): Edit {
-    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    const edit = modify(config, path, value, defaultModificationOptions)[0]
     edit.content = edit.content.replace('"COMMENT_SENTINEL": true', comment)
     return edit
 }
@@ -260,7 +261,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
                   label: 'Set GitHub URL',
                   run: (config: string) => {
                       const value = 'https://github.example.com'
-                      const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                      const edits = modify(config, ['url'], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -271,7 +272,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Set access token',
         run: (config: string) => {
             const value = '<access token>'
-            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+            const edits = modify(config, ['token'], value, defaultModificationOptions)
             return { edits, selectText: '<access token>' }
         },
     },
@@ -280,7 +281,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add repositories in an organization',
         run: (config: string) => {
             const value = '<organization name>'
-            const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['orgs', -1], value, defaultModificationOptions)
             return { edits, selectText: '<organization name>' }
         },
     },
@@ -289,7 +290,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add repositories matching a search query',
         run: (config: string) => {
             const value = '<search query>'
-            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: '<search query>' }
         },
     },
@@ -298,7 +299,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add repositories affiliated with token',
         run: (config: string) => {
             const value = 'affiliated'
-            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: 'affiliated' }
         },
     },
@@ -307,7 +308,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add a single repository',
         run: (config: string) => {
             const value = '<owner>/<repository>'
-            const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
             return { edits, selectText: '<owner>/<repository>' }
         },
     },
@@ -316,7 +317,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Exclude a repository',
         run: (config: string) => {
             const value = { name: '<owner>/<repository>' }
-            const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
             return { edits, selectText: '<owner>/<repository>' }
         },
     },
@@ -337,7 +338,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add webhook',
         run: (config: string) => {
             const value = { org: '<your_org_on_GitHub>', secret: '<any_secret_string>' }
-            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['webhooks', -1], value, defaultModificationOptions)
             return { edits, selectText: '<your_org_on_GitHub>' }
         },
     },
@@ -351,7 +352,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Set GitLab URL',
                   run: (config: string) => {
                       const value = 'https://gitlab.example.com'
-                      const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                      const edits = modify(config, ['url'], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -362,7 +363,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Set access token',
         run: (config: string) => {
             const value = '<access token>'
-            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+            const edits = modify(config, ['token'], value, defaultModificationOptions)
             return { edits, selectText: value }
         },
     },
@@ -371,7 +372,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add projects in a group',
         run: (config: string) => {
             const value = 'groups/<my group>/projects'
-            const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: '<my group>' }
         },
     },
@@ -380,7 +381,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: "Add projects that have the token's user as member",
         run: (config: string) => {
             const value = 'projects?membership=true&archived=no'
-            const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: value }
         },
     },
@@ -388,7 +389,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         id: 'addProjectsMatchingSearch',
         label: 'Add projects matching search',
         run: (config: string) => ({
-            edits: setProperty(config, ['projectQuery', -1], '?search=<search query>', defaultFormattingOptions),
+            edits: modify(config, ['projectQuery', -1], '?search=<search query>', defaultModificationOptions),
             selectText: '<search query>',
         }),
     },
@@ -397,7 +398,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add single project by name',
         run: (config: string) => {
             const value = { name: '<group>/<name>' }
-            const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projects', -1], value, defaultModificationOptions)
             return { edits, selectText: '<group>/<name>' }
         },
     },
@@ -406,7 +407,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add single project by ID',
         run: (config: string) => {
             const value = { id: 123 }
-            const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projects', -1], value, defaultModificationOptions)
             return { edits, selectText: '123' }
         },
     },
@@ -417,7 +418,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Add internal projects',
                   run: (config: string) => {
                       const value = 'projects?visibility=internal'
-                      const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -426,7 +427,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Add private projects',
                   run: (config: string) => {
                       const value = 'projects?visibility=private'
-                      const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -437,7 +438,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Exclude a project',
         run: (config: string) => {
             const value = { name: '<group>/<project>' }
-            const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
             return { edits, selectText: '"<group>/<project>"' }
         },
     },
@@ -482,7 +483,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Set internal or self-signed certificate',
                   run: (config: string) => {
                       const value = '<certificate>'
-                      const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                      const edits = modify(config, ['certificate'], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -509,7 +510,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add webhook',
         run: (config: string) => {
             const value = { secret: '<any_secret_string>' }
-            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['webhooks', -1], value, defaultModificationOptions)
             return { edits, selectText: '<any_secret_string>' }
         },
     },
@@ -615,7 +616,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Set access key ID',
             run: (config: string) => {
                 const value = '<access key id>'
-                const edits = setProperty(config, ['accessKeyID'], value, defaultFormattingOptions)
+                const edits = modify(config, ['accessKeyID'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -624,7 +625,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Set secret access key',
             run: (config: string) => {
                 const value = '<secret access key>'
-                const edits = setProperty(config, ['secretAccessKey'], value, defaultFormattingOptions)
+                const edits = modify(config, ['secretAccessKey'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -633,7 +634,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Set region',
             run: (config: string) => {
                 const value = '<region>'
-                const edits = setProperty(config, ['region'], value, defaultFormattingOptions)
+                const edits = modify(config, ['region'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -645,7 +646,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     username: '<username>',
                     password: '<password>',
                 }
-                const edits = setProperty(config, ['gitCredentials'], value, defaultFormattingOptions)
+                const edits = modify(config, ['gitCredentials'], value, defaultModificationOptions)
                 return { edits, selectText: '<username>' }
             },
         },
@@ -654,7 +655,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Exclude a repository',
             run: (config: string) => {
                 const value = { name: '<owner>/<repository>' }
-                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<owner>/<repository>' }
             },
         },
@@ -678,7 +679,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Set app password',
             run: (config: string) => {
                 const value = '<app password>'
-                const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
+                const edits = modify(config, ['appPassword'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -687,7 +688,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Set username',
             run: (config: string) => {
                 const value = '<username to which the app password belongs>'
-                const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
+                const edits = modify(config, ['username'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -696,7 +697,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Add repositories belonging to team',
             run: (config: string) => {
                 const value = '<team>'
-                const edits = setProperty(config, ['teams', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['teams', -1], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -705,7 +706,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Enable webhooks',
             run: (config: string) => {
                 const value = '<any_secret_string>'
-                const edits = setProperty(config, ['webhookSecret'], value, defaultFormattingOptions)
+                const edits = modify(config, ['webhookSecret'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -842,7 +843,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set URL',
             run: (config: string) => {
                 const value = 'https://bitbucket.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -851,7 +852,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set access token',
             run: (config: string) => {
                 const value = '<access token>'
-                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                const edits = modify(config, ['token'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -860,7 +861,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set username',
             run: (config: string) => {
                 const value = '<username that created access token>'
-                const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
+                const edits = modify(config, ['username'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -869,7 +870,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Add repositories in a project',
             run: (config: string) => {
                 const value = '?projectname=<project>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<project>' }
             },
         },
@@ -878,7 +879,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Add individual repository',
             run: (config: string) => {
                 const value = '<project/<repository>'
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<project/<repository>' }
             },
         },
@@ -887,7 +888,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Exclude a repository',
             run: (config: string) => {
                 const value = { name: '<project/<repository>' }
-                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
                 return { edits, selectText: '{"name": "<project/<repository>"}' }
             },
         },
@@ -896,7 +897,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set internal or self-signed certificate',
             run: (config: string) => {
                 const value = '<certificate>'
-                const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                const edits = modify(config, ['certificate'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -905,7 +906,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Enable webhooks',
             run: (config: string) => {
                 const value = { webhooks: { secret: '<any_secret_string>' } }
-                const edits = setProperty(config, ['plugin'], value, defaultFormattingOptions)
+                const edits = modify(config, ['plugin'], value, defaultModificationOptions)
                 return { edits, selectText: '<any_secret_string>' }
             },
         },
@@ -974,7 +975,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
             label: 'Sourcegraph in Docker and src serve-git running on host',
             run: (config: string) => {
                 const value = 'http://host.docker.internal:3434'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1021,7 +1022,7 @@ const GITOLITE: AddExternalServiceOptions = {
             label: 'Set host',
             run: (config: string) => {
                 const value = 'git@gitolite.example.com'
-                const edits = setProperty(config, ['host'], value, defaultFormattingOptions)
+                const edits = modify(config, ['host'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1030,7 +1031,7 @@ const GITOLITE: AddExternalServiceOptions = {
             label: 'Set prefix',
             run: (config: string) => {
                 const value = 'gitolite.example.com/'
-                const edits = setProperty(config, ['prefix'], value, defaultFormattingOptions)
+                const edits = modify(config, ['prefix'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1059,7 +1060,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
             label: 'Set Phabricator URL',
             run: (config: string) => {
                 const value = 'https://phabricator.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1068,7 +1069,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
             label: 'Set Phabricator access token',
             run: (config: string) => {
                 const value = '<Phabricator access token>'
-                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                const edits = modify(config, ['token'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1080,7 +1081,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
                     callsign: '<Phabricator repository callsign>',
                     path: '<Sourcegraph repository full name>',
                 }
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<Phabricator repository callsign>' }
             },
         },
@@ -1126,7 +1127,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             label: 'Set Git host URL',
             run: (config: string) => {
                 const value = 'https://git.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1135,7 +1136,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             label: 'Add a repository',
             run: (config: string) => {
                 const value = 'path/to/repository'
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1185,7 +1186,7 @@ const PERFORCE: AddExternalServiceOptions = {
             label: 'Set max changes',
             run: (config: string) => {
                 const value = 1000
-                const edits = setProperty(config, ['maxChanges'], value, defaultFormattingOptions)
+                const edits = modify(config, ['maxChanges'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1194,7 +1195,7 @@ const PERFORCE: AddExternalServiceOptions = {
             label: 'Enforce permissions',
             run: (config: string) => {
                 const value = {}
-                const edits = setProperty(config, ['authorization'], value, defaultFormattingOptions)
+                const edits = modify(config, ['authorization'], value, defaultModificationOptions)
                 return { edits, selectText: '"authorization": {}' }
             },
         },

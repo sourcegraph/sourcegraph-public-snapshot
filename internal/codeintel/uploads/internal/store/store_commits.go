@@ -2,8 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
-	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -31,10 +29,10 @@ func (s *store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastChe
 
 	now = now.UTC()
 	interval := int(minimumTimeSinceLastCheck / time.Second)
-	uploadSubquery := sqlf.Sprintf(staleSourcedCommitsSubquery, sqlf.Sprintf("lsif_uploads"), now, interval)
-	indexesSubquery := sqlf.Sprintf(staleSourcedCommitsSubquery, sqlf.Sprintf("lsif_indexes"), now, interval)
+	uploadSubquery := sqlf.Sprintf(staleSourcedCommitsSubquery, now, interval)
+	query := sqlf.Sprintf(staleSourcedCommitsQuery, uploadSubquery, limit)
 
-	sourcedCommits, err := scanSourcedCommits(tx.Query(ctx, sqlf.Sprintf(staleSourcedCommitsQuery, uploadSubquery, indexesSubquery, limit)))
+	sourcedCommits, err := scanSourcedCommits(tx.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
@@ -52,9 +50,9 @@ func (s *store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastChe
 }
 
 const staleSourcedCommitsQuery = `
--- source: internal/codeintel/stores/dbstore/janitor.go:StaleSourcedCommits
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:StaleSourcedCommits
 WITH
-candidates AS (%s UNION %s)
+	candidates AS (%s)
 SELECT r.id, r.name, c.commit
 FROM candidates c
 JOIN repo r ON r.id = c.repository_id
@@ -73,7 +71,7 @@ SELECT
 	-- as any earlier dates for the same repository and commit pair carry no
 	-- useful information.
 	MAX(commit_last_checked_at) as max_last_checked_at
-FROM %s
+FROM lsif_uploads
 WHERE
 	-- Ignore records already marked as deleted
 	state NOT IN ('deleted', 'deleting') AND
@@ -83,95 +81,53 @@ WHERE
 GROUP BY repository_id, commit
 `
 
-// scanSourcedCommits scans triples of repository ids/repository names/commits from the
-// return value of `*Store.query`. The output of this function is ordered by repository
-// identifier, then by commit.
-func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	sourcedCommitsMap := map[int]shared.SourcedCommits{}
-	for rows.Next() {
-		var repositoryID int
-		var repositoryName string
-		var commit string
-		if err := rows.Scan(&repositoryID, &repositoryName, &commit); err != nil {
-			return nil, err
-		}
-
-		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
-			RepositoryID:   repositoryID,
-			RepositoryName: repositoryName,
-			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
-		}
-	}
-
-	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
-	for _, sourcedCommits := range sourcedCommitsMap {
-		sort.Strings(sourcedCommits.Commits)
-		flattened = append(flattened, sourcedCommits)
-	}
-
-	sort.Slice(flattened, func(i, j int) bool {
-		return flattened[i].RepositoryID < flattened[j].RepositoryID
-	})
-	return flattened, nil
-}
-
-// UpdateSourcedCommits updates the commit_last_checked_at field of each upload and index records belonging
-// to the given repository identifier and commit. This method returns the count of upload and index records
-// modified, respectively.
-func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
+// UpdateSourcedCommits updates the commit_last_checked_at field of each upload records belonging to
+// the given repository identifier and commit. This method returns the count of upload records modified
+func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
 	ctx, trace, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.db.Query(ctx, sqlf.Sprintf(
-		updateSourcedCommitsQuery,
-		repositoryID, commit, // candidate_uploads
-		repositoryID, commit, // candidate_indexes
-		now, now, // update_uploads, update_indexes
-	)))
-	if err != nil {
-		return 0, 0, err
-	}
-	trace.Log(
-		log.Int("uploadsUpdated", uploadsUpdated),
-		log.Int("indexesUpdated", indexesUpdated),
-	)
+	candidateUploadsSubquery := sqlf.Sprintf(candidateUploadsCTE, repositoryID, commit)
+	updateSourcedCommitQuery := sqlf.Sprintf(updateSourcedCommitsQuery, candidateUploadsSubquery, now)
 
-	return uploadsUpdated, indexesUpdated, nil
+	uploadsUpdated, err = scanCount(s.db.Query(ctx, updateSourcedCommitQuery))
+	if err != nil {
+		return 0, err
+	}
+	trace.Log(log.Int("uploadsUpdated", uploadsUpdated))
+
+	return uploadsUpdated, nil
 }
 
 const updateSourcedCommitsQuery = `
--- source: internal/codeintel/stores/dbstore/janitor.go:UpdateSourcedCommits
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:UpdateSourcedCommits
 WITH
-` + sourcedCommitsCandidateUploadsCTE + `,
-` + sourcedCommitsCandidateIndexesCTE + `,
+candidate_uploads AS (%s),
 update_uploads AS (
 	UPDATE lsif_uploads u
 	SET commit_last_checked_at = %s
 	WHERE id IN (SELECT id FROM candidate_uploads)
 	RETURNING 1
-),
-update_indexes AS (
-	UPDATE lsif_indexes u
-	SET commit_last_checked_at = %s
-	WHERE id IN (SELECT id FROM candidate_indexes)
-	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
-	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
+	(SELECT COUNT(*) FROM update_uploads) AS num_uploads
 `
 
-// DeleteSourcedCommits deletes each upload and index records belonging to the given repository identifier
-// and commit. Uploads are soft deleted and indexes are hard-deleted. This method returns the count of upload
-// and index records modified.
+const candidateUploadsCTE = `
+SELECT u.id, u.state, u.uploaded_at
+FROM lsif_uploads u
+WHERE u.repository_id = %s AND u.commit = %s
+
+-- Lock these rows in a deterministic order so that we don't
+-- deadlock with other processes updating the lsif_uploads table.
+ORDER BY u.id FOR UPDATE
+`
+
+// DeleteSourcedCommits deletes each upload record belonging to the given repository identifier
+// and commit. Uploads are soft deleted. This method returns the count of upload modified.
 //
 // If a maximum commit lag is supplied, then any upload records in the uploading, queued, or processing states
 // younger than the provided lag will not be deleted, but its timestamp will be modified as if the sibling method
@@ -179,9 +135,7 @@ SELECT
 // that are not the source of truth; if we deleted all pending records without resolvable commits introduce races
 // between the customer's Sourcegraph instance and their CI (and their CI will usually win).
 func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (
-	uploadsUpdated int,
-	uploadsDeleted int,
-	indexesDeleted int,
+	uploadsUpdated, uploadsDeleted int,
 	err error,
 ) {
 	ctx, trace, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -190,41 +144,33 @@ func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	}})
 	defer endObservation(1, observation.Args{})
 
+	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
+	defer unset(ctx)
+
 	now = now.UTC()
 	interval := int(maximumCommitLag / time.Second)
 
-	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
-	defer unset(ctx)
-	uploadsUpdated, uploadsDeleted, indexesDeleted, err = scanTripleOfCounts(s.db.Query(ctx, sqlf.Sprintf(
-		deleteSourcedCommitsQuery,
-		repositoryID, commit, // candidate_uploads
-		repositoryID, commit, // candidate_indexes
-		now, interval, // tagged_candidate_uploads
-		now, // update_uploads
-	)))
+	candidateUploadsSubquery := sqlf.Sprintf(candidateUploadsCTE, repositoryID, commit)
+	taggedCandidateUploadsSubquery := sqlf.Sprintf(taggedCandidateUploadsCTE, now, interval)
+	deleteSourcedCommitsQuery := sqlf.Sprintf(deleteSourcedCommitsQuery, candidateUploadsSubquery, taggedCandidateUploadsSubquery, now)
+
+	uploadsUpdated, uploadsDeleted, err = scanPairOfCounts(s.db.Query(ctx, deleteSourcedCommitsQuery))
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, err
 	}
 	trace.Log(
 		log.Int("uploadsUpdated", uploadsUpdated),
 		log.Int("uploadsDeleted", uploadsDeleted),
-		log.Int("indexesDeleted", indexesDeleted),
 	)
 
-	return uploadsUpdated, uploadsDeleted, indexesDeleted, nil
+	return uploadsUpdated, uploadsDeleted, nil
 }
 
 const deleteSourcedCommitsQuery = `
--- source: internal/codeintel/stores/dbstore/janitor.go:DeleteSourcedCommits
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:DeleteSourcedCommits
 WITH
-` + sourcedCommitsCandidateUploadsCTE + `,
-` + sourcedCommitsCandidateIndexesCTE + `,
-tagged_candidate_uploads AS (
-	SELECT
-		u.*,
-		(u.state IN ('uploading', 'queued', 'processing') AND %s - u.uploaded_at <= (%s * '1 second'::interval)) AS protected
-	FROM candidate_uploads u
-),
+candidate_uploads AS (%s),
+tagged_candidate_uploads AS (%s),
 update_uploads AS (
 	UPDATE lsif_uploads u
 	SET commit_last_checked_at = %s
@@ -236,68 +182,61 @@ delete_uploads AS (
 	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
 	WHERE EXISTS (SELECT 1 FROM tagged_candidate_uploads tu WHERE tu.id = u.id AND NOT tu.protected)
 	RETURNING 1
-),
-delete_indexes AS (
-	DELETE FROM lsif_indexes u
-	WHERE id IN (SELECT id FROM candidate_indexes)
-	RETURNING 1
 )
 SELECT
 	(SELECT COUNT(*) FROM update_uploads) AS num_uploads_updated,
-	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads_deleted,
-	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes_deleted
+	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads_deleted
 `
 
-const sourcedCommitsCandidateUploadsCTE = `
-candidate_uploads AS (
-	SELECT u.id, u.state, u.uploaded_at
-	FROM lsif_uploads u
-	WHERE u.repository_id = %s AND u.commit = %s
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
-	ORDER BY u.id FOR UPDATE
-)
+const taggedCandidateUploadsCTE = `
+SELECT
+	u.*,
+	(u.state IN ('uploading', 'queued', 'processing') AND %s - u.uploaded_at <= (%s * '1 second'::interval)) AS protected
+FROM candidate_uploads u
 `
 
-const sourcedCommitsCandidateIndexesCTE = `
-candidate_indexes AS (
-	SELECT u.id
-	FROM lsif_indexes u
-	WHERE u.repository_id = %s AND u.commit = %s
+// SetRepositoryAsDirty marks the given repository's commit graph as out of date.
+func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_indexes table.
-	ORDER BY u.id FOR UPDATE
-)
-`
-
-func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
-	if queryErr != nil {
-		return 0, 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(&value1, &value2); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return value1, value2, nil
+	return tx.Exec(ctx, sqlf.Sprintf(setRepositoryAsDirtyQuery, repositoryID))
 }
 
-func scanTripleOfCounts(rows *sql.Rows, queryErr error) (value1, value2, value3 int, err error) {
-	if queryErr != nil {
-		return 0, 0, 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+const setRepositoryAsDirtyQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_commits.go:SetRepositoryAsDirty
+INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
+VALUES (%s, 1, 0)
+ON CONFLICT (repository_id) DO UPDATE SET
+    dirty_token = lsif_dirty_repositories.dirty_token + 1,
+    set_dirty_at = CASE
+        WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token THEN NOW()
+        ELSE lsif_dirty_repositories.set_dirty_at
+    END
+`
 
-	for rows.Next() {
-		if err := rows.Scan(&value1, &value2, &value3); err != nil {
-			return 0, 0, 0, err
-		}
-	}
+// GetDirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
+// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
+func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, trace, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-	return value1, value2, value3, nil
+	repositories, err := scanIntPairs(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(log.Int("numRepositories", len(repositories)))
+
+	return repositories, nil
 }
+
+const dirtyRepositoriesQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetDirtyRepositories
+SELECT ldr.repository_id, ldr.dirty_token
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
+    AND repo.deleted_at IS NULL
+`

@@ -43,4 +43,17 @@ func TestLibLogLinter(t *testing.T) {
 		}))
 		assert.NotNil(t, err)
 	})
+
+	t.Run("allowlist", func(t *testing.T) {
+		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
+			"dev/foobar.go": []repo.DiffHunk{
+				{
+					AddedLines: []string{
+						`log15.Info("hi!")`,
+					},
+				},
+			},
+		}))
+		assert.Nil(t, err)
+	})
 }

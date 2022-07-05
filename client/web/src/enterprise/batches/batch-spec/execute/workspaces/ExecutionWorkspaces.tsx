@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -37,7 +37,7 @@ export const ExecutionWorkspaces: React.FunctionComponent<
         return (
             <>
                 <H1 className="text-center text-muted mt-5">
-                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <Icon role="img" aria-hidden={true} svgPath={mdiClose} />
                     <VisuallyHidden>No Execution</VisuallyHidden>
                 </H1>
                 <Text alignment="center">

@@ -74,7 +74,8 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 			//
 			// See https://github.com/sourcegraph/sourcegraph/issues/33375
 
-			return uploadshttp.GetHandler(uploads.GetService(db))
+			lsifStore := database.NewDBWith(observationContext.Logger, codeIntelDB)
+			return uploadshttp.GetHandler(uploads.GetService(db, lsifStore))
 		}
 
 		return httpapi.NewUploadHandler(

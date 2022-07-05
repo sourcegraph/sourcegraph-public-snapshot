@@ -16,6 +16,10 @@ type operations struct {
 	list                        *observation.Operation
 	updateIndexingConfiguration *observation.Operation
 
+	deleteIndexesWithoutRepository *observation.Operation
+	staleSourcedCommits            *observation.Operation
+	updateSourcedCommits           *observation.Operation
+	deleteSourcedCommits           *observation.Operation
 	// temporary
 	inferIndexConfiguration *observation.Operation
 	queueIndex              *observation.Operation
@@ -49,5 +53,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		queueIndex:                  op("QueueIndex"),
 		queueIndexForPackage:        op("QueueIndexForPackage"),
 		updateIndexingConfiguration: op("UpdateIndexingConfiguration"),
+
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+		staleSourcedCommits:            op("StaleSourcedCommits"),
+		updateSourcedCommits:           op("UpdateSourcedCommits"),
+		deleteSourcedCommits:           op("DeleteSourcedCommits"),
 	}
 }

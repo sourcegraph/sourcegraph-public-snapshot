@@ -1,10 +1,14 @@
-import React from 'react'
+import { FC } from 'react'
 
-import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { styles } from '../../../../../../components/creation-ui-kit'
-import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
+import {
+    CreationUiLayout,
+    CreationUIForm,
+    CreationUIPreview,
+    FormChangeEvent,
+    SubmissionErrors,
+} from '../../../../../../components'
 import { Insight } from '../../../../../../core'
 import { LineChartLivePreview } from '../../../LineChartLivePreview'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
@@ -30,9 +34,7 @@ export interface SearchInsightCreationContentProps {
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
 
-export const SearchInsightCreationContent: React.FunctionComponent<
-    React.PropsWithChildren<SearchInsightCreationContentProps>
-> = props => {
+export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
         initialValue,
@@ -87,10 +89,10 @@ export const SearchInsightCreationContent: React.FunctionComponent<
         values.title !== ''
 
     return (
-        <div data-testid={dataTestId} className={classNames(styles.content, className)}>
-            <SearchInsightCreationForm
+        <CreationUiLayout data-testid={dataTestId} className={className}>
+            <CreationUIForm
+                as={SearchInsightCreationForm}
                 mode={mode}
-                className={styles.contentForm}
                 innerRef={ref}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
@@ -114,16 +116,16 @@ export const SearchInsightCreationContent: React.FunctionComponent<
                 onFormReset={handleFormReset}
             />
 
-            <LineChartLivePreview
+            <CreationUIPreview
+                as={LineChartLivePreview}
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
                 isAllReposMode={allReposMode.input.value}
                 series={seriesToPreview(editSeries)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
-                className={styles.contentLivePreview}
             />
-        </div>
+        </CreationUiLayout>
     )
 }
 

@@ -17,47 +17,74 @@ public class ConfigUtil {
     public static JsonObject getConfigAsJson(@NotNull Project project) {
         JsonObject configAsJson = new JsonObject();
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
-        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
+        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
+        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
         return configAsJson;
-    }
-
-    @Nullable
-    public static String getDefaultBranchName(@NotNull Project project) {
-        String defaultBranch = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
-        if (defaultBranch == null || defaultBranch.length() == 0) {
-            return UserLevelConfig.getDefaultBranchName();
-        }
-        return defaultBranch;
-    }
-
-    @Nullable
-    public static String getRemoteUrlReplacements(@NotNull Project project) {
-        String replacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
-        if (replacements == null || replacements.length() == 0) {
-            return UserLevelConfig.getRemoteUrlReplacements();
-        }
-        return replacements;
     }
 
     @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
-        String url = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
-        if (url == null || url.length() == 0) {
-            return UserLevelConfig.getSourcegraphUrl();
+        String projectLevelUrl = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
+            return addSlashIfNeeded(projectLevelUrl);
         }
+
+        String applicationLevelUrl = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
+            return addSlashIfNeeded(applicationLevelUrl);
+        }
+
+        return addSlashIfNeeded(UserLevelConfig.getSourcegraphUrl());
+    }
+
+    @NotNull
+    private static String addSlashIfNeeded(@NotNull String url) {
         return url.endsWith("/") ? url : url + "/";
     }
 
     @Nullable
-    public static String getAnonymousUserId() {
-        return SourcegraphApplicationService.getInstance().getAnonymousUserId();
+    public static String getAccessToken(Project project) {
+        String projectLevelAccessToken = getProjectLevelConfig(project).getAccessToken();
+        return projectLevelAccessToken != null ? projectLevelAccessToken : getApplicationLevelConfig().getAccessToken();
     }
 
-    public static void setAnonymousUserId(@Nullable String anonymousUserId) {
-        SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
+    @NotNull
+    public static String getDefaultBranchName(@NotNull Project project) {
+        String projectLevelDefaultBranchName = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
+        if (projectLevelDefaultBranchName != null && projectLevelDefaultBranchName.length() > 0) {
+            return projectLevelDefaultBranchName;
+        }
+
+        String applicationLevelDefaultBranchName = Objects.requireNonNull(SourcegraphApplicationService.getInstance()).getDefaultBranchName();
+        if (applicationLevelDefaultBranchName != null && applicationLevelDefaultBranchName.length() > 0) {
+            return applicationLevelDefaultBranchName;
+        }
+
+        String userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName();
+        return userLevelDefaultBranchName != null ? userLevelDefaultBranchName : "main";
+    }
+
+    @NotNull
+    public static String getRemoteUrlReplacements(@NotNull Project project) {
+        String projectLevelReplacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
+        if (projectLevelReplacements != null && projectLevelReplacements.length() > 0) {
+            return projectLevelReplacements;
+        }
+
+        String applicationLevelReplacements = Objects.requireNonNull(SourcegraphApplicationService.getInstance()).getRemoteUrlReplacements();
+        if (applicationLevelReplacements != null && applicationLevelReplacements.length() > 0) {
+            return applicationLevelReplacements;
+        }
+
+        String userLevelRemoteUrlReplacements = UserLevelConfig.getRemoteUrlReplacements();
+        return userLevelRemoteUrlReplacements != null ? userLevelRemoteUrlReplacements : "";
+    }
+
+    public static boolean isGlobbingEnabled(@NotNull Project project) {
+        Boolean projectLevelIsGlobbingEnabled = getProjectLevelConfig(project).isGlobbingEnabled();
+        return projectLevelIsGlobbingEnabled != null ? projectLevelIsGlobbingEnabled : getApplicationLevelConfig().isGlobbingEnabled();
     }
 
     @Nullable
@@ -73,20 +100,33 @@ public class ConfigUtil {
         settings.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
     }
 
-    public static boolean isGlobbingEnabled(@NotNull Project project) {
-        return getProjectLevelConfig(project).isGlobbingEnabled();
-    }
-
-    @Nullable
-    public static String getAccessToken(Project project) {
-        return getProjectLevelConfig(project).getAccessToken();
-    }
-
     @NotNull
     @Contract(pure = true)
     public static String getPluginVersion() {
         IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
         return plugin != null ? plugin.getVersion() : "unknown";
+    }
+
+    @Nullable
+    public static String getAnonymousUserId() {
+        return SourcegraphApplicationService.getInstance().getAnonymousUserId();
+    }
+
+    public static void setAnonymousUserId(@Nullable String anonymousUserId) {
+        SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
+    }
+
+    public static boolean isInstallEventLogged() {
+        return SourcegraphApplicationService.getInstance().isInstallEventLogged();
+    }
+
+    public static void setInstallEventLogged(boolean value) {
+        SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
+    }
+
+    @NotNull
+    private static SourcegraphApplicationService getApplicationLevelConfig() {
+        return Objects.requireNonNull(SourcegraphApplicationService.getInstance());
     }
 
     @NotNull
