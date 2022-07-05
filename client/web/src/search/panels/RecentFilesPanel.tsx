@@ -1,26 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
-import { of } from 'rxjs'
 
 import { gql } from '@sourcegraph/http-client'
-import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useObservable } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { RecentFilesFragment } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
 
-import { ComputeParseResult } from './computeResults'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { useComputeResults } from './useComputeResults'
 import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
@@ -132,12 +129,12 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                             <td>
                                 <small>
                                     <Link
-                                            to={recentFile.url}
-                                            ref={getItemRef(index)}
-                                            onClick={logFileClicked}
-                                            data-testid="recent-files-item"
-                                        >
-                                        {recentFile.repoName}
+                                        to={recentFile.url}
+                                        ref={getItemRef(index)}
+                                        onClick={logFileClicked}
+                                        data-testid="recent-files-item"
+                                    >
+                                        {recentFile.repoName} › {recentFile.filePath}
                                     </Link>
                                 </small>
                             </td>
@@ -154,37 +151,8 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         </>
     )
 
-    const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
-    const gitRecentFiles = useObservable(
-        useMemo(
-            () =>
-                checkHomePanelsFeatureFlag && authenticatedUser
-                    ? streamComputeQuery(
-                          `content:output((.|\n)* -> $repo › $path) author:${authenticatedUser.email} type:diff after:"1 year ago" count:all`
-                      )
-                    : of([]),
-            [authenticatedUser, checkHomePanelsFeatureFlag]
-        )
-    )
+    const { isLoading: computeLoading, results: computeResults } = useComputeResults(authenticatedUser, '$repo › $path')
 
-    const gitSet = useMemo(() => {
-        let gitRepositoryParsedString: ComputeParseResult[] = []
-        if (gitRecentFiles) {
-            gitRepositoryParsedString = gitRecentFiles.map(value => JSON.parse(value) as ComputeParseResult)
-        }
-        const gitReposList = gitRepositoryParsedString?.flat()
-
-        const gitSet = new Set<string>()
-        if (gitReposList) {
-            for (const git of gitReposList) {
-                if (git.value) {
-                    gitSet.add(git.value)
-                }
-            }
-        }
-
-        return gitSet
-    }, [gitRecentFiles])
     const gitFilesDisplay = (
         <>
             <table className={classNames('mt-2', styles.resultsTable)}>
@@ -196,8 +164,8 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                     </tr>
                 </thead>
                 <tbody>
-                    {gitSet.size > 0 &&
-                        [...gitSet].map((file, index) => (
+                    {computeResults.size > 0 &&
+                        [...computeResults].map((file, index) => (
                             <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
                                 <td>
                                     <small>
@@ -216,13 +184,19 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
             </table>
         </>
     )
+
+    // Wait for both the search event logs and the git history to be loaded
+    const isLoading = computeLoading || !processedResults
+    // If neither search event logs or git history have items, then display the empty display
+    const isEmpty = processedResults?.length === 0 && computeResults.size === 0
+
     return (
         <PanelContainer
             className={classNames(className, 'recent-files-panel')}
             title="Recent files"
-            state={processedResults ? (processedResults.length > 0 ? 'populated' : 'empty') : 'loading'}
+            state={isLoading ? 'loading' : isEmpty ? 'empty' : 'populated'}
             loadingContent={loadingDisplay}
-            populatedContent={(gitSet.size > 0 && !processedResults)? gitFilesDisplay : contentDisplay}
+            populatedContent={computeResults.size > 0 ? gitFilesDisplay : contentDisplay}
             emptyContent={emptyDisplay}
         />
     )
