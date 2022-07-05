@@ -7,12 +7,12 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -30,12 +30,14 @@ type meteredSearcher struct {
 	zoekt.Streamer
 
 	hostname string
+	log      sglog.Logger
 }
 
 func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
+		log:      sglog.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
 	}
 }
 
@@ -101,7 +103,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
 		} else {
-			log15.Warn("meteredSearcher: Error injecting new span context into map: %s", err)
+			m.log.Warn("error injecting new span context into map", sglog.Error(err))
 		}
 	}
 

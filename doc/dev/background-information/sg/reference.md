@@ -42,6 +42,7 @@ Available comamndsets in `sg.config.yaml`:
 * oss
 * oss-web-standalone
 * oss-web-standalone-prod
+* otel
 * web-standalone
 * web-standalone-prod
 
@@ -101,6 +102,7 @@ Available commands in `sg.config.yaml`:
 * oss-symbols
 * oss-web
 * oss-worker
+* otel-collector
 * postgres_exporter
 * prometheus
 * redis-postgres
