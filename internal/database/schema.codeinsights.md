@@ -155,6 +155,7 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  generation_method             | text                        |           | not null | 
  just_in_time                  | boolean                     |           | not null | false
  group_by                      | text                        |           |          | 
+ backfill_attempts             | integer                     |           | not null | 0
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)

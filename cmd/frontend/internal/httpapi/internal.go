@@ -1,14 +1,11 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"path"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -20,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -265,55 +261,6 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(commitID))
-		return nil
-	}
-}
-
-func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		defer r.Body.Close()
-		log15.Warn("The use of .internal/git/[repoID]/exec has been deprecated")
-		req := protocol.ExecRequest{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-
-		vars := mux.Vars(r)
-		repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
-		if err != nil {
-			http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
-			return nil
-		}
-
-		ctx := r.Context()
-		repo, err := db.Repos().Get(ctx, api.RepoID(repoID))
-		if err != nil {
-			return err
-		}
-
-		// Set repo name in gitserver request payload
-		req.Repo = repo.Name
-
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(req); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-
-		// Find the correct shard to query
-		addr, err := gitserver.NewClient(db).AddrForRepo(ctx, repo.Name)
-		if err != nil {
-			return err
-		}
-
-		director := func(req *http.Request) {
-			req.URL.Scheme = "http"
-			req.URL.Host = addr
-			req.URL.Path = "/exec"
-			req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
-			req.ContentLength = int64(buf.Len())
-		}
-
-		gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
 		return nil
 	}
 }

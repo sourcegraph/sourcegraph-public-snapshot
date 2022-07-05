@@ -23,7 +23,7 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
-	conds, cte := buildConditionsAndCte(opts)
+	tableExpr, conds, cte := buildConditionsAndCte(opts)
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return nil, 0, err
@@ -32,14 +32,15 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 
 	var orderExpression *sqlf.Query
 	if opts.OldestFirst {
-		orderExpression = sqlf.Sprintf("uploaded_at")
+		orderExpression = sqlf.Sprintf("uploaded_at, id DESC")
 	} else {
-		orderExpression = sqlf.Sprintf("uploaded_at DESC")
+		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
 	}
 
 	query := sqlf.Sprintf(
 		getUploadsQuery,
 		buildCTEPrefix(cte),
+		tableExpr,
 		sqlf.Join(conds, " AND "),
 		orderExpression,
 		opts.Limit,
@@ -83,7 +84,7 @@ SELECT
 	u.associated_index_id,
 	s.rank,
 	COUNT(*) OVER() AS count
-FROM lsif_uploads u
+FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
@@ -100,7 +101,32 @@ WHERE r.state = 'queued'
 
 const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
 
-var rankedDependencyCandidateCTEQuery = `
+const deletedUploadsFromAuditLogsCTEQuery = `
+SELECT
+	DISTINCT ON(s.upload_id) s.upload_id AS id, au.commit, au.root,
+	au.uploaded_at, 'deleted' AS state,
+	snapshot->'failure_message' AS failure_message,
+	(snapshot->'started_at')::timestamptz AS started_at,
+	(snapshot->'finished_at')::timestamptz AS finished_at,
+	(snapshot->'process_after')::timestamptz AS process_after,
+	(snapshot->'num_resets')::integer AS num_resets,
+	(snapshot->'num_failures')::integer AS num_failures,
+	au.repository_id,
+	au.indexer, au.indexer_version,
+	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
+	NULL::integer[] as uploaded_parts,
+	au.upload_size, au.associated_index_id,
+	(snapshot->'expired')::boolean AS expired
+FROM (
+	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
+	FROM lsif_uploads_audit_logs
+	WHERE record_deleted_at IS NOT NULL
+	GROUP BY upload_id
+) AS s
+JOIN lsif_uploads_audit_logs au ON au.upload_id = s.upload_id
+`
+
+const rankedDependencyCandidateCTEQuery = `
 SELECT
 	p.dump_id as pkg_id,
 	r.dump_id as ref_id,
@@ -139,7 +165,7 @@ rank() OVER (
 )
 `
 
-var rankedDependentCandidateCTEQuery = `
+const rankedDependentCandidateCTEQuery = `
 SELECT
 	p.dump_id as pkg_id,
 	p.scheme as scheme,
@@ -494,7 +520,7 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 	return int(affected), nil
 }
 
-var updateUploadsReferenceCountsQuery = `
+const updateUploadsReferenceCountsQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateReferenceCounts
 WITH
 -- Select the set of package identifiers provided by the target upload list. This
@@ -657,8 +683,11 @@ func nilTimeToString(t *time.Time) string {
 	return t.String()
 }
 
-func buildConditionsAndCte(opts shared.GetUploadsOptions) ([]*sqlf.Query, []cteDefinition) {
+func buildConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
 	conds := make([]*sqlf.Query, 0, 12)
+
+	allowDeletedUploads := (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted"
+
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -667,7 +696,7 @@ func buildConditionsAndCte(opts shared.GetUploadsOptions) ([]*sqlf.Query, []cteD
 	}
 	if opts.State != "" {
 		conds = append(conds, makeStateCondition(opts.State))
-	} else {
+	} else if !allowDeletedUploads {
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
 	if opts.VisibleAtTip {
@@ -711,6 +740,42 @@ func buildConditionsAndCte(opts shared.GetUploadsOptions) ([]*sqlf.Query, []cteD
 			WHERE rd.pkg_id = %s AND rd.rank = 1
 		)`, opts.DependentOf))
 	}
+
+	sourceTableExpr := sqlf.Sprintf("lsif_uploads u")
+	if allowDeletedUploads {
+		cteDefinitions = append(cteDefinitions, cteDefinition{
+			name:       "deleted_uploads",
+			definition: sqlf.Sprintf(deletedUploadsFromAuditLogsCTEQuery),
+		})
+
+		sourceTableExpr = sqlf.Sprintf(`(
+			SELECT
+				id,
+				commit,
+				root,
+				uploaded_at,
+				state,
+				failure_message,
+				started_at,
+				finished_at,
+				process_after,
+				num_resets,
+				num_failures,
+				repository_id,
+				indexer,
+				indexer_version,
+				num_parts,
+				uploaded_parts,
+				upload_size,
+				associated_index_id,
+				expired
+			FROM lsif_uploads
+			UNION ALL
+			SELECT *
+			FROM deleted_uploads
+		) AS u`)
+	}
+
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
 	}
@@ -730,7 +795,7 @@ func buildConditionsAndCte(opts shared.GetUploadsOptions) ([]*sqlf.Query, []cteD
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
 
-	return conds, cteDefinitions
+	return sourceTableExpr, conds, cteDefinitions
 }
 
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.

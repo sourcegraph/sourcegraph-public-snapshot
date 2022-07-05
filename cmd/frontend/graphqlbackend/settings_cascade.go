@@ -231,5 +231,5 @@ func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, e
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return schemaResolver{db: r.db}.ViewerSettings(ctx)
+	return newSchemaResolver(r.db).ViewerSettings(ctx)
 }

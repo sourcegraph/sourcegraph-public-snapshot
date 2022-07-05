@@ -1,5 +1,4 @@
-import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { applyEdits, JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -418,10 +417,12 @@ async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unk
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, path, value, {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
+        modify(oldContents, path, value, {
+            formattingOptions: {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            },
         })
     )
 

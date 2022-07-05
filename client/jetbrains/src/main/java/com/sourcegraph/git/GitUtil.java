@@ -20,7 +20,6 @@ public class GitUtil {
         String remoteUrl = "";
         String branchName = "";
         try {
-            String defaultBranchNameSetting = ConfigUtil.getDefaultBranchName(project);
             String directoryPath = filePath.substring(0, filePath.lastIndexOf("/"));
             String repoRootPath = getRepoRootPath(directoryPath);
 
@@ -30,18 +29,15 @@ public class GitUtil {
             // If the current branch doesn’t exist on the remote, use the default branch.
             branchName = getCurrentBranchName(repoRootPath);
             if (!doesRemoteBranchExist(branchName, repoRootPath)) {
-                branchName = defaultBranchNameSetting != null ? defaultBranchNameSetting : "main";
+                branchName = ConfigUtil.getDefaultBranchName(project);
             }
 
             remoteUrl = getConfiguredRemoteUrl(repoRootPath);
-            // replace remoteURL if config option is not null
             String r = ConfigUtil.getRemoteUrlReplacements(project);
-            if (r != null) {
-                String[] replacements = r.trim().split("\\s*,\\s*");
-                // Check if the entered values are pairs
-                for (int i = 0; i < replacements.length && replacements.length % 2 == 0; i += 2) {
-                    remoteUrl = remoteUrl.replace(replacements[i], replacements[i + 1]);
-                }
+            String[] replacements = r.trim().split("\\s*,\\s*");
+            // Check if the entered values are pairs
+            for (int i = 0; i < replacements.length && replacements.length % 2 == 0; i += 2) {
+                remoteUrl = remoteUrl.replace(replacements[i], replacements[i + 1]);
             }
         } catch (Exception err) {
             Logger.getInstance(GitUtil.class).info(err);
