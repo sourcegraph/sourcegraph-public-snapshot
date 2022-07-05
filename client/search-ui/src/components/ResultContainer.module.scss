@@ -15,12 +15,13 @@
     background-color: transparent;
     display: flex;
     align-items: center;
-    white-space: nowrap;
+    flex-wrap: wrap;
 
     &-title {
         flex: 1 1 auto;
         overflow: hidden;
         display: flex;
+        flex-wrap: wrap;
     }
 
     &-divider {

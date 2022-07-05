@@ -1,18 +1,20 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import {
+    mdiClose,
+    mdiTimelineClockOutline,
+    mdiSourceBranch,
+    mdiEyeOffOutline,
+    mdiSync,
+    mdiLinkVariantRemove,
+    mdiChevronDown,
+    mdiChevronRight,
+    mdiOpenInNew,
+} from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import EyeOffOutlineIcon from 'mdi-react/EyeOffOutlineIcon'
-import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
-import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
@@ -133,13 +135,13 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                     <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
-                        <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                 )}
             </H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
-                <Icon aria-hidden={true} as={CloseIcon} />
+                <Icon aria-hidden={true} svgPath={mdiClose} />
             </Button>
         </div>
         <div className="d-flex align-items-center">
@@ -148,7 +150,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}
                     data-tooltip={`This workspace is number ${workspace.placeInGlobalQueue} in the global queue`}
                 >
-                    <Icon aria-hidden={true} as={TimelineClockOutlineIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiTimelineClockOutline} />
                     <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>
@@ -160,7 +162,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                 <span className={classNames(styles.workspaceDetail, 'text-monospace')}>
-                    <Icon aria-hidden={true} as={SourceBranchIcon} /> {workspace.branch.displayName}
+                    <Icon aria-hidden={true} svgPath={mdiSourceBranch} /> {workspace.branch.displayName}
                 </span>
             )}
             {workspace.startedAt && (
@@ -192,7 +194,7 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
-            <Icon aria-hidden={true} as={EyeOffOutlineIcon} />
+            <Icon aria-hidden={true} svgPath={mdiEyeOffOutline} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">This workspace is hidden due to permissions.</Text>
@@ -253,7 +255,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                             outline={true}
                             variant="danger"
                         >
-                            <Icon aria-hidden={true} as={SyncIcon} /> Retry
+                            <Icon aria-hidden={true} svgPath={mdiSync} /> Retry
                         </Button>
                     </div>
                     {retryError && <ErrorAlert error={retryError} />}
@@ -305,7 +307,7 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
-            <Icon aria-hidden={true} as={LinkVariantRemoveIcon} />
+            <Icon aria-hidden={true} svgPath={mdiLinkVariantRemove} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">
@@ -326,7 +328,7 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
-            <Icon aria-hidden={true} as={LinkVariantRemoveIcon} />
+            <Icon aria-hidden={true} svgPath={mdiLinkVariantRemove} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">This workspace has been skipped because it is from an unsupported codehost.</Text>
@@ -379,7 +381,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                 as={Button}
                 className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
                 <div className={styles.collapseHeader}>
                     <H4 className="mb-0 d-inline-block mr-2">
                         <H3 className={styles.result}>Result</H3>
@@ -387,7 +389,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             <Badge className="text-uppercase">{publishBadgeLabel(node.description.published)}</Badge>
                         )}{' '}
                     </H4>
-                    <Icon aria-hidden={true} className="text-muted mr-1 flex-shrink-0" as={SourceBranchIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-1 flex-shrink-0" svgPath={mdiSourceBranch} />
                     <span className={classNames('text-monospace text-muted', styles.changesetSpecBranch)}>
                         {node.description.headRef}
                     </span>
@@ -411,7 +413,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
                                 <Icon
                                     aria-hidden={true}
-                                    as={areChangesExpanded ? ChevronDownIcon : ChevronRightIcon}
+                                    svgPath={areChangesExpanded ? mdiChevronDown : mdiChevronRight}
                                     className="mr-1"
                                 />
                                 <Heading className="mb-0" as="h4" styleAs="h3">
@@ -512,7 +514,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 as={Button}
                 className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
                 <div className={classNames(styles.collapseHeader, step.skipped && 'text-muted')}>
                     <StepStateIcon step={step} />
                     <H3 className={styles.stepNumber}>Step {step.number}</H3>

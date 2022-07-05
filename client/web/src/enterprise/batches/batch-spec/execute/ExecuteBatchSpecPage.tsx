@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 
+import { mdiProgressClock } from '@mdi/js'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -182,7 +182,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     )}
                     {batchSpec.startedAt && (
                         <ExecutionStat>
-                            <Icon aria-label="Duration" as={ProgressClockIcon} className={styles.durationIcon} />
+                            <Icon aria-label="Duration" className={styles.durationIcon} svgPath={mdiProgressClock} />
                             <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
                         </ExecutionStat>
                     )}

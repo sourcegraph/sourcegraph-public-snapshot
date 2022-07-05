@@ -30,6 +30,8 @@ import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainerProps, ResultContainer } from './ResultContainer'
 
+import styles from './SearchResult.module.scss'
+
 interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     /**
@@ -114,7 +116,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className="ml-1 flex-shrink-past-contents text-truncate"
+                className={styles.titleInner}
             />
         </>
     )

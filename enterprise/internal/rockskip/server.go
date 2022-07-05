@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,15 +21,13 @@ type Symbol struct {
 	Line   int    `json:"line"`
 }
 
-type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err error)
-
 const NULL CommitId = 0
 
 type Service struct {
 	logger               log.Logger
 	db                   *sql.DB
 	git                  Git
-	createParser         func() (ParseSymbolsFunc, error)
+	createParser         func() (ctags.Parser, error)
 	status               *ServiceStatus
 	repoUpdates          chan struct{}
 	maxRepos             int
@@ -44,7 +42,7 @@ type Service struct {
 func NewService(
 	db *sql.DB,
 	git Git,
-	createParser func() (ParseSymbolsFunc, error),
+	createParser func() (ctags.Parser, error),
 	maxConcurrentlyIndexing int,
 	maxRepos int,
 	logQueries bool,

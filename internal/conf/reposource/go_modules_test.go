@@ -37,7 +37,7 @@ func TestParseGoDependency(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dep, err := ParseGoDependency(test.name)
+			dep, err := ParseGoPackageVersion(test.name)
 			require.NoError(t, err)
 			assert.Equal(t, api.RepoName(test.wantRepoName), dep.RepoName())
 			assert.Equal(t, test.wantVersion, dep.PackageVersion())
@@ -48,18 +48,18 @@ func TestParseGoDependency(t *testing.T) {
 func TestParseGoDependencyFromRepoName(t *testing.T) {
 	tests := []struct {
 		name string
-		dep  *GoDependency
+		dep  *GoPackageVersion
 		err  string
 	}{
 		{
 			name: "go/cloud.google.com/go",
-			dep: NewGoDependency(module.Version{
+			dep: NewGoPackageVersion(module.Version{
 				Path: "cloud.google.com/go",
 			}),
 		},
 		{
 			name: "go/cloud.google.com/go@v0.16.0",
-			dep: NewGoDependency(module.Version{
+			dep: NewGoPackageVersion(module.Version{
 				Path:    "cloud.google.com/go",
 				Version: "v0.16.0",
 			}),
@@ -83,7 +83,7 @@ func TestParseGoDependencyFromRepoName(t *testing.T) {
 }
 
 func TestGoDependency_Less(t *testing.T) {
-	deps := []*GoDependency{
+	deps := []*GoPackageVersion{
 		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.1"),
 		parseGoDependencyOrPanic(t, "github.com/go-kit/kit@v0.1.0"),
 		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.8.0"),
@@ -107,7 +107,7 @@ func TestGoDependency_Less(t *testing.T) {
 
 	have := make([]string, 0, len(deps))
 	for _, d := range deps {
-		have = append(have, d.PackageManagerSyntax())
+		have = append(have, d.PackageVersionSyntax())
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
@@ -115,8 +115,8 @@ func TestGoDependency_Less(t *testing.T) {
 	}
 }
 
-func parseGoDependencyOrPanic(t *testing.T, value string) *GoDependency {
-	dependency, err := ParseGoDependency(value)
+func parseGoDependencyOrPanic(t *testing.T, value string) *GoPackageVersion {
+	dependency, err := ParseGoPackageVersion(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}

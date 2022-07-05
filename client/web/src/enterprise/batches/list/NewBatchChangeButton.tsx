@@ -1,6 +1,6 @@
 import React from 'react'
 
-import PlusIcon from 'mdi-react/PlusIcon'
+import { mdiPlus } from '@mdi/js'
 
 import { Link, LinkProps, Button, Icon } from '@sourcegraph/wildcard'
 
@@ -10,6 +10,6 @@ export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildr
     to,
 }) => (
     <Button to={to} variant="primary" as={Link}>
-        <Icon aria-hidden={true} as={PlusIcon} /> Create batch change
+        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create batch change
     </Button>
 )

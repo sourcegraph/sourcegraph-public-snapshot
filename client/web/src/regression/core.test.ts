@@ -1,5 +1,3 @@
-// import { applyEdits, parse } from '@sqs/jsonc-parser'
-// import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'

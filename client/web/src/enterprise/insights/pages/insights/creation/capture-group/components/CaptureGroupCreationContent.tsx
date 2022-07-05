@@ -1,13 +1,18 @@
-import React, { useCallback } from 'react'
+import { FC, useCallback } from 'react'
 
-import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { styles } from '../../../../../components/creation-ui-kit'
-import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../components/form/validators'
+import {
+    CreationUiLayout,
+    CreationUIForm,
+    CreationUIPreview,
+    useAsyncInsightTitleValidator,
+    useField,
+    FormChangeEvent,
+    SubmissionErrors,
+    useForm,
+    createRequiredValidator,
+} from '../../../../../components'
 import { Insight } from '../../../../../core'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import {
@@ -44,9 +49,7 @@ interface CaptureGroupCreationContentProps {
     onCancel: () => void
 }
 
-export const CaptureGroupCreationContent: React.FunctionComponent<
-    React.PropsWithChildren<CaptureGroupCreationContentProps>
-> = props => {
+export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
     const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel, insight } = props
 
     // Search query validators
@@ -55,7 +58,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
             return queryRequiredValidator(value)
         }
 
-        const validatedChecks = searchQueryValidator(value, value !== undefined)
+        const validatedChecks = searchQueryValidator(value, true)
         const allChecksPassed = Object.values(validatedChecks).every(Boolean)
 
         if (!allChecksPassed) {
@@ -150,8 +153,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
         !allReposMode.input.value
 
     return (
-        <div className={classNames(styles.content, className)}>
-            <CaptureGroupCreationForm
+        <CreationUiLayout className={className}>
+            <CreationUIForm
+                as={CaptureGroupCreationForm}
                 mode={mode}
                 form={form}
                 title={title}
@@ -160,7 +164,6 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
                 stepValue={stepValue}
                 query={query}
                 isFormClearActive={hasFilledValue}
-                className={styles.contentForm}
                 allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
                 insight={insight}
@@ -168,16 +171,16 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
                 onFormReset={handleFormReset}
             />
 
-            <LineChartLivePreview
+            <CreationUIPreview
+                as={LineChartLivePreview}
                 disabled={!areAllFieldsForPreviewValid}
                 isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
                 series={captureGroupPreviewSeries(query.meta.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
-                className={styles.contentLivePreview}
             />
-        </div>
+        </CreationUiLayout>
     )
 }
 

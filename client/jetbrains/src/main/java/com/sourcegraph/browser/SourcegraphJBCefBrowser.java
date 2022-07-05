@@ -14,7 +14,6 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
         super("http://sourcegraph/html/index.html");
         // Create and set up JCEF browser
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());
-        this.setPageBackgroundColor(ThemeUtil.getPanelBackgroundColorHexString());
 
         // Create bridges, set up handlers, then run init function
         String initJSCode = "window.initializeSourcegraph();";

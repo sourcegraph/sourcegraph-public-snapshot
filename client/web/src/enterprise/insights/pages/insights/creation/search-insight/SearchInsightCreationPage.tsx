@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -6,9 +6,8 @@ import { LoadingSpinner, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
+import { FORM_ERROR, FormChangeEvent, CodeInsightsPage } from '../../../../components'
+import { MinimalSearchBasedInsightData } from '../../../../core'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -37,7 +36,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: MinimalSearchBasedInsightData) => void
+    onSuccessfulCreation: () => void
 
     /**
      * Whenever the user click on cancel button
@@ -45,9 +44,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const SearchInsightCreationPage: React.FunctionComponent<
-    React.PropsWithChildren<SearchInsightCreationPageProps>
-> = props => {
+export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
@@ -73,7 +70,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
 
-                onSuccessfulCreation(insight)
+                onSuccessfulCreation()
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }

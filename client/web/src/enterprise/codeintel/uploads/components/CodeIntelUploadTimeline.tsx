@@ -1,9 +1,6 @@
 import { FunctionComponent, useMemo } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import FileUploadIcon from 'mdi-react/FileUploadIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
+import { mdiFileUpload, mdiProgressClock, mdiCheck, mdiAlertCircle } from '@mdi/js'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon } from '@sourcegraph/wildcard'
@@ -49,7 +46,6 @@ const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null)
     {
         icon: (
             <Icon
-                as={FileUploadIcon}
                 aria-label={
                     upload.state === LSIFUploadState.UPLOADING
                         ? 'In progress'
@@ -59,6 +55,7 @@ const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null)
                             : 'Success'
                         : 'Success'
                 }
+                svgPath={mdiFileUpload}
             />
         ),
         text:
@@ -85,7 +82,6 @@ const processingStages = (
     {
         icon: (
             <Icon
-                as={ProgressClockIcon}
                 aria-label={
                     upload.state === LSIFUploadState.PROCESSING
                         ? 'In progress'
@@ -93,6 +89,7 @@ const processingStages = (
                         ? 'Failed'
                         : 'Success'
                 }
+                svgPath={mdiProgressClock}
             />
         ),
         text:
@@ -114,7 +111,7 @@ const terminalStages = (upload: LsifUploadFields): (TimelineStage | { date: null
     upload.state === LSIFUploadState.COMPLETED
         ? [
               {
-                  icon: <Icon as={CheckIcon} aria-label="Success" />,
+                  icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                   text: 'Finished',
                   date: upload.finishedAt,
                   className: 'bg-success',
@@ -123,7 +120,7 @@ const terminalStages = (upload: LsifUploadFields): (TimelineStage | { date: null
         : upload.state === LSIFUploadState.ERRORED
         ? [
               {
-                  icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                  icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                   text: 'Failed',
                   date: upload.finishedAt,
                   className: 'bg-danger',

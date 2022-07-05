@@ -257,17 +257,8 @@ func (f RepoContainsCommitAfterPredicate) Name() string {
 	return "contains.commit.after"
 }
 func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
-	nodes := make([]Node, 0, 3)
-	nodes = append(nodes, Parameter{
-		Field: FieldCount,
-		Value: "99999",
-	}, Parameter{
-		Field: FieldRepoHasCommitAfter,
-		Value: f.TimeRef,
-	})
-
-	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return BuildPlan(nodes), nil
+	// Handled by repo pagination code
+	return nil, nil
 }
 
 // RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,

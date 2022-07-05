@@ -246,7 +246,7 @@ func serveRaw(db database.DB) handlerFunc {
 
 			if fi.IsDir() {
 				requestType = "dir"
-				infos, err := client.ReadDir(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
+				infos, err := client.ReadDir(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
 				if err != nil {
 					return err
 				}

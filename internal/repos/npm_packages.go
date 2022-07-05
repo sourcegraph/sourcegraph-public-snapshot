@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewNpmPackagesSource returns a new DependenciesSource from the given external
+// NewNpmPackagesSource returns a new PackagesSource from the given external
 // service.
-func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*DependenciesSource, error) {
+func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
 	var c schema.NpmPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -26,7 +26,7 @@ func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*Dep
 		return nil, err
 	}
 
-	return &DependenciesSource{
+	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.NpmPackagesScheme,
@@ -37,31 +37,31 @@ func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*Dep
 	}, nil
 }
 
-var _ dependenciesSource = &npmPackagesSource{}
+var _ packagesSource = &npmPackagesSource{}
 
 type npmPackagesSource struct {
 	client npm.Client
 }
 
-func (npmPackagesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseNpmDependency(dep)
+func (npmPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+	return reposource.ParseNpmPackageVersion(dep)
 }
 
-func (npmPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (npmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
 		return nil, err
 	}
-	return &reposource.NpmDependency{NpmPackage: pkg}, nil
+	return &reposource.NpmPackageVersion{NpmPackageName: pkg}, nil
 }
 
-func (s *npmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *npmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	parsedDbPackage, err := reposource.ParseNpmPackageFromPackageSyntax(name)
 	if err != nil {
 		return nil, err
 	}
 
-	dep := &reposource.NpmDependency{NpmPackage: parsedDbPackage, Version: version}
+	dep := &reposource.NpmPackageVersion{NpmPackageName: parsedDbPackage, Version: version}
 
 	info, err := s.client.GetDependencyInfo(ctx, dep)
 	if err != nil {

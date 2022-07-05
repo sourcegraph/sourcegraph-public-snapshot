@@ -29,7 +29,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -51,7 +51,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
