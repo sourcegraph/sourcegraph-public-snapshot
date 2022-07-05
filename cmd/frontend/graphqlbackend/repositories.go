@@ -146,7 +146,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			listCtx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
 			var err error
-			indexed, err = search.Indexed(log.Scoped("compute", "")).List(listCtx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+			indexed, err = search.Indexed().List(listCtx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 			if err != nil {
 				r.err = err
 				return

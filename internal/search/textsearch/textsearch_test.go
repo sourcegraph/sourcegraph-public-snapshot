@@ -11,10 +11,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -404,7 +403,10 @@ func RunRepoSubsetTextSearch(
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err := zoektJob.Run(ctx, job.RuntimeClients{
+				Logger: logger,
+				Zoekt:  zoekt,
+			}, agg)
 			return err
 		})
 	}
@@ -412,14 +414,17 @@ func RunRepoSubsetTextSearch(
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
 		searcherJob := &searcher.TextSearchJob{
-			Log:             logger,
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, job.RuntimeClients{SearcherURLs: searcherURLs, Zoekt: zoekt}, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{
+			Logger:       logger,
+			SearcherURLs: searcherURLs,
+			Zoekt:        zoekt,
+		}, agg)
 		return err
 	})
 

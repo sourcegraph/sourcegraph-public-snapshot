@@ -31,7 +31,7 @@ async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): 
         repoName: match.repository,
     })
 
-    const content: undefined | string = response?.data?.repository?.commit?.file?.content
+    const content: undefined | string = response.data?.repository?.commit?.file?.content
     if (content === undefined) {
         console.error('No content found in query response', response)
         return null

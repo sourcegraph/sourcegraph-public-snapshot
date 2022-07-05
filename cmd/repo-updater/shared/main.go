@@ -230,7 +230,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	globals.WatchExternalURL(nil)
 
 	debugDumpers["repos"] = updateScheduler
-	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(db, debugDumpers)
+	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
 	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
@@ -413,7 +413,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 	}
 }
 
-func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver.Dumper) http.HandlerFunc {
+func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		wantDumper := r.URL.Query().Get("dumper")
 		wantFormat := r.URL.Query().Get("format")
@@ -436,7 +436,7 @@ func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver
 				},
 			})
 			template.Must(tmpl.Parse(stateHTMLTemplate))
-			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context(), db.ExternalServices()))
+			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context()))
 			if err != nil {
 				http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
 				return
@@ -449,7 +449,7 @@ func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver
 			if wantDumper != "" && wantDumper != name {
 				continue
 			}
-			dumps = append(dumps, dumper.DebugDump(r.Context(), db.ExternalServices()))
+			dumps = append(dumps, dumper.DebugDump(r.Context()))
 		}
 
 		p, err := json.MarshalIndent(dumps, "", "  ")

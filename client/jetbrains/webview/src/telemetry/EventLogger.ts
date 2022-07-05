@@ -22,10 +22,8 @@ events
         bufferTime(1000),
         concatMap(events => {
             if (events.length > 0) {
-                console.log('sending events in batches bruh', events)
-
                 // For every IDESearchSubmitted, we also fire a legacy logUserEvent event. This is
-                // necessary since we only look at the latter to calculat some activity usage
+                // necessary since we only look at the latter to calculate some activity usage
                 // numbers.
                 //
                 // See sourcegraph/sourcegraph#35178

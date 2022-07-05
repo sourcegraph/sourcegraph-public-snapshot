@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import * as jsonc from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import * as jsonc from 'jsonc-parser'
 import CheckIcon from 'mdi-react/CheckIcon'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
@@ -52,10 +51,12 @@ export const REPOSITORIES_REVISIONS_CONFIG_SCHEMA = {
     },
 }
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: jsonc.ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 const actions: {
@@ -68,7 +69,7 @@ const actions: {
         label: 'Add repository',
         run: config => {
             const value = { [REPOSITORY_KEY]: 'github.com/example/repository-name', [REVISIONS_KEY]: ['HEAD'] }
-            const edits = setProperty(config, [-1], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, [-1], value, defaultModificationOptions)
             return { edits, selectText: 'github.com/example/repository-name' }
         },
     },

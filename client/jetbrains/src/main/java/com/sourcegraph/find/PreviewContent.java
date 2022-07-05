@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -182,7 +183,11 @@ public class PreviewContent {
             return null;
         }
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);
-        return new String(decodedBytes);
+        try {
+            return new String(decodedBytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return "";
+        }
     }
 
     @Override
