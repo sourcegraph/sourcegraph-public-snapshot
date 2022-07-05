@@ -93,6 +93,13 @@ func SingleRepoQuery(query, repo, revision string, defaultParams searchquery.Par
 	return modified, nil
 }
 
+// TODO used right now for live preview compute
+func SingleRepoQueryIndexed(query, repo string, defaultParams searchquery.Parameters) (string, error) {
+	modified := withCountAll(query)
+	modified = forRepos(modified, []string{repo})
+	return modified, nil
+}
+
 // GlobalQuery generates a Sourcegraph query with the provided default values given a user specified query. This query will be global (against all visible repositories).
 func GlobalQuery(query string, defaultParams searchquery.Parameters) (string, error) {
 	modified := withCountAll(query)
