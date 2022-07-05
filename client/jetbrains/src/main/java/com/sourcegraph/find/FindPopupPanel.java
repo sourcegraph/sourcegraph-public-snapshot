@@ -61,7 +61,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         // doesn't properly pass the mouse events to Swing.
         // 4px is the minimum amount to make it work for the window resize, the splitter works without a padding.
         if (OS.isMacOSX()) {
-            topPanel.setBorder(JBUI.Borders.empty(0, 4, 0, 4));
+            topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
         }
         topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
         topPanel.setMinimumSize(JBUI.size(750, 200));
