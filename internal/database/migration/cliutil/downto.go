@@ -18,17 +18,17 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 	}
 	targetFlag := &cli.StringSliceFlag{
 		Name:     "target",
-		Usage:    `The migration to apply. Comma-separated values are accepted.`,
+		Usage:    "The migration to apply. Comma-separated values are accepted.",
 		Required: true,
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
 		Name:  "unprivileged-only",
-		Usage: `Do not apply privileged migrations.`,
+		Usage: "Do not apply privileged migrations.",
 		Value: false,
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: `Ignore a previously failed attempt if it will be immediately retried by this operation.`,
+		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 
