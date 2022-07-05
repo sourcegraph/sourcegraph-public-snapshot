@@ -113,6 +113,10 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         setRecentFiles(node.recentFilesLogs)
     }
 
+    const { isLoading: computeLoading, results: computeResults } = useComputeResults(authenticatedUser, '$repo › $path')
+
+    const renderComputeResults = computeResults.size > 0
+
     const contentDisplay = (
         <>
             <table className={classNames('mt-2', styles.resultsTable)}>
@@ -123,65 +127,52 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                         </th>
                     </tr>
                 </thead>
-                {processedResults?.map((recentFile, index) => (
-                    <tbody key={index}>
-                        <tr className={styles.resultsTableRow}>
-                            <td>
-                                <small>
-                                    <Link
-                                        to={recentFile.url}
-                                        ref={getItemRef(index)}
-                                        onClick={logFileClicked}
-                                        data-testid="recent-files-item"
-                                    >
-                                        {recentFile.repoName} › {recentFile.filePath}
-                                    </Link>
-                                </small>
-                            </td>
-                        </tr>
-                    </tbody>
-                ))}
-            </table>
-            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent files</VisuallyHidden>}
-            {recentFiles?.pageInfo.hasNextPage && (
-                <div>
-                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
-                </div>
-            )}
-        </>
-    )
-
-    const { isLoading: computeLoading, results: computeResults } = useComputeResults(authenticatedUser, '$repo › $path')
-
-    const gitFilesDisplay = (
-        <>
-            <table className={classNames('mt-2', styles.resultsTable)}>
-                <thead>
-                    <tr className={styles.resultsTableRow}>
-                        <th>
-                            <small>File</small>
-                        </th>
-                    </tr>
-                </thead>
                 <tbody>
-                    {computeResults.size > 0 &&
-                        [...computeResults].map((file, index) => (
-                            <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
-                                <td>
-                                    <small>
-                                        <Link
-                                            to={`/${file.split(' › ')[0]}/-/blob/${file.split(' › ')[1].trim()}`}
-                                            onClick={logFileClicked}
-                                            data-testid="recent-files-item"
-                                        >
-                                            {file}
-                                        </Link>
-                                    </small>
-                                </td>
-                            </tr>
-                        ))}
+                    {renderComputeResults
+                        ? [...computeResults].map((file, index) => (
+                              <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                                  <td>
+                                      <small>
+                                          <Link
+                                              to={`/${file.split(' › ')[0]}/-/blob/${file.split(' › ')[1].trim()}`}
+                                              onClick={logFileClicked}
+                                              data-testid="recent-files-item"
+                                          >
+                                              {file}
+                                          </Link>
+                                      </small>
+                                  </td>
+                              </tr>
+                          ))
+                        : processedResults?.map((recentFile, index) => (
+                              <tr key="index" className={styles.resultsTableRow}>
+                                  <td>
+                                      <small>
+                                          <Link
+                                              to={recentFile.url}
+                                              ref={getItemRef(index)}
+                                              onClick={logFileClicked}
+                                              data-testid="recent-files-item"
+                                          >
+                                              {recentFile.repoName} › {recentFile.filePath}
+                                          </Link>
+                                      </small>
+                                  </td>
+                              </tr>
+                          ))}
                 </tbody>
             </table>
+
+            {!renderComputeResults && (
+                <>
+                    {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent files</VisuallyHidden>}
+                    {recentFiles?.pageInfo.hasNextPage && (
+                        <div>
+                            <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
+                        </div>
+                    )}
+                </>
+            )}
         </>
     )
 
@@ -196,7 +187,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
             title="Recent files"
             state={isLoading ? 'loading' : isEmpty ? 'empty' : 'populated'}
             loadingContent={loadingDisplay}
-            populatedContent={computeResults.size > 0 ? gitFilesDisplay : contentDisplay}
+            populatedContent={contentDisplay}
             emptyContent={emptyDisplay}
         />
     )
