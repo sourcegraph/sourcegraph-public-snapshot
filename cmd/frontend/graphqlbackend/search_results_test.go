@@ -11,9 +11,8 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/stretchr/testify/require"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -262,7 +261,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
-	log := logtest.Scoped(t)
 
 	repoWithIDs := &types.Repo{
 		ID:   api.RepoID(id),
@@ -331,7 +329,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	literalPatternType := "literal"
 	searchInputs, err := run.NewSearchInputs(
 		ctx,
-		log,
 		db,
 		"V2",
 		&literalPatternType,
@@ -346,9 +343,9 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	resolver := &searchResolver{
 		db:           db,
+		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
 		zoekt:        z,
-		log:          logtest.Scoped(t),
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -570,7 +567,6 @@ func TestEvaluateAnd(t *testing.T) {
 			literalPatternType := "literal"
 			searchInputs, err := run.NewSearchInputs(
 				context.Background(),
-				logtest.Scoped(t),
 				db,
 				"V2",
 				&literalPatternType,
@@ -585,9 +581,9 @@ func TestEvaluateAnd(t *testing.T) {
 
 			resolver := &searchResolver{
 				db:           db,
+				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
 				zoekt:        z,
-				log:          logtest.Scoped(t),
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -676,7 +672,6 @@ func TestSubRepoFiltering(t *testing.T) {
 			literalPatternType := "literal"
 			searchInputs, err := run.NewSearchInputs(
 				context.Background(),
-				logtest.Scoped(t),
 				db,
 				"V2",
 				&literalPatternType,
@@ -693,7 +688,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
-				log:          logtest.Scoped(t),
+				logger:       logtest.Scoped(t),
 			}
 
 			ctx := context.Background()
