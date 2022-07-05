@@ -3,6 +3,7 @@ import * as React from 'react'
 import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
