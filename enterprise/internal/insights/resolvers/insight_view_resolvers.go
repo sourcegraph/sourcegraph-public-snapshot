@@ -1058,7 +1058,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
-		if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
+		// If this a compute type insight we do not want a scoped backfill, only a single datapoint.
+		if len(seriesToAdd.Repositories) > 0 && groupBy == nil && deprecateJustInTime {
 			err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{seriesToAdd})
 			if err != nil {
 				return nil, errors.Wrap(err, "ScopedBackfill")
