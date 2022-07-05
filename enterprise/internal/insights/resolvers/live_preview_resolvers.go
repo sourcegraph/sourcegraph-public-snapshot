@@ -63,7 +63,7 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 			}
 		} else if seriesArgs.GroupBy != nil {
 			executor := query.NewComputeExecutor(r.postgresDB, clock)
-			series, err = executor.Execute(ctx, seriesArgs.Query, repos)
+			series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
 			if err != nil {
 				return nil, err
 			}

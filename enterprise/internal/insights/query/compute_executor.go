@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -50,7 +51,7 @@ func streamTextExtraCompute(ctx context.Context, query string) ([]GroupedResults
 	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
-func (c *ComputeExecutor) Execute(ctx context.Context, query string, repositories []string) ([]GeneratedTimeSeries, error) {
+func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, repositories []string) ([]GeneratedTimeSeries, error) {
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
 		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
@@ -63,7 +64,11 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query string, repositorie
 
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {
-		modifiedQuery, err := querybuilder.SingleRepoQueryIndexed(query, repository, querybuilder.CodeInsightsQueryDefaults(false))
+		modifiedQuery, err := querybuilder.ComputeInsightCommandQuery(query, querybuilder.MapType(strings.ToLower(groupBy)))
+		if err != nil {
+			return nil, errors.Wrap(err, "ComputeInsightCommandQuery")
+		}
+		modifiedQuery, err = querybuilder.SingleRepoQueryIndexed(modifiedQuery, repository)
 		if err != nil {
 			return nil, errors.Wrap(err, "SingleRepoQueryIndexed")
 		}
