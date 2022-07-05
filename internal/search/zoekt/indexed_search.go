@@ -473,12 +473,12 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 	}
 
 	for _, cm := range file.ChunkMatches {
-		if cm.FileName {
+		if cm.FileName || len(cm.SymbolInfo) == 0 {
 			continue
 		}
 
-		for _, r := range cm.Ranges {
-			si := r.SymbolInfo
+		for i, r := range cm.Ranges {
+			si := cm.SymbolInfo[i]
 			if si == nil {
 				continue
 			}

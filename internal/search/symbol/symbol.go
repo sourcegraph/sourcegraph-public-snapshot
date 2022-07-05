@@ -103,6 +103,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 		ShardMaxImportantMatch: match * 25,
 		TotalMaxImportantMatch: match * 25,
 		MaxDocDisplayCount:     match,
+		ChunkMatches:           true,
 	})
 	if err != nil {
 		return nil, err
@@ -142,12 +143,12 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 		}
 
 		for _, cm := range file.ChunkMatches {
-			if cm.FileName {
+			if cm.FileName || len(cm.SymbolInfo) == 0 {
 				continue
 			}
 
-			for _, r := range cm.Ranges {
-				si := r.SymbolInfo
+			for i, r := range cm.Ranges {
+				si := cm.SymbolInfo[i]
 				if si == nil {
 					continue
 				}
