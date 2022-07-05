@@ -99,8 +99,7 @@ func errString(err error) string {
 }
 
 // ServeHTTP serves a page just like /vars but filtered for health checks. Each
-// service should expose a /checks endpoint. All /checks endpoints are
-// aggregated by ServeHealthCheckAggregate
+// service should expose a /checks endpoint.
 func (hc *HealthChecker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	fmt.Fprintf(w, "{\n")
