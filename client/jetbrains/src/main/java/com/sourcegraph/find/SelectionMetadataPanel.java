@@ -14,7 +14,7 @@ import java.awt.event.KeyEvent;
 import java.util.Objects;
 
 public class SelectionMetadataPanel extends JPanel {
-    private LinkLabel selectionMetadataLabel = null;
+    private LinkLabel<String> selectionMetadataLabel = null;
     private final JLabel externalLinkLabel;
     private final JLabel openShortcutLabel;
     private PreviewContent previewContent;
@@ -22,7 +22,7 @@ public class SelectionMetadataPanel extends JPanel {
     public SelectionMetadataPanel() {
         super(new FlowLayout(FlowLayout.LEFT, 0, 8));
 
-        selectionMetadataLabel = new LinkLabel("", null, (aSource, aLinkData) -> {
+        selectionMetadataLabel = new LinkLabel<>("", null, (aSource, aLinkData) -> {
             if (previewContent != null) {
                 try {
                     previewContent.openInEditorOrBrowser();

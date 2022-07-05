@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Added a new UI to search with Sourcegraph from inside your JetBrains product.
+
 ## [1.2.4]
 
 - Fixed an issue that prevent the latest version of the plugin to work with JetBrains 2022.1 products.

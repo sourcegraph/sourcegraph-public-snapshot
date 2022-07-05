@@ -271,8 +271,13 @@ func TestGetUploads(t *testing.T) {
 
 		// deleted repo
 		Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
+
+		// to-be hard deleted
+		Upload{ID: 16, Commit: makeCommit(3333), UploadedAt: t4, FinishedAt: &t3, State: "deleted"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
+
+	deleteUploads(t, db, 16)
 
 	// upload 10 depends on uploads 7 and 8
 	insertPackages(t, store, []shared.Package{
@@ -332,12 +337,12 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
-		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
+		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15, 16}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d state=%s term=%s visibleAtTip=%v dependencyOf=%d dependentOf=%d offset=%d",
+			"repositoryID=%d|state='%s'|term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
 			testCase.term,

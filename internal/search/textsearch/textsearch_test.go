@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -94,6 +96,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 
 	matches, common, err := RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		repoRevs,
 		q,
@@ -123,6 +126,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	// that should be checked earlier.
 	_, _, err = RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/no-rev@dev"),
 		q,
@@ -193,6 +197,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
 		q,
@@ -271,6 +276,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		repos,
 		q,
@@ -332,6 +338,7 @@ func mkRepos(names ...string) []types.MinimalRepo {
 // RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
 func RunRepoSubsetTextSearch(
 	ctx context.Context,
+	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
 	repos []*search.RepositoryRevisions,
 	q query.Q,
@@ -350,6 +357,7 @@ func RunRepoSubsetTextSearch(
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		context.Background(),
+		logger,
 		repos,
 		zoekt,
 		search.TextRequest,
@@ -395,7 +403,10 @@ func RunRepoSubsetTextSearch(
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err := zoektJob.Run(ctx, job.RuntimeClients{
+				Logger: logger,
+				Zoekt:  zoekt,
+			}, agg)
 			return err
 		})
 	}
@@ -409,7 +420,11 @@ func RunRepoSubsetTextSearch(
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, job.RuntimeClients{SearcherURLs: searcherURLs, Zoekt: zoekt}, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{
+			Logger:       logger,
+			SearcherURLs: searcherURLs,
+			Zoekt:        zoekt,
+		}, agg)
 		return err
 	})
 

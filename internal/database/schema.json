@@ -133,6 +133,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.invalidate_session_for_userid_on_password_change()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        IF OLD.passwd != NEW.passwd THEN\n            NEW.invalidated_sessions_at = now() + (1 * interval '1 second');\n            RETURN NEW;\n        END IF;\n    RETURN NEW;\n    END;\n$function$\n"
     },
     {
+      "Name": "merge_audit_log_transitions",
+      "Definition": "CREATE OR REPLACE FUNCTION public.merge_audit_log_transitions(internal hstore, arrayhstore hstore[])\n RETURNS hstore\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\n    DECLARE\n        trans hstore;\n    BEGIN\n      FOREACH trans IN ARRAY arrayhstore\n      LOOP\n          internal := internal || hstore(trans-\u003e'column', trans-\u003e'new');\n      END LOOP;\n\n      RETURN internal;\n    END;\n$function$\n"
+    },
+    {
       "Name": "repo_block",
       "Definition": "CREATE OR REPLACE FUNCTION public.repo_block(reason text, at timestamp with time zone)\n RETURNS jsonb\n LANGUAGE sql\n IMMUTABLE STRICT\nAS $function$\nSELECT jsonb_build_object(\n    'reason', reason,\n    'at', extract(epoch from timezone('utc', at))::bigint\n);\n$function$\n"
     },
