@@ -182,7 +182,7 @@ type Client interface {
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
 	// BlameFile returns Git blame information about a file.
-	BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error)
+	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
 
 	// GitCommand creates a new GitCommand.
 	GitCommand(repo api.RepoName, args ...string) GitCommand
@@ -290,10 +290,10 @@ type Client interface {
 
 	// DiffPath returns a position-ordered slice of changes (additions or deletions)
 	// of the given path between the given source and target commits.
-	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error)
+	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
 
 	// ReadDir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 }
 
 func (c *ClientImplementor) Addrs() []string {

@@ -17,10 +17,8 @@ type operations struct {
 	deleteConfigurationPolicyByID               *observation.Operation
 	deleteIndexByID                             *observation.Operation
 	deleteIndexesWithoutRepository              *observation.Operation
-	deleteOldAuditLogs                          *observation.Operation
 	deleteOverlappingDumps                      *observation.Operation
 	deleteUploadByID                            *observation.Operation
-	deleteUploadsStuckUploading                 *observation.Operation
 	dequeue                                     *observation.Operation
 	dequeueIndex                                *observation.Operation
 	dirtyRepositories                           *observation.Operation
@@ -73,7 +71,6 @@ type operations struct {
 	selectRepositoriesForIndexScan              *observation.Operation
 	selectRepositoriesForRetentionScan          *observation.Operation
 	selectRepositoriesForLockfileIndexScan      *observation.Operation
-	softDeleteExpiredUploads                    *observation.Operation
 	updateCommitedAt                            *observation.Operation
 	updateConfigurationPolicy                   *observation.Operation
 	updateIndexConfigurationByRepositoryID      *observation.Operation
@@ -120,10 +117,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		deleteConfigurationPolicyByID:        op("DeleteConfigurationPolicyByID"),
 		deleteIndexByID:                      op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:       op("DeleteIndexesWithoutRepository"),
-		deleteOldAuditLogs:                   op("DeleteOldAuditLogs"),
 		deleteOverlappingDumps:               op("DeleteOverlappingDumps"),
 		deleteUploadByID:                     op("DeleteUploadByID"),
-		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
 		dequeue:                              op("Dequeue"),
 		dequeueIndex:                         op("DequeueIndex"),
 		dirtyRepositories:                    op("DirtyRepositories"),
@@ -177,7 +172,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),
 		selectRepositoriesForLockfileIndexScan:      op("SelectRepositoriesForLockfileIndexScan"),
-		softDeleteExpiredUploads:                    op("SoftDeleteExpiredUploads"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),
 		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),
 		updateReferenceCounts:                       op("UpdateReferenceCounts"),
