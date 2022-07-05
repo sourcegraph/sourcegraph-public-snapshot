@@ -304,10 +304,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     withLatestFrom(urlSearchParameters),
                     tap(([, parameters]) => {
                         parameters.delete('popover')
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(parameters),
-                        })
+                        updateBrowserHistoryIfNecessary(props.history, location, parameters)
                     })
                 ),
             [location, popoverCloses, props.history, urlSearchParameters]
@@ -412,10 +409,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
-                            props.history.push({
-                                ...location,
-                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                            })
+                            updateBrowserHistoryIfNecessary(
+                                props.history,
+                                location,
+                                addLineRangeQueryParameter(parameters, query)
+                            )
                         }
                     }),
                     mapTo(undefined)
@@ -737,18 +735,18 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const context = { position: point, range }
                 const search = new URLSearchParams(location.search)
                 search.set('popover', 'pinned')
-                props.history.push({
-                    search: formatSearchParameters(
-                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
-                    ),
-                })
+                updateBrowserHistoryIfNecessary(
+                    props.history,
+                    location,
+                    addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
+                )
                 await navigator.clipboard.writeText(window.location.href)
             },
         }),
         [
             hoverifier.hoverState.hoveredToken?.line,
             hoverifier.hoverState.hoveredToken?.character,
-            location.search,
+            location,
             nextPopoverClose,
             props.history,
         ]
@@ -853,6 +851,35 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             )}
         </>
     )
+}
+
+/**
+ * Adds an entry to the browser history only if new search parameters differ
+ * from the current ones. This prevents adding a new entry when e.g. the user
+ * clicks the same line multiple times.
+ */
+function updateBrowserHistoryIfNecessary(
+    history: H.History,
+    location: H.Location,
+    newSearchParameters: URLSearchParams
+): void {
+    const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
+
+    // Update history if the number of search params changes or if any parameter
+    // value changes. This will also work for file position changes, which are
+    // encoded as parameter without a value. The old file position will be a
+    // non-existing key in the new search parameters and thus return `null`
+    // (whereas it returns an empty string in the current search parameters).
+    const needsUpdate =
+        currentSearchParameters.length !== [...newSearchParameters.keys()].length ||
+        currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
+
+    if (needsUpdate) {
+        history.push({
+            ...location,
+            search: formatSearchParameters(newSearchParameters),
+        })
+    }
 }
 
 export function getLSPTextDocumentPositionParameters(

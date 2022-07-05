@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Updated minimum required veresion of `git` to 2.35.2 in `gitserver` and `server` Docker image. This addresses a few vulnerabilities disclosed in https://github.blog/2022-04-12-git-security-vulnerability-announced/.
 - Search: Pasting a query with line breaks into the main search query input will now replace them with spaces instead of removing them. [#37674](https://github.com/sourcegraph/sourcegraph/pull/37674)
 - Rewrite resource estimator using the latest metrics [#37869](https://github.com/sourcegraph/sourcegraph/pull/37869)
+- Selecting a line multiple times in the file view will only add a single browser history entry [#38204](https://github.com/sourcegraph/sourcegraph/pull/38204)
 
 ### Fixed
 
