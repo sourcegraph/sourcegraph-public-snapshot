@@ -3,7 +3,6 @@ package repos_test
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -26,11 +24,22 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		servicesPerKind := createExternalServices(t, s)
 		githubService := servicesPerKind[extsvc.KindGitHub]
-		githubRepo := (*&types.Repo{
+		githubRepo1 := (*&types.Repo{
 			Name:     "github.com/susantoscott/Task-Tracker",
 			Metadata: &github.Repository{},
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "hi-mom-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}).With(
+			typestest.Opt.RepoSources(githubService.URN()),
+		)
+		githubRepo2 := (*&types.Repo{
+			Name:     "github.com/susantoscott/Password-Cracking",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "hi-mom-6789",
 				ServiceID:   "https://github.com/",
 				ServiceType: extsvc.TypeGitHub,
 			},
@@ -86,7 +95,8 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 			repo *types.Repo
 			svc  *types.ExternalService
 		}{
-			{repo: githubRepo, svc: githubService},
+			{repo: githubRepo1, svc: githubService},
+			{repo: githubRepo2, svc: githubService},
 			// {repo: userAddedGithubRepo, svc: userAddedGithubSvc},
 		} {
 			testCases = append(testCases,
@@ -120,6 +130,7 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 		}
 
 		for _, tc := range testCases {
+			fmt.Println("Testing:", tc.name)
 			if tc.name == "" {
 				t.Error("Test case name is blank")
 				continue
@@ -145,6 +156,18 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 					ctx = context.Background()
 				}
 
+				parts := strings.Split(tc.name, "/")
+				reponame := parts[2]
+
+				befores := repos.ListWebhooks(reponame)
+				fmt.Println("Before:")
+				if len(befores) == 0 {
+					fmt.Println("[]")
+				}
+				for _, before := range befores {
+					fmt.Printf("%+v\n", before)
+				}
+
 				if len(tc.stored) > 0 {
 					cloned := tc.stored.Clone()
 					if err := st.RepoStore().Create(ctx, cloned...); err != nil {
@@ -160,10 +183,12 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 				}
 
 				for _, svc := range tc.svcs {
+					// fmt.Printf("svc:%+v\n", svc)
 					before, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
 					if err != nil {
 						t.Fatal(err)
 					}
+					// fmt.Printf("before:%+v\n", before)
 
 					err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond)
 					if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
@@ -174,6 +199,7 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					// fmt.Printf("after:%+v\n", after)
 
 					if before.LastSyncAt == after.LastSyncAt {
 						t.Log(before.LastSyncAt, after.LastSyncAt)
@@ -181,17 +207,30 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 					}
 				}
 
-				var want, have types.Repos
-				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
-				have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
-				want = want.With(typestest.Opt.RepoID(0))
-				have = have.With(typestest.Opt.RepoID(0))
-				sort.Sort(want)
-				sort.Sort(have)
-				fmt.Printf("want:%+v\n", want)
-				fmt.Printf("have:%+v\n", have)
+				toDeletes := make([]int, 0)
 
-				typestest.Assert.ReposEqual(want...)(t, have)
+				afters := repos.ListWebhooks(reponame)
+				fmt.Println("After:")
+				for _, after := range afters {
+					fmt.Printf("%+v\n", after)
+					toDeletes = append(toDeletes, after.ID)
+				}
+
+				for _, toDelete := range toDeletes {
+					repos.DeleteWebhook(reponame, toDelete)
+				}
+
+				// var want, have types.Repos
+				// want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
+				// have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
+				// want = want.With(typestest.Opt.RepoID(0))
+				// have = have.With(typestest.Opt.RepoID(0))
+				// sort.Sort(want)
+				// sort.Sort(have)
+				// fmt.Printf("want:%+v\n", want)
+				// fmt.Printf("have:%+v\n", have)
+
+				// typestest.Assert.ReposEqual(want...)(t, have)
 			}))
 		}
 	}

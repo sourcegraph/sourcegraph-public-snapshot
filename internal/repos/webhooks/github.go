@@ -50,3 +50,10 @@ func (h *SyncGitHubWebhook) handleSyncWebhook(ctx context.Context, extSvc *types
 
 	return nil
 }
+
+// u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
+// if err != nil {
+// 	t.Fatal(err)
+// }
+
+// Indra's answer will affect how I implement the handler in httpapi.go

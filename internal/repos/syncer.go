@@ -97,6 +97,10 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	go resetter.Start()
 	defer resetter.Stop()
 
+	// webhookWorker, webhookResetter := NewSyncWebhookWorker(ctx, store.Handle(), &syncHandler{}, Opts{})
+	// go webhookWorker.Start()
+	// go webhookWorker.Stop()
+
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
 			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
@@ -116,13 +120,27 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
+}
+
+type createWebhookHandler struct {
+	store                    Store
+	minCreateWebhookInterval func() time.Duration
+}
+
+func (cw *createWebhookHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	cwj, ok := record.(*CreateWebhookJob)
+	if !ok {
+		return errors.Errorf("expected repos.CreateWebhookJob, got %T", record)
+	}
+
+	return CreateSyncWebhook(string(cwj.Repo.Name), "secret", "token")
 }
 
 // sleep is a context aware time.Sleep
@@ -563,6 +581,7 @@ func (s *Syncer) SyncExternalService(
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
+	worker := NewSyncWebhookWorker(ctx)
 	for res := range results {
 		if err := res.Err; err != nil {
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
@@ -583,14 +602,12 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		if !svc.SyncUsingWebhooks {
-			w, err := CreateSyncWebhook(string(sourced.Name))
+		svc.SyncUsingWebhooks = true
+		if svc.SyncUsingWebhooks {
+			err := worker.Enqueue(sourced)
 			if err != nil {
 				return err
 			}
-			webhook := w.(Payload)
-			fmt.Printf("webhook:%+v\n", webhook)
-			fmt.Printf("config:%+v\n", webhook.Config)
 		}
 
 		var diff Diff
@@ -614,6 +631,7 @@ func (s *Syncer) SyncExternalService(
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
+	// worker.processQueue()
 
 	// We don't delete any repos of site-level external services if there were any
 	// errors during a sync.
