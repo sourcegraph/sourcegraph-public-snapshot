@@ -11,6 +11,7 @@ import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.browser.SourcegraphJBCefBrowser;
+import org.jdesktop.swingx.util.OS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,11 +55,13 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
             browserAndLoadingPanel.setBrowser(browser);
         }
 
-        // The border is needed because without it, window and splitter resize don't work because the JCEF
-        // doesn't properly pass the mouse events to Swing.
-        // 4px is the minimum amount to make it work for the window resize, and 5px for the splitter.
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
-        topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+        // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
+        // doesn't properly pass the mouse events to Swing.
+        // 4px is the minimum amount to make it work for the window resize, the splitter works without a padding.
+        if (OS.isMacOSX()) {
+            topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+        }
         topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
         topPanel.setMinimumSize(JBUI.size(750, 200));
 
