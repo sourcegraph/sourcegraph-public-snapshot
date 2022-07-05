@@ -3872,22 +3872,22 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "changesets_detached_at",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "changesets_changeset_specs",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "changesets_detached_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
