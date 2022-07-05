@@ -19,10 +19,15 @@ type store struct {
 	// operations *operations
 }
 
-// New returns a new version store.
+// New returns a new version store with the given database handle.
 func New(db database.DB, observationContext *observation.Context) *store {
+	return NewWith(db.Handle(), observationContext)
+}
+
+// NewWith returns a new version store with the given transactable handle.
+func NewWith(db basestore.TransactableHandle, observationContext *observation.Context) *store {
 	return &store{
-		db: basestore.NewWithHandle(db.Handle()),
+		db: basestore.NewWithHandle(db),
 		// operations: newOperations(observationContext),
 	}
 }
