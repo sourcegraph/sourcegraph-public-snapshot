@@ -32,10 +32,10 @@ var (
 				Action:      decodeInsightIDAction,
 			},
 			{
-				Name:        "series-id",
+				Name:        "series-ids",
 				Usage:       "Gets all insight series ID from the base64 encoded frontend ID",
-				Description: `Run 'sg insights series-id' to decode a frontend ID and find all related series IDs`,
-				Action:      getInsightSeriesIDAction,
+				Description: `Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs`,
+				Action:      getInsightSeriesIDsAction,
 			},
 		},
 	}
@@ -57,15 +57,15 @@ func decodeInsightIDAction(cmd *cli.Context) error {
 	return nil
 }
 
-func getInsightSeriesIDAction(cmd *cli.Context) error {
+func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	ids := cmd.Args().Slice()
 	if len(ids) != 1 {
 		return errors.New("Expected 1 id to decode")
 	}
-	std.Out.WriteNoticef("Finding the series_id for %s", ids[0])
+	std.Out.WriteNoticef("Finding the series_ids for %s", ids[0])
 
 	ctx := cmd.Context
-	logger := log.Scoped("getInsightSeriesIDAction", "")
+	logger := log.Scoped("getInsightSeriesIDsAction", "")
 
 	// Read the configuration.
 	conf, _ := sgconf.Get(configFile, configOverwriteFile)
