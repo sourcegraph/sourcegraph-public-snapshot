@@ -109,7 +109,6 @@
     "@babel/preset-env": "^7.14.2",
     "@babel/preset-typescript": "^7.13.0",
     "@babel/runtime": "^7.14.0",
-    "@datadog/browser-rum-slim": "^4.7.1",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
     "@gql2ts/types": "^1.9.0",

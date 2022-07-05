@@ -40,7 +40,7 @@ export const ENVIRONMENT_CONFIG = {
     ENTERPRISE: getEnvironmentBoolean('ENTERPRISE'),
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
 
-    // Is reporting to Datadog/Sentry enabled.
+    // Is reporting to Sentry enabled.
     ENABLE_MONITORING: getEnvironmentBoolean('ENABLE_MONITORING'),
 
     /**

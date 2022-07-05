@@ -1095,47 +1095,6 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "observability.logging": {
-      "description": "Configuration for logging to external services.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "datadog": {
-          "description": "Datadog configuration",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "RUM": {
-              "description": "Datadog RUM configuration",
-              "type": "object",
-              "required": ["clientToken", "applicationId"],
-              "additionalProperties": false,
-              "properties": {
-                "clientToken": {
-                  "description": "Datadog client token required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).",
-                  "type": "string"
-                },
-                "applicationId": {
-                  "description": "Datadog application ID required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
-      "examples": [
-        {
-          "datadog": {
-            "RUM": {
-              "clientToken": "aaa1111a1a11a1aa11a1aa1a111aaa111aa",
-              "applicationId": "a11aa111-a1aa-1a11-aaa1-a11a111a111a"
-            }
-          }
-        }
-      ],
-      "group": "Debug"
-    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",

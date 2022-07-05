@@ -7,7 +7,7 @@ import ReloadIcon from 'mdi-react/ReloadIcon'
 import { asError } from '@sourcegraph/common'
 import { Button, Code, Text } from '@sourcegraph/wildcard'
 
-import { DatadogClient, isWebpackChunkError } from '../monitoring'
+import { isWebpackChunkError } from '../monitoring'
 
 import { HeroPage } from './HeroPage'
 
@@ -61,8 +61,6 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                 Sentry.captureException(error)
             })
         }
-
-        DatadogClient.addError(error, { errorInfo, originalException: error })
     }
 
     public componentDidUpdate(previousProps: Props): void {
