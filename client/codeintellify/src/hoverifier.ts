@@ -444,7 +444,7 @@ export function createHoverifier<C extends object, D, A>({
     const allPositionsFromEvents = new Subject<MouseEventTrigger>()
 
     // This keeps the overlay open while the mouse moves over another token on the way to the overlay
-    // eslint-disable-next-line unicorn/consistent-function-scoping
+
     const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => observable =>
         observable.pipe(
             withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
@@ -536,9 +536,6 @@ export function createHoverifier<C extends object, D, A>({
      * pinned at the jump target.
      */
     const jumpTargets = positionJumps.pipe(
-        withLatestFrom(container.updates),
-        filter(([, { pinned }]) => pinned),
-        map(([position]) => position),
         // Only use line and character for comparison
         map(({ position: { line, character, part }, ...rest }) => ({
             position: { line, character, part },
@@ -548,7 +545,9 @@ export function createHoverifier<C extends object, D, A>({
         // It's important to do this before filtering otherwise navigating from
         // a position, to a line-only position, back to the first position would get ignored
         distinctUntilChanged((a, b) => isEqual(a, b)),
-        map(({ position, codeView, dom, overrideTokenize, ...rest }) => {
+        withLatestFrom(container.updates),
+        filter(([, { pinned }]) => pinned),
+        map(([{ position, codeView, dom, overrideTokenize, ...rest }]) => {
             let cell: HTMLElement | null
             let target: HTMLElement | undefined
             let part: DiffPart | undefined
@@ -576,7 +575,8 @@ export function createHoverifier<C extends object, D, A>({
                 dom,
                 overrideTokenize,
             }
-        })
+        }),
+        share()
     )
 
     // REPOSITIONING
@@ -668,9 +668,17 @@ export function createHoverifier<C extends object, D, A>({
         share()
     )
 
-    const resolvedPositions = resolvedPositionEvents.pipe(
-        // Suppress emissions from other events that refer to the same position as the current one.
-        distinctUntilChanged((a, b) => isEqual(a.position, b.position))
+    // Suppress emissions from other events that refer to the same position as
+    // the current one as long as a hovercard is visible. This is to prevent an
+    // existing hover card from flickering
+    const resolvedPositions = container.updates.pipe(
+        map(shouldRenderOverlay),
+        distinctUntilChanged(),
+        switchMap(isHoverActive =>
+            isHoverActive
+                ? resolvedPositionEvents.pipe(distinctUntilChanged((a, b) => isEqual(a.position, b.position)))
+                : resolvedPositionEvents
+        )
     )
 
     /**
