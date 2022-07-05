@@ -270,6 +270,55 @@ func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
 	}
 }
 
+func updateUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
+	for _, upload := range uploads {
+		query := sqlf.Sprintf(`
+			UPDATE lsif_uploads
+			SET
+				commit = COALESCE(NULLIF(%s, ''), commit),
+				root = COALESCE(NULLIF(%s, ''), root),
+				uploaded_at = COALESCE(NULLIF(%s, '0001-01-01 00:00:00+00'::timestamptz), uploaded_at),
+				state = COALESCE(NULLIF(%s, ''), state),
+				failure_message  = COALESCE(%s, failure_message),
+				started_at = COALESCE(%s, started_at),
+				finished_at = COALESCE(%s, finished_at),
+				process_after = COALESCE(%s, process_after),
+				num_resets = COALESCE(NULLIF(%s, 0), num_resets),
+				num_failures = COALESCE(NULLIF(%s, 0), num_failures),
+				repository_id = COALESCE(NULLIF(%s, 0), repository_id),
+				indexer = COALESCE(NULLIF(%s, ''), indexer),
+				indexer_version = COALESCE(NULLIF(%s, ''), indexer_version),
+				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
+				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
+				upload_size = COALESCE(%s, upload_size),
+				associated_index_id = COALESCE(%s, associated_index_id)
+			WHERE id = %s
+		`,
+			upload.Commit,
+			upload.Root,
+			upload.UploadedAt,
+			upload.State,
+			upload.FailureMessage,
+			upload.StartedAt,
+			upload.FinishedAt,
+			upload.ProcessAfter,
+			upload.NumResets,
+			upload.NumFailures,
+			upload.RepositoryID,
+			upload.Indexer,
+			upload.IndexerVersion,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
+			upload.AssociatedIndexID,
+			upload.ID)
+
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while updating upload: %s", err)
+		}
+	}
+}
+
 func deleteUploads(t testing.TB, db database.DB, uploads ...int) {
 	for _, upload := range uploads {
 		query := sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, upload)

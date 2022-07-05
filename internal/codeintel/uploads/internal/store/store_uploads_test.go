@@ -64,10 +64,27 @@ func TestGetUploads(t *testing.T) {
 
 		// to-be hard deleted
 		shared.Upload{ID: 16, Commit: makeCommit(3333), UploadedAt: t4, FinishedAt: &t3, State: "deleted"},
+		shared.Upload{ID: 17, Commit: makeCommit(3334), UploadedAt: t4, FinishedAt: &t5, State: "deleting"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
+	updateUploads(t, db, shared.Upload{
+		ID: 17, State: "deleted",
+	})
+
 	deleteUploads(t, db, 16)
+	deleteUploads(t, db, 17)
+
+	query := sqlf.Sprintf(
+		`DELETE FROM lsif_uploads_audit_logs WHERE upload_id = %s
+			AND sequence NOT IN (
+				SELECT MAX(sequence) FROM lsif_uploads_audit_logs
+				WHERE upload_id = %s
+			)`,
+		17, 17)
+	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 
 	// upload 10 depends on uploads 7 and 8
 	insertPackages(t, store, []shared.Package{
@@ -135,7 +152,7 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
-		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15, 16}},
+		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15, 16, 17}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
