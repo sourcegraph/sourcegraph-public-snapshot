@@ -156,13 +156,13 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 				res = append(res, result.NewSymbolMatch(
 					newFile,
 					int(r.Start.LineNumber),
-					-1,
+					int(r.Start.Column),
 					si.Sym,
 					si.Kind,
 					si.Parent,
 					si.ParentKind,
 					file.Language,
-					string(cm.Content), // TODO will symbol matches always be one line?
+					"", // unused when column is set
 					false,
 				))
 			}

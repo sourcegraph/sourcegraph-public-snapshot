@@ -594,29 +594,29 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 			Content:      []byte(""),
 			ContentStart: zoekt.Location{LineNumber: 5, Column: 1},
 			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 5},
+				Start: zoekt.Location{LineNumber: 5, Column: 8},
 			}},
 		}, {
 			Content:      []byte("symbol a symbol b"),
 			ContentStart: zoekt.Location{LineNumber: 10, Column: 1},
 			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 10},
+				Start: zoekt.Location{LineNumber: 10, Column: 8},
 			}, {
-				Start: zoekt.Location{LineNumber: 10},
+				Start: zoekt.Location{LineNumber: 10, Column: 18},
 			}},
 			SymbolInfo: []*zoekt.Symbol{symbolInfo("a"), symbolInfo("b")},
 		}, {
 			Content:      []byte("symbol c"),
 			ContentStart: zoekt.Location{LineNumber: 15, Column: 1},
 			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 15},
+				Start: zoekt.Location{LineNumber: 15, Column: 8},
 			}},
 			SymbolInfo: []*zoekt.Symbol{symbolInfo("c")},
 		}, {
 			Content:      []byte(`bar() { var regex = /.*\//; function baz() { }  } `),
 			ContentStart: zoekt.Location{LineNumber: 20, Column: 1},
 			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 20},
+				Start: zoekt.Location{LineNumber: 20, Column: 38},
 			}},
 			SymbolInfo: []*zoekt.Symbol{symbolInfo("baz")},
 		}},
@@ -635,7 +635,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}, {
 		Name:      "b",
 		Line:      10,
-		Character: 3,
+		Character: 17,
 	}, {
 		Name:      "c",
 		Line:      15,

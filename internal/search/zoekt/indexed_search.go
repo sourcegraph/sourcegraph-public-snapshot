@@ -485,13 +485,13 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 			symbols = append(symbols, result.NewSymbolMatch(
 				newFile,
 				int(r.Start.LineNumber),
-				-1,
+				int(r.Start.Column)-1,
 				si.Sym,
 				si.Kind,
 				si.Parent,
 				si.ParentKind,
 				file.Language,
-				string(cm.Content), // TODO will symbol matches always be one line?
+				"", // Unused when column is set
 				false,
 			))
 		}
