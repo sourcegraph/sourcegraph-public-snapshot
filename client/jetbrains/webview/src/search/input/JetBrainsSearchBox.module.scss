@@ -83,7 +83,8 @@
         > button,
         > button:hover,
         > button:focus {
-            padding: 0.185rem 1rem;
+            height: 1.5rem;
+            padding: 0.125rem 1rem;
             background: var(--jb-button-bg);
             border: 1px solid var(--jb-border-color);
             border-radius: 4px;
@@ -156,7 +157,8 @@
                 flex-direction: row-reverse;
 
                 > button {
-                    padding: 0.185rem 1rem;
+                    height: 1.5rem;
+                    padding: 0.125rem 1rem;
                     background: var(--jb-button-bg);
                     border: 1px solid var(--jb-border-color);
                     border-radius: 4px;
