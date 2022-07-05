@@ -7,12 +7,17 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestConvertToPostgresMatch(t *testing.T) {
@@ -345,6 +350,114 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 	if diff := cmp.Diff(want, perms); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+// Confirm the rules as defined in
+// https://www.perforce.com/manuals/p4sag/Content/P4SAG/protections-implementation.html
+//
+// Modified slightly by removing the //depot prefix and only including rules
+// applicable to the actual user since that's what we'll get back from protect -u
+func TestFullScanMatchRules(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		protects   string
+		canRead    string
+		cannotRead string
+	}{
+		{
+			name: "Without an exclusionary mapping, the most permissive line rules",
+			protects: `
+write       group       Dev2    *    //depot/dev/...
+read        group       Dev1    *    //depot/dev/productA/...
+write       group       Dev1    *    //depot/elm_proj/...
+`,
+			canRead: "dev/productA/readme.txt",
+		},
+		{
+			name: "Exclusion overrides prior inclusion",
+			protects: `
+write   group   Dev1   *   //depot/dev/...            ## Maria is a member of Dev1
+list    group   Dev1   *   -//depot/dev/productA/...  ## exclusionary mapping overrides the line above
+`,
+			cannotRead: "dev/productA/readme.txt",
+		},
+		{
+			name: "Exclusionary mapping and =, - before file path",
+			protects: `
+list   group   Rome    *   -//depot/dev/prodA/...   ## exclusion of list implies no read, no write, etc.
+read   group   Rome    *   //depot/dev/prodA/...   ## Rome can only read this one path
+`,
+			cannotRead: "dev/prodB/things.txt",
+			// The include appears after the exclude so it should take preference
+			canRead: "dev/prodA/things.txt",
+		},
+		{
+			name: "Exclusionary mapping and =, - before the file path and = before the access level",
+			protects: `
+read  group     Rome    *  //depot/dev/...
+=read  group    Rome    *  -//depot/dev/prodA/...   ## Rome cannot read this one path
+`,
+			cannotRead: "dev/prodA/things.txt",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						SubRepoPermissions: &schema.SubRepoPermissions{
+							Enabled: true,
+						},
+					},
+				},
+			})
+			t.Cleanup(func() { conf.Mock(nil) })
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+
+			depot := "//depot/"
+			rc := io.NopCloser(strings.NewReader(tc.protects))
+			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+				return rc, nil, nil
+			})
+			p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+			p.depots = []extsvc.RepoID{
+				extsvc.RepoID(depot),
+			}
+			perms := &authz.ExternalUserPermissions{
+				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+			}
+			if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
+				t.Fatal(err)
+			}
+			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(depot)]
+			if !ok {
+				t.Fatal("no rules found")
+			}
+			checker, err := authz.NewSimpleChecker(api.RepoName(depot), rules.PathIncludes, rules.PathExcludes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.canRead != "" {
+				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(depot), []string{tc.canRead})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !ok {
+					t.Fatal("should be able to read path")
+				}
+			}
+			if tc.cannotRead != "" {
+				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(depot), []string{tc.cannotRead})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if ok {
+					t.Fatal("should not be able to read path")
+				}
+			}
+		})
 	}
 }
 
