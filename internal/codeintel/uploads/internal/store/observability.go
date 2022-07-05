@@ -12,11 +12,10 @@ type operations struct {
 	list *observation.Operation
 
 	// Commits
-	staleSourcedCommits  *observation.Operation
-	deleteSourcedCommits *observation.Operation
-	updateSourcedCommits *observation.Operation
-	setRepositoryAsDirty *observation.Operation
-	getDirtyRepositories *observation.Operation
+	staleSourcedCommits       *observation.Operation
+	deleteSourcedCommits      *observation.Operation
+	updateSourcedCommits      *observation.Operation
+	getCommitsVisibleToUpload *observation.Operation
 
 	// Uploads
 	getUploads                     *observation.Operation
@@ -26,6 +25,11 @@ type operations struct {
 	deleteUploadsStuckUploading    *observation.Operation
 	softDeleteExpiredUploads       *observation.Operation
 	hardDeleteUploadByID           *observation.Operation
+
+	// Repositories
+	getDirtyRepositories            *observation.Operation
+	setRepositoryAsDirty            *observation.Operation
+	setRepositoriesForRetentionScan *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
@@ -58,11 +62,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		list: op("List"),
 
 		// Commits
-		staleSourcedCommits:  op("StaleSourcedCommits"),
-		deleteSourcedCommits: op("DeleteSourcedCommits"),
-		updateSourcedCommits: op("UpdateSourcedCommits"),
-		setRepositoryAsDirty: op("SetRepositoryAsDirty"),
-		getDirtyRepositories: op("GetDirtyRepositories"),
+		staleSourcedCommits:       op("StaleSourcedCommits"),
+		deleteSourcedCommits:      op("DeleteSourcedCommits"),
+		updateSourcedCommits:      op("UpdateSourcedCommits"),
+		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),
@@ -72,6 +75,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
 		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadByID:           op("HardDeleteUploadByID"),
+
+		// Repositories
+		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
+		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
+		getDirtyRepositories:            op("GetDirtyRepositories"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),

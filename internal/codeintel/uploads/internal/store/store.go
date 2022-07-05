@@ -22,6 +22,7 @@ type Store interface {
 	List(ctx context.Context, opts ListOpts) (uploads []shared.Upload, err error)
 
 	// Commits
+	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
 	StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
@@ -36,8 +37,9 @@ type Store interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 
 	// Repositories
-	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
+	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)

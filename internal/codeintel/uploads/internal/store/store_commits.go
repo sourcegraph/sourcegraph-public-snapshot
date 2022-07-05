@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -193,6 +194,61 @@ SELECT
 	u.*,
 	(u.state IN ('uploading', 'queued', 'processing') AND %s - u.uploaded_at <= (%s * '1 second'::interval)) AS protected
 FROM candidate_uploads u
+`
+
+// GetCommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
+// To paginate, supply the token returned from this method to the invocation for the next page.
+func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
+	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	after := ""
+	if token != nil {
+		after = *token
+	}
+
+	commits, err := basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), after, limit)))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(commits) > 0 {
+		last := commits[len(commits)-1]
+		nextToken = &last
+	}
+
+	return commits, nextToken, nil
+}
+
+const commitsVisibleToUploadQuery = `
+-- source: internal/codeintel/stores/dbstore/commits.go:CommitsVisibleToUpload
+WITH
+direct_commits AS (
+	SELECT nu.repository_id, nu.commit_bytea
+	FROM lsif_nearest_uploads nu
+	WHERE nu.uploads ? %s
+),
+linked_commits AS (
+	SELECT ul.commit_bytea
+	FROM direct_commits dc
+	JOIN lsif_nearest_uploads_links ul
+	ON
+		ul.repository_id = dc.repository_id AND
+		ul.ancestor_commit_bytea = dc.commit_bytea
+),
+combined_commits AS (
+	SELECT dc.commit_bytea FROM direct_commits dc
+	UNION ALL
+	SELECT lc.commit_bytea FROM linked_commits lc
+)
+SELECT encode(c.commit_bytea, 'hex') as commit
+FROM combined_commits c
+WHERE decode(%s, 'hex') < c.commit_bytea
+ORDER BY c.commit_bytea
+LIMIT %s
 `
 
 // SetRepositoryAsDirty marks the given repository's commit graph as out of date.

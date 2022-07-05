@@ -7,7 +7,8 @@ import (
 )
 
 type expirer struct {
-	dbStore       DBStore
+	uploadSvc     UploadService
+	policySvc     PolicyService
 	metrics       *metrics
 	policyMatcher PolicyMatcher
 }

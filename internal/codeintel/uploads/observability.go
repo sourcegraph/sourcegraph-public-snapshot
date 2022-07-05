@@ -14,13 +14,13 @@ type operations struct {
 	getBatch         *observation.Operation
 	enqueue          *observation.Operation
 	delete           *observation.Operation
-	commitsVisibleTo *observation.Operation
 	uploadsVisibleTo *observation.Operation
 
 	// Commits
-	staleSourcedCommits  *observation.Operation
-	updateSourcedCommits *observation.Operation
-	deleteSourcedCommits *observation.Operation
+	getCommitsVisibleToUpload *observation.Operation
+	staleSourcedCommits       *observation.Operation
+	updateSourcedCommits      *observation.Operation
+	deleteSourcedCommits      *observation.Operation
 
 	// Uploads
 	getUploads                     *observation.Operation
@@ -32,8 +32,9 @@ type operations struct {
 	hardDeleteUploads              *observation.Operation
 
 	// Repositories
-	setRepositoryAsDirty *observation.Operation
-	getDirtyRepositories *observation.Operation
+	getDirtyRepositories            *observation.Operation
+	setRepositoryAsDirty            *observation.Operation
+	setRepositoriesForRetentionScan *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
@@ -68,15 +69,13 @@ func newOperations(observationContext *observation.Context) *operations {
 		getBatch:         op("GetBatch"),
 		enqueue:          op("Enqueue"),
 		delete:           op("Delete"),
-		commitsVisibleTo: op("CommitsVisibleTo"),
 		uploadsVisibleTo: op("UploadsVisibleTo"),
 
 		// Commits
-		staleSourcedCommits:  op("StaleSourcedCommits"),
-		updateSourcedCommits: op("UpdateSourcedCommits"),
-		deleteSourcedCommits: op("DeleteSourcedCommits"),
-		setRepositoryAsDirty: op("SetRepositoryAsDirty"),
-		getDirtyRepositories: op("GetDirtyRepositories"),
+		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
+		staleSourcedCommits:       op("StaleSourcedCommits"),
+		updateSourcedCommits:      op("UpdateSourcedCommits"),
+		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),
@@ -86,6 +85,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
 		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
 		hardDeleteUploads:              op("HardDeleteUploads"),
+
+		// Repositories
+		getDirtyRepositories:            op("GetDirtyRepositories"),
+		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
+		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),

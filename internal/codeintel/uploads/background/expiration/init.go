@@ -6,9 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewExpirer(store DBStore, policyMatcher PolicyMatcher, metrics *metrics) goroutine.BackgroundRoutine {
+func NewExpirer(uploadSvc UploadService, policySvc PolicyService, policyMatcher PolicyMatcher, metrics *metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, &expirer{
-		dbStore:       store,
+		uploadSvc:     uploadSvc,
+		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
 	})
