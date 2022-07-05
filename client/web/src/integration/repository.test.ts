@@ -1551,7 +1551,7 @@ describe('Repository', () => {
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
                 await driver.page.waitForSelector('.test-filtered-tags-connection')
-                await percySnapshotWithVariants(driver.page, 'Repository tags page')
+                await percySnapshotWithVariants(driver.page, 'Repository tags page', { timeout: 2000 })
                 await accessibilityAudit(driver.page)
             })
         })
