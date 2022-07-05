@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
+- Reattached changesets now display an action and factor into the stats when previewing batch changes. [#36359](https://github.com/sourcegraph/sourcegraph/issues/36359)
 
 ### Changed
 

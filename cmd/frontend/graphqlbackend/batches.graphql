@@ -707,6 +707,10 @@ enum ChangesetSpecOperation {
     The changeset is kept in the batch change, but it's marked as archived.
     """
     ARCHIVE
+    """
+    The changeset is re-added to the batch change.
+    """
+    REATTACH
 }
 
 """
@@ -1232,6 +1236,10 @@ type ChangesetApplyPreviewConnectionStats {
     The amount of changesets that are disassociated from the batch change in this operation.
     """
     removed: Int!
+    """
+    The changeset is re-added to some of the associated batch changes.
+    """
+    reattach: Int!
 }
 
 """
