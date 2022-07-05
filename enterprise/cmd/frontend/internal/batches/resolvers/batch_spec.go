@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -195,6 +196,10 @@ func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return r.computeCanAdminister(ctx)
+}
+
+func (r *batchSpecResolver) ExceedsLicense(ctx context.Context) (bool, error) {
+	return r.computeExceedsLicense(ctx)
 }
 
 type batchChangeDescriptionResolver struct {
@@ -613,4 +618,21 @@ func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, err
 		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
 	})
 	return r.canAdminister, r.canAdministerErr
+}
+
+func (r *batchSpecResolver) computeExceedsLicense(ctx context.Context) (bool, error) {
+	if err := checkLicense(); err != nil {
+		if licensing.IsFeatureNotActivated(err) {
+			count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID})
+			if err != nil {
+				return false, err
+			}
+			if count > maxUnlicensedChangesets {
+				return true, nil
+			}
+		} else {
+			return false, err
+		}
+	}
+	return false, nil
 }
