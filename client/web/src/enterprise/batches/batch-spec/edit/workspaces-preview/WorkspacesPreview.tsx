@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiMagnify, mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -146,7 +145,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
             onClick={() => preview(debouncedCode)}
         >
-            <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
+            <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
             {error ? 'Retry preview' : 'Preview workspaces'}
         </Button>
     )
@@ -224,8 +223,8 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                         <Icon
                             className={classNames('text-muted ml-1', styles.warningIcon)}
                             data-tooltip="The workspaces previewed below may not be up-to-date."
-                            as={WarningIcon}
                             aria-label="The workspaces previewed below may not be up-to-date."
+                            svgPath={mdiAlert}
                         />
                     )}
                 {totalCount}

@@ -1,6 +1,6 @@
 import { FunctionComponent, useRef, useState } from 'react'
 
-import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
+import { mdiLinkVariant } from '@mdi/js'
 import { useHistory } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -52,7 +52,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
                 data-tooltip={isCopied ? 'Copied!' : undefined}
                 onClick={handleCopyLinkClick}
             >
-                <Icon aria-hidden={true} as={LinkVariantIcon} /> Copy link
+                <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
             </Button>
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete

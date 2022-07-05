@@ -127,6 +127,20 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of views of the create code monitor page without a pre-populated trigger query
   - Total number of views of the manage code monitor page
   - Total number of clicks on the code monitor email search link
+  - Total number of clicks on example monitors
+  - Total number of views of the getting started page
+  - Total number of submissions of the create code monitor form
+  - Total number of submissions of the manage code monitor form
+  - Total number of deletions from the manage code monitor form
+  - Total number of views of the logs page
+  - Current number of Slack, webhook, and email actions enabled
+  - Current number of unique users with Slack, webhook, and email actions enabled
+  - Total number of Slack, webhook, and email actions triggered
+  - Total number of Slack, webhook, and email action triggers that errored
+  - Total number of unique users that have had Slack, webhook, and email actions triggered
+  - Total number of search executions
+  - Total number of search executions that errored
+  - 50th and 90th percentile runtimes for search executions
 - Notebooks usage data
   - Total number of views of the notebook page
   - Total number of views of the notebooks list page

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
@@ -160,7 +160,11 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         className="test-create-access-token-submit"
                         variant="primary"
                     >
-                        {creationOrError === 'loading' ? <LoadingSpinner /> : <Icon as={AddIcon} aria-hidden={true} />}{' '}
+                        {creationOrError === 'loading' ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
+                        )}{' '}
                         Generate token
                     </Button>
                     <Button

@@ -1058,7 +1058,7 @@ type RandomizeUserPasswordResult {
 }
 
 """
-Possible answers to "You are using Sourcegraph to..." in the NPS Survey.
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
 """
 enum SurveyUseCase {
     UNDERSTAND_NEW_CODE
@@ -1082,15 +1082,15 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "You are using Sourcegraph to...".
+    The answer to "You use Sourcegraph to...".
     """
     useCases: [SurveyUseCase!]
     """
-    The answer to "What else are you using Sourcegraph to do?".
+    The answer to "What else do you use Sourcegraph to do?".
     """
     otherUseCase: String
     """
-    The answer to "What can Sourcegraph do to provide a better product?"
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -5990,11 +5990,11 @@ type SurveyResponse {
     """
     better: String
     """
-    The answer to "You are using Sourcegraph to...".
+    The answer to "You use Sourcegraph to...".
     """
     useCases: [SurveyUseCase!]
     """
-    The answer to "What else are you using Sourcegraph to do?".
+    The answer to "What else do you use Sourcegraph to do?".
     """
     otherUseCase: String
     """

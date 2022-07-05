@@ -2,8 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
-	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -197,69 +195,48 @@ SELECT
 FROM candidate_uploads u
 `
 
-// scanSourcedCommits scans triples of repository ids/repository names/commits from the
-// return value of `*Store.query`. The output of this function is ordered by repository
-// identifier, then by commit.
-func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+// SetRepositoryAsDirty marks the given repository's commit graph as out of date.
+func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	sourcedCommitsMap := map[int]shared.SourcedCommits{}
-	for rows.Next() {
-		var repositoryID int
-		var repositoryName string
-		var commit string
-		if err := rows.Scan(&repositoryID, &repositoryName, &commit); err != nil {
-			return nil, err
-		}
-
-		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
-			RepositoryID:   repositoryID,
-			RepositoryName: repositoryName,
-			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
-		}
-	}
-
-	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
-	for _, sourcedCommits := range sourcedCommitsMap {
-		sort.Strings(sourcedCommits.Commits)
-		flattened = append(flattened, sourcedCommits)
-	}
-
-	sort.Slice(flattened, func(i, j int) bool {
-		return flattened[i].RepositoryID < flattened[j].RepositoryID
-	})
-	return flattened, nil
+	return tx.Exec(ctx, sqlf.Sprintf(setRepositoryAsDirtyQuery, repositoryID))
 }
 
-func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
-	if queryErr != nil {
-		return 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+const setRepositoryAsDirtyQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_commits.go:SetRepositoryAsDirty
+INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
+VALUES (%s, 1, 0)
+ON CONFLICT (repository_id) DO UPDATE SET
+    dirty_token = lsif_dirty_repositories.dirty_token + 1,
+    set_dirty_at = CASE
+        WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token THEN NOW()
+        ELSE lsif_dirty_repositories.set_dirty_at
+    END
+`
 
-	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return 0, err
-		}
-	}
+// GetDirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
+// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
+func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, trace, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-	return value, nil
+	repositories, err := scanIntPairs(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(log.Int("numRepositories", len(repositories)))
+
+	return repositories, nil
 }
 
-func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
-	if queryErr != nil {
-		return 0, 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(&value1, &value2); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return value1, value2, nil
-}
+const dirtyRepositoriesQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetDirtyRepositories
+SELECT ldr.repository_id, ldr.dirty_token
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
+    AND repo.deleted_at IS NULL
+`

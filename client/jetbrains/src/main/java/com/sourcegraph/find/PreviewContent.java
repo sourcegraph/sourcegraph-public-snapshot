@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -31,6 +32,7 @@ public class PreviewContent {
     private final String resultType;
     private final String fileName;
     private final String repoUrl;
+    private final String commit;
     private final String path;
     private final String content;
     private final String symbolName;
@@ -47,6 +49,7 @@ public class PreviewContent {
                           @Nullable String resultType,
                           @Nullable String fileName,
                           @NotNull String repoUrl,
+                          @Nullable String commit,
                           @Nullable String path,
                           @Nullable String content,
                           @Nullable String symbolName,
@@ -62,6 +65,7 @@ public class PreviewContent {
         this.resultType = resultType;
         this.fileName = fileName;
         this.repoUrl = repoUrl;
+        this.commit = commit;
         this.path = path;
         this.symbolName = symbolName;
         this.symbolContainerName = symbolContainerName;
@@ -87,6 +91,7 @@ public class PreviewContent {
             isNotNull(json, "resultType") ? json.get("resultType").getAsString() : null,
             isNotNull(json, "fileName") ? json.get("fileName").getAsString() : null,
             json.get("repoUrl").getAsString(),
+            isNotNull(json, "commit") ? json.get("commit").getAsString() : null,
             isNotNull(json, "path") ? json.get("path").getAsString() : null,
             isNotNull(json, "content") ? json.get("content").getAsString() : null,
             isNotNull(json, "symbolName") ? json.get("symbolName").getAsString() : null,
@@ -119,6 +124,11 @@ public class PreviewContent {
     @NotNull
     public String getRepoUrl() {
         return repoUrl;
+    }
+
+    @Nullable
+    public String getCommit() {
+        return commit;
     }
 
     @Nullable
@@ -173,7 +183,11 @@ public class PreviewContent {
             return null;
         }
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);
-        return new String(decodedBytes);
+        try {
+            return new String(decodedBytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return "";
+        }
     }
 
     @Override

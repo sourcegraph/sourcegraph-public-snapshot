@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 
+import { mdiAlertCircle, mdiSync, mdiInformationOutline } from '@mdi/js'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
@@ -75,7 +73,7 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <Icon aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> Syncing from code host
+                    <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} /> Syncing from code host
                     failed.
                 </span>
             ) : (
@@ -86,7 +84,7 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
                     data-tooltip={lastUpdatedAt.message}
                     aria-label={lastUpdatedAt.message}
                     className="ml-2 small"
-                    as={AlertCircleIcon}
+                    svgPath={mdiAlertCircle}
                 />
             )}
             <span data-tooltip={tooltipText}>
@@ -120,10 +118,10 @@ const UpdateLoaderIcon: React.FunctionComponent<
                 className="cursor-pointer"
                 onClick={onEnqueueChangeset}
                 role="button"
-                as={SyncIcon}
+                svgPath={mdiSync}
             />
         )
     }
 
-    return <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
+    return <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
 }

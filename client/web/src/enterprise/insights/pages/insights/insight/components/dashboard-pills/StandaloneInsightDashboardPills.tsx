@@ -1,7 +1,7 @@
 import { FunctionComponent, HTMLAttributes } from 'react'
 
+import { mdiViewDashboard } from '@mdi/js'
 import classNames from 'classnames'
-import ViewDashboardIcon from 'mdi-react/ViewDashboardIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -41,7 +41,7 @@ export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsigh
                     className={styles.pill}
                     onClick={handleDashboardClick}
                 >
-                    <Icon as={ViewDashboardIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiViewDashboard} />
                     {dashboard.title}
                 </Button>
             ))}
