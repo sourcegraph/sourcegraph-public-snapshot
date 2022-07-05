@@ -1,11 +1,11 @@
 import React from 'react'
 
+import { mdiProgressWrench } from '@mdi/js'
 import classNames from 'classnames'
-import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/common'
-import { Alert, H4 } from '@sourcegraph/wildcard'
+import { Alert, H4, Icon } from '@sourcegraph/wildcard'
 
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'
 
@@ -27,7 +27,15 @@ export const BackendAlertOverlay: React.FunctionComponent<
             <AlertOverlay
                 title="This insight is still being processed"
                 description="Datapoints shown may be undercounted."
-                icon={<ProgressWrench className={classNames('mb-3')} size={33} />}
+                icon={
+                    <Icon
+                        svgPath={mdiProgressWrench}
+                        className={classNames('mb-3')}
+                        height={33}
+                        width={33}
+                        aria-hidden={true}
+                    />
+                }
                 className={className}
             />
         )

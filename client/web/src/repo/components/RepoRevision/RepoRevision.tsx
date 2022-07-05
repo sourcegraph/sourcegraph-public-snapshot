@@ -1,11 +1,11 @@
 import React, { HTMLAttributes } from 'react'
 
+import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
-import type { MdiReactIconProps } from 'mdi-react'
+
+import { Icon, IconProps } from '@sourcegraph/wildcard'
 
 import styles from './RepoRevision.module.scss'
-import { mdiChevronDown } from "@mdi/js";
-import { Icon } from "@sourcegraph/wildcard";
 
 type RepoRevisionProps = HTMLAttributes<HTMLDivElement>
 
@@ -19,7 +19,14 @@ export const RepoRevisionWrapper: React.FunctionComponent<React.PropsWithChildre
     </div>
 )
 
-export const RepoRevisionChevronDownIcon: React.FunctionComponent<React.PropsWithChildren<MdiReactIconProps>> = ({
-    className,
-    ...rest
-}) => <Icon className={classNames(styles.breadcrumbIcon, className)} {...rest} svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
+export const RepoRevisionChevronDownIcon: React.FunctionComponent<
+    React.PropsWithChildren<React.PropsWithoutRef<IconProps>>
+> = ({ className, ...rest }) => (
+    <Icon
+        className={classNames(styles.breadcrumbIcon, className)}
+        {...rest}
+        svgPath={mdiChevronDown}
+        inline={false}
+        aria-hidden={true}
+    />
+)

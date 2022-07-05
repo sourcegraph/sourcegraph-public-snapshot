@@ -3,9 +3,9 @@ import 'focus-visible'
 import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
+import { mdiServer } from '@mdi/js'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
-import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { ScrollManager } from 'react-scroll-manager'
@@ -371,7 +371,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             } else {
                 subtitle = <div className={styles.error}>{subtitle}</div>
             }
-            return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
+            return <HeroPage icon={mdiServer} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
         const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state

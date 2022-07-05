@@ -1,9 +1,8 @@
 import * as React from 'react'
 
-import { mdiCheckCircle } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -135,7 +134,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             ) {
                 return (
                     <HeroPage
-                        icon={AlertCircleIcon}
+                        icon={mdiAlertCircle}
                         title="Unauthorized"
                         subtitle="You are not authorized to adminster this extension."
                     />
@@ -144,7 +143,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
 
             const publisher = this.props.extension.registryExtension.publisher
             if (!publisher) {
-                return <HeroPage icon={AlertCircleIcon} title="Publisher not found" />
+                return <HeroPage icon={mdiAlertCircle} title="Publisher not found" />
             }
 
             const extensionName =

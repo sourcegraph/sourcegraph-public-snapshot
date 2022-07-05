@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { mdiAlertCircle } from '@mdi/js'
 import { useHistory, useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -58,7 +58,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<
         )
     }
     if (data?.node?.__typename !== 'BatchSpec') {
-        return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
+        return <HeroPage icon={mdiAlertCircle} title="Batch spec not found" />
     }
     const spec = data.node
 
@@ -155,7 +155,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
     }
     // If there weren't any errors and we just didn't receive any data
     if (data?.node?.__typename !== 'BatchSpec') {
-        return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
+        return <HeroPage icon={mdiAlertCircle} title="Batch spec not found" />
     }
 
     const spec = data.node

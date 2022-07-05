@@ -1,11 +1,10 @@
 import { FunctionComponent } from 'react'
 
-import BarChartIcon from 'mdi-react/BarChartIcon'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../components'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent } from '../../../../components/form/hooks/useForm'
 
@@ -47,7 +46,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
 
             <PageHeader
                 className="mb-5"
-                path={[{ icon: BarChartIcon }, { text: 'Create code insight' }]}
+                path={[{ icon: CodeInsightsIcon }, { text: 'Create code insight' }]}
                 description={
                     <Text>
                         Type: <b>Map results</b> | <Link to="/insights/create">Change type</Link>

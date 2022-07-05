@@ -16,7 +16,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert, Icon, IconType } from '@sourcegraph/wildcard'
 
 import { ReferencePanelCta } from './ReferencePanelCta'
 
@@ -50,7 +50,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     locations: Observable<Location[] | null>
 
     /** The icon to use for each location. */
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconType
 
     /** Called when a location is selected. */
     onSelect?: () => void

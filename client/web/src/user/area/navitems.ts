@@ -1,5 +1,4 @@
-import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
-import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
+import { mdiCogOutline, mdiFeatureSearchOutline } from '@mdi/js'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
@@ -9,13 +8,13 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
         to: '/settings',
         label: 'Settings',
-        icon: CogOutlineIcon,
+        icon: mdiCogOutline,
         condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     {
         to: '/searches',
         label: 'Saved searches',
-        icon: FeatureSearchOutlineIcon,
+        icon: mdiFeatureSearchOutline,
         condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     ...namespaceAreaHeaderNavItems,

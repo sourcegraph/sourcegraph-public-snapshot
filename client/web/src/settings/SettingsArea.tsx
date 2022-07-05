@@ -1,8 +1,7 @@
 import * as React from 'react'
 
+import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -31,7 +30,7 @@ import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 /** Props shared by SettingsArea and its sub-pages. */
@@ -131,7 +130,7 @@ export class SettingsArea extends React.Component<Props, State> {
         if (isErrorLike(this.state.dataOrError)) {
             return (
                 <HeroPage
-                    icon={AlertCircleIcon}
+                    icon={mdiAlertCircle}
                     title="Error"
                     subtitle={<ErrorMessage error={this.state.dataOrError} />}
                 />

@@ -1,10 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiBitbucket, mdiExport, mdiGithub, mdiGitlab } from '@mdi/js'
 import { upperFirst, toLower } from 'lodash'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import ExportIcon from 'mdi-react/ExportIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -20,6 +17,7 @@ import {
     PopoverTail,
     PopoverOpenEvent,
     Icon,
+    IconType,
 } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
@@ -199,7 +197,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
     const externalURL = externalURLs[0]
 
     const { displayName, icon } = serviceKindDisplayNameAndIcon(externalURL.serviceKind)
-    const exportIcon = icon || ExportIcon
+    const exportIcon = icon || mdiExport
 
     // Extract url to add branch, line numbers or commit range.
     let url = externalURL.url
@@ -242,7 +240,10 @@ export const GoToCodeHostAction: React.FunctionComponent<
                 onClick={onClick}
                 onAuxClick={onClick}
             >
-                <Icon as={exportIcon} aria-hidden={true} />
+                <Icon
+                    {...(typeof exportIcon === 'string' ? { svgPath: exportIcon } : { as: exportIcon })}
+                    aria-hidden={true}
+                />
                 <span>{descriptiveText}</span>
             </RepoHeaderActionAnchor>
         )
@@ -264,7 +265,10 @@ export const GoToCodeHostAction: React.FunctionComponent<
         return (
             <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
                 <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
-                    <Icon as={exportIcon} aria-hidden={true} />
+                    <Icon
+                        {...(typeof exportIcon === 'string' ? { svgPath: exportIcon } : { as: exportIcon })}
+                        aria-hidden={true}
+                    />
                 </PopoverTrigger>
                 <InstallBrowserExtensionPopover
                     url={url}
@@ -280,27 +284,30 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     return (
         <RepoHeaderActionAnchor {...commonProps}>
-            <Icon as={exportIcon} aria-hidden={true} />
+            <Icon
+                {...(typeof exportIcon === 'string' ? { svgPath: exportIcon } : { as: exportIcon })}
+                aria-hidden={true}
+            />
         </RepoHeaderActionAnchor>
     )
 }
 
 export function serviceKindDisplayNameAndIcon(
     serviceKind: ExternalServiceKind | null
-): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
+): { displayName: string; icon?: IconType } {
     if (!serviceKind) {
         return { displayName: 'code host' }
     }
 
     switch (serviceKind) {
         case ExternalServiceKind.GITHUB:
-            return { displayName: 'GitHub', icon: GithubIcon }
+            return { displayName: 'GitHub', icon: mdiGithub }
         case ExternalServiceKind.GITLAB:
-            return { displayName: 'GitLab', icon: GitlabIcon }
+            return { displayName: 'GitLab', icon: mdiGitlab }
         case ExternalServiceKind.BITBUCKETSERVER:
-            return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
+            return { displayName: 'Bitbucket Server', icon: mdiBitbucket }
         case ExternalServiceKind.BITBUCKETCLOUD:
-            return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
+            return { displayName: 'Bitbucket Cloud', icon: mdiBitbucket }
         case ExternalServiceKind.PHABRICATOR:
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
         case ExternalServiceKind.AWSCODECOMMIT:

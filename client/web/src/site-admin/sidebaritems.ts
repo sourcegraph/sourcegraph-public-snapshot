@@ -1,16 +1,11 @@
-import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
-import CogsIcon from 'mdi-react/CogsIcon'
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
-import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { mdiAccountMultiple, mdiCogs, mdiConsole, mdiEarth, mdiMonitorStar, mdiSourceRepository } from '@mdi/js'
 
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const overviewGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Statistics',
-        icon: EarthIcon,
+        icon: mdiEarth,
     },
     items: [
         {
@@ -32,7 +27,7 @@ export const overviewGroup: SiteAdminSideBarGroup = {
 export const configurationGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Configuration',
-        icon: CogsIcon,
+        icon: mdiCogs,
     },
     items: [
         {
@@ -53,7 +48,7 @@ export const configurationGroup: SiteAdminSideBarGroup = {
 export const repositoriesGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Repositories',
-        icon: SourceRepositoryIcon,
+        icon: mdiSourceRepository,
     },
     items: [
         {
@@ -70,7 +65,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
 export const usersGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Users & auth',
-        icon: AccountMultipleIcon,
+        icon: mdiAccountMultiple,
     },
     items: [
         {
@@ -91,7 +86,7 @@ export const usersGroup: SiteAdminSideBarGroup = {
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Maintenance',
-        icon: MonitorStarIcon,
+        icon: mdiMonitorStar,
     },
     items: [
         {
@@ -139,7 +134,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
 export const apiConsoleGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'API Console',
-        icon: ConsoleIcon,
+        icon: mdiConsole,
     },
     items: [
         {

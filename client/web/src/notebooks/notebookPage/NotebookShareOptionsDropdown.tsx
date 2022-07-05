@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import DomainIcon from 'mdi-react/DomainIcon'
-import WebIcon from 'mdi-react/WebIcon'
+import { mdiLock, mdiChevronUp, mdiChevronDown, mdiWeb, mdiDomain } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Menu, MenuButton, MenuItem, MenuList, Icon } from '@sourcegraph/wildcard'
@@ -10,7 +9,6 @@ import { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
 
 import styles from './NotebookShareOptionsDropdown.module.scss'
-import { mdiLock, mdiChevronUp, mdiChevronDown } from "@mdi/js";
 
 export interface ShareOption {
     namespaceType: 'User' | 'Org'
@@ -31,17 +29,26 @@ const ShareOptionComponent: React.FunctionComponent<
 > = ({ isSourcegraphDotCom, namespaceType, namespaceName, isPublic }) => {
     if (namespaceType === 'User') {
         if (isPublic) {
-            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
+            const PublicIcon = isSourcegraphDotCom ? mdiWeb : mdiDomain
             const publicText = isSourcegraphDotCom ? 'Public' : 'Instance'
             return (
                 <>
-                    <PublicIcon className="mr-2" size="1.15rem" /> {publicText}
+                    <Icon svgPath={PublicIcon} aria-hidden={true} className="mr-2" height="1.15rem" width="1.15rem" />{' '}
+                    {publicText}
                 </>
             )
         }
         return (
             <>
-                <Icon className="mr-2" svgPath={mdiLock} inline={false} aria-hidden={true} height="1.15rem" width="1.15rem" /> Private
+                <Icon
+                    className="mr-2"
+                    svgPath={mdiLock}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />{' '}
+                Private
             </>
         )
     }
@@ -97,7 +104,13 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<
                         <span className="d-flex align-items-center">
                             <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
                         </span>
-                        <span className="ml-5">{isOpen ? <Icon svgPath={mdiChevronUp} inline={false} aria-hidden={true} /> : <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />}</span>
+                        <span className="ml-5">
+                            {isOpen ? (
+                                <Icon svgPath={mdiChevronUp} inline={false} aria-hidden={true} />
+                            ) : (
+                                <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
+                            )}
+                        </span>
                     </MenuButton>
                     <MenuList>
                         {shareOptions.map(option => (

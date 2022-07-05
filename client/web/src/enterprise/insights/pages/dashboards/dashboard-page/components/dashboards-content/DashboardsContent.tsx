@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -145,7 +145,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                     onAddInsightRequest={handleAddInsightRequest}
                 />
             ) : (
-                <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
+                <HeroPage icon={mdiMapSearch} title="Hmm, the dashboard wasn't found." />
             )}
 
             {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (

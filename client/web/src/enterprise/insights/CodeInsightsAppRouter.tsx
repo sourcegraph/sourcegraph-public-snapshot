@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -30,7 +30,7 @@ const EditInsightLazyPage = lazyComponent(
 )
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 const CODE_INSIGHT_STANDALONE_PAGE = true

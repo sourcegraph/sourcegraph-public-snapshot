@@ -10,11 +10,11 @@ import {
     mdiChevronDown,
     mdiChevronRight,
     mdiOpenInNew,
+    mdiMapSearch,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
@@ -101,7 +101,7 @@ export const WorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<W
     }
     // If there weren't any errors and we just didn't receive any data
     if (!data) {
-        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+        return <HeroPage icon={mdiMapSearch} title="404: Not Found" />
     }
 
     const workspace = data

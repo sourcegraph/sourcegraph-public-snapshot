@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, IconType } from '@sourcegraph/wildcard'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
@@ -48,7 +48,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     /**
      * The icon to show to the left of the title.
      */
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconType
 
     /**
      * Called when the file's search result is selected.

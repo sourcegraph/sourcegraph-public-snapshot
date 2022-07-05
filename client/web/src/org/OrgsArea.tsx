@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -23,9 +22,11 @@ import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { JoinOpenBetaPage } from './openBeta/JoinOpenBetaPage'
 import { NewOrgOpenBetaPage } from './openBeta/NewOrganizationPage'
 
+import { mdiMapSearch } from '@mdi/js'
+
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested organization page was not found."
     />

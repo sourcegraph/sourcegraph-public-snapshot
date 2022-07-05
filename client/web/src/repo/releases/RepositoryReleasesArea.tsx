@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import * as H from 'history'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -13,7 +13,7 @@ import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested repository tags page was not found."
     />

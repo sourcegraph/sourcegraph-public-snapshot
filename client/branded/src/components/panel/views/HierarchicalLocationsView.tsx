@@ -1,8 +1,8 @@
 import * as React from 'react'
 
+import { mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -286,7 +286,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         telemetryService={this.props.telemetryService}
                         locations={of(visibleLocations)}
                         onSelect={this.props.onSelectLocation}
-                        icon={FileDocumentIcon}
+                        icon={mdiFileDocument}
                         fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
                         parentContainerIsEmpty={this.state.locationsOrError.result.locations.length === 0}

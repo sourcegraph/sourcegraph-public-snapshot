@@ -35,7 +35,7 @@ export interface GitReferenceNodeProps {
 
     className?: string
 
-    icon?: React.ComponentType<{ className?: string }>
+    icon?: string
 
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
     nodeLinkClassName?: string
@@ -72,7 +72,7 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
                 aria-label={ariaLabel}
             >
                 <span className="d-flex align-items-center">
-                    {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} aria-hidden={true} />}
+                    {ReferenceIcon && <Icon className="mr-1" svgPath={ReferenceIcon} aria-hidden={true} />}
                     {/*
                     a11y-ignore
                     Rule: "color-contrast" (Elements must have sufficient color contrast)

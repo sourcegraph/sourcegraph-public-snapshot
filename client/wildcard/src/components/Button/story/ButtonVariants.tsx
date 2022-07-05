@@ -11,7 +11,7 @@ import styles from './ButtonVariants.module.scss'
 
 interface ButtonVariantsProps extends Pick<ButtonProps, 'size' | 'outline'> {
     variants: readonly typeof BUTTON_VARIANTS[number][]
-    icon?: React.ComponentType<{ className?: string }>
+    icon?: string
 }
 
 export const ButtonVariants: React.FunctionComponent<React.PropsWithChildren<ButtonVariantsProps>> = ({
@@ -24,15 +24,15 @@ export const ButtonVariants: React.FunctionComponent<React.PropsWithChildren<But
         {variants.map(variant => (
             <React.Fragment key={variant}>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log}>
-                    {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon aria-hidden={true} svgPath={ButtonIcon} className="mr-1" />}
                     {startCase(variant)}
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
-                    {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon aria-hidden={true} svgPath={ButtonIcon} className="mr-1" />}
                     Focus
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
-                    {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon aria-hidden={true} svgPath={ButtonIcon} className="mr-1" />}
                     Disabled
                 </Button>
             </React.Fragment>

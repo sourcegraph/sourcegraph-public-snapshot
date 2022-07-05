@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiLock, mdiDotsHorizontal, mdiStar, mdiStarOutline, mdiWeb, mdiDomain } from '@mdi/js'
 import classNames from 'classnames'
-import DomainIcon from 'mdi-react/DomainIcon'
-import WebIcon from 'mdi-react/WebIcon'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
@@ -34,7 +33,6 @@ import { ShareOption } from './NotebookShareOptionsDropdown'
 import { ShareNotebookModal } from './ShareNotebookModal'
 
 import styles from './NotebookPageHeaderActions.module.scss'
-import { mdiLock, mdiDotsHorizontal, mdiStar, mdiStarOutline } from "@mdi/js";
 
 export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     isSourcegraphDotCom: boolean
@@ -86,11 +84,25 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
             return <></>
         }
         if (selectedShareOption.namespaceType === 'User') {
-            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
+            const PublicIcon = isSourcegraphDotCom ? mdiWeb : mdiDomain
             return selectedShareOption.isPublic ? (
-                <PublicIcon className="mr-1" size="1.15rem" />
+                <Icon
+                    inline={false}
+                    svgPath={PublicIcon}
+                    aria-hidden={true}
+                    className="mr-1"
+                    height="1.15rem"
+                    width="1.15rem"
+                />
             ) : (
-                <Icon className="mr-1" svgPath={mdiLock} inline={false} aria-hidden={true} height="1.15rem" width="1.15rem" />
+                <Icon
+                    className="mr-1"
+                    svgPath={mdiLock}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />
             )
         }
         return (
@@ -252,7 +264,8 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
             {viewerHasStarred ? (
                 <Icon
                     aria-hidden={true}
-                    className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)} svgPath={mdiStar}
+                    className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
+                    svgPath={mdiStar}
                 />
             ) : (
                 <Icon aria-hidden={true} className={styles.notebookStarIcon} svgPath={mdiStarOutline} />

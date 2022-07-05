@@ -1,17 +1,16 @@
 import React from 'react'
 
+import { mdiExport, mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
-import ExportIcon from 'mdi-react/ExportIcon'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { ButtonLink, PopoverContent, Position, H3, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, PopoverContent, Position, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 import styles from './InstallBrowserExtensionPopover.module.scss'
-import { mdiPlusThick } from "@mdi/js";
 
 interface Props {
     url: string
@@ -29,7 +28,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<React.Props
     onInstall,
 }) => {
     const { displayName, icon } = serviceKindDisplayNameAndIcon(serviceKind)
-    const Icon = icon || ExportIcon
+    const displayIcon = icon || mdiExport
 
     // Open all external links in new tab
     const linkProps = { rel: 'noopener noreferrer', target: '_blank' }
@@ -60,7 +59,11 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<React.Props
                 >
                     <SourcegraphIcon className={classNames('p-1', styles.logo)} />
                     <Icon className={styles.plusIcon} svgPath={mdiPlusThick} inline={false} aria-hidden={true} />
-                    <Icon className={styles.logo} aria-hidden={true} />
+                    <Icon
+                        className={styles.logo}
+                        {...(typeof displayIcon === 'string' ? { svgPath: displayIcon } : { as: displayIcon })}
+                        aria-hidden={true}
+                    />
                 </div>
 
                 <div className="d-flex justify-content-end">

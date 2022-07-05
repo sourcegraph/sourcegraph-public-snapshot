@@ -1,11 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import {
+    mdiFormatQuoteOpen,
+    mdiBookmarkOutline,
+    mdiMenu,
+    mdiArrowCollapseUp,
+    mdiArrowExpandDown,
+    mdiMenuUp,
+    mdiMenuDown,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
@@ -42,7 +47,6 @@ import { CreateActionsMenu } from './CreateActionsMenu'
 import featureTourStyles from '../FeatureTour.module.scss'
 import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
-import { mdiFormatQuoteOpen, mdiBookmarkOutline, mdiMenu } from "@mdi/js";
 
 function getFeatureTourElementFunc(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
     return (onClose: () => void): HTMLElement => {
@@ -371,7 +375,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 >
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiMenu} />
                     Filters
-                    <Icon aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} svgPath={showFilters ? mdiMenuUp : mdiMenuDown} />
                 </Button>
 
                 {props.stats}
@@ -468,7 +472,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     <Icon
                                         aria-hidden={true}
                                         className="mr-0"
-                                        as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}
+                                        svgPath={props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
                                     />
                                 </Button>
                             </li>

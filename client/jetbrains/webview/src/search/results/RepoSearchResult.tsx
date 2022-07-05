@@ -1,7 +1,6 @@
 import React from 'react'
 
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-
+import { mdiSourceRepository } from '@mdi/js'
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 
@@ -25,7 +24,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
         <SelectableSearchResult match={match} selectResult={selectResult} selectedResult={selectedResult}>
             {isActive => (
                 <SearchResultLayout
-                    iconColumn={{ icon: SourceRepositoryIcon, repoName: match.repository }}
+                    iconColumn={{ icon: mdiSourceRepository, repoName: match.repository }}
                     infoColumn={
                         formattedRepositoryStarCount && (
                             <>

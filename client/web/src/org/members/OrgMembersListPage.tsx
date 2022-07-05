@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiChevronDown, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -18,7 +18,9 @@ import {
     MenuItem,
     Position,
     PageSelector,
-    H3, Icon } from '@sourcegraph/wildcard'
+    H3,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {
@@ -39,7 +41,6 @@ import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } fro
 import { getPaginatedItems, OrgMemberNotification } from './utils'
 
 import styles from './OrgMembersListPage.module.scss'
-import { mdiCog } from "@mdi/js";
 
 interface Props
     extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
@@ -135,8 +136,14 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                                 disabled={loading}
                             >
                                 <Icon svgPath={mdiCog} inline={false} aria-hidden={true} height={15} width={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
+                                <span>
+                                    <Icon
+                                        svgPath={mdiChevronDown}
+                                        inline={true}
+                                        aria-hidden={true}
+                                        height={15}
+                                        width={15}
+                                    />
                                 </span>
                             </MenuButton>
 

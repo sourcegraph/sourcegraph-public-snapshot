@@ -1,7 +1,6 @@
 import React from 'react'
 
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-
+import { mdiFileDocument } from '@mdi/js'
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 
@@ -24,7 +23,7 @@ export const PathSearchResult: React.FunctionComponent<Props> = ({ match, select
                 <SearchResultLayout
                     isActive={isActive}
                     iconColumn={{
-                        icon: FileDocumentIcon,
+                        icon: mdiFileDocument,
                         repoName: match.repository,
                     }}
                     infoColumn={

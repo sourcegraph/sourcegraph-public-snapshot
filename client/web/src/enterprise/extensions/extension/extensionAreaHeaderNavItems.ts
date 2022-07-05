@@ -1,4 +1,4 @@
-import LockIcon from 'mdi-react/LockIcon'
+import { mdiLock } from '@mdi/js'
 
 import { ExtensionAreaHeaderNavItem } from '../../../extensions/extension/ExtensionAreaHeader'
 import { extensionAreaHeaderNavItems } from '../../../extensions/extension/extensionAreaHeaderNavItems'
@@ -9,7 +9,7 @@ export const enterpriseExtensionAreaHeaderNavItems: readonly ExtensionAreaHeader
         condition: context =>
             !!context.extension.registryExtension && context.extension.registryExtension.viewerCanAdminister,
         to: '/-/manage',
-        icon: LockIcon,
+        icon: mdiLock,
         label: 'Manage',
     },
 ]

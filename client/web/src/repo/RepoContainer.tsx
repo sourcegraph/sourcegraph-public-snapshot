@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiSourceRepository, mdiChevronDown } from '@mdi/js'
+import { mdiSourceRepository, mdiChevronDown, mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -114,7 +112,7 @@ export interface RepoContainerContext
 export interface RepoContainerRoute extends RouteDescriptor<RepoContainerContext> {}
 
 const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
 interface RepoContainerProps
@@ -365,7 +363,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         if (isRepoNotFoundErrorLike(repoOrError)) {
             return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
         }
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
+        return <HeroPage icon={mdiAlertCircle} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
     }
 
     const isCodeIntelRepositoryBadgeEnabled =

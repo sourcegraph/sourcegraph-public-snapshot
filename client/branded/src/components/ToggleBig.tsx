@@ -1,7 +1,9 @@
 import * as React from 'react'
 
+import { mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
-import Check from 'mdi-react/CheckIcon'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './ToggleBig.module.scss'
 
@@ -100,7 +102,16 @@ export const ToggleBig: React.FunctionComponent<React.PropsWithChildren<Props>> 
                     [styles.knobOn]: value,
                 })}
             >
-                {value && <Check size={16} className={styles.iconOn} />}
+                {value && (
+                    <Icon
+                        height={16}
+                        width={16}
+                        className={styles.iconOn}
+                        svgPath={mdiCheck}
+                        inline={false}
+                        aria-hidden={true}
+                    />
+                )}
             </span>
             <span className={classNames(styles.text, { [styles.textOn]: value })}>
                 {value ? 'Enabled' : 'Disabled'}

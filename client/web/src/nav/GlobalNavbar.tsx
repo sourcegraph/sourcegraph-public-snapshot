@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiBookOutline, mdiMagnify, mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import BarChartIcon from 'mdi-react/BarChartIcon'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -45,6 +42,7 @@ import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { CodeInsightsIcon } from '../insights/Icons'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
@@ -260,7 +258,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         toggleItem={{
                             path: PageRoutes.Search,
                             altPath: PageRoutes.RepoContainer,
-                            icon: MagnifyIcon,
+                            icon: mdiMagnify,
                             content: 'Code Search',
                             variant: navLinkVariant,
                         }}
@@ -269,7 +267,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         items={searchNavBarItems}
                     />
                     {showSearchNotebook && (
-                        <NavItem icon={BookOutlineIcon}>
+                        <NavItem icon={mdiBookOutline}>
                             <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
                                 Notebooks
                             </NavLink>
@@ -289,13 +287,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         <BatchChangesNavItem variant={navLinkVariant} />
                     )}
                     {codeInsights && (
-                        <NavItem icon={BarChartIcon}>
+                        <NavItem icon={CodeInsightsIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>
                     )}
-                    <NavItem icon={PuzzleOutlineIcon}>
+                    <NavItem icon={mdiPuzzleOutline}>
                         <NavLink variant={navLinkVariant} to="/extensions">
                             Extensions
                         </NavLink>

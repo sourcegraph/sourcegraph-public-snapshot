@@ -1,6 +1,4 @@
-import BrainIcon from 'mdi-react/BrainIcon'
-import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import { mdiBrain, mdiBriefcase, mdiPuzzleOutline } from '@mdi/js'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -40,7 +38,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
 const extensionsGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Extensions',
-        icon: PuzzleOutlineIcon,
+        icon: mdiPuzzleOutline,
     },
     items: [
         {
@@ -75,7 +73,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Business', icon: BriefcaseIcon },
+    header: { label: 'Business', icon: mdiBriefcase },
     items: [
         {
             label: 'Customers',
@@ -97,7 +95,7 @@ const businessGroup: SiteAdminSideBarGroup = {
 }
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Code intelligence', icon: BrainIcon },
+    header: { label: 'Code intelligence', icon: mdiBrain },
     items: [
         {
             to: '/site-admin/code-intelligence/uploads',

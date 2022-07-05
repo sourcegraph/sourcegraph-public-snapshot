@@ -5,7 +5,7 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, IconType, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './Toggles.module.scss'
 
@@ -13,7 +13,7 @@ export interface ToggleProps {
     /** Title of the toggle.  */
     title: string
     /** Icon to display.  */
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconType
     /** Condition for when the toggle should have an active state.  */
     isActive: boolean
     /** Callback on toggle.  */
@@ -100,7 +100,10 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
                 aria-checked={isActive}
                 {...interactiveProps}
             >
-                <Icon aria-hidden={true} as={props.icon} />
+                <Icon
+                    aria-hidden={true}
+                    {...(typeof props.icon === 'string' ? { svgPath: props.icon } : { as: props.icon })}
+                />
             </Button>
         </Tooltip>
     )

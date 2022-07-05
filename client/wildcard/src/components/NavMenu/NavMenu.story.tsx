@@ -1,8 +1,6 @@
-import { mdiPoll, mdiAntenna, mdiMenu, mdiMenuUp, mdiMenuDown } from '@mdi/js'
+import { mdiPoll, mdiAntenna, mdiMenu, mdiMenuUp, mdiMenuDown, mdiFileTreeOutline, mdiOpenInNew } from '@mdi/js'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import FileTreeOutlineIcon from 'mdi-react/FileTreeOutlineIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -120,7 +118,7 @@ const navItems: NavMenuSectionProps[] = [
             {
                 content: 'Help',
                 onSelect: noop,
-                suffixIcon: OpenInNewIcon,
+                suffixIcon: mdiOpenInNew,
                 key: 'Help',
             },
             {
@@ -134,13 +132,13 @@ const navItems: NavMenuSectionProps[] = [
         navItems: [
             {
                 content: 'About Sourcegraph',
-                suffixIcon: OpenInNewIcon,
+                suffixIcon: mdiOpenInNew,
                 to: 'https://about.sourcegraph.com',
                 key: 'Sourcegraph',
             },
             {
                 content: 'Browser Extension',
-                suffixIcon: OpenInNewIcon,
+                suffixIcon: mdiOpenInNew,
                 to: 'https://docs.sourcegraph.com/integration/browser_extension',
                 key: 'Extension',
             },
@@ -168,7 +166,7 @@ export const UserNav: Story = () => (
 const singleSectionNavItems: NavMenuSectionProps[] = [
     {
         navItems: [
-            { content: 'Batch Changes', prefixIcon: FileTreeOutlineIcon, key: 'Batch Changes' },
+            { content: 'Batch Changes', prefixIcon: mdiFileTreeOutline, key: 'Batch Changes' },
             {
                 content: (
                     <Button variant="link" className="w-100 text-left">

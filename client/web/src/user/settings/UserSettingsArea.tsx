@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -32,7 +32,7 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 import styles from './UserSettingsArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
@@ -145,7 +145,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
     if (authenticatedUser.id !== user.id && !user.viewerCanAdminister) {
         return (
             <HeroPage
-                icon={MapSearchIcon}
+                icon={mdiMapSearch}
                 title="403: Forbidden"
                 subtitle="You are not authorized to view or edit this user's settings."
             />

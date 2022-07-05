@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 
+import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -286,7 +285,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         return (
             <>
                 {alwaysRender}
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={blobInfoOrError} />} />
+                <HeroPage icon={mdiAlertCircle} title="Error" subtitle={<ErrorMessage error={blobInfoOrError} />} />
             </>
         )
     }
@@ -308,7 +307,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         return (
             <div className={styles.placeholder}>
                 <HeroPage
-                    icon={MapSearchIcon}
+                    icon={mdiMapSearch}
                     title="Not found"
                     subtitle={`${filePath} does not exist at this revision.`}
                 />

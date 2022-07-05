@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react'
 
+import { mdiAlertCircle, mdiMapSearch, mdiMinusCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
@@ -27,7 +25,7 @@ import styles from './RepoSettingsArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested repository page was not found."
     />
@@ -68,7 +66,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
         return null
     }
     if (isErrorLike(repoOrError)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError.message} />} />
+        return <HeroPage icon={mdiAlertCircle} title="Error" subtitle={<ErrorMessage error={repoOrError.message} />} />
     }
     if (repoOrError === null) {
         return <NotFoundPage />
@@ -76,7 +74,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     if (!repoOrError.viewerCanAdminister) {
         return (
             <HeroPage
-                icon={MinusCircleIcon}
+                icon={mdiMinusCircle}
                 title="Forbidden"
                 subtitle="You are not authorized to view or change this repository's settings."
             />

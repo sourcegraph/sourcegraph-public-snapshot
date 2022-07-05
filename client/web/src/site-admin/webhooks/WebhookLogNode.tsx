@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { format } from 'date-fns'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
@@ -13,7 +12,6 @@ import { MessagePanel } from './MessagePanel'
 import { StatusCode } from './StatusCode'
 
 import styles from './WebhookLogNode.module.scss'
-import { mdiChevronDown, mdiChevronRight } from "@mdi/js";
 
 export interface Props {
     node: WebhookLogFields
@@ -40,7 +38,7 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleExpanded}
                 >
-                    <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                    <Icon aria-hidden={true} as={isExpanded ? mdiChevronDown : mdiChevronRight} />
                 </Button>
             </span>
             <span className={styles.statusCode}>

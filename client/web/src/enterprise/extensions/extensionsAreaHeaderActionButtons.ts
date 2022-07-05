@@ -1,4 +1,4 @@
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 
 import { ExtensionsAreaHeaderActionButton } from '../../extensions/ExtensionsAreaHeader'
 import { extensionsAreaHeaderActionButtons } from '../../extensions/extensionsAreaHeaderActionButtons'
@@ -8,7 +8,7 @@ export const enterpriseExtensionsAreaHeaderActionButtons: readonly ExtensionsAre
     {
         label: 'Create extension',
         to: () => '/extensions/registry/new',
-        icon: AddIcon,
+        icon: mdiPlus,
         condition: context => context.isPrimaryHeader,
     },
 ]

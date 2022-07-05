@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
+import { mdiMagnify } from '@mdi/js'
 import * as H from 'history'
-import SearchIcon from 'mdi-react/SearchIcon'
 import { useLocation } from 'react-router'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
@@ -49,7 +49,7 @@ const GitReferencePopoverNode: React.FunctionComponent<React.PropsWithChildren<G
             ancestorIsLink={false}
             active={isCurrent}
             onClick={onClick}
-            icon={isSpeculative ? SearchIcon : undefined}
+            icon={isSpeculative ? mdiMagnify : undefined}
         />
     )
 }

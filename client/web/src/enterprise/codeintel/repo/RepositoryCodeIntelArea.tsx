@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -21,6 +20,8 @@ import { CodeIntelUploadPageProps } from '../uploads/pages/CodeIntelUploadPage'
 import { CodeIntelUploadsPageProps } from '../uploads/pages/CodeIntelUploadsPage'
 
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
+
+import { mdiMapSearch } from '@mdi/js'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
@@ -112,7 +113,7 @@ export const routes: readonly CodeIntelAreaRoute[] = [
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested repository page was not found."
     />

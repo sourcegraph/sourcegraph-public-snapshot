@@ -2,13 +2,15 @@ import React from 'react'
 
 import { RouteComponentProps } from 'react-router'
 
+import { IconType } from '@sourcegraph/wildcard'
+
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
     readonly condition?: (context: C) => boolean
 }
 
 interface WithIcon {
-    readonly icon?: React.ComponentType<{ className?: string }>
+    readonly icon?: IconType
 }
 
 /**
@@ -35,7 +37,7 @@ export interface RouteDescriptor<C extends object = {}, P = any> extends Conditi
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {
     readonly header?: {
         readonly label: string
-        readonly icon?: React.ComponentType<{ className?: string }>
+        readonly icon?: IconType
         readonly source?: 'server' | 'client'
     }
     readonly items: readonly NavItemDescriptor<C>[]

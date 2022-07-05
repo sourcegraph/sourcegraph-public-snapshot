@@ -1,6 +1,6 @@
+import { mdiMagnify } from '@mdi/js'
 import { boolean, select } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -61,8 +61,8 @@ export const AllButtons: Story = () => (
         <ButtonVariants variants={['primary', 'secondary', 'danger']} outline={true} />
         <H2>Icons</H2>
         <Text>We can use icons with our buttons.</Text>
-        <ButtonVariants variants={['danger']} icon={SearchIcon} />
-        <ButtonVariants variants={['danger']} icon={SearchIcon} outline={true} />
+        <ButtonVariants variants={['danger']} icon={mdiMagnify} />
+        <ButtonVariants variants={['danger']} icon={mdiMagnify} outline={true} />
         <H2>Smaller</H2>
         <Text>We can make our buttons smaller.</Text>
         <ButtonVariants variants={['primary']} size="sm" outline={true} />

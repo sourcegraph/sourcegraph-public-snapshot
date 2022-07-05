@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, IconType } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -32,7 +32,7 @@ export interface ResultContainerProps {
     /**
      * The icon to show left to the title.
      */
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconType
 
     /**
      * The title component.
@@ -165,7 +165,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                 <div className={styles.header} id={`result-container-${index}`}>
                     <Icon
                         className="flex-shrink-0"
-                        as={icon}
+                        {...(typeof icon === 'string' ? { svgPath: icon } : { as: icon })}
                         {...(resultType
                             ? {
                                   'aria-label': `${resultType} result`,

@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -103,7 +103,7 @@ export const AllOptionsPages: Story = () => (
                 <div className="mx-4">
                     <H3 className="text-center">Asking for permission</H3>
                     <OptionsPageWrapper
-                        permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
+                        permissionAlert={{ name: 'GitHub', icon: mdiGithub }}
                         requestPermissionsHandler={requestPermissionsHandler}
                     />
                 </div>

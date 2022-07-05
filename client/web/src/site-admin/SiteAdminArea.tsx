@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -22,14 +22,14 @@ import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<React.PropsWithChildren<{}>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested site admin page was not found."
     />
 )
 
 const NotSiteAdminPage: React.ComponentType<React.PropsWithChildren<{}>> = () => (
-    <HeroPage icon={MapSearchIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
+    <HeroPage icon={mdiMapSearch} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
 export interface SiteAdminAreaRouteContext

@@ -1,10 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react'
 
 import { EditorView } from '@codemirror/view'
+import { mdiCheck, mdiPencil, mdiOpenInNew, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CheckIcon from 'mdi-react/CheckIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -36,7 +35,6 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
 import styles from './NotebookSymbolBlock.module.scss'
-import { mdiOpenInNew, mdiInformationOutline } from "@mdi/js";
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
@@ -136,7 +134,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={showInputs ? mdiCheck : mdiPencil} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -275,7 +273,8 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
                 >
                     <Icon
                         aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
-                        className="ml-1" svgPath={mdiInformationOutline}
+                        className="ml-1"
+                        svgPath={mdiInformationOutline}
                     />
                 </Tooltip>
             )}

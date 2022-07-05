@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import { subDays, startOfDay } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
@@ -94,7 +94,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
     }
     // If there weren't any errors and we just didn't receive any data
     if (!data || !data.batchChange) {
-        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
+        return <HeroPage icon={mdiAlertCircle} title="Batch change not found" />
     }
 
     const { batchChange } = data

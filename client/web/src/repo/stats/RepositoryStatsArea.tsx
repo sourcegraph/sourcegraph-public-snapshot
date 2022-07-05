@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -10,9 +9,11 @@ import { RepositoryFields } from '../../graphql-operations'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
 
+import { mdiMapSearch } from '@mdi/js'
+
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested repository stats page was not found."
     />

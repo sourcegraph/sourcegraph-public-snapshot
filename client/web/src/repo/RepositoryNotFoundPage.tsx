@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
@@ -91,7 +91,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <HeroPage
-                icon={MapSearchIcon}
+                icon={mdiMapSearch}
                 title="Repository not found"
                 subtitle={
                     <div className={styles.repositoryNotFoundPage}>

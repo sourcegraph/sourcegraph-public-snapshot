@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
@@ -119,7 +118,11 @@ export const SearchSidebarSection: React.FunctionComponent<
                         <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
                             {header}
                         </H5>
-                        <Icon aria-hidden={true} className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        <Icon
+                            aria-hidden={true}
+                            className="mr-1"
+                            svgPath={isOpened ? mdiChevronDown : mdiChevronLeft}
+                        />
                     </CollapseHeader>
 
                     <CollapsePanel>

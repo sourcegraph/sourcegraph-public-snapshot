@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { mdiSourceCommit } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -72,7 +72,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     return (
         <ResultContainer
             index={index}
-            icon={SourceCommitIcon}
+            icon={mdiSourceCommit}
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}

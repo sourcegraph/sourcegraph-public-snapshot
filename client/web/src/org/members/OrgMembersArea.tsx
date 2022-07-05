@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import * as H from 'history'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,7 +19,7 @@ import { OrgPendingInvitesPage } from './OrgPendingInvites'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested organization page was not found."
     />

@@ -17765,11 +17765,6 @@ mdast-util-to-hast@10.0.1:
     unist-util-position "^3.0.0"
     unist-util-visit "^2.0.0"
 
-mdi-react@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-8.1.0.tgz#faaa1d20e69b70c03e60588d989c6d58031263f3"
-  integrity sha512-MK/u2TbzyTW61DTzqPdewFjwt/joHndswlEpLRIHXhzbs7E//wncS1C4LVy/U6MLUVTjEc/9Vm70Y7qRFN0StA==
-
 mdn-data@2.0.14:
   version "2.0.14"
   resolved "https://registry.npmjs.org/mdn-data/-/mdn-data-2.0.14.tgz#7113fc4281917d63ce29b43446f701e68c25ba50"

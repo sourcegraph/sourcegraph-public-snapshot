@@ -1,8 +1,7 @@
 import React from 'react'
 
-import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
+import { mdiSourceFork, mdiArchive, mdiLock, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { SearchResultStyles as styles, LastSyncedIcon, ResultContainer } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -115,7 +114,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
         <ResultContainer
             as={as}
             index={index}
-            icon={SourceRepositoryIcon}
+            icon={mdiSourceRepository}
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}

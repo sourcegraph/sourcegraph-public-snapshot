@@ -1,7 +1,6 @@
 import React, { useContext, useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-
+import { mdiMapSearch } from '@mdi/js'
 import { Badge, LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
@@ -47,7 +46,7 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
     if (!insight) {
         return (
             <HeroPage
-                icon={MapSearchIcon}
+                icon={mdiMapSearch}
                 title="Oops, we couldn't find that insight"
                 subtitle={
                     <span>

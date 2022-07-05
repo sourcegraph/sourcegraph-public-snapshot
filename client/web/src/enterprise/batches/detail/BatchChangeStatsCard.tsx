@@ -1,8 +1,7 @@
 import React from 'react'
 
+import { mdiCheckCircleOutline, mdiProgressCheck } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Badge, Icon, H1, H2 } from '@sourcegraph/wildcard'
@@ -38,9 +37,9 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     const { changesetsStats: stats, diffStat } = batchChange
     const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
     const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
-    let BatchChangeStatusIcon = ProgressCheckIcon
+    let BatchChangeStatusIcon = mdiProgressCheck
     if (isCompleted) {
-        BatchChangeStatusIcon = CheckCircleOutlineIcon
+        BatchChangeStatusIcon = mdiCheckCircleOutline
     }
     return (
         <div className={classNames(className)}>
@@ -61,7 +60,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <H1 className="d-inline mb-0" aria-label="Batch Change Status">
                         <Icon
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
-                            as={BatchChangeStatusIcon}
+                            svgPath={BatchChangeStatusIcon}
                             aria-label="Batch Change Status Icon"
                         />
                     </H1>{' '}

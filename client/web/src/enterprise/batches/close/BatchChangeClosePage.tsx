@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import { subDays } from 'date-fns'
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -105,7 +105,7 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
 
     // Batch change not found.
     if (batchChange === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
+        return <HeroPage icon={mdiAlertCircle} title="Batch change not found" />
     }
 
     return (

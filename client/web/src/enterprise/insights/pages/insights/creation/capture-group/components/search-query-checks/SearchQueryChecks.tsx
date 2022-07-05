@@ -1,8 +1,7 @@
 import React from 'react'
 
-import { mdiClose, mdiRadioboxBlank } from '@mdi/js'
+import { mdiCheck, mdiClose, mdiRadioboxBlank } from '@mdi/js'
 import classNames from 'classnames'
-import Check from 'mdi-react/CheckIcon'
 
 import { Icon, Code } from '@sourcegraph/wildcard'
 
@@ -25,7 +24,7 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
     if (valid === true) {
         return (
             <>
-                <Icon aria-hidden={true} className={classNames(styles.icon, 'text-success')} as={Check} />
+                <Icon aria-hidden={true} className={classNames(styles.icon, 'text-success')} svgPath={mdiCheck} />
                 <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
             </>
         )

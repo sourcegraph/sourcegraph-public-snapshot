@@ -1,9 +1,7 @@
 import React, { useCallback } from 'react'
 
+import { mdiAlphaSBox, mdiFile, mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
-import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import FileIcon from 'mdi-react/FileIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -222,13 +220,13 @@ function itemKey(item: SearchMatch): string {
     return getMatchUrl(item)
 }
 
-function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
+function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): string {
     switch (result.type) {
         case 'content':
-            return FileDocumentIcon
+            return mdiFileDocument
         case 'symbol':
-            return AlphaSBoxIcon
+            return mdiAlphaSBox
         case 'path':
-            return FileIcon
+            return mdiFile
     }
 }

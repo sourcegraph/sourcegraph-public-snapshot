@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -26,6 +25,8 @@ import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+
+import { mdiMapSearch } from '@mdi/js'
 
 /**
  * GraphQL fragment for the User fields needed by UserArea.
@@ -229,5 +230,5 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
 }
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )

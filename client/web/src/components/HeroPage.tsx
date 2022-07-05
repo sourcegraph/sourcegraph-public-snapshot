@@ -2,12 +2,12 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H1 } from '@sourcegraph/wildcard'
+import { Link, H1, Icon, IconType } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
 interface HeroPageProps {
-    icon?: React.ComponentType<React.PropsWithChildren<any>>
+    icon?: IconType
     iconLinkTo?: string
     iconClassName?: string
     className?: string
@@ -32,10 +32,18 @@ export const HeroPage: React.FunctionComponent<React.PropsWithChildren<HeroPageP
             <div className={classNames(styles.icon, props.iconClassName)}>
                 {props.iconLinkTo ? (
                     <Link to={props.iconLinkTo}>
-                        <props.icon />
+                        <Icon
+                            {...(typeof props.icon === 'string' ? { svgPath: props.icon } : { as: props.icon })}
+                            inline={false}
+                            aria-hidden={true}
+                        />
                     </Link>
                 ) : (
-                    <props.icon />
+                    <Icon
+                        {...(typeof props.icon === 'string' ? { svgPath: props.icon } : { as: props.icon })}
+                        inline={false}
+                        aria-hidden={true}
+                    />
                 )}
             </div>
         )}

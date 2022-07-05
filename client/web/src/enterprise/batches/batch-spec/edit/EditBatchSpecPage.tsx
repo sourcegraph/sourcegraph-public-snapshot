@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useHistory } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -39,6 +38,8 @@ import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPa
 import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
+import { mdiAlertCircle } from '@mdi/js'
+
 export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     batchChange: { name: string; namespace: Scalars['ID'] }
 }
@@ -73,7 +74,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     }
     // If there weren't any errors and we just didn't receive any data
     if (!data?.batchChange) {
-        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
+        return <HeroPage icon={mdiAlertCircle} title="Batch change not found" />
     }
 
     // The first node from the batch specs is the latest batch spec for a batch change. If

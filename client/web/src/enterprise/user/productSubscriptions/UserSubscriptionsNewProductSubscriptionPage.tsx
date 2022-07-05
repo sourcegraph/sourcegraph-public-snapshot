@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
@@ -72,7 +72,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
     )
 
     if (user && !user.viewerCanAdminister) {
-        return <HeroPage icon={AlertCircleIcon} title="Not authorized" />
+        return <HeroPage icon={mdiAlertCircle} title="Not authorized" />
     }
 
     return (

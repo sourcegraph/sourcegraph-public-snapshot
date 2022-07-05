@@ -1,6 +1,5 @@
 import React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -22,6 +21,8 @@ import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 
 import type { DotcomGettingStartedPageProps } from './DotcomGettingStartedPage'
+
+import { mdiMapSearch } from '@mdi/js'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
@@ -72,7 +73,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
 )
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 interface AuthenticatedProps extends Props {

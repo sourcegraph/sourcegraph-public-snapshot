@@ -1,11 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -217,7 +215,7 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
         if (isRepoNotFoundErrorLike(props.resolvedRevisionOrError)) {
             return (
                 <HeroPage
-                    icon={MapSearchIcon}
+                    icon={mdiMapSearch}
                     title="404: Not Found"
                     subtitle="The requested repository was not found."
                 />
@@ -228,16 +226,12 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                 return <EmptyRepositoryPage />
             }
             return (
-                <HeroPage
-                    icon={MapSearchIcon}
-                    title="404: Not Found"
-                    subtitle="The requested revision was not found."
-                />
+                <HeroPage icon={mdiMapSearch} title="404: Not Found" subtitle="The requested revision was not found." />
             )
         }
         return (
             <HeroPage
-                icon={AlertCircleIcon}
+                icon={mdiAlertCircle}
                 title="Error"
                 subtitle={<ErrorMessage error={props.resolvedRevisionOrError} />}
             />

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,7 +14,7 @@ import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTok
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 interface Props

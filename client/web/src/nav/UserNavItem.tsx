@@ -1,9 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 // eslint-disable-next-line no-restricted-imports
 import { Tooltip } from 'reactstrap'
 
@@ -34,7 +33,6 @@ import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
-import { mdiOpenInNew } from "@mdi/js";
 
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     authenticatedUser: Pick<
@@ -154,7 +152,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         targetID={targetID}
                                         className={styles.avatar}
                                     />
-                                    <Icon as={isExpanded ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                                    <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
                             {isExtensionAlertAnimating && (

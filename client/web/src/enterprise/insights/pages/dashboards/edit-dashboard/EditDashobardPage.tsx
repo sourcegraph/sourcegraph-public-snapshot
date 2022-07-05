@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router'
 
 import { asError } from '@sourcegraph/common'
@@ -63,7 +63,7 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
     if (dashboard === null || isVirtualDashboard(dashboard)) {
         return (
             <HeroPage
-                icon={MapSearchIcon}
+                icon={mdiMapSearch}
                 title="Oops, we couldn't find the dashboard"
                 subtitle={
                     <span>

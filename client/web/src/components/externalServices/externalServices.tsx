@@ -1,19 +1,21 @@
 import React from 'react'
 
+import {
+    mdiAws,
+    mdiBitbucket,
+    mdiGit,
+    mdiGithub,
+    mdiGitlab,
+    mdiLanguageGo,
+    mdiLanguageJava,
+    mdiLanguagePython,
+    mdiLanguageRust,
+    mdiNpm,
+} from '@mdi/js'
 import { Edit, JSONPath, ModificationOptions, modify } from 'jsonc-parser'
-import AwsIcon from 'mdi-react/AwsIcon'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitIcon from 'mdi-react/GitIcon'
-import GitLabIcon from 'mdi-react/GitlabIcon'
-import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
-import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
-import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
-import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
-import NpmIcon from 'mdi-react/NpmIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Code, Text } from '@sourcegraph/wildcard'
+import { Link, Code, Text, IconType } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -49,7 +51,7 @@ export interface AddExternalServiceOptions {
     /**
      * Icon to show in the external service "button"
      */
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconType
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -519,7 +521,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     title: 'GitHub',
-    icon: GithubIcon,
+    icon: mdiGithub,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
     instructions: githubInstructions(false),
@@ -544,7 +546,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
     title: 'AWS CodeCommit repositories',
-    icon: AwsIcon,
+    icon: mdiAws,
     jsonSchema: awsCodeCommitSchemaJSON,
     defaultDisplayName: 'AWS CodeCommit',
     defaultConfig: `{
@@ -664,7 +666,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
 const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETCLOUD,
     title: 'Bitbucket.org',
-    icon: BitbucketIcon,
+    icon: mdiBitbucket,
     jsonSchema: bitbucketCloudSchemaJSON,
     defaultDisplayName: 'Bitbucket Cloud',
     defaultConfig: `{
@@ -752,7 +754,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
 const BITBUCKET_SERVER: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETSERVER,
     title: 'Bitbucket Server',
-    icon: BitbucketIcon,
+    icon: mdiBitbucket,
     jsonSchema: bitbucketServerSchemaJSON,
     defaultDisplayName: 'Bitbucket Server',
     defaultConfig: `{
@@ -915,7 +917,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
     title: 'GitLab',
-    icon: GitLabIcon,
+    icon: mdiGitlab,
     jsonSchema: gitlabSchemaJSON,
     defaultDisplayName: 'GitLab',
     defaultConfig: `{
@@ -944,7 +946,7 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
     title: 'Sourcegraph CLI Serve-Git',
-    icon: GitIcon,
+    icon: mdiGit,
     jsonSchema: otherExternalServiceSchemaJSON,
     defaultDisplayName: 'src serve-git',
     defaultConfig: `{
@@ -984,7 +986,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
 const GITOLITE: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITOLITE,
     title: 'Gitolite',
-    icon: GitIcon,
+    icon: mdiGit,
     jsonSchema: gitoliteSchemaJSON,
     defaultDisplayName: 'Gitolite',
     defaultConfig: `{
@@ -1090,7 +1092,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
 const GENERIC_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
     title: 'Generic Git host',
-    icon: GitIcon,
+    icon: mdiGit,
     jsonSchema: otherExternalServiceSchemaJSON,
     defaultDisplayName: 'Git repositories',
     defaultConfig: `{
@@ -1204,7 +1206,7 @@ const PERFORCE: AddExternalServiceOptions = {
 const JVM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.JVMPACKAGES,
     title: 'JVM Dependencies',
-    icon: LanguageJavaIcon,
+    icon: mdiLanguageJava,
     jsonSchema: jvmPackagesSchemaJSON,
     defaultDisplayName: 'JVM Dependencies',
     defaultConfig: `{
@@ -1238,7 +1240,7 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
 const PAGURE: AddExternalServiceOptions = {
     kind: ExternalServiceKind.PAGURE,
     title: 'Pagure',
-    icon: GitIcon,
+    icon: mdiGit,
     jsonSchema: pagureSchemaJSON,
     defaultDisplayName: 'Pagure',
     defaultConfig: `{
@@ -1259,7 +1261,7 @@ const PAGURE: AddExternalServiceOptions = {
 const GERRIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GERRIT,
     title: 'Gerrit',
-    icon: GitIcon,
+    icon: mdiGit,
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
@@ -1280,7 +1282,7 @@ const GERRIT: AddExternalServiceOptions = {
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
     title: 'npm Dependencies',
-    icon: NpmIcon,
+    icon: mdiNpm,
     jsonSchema: npmPackagesSchemaJSON,
     defaultDisplayName: 'npm Dependencies',
     defaultConfig: `{
@@ -1315,7 +1317,7 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
 const GO_MODULES = {
     kind: ExternalServiceKind.GOMODULES,
     title: 'Go Dependencies',
-    icon: LanguageGoIcon,
+    icon: mdiLanguageGo,
     jsonSchema: goModulesSchemaJSON,
     defaultDisplayName: 'Go Dependencies',
     defaultConfig: `{
@@ -1346,7 +1348,7 @@ const GO_MODULES = {
 const PYTHON_PACKAGES = {
     kind: ExternalServiceKind.PYTHONPACKAGES,
     title: 'Python Dependencies',
-    icon: LanguagePythonIcon,
+    icon: mdiLanguagePython,
     jsonSchema: pythonPackagesJSON,
     defaultDisplayName: 'Python Dependencies',
     defaultConfig: `{
@@ -1378,7 +1380,7 @@ const PYTHON_PACKAGES = {
 const RUST_PACKAGES = {
     kind: ExternalServiceKind.RUSTPACKAGES,
     title: 'Rust Dependencies',
-    icon: LanguageRustIcon,
+    icon: mdiLanguageRust,
     jsonSchema: rustPackagesJSON,
     defaultDisplayName: 'Rust Dependencies',
     defaultConfig: `{

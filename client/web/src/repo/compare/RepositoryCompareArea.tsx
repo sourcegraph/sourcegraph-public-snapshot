@@ -1,10 +1,9 @@
 import * as React from 'react'
 
+import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
@@ -46,7 +45,7 @@ import styles from './RepositoryCompareArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested repository comparison page was not found."
     />
@@ -168,9 +167,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
-            )
+            return <HeroPage icon={mdiAlertCircle} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
         }
 
         let spec: { base: string | null; head: string | null } | null | undefined

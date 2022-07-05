@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiProgressClock } from '@mdi/js'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiAlertCircle, mdiMapSearch, mdiProgressClock } from '@mdi/js'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -89,9 +87,9 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
 
     if (!data?.node || data.node.__typename !== 'BatchSpec' || !batchChangeData?.batchChange) {
         if (error || batchChangeError) {
-            return <HeroPage icon={AlertCircleIcon} title={String(error || batchChangeError)} />
+            return <HeroPage icon={mdiAlertCircle} title={String(error || batchChangeError)} />
         }
-        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
+        return <HeroPage icon={mdiAlertCircle} title="Batch change not found" />
     }
 
     return (
@@ -265,7 +263,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         exact={true}
                     />
                 ) : null}
-                <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
+                <Route component={() => <HeroPage icon={mdiMapSearch} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
         </div>
     )

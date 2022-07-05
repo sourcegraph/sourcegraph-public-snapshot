@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -13,7 +13,7 @@ import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
-        icon={MapSearchIcon}
+        icon={mdiMapSearch}
         title="404: Not Found"
         subtitle="Sorry, the requested repository branches page was not found."
     />

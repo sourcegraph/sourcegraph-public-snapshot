@@ -1,6 +1,5 @@
 import React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -14,8 +13,10 @@ import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
 import styles from './RegistryArea.module.scss'
 
+import { mdiMapSearch } from '@mdi/js'
+
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}

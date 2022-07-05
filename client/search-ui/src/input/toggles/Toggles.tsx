@@ -1,10 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import LightningBoltIcon from 'mdi-react/LightningBoltIcon'
-import RegexIcon from 'mdi-react/RegexIcon'
 
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import {
@@ -153,7 +150,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         title="Expert mode"
                         isActive={false}
                         onToggle={toggleExpertMode}
-                        icon={LightningBoltIcon}
+                        icon={mdiLightningBolt}
                         interactive={props.interactive}
                         className="test-expert-mode-toggle"
                         activeClassName="test-expert-mode-toggle--active"
@@ -167,7 +164,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         title="Case sensitivity"
                         isActive={caseSensitive}
                         onToggle={toggleCaseSensitivity}
-                        icon={FormatLetterCaseIcon}
+                        icon={mdiFormatLetterCase}
                         interactive={props.interactive}
                         className="test-case-sensitivity-toggle"
                         activeClassName="test-case-sensitivity-toggle--active"
@@ -194,7 +191,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         title="Regular expression"
                         isActive={patternType === SearchPatternType.regexp}
                         onToggle={toggleRegexp}
-                        icon={RegexIcon}
+                        icon={mdiRegex}
                         interactive={props.interactive}
                         className="test-regexp-toggle"
                         activeClassName="test-regexp-toggle--active"
@@ -214,7 +211,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                             activeClassName="test-structural-search-toggle--active"
                             isActive={patternType === SearchPatternType.structural}
                             onToggle={toggleStructuralSearch}
-                            icon={CodeBracketsIcon}
+                            icon={mdiCodeBrackets}
                             interactive={props.interactive}
                             disableOn={[
                                 {
@@ -231,7 +228,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                             title="Expert mode"
                             isActive={true}
                             onToggle={toggleExpertMode}
-                            icon={LightningBoltIcon}
+                            icon={mdiLightningBolt}
                             interactive={props.interactive}
                             className="test-expert-mode-toggle"
                             activeClassName="test-expert-mode-toggle--active"

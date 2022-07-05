@@ -1,8 +1,5 @@
 import React from 'react'
 
-import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { ContentMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
@@ -16,6 +13,8 @@ import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getResultId } from './utils'
 
 import styles from './FileSearchResult.module.scss'
+
+import { mdiAlphaSBox, mdiFileDocument } from '@mdi/js'
 
 interface Props {
     selectResult: (resultId: string) => void
@@ -80,7 +79,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
         <SearchResultHeader>
             <SearchResultLayout
                 iconColumn={{
-                    icon: match.type === 'content' ? FileDocumentIcon : AlphaSBoxIcon,
+                    icon: match.type === 'content' ? mdiFileDocument : mdiAlphaSBox,
                     repoName: match.repository,
                 }}
                 infoColumn={

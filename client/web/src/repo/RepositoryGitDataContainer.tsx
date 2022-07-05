@@ -1,7 +1,6 @@
 import * as React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { mdiAlertCircle, mdiSourceRepository } from '@mdi/js'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 
@@ -26,7 +25,7 @@ export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName
     progress,
 }) => (
     <HeroPage
-        icon={SourceRepositoryIcon}
+        icon={mdiSourceRepository}
         title={displayRepoName(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
@@ -136,7 +135,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
             }
             return (
                 <HeroPage
-                    icon={AlertCircleIcon}
+                    icon={mdiAlertCircle}
                     title="Error"
                     subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} />}
                 />

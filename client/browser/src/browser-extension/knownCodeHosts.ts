@@ -1,12 +1,11 @@
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { IconType } from '@sourcegraph/wildcard'
 
 export interface KnownCodeHost {
     host: string
-    icon?: React.ComponentType<{ className?: string }>
+    icon?: IconType
     name: string
 }
 
@@ -14,17 +13,17 @@ export const knownCodeHosts: KnownCodeHost[] = [
     {
         host: 'github.com',
         name: 'GitHub',
-        icon: GithubIcon,
+        icon: mdiGithub,
     },
     {
         host: 'gitlab.com',
         name: 'GitLab',
-        icon: GitlabIcon,
+        icon: mdiGitlab,
     },
     {
         host: 'bitbucket.org',
         name: 'Bitbucket',
-        icon: BitbucketIcon,
+        icon: mdiBitbucket,
     },
     {
         host: 'phabricator.com',

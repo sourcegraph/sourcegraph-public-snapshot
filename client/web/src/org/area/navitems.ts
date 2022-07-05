@@ -1,6 +1,4 @@
-import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
-import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
-import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
+import { mdiAccountMultiple, mdiCogOutline, mdiFeatureSearchOutline } from '@mdi/js'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
@@ -10,7 +8,7 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {
         to: '/settings/members',
         label: 'Members',
-        icon: AccountMultipleIcon,
+        icon: mdiAccountMultiple,
         isActive: (_match, location) => location.pathname.includes('members'),
         condition: ({ org: { viewerCanAdminister }, newMembersInviteEnabled }) =>
             viewerCanAdminister && newMembersInviteEnabled,
@@ -18,7 +16,7 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {
         to: '/settings',
         label: 'Settings',
-        icon: CogOutlineIcon,
+        icon: mdiCogOutline,
         isActive: (_match, location, context) =>
             context.newMembersInviteEnabled
                 ? location.pathname.includes('settings') && !location.pathname.includes('members')
@@ -28,7 +26,7 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {
         to: '/searches',
         label: 'Saved searches',
-        icon: FeatureSearchOutlineIcon,
+        icon: mdiFeatureSearchOutline,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     ...namespaceAreaHeaderNavItems,

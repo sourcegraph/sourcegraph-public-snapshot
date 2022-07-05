@@ -1,12 +1,8 @@
 import React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
-import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
-import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import { mdiAlertCircle, mdiCheckBold, mdiContentSave, mdiLinkVariantRemove, mdiTimerSand } from '@mdi/js'
 
-import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, IconType, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceStepFields } from '../../../../../graphql-operations'
 
@@ -14,25 +10,23 @@ interface StepStateIconProps {
     step: BatchSpecWorkspaceStepFields
 }
 
-const getProps = (
-    step: BatchSpecWorkspaceStepFields
-): [classNameVariant: string, icon: React.ElementType, label: string] => {
+const getProps = (step: BatchSpecWorkspaceStepFields): [classNameVariant: string, icon: IconType, label: string] => {
     if (step.cachedResultFound) {
-        return ['text-success', ContentSaveIcon, 'A cached result for this step has been found.']
+        return ['text-success', mdiContentSave, 'A cached result for this step has been found.']
     }
     if (step.skipped) {
-        return ['text-muted', LinkVariantRemoveIcon, 'This step has been skipped.']
+        return ['text-muted', mdiLinkVariantRemove, 'This step has been skipped.']
     }
     if (!step.startedAt) {
-        return ['text-muted', TimerSandIcon, 'This step has not started yet.']
+        return ['text-muted', mdiTimerSand, 'This step has not started yet.']
     }
     if (!step.finishedAt) {
         return ['text-muted', LoadingSpinner, 'This step is currently running.']
     }
     if (step.exitCode === 0) {
-        return ['text-success', CheckBoldIcon, 'This step finished running successfully.']
+        return ['text-success', mdiCheckBold, 'This step finished running successfully.']
     }
-    return ['text-danger', AlertCircleIcon, `This step failed with exit code ${String(step.exitCode)}.`]
+    return ['text-danger', mdiAlertCircle, `This step failed with exit code ${String(step.exitCode)}.`]
 }
 
 export const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIconProps>> = ({ step }) => {
@@ -41,7 +35,11 @@ export const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<Step
     return (
         <div className="d-flex flex-shrink-0">
             <Tooltip content={label} placement="bottom">
-                <Icon className={classNameVariant} aria-label={label} as={IconElement} />
+                <Icon
+                    className={classNameVariant}
+                    aria-label={label}
+                    {...(typeof IconElement === 'string' ? { svgPath: IconElement } : { as: IconElement })}
+                />
             </Tooltip>
         </div>
     )

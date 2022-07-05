@@ -1,9 +1,10 @@
 import React from 'react'
 
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { ListboxButton } from '@reach/listbox'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../../components'
 import { InsightDashboard, isCustomDashboard } from '../../../../../../../core'
@@ -52,7 +53,7 @@ interface MenuButtonContentProps {
 
 const MenuButtonContent: React.FunctionComponent<React.PropsWithChildren<MenuButtonContentProps>> = props => {
     const { title, isExpanded, badge } = props
-    const ListboxButtonIcon = isExpanded ? ChevronUpIcon : ChevronDownIcon
+    const ListboxButtonIcon = isExpanded ? mdiChevronUp : mdiChevronDown
 
     return (
         <>
@@ -60,8 +61,7 @@ const MenuButtonContent: React.FunctionComponent<React.PropsWithChildren<MenuBut
                 <TruncatedText title={title}>{title}</TruncatedText>
                 {badge && <InsightsBadge value={badge} className={classNames('ml-1 mr-1', styles.badge)} />}
             </span>
-
-            <ListboxButtonIcon className={styles.expandedIcon} />
+            <Icon svgPath={ListboxButtonIcon} inline={false} className={styles.expandedIcon} aria-hidden={true} />
         </>
     )
 }

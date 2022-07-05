@@ -1,7 +1,6 @@
 import * as React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -71,7 +70,7 @@ export const registryExtensionFragment = gql`
 `
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
@@ -198,7 +197,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         if (isErrorLike(this.state.extensionOrError)) {
             return (
                 <HeroPage
-                    icon={AlertCircleIcon}
+                    icon={mdiAlertCircle}
                     title="Error"
                     subtitle={<ErrorMessage error={this.state.extensionOrError} />}
                 />

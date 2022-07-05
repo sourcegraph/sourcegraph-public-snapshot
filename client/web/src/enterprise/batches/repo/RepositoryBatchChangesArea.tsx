@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -12,7 +12,7 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" />
 )
 
 /**

@@ -1,9 +1,8 @@
 import * as React from 'react'
 
-import { mdiPuzzleOutline } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -144,7 +143,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     rel="noopener"
                                     to="/help/extensions/authoring"
                                 >
-                                    <Icon aria-hidden={true} as={HelpCircleOutline} />
+                                    <Icon aria-hidden={true} svgPath={mdiHelpCircleOutline} />
                                 </Link>
                             </>
                         }

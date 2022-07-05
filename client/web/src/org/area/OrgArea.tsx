@@ -1,7 +1,6 @@
 import * as React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -100,7 +99,7 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
 }
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
+    <HeroPage icon={mdiMapSearch} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
 export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
@@ -263,7 +262,7 @@ export class OrgArea extends React.Component<Props> {
         if (isErrorLike(this.state.orgOrError)) {
             return (
                 <HeroPage
-                    icon={AlertCircleIcon}
+                    icon={mdiAlertCircle}
                     title="Error"
                     subtitle={<ErrorMessage error={this.state.orgOrError} />}
                 />

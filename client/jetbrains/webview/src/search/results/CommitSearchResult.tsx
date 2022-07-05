@@ -1,7 +1,6 @@
 import React from 'react'
 
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-
+import { mdiSourceCommit } from '@mdi/js'
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
@@ -30,7 +29,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                 <SearchResultLayout
                     isActive={isActive}
                     iconColumn={{
-                        icon: SourceCommitIcon,
+                        icon: mdiSourceCommit,
                         repoName: match.repository,
                     }}
                     infoColumn={

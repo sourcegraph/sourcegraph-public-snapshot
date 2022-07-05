@@ -11,7 +11,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { IUser } from '@sourcegraph/shared/src/schema'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Label, H4, Text, IconType } from '@sourcegraph/wildcard'
 
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
@@ -43,7 +43,7 @@ export interface OptionsPageProps {
     initialShowAdvancedSettings?: boolean
     isFullPage: boolean
     showSourcegraphCloudAlert?: boolean
-    permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
+    permissionAlert?: { name: string; icon?: IconType }
     requestPermissionsHandler?: React.MouseEventHandler
 
     hasRepoSyncError?: boolean
@@ -178,7 +178,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
 }
 
 interface PermissionAlertProps {
-    icon?: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
+    icon?: IconType
     name: string
     onClickGrantPermissions?: React.MouseEventHandler
 }
@@ -190,7 +190,14 @@ const PermissionAlert: React.FunctionComponent<React.PropsWithChildren<Permissio
 }) => (
     <section className={classNames('bg-2', styles.section)}>
         <H4>
-            {AlertIcon && <Icon className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
+            {AlertIcon && (
+                <Icon
+                    className="mr-2"
+                    {...(typeof AlertIcon === 'string' ? { svgPath: AlertIcon } : { as: AlertIcon })}
+                    aria-hidden={true}
+                />
+            )}{' '}
+            <span>{name}</span>
         </H4>
         <Text className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.

@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
+import { mdiOpenInNew, mdiFileDocument, mdiCheck, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CheckIcon from 'mdi-react/CheckIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -36,7 +35,6 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
 import styles from './NotebookFileBlock.module.scss'
-import { mdiOpenInNew, mdiFileDocument } from "@mdi/js";
 
 interface NotebookFileBlockProps
     extends BlockProps<FileBlock>,
@@ -133,7 +131,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={showInputs ? mdiCheck : mdiPencil} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },

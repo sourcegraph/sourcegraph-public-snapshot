@@ -1,15 +1,14 @@
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiClose } from '@mdi/js'
 import { Story, Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Icon } from '@sourcegraph/wildcard'
 import { Icon } from '..'
 import { H3 } from '../..'
 import { SourcegraphIcon } from '../SourcegraphIcon'
 import { Code } from '../Typography'
-import { mdiClose } from "@mdi/js";
-import { Icon } from "@sourcegraph/wildcard";
 
 const config: Meta = {
     title: 'wildcard/Icon',

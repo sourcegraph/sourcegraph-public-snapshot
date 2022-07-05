@@ -1,7 +1,6 @@
 import React, { AriaRole, ComponentType, ElementType, SVGProps } from 'react'
 
 import classNames from 'classnames'
-import { MdiReactIconProps } from 'mdi-react'
 
 import { ForwardReferenceComponent } from '../..'
 
@@ -80,5 +79,5 @@ export const Icon = React.memo(
                 {children}
             </IconComponent>
         )
-    }) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>
+    }) as ForwardReferenceComponent<CustomIcon | ElementType, IconProps>
 )

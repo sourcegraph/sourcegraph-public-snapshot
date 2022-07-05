@@ -1,8 +1,7 @@
 import React from 'react'
 
+import { mdiAlertCircle, mdiReload } from '@mdi/js'
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ReloadIcon from 'mdi-react/ReloadIcon'
 
 import { asError } from '@sourcegraph/common'
 import { Button, Code, Text } from '@sourcegraph/wildcard'
@@ -82,7 +81,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                 // user initially loaded this page.
                 return (
                     <HeroPage
-                        icon={ReloadIcon}
+                        icon={mdiReload}
                         title="Reload required"
                         subtitle={
                             <div className="container">
@@ -102,7 +101,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 
             return (
                 <HeroPage
-                    icon={AlertCircleIcon}
+                    icon={mdiAlertCircle}
                     title="Error"
                     className={this.props.className}
                     subtitle={

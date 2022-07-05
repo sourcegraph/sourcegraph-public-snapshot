@@ -18,7 +18,6 @@ import { AutocompleteSearchUsers } from './SearchUserAutocomplete'
 import { useQueryStringParameters } from './utils'
 
 import styles from './InviteMemberModal.module.scss'
-import { mdiClose } from "@mdi/js";
 
 export interface IModalInviteResult {
     username: string

@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -385,7 +384,7 @@ export const ReferencesList: React.FunctionComponent<
                     <small>
                         <Icon
                             aria-hidden={true}
-                            as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
+                            {...(canShowSpinner ? { as: LoadingSpinner } : { svgPath: mdiFilterOutline })}
                             size="sm"
                             className={styles.filterIcon}
                         />

@@ -1,11 +1,10 @@
 import React, { forwardRef, ReactNode } from 'react'
 
 import * as H from 'history'
-import { MdiReactIconProps } from 'mdi-react'
 
 import { ForwardReferenceComponent, Position } from '../..'
 import { ButtonProps } from '../Button'
-import { Icon } from '../Icon'
+import { Icon, IconType } from '../Icon'
 import { Link } from '../Link'
 import {
     Menu,
@@ -54,8 +53,8 @@ const NavMenuContent = forwardRef(({ sections = [], position, children, ...rest 
 )) as ForwardReferenceComponent<'div', NavMenuContentProps>
 
 interface NavItemProps extends Omit<MenuItemProps, 'children' | 'onSelect'> {
-    prefixIcon?: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>>
-    suffixIcon?: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>>
+    prefixIcon?: IconType
+    suffixIcon?: IconType
     content: string | ReactNode
     itemAs?: any
     to?: string | H.LocationDescriptor<any>
@@ -66,9 +65,21 @@ interface NavItemProps extends Omit<MenuItemProps, 'children' | 'onSelect'> {
 const NavMenuItem = forwardRef(({ content, prefixIcon, suffixIcon, onSelect, to, itemAs, ...rest }, reference) => {
     const contentWithIcon = (
         <>
-            {prefixIcon && <Icon aria-hidden={true} as={prefixIcon} className="mr-1" />}
+            {prefixIcon && (
+                <Icon
+                    aria-hidden={true}
+                    {...(typeof prefixIcon === 'string' ? { svgPath: prefixIcon } : { as: prefixIcon })}
+                    className="mr-1"
+                />
+            )}
             {content}
-            {suffixIcon && <Icon aria-hidden={true} as={suffixIcon} className="ml-1" />}
+            {suffixIcon && (
+                <Icon
+                    aria-hidden={true}
+                    {...(typeof suffixIcon === 'string' ? { svgPath: suffixIcon } : { as: suffixIcon })}
+                    className="ml-1"
+                />
+            )}
         </>
     )
 

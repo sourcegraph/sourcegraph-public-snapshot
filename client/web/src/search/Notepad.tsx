@@ -10,10 +10,18 @@ import React, {
     useLayoutEffect,
 } from 'react'
 
+import {
+    mdiBookPlusOutline,
+    mdiChevronUp,
+    mdiDelete,
+    mdiSearch,
+    mdiFileDocumentOutline,
+    mdiCodeBrackets,
+    mdiTextBox,
+    mdiMagnify,
+} from '@mdi/js'
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -40,7 +48,6 @@ import {
 } from '../stores/notepad'
 
 import styles from './Notepad.module.scss'
-import { mdiBookPlusOutline, mdiChevronUp, mdiDelete, mdiSearch, mdiFileDocumentOutline, mdiCodeBrackets, mdiTextBox } from "@mdi/js";
 
 const NOTEPAD_ID = 'search:notepad'
 
@@ -460,7 +467,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                         addEntry(entry)
                     }}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiSearch} /> Add search
+                    <Icon aria-hidden={true} svgPath={mdiMagnify} /> Add search
                 </Button>
             )
             break
@@ -646,7 +653,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon aria-label="File" as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: <Icon aria-label="File" svgPath={entry.lineRange ? mdiCodeBrackets : mdiFileDocumentOutline} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}
