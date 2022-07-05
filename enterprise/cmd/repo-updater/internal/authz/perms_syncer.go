@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1051,6 +1052,9 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger.Debug("started")
 	defer logger.Info("stopped")
 
+	userSyncGroup := group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(3) // TODO: Read MaxConcurrency from code host configuration
+	repoSyncGroup := group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(1)
+
 	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
 	notifyDequeued := make(chan struct{}, 1)
 	for {
@@ -1080,16 +1084,36 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		notify(notifyDequeued)
 
-		err := s.syncPerms(ctx, request)
-		if err != nil {
-			logger.Error("failed to sync permissions",
-				log.Object("request",
-					log.Int("type", int(request.Type)),
-					log.Int32("id", request.ID),
-				),
-				log.Error(err))
+		// TODO: Move logic inside syncPerms
+		var syncGroup group.ContextStreamGroup[*syncRequest]
+		switch request.Type {
+		case requestTypeUser:
+			syncGroup = userSyncGroup
+		case requestTypeRepo:
+			syncGroup = repoSyncGroup
+		default:
+			s.queue.remove(request.Type, request.ID, true)
+			logger.Error("unexpected request type", log.Int("type", int(request.Type)))
 			continue
 		}
+
+		// The call is blocked if reached max concurrency
+		syncGroup.Go(
+			func(ctx context.Context) (*syncRequest, error) {
+				err := s.syncPerms(ctx, request)
+				return request, err
+			},
+			func(_ context.Context, request *syncRequest, err error) {
+				if err != nil {
+					logger.Error("failed to sync permissions",
+						log.Object("request",
+							log.Int("type", int(request.Type)),
+							log.Int32("id", request.ID),
+						),
+						log.Error(err))
+				}
+			},
+		)
 	}
 }
 
