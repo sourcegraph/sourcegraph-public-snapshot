@@ -85,13 +85,14 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         browserAndLoadingPanel.setState(wasServerAccessSuccessful
             ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
             : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
-        if (!wasServerAccessSuccessful) {
+
+        if (wasServerAccessSuccessful) {
+            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
+        } else {
             selectionMetadataPanel.clearSelectionMetadataLabel();
             previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
             footerPanel.setPreviewContent(null);
-        } else {
-            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
-            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
         }
     }
 
