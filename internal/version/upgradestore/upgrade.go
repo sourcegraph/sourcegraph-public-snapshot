@@ -2,8 +2,8 @@ package upgradestore
 
 import "github.com/Masterminds/semver"
 
-// IsValidUpgrade returns true if the given previous and latest versions comply
-// with our documented upgrade policy. All roll-backs or downgrades are supported.
+// IsValidUpgrade returns true if the given previous and latest versions comply with our
+// documented upgrade policy. All roll-backs or downgrades are supported.
 //
 // See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func IsValidUpgrade(previous, latest *semver.Version) bool {

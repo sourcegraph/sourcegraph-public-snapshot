@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// store manages checking and updating the version of the instance that
-// was running prior to an ongoing instance upgrade or downgrade operation.
+// store manages checking and updating the version of the instance that was running prior to an ongoing
+// instance upgrade or downgrade operation.
 type store struct {
 	db *basestore.Store
 	// operations *operations
@@ -31,9 +31,6 @@ func New(db database.DB, observationContext *observation.Context) *store {
 // method will return a false-valued flag if UpdateServiceVersion has never been called for the given
 // service.
 func (s *store) GetFirstServiceVersion(ctx context.Context, service string) (_ string, _ bool, err error) {
-	// ctx, _, endObservation := s.operations.getFirstServiceVersion.With(ctx, &err, observation.Args{})
-	// defer endObservation(1, observation.Args{})
-
 	return basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getFirstServiceVersionQuery, service)))
 }
 
@@ -42,14 +39,23 @@ const getFirstServiceVersionQuery = `
 SELECT first_version FROM versions WHERE service = %s
 `
 
-// UpdateServiceVersion updates the latest version for the given Sourcegraph service. It enforces our
-// documented upgrade policy.
-//
-// See https://docs.sourcegraph.com/#upgrading-sourcegraph.
+// ValidateUpgrade enforces our documented upgrade policy and will return an error (performing no side-effects)
+// if the upgrade is between two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
+func (s *store) ValidateUpgrade(ctx context.Context, service, version string) (err error) {
+	return s.updateServiceVersion(ctx, service, version, false)
+}
+
+// UpdateServiceVersion updates the latest version for the given Sourcegraph service. This method also enforces
+// our documented upgrade policy and will return an error (performing no side-effects) if the upgrade is between
+// two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) UpdateServiceVersion(ctx context.Context, service, version string) (err error) {
 	// ctx, _, endObservation := s.operations.updateServiceVersion.With(ctx, &err, observation.Args{})
 	// defer endObservation(1, observation.Args{})
 
+	return s.updateServiceVersion(ctx, service, version, true)
+}
+
+func (s *store) updateServiceVersion(ctx context.Context, service, version string, update bool) (err error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return err
@@ -68,20 +74,22 @@ func (s *store) UpdateServiceVersion(ctx context.Context, service, version strin
 		return &UpgradeError{Service: service, Previous: previous, Latest: latest}
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(upsertVersionQuery, service, version, time.Now().UTC(), prev)); err != nil {
-		return err
+	if update {
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateServiceVersionSelectUpsertQuery, service, version, time.Now().UTC(), prev)); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 const updateServiceVersionSelectQuery = `
--- source: internal/version/store/store.go:UpdateServiceVersion
+-- source: internal/version/store/store.go:updateServiceVersion
 SELECT version FROM versions WHERE service = %s
 `
 
-const upsertVersionQuery = `
--- source: internal/version/store/store.go:UpdateServiceVersion
+const updateServiceVersionSelectUpsertQuery = `
+-- source: internal/version/store/store.go:updateServiceVersion
 INSERT INTO versions (service, version, updated_at)
 VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) = (excluded.version, excluded.updated_at)

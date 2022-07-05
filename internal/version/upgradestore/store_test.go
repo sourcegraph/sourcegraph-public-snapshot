@@ -30,9 +30,12 @@ func TestGetFirstServiceVersion(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	firstVersion, err := store.GetFirstServiceVersion(ctx, "service")
+	firstVersion, ok, err := store.GetFirstServiceVersion(ctx, "service")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
+	}
+	if !ok {
+		t.Fatalf("unexpected value, got none")
 	}
 	if firstVersion != "1.2.3" {
 		t.Errorf("unexpected first version. want=%s have=%s", "1.2.3", firstVersion)
