@@ -20,6 +20,8 @@ import {
     Button,
     LoadingSpinner,
     Tooltip,
+    Link,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { LineChart, ParentSize, Series } from '../../charts'
@@ -935,6 +937,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         return <LoadingSpinner />
     }
 
+    const reposSummary = data?.site.analytics.reposSummary
+
     return (
         <>
             <AnalyticsPageTitle>Analytics / Code intel</AnalyticsPageTitle>
@@ -983,7 +987,22 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         </div>
                     </div>
                 )}
-                <H3 className="my-3">Time saved</H3>
+                <H4 className="my-3">Suggestions</H4>
+                <div className={classNames(styles.border, 'mb-3')} />
+                <ul className="mb-3">
+                    {reposSummary && (
+                        <Text as="li">
+                            {reposSummary.preciseCodeIntelCount} of your {reposSummary.totalCount} repositories have
+                            precise code intel.{' '}
+                            <Link to="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence">
+                                Learn how to improve precise code intel coverage.
+                            </Link>
+                        </Text>
+                    )}
+                </ul>
+                <Text className="font-italic text-center">
+                    * All events are actually entries from this instance's event_logs table.{' '}
+                </Text>
             </Card>
         </>
     )

@@ -6016,6 +6016,11 @@ type AnalyticsCodeIntelResult {
     definitionClicks: AnalyticsStatItem!
 }
 
+type AnalyticsReposSummartResult {
+    totalCount: Int!
+    preciseCodeIntelCount: Int!
+}
+
 """
 Analytics describes a new site statistics.
 """
@@ -6036,6 +6041,7 @@ type Analytics {
     Code-intelligence statistics.
     """
     codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    reposSummary: AnalyticsReposSummartResult!
 }
 
 """

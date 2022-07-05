@@ -94,6 +94,10 @@ export const CODEINTEL_STATISTICS = gql`
     query CodeIntelStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
+                reposSummary {
+                    totalCount
+                    preciseCodeIntelCount
+                }
                 codeIntel(dateRange: $dateRange) {
                     referenceClicks {
                         ...AnalyticsStatItemFragment

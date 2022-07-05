@@ -174,8 +174,6 @@ func (r *siteAnalyticsUsersResolver) Frequencies(ctx context.Context) ([]*admina
 	return frequenceis, nil
 }
 
-
-
 /* Code-intel Analytics */
 
 func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
@@ -206,4 +204,12 @@ func (r *siteAnalyticsCodeIntelResolver) DefinitionClicks(ctx context.Context) (
 	}
 
 	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
+/* Repos Analytics */
+
+func (r *siteAnalyticsResolver) ReposSummary(ctx context.Context) (*adminanalytics.ReposSummary, error) {
+	repos := adminanalytics.Repos{DB: r.db}
+
+	return repos.Summary(ctx, true)
 }
