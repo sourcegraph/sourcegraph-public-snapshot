@@ -13,8 +13,9 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
-	oteltrace "go.opentelemetry.io/otel/sdk/trace"
+	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -51,15 +52,18 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	if err != nil {
 		return nil, nil, err
 	}
-	provider := oteltrace.NewTracerProvider(
-		oteltrace.WithResource(newResource(opts.resource)),
-		oteltrace.WithSampler(oteltrace.AlwaysSample()),
-		oteltrace.WithSpanProcessor(processor),
+	provider := oteltracesdk.NewTracerProvider(
+		oteltracesdk.WithResource(newResource(opts.resource)),
+		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		oteltracesdk.WithSpanProcessor(processor),
 	)
 
 	// Set up bridge for converting opentracing API calls to OpenTelemetry.
-	bridge, _ := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
+	bridge, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
 	bridge.SetTextMapPropagator(propagation.TraceContext{})
+
+	// Set OTel provider globally - this gets unset by otelBridgeCloser
+	otel.SetTracerProvider(otelTracerProvider)
 
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(1) // no additional scope needed, this is already otel scope
@@ -73,7 +77,7 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
 // collector.
-func newOTelCollectorExporter(ctx context.Context, logger log.Logger, debug bool) (oteltrace.SpanProcessor, error) {
+func newOTelCollectorExporter(ctx context.Context, logger log.Logger, debug bool) (oteltracesdk.SpanProcessor, error) {
 	conn, err := grpc.DialContext(ctx, otelCollectorEndpoint,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -90,17 +94,21 @@ func newOTelCollectorExporter(ctx context.Context, logger log.Logger, debug bool
 	// immediately.
 	if debug {
 		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
-		return oteltrace.NewSimpleSpanProcessor(traceExporter), nil
+		return oteltracesdk.NewSimpleSpanProcessor(traceExporter), nil
 	}
-	return oteltrace.NewBatchSpanProcessor(traceExporter), nil
+	return oteltracesdk.NewBatchSpanProcessor(traceExporter), nil
 }
 
-// otelBridgeCloser shuts down the wrapped TracerProvider.
-type otelBridgeCloser struct{ *oteltrace.TracerProvider }
+// otelBridgeCloser shuts down the wrapped TracerProvider, and unsets the global OTel
+// trace provider.
+type otelBridgeCloser struct{ *oteltracesdk.TracerProvider }
 
 var _ io.Closer = &otelBridgeCloser{}
 
 func (p otelBridgeCloser) Close() error {
+	// unset the global provider
+	otel.SetTracerProvider(oteltrace.NewNoopTracerProvider())
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
