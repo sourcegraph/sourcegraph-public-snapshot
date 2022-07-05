@@ -11,7 +11,7 @@ import {
     mdiUploadNetwork,
     mdiBeakerQuestion,
     mdiArchive,
-    mdiCheckboxBlankCircle,
+    mdiCheckboxBlankCircleOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -233,7 +233,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
         <Tooltip content={reason}>
-            <Icon className="mr-1" svgPath={mdiCheckboxBlankCircle} aria-hidden={true} />
+            <Icon className="mr-1" svgPath={mdiCheckboxBlankCircleOutline} aria-hidden={true} />
         </Tooltip>
         <span>No action</span>
     </div>

@@ -35,7 +35,7 @@ export const ChangesetCheckStatusPending: React.FunctionComponent<React.PropsWit
         )}
     >
         <Tooltip content="Check state is pending">
-            <Icon svgPath={mdiTimerSand} aria-hidden={true} />
+            <Icon svgPath={mdiTimerSand} aria-hidden={true} inline={false} />
         </Tooltip>
         <span className="text-muted">Pending</span>
     </div>
@@ -50,7 +50,7 @@ export const ChangesetCheckStatusPassed: React.FunctionComponent<React.PropsWith
         )}
     >
         <Tooltip content="All checks complete">
-            <Icon svgPath={mdiCheckCircle} aria-hidden={true} />
+            <Icon svgPath={mdiCheckCircle} aria-hidden={true} inline={false} />
         </Tooltip>
         <span className="text-muted">Passed</span>
     </div>
@@ -65,7 +65,7 @@ export const ChangesetCheckStatusFailed: React.FunctionComponent<React.PropsWith
         )}
     >
         <Tooltip content="Some checks failed">
-            <Icon svgPath={mdiCloseCircle} aria-hidden={true} />
+            <Icon svgPath={mdiCloseCircle} aria-hidden={true} inline={false} />
         </Tooltip>
         <span className="text-muted">Failed</span>
     </div>
