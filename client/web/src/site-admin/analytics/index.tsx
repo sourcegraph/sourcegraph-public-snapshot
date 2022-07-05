@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 
 import { mdiChartLineVariant, mdiChartTimelineVariantShimmer } from '@mdi/js'
 import classNames from 'classnames'
@@ -43,19 +43,28 @@ import { SEARCH_STATISTICS, NOTEBOOKS_STATISTICS, USERS_STATISTICS, CODEINTEL_ST
 
 import styles from './index.module.scss'
 
+interface TimeSavedCalculatorGroupItem {
+    label: string
+    value: number
+    minPerItem: number
+    description: string
+    percentage?: number
+    hoursSaved?: number
+}
+
 interface TimeSavedCalculatorGroupProps {
     color: string
     value: number
     label: string
     description: string
-    items: {
-        label: string
-        value: number
-        minPerItem: number
-        description: string
-        percentage?: number
-    }[]
+    items: TimeSavedCalculatorGroupItem[]
 }
+
+const calculateHoursSaved = (items: TimeSavedCalculatorGroupItem[]) =>
+    items.map(item => ({
+        ...item,
+        hoursSaved: (item.minPerItem * item.value * (item.percentage ?? 100)) / 100,
+    }))
 
 const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroupProps> = ({
     items,
@@ -64,18 +73,64 @@ const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroup
     description,
     label,
 }) => {
-    const memoizedItems = useMemo(
-        () =>
-            items.map(item => ({
-                ...item,
-                hoursSaved: (item.minPerItem * item.value * (item.percentage ?? 100)) / 100,
-            })),
-        [items]
-    )
+    const [memoizedItems, setMemoizedItems] = useState(calculateHoursSaved(items))
+
+    useEffect(() => {
+        if (!items.length) {
+            return
+        }
+
+        setMemoizedItems(calculateHoursSaved(items))
+    }, [items])
 
     const totalSavedHours = useMemo(() => memoizedItems.reduce((sum, item) => sum + item.hoursSaved, 0), [
         memoizedItems,
     ])
+
+    const updateMinPerItem = (index: number, minPerItem: number) => {
+        const updatedItems = [...memoizedItems]
+        updatedItems[index] = { ...memoizedItems[index], minPerItem }
+
+        setMemoizedItems(calculateHoursSaved(updatedItems))
+    }
+
+    const updatePercentage = (index: number, percentage: number = 0) => {
+        if (!memoizedItems.length || percentage > 100 || percentage < 0) {
+            return
+        }
+
+        const updatedItems = [...memoizedItems]
+
+        if (index !== 0 || memoizedItems.length > 1) {
+            let deltaPercentage = (memoizedItems[index].percentage ?? 100) - percentage
+
+            const itemsList = [...memoizedItems, ...memoizedItems]
+
+            for (
+                let listIndex = index + 1;
+                listIndex % memoizedItems.length !== index && deltaPercentage !== 0;
+                listIndex++
+            ) {
+                const itemIndex = listIndex % memoizedItems.length
+
+                const item = memoizedItems[itemIndex]
+
+                const updatedPercentage = Math.min(Math.max((item.percentage ?? 100) + deltaPercentage, 0), 100)
+
+                updatedItems[itemIndex] = {
+                    ...item,
+                    percentage: updatedPercentage,
+                }
+
+                deltaPercentage -= updatedPercentage - (item.percentage ?? 100)
+            }
+        }
+
+        updatedItems[index] = { ...memoizedItems[index], percentage }
+
+        setMemoizedItems(calculateHoursSaved(updatedItems))
+    }
+
     return (
         <div>
             <Card className="mb-3 p-4 d-flex flex-row">
@@ -101,18 +156,19 @@ const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroup
                 </div>
             </Card>
             <div className={styles.calculatorList}>
-                {memoizedItems.map(({ label, percentage, minPerItem, hoursSaved }) => (
+                {memoizedItems.map(({ label, percentage, minPerItem, hoursSaved }, index) => (
                     <React.Fragment key={label}>
                         <Text
                             className="text-nowrap d-flex align-items-center"
                             dangerouslySetInnerHTML={{ __html: label }}
                         />
-                        {percentage && (
+                        {percentage >= 0 && (
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <Input
                                     type="number"
                                     value={percentage}
                                     className={classNames(styles.calculatorInput, 'mb-1')}
+                                    onChange={e => updatePercentage(index, Number(e.target.value))}
                                 />
                                 <Text as="span">% of total</Text>
                             </div>
@@ -122,6 +178,7 @@ const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroup
                                 type="number"
                                 value={minPerItem}
                                 className={classNames(styles.calculatorInput, 'mb-1')}
+                                onChange={e => updateMinPerItem(index, e.target.value)}
                             />
                             <Text as="span" className="text-nowrap">
                                 Minutes per
