@@ -13,7 +13,7 @@ export const SearchTemplatesBanner: React.FunctionComponent = () => (
             <div className="flex-grow-1 justify-content-between align-items-center">
                 <H4 className="mb-1">You are creating a Batch Change from a Code Search</H4>
                 <Text className={styles.bannerDescription}>
-                    Let Sourcegraph help you refactoring your code by preparing a Batch Change from your search query
+                    Let Sourcegraph help you refactor your code by preparing a Batch Change from your search query
                 </Text>
             </div>
         </CardBody>
