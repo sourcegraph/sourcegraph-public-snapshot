@@ -37,9 +37,7 @@ If this does not solve your problem, please reach out directly to your Sourcegra
 
 ### Features currently available only on insights over all your repositories
 
-* **[Filtering insights](code_insights_filters.md)**: we do not yet allow filtering for insights that run over explicitly defined lists of repositories, except for "detect and track" insights. 
-
-(If you want to filter other insights' repository lists, you can quickly add/remove repositories on the edit screen and results will return equally quickly.) 
+* **[Filtering insights](code_insights_filters.md)**: available in 3.41+ ~~we do not yet allow filtering for insights that run over explicitly defined lists of repositories, except for "detect and track" insights. ~~
 
 ### Features currently available only on insights over explicitly defined repository lists
 
