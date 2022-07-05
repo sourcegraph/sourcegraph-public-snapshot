@@ -111,7 +111,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 			return nil, errors.Wrap(err, "refreshing OAuth token")
 		}
 		c.Token = refreshed
-		client = provider.GetOAuthClient(c.Token)
+		client = provider.GetOAuthClient(c.Token, true)
 	default:
 		client = provider.GetPATClient(c.Token, "")
 	}

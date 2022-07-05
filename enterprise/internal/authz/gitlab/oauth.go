@@ -97,14 +97,14 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	client := p.clientProvider.GetOAuthClient(tok.AccessToken)
+	client := p.clientProvider.GetOAuthClient(tok.AccessToken, true)
 	return listProjects(ctx, client)
 }
 
 // FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
 // token.
 func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
+	client := p.clientProvider.GetOAuthClient(token, true)
 	return listProjects(ctx, client)
 }
 
@@ -128,7 +128,7 @@ func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposit
 	var client *gitlab.Client
 	switch p.tokenType {
 	case gitlab.TokenTypeOAuth:
-		client = p.clientProvider.GetOAuthClient(p.token)
+		client = p.clientProvider.GetOAuthClient(p.token, true)
 	default:
 		client = p.clientProvider.GetPATClient(p.token, "")
 	}

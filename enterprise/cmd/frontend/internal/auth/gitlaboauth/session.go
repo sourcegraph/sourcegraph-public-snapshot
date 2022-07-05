@@ -43,7 +43,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
-	glClient := provider.GetOAuthClient(token.AccessToken)
+	glClient := provider.GetOAuthClient(token.AccessToken, true)
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
 	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient)

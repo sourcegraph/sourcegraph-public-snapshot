@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/refresherer"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -110,7 +111,7 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientPr
 
 // GetAuthenticatorClient returns a client authenticated by the given
 // authenticator.
-func (p *ClientProvider) GetAuthenticatorClient(a auth.Authenticator) *Client {
+func (p *ClientProvider) GetAuthenticatorClient(a refresherer.Authenticator) *Client {
 	return p.getClient(a)
 }
 
@@ -123,11 +124,16 @@ func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client 
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
-func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
+func (p *ClientProvider) GetOAuthClient(oauthToken string, shouldRetryAndRefreshToken bool) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+
+	if !shouldRetryAndRefreshToken {
+		return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+	}
+
+	return p.getClient(&refresherer.TokenWithRefresherer{Token: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
@@ -135,7 +141,7 @@ func (p *ClientProvider) GetClient() *Client {
 	return p.getClient(nil)
 }
 
-func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
+func (p *ClientProvider) getClient(a refresherer.Authenticator) *Client {
 	p.gitlabClientsMu.Lock()
 	defer p.gitlabClientsMu.Unlock()
 
@@ -172,7 +178,7 @@ type Client struct {
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
-	Auth             auth.Authenticator
+	Auth             refresherer.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
 	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
@@ -183,7 +189,8 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer) *Client {
+func (p *ClientProvider) newClient(baseURL *url.URL, a refresherer.Authenticator, httpClient httpcli.Doer) *Client {
+
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(baseURL) && a == nil {
