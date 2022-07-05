@@ -34,7 +34,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
 
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
-
     const [error, setError] = useState<Error | null>(null)
 
     if (props.authenticatedUser) {
