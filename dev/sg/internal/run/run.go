@@ -326,7 +326,11 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 				duration := time.Since(installationStart)
 
 				std.Out.Write("")
-				std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Took %s. Booting up the system!", duration))
+				if c.verbose {
+					std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Took %s. Booting up the system!", duration))
+				} else {
+					std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
+				}
 				std.Out.Write("")
 
 				close(c.okayToStart)
