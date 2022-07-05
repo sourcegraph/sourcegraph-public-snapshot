@@ -505,7 +505,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 		}
 		span.Finish()
 	}()
-	traceId := trace.IDFromSpan(span)
+	traceId := trace.Context(ctx)
 
 	// We are encountering a problem where it seems repositories go missing, so this is overly-noisy logging to try and get a complete picture
 	log15.Info("[historical_enqueuer_backfill] buildForRepo start", "repo_id", id, "repo_name", repoName, "traceId", traceId)
