@@ -373,7 +373,8 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 							i++
 							continue
 						}
-						if originalExclude.Match(match.original) {
+						checkWithDepotAdded := !strings.HasPrefix(originalExclude.pattern, "//") && match.Match(string(depot)+originalExclude.pattern)
+						if originalExclude.Match(match.original) || checkWithDepotAdded {
 							srp.PathExcludes = append(srp.PathExcludes[:i], srp.PathExcludes[i+1:]...)
 						} else {
 							i++
