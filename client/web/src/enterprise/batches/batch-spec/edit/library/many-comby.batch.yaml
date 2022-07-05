@@ -2,7 +2,7 @@ name: many-comby
 description: |
   Apply many comby match patterns
 on:
-  - repositoriesMatchingQuery: TODO
+  - repositoriesMatchingQuery: <<CHANGE_ME>>
 
 # comby can take a configuration file listing patterns to apply
 # https://comby.dev/docs/configuration
