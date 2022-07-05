@@ -7,7 +7,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -95,5 +94,5 @@ func validateUpgrade(ctx context.Context, r Runner, version string) error {
 		return err
 	}
 
-	return upgradestore.NewWith(store.Handle(), &observation.TestContext).ValidateUpgrade(ctx, "frontend", version)
+	return upgradestore.NewWith(store.Handle()).ValidateUpgrade(ctx, "frontend", version)
 }

@@ -9,26 +9,23 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // store manages checking and updating the version of the instance that was running prior to an ongoing
 // instance upgrade or downgrade operation.
 type store struct {
 	db *basestore.Store
-	// operations *operations
 }
 
 // New returns a new version store with the given database handle.
-func New(db database.DB, observationContext *observation.Context) *store {
-	return NewWith(db.Handle(), observationContext)
+func New(db database.DB) *store {
+	return NewWith(db.Handle())
 }
 
 // NewWith returns a new version store with the given transactable handle.
-func NewWith(db basestore.TransactableHandle, observationContext *observation.Context) *store {
+func NewWith(db basestore.TransactableHandle) *store {
 	return &store{
 		db: basestore.NewWithHandle(db),
-		// operations: newOperations(observationContext),
 	}
 }
 
@@ -47,9 +44,6 @@ SELECT first_version FROM versions WHERE service = %s
 // ValidateUpgrade enforces our documented upgrade policy and will return an error (performing no side-effects)
 // if the upgrade is between two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) ValidateUpgrade(ctx context.Context, service, version string) (err error) {
-	// ctx, _, endObservation := s.operations.validateUpgrade.With(ctx, &err, observation.Args{})
-	// defer endObservation(1, observation.Args{})
-
 	return s.updateServiceVersion(ctx, service, version, false)
 }
 
@@ -57,9 +51,6 @@ func (s *store) ValidateUpgrade(ctx context.Context, service, version string) (e
 // our documented upgrade policy and will return an error (performing no side-effects) if the upgrade is between
 // two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) UpdateServiceVersion(ctx context.Context, service, version string) (err error) {
-	// ctx, _, endObservation := s.operations.updateServiceVersion.With(ctx, &err, observation.Args{})
-	// defer endObservation(1, observation.Args{})
-
 	return s.updateServiceVersion(ctx, service, version, true)
 }
 
