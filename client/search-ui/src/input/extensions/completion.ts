@@ -273,7 +273,14 @@ export function createDefaultSuggestionSources(options: {
                             const apply = (insertText || label) + ' '
                             return {
                                 label,
-                                apply: asSnippet ? snippet(apply) : apply,
+                                // See issue https://github.com/sourcegraph/sourcegraph/issues/38254
+                                // Per CodeMirrors documentation (https://codemirror.net/docs/ref/#autocomplete.snippet)
+                                // "The user can move between fields with Tab and Shift-Tab as long as the fields are
+                                // active. Moving to the last field or moving the cursor out of the current field
+                                // deactivates the fields."
+                                // This means we need to append a field at the end so that pressing Tab when at the last
+                                // field will move the cursor after the filter value and not move focus outside the input
+                                apply: asSnippet ? snippet(apply + '${}') : apply,
                             }
                         }),
                 }
