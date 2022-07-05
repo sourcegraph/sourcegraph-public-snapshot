@@ -280,10 +280,19 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		} else {
 			results.failed = append(results.failed, i)
 			r.Output.WriteFailuref(summaryStr)
+
 			for _, check := range category.Checks {
 				if check.cachedCheckErr != nil {
 					// Slightly different formatting for each destination
-					terminalSummary := fmt.Sprintf("**%s**\n\n%s", check.Name, check.cachedCheckErr)
+
+					// Write the terminal summary to an indented block
+					var style = output.CombineStyles(output.StyleBold, output.StyleFailure)
+					block := r.Output.Block(output.Linef(output.EmojiFailure, style, check.Name))
+					block.Writef("%s\n", check.cachedCheckErr)
+					block.Writef("%s\n", check.cachedCheckOutput)
+					block.Close()
+
+					// Build the markdown for the annotation summary
 					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
 
 					// Render additional details
@@ -291,11 +300,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```",
 							strings.TrimSpace(check.cachedCheckOutput))
 
-						terminalSummary += outputMarkdown
 						annotationSummary += outputMarkdown
 					}
-
-					r.Output.WriteMarkdown(terminalSummary)
 
 					if r.GenerateAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)

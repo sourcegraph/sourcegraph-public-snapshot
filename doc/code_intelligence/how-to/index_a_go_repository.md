@@ -89,7 +89,7 @@ The following projects have example Travis CI configurations to generate and upl
 
 ## Manual indexing
 
-1. Install [lsif-go](https://github.com/sourcegraph/lsif-go) with `go get github.com/sourcegraph/lsif-go/cmd/lsif-go` and ensure it's on your path.
+1. Install [lsif-go](https://github.com/sourcegraph/lsif-go)
 
 1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
 
@@ -98,7 +98,7 @@ The following projects have example Travis CI configurations to generate and upl
    chmod +x /usr/local/bin/src
    ```
 
-   - **macOS**: replace `linux` with `darwin` in the URL
+   - **macOS**: replace `linux` with `darwin` in the URL, choose the appropriate architecture: M1/M2 chips - `arm64`, Intel chips - `amd64`
    - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
 
 1. `cd` into your Go project's root (where the go.mod file lives, if you have one) and run:

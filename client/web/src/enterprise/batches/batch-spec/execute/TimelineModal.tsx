@@ -1,11 +1,7 @@
 import React, { useMemo } from 'react'
 
+import { mdiClose, mdiTimerSand, mdiCheck, mdiAlertCircle, mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
 
@@ -31,7 +27,7 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
             <H3 className="mb-0">Execution timeline</H3>
             <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
                 <VisuallyHidden>Close</VisuallyHidden>
-                <Icon aria-hidden={true} as={CloseIcon} />
+                <Icon aria-hidden={true} svgPath={mdiClose} />
             </Button>
         </div>
         <div className={styles.modalContent}>
@@ -65,13 +61,13 @@ const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<Executi
         () =>
             [
                 {
-                    icon: <Icon as={TimerSandIcon} aria-label="Success" />,
+                    icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
                     text: 'Queued',
                     date: node.queuedAt,
                     className: 'bg-success',
                 },
                 {
-                    icon: <Icon as={CheckIcon} aria-label="Success" />,
+                    icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                     text: 'Began processing',
                     date: node.startedAt,
                     className: 'bg-success',
@@ -83,20 +79,20 @@ const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<Executi
 
                 node.state === BatchSpecWorkspaceState.COMPLETED
                     ? {
-                          icon: <Icon as={CheckIcon} aria-label="Success" />,
+                          icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                           text: 'Finished',
                           date: node.finishedAt,
                           className: 'bg-success',
                       }
                     : node.state === BatchSpecWorkspaceState.CANCELED
                     ? {
-                          icon: <Icon as={AlertCircleIcon} aria-label="Success" />,
+                          icon: <Icon aria-label="Success" svgPath={mdiAlertCircle} />,
                           text: 'Canceled',
                           date: node.finishedAt,
                           className: 'bg-secondary',
                       }
                     : {
-                          icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                          icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                           text: 'Failed',
                           date: node.finishedAt,
                           className: 'bg-danger',
@@ -177,11 +173,11 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
 
     return {
         icon: !finished ? (
-            <Icon as={ProgressClockIcon} aria-label="success" />
+            <Icon aria-label="success" svgPath={mdiProgressClock} />
         ) : success ? (
-            <Icon as={CheckIcon} aria-label="Success" />
+            <Icon aria-label="Success" svgPath={mdiCheck} />
         ) : (
-            <Icon as={AlertCircleIcon} aria-label="Failed" />
+            <Icon aria-label="Failed" svgPath={mdiAlertCircle} />
         ),
         date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',

@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Link, Icon, H3 } from '@sourcegraph/wildcard'
@@ -61,7 +61,7 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                                 className="ml-1"
                                 aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
                                 data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
-                                as={InformationOutlineIcon}
+                                svgPath={mdiInformationOutline}
                             />
                         </>
                     )}
@@ -70,7 +70,7 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                             className="ml-1"
                             aria-label="Uploads at the tip of the default branch are always retained indefinitely."
                             data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
-                            as={InformationOutlineIcon}
+                            svgPath={mdiInformationOutline}
                         />
                     )}
                 </div>
@@ -102,7 +102,7 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
                         className="ml-1"
                         aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
                         data-tooltip="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
-                        as={InformationOutlineIcon}
+                        svgPath={mdiInformationOutline}
                     />
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useMemo, useContext } from 'react'
 
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
@@ -205,7 +205,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
         <>
             <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon aria-hidden={true} className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiInformationOutline} />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (

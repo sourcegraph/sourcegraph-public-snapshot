@@ -408,7 +408,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
-                        nextPopoverClose()
 
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
@@ -421,7 +420,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, nextPopoverClose, props.history]
+            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
         )
     )
 
@@ -792,7 +791,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     return (
         <>
-            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
+            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement} tabIndex={-1}>
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
@@ -849,6 +848,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     className={styles.blobStatusBarBody}
                     statusBarRef={nextStatusBarElement}
                     hideWhileInitializing={true}
+                    isBlobPage={true}
                 />
             )}
         </>

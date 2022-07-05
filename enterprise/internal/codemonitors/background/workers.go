@@ -175,7 +175,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
-	results, searchErr := codemonitors.Search(ctx, r.db, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, logger, r.db, query, m.ID, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)

@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
@@ -228,7 +228,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
-                                            <Icon aria-hidden={true} as={CheckCircleIcon} /> Published release
+                                            <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Published release
                                             successfully.
                                         </span>
                                     ))}

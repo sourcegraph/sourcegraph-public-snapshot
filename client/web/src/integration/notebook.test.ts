@@ -319,9 +319,10 @@ describe('Search Notebook', () => {
         expect(renderedMarkdownText?.trim()).toEqual('Replaced text')
 
         // Edit and run new query block
-        await driver.page.click(`${newQueryBlockSelector} .monaco-editor`)
+        const inputSelector = `${newQueryBlockSelector} [data-testid="notebook-query-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${newQueryBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'repo:test query',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -353,9 +354,10 @@ describe('Search Notebook', () => {
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Edit new file block
-        await driver.page.click(`${fileBlockSelector} .monaco-editor`)
+        const inputSelector = `${fileBlockSelector} [data-testid="notebook-file-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${fileBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'client/web/file.tsx',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -601,9 +603,10 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         const symbolBlockSelector = blockSelector(blockIds[2])
 
         // Edit new symbol block
-        await driver.page.click(`${symbolBlockSelector} .monaco-editor`)
+        const inputSelector = `${symbolBlockSelector} [data-testid="notebook-symbol-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${symbolBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'func',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',

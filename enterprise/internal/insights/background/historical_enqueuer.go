@@ -43,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -377,7 +378,12 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	var multi error
 	for _, series := range foundInsights {
 		log15.Info("Loaded insight data series for historical processing", "series_id", series.SeriesID)
+		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
+		if incrementErr != nil {
+			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID)
+		}
 	}
+
 	if err := h.buildFrames(ctx, foundInsights); err != nil {
 		multi = errors.Append(multi, err)
 	}
@@ -444,7 +450,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 }
 
 func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, err error, softErr error) {
-	span, ctx := ot.StartSpanFromContext(ot.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
+	span, ctx := ot.StartSpanFromContext(policy.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
 	span.SetTag("repo_id", id)
 	defer func() {
 		if err != nil {

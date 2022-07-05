@@ -1,7 +1,7 @@
 import React, { useContext, useMemo, useEffect } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -153,7 +153,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                 <footer className={styles.footer}>
                     {licensed ? (
                         <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon aria-hidden={true} as={PlusIcon} /> Create your first insight
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
                         </Button>
                     ) : (
                         <Button
