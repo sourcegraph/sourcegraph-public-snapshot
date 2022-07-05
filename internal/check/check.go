@@ -149,7 +149,7 @@ func DefaultEndpointProvider(service string) []*url.URL {
 // While it is not necessary to add newlines to the JSON output, it is really
 // convenient for grepping from the command line.
 func NewAggregateHealthCheckHandler(endpointProvider func(service string) []*url.URL) http.Handler {
-	services := []string{"frontend", "searcher"}
+	services := []string{"frontend"}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
