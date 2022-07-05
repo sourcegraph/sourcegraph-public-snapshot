@@ -652,6 +652,25 @@ commands:
       LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
+  otel-collector:
+    cmd: |
+      JAEGER_HOST='host.docker.internal'
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        # Jaeger generally runs outside of Docker, so to access it we need to be
+        # able to access ports on the host, because the Docker host only exists on
+        # MacOS. --net=host is a very dirty way of enabling this.
+        DOCKER_NET="--net=host"
+        JAEGER_HOST="localhost"
+      fi
+
+      docker run --rm --name=otel-collector $DOCKER_NET \
+        -p 4317:4317 -p 55679:55679 \
+        -e JAEGER_HOST=$JAEGER_HOST \
+        -v "$(pwd)"/dev/otel-collector/config.yaml:/etc/otel-collector/config.yaml \
+        otel/opentelemetry-collector:${OTEL_COLLECTOR_VERISON} --config /etc/otel-collector/config.yaml
+    env:
+      OTEL_COLLECTOR_VERISON: '0.54.0'
+
   storybook:
     cmd: yarn storybook
     install: yarn
@@ -896,6 +915,14 @@ commandsets:
     commands:
       - web-standalone-http-prod
       - caddy
+
+  # For testing out OpenTelemetry stack
+  otel:
+    checks:
+      - docker
+    commands:
+      - otel-collector
+      - jaeger
 
 tests:
   # These can be run with `sg test [name]`
