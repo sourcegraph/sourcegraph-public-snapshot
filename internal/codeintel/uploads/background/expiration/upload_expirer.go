@@ -242,7 +242,7 @@ func (e *expirer) isUploadProtectedByPolicy(
 }
 
 func convertConfigPolicies(configs []policyShared.ConfigurationPolicy) []dbstore.ConfigurationPolicy {
-	var configPolicy []dbstore.ConfigurationPolicy
+	configPolicy := make([]dbstore.ConfigurationPolicy, 0, len(configs))
 	for _, c := range configs {
 		configPolicy = append(configPolicy, dbstore.ConfigurationPolicy{
 			ID:                        c.ID,
