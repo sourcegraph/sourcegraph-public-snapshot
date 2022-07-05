@@ -533,13 +533,13 @@ WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
 func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 	-- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetRepoSize
-	INSERT INTO gitserver_repos(repo_id, repo_size_bytes, shard_id, updated_at)
-	SELECT id, %s, %s, now()
+	INSERT INTO gitserver_repos(repo_id, repo_size_bytes, shard_id, clone_status, updated_at)
+	SELECT id, %s, %s, 'cloned', now()
 	FROM repo
 	WHERE name = %s
 	ON CONFLICT (repo_id) DO UPDATE
-	       SET (repo_size_bytes, updated_at) =
-	                       (EXCLUDED.repo_size_bytes, now())
+	       SET (repo_size_bytes, clone_status, updated_at) =
+	                       (EXCLUDED.repo_size_bytes, 'cloned', now())
 	WHERE gitserver_repos.repo_size_bytes IS DISTINCT FROM EXCLUDED.repo_size_bytes
 	`, size, shardID, name))
 
@@ -562,12 +562,12 @@ type GitserverFetchData struct {
 func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetLastFetched
-INSERT INTO gitserver_repos(repo_id, last_fetched, last_changed, shard_id, updated_at)
-SELECT id, %s, %s, %s, now()
+INSERT INTO gitserver_repos(repo_id, last_fetched, last_changed, shard_id, clone_status, updated_at)
+SELECT id, %s, %s, %s, 'cloned', now()
 FROM repo WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
-SET (last_fetched, last_changed, shard_id, updated_at) =
-    (EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.shard_id, now())
+SET (last_fetched, last_changed, shard_id, clone_status, updated_at) =
+    (EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.shard_id, 'cloned', now())
 `, data.LastFetched, data.LastChanged, data.ShardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
@@ -604,10 +604,9 @@ WHERE gr.repo_size_bytes IS NULL
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (err error) {
-
 	inserter := func(inserter *batch.Inserter) error {
 		for repo, size := range repos {
-			if err := inserter.Insert(ctx, repo, shardID, size, "now()"); err != nil {
+			if err := inserter.Insert(ctx, repo, shardID, size, "cloned", "now()"); err != nil {
 				return err
 			}
 		}
@@ -625,8 +624,8 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 		tx.Handle(),
 		"gitserver_repos",
 		batch.MaxNumPostgresParameters,
-		[]string{"repo_id", "shard_id", "repo_size_bytes", "updated_at"},
-		"ON CONFLICT (repo_id) DO UPDATE SET (repo_size_bytes, shard_id, updated_at) = (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, now())",
+		[]string{"repo_id", "shard_id", "repo_size_bytes", "clone_status", "updated_at"},
+		"ON CONFLICT (repo_id) DO UPDATE SET (repo_size_bytes, shard_id, clone_status, updated_at) = (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, 'cloned', now())",
 		nil,
 		nil,
 		inserter,
