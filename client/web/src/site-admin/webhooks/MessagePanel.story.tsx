@@ -1,55 +1,103 @@
 import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { MessagePanel } from './MessagePanel'
 import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'
 
-const { add } = storiesOf('web/site-admin/webhooks/MessagePanel', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const config: Meta = {
+    title: 'web/site-admin/webhooks/MessagePanel',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
         },
-    })
+    },
+}
 
-for (const [name, { headers, body }] of Object.entries({
+export default config
+
+const messagePanelObject = {
     JSON: { headers: HEADERS_JSON, body: BODY_JSON },
     plain: { headers: HEADERS_PLAIN, body: BODY_PLAIN },
-})) {
-    add(`${name} request`, () => (
-        <WebStory>
-            {() => (
-                <MessagePanel
-                    message={{
-                        headers,
-                        body,
-                    }}
-                    requestOrStatusCode={{
-                        method: 'POST',
-                        url: '/my/url',
-                        version: 'HTTP/1.1',
-                    }}
-                />
-            )}
-        </WebStory>
-    ))
-
-    add(`${name} response`, () => (
-        <WebStory>
-            {() => (
-                <MessagePanel
-                    message={{
-                        headers,
-                        body,
-                    }}
-                    requestOrStatusCode={number('status code', 200, {
-                        min: 100,
-                        max: 599,
-                    })}
-                />
-            )}
-        </WebStory>
-    ))
 }
+
+export const JSONRequest: Story = () => (
+    <WebStory>
+        {() => (
+            <MessagePanel
+                message={{
+                    headers: messagePanelObject.JSON.headers,
+                    body: messagePanelObject.JSON.body,
+                }}
+                requestOrStatusCode={{
+                    method: 'POST',
+                    url: '/my/url',
+                    version: 'HTTP/1.1',
+                }}
+            />
+        )}
+    </WebStory>
+)
+
+JSONRequest.storyName = 'JSON request'
+
+export const JSONResponse: Story = () => (
+    <WebStory>
+        {() => (
+            <MessagePanel
+                message={{
+                    headers: messagePanelObject.JSON.headers,
+                    body: messagePanelObject.JSON.body,
+                }}
+                requestOrStatusCode={number('status code', 200, {
+                    min: 100,
+                    max: 599,
+                })}
+            />
+        )}
+    </WebStory>
+)
+
+JSONResponse.storyName = 'JSON response'
+
+export const PlainRequest: Story = () => (
+    <WebStory>
+        {() => (
+            <MessagePanel
+                message={{
+                    headers: messagePanelObject.plain.headers,
+                    body: messagePanelObject.plain.body,
+                }}
+                requestOrStatusCode={{
+                    method: 'POST',
+                    url: '/my/url',
+                    version: 'HTTP/1.1',
+                }}
+            />
+        )}
+    </WebStory>
+)
+
+PlainRequest.storyName = 'plain request'
+
+export const PlainResponse: Story = () => (
+    <WebStory>
+        {() => (
+            <MessagePanel
+                message={{
+                    headers: messagePanelObject.plain.headers,
+                    body: messagePanelObject.plain.body,
+                }}
+                requestOrStatusCode={number('status code', 200, {
+                    min: 100,
+                    max: 599,
+                })}
+            />
+        )}
+    </WebStory>
+)
+
+PlainResponse.storyName = 'plain response'
