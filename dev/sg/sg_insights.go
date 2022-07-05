@@ -69,7 +69,7 @@ func getInsightSeriesIDAction(cmd *cli.Context) error {
 	// Read the configuration.
 	conf, _ := sgconf.Get(configFile, configOverwriteFile)
 	if conf == nil {
-		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+		return errors.New("Failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
 	// Connect to the database.
