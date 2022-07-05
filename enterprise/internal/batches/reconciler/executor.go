@@ -115,6 +115,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case btypes.ReconcilerOperationArchive:
 			e.archiveChangeset()
 
+		case btypes.ReconcilerOperationReattach:
+			e.reattachChangeset()
+
 		default:
 			err = errors.Errorf("executor operation %q not implemented", op)
 		}
@@ -379,6 +382,13 @@ func (e *executor) archiveChangeset() {
 			e.ch.BatchChanges[i].IsArchived = true
 			e.ch.BatchChanges[i].Archive = false
 		}
+	}
+}
+
+// reattachChangeset resets detatched_at to zero.
+func (e *executor) reattachChangeset() {
+	if !e.ch.DetachedAt.IsZero() {
+		e.ch.DetachedAt = time.Time{}
 	}
 }
 
