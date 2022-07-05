@@ -858,22 +858,26 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
  * from the current ones. This prevents adding a new entry when e.g. the user
  * clicks the same line multiple times.
  */
-function updateBrowserHistoryIfNecessary(history: H.History, location: H.Location, newSearch: URLSearchParams): void {
-    const currentSearch = new URLSearchParams(location.search)
-    let updateHistory = [...currentSearch.keys()].length !== [...newSearch.keys()].length
-    if (!updateHistory) {
-        for (const [key, value] of currentSearch) {
-            if (newSearch.get(key) !== value) {
-                updateHistory = true
-                break
-            }
-        }
-    }
+function updateBrowserHistoryIfNecessary(
+    history: H.History,
+    location: H.Location,
+    newSearchParams: URLSearchParams
+): void {
+    const currentSearchParams = [...new URLSearchParams(location.search).entries()]
 
-    if (updateHistory) {
+    // Update history if the number of search params changes or if any parameter
+    // value changes. This will also work for file position changes, which are
+    // encoded as parameter without a value. The old file position will be a
+    // non-existing key in the new search parameters and thus return `null`
+    // (whereas it returns an empty string in the current search parameters).
+    const needsUpdate =
+        currentSearchParams.length !== [...newSearchParams.keys()].length ||
+        currentSearchParams.some(([key, value]) => newSearchParams.get(key) !== value)
+
+    if (needsUpdate) {
         history.push({
             ...location,
-            search: formatSearchParameters(newSearch),
+            search: formatSearchParameters(newSearchParams),
         })
     }
 }
