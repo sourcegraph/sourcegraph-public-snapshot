@@ -296,6 +296,7 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/jetbrains -s typecheck"),
 		bk.Cmd("yarn --cwd client/jetbrains -s build"),
 	)
 }
