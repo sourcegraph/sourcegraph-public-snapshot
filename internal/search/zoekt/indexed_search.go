@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
