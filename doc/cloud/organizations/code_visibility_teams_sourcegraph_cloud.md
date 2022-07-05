@@ -1,5 +1,7 @@
 # Who can see your organization’s code on Sourcegraph Cloud
 
+> WARNING: [Private code on Sourcegraph.com is no longer supported](https://about.sourcegraph.com/blog/single-tenant-cloud) and all previously synced code will be removed on August 1.
+
 Sourcegraph Cloud protects your organization’s private code using repository permissions from GitHub.com and GitLab.com to determine who can see repositories you’ve added to your organization on Sourcegraph Cloud.
 
 ## Public repositories

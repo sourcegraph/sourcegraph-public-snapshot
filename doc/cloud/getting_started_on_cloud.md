@@ -1,5 +1,7 @@
 # Getting Started on Sourcegraph Cloud for Individuals
 
+> WARNING: [Private code on Sourcegraph.com is no longer supported](https://about.sourcegraph.com/blog/single-tenant-cloud) and all previously synced code will be removed on August 1.
+
 Are you new to Sourcegraph Cloud? This is your place to start. 
 
 [Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your personal code from GitHub.com or GitLab.com, and across more than 2 million open source repositories. Sourcegraph Cloud allows any individual to sign up, connect personal repositories, and search across personal code for free. 

@@ -1,5 +1,7 @@
 # Adding your organization’s repositories to Sourcegraph Cloud
 
+> WARNING: [Private code on Sourcegraph.com is no longer supported](https://about.sourcegraph.com/blog/single-tenant-cloud) and all previously synced code will be removed on August 1.
+
 Search across your code with your team on Sourcegraph Cloud by adding your organization’s repositories to Sourcegraph from GitHub.com or GitLab.com.
 
 ## Adding a code host connection
