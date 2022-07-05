@@ -7,6 +7,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -62,6 +64,7 @@ func getInsightSeriesIDAction(cmd *cli.Context) error {
 	std.Out.WriteNoticef("Finding all insight_series_ids for %s", ids[0])
 
 	ctx := cmd.Context
+	logger := log.Scoped("getInsightSeriesIDAction", "")
 
 	// Read the configuration.
 	conf, _ := sgconf.Get(configFile, configOverwriteFile)
@@ -74,7 +77,7 @@ func getInsightSeriesIDAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(conn)
+	db := database.NewDB(logger, conn)
 
 	const getInsightSeriesIDQuery = `
 SELECT series_id from insight_series where id IN
@@ -104,10 +107,10 @@ SELECT series_id from insight_series where id IN
 		if err := rows.Scan(&insightViewSeries); err != nil {
 			return err
 		}
-		std.Out.Writef("%s", insightViewSeries)
+		std.Out.WriteSuccessf("%s", insightViewSeries)
 	}
 	if !hit {
-		std.Out.Writef("No IDs found")
+		std.Out.WriteSkippedf("No IDs found")
 	}
 	return nil
 }
