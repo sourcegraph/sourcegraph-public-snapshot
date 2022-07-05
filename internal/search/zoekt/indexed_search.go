@@ -445,7 +445,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 		InputRev: &inputRev,
 	}
 
-	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
+	symbols := make([]*result.SymbolMatch, 0, len(file.ChunkMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue

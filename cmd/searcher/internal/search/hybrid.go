@@ -124,7 +124,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 			return false, nil
 		}
 
-		cms := make([]protocol.ChunkMatch, 0, len(fm.LineMatches))
+		cms := make([]protocol.ChunkMatch, 0, len(fm.ChunkMatches))
 		for _, l := range fm.LineMatches {
 			if l.FileName {
 				continue
