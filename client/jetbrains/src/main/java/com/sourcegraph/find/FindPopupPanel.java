@@ -55,7 +55,6 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
             browserAndLoadingPanel.setBrowser(browser);
         }
 
-
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
         // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
         // doesn't properly pass the mouse events to Swing.
