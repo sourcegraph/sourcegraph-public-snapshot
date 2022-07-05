@@ -1013,12 +1013,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 	s.queue.Push(request)
 
-	expErr := "unexpected request type: 3"
-	err := s.syncPerms(context.Background(), request)
-	if err == nil || err.Error() != expErr {
-		t.Fatalf("err: want %q but got %v", expErr, err)
-	}
-
+	s.syncPerms(context.Background(), logtest.NoOp(t), nil, request)
 	if s.queue.Len() != 0 {
 		t.Fatalf("queue length: want 0 but got %d", s.queue.Len())
 	}

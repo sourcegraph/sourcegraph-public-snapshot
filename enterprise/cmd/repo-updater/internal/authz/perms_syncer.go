@@ -1039,7 +1039,7 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 // syncPerms processes the permissions syncing request and remove the request from
 // the queue once it is done (independent of success or failure).
 // TODO: update docstring
-func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextStreamGroup[*syncRequest], request *syncRequest) {
+func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	defer s.queue.remove(request.Type, request.ID, true)
 
 	var runSync func() error
@@ -1063,10 +1063,8 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 
 	// The call is blocked if reached max concurrency
 	syncGroups[request.Type].Go(
-		func(ctx context.Context) (*syncRequest, error) {
-			return request, runSync()
-		},
-		func(_ context.Context, request *syncRequest, err error) {
+		func(ctx context.Context) error {
+			err := runSync()
 			if err != nil {
 				logger.Error("failed to sync permissions",
 					log.Object("request",
@@ -1076,6 +1074,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 					log.Error(err),
 				)
 			}
+			return nil
 		},
 	)
 }
@@ -1085,9 +1084,9 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger.Debug("started")
 	defer logger.Info("stopped")
 
-	syncGroups := map[requestType]group.ContextStreamGroup[*syncRequest]{
-		requestTypeUser: group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(3), // TODO: Read MaxConcurrency from code host configuration
-		requestTypeRepo: group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(1),
+	syncGroups := map[requestType]group.ContextGroup{
+		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(3), // TODO: Read MaxConcurrency from code host configuration
+		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
 	}
 
 	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
