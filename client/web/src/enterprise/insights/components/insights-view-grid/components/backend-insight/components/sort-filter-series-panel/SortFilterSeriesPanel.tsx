@@ -31,7 +31,21 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
     }
 
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        onChange({ ...value, limit: event.target.value })
+        const inputValue = event.target.value
+        let limit = inputValue
+
+        // If a value is provided, clamp that value between 1 and maxLimit
+        if (inputValue.length > 0) {
+            limit = Math.max(Math.min(parseInt(inputValue, 10), maxLimit), 1).toString()
+        }
+        onChange({ ...value, limit })
+    }
+
+    const handleBlur: React.FocusEventHandler<HTMLInputElement> = event => {
+        const limit = event.target.value
+        if (limit === '') {
+            onChange({ ...value, limit: `${maxLimit}` })
+        }
     }
 
     return (
@@ -102,9 +116,11 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                 <Input
                     type="number"
                     step="1"
+                    min={1}
                     max={maxLimit}
                     value={value.limit}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     variant="small"
                 />
             </footer>
