@@ -246,11 +246,46 @@ func (r *resolver) GetConfigurationPolicyByID(ctx context.Context, id int) (dbst
 }
 
 func (r *resolver) CreateConfigurationPolicy(ctx context.Context, configurationPolicy dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
-	return r.dbStore.CreateConfigurationPolicy(ctx, configurationPolicy)
+	policy, err := r.dbStore.CreateConfigurationPolicy(ctx, configurationPolicy)
+	if err != nil {
+		return policy, err
+	}
+
+	if err := r.updateReposMatchingPolicyPatterns(ctx, policy); err != nil {
+		return policy, err
+	}
+
+	return policy, nil
+}
+
+func (r *resolver) updateReposMatchingPolicyPatterns(ctx context.Context, policy dbstore.ConfigurationPolicy) error {
+	var patterns []string
+	if policy.RepositoryPatterns != nil {
+		patterns = *policy.RepositoryPatterns
+	}
+
+	if len(patterns) == 0 {
+		return nil
+	}
+
+	var repositoryMatchLimit *int
+	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
+		repositoryMatchLimit = &val
+	}
+
+	if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *resolver) UpdateConfigurationPolicy(ctx context.Context, policy dbstore.ConfigurationPolicy) (err error) {
-	return r.dbStore.UpdateConfigurationPolicy(ctx, policy)
+	if err := r.dbStore.UpdateConfigurationPolicy(ctx, policy); err != nil {
+		return err
+	}
+
+	return r.updateReposMatchingPolicyPatterns(ctx, policy)
 }
 
 func (r *resolver) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
