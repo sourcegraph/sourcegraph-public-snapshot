@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/hexops/autogold"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -1435,7 +1437,8 @@ func mockComputeSearch(results []computeSearch) func(context.Context, string) ([
 }
 
 func TestGetSeries(t *testing.T) {
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {

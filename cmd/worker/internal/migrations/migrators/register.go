@@ -4,12 +4,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	logger := log.Scoped("RegisterOSSMigrations", "")
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := NewExternalServiceConfigMigratorWithDB(db)
 	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
@@ -18,7 +21,7 @@ func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigratio
 	}
 
 	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := NewExternalAccountsMigratorWithDB(db)
+	extAccMigrator := NewExternalAccountsMigratorWithDB(logger, db)
 	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		return errors.Wrap(err, "failed to run user external account encryption job")

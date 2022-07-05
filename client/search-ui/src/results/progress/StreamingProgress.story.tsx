@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -6,17 +6,22 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { StreamingProgress } from './StreamingProgress'
 
-const { add } = storiesOf('search-ui/results/progress/StreamingProgress', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+const config: Meta = {
+    title: 'search-ui/results/progress/StreamingProgress',
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+        },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     },
-    chromatic: { viewports: [1200], disableSnapshot: false },
-})
+}
+
+export default config
 
 const onSearchAgain = sinon.spy()
 
-add('StreamingProgress', () => (
+export const StreamingProgressStory: Story = () => (
     <BrandedStory>
         {() => (
             <>
@@ -254,4 +259,6 @@ add('StreamingProgress', () => (
             </>
         )}
     </BrandedStory>
-))
+)
+
+StreamingProgressStory.storyName = 'StreamingProgress'

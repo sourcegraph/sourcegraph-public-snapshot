@@ -1,10 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react'
 
+import { mdiChevronDown, mdiChevronRight, mdiSync } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -93,7 +91,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
                 <div className="p-2">
@@ -170,7 +168,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -273,7 +271,7 @@ const RetryChangesetButton: React.FunctionComponent<
                 <Icon
                     aria-hidden={true}
                     className={classNames(isLoading === true && styles.externalChangesetNodeRetrySpinning)}
-                    as={SyncIcon}
+                    svgPath={mdiSync}
                 />{' '}
                 Retry
             </Button>

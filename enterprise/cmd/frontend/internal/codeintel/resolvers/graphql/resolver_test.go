@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -32,7 +34,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
+	if _, err := NewResolver(db, db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -45,12 +47,13 @@ func TestDeleteLSIFUpload(t *testing.T) {
 }
 
 func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
+	if _, err := NewResolver(db, db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", backend.ErrNotAuthenticated, err)
 	}
 }
@@ -65,7 +68,7 @@ func TestDeleteLSIFIndex(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
+	if _, err := NewResolver(db, db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -78,12 +81,13 @@ func TestDeleteLSIFIndex(t *testing.T) {
 }
 
 func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
+	if _, err := NewResolver(db, db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", backend.ErrNotAuthenticated, err)
 	}
 }

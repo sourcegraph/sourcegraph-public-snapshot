@@ -14,7 +14,7 @@ import (
 )
 
 // NewGoModulesSource returns a new GoModulesSource from the given external service.
-func NewGoModulesSource(svc *types.ExternalService, cf *httpcli.Factory) (*DependenciesSource, error) {
+func NewGoModulesSource(svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
 	var c schema.GoModulesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -25,7 +25,7 @@ func NewGoModulesSource(svc *types.ExternalService, cf *httpcli.Factory) (*Depen
 		return nil, err
 	}
 
-	return &DependenciesSource{
+	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.GoModulesScheme,
@@ -39,20 +39,20 @@ type goModulesSource struct {
 	client *gomodproxy.Client
 }
 
-var _ dependenciesSource = &goModulesSource{}
+var _ packagesSource = &goModulesSource{}
 
-func (s *goModulesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+func (s *goModulesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	mod, err := s.client.GetVersion(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewGoDependency(*mod), nil
+	return reposource.NewGoPackageVersion(*mod), nil
 }
 
-func (goModulesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseGoDependency(dep)
+func (goModulesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+	return reposource.ParseGoPackageVersion(dep)
 }
 
-func (goModulesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (goModulesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }

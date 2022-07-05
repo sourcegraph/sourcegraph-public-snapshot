@@ -9,14 +9,6 @@
     --tooltip-margin: 0;
 }
 
-.tooltip {
-    // This goes along with the fix described here: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761
-    // This display style keeps the tooltip aligned on Button components, since `inline` or `inline-block` did not fill the full height,
-    // resulting in tooltips anchoring on just the Button text, not the full Button element
-    display: inline-flex;
-    user-select: text;
-}
-
 .tooltip-content {
     font-size: var(--tooltip-font-size);
     line-height: var(--tooltip-line-height);
@@ -31,4 +23,26 @@
 
 .tooltip-arrow {
     fill: var(--tooltip-bg);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// The styles below are all needed to properly support and style tooltips on disabled triggers.
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+.tooltip-wrapper {
+    display: inline-flex;
+    user-select: text;
+}
+
+.tooltip-trigger-container {
+    display: inline-block;
+    position: relative;
+}
+
+.tooltip-trigger-disabled-overlay {
+    cursor: not-allowed;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    z-index: 999999;
 }

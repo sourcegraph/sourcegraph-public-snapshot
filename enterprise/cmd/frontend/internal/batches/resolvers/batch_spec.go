@@ -412,7 +412,9 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 	failedJobs, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
 		OnlyWithFailureMessage: true,
 		BatchSpecID:            r.batchSpec.ID,
-		Cancel:                 &f,
+		// Omit canceled, they don't contain useful error messages.
+		Cancel:      &f,
+		ExcludeRank: true,
 	})
 	if err != nil {
 		return nil, err

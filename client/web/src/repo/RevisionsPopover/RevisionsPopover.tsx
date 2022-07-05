@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiClose } from '@mdi/js'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
@@ -112,7 +112,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                         className={styles.tabsClose}
                         aria-label="Close"
                     >
-                        <Icon as={CloseIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 }
             >

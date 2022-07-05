@@ -39,6 +39,10 @@ Running batch changes server-side has been tested to run a simple 20k changeset 
 
 Feedback on running batch changes server-side is very welcome, feel free to open an [issue](https://github.com/sourcegraph/sourcegraph/issues), reach out through your usual support channel, or send a [direct message](https://twitter.com/MaloMarrec).
 
+### Note for Apple M1 Mac users
+
+By default, docker on mac will build docker images for `linux/arm64`, which will result in errors when running server-side because executors provide `linux/amd64` hosts. If you're creating your own images to run in batch changes, this can be a problem. Use the `--platform linux/amd64` flag with `docker build` to build images compatible with the server-side host.
+
 ## FAQ
 
 ### Can large batch changes execution be distributed on multiple executors?

@@ -1,11 +1,9 @@
 import { FunctionComponent, useMemo } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import FileUploadIcon from 'mdi-react/FileUploadIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
+import { mdiFileUpload, mdiProgressClock, mdiCheck, mdiAlertCircle } from '@mdi/js'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { LsifUploadFields } from '../../../../graphql-operations'
@@ -46,7 +44,20 @@ export const CodeIntelUploadTimeline: FunctionComponent<React.PropsWithChildren<
 
 const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
-        icon: <FileUploadIcon />,
+        icon: (
+            <Icon
+                aria-label={
+                    upload.state === LSIFUploadState.UPLOADING
+                        ? 'In progress'
+                        : upload.state === LSIFUploadState.ERRORED
+                        ? failedStage === FailedStage.UPLOADING
+                            ? 'Failed'
+                            : 'Success'
+                        : 'Success'
+                }
+                svgPath={mdiFileUpload}
+            />
+        ),
         text:
             upload.state === LSIFUploadState.UPLOADING ||
             (LSIFUploadState.ERRORED && failedStage === FailedStage.UPLOADING)
@@ -69,7 +80,18 @@ const processingStages = (
     failedStage: FailedStage | null
 ): (TimelineStage | { date: null })[] => [
     {
-        icon: <ProgressClockIcon />,
+        icon: (
+            <Icon
+                aria-label={
+                    upload.state === LSIFUploadState.PROCESSING
+                        ? 'In progress'
+                        : upload.state === LSIFUploadState.ERRORED
+                        ? 'Failed'
+                        : 'Success'
+                }
+                svgPath={mdiProgressClock}
+            />
+        ),
         text:
             upload.state === LSIFUploadState.PROCESSING ||
             (LSIFUploadState.ERRORED && failedStage === FailedStage.PROCESSING)
@@ -89,7 +111,7 @@ const terminalStages = (upload: LsifUploadFields): (TimelineStage | { date: null
     upload.state === LSIFUploadState.COMPLETED
         ? [
               {
-                  icon: <CheckIcon />,
+                  icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                   text: 'Finished',
                   date: upload.finishedAt,
                   className: 'bg-success',
@@ -98,7 +120,7 @@ const terminalStages = (upload: LsifUploadFields): (TimelineStage | { date: null
         : upload.state === LSIFUploadState.ERRORED
         ? [
               {
-                  icon: <AlertCircleIcon />,
+                  icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                   text: 'Failed',
                   date: upload.finishedAt,
                   className: 'bg-danger',

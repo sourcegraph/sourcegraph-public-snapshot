@@ -1,0 +1,81 @@
+package com.sourcegraph.config;
+
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+@State(
+    name = "ApplicationConfig",
+    storages = {@Storage("sourcegraph.xml")})
+public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
+    @Nullable
+    public String url;
+    @Nullable
+    public String accessToken;
+    @Nullable
+    public String defaultBranch;
+    @Nullable
+    public String remoteUrlReplacements;
+    public boolean isGlobbingEnabled; // This can be a primitive boolean, we need no "null" state
+    @Nullable
+    public String anonymousUserId;
+    public boolean isInstallEventLogged;
+
+    @NotNull
+    public static SourcegraphApplicationService getInstance() {
+        return ApplicationManager.getApplication()
+            .getService(SourcegraphApplicationService.class);
+    }
+
+    @Nullable
+    public String getSourcegraphUrl() {
+        return url;
+    }
+
+    @Nullable
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    @Nullable
+    public String getDefaultBranchName() {
+        return defaultBranch;
+    }
+
+    @Nullable
+    public String getRemoteUrlReplacements() {
+        return remoteUrlReplacements;
+    }
+
+    public boolean isGlobbingEnabled() {
+        return this.isGlobbingEnabled;
+    }
+
+    @Nullable
+    public String getAnonymousUserId() {
+        return anonymousUserId;
+    }
+
+    public boolean isInstallEventLogged() {
+        return isInstallEventLogged;
+    }
+
+    @Nullable
+    @Override
+    public SourcegraphApplicationService getState() {
+        return this;
+    }
+
+    @Override
+    public void loadState(@NotNull SourcegraphApplicationService settings) {
+        this.url = settings.url;
+        this.accessToken = settings.accessToken;
+        this.defaultBranch = settings.defaultBranch;
+        this.remoteUrlReplacements = settings.remoteUrlReplacements;
+        this.isGlobbingEnabled = settings.isGlobbingEnabled;
+        this.anonymousUserId = settings.anonymousUserId;
+    }
+}

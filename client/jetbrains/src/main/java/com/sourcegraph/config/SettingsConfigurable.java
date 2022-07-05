@@ -39,38 +39,69 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
-        return !mySettingsComponent.getSourcegraphUrl().equals(settings.getSourcegraphUrl())
-            || !mySettingsComponent.getAccessToken().equals(settings.getAccessToken())
-            || !mySettingsComponent.getDefaultBranchName().equals(settings.getDefaultBranchName())
-            || !mySettingsComponent.getRemoteUrlReplacements().equals(settings.getRemoteUrlReplacements())
-            || mySettingsComponent.isGlobbingEnabled() != settings.isGlobbingEnabled();
+        return !mySettingsComponent.getSourcegraphUrl().equals(ConfigUtil.getSourcegraphUrl(project))
+            || !mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project))
+            || !mySettingsComponent.getDefaultBranchName().equals(ConfigUtil.getDefaultBranchName(project))
+            || !mySettingsComponent.getRemoteUrlReplacements().equals(ConfigUtil.getRemoteUrlReplacements(project))
+            || mySettingsComponent.isGlobbingEnabled() != ConfigUtil.isGlobbingEnabled(project);
     }
 
     @Override
     public void apply() {
         MessageBus bus = project.getMessageBus();
         PluginSettingChangeActionNotifier publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
-        publisher.beforeAction();
 
-        SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
-        settings.url = mySettingsComponent.getSourcegraphUrl();
-        settings.accessToken = mySettingsComponent.getAccessToken();
-        settings.defaultBranch = mySettingsComponent.getDefaultBranchName();
-        settings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
-        settings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
+        SourcegraphApplicationService aSettings = SourcegraphApplicationService.getInstance();
+        SourcegraphProjectService pSettings = SourcegraphProjectService.getInstance(project);
 
-        publisher.afterAction();
+        String oldUrl = ConfigUtil.getSourcegraphUrl(project);
+        String oldAccessToken = ConfigUtil.getAccessToken(project);
+        String newUrl = mySettingsComponent.getSourcegraphUrl();
+        String newAccessToken = mySettingsComponent.getAccessToken();
+        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken);
+
+        publisher.beforeAction(context);
+
+        if (pSettings.url != null) {
+            pSettings.url = newUrl;
+        } else {
+            aSettings.url = newUrl;
+        }
+        if (pSettings.accessToken != null) {
+            pSettings.accessToken = newAccessToken;
+        } else {
+            aSettings.accessToken = newAccessToken;
+        }
+        if (pSettings.defaultBranch != null) {
+            pSettings.defaultBranch = mySettingsComponent.getDefaultBranchName();
+        } else {
+            aSettings.defaultBranch = mySettingsComponent.getDefaultBranchName();
+        }
+        if (pSettings.remoteUrlReplacements != null) {
+            pSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
+        } else {
+            aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
+        }
+        //noinspection ReplaceNullCheck
+        if (pSettings.isGlobbingEnabled != null) {
+            pSettings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
+        } else {
+            aSettings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
+        }
+
+        publisher.afterAction(context);
     }
 
     @Override
     public void reset() {
-        SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
-        mySettingsComponent.setSourcegraphUrl(settings.getSourcegraphUrl() != null ? settings.getSourcegraphUrl() : "https://sourcegraph.com");
-        mySettingsComponent.setAccessToken(settings.getAccessToken() != null ? settings.getAccessToken() : "");
-        mySettingsComponent.setDefaultBranchName(settings.getDefaultBranchName() != null ? settings.getDefaultBranchName() : "main");
-        mySettingsComponent.setRemoteUrlReplacements(settings.getRemoteUrlReplacements() != null ? settings.getRemoteUrlReplacements() : "");
-        mySettingsComponent.setGlobbingEnabled(settings.isGlobbingEnabled());
+        mySettingsComponent.setSourcegraphUrl(ConfigUtil.getSourcegraphUrl(project));
+        String accessToken = ConfigUtil.getAccessToken(project);
+        mySettingsComponent.setAccessToken(accessToken != null ? accessToken : "");
+        String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
+        mySettingsComponent.setDefaultBranchName(defaultBranchName);
+        String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
+        mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
+        mySettingsComponent.setGlobbingEnabled(ConfigUtil.isGlobbingEnabled(project));
     }
 
     @Override

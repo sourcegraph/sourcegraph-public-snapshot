@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { sortBy } from 'lodash'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Unsubscribable } from 'sourcegraph'
 
 import { isDefined } from '@sourcegraph/common'
@@ -160,7 +160,7 @@ export const Breadcrumbs: React.FunctionComponent<
             .filter(isDefined)
             .map((breadcrumb, index, validBreadcrumbs) => {
                 const divider = breadcrumb.divider ?? (
-                    <Icon className={styles.divider} as={ChevronRightIcon} aria-hidden={true} />
+                    <Icon className={styles.divider} aria-hidden={true} svgPath={mdiChevronRight} />
                 )
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text

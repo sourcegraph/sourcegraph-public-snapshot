@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -14,7 +16,8 @@ func TestSiteGetLatestDefault(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	latest, err := db.Conf().SiteGetLatest(ctx)
@@ -32,8 +35,8 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	malformedJSON := "[This is malformed.}"
@@ -47,6 +50,7 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 
 func TestSiteCreateIfUpToDate(t *testing.T) {
 	t.Parallel()
+	logger := logtest.Scoped(t)
 
 	type input struct {
 		lastID   int32
@@ -162,7 +166,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			db := NewDB(dbtest.NewDB(t))
+			db := NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
 				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)

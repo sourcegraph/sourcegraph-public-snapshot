@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import {
     EMPTY_SETTINGS_CASCADE,
@@ -10,13 +10,19 @@ import { WebStory } from '../../../components/WebStory'
 
 import { ConfigurationForm } from './ConfigurationForm'
 
-const { add } = storiesOf('web/batches/create/ConfigurationForm', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/create/ConfigurationForm',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const FIXTURE_ORG: SettingsOrgSubject = {
     __typename: 'Org',
@@ -42,11 +48,13 @@ const SETTINGS_CASCADE = {
     ],
 }
 
-add('new batch change', () => (
+export const NewBatchChange: Story = () => (
     <WebStory>{props => <ConfigurationForm {...props} settingsCascade={SETTINGS_CASCADE} />}</WebStory>
-))
+)
 
-add('read-only for existing batch change', () => (
+NewBatchChange.storyName = 'New batch change'
+
+export const ExistingBatchChange: Story = () => (
     <WebStory>
         {props => (
             <ConfigurationForm
@@ -65,4 +73,6 @@ add('read-only for existing batch change', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ExistingBatchChange.storyName = 'Read-only for existing batch change'

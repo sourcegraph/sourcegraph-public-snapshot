@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiSourceRepository, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -245,7 +244,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 size="sm"
                                 as={Link}
                             >
-                                <Icon as={SourceRepositoryIcon} aria-hidden={true} />{' '}
+                                <Icon aria-hidden={true} svgPath={mdiSourceRepository} />{' '}
                                 {displayRepoName(repoOrError.name)}
                             </Button>
                             <PopoverTrigger
@@ -256,7 +255,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 variant="secondary"
                                 size="sm"
                             >
-                                <Icon as={ChevronDownIcon} aria-hidden={true} />
+                                <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                             </PopoverTrigger>
                         </ButtonGroup>
                         <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">

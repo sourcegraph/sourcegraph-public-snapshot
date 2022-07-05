@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -24,7 +24,8 @@ import (
 )
 
 type Observer struct {
-	Db database.DB
+	Logger log.Logger
+	Db     database.DB
 
 	// Inputs are used to generate alert messages based on the query.
 	*run.SearchInputs
@@ -222,12 +223,16 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		log15.Error("Errors during search", "error", o.err)
+		o.Logger.Warn("Errors during search", log.Error(o.err))
 		return o.alert, nil
 	}
 
 	return o.alert, o.err
 }
+
+type alertKind string
+
+const luckySearchQueries alertKind = "lucky-search-queries"
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
@@ -281,10 +286,19 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return a, nil
 	}
 
+	var unindexedLockfile *searchrepos.MissingLockfileIndexing
+	if errors.As(err, &unindexedLockfile) {
+		repo := unindexedLockfile.RepoName()
+		revs := unindexedLockfile.RevNames()
+
+		return search.AlertForUnindexedLockfile(repo, revs), nil
+	}
+
 	if errors.As(err, &lErr) {
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",
 			Title:           "Showing additional results for similar queries",
+			Kind:            string(luckySearchQueries),
 			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil

@@ -7,6 +7,8 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -20,8 +22,9 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
 	defer func() {
 		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil

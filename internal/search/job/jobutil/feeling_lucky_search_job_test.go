@@ -1,13 +1,19 @@
 package jobutil
 
 import (
+	"context"
+	"strconv"
 	"testing"
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -77,4 +83,36 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 	t.Run("type and lang multi rule", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`context:global go commit monitor code`)))
 	})
+}
+
+func TestGeneratedSearchJob(t *testing.T) {
+	mockJob := mockjob.NewMockJob()
+	setMockJobResultSize := func(n int) {
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+			for i := 0; i < n; i++ {
+				select {
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				default:
+				}
+				s.Send(streaming.SearchEvent{
+					Results: []result.Match{&result.FileMatch{
+						File: result.File{Path: strconv.Itoa(i)},
+					}},
+				})
+			}
+			return nil, nil
+		})
+	}
+
+	test := func(resultSize int) string {
+		setMockJobResultSize(resultSize)
+		j := generatedSearchJob{Child: mockJob, ProposedQuery: &search.ProposedQuery{}}
+		j.Run(context.Background(), job.RuntimeClients{}, streaming.NewAggregatingStream())
+		return j.ProposedQuery.Description
+	}
+
+	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
+	autogold.Want("1 result", autogold.Raw(" (1 result)")).Equal(t, autogold.Raw(test(1)))
+	autogold.Want("limit results", autogold.Raw(" (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }

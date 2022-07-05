@@ -53,6 +53,7 @@ var (
 const port = "3181"
 
 func frontendDB() (database.DB, error) {
+	logger := log.Scoped("frontendDB", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -60,7 +61,7 @@ func frontendDB() (database.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return database.NewDB(sqlDB), nil
+	return database.NewDB(logger, sqlDB), nil
 }
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
@@ -240,7 +241,7 @@ func main() {
 
 	defer liblog.Sync()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

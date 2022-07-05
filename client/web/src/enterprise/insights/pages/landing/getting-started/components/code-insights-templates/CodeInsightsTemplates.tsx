@@ -1,7 +1,7 @@
 import React, { MouseEvent, useContext, useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -226,7 +226,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
                 aria-label="Copy Docker command to clipboard"
                 variant="icon"
             >
-                <Icon aria-hidden={true} as={ContentCopyIcon} />
+                <Icon aria-hidden={true} svgPath={mdiContentCopy} />
             </Button>
         </CodeInsightsQueryBlock>
     )

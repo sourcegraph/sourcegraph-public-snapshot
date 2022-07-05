@@ -11,9 +11,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -37,8 +39,9 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -195,8 +198,9 @@ func TestService(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -209,8 +213,8 @@ func TestService(t *testing.T) {
 	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
-	fakeSource := &sources.FakeChangesetSource{}
-	sourcer := sources.NewFakeSourcer(nil, fakeSource)
+	fakeSource := &stesting.FakeChangesetSource{}
+	sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 	svc := New(s)
 	svc.sourcer = sourcer
@@ -810,8 +814,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
-		fakeSource := &sources.FakeChangesetSource{Username: "my-bbs-username"}
-		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &stesting.FakeChangesetSource{Username: "my-bbs-username"}
+		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 		// Create a fresh service for this test as to not mess with state
 		// possibly used by other tests.

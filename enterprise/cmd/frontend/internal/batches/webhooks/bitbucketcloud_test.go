@@ -14,6 +14,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -420,12 +422,14 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 // tests. Any changes made to the stores will be rolled back after the test is
 // complete.
 func bitbucketCloudTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
+
+	logger := logtest.Scoped(t)
 	clock := &bt.TestClock{Time: timeutil.Now()}
 	tx := dbtest.NewTx(t, sqlDB)
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	db := database.NewDBWith(basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
+	db := database.NewDBWith(logger, basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
 
 	return bstore.NewWithClock(db, &observation.TestContext, nil, clock.Now)
 }

@@ -7,7 +7,6 @@ import { ActionEditor, ActionEditorProps } from './ActionEditor'
 describe('ActionEditor', () => {
     const props: ActionEditorProps = {
         title: 'Send email notifications',
-        label: 'Send email notifications',
         subtitle: 'Send notifications to specified recipients.',
         disabled: false,
         completed: false,

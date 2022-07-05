@@ -1,17 +1,17 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { useState } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent.fixtures'
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2 } from '../..'
+import { H1, H2, Tooltip } from '../..'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -138,16 +138,16 @@ export const WithChildren: Story = props => {
                         ))}
                     </TabList>
                     <div className="align-items-center d-flex mr-2">
-                        <Button
-                            onClick={closePanel}
-                            className={classNames('ml-2')}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
-                            variant="icon"
-                        >
-                            <Icon aria-hidden={true} as={CloseIcon} />
-                        </Button>
+                        <Tooltip content="Close panel" placement="left">
+                            <Button
+                                onClick={closePanel}
+                                className={classNames('ml-2')}
+                                title="Close panel"
+                                variant="icon"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        </Tooltip>
                     </div>
                 </div>
                 <TabPanels>

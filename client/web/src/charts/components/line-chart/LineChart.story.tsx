@@ -6,7 +6,7 @@ import { ParentSize } from '@visx/responsive'
 import { WebStory } from '../../../components/WebStory'
 import { Series } from '../../types'
 
-import { LineChart, LegendList, LegendItem, getLineColor } from '.'
+import { LineChart, LegendList, LegendItem, getLineColor } from './index'
 
 const StoryConfig: Meta = {
     title: 'web/charts/line',
@@ -30,7 +30,7 @@ export const LineChartsVitrina: Story = () => (
 
 interface StandardDatum {
     value: number | null
-    x: number
+    x: Date | number
     link?: string
 }
 
@@ -43,27 +43,27 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
         id: 'series_001',
         data: [
             {
-                x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 5),
                 value: 4000,
                 link: 'https://google.com/search',
             },
             {
-                x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 6),
                 value: 4000,
                 link: 'https://google.com/search',
             },
             {
-                x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 7),
                 value: 5600,
                 link: 'https://google.com/search',
             },
             {
-                x: 1588965700286 - 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 8),
                 value: 9800,
                 link: 'https://google.com/search',
             },
             {
-                x: 1588965700286,
+                x: new Date(2020, 5, 9),
                 value: 6000,
             },
         ],
@@ -77,27 +77,27 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
         id: 'series_003',
         data: [
             {
-                x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 5),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 6),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 7),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: 1588965700286 - 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 8),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: 1588965700286,
+                x: new Date(2020, 5, 9),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
@@ -112,27 +112,27 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
         id: 'series_002',
         data: [
             {
-                x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 5),
                 value: 15000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 6),
                 value: 26000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 7),
                 value: 20000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: 1588965700286 - 24 * 60 * 60 * 1000,
+                x: new Date(2020, 5, 8),
                 value: 19000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: 1588965700286,
+                x: new Date(2020, 5, 9),
                 value: 17000,
                 link: 'https://yandex.com/search',
             },

@@ -1,6 +1,6 @@
+import { mdiMagnify } from '@mdi/js'
 import { Meta, Story } from '@storybook/react'
 import { startCase } from 'lodash'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -75,7 +75,7 @@ export const Overview: Story = () => (
             onClick={console.log}
             className="mb-2"
         >
-            <Icon aria-hidden={true} as={SearchIcon} className="mr-1" />
+            <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
             Search
         </ButtonLink>
         <H2>Smaller</H2>

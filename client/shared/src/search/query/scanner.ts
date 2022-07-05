@@ -412,13 +412,19 @@ const filter: Scanner<Filter> = (input, start) => {
     }
 }
 
-const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
+const createPattern = (
+    value: string,
+    range: CharacterRange,
+    kind: PatternKind,
+    delimited?: boolean
+): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
         type: 'pattern',
         range,
         kind,
         value,
+        delimited,
     },
 })
 
@@ -431,10 +437,13 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param scanner The literal scanner.
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
-export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> => (input, start) => {
+export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> => (
+    input,
+    start
+) => {
     const result = scanner(input, start)
     if (result.type === 'success') {
-        return createPattern(result.term.value, result.term.range, kind)
+        return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
     }
     return result
 }
@@ -470,6 +479,31 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     )
 }
 
+const scanStandard = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
 /**
  * Scans a search query string.
  */
@@ -480,6 +514,9 @@ export const scanSearchQuery = (
 ): ScanResult<Token[]> => {
     let patternKind
     switch (searchPatternType) {
+        case SearchPatternType.standard:
+        case SearchPatternType.lucky:
+            return scanStandard(query)
         case SearchPatternType.literal:
             patternKind = PatternKind.Literal
             break
@@ -488,11 +525,6 @@ export const scanSearchQuery = (
             break
         case SearchPatternType.structural:
             patternKind = PatternKind.Structural
-            break
-        case SearchPatternType.lucky:
-            // A `lucky` search pattern can be interpreted in multiple ways
-            // (e.g., literal _or_ regexp), so effectively scan and label patterns as literals.
-            patternKind = PatternKind.Literal
             break
     }
     const scanner = createScanner(patternKind, interpretComments)

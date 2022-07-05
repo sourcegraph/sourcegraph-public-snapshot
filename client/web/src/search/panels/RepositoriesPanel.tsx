@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react'
 
 import { gql } from '@apollo/client'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { of } from 'rxjs'
 
@@ -22,6 +23,9 @@ import { HomePanelsFetchMore, RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD } from './H
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -66,6 +70,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
     const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
         telemetryService,
@@ -92,6 +97,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const [repoFilterValues, setRepoFilterValues] = useState<string[] | null>(null)
+    const getItemRef = useFocusOnLoadedMore(repoFilterValues?.length ?? 0)
 
     useEffect(() => {
         if (searchEventLogs) {
@@ -116,10 +122,12 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         const newItemsToLoad = itemsToLoad + RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
+        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentlySearchedRepositories: newItemsToLoad,
         })
 
+        setIsLoadingMore(false)
         if (data === undefined) {
             return
         }
@@ -131,29 +139,43 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     }
 
     const contentDisplay = (
-        <div className="mt-2">
-            <div className="d-flex mb-1">
-                <small>Search</small>
-            </div>
-            {repoFilterValues?.length && (
-                <ul className="list-group">
-                    {repoFilterValues.map((repoFilterValue, index) => (
-                        // The repo is not guaranteed to be unique on its own, so we use index as well.
-                        // eslint-disable-next-line react/no-array-index-key
-                        <li key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
-                            <small>
-                                <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                                    <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                                </Link>
-                            </small>
-                        </li>
+        <>
+            <table className={classNames('mt-2', styles.resultsTable)}>
+                <thead>
+                    <tr className={styles.resultsTableRow}>
+                        <th>
+                            <small>Search</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {repoFilterValues?.map((repoFilterValue, index) => (
+                        <tr
+                            // The repo is not guaranteed to be unique on its own, so we use index as well.
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={`${repoFilterValue}-${index}`}
+                            className={classNames('text-monospace text-break', styles.resultsTableRow)}
+                        >
+                            <td>
+                                <small>
+                                    <Link
+                                        to={`/search?q=repo:${repoFilterValue}`}
+                                        ref={getItemRef(index)}
+                                        onClick={logRepoClicked}
+                                    >
+                                        <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                    </Link>
+                                </small>
+                            </td>
+                        </tr>
                     ))}
-                </ul>
-            )}
+                </tbody>
+            </table>
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more repositories</VisuallyHidden>}
             {searchEventLogs?.pageInfo.hasNextPage && (
                 <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
-        </div>
+        </>
     )
 
     // Get the user's repos from their commit history and extract all unique repos
@@ -190,21 +212,21 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     }, [gitRepository])
 
     const gitHistoryDisplay = (
-        <div className="mt-2">
-            {gitSet.size > 0 && (
-                <ul className="list-group">
-                    {Array.from(gitSet).map(repo => (
-                        <li key={`${repo}`} className="text-monospace text-break mb-2">
+        <table className={classNames('mt-2', styles.resultsTable)}>
+            <tbody>
+                {Array.from(gitSet).map(repo => (
+                    <tr key={`${repo}`} className={classNames('text-monospace text-break', styles.resultsTableRow)}>
+                        <td>
                             <small>
                                 <Link to={`/search?q=repo:${repo}`} onClick={logRepoClicked}>
                                     <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
                                 </Link>
                             </small>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     )
 
     // Wait for both the search event logs and the git history to be loaded

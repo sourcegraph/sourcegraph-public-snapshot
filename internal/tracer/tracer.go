@@ -3,49 +3,23 @@ package tracer
 import (
 	"fmt"
 	"io"
-	"os"
 	"reflect"
-	"strconv"
 	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/log"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
 	"go.uber.org/automaxprocs/maxprocs"
-	ddopentracing "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
-	ddtracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func init() {
-	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
-	// so we tune for all of them.
-	//
-	// TODO it is surprising that we do this here. We should create a standard
-	// import for sourcegraph binaries which would have less surprising
-	// behaviour.
-	if _, err := maxprocs.Set(); err != nil {
-		log15.Error("automaxprocs failed", "error", err)
-	}
-	if r := os.Getenv("MUX_ANALYTICS_TRACE_RATE"); r != "" {
-		rate, err := strconv.ParseFloat(r, 64)
-		if err != nil {
-			log15.Error("Failed to parse MUX_ANALYTICS_TRACE_RATE", "error", err)
-			return
-		}
-		MUX_ANALYTICS_TRACE_RATE = rate
-	}
-
-}
-
-var MUX_ANALYTICS_TRACE_RATE = 0.1
 
 // options control the behavior of a TracerType
 type options struct {
@@ -61,39 +35,45 @@ type options struct {
 type TracerType string
 
 const (
-	None    TracerType = "none"
-	Datadog TracerType = "datadog"
-	Ot      TracerType = "opentracing"
+	None        TracerType = "none"
+	OpenTracing TracerType = "opentracing"
 )
 
 // isSetByUser returns true if the TracerType is one supported by the schema
 // should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
 func (t TracerType) isSetByUser() bool {
 	switch t {
-	case Datadog, Ot:
+	case OpenTracing:
 		return true
 	}
 	return false
 }
 
 // Init should be called from the main function of service
-func Init(c conftypes.WatchableSiteConfig) {
+func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
+	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
+	// so we tune for all of them.
+	//
+	// TODO it is surprising that we do this here. We should create a standard
+	// import for sourcegraph binaries which would have less surprising
+	// behaviour.
+	if _, err := maxprocs.Set(); err != nil {
+		logger.Error("automaxprocs failed", log.Error(err))
+	}
+
 	opts := &options{}
 	opts.serviceName = env.MyName
 	if version.IsDev(version.Version()) {
 		opts.env = "dev"
 	}
-	if d := os.Getenv("DD_ENV"); d != "" {
-		opts.env = d
-	}
 	opts.version = version.Version()
 
-	initTracer(opts, c)
+	initTracer(logger, opts, c)
 }
 
 // initTracer is a helper that should be called exactly once (from Init).
-func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
-	globalTracer := newSwitchableTracer()
+func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfig) {
+	globalTracer := newSwitchableTracer(logger.Scoped("global", "the global tracer"))
 	opentracing.SetGlobalTracer(globalTracer)
 
 	// initial tracks if it's our first run of conf.Watch. This is used to
@@ -115,28 +95,28 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 	go c.Watch(func() {
 		siteConfig := c.SiteConfig()
 
-		samplingStrategy := ot.TraceNone
+		samplingStrategy := policy.TraceNone
 		shouldLog := false
 		setTracer := None
 		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
 			switch tracingConfig.Sampling {
 			case "all":
-				samplingStrategy = ot.TraceAll
-				setTracer = Ot
+				samplingStrategy = policy.TraceAll
+				setTracer = OpenTracing
 			case "selective":
-				samplingStrategy = ot.TraceSelective
-				setTracer = Ot
+				samplingStrategy = policy.TraceSelective
+				setTracer = OpenTracing
 			}
 			if t := TracerType(tracingConfig.Type); t.isSetByUser() {
 				setTracer = t
 			}
 			shouldLog = tracingConfig.Debug
 		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
+		if tracePolicy := policy.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
 			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
 		}
 		initial = false
-		ot.SetTracePolicy(samplingStrategy)
+		policy.SetTracePolicy(samplingStrategy)
 
 		opts := options{
 			externalURL: siteConfig.ExternalURL,
@@ -154,9 +134,11 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 		prevTracer := oldOpts.TracerType
 		oldOpts = opts
 
-		t, closer, err := newTracer(&opts, prevTracer)
+		t, closer, err := newTracer(logger, &opts, prevTracer)
 		if err != nil {
-			log15.Warn("Could not initialize tracer", "tracer", opts.TracerType, "error", err.Error())
+			logger.Warn("Could not initialize tracer",
+				log.String("tracer", string(opts.TracerType)),
+				log.Error(err))
 			return
 		}
 		globalTracer.set(t, closer, opts.debug)
@@ -164,26 +146,13 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 }
 
 // TODO Use openTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Closer, error) {
+func newTracer(logger log.Logger, opts *options, prevTracer TracerType) (opentracing.Tracer, io.Closer, error) {
 	if opts.TracerType == None {
-		log15.Info("tracing disabled")
-		if prevTracer == Datadog {
-			ddtracer.Stop()
-		}
+		logger.Info("tracing disabled")
 		return opentracing.NoopTracer{}, nil, nil
 	}
-	if opts.TracerType == Datadog {
-		log15.Info("Datadog: tracing enabled")
-		tracer := ddopentracing.New(ddtracer.WithService(opts.serviceName),
-			ddtracer.WithDebugMode(opts.debug),
-			ddtracer.WithServiceVersion(opts.version), ddtracer.WithEnv(opts.env))
-		return tracer, nil, nil
-	}
-	if prevTracer == Datadog {
-		ddtracer.Stop()
-	}
 
-	log15.Info("opentracing: enabled")
+	logger.Info("opentracing: enabled")
 	cfg, err := jaegercfg.FromEnv()
 	cfg.ServiceName = opts.serviceName
 	if err != nil {
@@ -198,7 +167,7 @@ func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Clo
 		cfg.Sampler.Param = 1
 	}
 	tracer, closer, err := cfg.NewTracer(
-		jaegercfg.Logger(log15Logger{}),
+		jaegercfg.Logger(jaegerLoggerShim{logger: logger.Scoped("jaeger", "Jaeger tracer")}),
 		jaegercfg.Metrics(jaegermetrics.NullFactory),
 	)
 	if err != nil {
@@ -208,12 +177,14 @@ func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Clo
 	return tracer, closer, nil
 }
 
-type log15Logger struct{}
+type jaegerLoggerShim struct {
+	logger log.Logger
+}
 
-func (l log15Logger) Error(msg string) { log15.Error(msg) }
+func (l jaegerLoggerShim) Error(msg string) { l.logger.Error(msg) }
 
-func (l log15Logger) Infof(msg string, args ...any) {
-	log15.Info(fmt.Sprintf(msg, args...))
+func (l jaegerLoggerShim) Infof(msg string, args ...any) {
+	l.logger.Info(fmt.Sprintf(msg, args...))
 }
 
 // move to OpenTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
@@ -223,19 +194,30 @@ type switchableTracer struct {
 	mu           sync.RWMutex
 	opentracer   opentracing.Tracer
 	tracerCloser io.Closer
+
 	log          bool
+	logger       log.Logger
+	parentLogger log.Logger // used to create logger
 }
 
+var _ opentracing.Tracer = &switchableTracer{}
+
 // move to OpenTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newSwitchableTracer() *switchableTracer {
-	return &switchableTracer{opentracer: opentracing.NoopTracer{}}
+func newSwitchableTracer(logger log.Logger) *switchableTracer {
+	var t opentracing.NoopTracer
+	return &switchableTracer{
+		opentracer:   t,
+		logger:       logger.With(log.String("opentracer", fmt.Sprintf("%T", t))),
+		parentLogger: logger,
+	}
 }
 
 func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		log15.Info("opentracing: StartSpan", "operationName", operationName, "opentracer", fmt.Sprintf("%T", t.opentracer))
+		t.logger.Info("opentracing: StartSpan",
+			log.String("operationName", operationName))
 	}
 	return t.opentracer.StartSpan(operationName, opts...)
 }
@@ -244,7 +226,7 @@ func (t *switchableTracer) Inject(sm opentracing.SpanContext, format any, carrie
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		log15.Info("opentracing: Inject", "opentracer", fmt.Sprintf("%T", t.opentracer))
+		t.logger.Info("opentracing: Inject")
 	}
 	return t.opentracer.Inject(sm, format, carrier)
 }
@@ -253,12 +235,12 @@ func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanCon
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		log15.Info("opentracing: Extract", "tracer", fmt.Sprintf("%T", t.opentracer))
+		t.logger.Info("opentracing: Extract")
 	}
 	return t.opentracer.Extract(format, carrier)
 }
 
-func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, log bool) {
+func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, shouldLog bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if tc := t.tracerCloser; tc != nil {
@@ -268,5 +250,6 @@ func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer
 
 	t.tracerCloser = tracerCloser
 	t.opentracer = tracer
-	t.log = log
+	t.log = shouldLog
+	t.logger = t.parentLogger.With(log.String("opentracer", fmt.Sprintf("%T", t)))
 }

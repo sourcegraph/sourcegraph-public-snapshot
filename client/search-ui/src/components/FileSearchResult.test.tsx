@@ -28,6 +28,7 @@ describe('FileSearchResult', () => {
     const history = createBrowserHistory()
     history.replace({ pathname: '/search' })
     const defaultProps = {
+        index: 0,
         location: history.location,
         result: RESULT,
         icon: FileIcon,

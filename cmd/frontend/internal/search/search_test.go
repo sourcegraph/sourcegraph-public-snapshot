@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -36,6 +37,7 @@ func TestServeStream_empty(t *testing.T) {
 	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
 
 	ts := httptest.NewServer(&streamHandler{
+		logger:              logtest.Scoped(t),
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
@@ -57,6 +59,74 @@ func TestServeStream_empty(t *testing.T) {
 	if testing.Verbose() {
 		t.Logf("GET:\n%s", b)
 	}
+}
+
+func TestServeStream_chunkMatches(t *testing.T) {
+	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
+	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+
+	mock := client.NewMockSearchClient()
+	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
+	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
+		s.Send(streaming.SearchEvent{
+			Results: result.Matches{&result.FileMatch{
+				File: result.File{Path: "testpath"},
+				ChunkMatches: result.ChunkMatches{{
+					Content: "line1",
+					Ranges: result.Ranges{{
+						Start: result.Location{0, 0, 0},
+						End:   result.Location{1, 0, 1},
+					}},
+				}},
+			}},
+		})
+		return nil, nil
+	})
+
+	mockRepos := database.NewMockRepoStore()
+	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
+		out := make([]*types.SearchedRepo, 0, len(ids))
+		for _, id := range ids {
+			out = append(out, &types.SearchedRepo{ID: id})
+		}
+		return out, nil
+	})
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(mockRepos)
+
+	ts := httptest.NewServer(&streamHandler{
+		logger:              logtest.Scoped(t),
+		db:                  db,
+		flushTickerInternal: 1 * time.Millisecond,
+		pingTickerInterval:  1 * time.Millisecond,
+		searchClient:        mock,
+	})
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL + "?q=test&cm=t&display=1000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	var matches []streamhttp.EventMatch
+	decoder := streamhttp.FrontendStreamDecoder{
+		OnMatches: func(ev []streamhttp.EventMatch) {
+			matches = append(matches, ev...)
+		},
+	}
+	err = decoder.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("expected status 200, got %d", res.StatusCode)
+	}
+	require.Len(t, matches, 1)
+	chunkMatches := matches[0].(*streamhttp.EventContentMatch).ChunkMatches
+	require.Len(t, chunkMatches, 1)
+	require.Len(t, chunkMatches[0].Ranges, 1)
 }
 
 func TestDisplayLimit(t *testing.T) {
@@ -118,7 +188,7 @@ func TestDisplayLimit(t *testing.T) {
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
 			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Protocol, _ *schema.Settings, _ bool) (*run.SearchInputs, error) {
-				q, err := query.Parse(queryString, query.SearchTypeLiteralDefault)
+				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
 				return &run.SearchInputs{
 					Query: q,
@@ -144,6 +214,7 @@ func TestDisplayLimit(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{
+				logger:              logtest.Scoped(t),
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,

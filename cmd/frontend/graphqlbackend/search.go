@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,7 +29,7 @@ type SearchImplementer interface {
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	settings, err := DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
 		return nil, err
@@ -57,17 +58,19 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 		SearchInputs: inputs,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
+		logger:       logger,
 	}, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewBatchSearchImplementer(ctx, r.db, args)
+	return NewBatchSearchImplementer(ctx, r.logger, r.db, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	SearchInputs *run.SearchInputs
 	db           database.DB
+	logger       log.Logger
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map

@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,9 +20,10 @@ func init() {
 
 func TestDBTransactions(t *testing.T) {
 	ctx := context.Background()
+	logger := logtest.Scoped(t)
 	t.Run("no transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		err := db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
 		require.NoError(t, err)
@@ -31,8 +34,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("basic transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
 		{
@@ -63,8 +66,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("rolled back transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
 		{
@@ -94,8 +97,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("nested transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
 		{
@@ -158,8 +161,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("nested transaction rollback works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
 		{

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -22,13 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "ba5e"
 	wantHeadRevision := "1ead"
@@ -62,8 +63,9 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 }
 
 func TestRepositoryComparison(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
@@ -137,7 +139,7 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitdomain.Commit, error) {
+		gitserver.Mocks.Commits = func(repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -147,7 +149,7 @@ func TestRepositoryComparison(t *testing.T) {
 			return commits, nil
 		}
 
-		defer func() { git.Mocks.Commits = nil }()
+		defer func() { gitserver.Mocks.Commits = nil }()
 		commitConnection := comp.Commits(&graphqlutil.ConnectionArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)

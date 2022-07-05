@@ -763,7 +763,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
 
-                if (!firstRow.querySelector('.top-spacer')) {
+                if (firstRow && !firstRow.querySelector('.top-spacer')) {
                     for (const cell of firstRow.cells) {
                         const spacer = document.createElement('div')
                         spacer.classList.add('top-spacer')
@@ -771,7 +771,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     }
                 }
 
-                if (!lastRow.querySelector('.bottom-spacer')) {
+                if (lastRow && !lastRow.querySelector('.bottom-spacer')) {
                     for (const cell of lastRow.cells) {
                         const spacer = document.createElement('div')
                         spacer.classList.add('bottom-spacer')
@@ -792,7 +792,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     return (
         <>
-            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
+            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement} tabIndex={-1}>
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
@@ -849,6 +849,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     className={styles.blobStatusBarBody}
                     statusBarRef={nextStatusBarElement}
                     hideWhileInitializing={true}
+                    isBlobPage={true}
                 />
             )}
         </>
