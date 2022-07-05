@@ -234,7 +234,7 @@ export function createDefaultSuggestionSources(options: {
 
     if (options.disableFilterCompletion !== true) {
         sources.push(
-            // Static suggestions shown if the the current position is outside a
+            // Static suggestions shown if the current position is outside a
             // filter value
             createDefaultSource((context, _tokens, token) => {
                 // Default to the current cursor position (e.g. if the token is a
@@ -273,7 +273,14 @@ export function createDefaultSuggestionSources(options: {
                             const apply = (insertText || label) + ' '
                             return {
                                 label,
-                                apply: asSnippet ? snippet(apply) : apply,
+                                // See issue https://github.com/sourcegraph/sourcegraph/issues/38254
+                                // Per CodeMirror's documentation (https://codemirror.net/docs/ref/#autocomplete.snippet)
+                                // "The user can move between fields with Tab and Shift-Tab as long as the fields are
+                                // active. Moving to the last field or moving the cursor out of the current field
+                                // deactivates the fields."
+                                // This means we need to append a field at the end so that pressing Tab when at the last
+                                // field will move the cursor after the filter value and not move focus outside the input
+                                apply: asSnippet ? snippet(apply + '${}') : apply,
                             }
                         }),
                 }
