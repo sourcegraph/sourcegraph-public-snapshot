@@ -304,10 +304,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     withLatestFrom(urlSearchParameters),
                     tap(([, parameters]) => {
                         parameters.delete('popover')
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(parameters),
-                        })
+                        updateBrowserHistoryIfNecessary(props.history, location, parameters)
                     })
                 ),
             [location, popoverCloses, props.history, urlSearchParameters]
@@ -412,10 +409,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
-                            props.history.push({
-                                ...location,
-                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                            })
+                            updateBrowserHistoryIfNecessary(
+                                props.history,
+                                location,
+                                addLineRangeQueryParameter(parameters, query)
+                            )
                         }
                     }),
                     mapTo(undefined)
@@ -737,18 +735,18 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const context = { position: point, range }
                 const search = new URLSearchParams(location.search)
                 search.set('popover', 'pinned')
-                props.history.push({
-                    search: formatSearchParameters(
-                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
-                    ),
-                })
+                updateBrowserHistoryIfNecessary(
+                    props.history,
+                    location,
+                    addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
+                )
                 await navigator.clipboard.writeText(window.location.href)
             },
         }),
         [
             hoverifier.hoverState.hoveredToken?.line,
             hoverifier.hoverState.hoveredToken?.character,
-            location.search,
+            location,
             nextPopoverClose,
             props.history,
         ]
@@ -853,6 +851,31 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             )}
         </>
     )
+}
+
+/**
+ * Adds an entry to the browser history only if new search parameters differ
+ * from the current ones. This prevents adding a new entry when e.g. the user
+ * clicks the same line multiple times.
+ */
+function updateBrowserHistoryIfNecessary(history: H.History, location: H.Location, newSearch: URLSearchParams): void {
+    const currentSearch = new URLSearchParams(location.search)
+    let updateHistory = [...currentSearch.keys()].length !== [...newSearch.keys()].length
+    if (!updateHistory) {
+        for (const [key, value] of currentSearch) {
+            if (newSearch.get(key) !== value) {
+                updateHistory = true
+                break
+            }
+        }
+    }
+
+    if (updateHistory) {
+        history.push({
+            ...location,
+            search: formatSearchParameters(newSearch),
+        })
+    }
 }
 
 export function getLSPTextDocumentPositionParameters(
