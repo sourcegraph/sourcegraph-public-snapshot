@@ -24,7 +24,7 @@ The number of insights you have does not affect the overall speed at which they 
 
 > NOTE: we have many performance improvements planned. We'll likely release considerable performance gains in the upcoming releases of 2021. 
 
-## Best practices for creating insights over very large repositories 
+## Creating insights over very large repositories 
 
 In some cases, depending on the size of the Sourcegraph instance and the size of the repo, you may see odd behavior or timeout errors if you try to create a code insight running over a single large repository. In this case, it's best to try: 
 
