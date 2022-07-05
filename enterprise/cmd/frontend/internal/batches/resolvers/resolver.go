@@ -474,6 +474,26 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 		}
 	}
 
+	if licenseErr := checkLicense(); licenseErr != nil {
+		if licensing.IsFeatureNotActivated(licenseErr) {
+			batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+				RandID: opts.BatchSpecRandID,
+			})
+			if err != nil {
+				return nil, err
+			}
+			count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+			if err != nil {
+				return nil, err
+			}
+			if count > maxUnlicensedChangesets {
+				return nil, ErrBatchChangesUnlicensed{licenseErr}
+			}
+		} else {
+			return nil, licenseErr
+		}
+	}
+
 	if err := addPublicationStatesToOptions(args.PublicationStates, &opts.PublicationStates); err != nil {
 		return nil, err
 	}
