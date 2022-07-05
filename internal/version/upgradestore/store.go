@@ -2,9 +2,11 @@ package upgradestore
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +35,19 @@ func NewWith(db basestore.TransactableHandle) *store {
 // method will return a false-valued flag if UpdateServiceVersion has never been called for the given
 // service.
 func (s *store) GetFirstServiceVersion(ctx context.Context, service string) (_ string, _ bool, err error) {
-	return basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getFirstServiceVersionQuery, service)))
+	version, ok, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getFirstServiceVersionQuery, service)))
+	if err != nil {
+		if isMissingRelation(err) {
+			// Swallow the error if the versions table does not exist. We will need this behavior
+			// to be acceptable once we begin adding instance version checks in the migrator, which
+			// occurs before schemas are applied.
+			return "", false, nil
+		}
+
+		return "", false, err
+	}
+
+	return version, ok, nil
 }
 
 const getFirstServiceVersionQuery = `
@@ -55,14 +69,17 @@ func (s *store) UpdateServiceVersion(ctx context.Context, service, version strin
 }
 
 func (s *store) updateServiceVersion(ctx context.Context, service, version string, update bool) (err error) {
-	tx, err := s.db.Transact(ctx)
+	prev, _, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(updateServiceVersionSelectQuery, service)))
 	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+		if !update && isMissingRelation(err) {
+			// If we are only validating and the relation does not exist, then we are applying the
+			// instance upgrade from nothing, which should never be an error (get lost, new users!).
+			// If we are also planning to _update_ the version string, return the error eagerly. If
+			// we don't, we will no-op an important update from the booted frontend service, which
+			// nullfies the point of doing these upgrade checks in the first place.
+			return nil
+		}
 
-	prev, _, err := basestore.ScanFirstString(tx.Query(ctx, sqlf.Sprintf(updateServiceVersionSelectQuery, service)))
-	if err != nil {
 		return err
 	}
 
@@ -74,7 +91,7 @@ func (s *store) updateServiceVersion(ctx context.Context, service, version strin
 	}
 
 	if update {
-		if err := tx.Exec(ctx, sqlf.Sprintf(updateServiceVersionSelectUpsertQuery, service, version, time.Now().UTC(), prev)); err != nil {
+		if err := s.db.Exec(ctx, sqlf.Sprintf(updateServiceVersionSelectUpsertQuery, service, version, time.Now().UTC(), prev)); err != nil {
 			return err
 		}
 	}
@@ -94,3 +111,12 @@ VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) = (excluded.version, excluded.updated_at)
 WHERE versions.version = %s
 `
+
+func isMissingRelation(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+
+	return pgErr.Code == "42P01"
+}
