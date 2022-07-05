@@ -6,12 +6,12 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Alert, Link, Code } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, Link } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
 
-import { createBatchChange, applyBatchChange } from './backend'
+import { applyBatchChange, createBatchChange } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
@@ -21,12 +21,13 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
     viewerCanAdminister: boolean
+    exceedsLicense: boolean
     history: H.History
 }
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, exceedsLicense, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
     // `BatchChangePreviewContext` is responsible for managing the overrideable
@@ -36,7 +37,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
 
-    const canApply = selected !== 'all' && selected.size === 0 && !isLoading && viewerCanAdminister
+    const canApply = selected !== 'all' && selected.size === 0 && !isLoading && viewerCanAdminister && !exceedsLicense
 
     // Returns a tooltip error message appropriate for the given circumstances preventing
     // the user from applying the preview.
@@ -110,6 +111,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 </div>
             </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+            {exceedsLicense && <ErrorAlert error="Changesets exceed maximum allowed with license" />}
         </>
     )
 }
