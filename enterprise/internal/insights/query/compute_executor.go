@@ -68,8 +68,6 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query string, repositorie
 			return nil, errors.Wrap(err, "SingleRepoQueryIndexed")
 		}
 
-		fmt.Println(modifiedQuery)
-
 		log15.Debug("executing query", "query", modifiedQuery)
 		grouped, err := c.computeSearch(ctx, modifiedQuery)
 		if err != nil {
