@@ -96,10 +96,8 @@ func validateUpgrade(ctx context.Context, r Runner, version string) error {
 		return err
 	}
 
-	// NOTE: this is a dynamic type check as requiring basestore.ShareableStore
-	// causes a cyclic import in internal/database/connections/test. Doing this
-	// at runtime has the same effect, just with a missing ShareableStore iface
-	// embedded in the store.
+	// NOTE: this is a dynamic type check as embedding basestore.ShareableStore
+	// into the store interface causes a cyclic import in db connection packages.
 	shareableStore, ok := store.(basestore.ShareableStore)
 	if !ok {
 		return errors.New("store does not support direct database handle access")
