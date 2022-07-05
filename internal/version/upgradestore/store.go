@@ -42,6 +42,9 @@ SELECT first_version FROM versions WHERE service = %s
 // ValidateUpgrade enforces our documented upgrade policy and will return an error (performing no side-effects)
 // if the upgrade is between two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) ValidateUpgrade(ctx context.Context, service, version string) (err error) {
+	// ctx, _, endObservation := s.operations.validateUpgrade.With(ctx, &err, observation.Args{})
+	// defer endObservation(1, observation.Args{})
+
 	return s.updateServiceVersion(ctx, service, version, false)
 }
 
