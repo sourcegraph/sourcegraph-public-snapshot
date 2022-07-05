@@ -31,9 +31,9 @@ interface SignInPageProps {
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
-    const location = useLocation()
-
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
+
+    const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
 
     if (props.authenticatedUser) {
