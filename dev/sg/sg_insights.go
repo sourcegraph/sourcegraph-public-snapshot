@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -94,31 +95,25 @@ SELECT series_id from insight_series where id IN
 	}
 
 	q := sqlf.Sprintf(getInsightSeriesIDQuery, cleanDecoded)
-	rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	seriesIds, err := basestore.ScanStrings(db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
 		return errors.Errorf("Got an error when querying database: %v", err)
 	}
-	defer rows.Close()
 
-	hit := false
-	for rows.Next() {
-		hit = true
-		var insightViewSeries string
-		if err := rows.Scan(&insightViewSeries); err != nil {
-			return err
-		}
-		std.Out.WriteSuccessf("%s", insightViewSeries)
-	}
-	if !hit {
+	if len(seriesIds) == 0 {
 		std.Out.WriteSkippedf("No IDs found")
 	}
+	for _, id := range seriesIds {
+		std.Out.WriteSuccessf("%s", id)
+	}
+
 	return nil
 }
 
 func decodeIDIntoUniqueViewID(id string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(id)
 	if err != nil {
-		return "", errors.Newf("could not decode id %q: %v", id, err)
+		return "", errors.Newf("Could not decode id %q: %v", id, err)
 	}
 	// an insight view id is encoded in this format: `insight_view:"[id]"`
 	return strings.Trim(strings.TrimLeft(string(decoded), "insight_view:"), "\""), nil
