@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -57,14 +58,17 @@ type PermsSyncer struct {
 	db database.DB
 	// The database interface for any repos and external services operations.
 	reposStore repos.Store
-	// The database interface for any permissions operations.
-	permsStore edb.PermsStore
 	// The mockable function to return the current time.
 	clock func() time.Time
 	// The rate limit registry for code hosts.
 	rateLimiterRegistry *ratelimit.Registry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
+
+	// TODO: docstring
+	permsUpdateLock sync.Mutex
+	// The database interface for any permissions operations.
+	permsStore edb.PermsStore
 }
 
 // NewPermsSyncer returns a new permissions syncing manager.
@@ -795,6 +799,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	for i := range externalServicesRepoIDs {
 		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
 	}
+
+	s.permsUpdateLock.Lock()
+	defer s.permsUpdateLock.Unlock()
+
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "set user permissions")
@@ -975,6 +983,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		pendingAccountIDs = append(pendingAccountIDs, aid)
 	}
 
+	s.permsUpdateLock.Lock()
+	defer s.permsUpdateLock.Unlock()
+
 	txs, err := s.permsStore.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
@@ -1028,23 +1039,46 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 
 // syncPerms processes the permissions syncing request and remove the request from
 // the queue once it is done (independent of success or failure).
-func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error {
+// TODO: update docstring
+func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextStreamGroup[*syncRequest], request *syncRequest) {
 	defer s.queue.remove(request.Type, request.ID, true)
 
-	var err error
+	var runSync func() error
 	switch request.Type {
 	case requestTypeUser:
-		// Ensure the job field is recorded when monitoring external API calls
-		ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
-		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
+		runSync = func() error {
+			// Ensure the job field is recorded when monitoring external API calls
+			ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
+			return s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
+		}
 	case requestTypeRepo:
-		ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
-		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
+		runSync = func() error {
+			// Ensure the job field is recorded when monitoring external API calls
+			ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
+			return s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
+		}
 	default:
-		err = errors.Errorf("unexpected request type: %v", request.Type)
+		logger.Error("unexpected request type", log.Int("type", int(request.Type)))
+		return
 	}
 
-	return err
+	// The call is blocked if reached max concurrency
+	syncGroups[request.Type].Go(
+		func(ctx context.Context) (*syncRequest, error) {
+			return request, runSync()
+		},
+		func(_ context.Context, request *syncRequest, err error) {
+			if err != nil {
+				logger.Error("failed to sync permissions",
+					log.Object("request",
+						log.Int("type", int(request.Type)),
+						log.Int32("id", request.ID),
+					),
+					log.Error(err),
+				)
+			}
+		},
+	)
 }
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
@@ -1052,8 +1086,10 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger.Debug("started")
 	defer logger.Info("stopped")
 
-	userSyncGroup := group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(3) // TODO: Read MaxConcurrency from code host configuration
-	repoSyncGroup := group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(1)
+	syncGroups := map[requestType]group.ContextStreamGroup[*syncRequest]{
+		requestTypeUser: group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(3), // TODO: Read MaxConcurrency from code host configuration
+		requestTypeRepo: group.NewWithStreaming[*syncRequest]().WithContext(ctx).WithMaxConcurrency(1),
+	}
 
 	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
 	notifyDequeued := make(chan struct{}, 1)
@@ -1084,36 +1120,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		notify(notifyDequeued)
 
-		// TODO: Move logic inside syncPerms
-		var syncGroup group.ContextStreamGroup[*syncRequest]
-		switch request.Type {
-		case requestTypeUser:
-			syncGroup = userSyncGroup
-		case requestTypeRepo:
-			syncGroup = repoSyncGroup
-		default:
-			s.queue.remove(request.Type, request.ID, true)
-			logger.Error("unexpected request type", log.Int("type", int(request.Type)))
-			continue
-		}
-
-		// The call is blocked if reached max concurrency
-		syncGroup.Go(
-			func(ctx context.Context) (*syncRequest, error) {
-				err := s.syncPerms(ctx, request)
-				return request, err
-			},
-			func(_ context.Context, request *syncRequest, err error) {
-				if err != nil {
-					logger.Error("failed to sync permissions",
-						log.Object("request",
-							log.Int("type", int(request.Type)),
-							log.Int32("id", request.ID),
-						),
-						log.Error(err))
-				}
-			},
-		)
+		s.syncPerms(ctx, logger, syncGroups, request)
 	}
 }
 
