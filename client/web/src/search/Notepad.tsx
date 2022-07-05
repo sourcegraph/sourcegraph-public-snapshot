@@ -326,14 +326,18 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
     )
 
     return (
-        <section className={classNames(styles.root, className, { [styles.open]: open })} id={NOTEPAD_ID} role="dialog">
+        <aside
+            className={classNames(styles.root, className, { [styles.open]: open })}
+            id={NOTEPAD_ID}
+            aria-labelledby={`${NOTEPAD_ID}-button`}
+        >
             <Button
-                aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
                 variant="icon"
                 className={classNames(styles.header, 'p-2 d-flex align-items-center justify-content-between')}
                 onClick={toggleOpen}
                 aria-controls={NOTEPAD_ID}
                 aria-expanded="true"
+                id={`${NOTEPAD_ID}-button`}
             >
                 <span>
                     <NotepadIcon />
@@ -343,7 +347,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon aria-hidden={true} as={ChevronUpIcon} />
+                    <Icon aria-label={(open ? 'Close' : 'Open') + ' Notepad'} as={ChevronUpIcon} />
                 </span>
             </Button>
             {open && (
@@ -439,7 +443,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     </div>
                 </>
             )}
-        </section>
+        </aside>
     )
 }
 
