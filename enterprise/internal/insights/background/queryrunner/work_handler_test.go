@@ -403,16 +403,15 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 
 		handler := workHandler{
-			baseWorkerStore:     nil,
-			insightsStore:       nil,
-			metadadataStore:     nil,
-			limiter:             nil,
-			mu:                  sync.RWMutex{},
-			seriesCache:         nil,
-			computeSearchStream: mocked,
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -475,7 +474,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -535,7 +534,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -592,7 +591,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -643,7 +642,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -687,7 +686,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -726,7 +725,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -768,7 +767,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -811,7 +810,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
