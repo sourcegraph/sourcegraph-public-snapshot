@@ -1,5 +1,4 @@
-import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { applyEdits, modify, parse as parseJSONC } from 'jsonc-parser'
 import { from, fromEvent, Observable } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
@@ -179,12 +178,12 @@ export async function editClientSettings(edit: SettingsEdit | string): Promise<v
             ? edit
             : applyEdits(
                   previous,
-                  // TODO(chris): remove `.slice()` (which guards against mutation) once
-                  // https://github.com/Microsoft/node-jsonc-parser/pull/12 is merged in.
-                  setProperty(previous, edit.path.slice(), edit.value, {
-                      tabSize: 2,
-                      insertSpaces: true,
-                      eol: '\n',
+                  modify(previous, edit.path, edit.value, {
+                      formattingOptions: {
+                          tabSize: 2,
+                          insertSpaces: true,
+                          eol: '\n',
+                      },
                   })
               )
     if (isInPage) {

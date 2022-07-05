@@ -743,6 +743,22 @@ input LineChartSearchInsightDataSeriesInput {
     Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
     """
     generatedFromCaptureGroups: Boolean
+
+    """
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
+    """
+    groupBy: GroupByField
+}
+
+"""
+Fields that can be grouped on for compute powered insights.
+"""
+enum GroupByField {
+    REPO
+    LANG
+    PATH
+    AUTHOR
+    DATE
 }
 
 """
@@ -993,6 +1009,11 @@ type SearchInsightDataSeriesDefinition {
     for the code insights webapp, and should be considered unstable (planned to be deprecated in a future release).
     """
     isCalculated: Boolean!
+
+    """
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
+    """
+    groupBy: GroupByField
 }
 
 """

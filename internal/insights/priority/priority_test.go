@@ -21,7 +21,7 @@ func TestFromTimeInterval(t *testing.T) {
 				from: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 				to:   time.Date(2021, 1, 6, 0, 0, 0, 0, time.UTC),
 			},
-			want: 5,
+			want: 16,
 		},
 		{
 			name: "30 days",
@@ -29,7 +29,15 @@ func TestFromTimeInterval(t *testing.T) {
 				from: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 				to:   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).Add(30 * 24 * time.Hour),
 			},
-			want: 30,
+			want: 41,
+		},
+		{
+			name: "0 days",
+			args: args{
+				from: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				to:   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: High + 1,
 		},
 	}
 	for _, tt := range tests {

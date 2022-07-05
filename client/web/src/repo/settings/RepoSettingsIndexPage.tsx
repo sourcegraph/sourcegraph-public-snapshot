@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -89,7 +89,8 @@ const TextSearchIndexedReference: React.FunctionComponent<
         <li className={styles.ref}>
             <Icon
                 className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
-                as={isCurrent ? CheckCircleIcon : LoadingSpinner}
+                svgPath={isCurrent ? mdiCheckCircle : undefined}
+                as={!isCurrent ? LoadingSpinner : undefined}
                 aria-hidden={true}
             />
             <LinkOrSpan to={indexedRef.ref.url}>

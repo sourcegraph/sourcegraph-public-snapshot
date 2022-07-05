@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -42,7 +42,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <H2 className="mb-0">Product subscriptions</H2>
                 <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
-                    <Icon aria-hidden={true} as={AddIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                     Create product subscription
                 </Button>
             </div>

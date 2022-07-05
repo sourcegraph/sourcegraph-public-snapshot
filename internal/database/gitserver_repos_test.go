@@ -693,6 +693,8 @@ func TestSetRepoSize(t *testing.T) {
 	}
 
 	gitserverRepo.RepoSizeBytes = 200
+	// If we have size, we can assume it's cloned
+	gitserverRepo.CloneStatus = types.CloneStatusCloned
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
@@ -721,6 +723,8 @@ func TestSetRepoSize(t *testing.T) {
 		RepoID:        repo2.ID,
 		ShardID:       "",
 		RepoSizeBytes: 300,
+		// If we have size, we can assume it's cloned
+		CloneStatus: types.CloneStatusCloned,
 	}
 	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CloneStatus")); diff != "" {
 		t.Fatal(diff)
@@ -1012,7 +1016,9 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 
 	// Updating sizes in test data for further diff comparison
 	gitserverRepo1.RepoSizeBytes = sizes[gitserverRepo1.RepoID]
+	gitserverRepo1.CloneStatus = types.CloneStatusCloned
 	gitserverRepo2.RepoSizeBytes = sizes[gitserverRepo2.RepoID]
+	gitserverRepo2.CloneStatus = types.CloneStatusCloned
 
 	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
 	// has changed

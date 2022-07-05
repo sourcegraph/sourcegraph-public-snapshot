@@ -1,10 +1,6 @@
 package jobutil
 
-import (
-	"testing"
-
-	"github.com/sourcegraph/log/logtest"
-)
+import "testing"
 
 func TestMembership(t *testing.T) {
 	defer func() {
@@ -13,9 +9,7 @@ func TestMembership(t *testing.T) {
 		}
 	}()
 
-	mapper := Mapper{
-		Log: logtest.Scoped(t),
-	}
+	mapper := Mapper{}
 	for _, j := range allJobs {
 		Sexp(j)
 		PrettyMermaid(j)

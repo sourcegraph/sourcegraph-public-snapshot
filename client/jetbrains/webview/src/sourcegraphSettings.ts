@@ -38,8 +38,8 @@ export function initializeSourcegraphSettings(
                 }
                 return gqlToCascade(data?.viewerSettings as ISettingsCascade)
             }),
-            catchError(() => {
-                console.warn('Failed to load settings')
+            catchError(error => {
+                console.warn('Failed to load Sourcegraph settings', error)
                 return of(EMPTY_SETTINGS_CASCADE)
             })
         )

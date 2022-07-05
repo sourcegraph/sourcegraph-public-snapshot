@@ -7,12 +7,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// WaitForReposToBeCloned waits (up to two minutes) for all repositories
+// WaitForReposToBeCloned waits up to two minutes for all repositories
 // in the list to be cloned.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 	timeout := 120 * time.Second
+	return c.WaitForReposToBeClonedWithin(timeout, repos...)
+}
+
+// WaitForReposToBeClonedWithin waits up to specified duration for all
+// repositories in the list to be cloned.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) WaitForReposToBeClonedWithin(timeout time.Duration, repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

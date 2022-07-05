@@ -19,8 +19,7 @@ import {
 
 import { BATCH_SPEC_BY_ID } from './backend'
 import { BatchChangePreviewPage } from './BatchChangePreviewPage'
-import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
-import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
+import { visibleChangesetApplyPreviewNodeStories, hiddenChangesetApplyPreviewStories } from './list/storyData'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

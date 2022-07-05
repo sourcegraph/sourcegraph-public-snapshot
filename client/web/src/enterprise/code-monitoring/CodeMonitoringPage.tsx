@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState, useLayoutEffect } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -113,7 +113,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 actions={
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <Icon as={PlusIcon} aria-hidden={true} /> Create code monitor
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create code monitor
                         </Button>
                     )
                 }

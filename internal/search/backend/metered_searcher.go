@@ -12,7 +12,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -34,11 +33,11 @@ type meteredSearcher struct {
 	log      sglog.Logger
 }
 
-func NewMeteredSearcher(logger sglog.Logger, hostname string, z zoekt.Streamer) zoekt.Streamer {
+func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
-		log:      logger.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
+		log:      sglog.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -353,6 +355,149 @@ func TestCommitIndexer_windowing(t *testing.T) {
 	})
 }
 
+func Test_IsEmptyRepoError(t *testing.T) {
+	t.Parallel()
+
+	defaultDate := time.Date(2022, 07, 01, 12, 12, 12, 10, time.UTC)
+	defaultError := generateEmptyRepoErrorMessage(defaultDate, nil)
+
+	testCases := []struct {
+		err   error
+		after time.Time
+		until *time.Time
+		want  autogold.Value
+	}{
+		{
+			err:   errors.New(defaultError),
+			after: defaultDate,
+			until: nil,
+			want:  autogold.Want("EmptyRepo", true),
+		},
+		{
+			err:   errors.Newf("Another message: %w", defaultError),
+			after: defaultDate,
+			until: nil,
+			want:  autogold.Want("NestedEmptyRepoError", true),
+		},
+		{
+			err:   errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", defaultError)),
+			after: defaultDate,
+			until: nil,
+			want:  autogold.Want("DeepNestedError", true),
+		},
+		{
+			err:   errors.Newf("Another message: %w", errors.New("Not an empty repo")),
+			after: time.Now(),
+			until: nil,
+			want:  autogold.Want("NestedNotEmptyRepoError", false),
+		},
+		{
+			err:   errors.New(generateEmptyRepoErrorMessage(defaultDate, &defaultDate)),
+			after: defaultDate,
+			until: &defaultDate,
+			want:  autogold.Want("EmptyRepoUntil", true),
+		},
+		{
+			err:   errors.New("A different error"),
+			after: time.Now(),
+			until: nil,
+			want:  autogold.Want("NotEmptyRepo", false),
+		},
+		{
+			err:   nil,
+			after: time.Now(),
+			until: nil,
+			want:  autogold.Want("NotAnError", false),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := isCommitEmptyRepoError(tc.err, tc.after, tc.until)
+			tc.want.Equal(t, got)
+		})
+	}
+}
+
+func TestCommitIndexer_EmptyRepoError(t *testing.T) {
+	ctx := context.Background()
+	commitStore := NewMockCommitStore()
+
+	maxHistorical := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC) }
+
+	indexer := CommitIndexer{
+		limiter:           ratelimit.NewInstrumentedLimiter("TestCommitIndexer", rate.NewLimiter(10, 1)),
+		commitStore:       commitStore,
+		maxHistoricalTime: maxHistorical,
+		background:        context.Background(),
+		operations:        ops,
+		clock:             clock,
+	}
+
+	commits := map[string][]*gitdomain.Commit{
+		"repo-one": {
+			commit("ref1", "2020-05-01T00:00:00+00:00"),
+			commit("ref2", "2020-05-10T00:00:00+00:00"),
+			commit("ref3", "2020-05-15T00:00:00+00:00"),
+			commit("ref4", "2020-05-20T00:00:00+00:00"),
+		},
+		"empty-repo": {},
+	}
+	indexer.getCommits = mockCommitsWithError(nil)
+	indexer.allReposIterator = mockIterator([]string{"repo-one", "empty-repo"})
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        1,
+		Enabled:       true,
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        2,
+		Enabled:       true,
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	windowDuration := 0
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			InsightsCommitIndexerWindowDuration: windowDuration,
+		},
+	})
+	defer conf.Mock(nil)
+	err := indexer.indexAll(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Two repos get metadata
+	if got, want := len(commitStore.GetMetadataFunc.history), 2; got != want {
+		t.Errorf("got GetMetadata invocations: %v want %v", got, want)
+	}
+
+	// The two repos should call insert commits. Repo 2 is empty but its metadata is up to date.
+	if got, want := len(commitStore.InsertCommitsFunc.history), 2; got != want {
+		t.Errorf("got InsertCommits invocations: %v want %v", got, want)
+	} else {
+		calls := map[string]CommitStoreInsertCommitsFuncCall{
+			"repo-one":   commitStore.InsertCommitsFunc.history[0],
+			"empty-repo": commitStore.InsertCommitsFunc.history[1],
+		}
+		for repo, call := range calls {
+			// Check Indexed though is the clock time
+			if diff := cmp.Diff(clock(), call.Arg3); diff != "" {
+				t.Errorf("unexpected indexed though date/time")
+			}
+			// Check the correct commits
+			for i, got := range call.Arg2 {
+				if diff := cmp.Diff(commits[repo][i], got); diff != "" {
+					t.Errorf("unexpected commit\n%s", diff)
+				}
+			}
+		}
+	}
+}
+
 func checkCommits(t *testing.T, want []*gitdomain.Commit, got []*gitdomain.Commit) {
 	for i, commit := range got {
 		if diff := cmp.Diff(want[i], commit); diff != "" {
@@ -403,5 +548,11 @@ func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Contex
 			filteredCommits = append(filteredCommits, commit)
 		}
 		return filteredCommits, nil
+	}
+}
+
+func mockCommitsWithError(err error) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+		return nil, err
 	}
 }
