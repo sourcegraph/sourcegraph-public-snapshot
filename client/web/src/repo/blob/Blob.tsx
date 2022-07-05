@@ -861,9 +861,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 function updateBrowserHistoryIfNecessary(
     history: H.History,
     location: H.Location,
-    newSearchParams: URLSearchParams
+    newSearchParameters: URLSearchParams
 ): void {
-    const currentSearchParams = [...new URLSearchParams(location.search).entries()]
+    const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
 
     // Update history if the number of search params changes or if any parameter
     // value changes. This will also work for file position changes, which are
@@ -871,13 +871,13 @@ function updateBrowserHistoryIfNecessary(
     // non-existing key in the new search parameters and thus return `null`
     // (whereas it returns an empty string in the current search parameters).
     const needsUpdate =
-        currentSearchParams.length !== [...newSearchParams.keys()].length ||
-        currentSearchParams.some(([key, value]) => newSearchParams.get(key) !== value)
+        currentSearchParameters.length !== [...newSearchParameters.keys()].length ||
+        currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
 
     if (needsUpdate) {
         history.push({
             ...location,
-            search: formatSearchParameters(newSearchParams),
+            search: formatSearchParameters(newSearchParameters),
         })
     }
 }
