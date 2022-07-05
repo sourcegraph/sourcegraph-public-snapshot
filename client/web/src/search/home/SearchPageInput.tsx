@@ -56,7 +56,6 @@ interface Props
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
     autoFocus?: boolean
-    showOnboardingTour?: boolean
 }
 
 const queryStateSelector = (
