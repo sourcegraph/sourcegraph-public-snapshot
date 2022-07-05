@@ -2,6 +2,7 @@ package zoekt
 
 import (
 	"context"
+	"encoding/utf8"
 	"strings"
 	"time"
 
@@ -402,6 +403,42 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 
 func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
 	cms := make(result.ChunkMatches, 0, len(file.ChunkMatches))
+	for _, l := range file.LineMatches {
+		if l.FileName {
+			continue
+		}
+
+		ranges := make(result.Ranges, 0, len(l.LineFragments))
+		for _, m := range l.LineFragments {
+			offset := utf8.RuneCount(l.Line[:m.LineOffset])
+			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
+
+			ranges = append(ranges, result.Range{
+				Start: result.Location{
+					Offset: int(m.Offset),
+					Line:   l.LineNumber - 1,
+					Column: offset,
+				},
+				End: result.Location{
+					Offset: int(m.Offset) + m.MatchLength,
+					Line:   l.LineNumber - 1,
+					Column: offset + length,
+				},
+			})
+		}
+
+		cms = append(cms, result.ChunkMatch{
+			Content: string(l.Line),
+			// zoekt line numbers are 1-based rather than 0-based so subtract 1
+			ContentStart: result.Location{
+				Offset: l.LineStart,
+				Line:   l.LineNumber - 1,
+				Column: 0,
+			},
+			Ranges: ranges,
+		})
+	}
+
 	for _, cm := range file.ChunkMatches {
 		if cm.FileName {
 			continue
