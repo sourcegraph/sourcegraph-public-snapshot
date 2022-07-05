@@ -25,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+const MAX_CONCURRENT_BUILD_PROCS = 4
+
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
@@ -44,7 +46,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	}
 
 	wg := sync.WaitGroup{}
-	installSemaphore := semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
+	installSemaphore := semaphore.NewWeighted(MAX_CONCURRENT_BUILD_PROCS)
 	failures := make(chan failedRun, len(cmds))
 	installed := make(chan string, len(cmds))
 	okayToStart := make(chan struct{})
@@ -147,28 +149,30 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 	for {
 		// Build it
 		if cmd.Install != "" || cmd.InstallFunc != "" {
-			if err := c.installSemaphore.Acquire(ctx, 1); err != nil {
-				return errors.Wrap(err, "lockfiles semaphore")
-			}
-
-			if startedOnce {
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Installing %s...", cmd.Name))
-			}
-			var cmdOut string
-			var err error
-			if cmd.Install != "" && cmd.InstallFunc == "" {
-				cmdOut, err = BashInRoot(ctx, cmd.Install, makeEnv(c.parentEnv, cmd.Env))
-			} else if cmd.Install == "" && cmd.InstallFunc != "" {
-				fn, ok := installFuncs[cmd.InstallFunc]
-				if !ok {
-					c.installSemaphore.Release(1)
-					return errors.New("nope, no install func with that name")
+			install := func() (string, error) {
+				if err := c.installSemaphore.Acquire(ctx, 1); err != nil {
+					return "", errors.Wrap(err, "lockfiles semaphore")
 				}
-				err = fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
+				defer c.installSemaphore.Release(1)
+
+				if startedOnce {
+					std.Out.WriteLine(output.Styledf(output.StylePending, "Installing %s...", cmd.Name))
+				}
+				if cmd.Install != "" && cmd.InstallFunc == "" {
+					return BashInRoot(ctx, cmd.Install, makeEnv(c.parentEnv, cmd.Env))
+				} else if cmd.Install == "" && cmd.InstallFunc != "" {
+					fn, ok := installFuncs[cmd.InstallFunc]
+					if !ok {
+						c.installSemaphore.Release(1)
+						return "", errors.New("nope, no install func with that name")
+					}
+					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
+				}
+
+				return "", nil
 			}
 
-			c.installSemaphore.Release(1)
-
+			cmdOut, err := install()
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
