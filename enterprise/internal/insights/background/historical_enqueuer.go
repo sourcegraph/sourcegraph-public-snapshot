@@ -693,6 +693,13 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return
 	}
+	if bctx.series.GroupBy != nil {
+		modifiedQuery, err = querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
+		if err != nil {
+			err = errors.Append(err, errors.Wrap(err, "ComputeInsightCommandQuery"))
+			return
+		}
+	}
 
 	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, modifiedQuery, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job, preempted
