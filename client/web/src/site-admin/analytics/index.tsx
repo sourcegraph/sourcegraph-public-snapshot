@@ -20,7 +20,7 @@ import {
     Button,
     LoadingSpinner,
     Tooltip,
-    Link,
+    AnchorLink,
     H4,
 } from '@sourcegraph/wildcard'
 
@@ -995,6 +995,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const reposSummary = data?.site.analytics.reposSummary
+    const orgMembersCount = data?.currentUser?.organizationMemberships?.totalCount || 0
+    const browserExtensionInstalls =
+        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.registeredUsers || 0
+    const browserExtensionInstallPercentage = orgMembersCount ? (browserExtensionInstalls * 100) / orgMembersCount : 0
 
     return (
         <>
@@ -1046,18 +1050,29 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 )}
                 <H4 className="my-3">Suggestions</H4>
                 <div className={classNames(styles.border, 'mb-3')} />
-                <ul className="mb-3">
+                <ul className="mb-3 pl-3">
+                    <Text as="li">
+                        {browserExtensionInstallPercentage}% of users have installed the browser extension.{' '}
+                        <AnchorLink href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank">
+                            Promote installation of the browser extesion to increase value.
+                        </AnchorLink>
+                    </Text>
+                </ul>
+                <ul className="mb-3 pl-3">
                     {reposSummary && (
                         <Text as="li">
                             {reposSummary.preciseCodeIntelCount} of your {reposSummary.totalCount} repositories have
                             precise code intel.{' '}
-                            <Link to="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence">
+                            <AnchorLink
+                                href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
+                                target="_blank"
+                            >
                                 Learn how to improve precise code intel coverage.
-                            </Link>
+                            </AnchorLink>
                         </Text>
                     )}
                 </ul>
-                <Text className="font-italic text-center">
+                <Text className="font-italic">
                     * All events are actually entries from this instance's event_logs table.{' '}
                 </Text>
             </Card>

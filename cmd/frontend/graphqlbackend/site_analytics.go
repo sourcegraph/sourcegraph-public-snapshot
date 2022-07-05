@@ -206,6 +206,16 @@ func (r *siteAnalyticsCodeIntelResolver) DefinitionClicks(ctx context.Context) (
 	return &siteAnalyticsStatItemResolver{fetcher}, nil
 }
 
+func (r *siteAnalyticsCodeIntelResolver) BrowserExtensionInstalls(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
+	fetcher, err := r.store.BrowserExtensionInstalls()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &siteAnalyticsStatItemResolver{fetcher}, nil
+}
+
 /* Repos Analytics */
 
 func (r *siteAnalyticsResolver) ReposSummary(ctx context.Context) (*adminanalytics.ReposSummary, error) {

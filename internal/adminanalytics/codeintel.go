@@ -41,8 +41,23 @@ func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
+func (s *CodeIntel) BrowserExtensionInstalls() (*AnalyticsFetcher, error) {
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"BrowserExtensionInstalled"})
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "CodeIntel:BrowserExtensionInstalls",
+	}, nil
+}
+
 func (s *CodeIntel) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.DefinitionClicks, s.ReferenceClicks}
+	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.DefinitionClicks, s.ReferenceClicks, s.BrowserExtensionInstalls}
 	for _, buildFetcher := range fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {

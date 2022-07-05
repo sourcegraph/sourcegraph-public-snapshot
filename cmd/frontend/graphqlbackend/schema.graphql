@@ -6014,6 +6014,10 @@ type AnalyticsCodeIntelResult {
     "GoToDef" click
     """
     definitionClicks: AnalyticsStatItem!
+    """
+    Browser extension installs
+    """
+    browserExtensionInstalls: AnalyticsStatItem!
 }
 
 type AnalyticsReposSummartResult {
