@@ -28,7 +28,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
             }
         };
-        AnAction cancelAction = new DumbAwareAction("Do not Set") {
+        AnAction cancelAction = new DumbAwareAction("Do Not Set") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 notification.expire();
