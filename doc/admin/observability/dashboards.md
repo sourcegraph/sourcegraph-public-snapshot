@@ -11590,7 +11590,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m])))`
+Query: `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`
 
 </details>
 
@@ -12197,7 +12197,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`
+Query: `max by (name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`
 
 </details>
 
