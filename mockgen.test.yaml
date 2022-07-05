@@ -155,15 +155,10 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/internal/store
   interfaces:
     - Store
-- filename: internal/codeintel/uploads/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-  interfaces:
-    - Store
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
     - DBStore
-    - LSIFStore
     - UploadService
     - AutoIndexingService
 - filename: internal/codeintel/uploads/background/commitgraph/mocks_test.go
@@ -214,3 +209,7 @@
     - Store
     - WithHooks
     - WithPreDequeue
+- filename: enterprise/internal/authz/github/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github
+  interfaces:
+    - client

@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import { mdiOpenInNew, mdiAlertCircle } from '@mdi/js'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -69,7 +68,7 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWi
             <div className="d-flex align-items-center">
                 {customer.urlForSiteAdminBilling && (
                     <Link to={customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View customer account <Icon aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />
+                        View customer account <Icon aria-hidden={true} className="ml-1" svgPath={mdiOpenInNew} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
@@ -77,7 +76,7 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWi
                         aria-label={update.message}
                         className="text-danger mr-2"
                         data-tooltip={update.message}
-                        as={AlertCircleIcon}
+                        svgPath={mdiAlertCircle}
                     />
                 )}
                 <Button

@@ -572,7 +572,7 @@ export function buildSearchURLQuery(
 }
 
 export function buildGetStartedURL(source: string, returnTo?: string): string {
-    const url = new URL('https://about.sourcegraph.com/get-started')
+    const url = new URL('https://about.sourcegraph.com/get-started/self-hosted')
     url.searchParams.set('utm_medium', 'inproduct')
     url.searchParams.set('utm_source', source)
     url.searchParams.set('utm_campaign', 'inproduct-cta')

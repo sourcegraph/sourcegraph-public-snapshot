@@ -1,7 +1,7 @@
 import React, { useState, useLayoutEffect } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { useLocation } from 'react-router'
 
 import { Button, DeprecatedTooltipController, Icon, screenReaderAnnounce } from '@sourcegraph/wildcard'
@@ -39,7 +39,7 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
 
     return (
         <Button variant="icon" className="p-2" data-tooltip={label} aria-label={label} onClick={onClick} size="sm">
-            <Icon className={styles.copyIcon} as={ContentCopyIcon} aria-hidden={true} />
+            <Icon className={styles.copyIcon} aria-hidden={true} svgPath={mdiContentCopy} />
         </Button>
     )
 }

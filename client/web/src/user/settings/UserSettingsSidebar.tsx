@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -48,6 +48,9 @@ export const UserSettingsSidebar: React.FunctionComponent<
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
     const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useTemporarySetting(
+        'coreWorkflowImprovements.enabled'
+    )
 
     if (!props.authenticatedUser) {
         return null
@@ -103,7 +106,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon as={AddIcon} aria-hidden={true} /> New organization
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
                                 </Button>
                             </div>
                         ))}
@@ -118,6 +121,12 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         Show search tour
                     </Button>
                 )}
+                <Button
+                    className="text-left sidebar__link--inactive d-flex w-100"
+                    onClick={() => setCoreWorkflowImprovementsEnabled(!coreWorkflowImprovementsEnabled)}
+                >
+                    {coreWorkflowImprovementsEnabled ? 'Disable' : 'Enable'} workflow improvements
+                </Button>
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>

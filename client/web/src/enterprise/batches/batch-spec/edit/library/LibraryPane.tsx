@@ -1,8 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -123,7 +121,10 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             onClick={() => toggleCollapse(!collapsed)}
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
-                            <Icon aria-hidden={true} as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={collapsed ? mdiChevronDoubleRight : mdiChevronDoubleLeft}
+                            />
                         </Button>
                     </div>
                 </div>
@@ -148,7 +149,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             rel="noopener noreferrer"
                             to="https://github.com/sourcegraph/batch-change-examples"
                         >
-                            View more examples <Icon aria-hidden={true} as={OpenInNewIcon} />
+                            View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>
                     </Text>
                 </animated.div>

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var analyticsCommand = &cli.Command{
@@ -36,6 +37,8 @@ var analyticsCommand = &cli.Command{
 						return err
 					}
 
+					pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Fetching a secret"))
+
 					var errs error
 					for _, secret := range []secrets.ExternalSecret{
 						{
@@ -50,13 +53,15 @@ var analyticsCommand = &cli.Command{
 							Name:     "CI_OKAYHQ_TOKEN",
 						},
 					} {
+						pending.Updatef("Trying to get the secret from %s", string(secret.Provider))
 						okayToken, err = store.GetExternal(cmd.Context, secret)
 						if err != nil {
+							pending.Writef("Didn't get the secret we wanted from %s", string(secret.Provider))
 							errs = errors.Append(errs, err)
 							continue // try the next provider
 						}
 						if okayToken != "" {
-							std.Out.Writef("Got OkayHQ token from %s!", secret.Provider)
+							pending.Updatef("Got our secret from %s", string(secret.Provider))
 							break // done!
 						}
 					}
@@ -64,14 +69,19 @@ var analyticsCommand = &cli.Command{
 					// If we've tried all providers and still don't have the token, we
 					// return the error.
 					if okayToken == "" {
+						pending.Destroy()
 						return errors.Wrap(errs, "failed to get OkayHQ token")
 					}
+					pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Secret retrieved"))
+
 				}
 
+				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))
 				if err := analytics.Submit(okayToken, cmd.Args().First()); err != nil {
+					pending.Destroy()
 					return err
 				}
-				std.Out.WriteSuccessf("Analytics successfully submitted!")
+				pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Your analytics have been successfully submitted!"))
 				return analytics.Reset()
 			},
 		},

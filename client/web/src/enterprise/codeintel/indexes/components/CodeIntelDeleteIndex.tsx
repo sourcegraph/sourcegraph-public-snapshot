@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import DeleteIcon from 'mdi-react/DeleteIcon'
+import { mdiDelete } from '@mdi/js'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -22,6 +22,6 @@ export const CodeIntelDeleteIndex: FunctionComponent<React.PropsWithChildren<Cod
         aria-describedby="upload-delete-button-help"
         data-tooltip="Deleting this index will remove it from the index queue."
     >
-        <Icon aria-hidden={true} as={DeleteIcon} /> Delete index
+        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
     </Button>
 )

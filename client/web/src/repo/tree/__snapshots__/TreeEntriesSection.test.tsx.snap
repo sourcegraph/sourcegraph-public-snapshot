@@ -15,7 +15,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -56,7 +56,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -97,7 +97,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -124,7 +124,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -158,7 +158,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -199,7 +199,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -240,7 +240,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -267,7 +267,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
@@ -301,7 +301,7 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
         <span>
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline mr-1"
+            class="iconInline mr-1"
             fill="currentColor"
             height="24"
             role="img"
