@@ -153,7 +153,7 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer,
 		return newJaegerTracer(logger, opts)
 
 	case OpenTelemetry:
-		return newOTelTracer(logger, opts)
+		return newOTelBridgeTracer(logger, opts)
 
 	default:
 		return opentracing.NoopTracer{}, nil, nil

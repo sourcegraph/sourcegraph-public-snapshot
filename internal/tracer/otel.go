@@ -32,9 +32,11 @@ import (
 // projects: https://sourcegraph.com/search?q=OTEL_EXPORTER_OTLP_ENDPOINT+-f:vendor
 var otelCollectorEndpoint = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317", "Address of OpenTelemetry collector")
 
-// newOTelTracer creates an opentracing.Tracer that actually exports OpenTelemetry traces
-// to an OpenTelemetry collector.
-func newOTelTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
+// newOTelBridgeTracer creates an opentracing.Tracer that exports all OpenTracing traces
+// as OpenTelemetry traces to an OpenTelemetry collector (effectively "bridging" the two
+// APIs). This enables us to continue leveraging the OpenTracing API (which is a predecessor
+// to OpenTelemetry tracing) without making changes to existing tracing code.
+func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").
 		With(log.String("otel-collector.endpoint", otelCollectorEndpoint))
 
