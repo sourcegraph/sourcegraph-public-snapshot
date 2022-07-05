@@ -385,6 +385,52 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	return scanDataSeries(s.Query(ctx, q))
 }
 
+// GetJustInTimeSearchSeriesToBackfill Is a special purpose func to get only just in time series that should
+// be converted to scoped backfilled insights
+func (s *InsightStore) GetJustInTimeSearchSeriesToBackfill(ctx context.Context) ([]types.InsightSeries, error) {
+	preds := make([]*sqlf.Query, 0, 1)
+
+	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
+	preds = append(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
+	preds = append(preds, sqlf.Sprintf("just_in_time = true"))
+	preds = append(preds, sqlf.Sprintf("backfill_attempts < 10"))
+	preds = append(preds, sqlf.Sprintf("generation_method !=  %s", "language-stats"))
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scanDataSeries(s.Query(ctx, q))
+}
+
+// GetJustInTimeSearchSeriesToBackfill Is a special purpose func to convert a Just In Time search insight
+// to a scoped backfilled serach insight
+func (s *InsightStore) ConvertJustInTimeSearchSeriesToBackfill(ctx context.Context, series types.InsightSeries) error {
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+	nextRecording := interval.StepForwards(s.Now())
+	nextSnapshot := NextSnapshot(s.Now())
+
+	return s.Exec(ctx, sqlf.Sprintf(convertJITSeriesToBackfillSql, nextRecording, nextSnapshot, series.SeriesID))
+
+}
+
+const convertJITSeriesToBackfillSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:ConvertJustInTimeSearchSeriesToBackfill
+UPDATE insight_series
+SET just_in_time = false,
+    next_recording_after = %s,
+	next_snapshot_after = %s,
+	backfill_queued_at = now()
+WHERE
+	series_id = %s
+	AND generation_method !='language-stats'
+	AND deleted_at is null;
+`
+
 func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -671,7 +717,7 @@ const deleteViewSql = `
 delete from insight_view where %s;
 `
 
-// CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
+// IncrementBackfillAttempts increments backfill_attempts to track how many attempts at backfilling a series has taken.
 func (s *InsightStore) IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error {
 	return s.Exec(ctx, sqlf.Sprintf(incrementSeriesBackfillAttemptsSql, series.SeriesID))
 }
@@ -738,6 +784,8 @@ type DataSeriesStore interface {
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
 	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
+	GetJustInTimeSearchSeriesToBackfill(ctx context.Context) ([]types.InsightSeries, error)
+	ConvertJustInTimeSearchSeriesToBackfill(ctx context.Context, series types.InsightSeries) error
 }
 
 type InsightMetadataStore interface {

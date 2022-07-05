@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -234,6 +235,8 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // may contain sensitive info on Sourcegraph Cloud. We replace all paths,
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
+//
+// Note that URL redaction also happens in web/src/tracking/util.ts.
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -244,8 +247,19 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return rawURL, nil
 	}
 
-	parsedURL.RawPath = "/redacted"
-	parsedURL.Path = "/redacted"
+	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
+	if strings.HasPrefix(parsedURL.Path, "/github.com") {
+		parsedURL.RawPath = "/github.com/redacted"
+		parsedURL.Path = "/github.com/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
+		parsedURL.RawPath = "/gitlab.com/redacted"
+		parsedURL.Path = "/gitlab.com/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/search") {
+		parsedURL.RawPath = "/search/redacted"
+		parsedURL.Path = "/search/redacted"
+	} else {
+		return rawURL, nil
+	}
 
 	marketingQueryParameters := map[string]struct{}{
 		"utm_source":   {},

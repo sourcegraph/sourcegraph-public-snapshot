@@ -80,7 +80,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                 )}
             </small>
             {showTrace && progress.trace && (
-                <small className="d-flex ml-2">
+                <small className={classNames('d-flex align-items-center', className, styles.count)}>
                     <Link to={progress.trace}>
                         <Icon aria-hidden={true} className="mr-2" svgPath={mdiClipboardPulseOutline} />
                         View trace
