@@ -105,14 +105,12 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 
-    root.style.setProperty('--jb-text', intelliJTheme.text)
-    root.style.setProperty('--jb-completion-detail-color', isDarkTheme ? null : intelliJTheme['SplitPane.highlight'])
-    root.style.setProperty('--jb-button-bg', intelliJTheme['Button.background'])
+    root.style.setProperty('--jb-button-bg', intelliJTheme['Button.startBackground'])
     root.style.setProperty('--jb-text-color', intelliJTheme.text)
+    root.style.setProperty('--jb-inactive-text-color', intelliJTheme.textInactiveText)
     root.style.setProperty('--jb-hover-button-bg', intelliJTheme['ActionButton.hoverBackground'])
     root.style.setProperty('--jb-input-bg', intelliJTheme['TextField.background'])
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
-    root.style.setProperty('--jb-focus-color', intelliJTheme['Component.focusColor'])
     root.style.setProperty('--jb-focus-border-color', intelliJTheme['Component.focusedBorderColor'])
     root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
 

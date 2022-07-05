@@ -89,7 +89,7 @@
             border-radius: 2px;
 
             &:focus {
-                border: 1px solid var(--input-focus-border-color);
+                border: 1px solid var(--jb-focus-border-color);
                 box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
             }
 
@@ -99,32 +99,60 @@
             }
         }
 
-        > div {
+        :global(.dropdown-menu) {
             border-radius: 0;
             padding: 0;
+            border: none;
+            box-shadow: 0 4px 16px -6px rgba(64, 64, 64, 0.3);
         }
     }
 
     &__context-menu {
         // On JetBrains, the menu always appears under the context button with a top positon of 40px
         max-height: calc(100vh - 40px);
+        border: 1px solid var(--jb-border-color);
 
         > div {
             border: none;
 
+            &:not(:last-child) {
+                border-bottom: 1px solid var(--jb-border-color);
+            }
+
+            &:first-child,
+            &:last-child {
+                padding: 0.375rem 0.75rem;
+                background: var(--subtle-bg);
+            }
+
             &:first-child {
                 font-weight: 600;
                 color: var(--jb-text-color);
-                padding: 0.5rem 0.75rem;
 
                 > button {
                     display: none;
                 }
             }
 
+            &:nth-child(2) {
+                padding: 0;
+
+                input {
+                    border: none;
+                    box-shadow: none;
+                    padding: 0 0.75rem;
+
+                    &:focus {
+                        box-shadow: none;
+                    }
+
+                    &::placeholder {
+                        color: var(--jb-inactive-text-color);
+                    }
+                }
+            }
+
             &:last-child {
-                padding: 0.5rem 0.75rem;
-                background: #f2f2f2; // TODO: replace with variable
                 flex-direction: row-reverse;
 
                 > button {
@@ -140,16 +168,21 @@
                         text-decoration: none !important;
                         color: var(--jb-text-color) !important;
                     }
+
+                    &:focus {
+                        border: 1px solid var(--jb-focus-border-color);
+                        box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
+                    }
                 }
             }
         }
 
-        button[data-search-context-spec] {
-            padding-top: 0;
-            padding-bottom: 0;
+        button[data-search-context-spec],
+        :global(button.disabled.dropdown-item) {
+            padding: 0 0.75rem;
 
             > small:last-child {
-                color: #8b8b8b; // TODO: replace with variable
+                color: var(--jb-inactive-text-color);
             }
 
             &:hover {
@@ -243,14 +276,16 @@
         :global(.cm-tooltip):global(.cm-tooltip-autocomplete) {
             color: var(--jb-text-color);
             background-color: var(--dropdown-bg);
+            border: 1px solid var(--jb-border-color);
             border-radius: 0;
+            box-shadow: 0 0.25rem 0.5rem rgba(64, 64, 64, 0.3);
 
             &::after {
                 content: 'Press Tab to apply selection';
                 padding: 0.125rem 0.75rem;
                 display: block;
-                background: #f2f2f2; // TODO: replace with variable
-                color: #6c6c6c; // TODO: replace with variable
+                background: var(--subtle-bg);
+                color: var(--jb-inactive-text-color);
                 font-size: var(--code-font-size);
             }
 
@@ -278,7 +313,7 @@
             :global(.cm-completionDetail) {
                 text-align: end;
                 font-style: normal;
-                color: #8b8b8b; // TODO: replace with variable
+                color: var(--jb-inactive-text-color);
             }
 
             > ul {
@@ -301,7 +336,7 @@
                     &[aria-selected],
                     &:focus {
                         background-color: var(--dropdown-link-active-bg) !important;
-                        border-color: #0068c1;
+                        border-color: var('--jb-focus-border-color');
 
                         :global(.cm-completionLabel),
                         :global(.cm-completionDetail) {
