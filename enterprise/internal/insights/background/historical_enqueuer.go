@@ -77,7 +77,7 @@ import (
 // insights across all user settings, and determine for which dates they do not have data and attempt
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
-func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_historical_enqueuer",
@@ -106,6 +106,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
 	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
+	enq.featureFlagStore = ffs
 
 	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
@@ -255,8 +256,9 @@ func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dat
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
-		statistics: statistics,
-		analyzer:   baseAnalyzer(dbConn, statistics),
+		statistics:       statistics,
+		analyzer:         baseAnalyzer(dbConn, statistics),
+		scopedBackfiller: NewScopedBackfiller(workerBaseStore, insightsStore),
 	}
 
 	return historicalEnqueuer
@@ -340,6 +342,7 @@ type historicalEnqueuer struct {
 	insightsStore         store.Interface
 	dataSeriesStore       store.DataSeriesStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
+	featureFlagStore      database.FeatureFlagStore
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	repoIterator func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
@@ -347,6 +350,9 @@ type historicalEnqueuer struct {
 	statistics statistics
 
 	analyzer backfillAnalyzer
+
+	// To convert any existing just in time insights into scoped backfilled insights
+	scopedBackfiller *ScopedBackfiller
 }
 
 type backfillAnalyzer struct {
@@ -364,7 +370,17 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// are filtered at view time of an insight.
 	ctx = actor.WithInternalActor(ctx)
 
-	// Discover all insights on the instance.
+	convertJITInsights := true
+	deprecateJITInsights, _ := h.featureFlagStore.GetFeatureFlag(ctx, "code_insights_deprecate_jit")
+	if deprecateJITInsights != nil {
+		convertJITInsights = deprecateJITInsights.Bool.Value
+	}
+
+	if convertJITInsights {
+		h.convertJustInTimeInsights(ctx)
+	}
+
+	// Discover all global insights on the instance.
 	log15.Debug("Fetching data series for historical")
 	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true, GlobalOnly: true})
 	if err != nil {
@@ -399,6 +415,37 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	}
 
 	return multi
+}
+
+func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
+
+	log15.Debug("fetching data series to convert from just in time and backfill")
+	foundSeries, err := h.dataSeriesStore.GetJustInTimeSearchSeriesToBackfill(ctx)
+	if err != nil {
+		log15.Error("unable to find series to convert to backfilled", "error", err)
+		return
+	}
+
+	for _, series := range foundSeries {
+		log15.Info("loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
+		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
+		if incrementErr != nil {
+			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID, "error", err)
+		}
+		err := h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
+		if err != nil {
+			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
+			continue
+		}
+
+		err = h.dataSeriesStore.ConvertJustInTimeSearchSeriesToBackfill(ctx, series)
+		if err != nil {
+			log15.Error("unable to convert insight from jit to backfilled", "series_id", series.SeriesID, "error", err)
+		}
+
+	}
+
+	return
 }
 
 func markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries, dataSeriesStore store.DataSeriesStore) {
