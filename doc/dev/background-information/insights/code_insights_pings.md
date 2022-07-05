@@ -27,7 +27,6 @@ We keep this docs page up to date because pings are a vital component of our pro
 - **Version Added:** 3.25
 - **Version(s) broken:**  3.31-3.35.0 (does not count backend insights) ([fix PR](https://github.com/sourcegraph/sourcegraph/pull/25317))
 
-
 ### Hovers count
 
 **Type:** FE event
@@ -88,7 +87,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 **Other considerations:** As we add new insights pages it's important to make sure we're adding pages to this counter. 
 
 - Aggregation: By week 
-- Event Code: [InsightsPageView](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsPageView&patternType=regexp) 
+- Event Code: [ViewInsights](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+ViewInsights&patternType=regexp), [StandaloneInsightPageViewed](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+StandaloneInsightPageViewed&patternType=regexp),
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
@@ -108,6 +107,51 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
+
+### Standalone insights page filters edits count
+
+**Type:** FE event
+
+**Intended purpose:** To track how many users actively re-filter insights through the standalone insight page's filter panel.
+
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user changes insights filters (include/exclude repository regexp, search context, etc).
+
+**Other considerations:** N/A
+
+- Aggregation: By week
+- Event Code: [InsightFiltersChange](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightFiltersChange%27&patternType=literal)
+- PRs: [#37521](https://github.com/sourcegraph/sourcegraph/pull/37521)
+- **Version Added:** 3.41
+
+### Standalone insights page dashboard clicks count
+
+**Type:** FE event
+
+**Intended purpose:** To track how many users are discovering dashboards from this page.
+
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user clicks any dashboard pills on the standalone insight page.
+
+**Other considerations:** N/A
+
+- Aggregation: By week
+- Event Code: [StandaloneInsightDashboardClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27StandaloneInsightDashboardClick%27&patternType=literal)
+- PRs: [#37521](https://github.com/sourcegraph/sourcegraph/pull/37521)
+- **Version Added:** 3.41
+
+### Standalone insights page edit button clicks count
+
+**Type:** FE event
+
+**Intended purpose:** To track how many users are going to the edit page through the standalone insight page.
+
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user clicks on the edit button on the standalone insight page.
+
+**Other considerations:** N/A
+
+- Aggregation: By week
+- Event Code: [StandaloneInsightPageEditClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27StandaloneInsightPageEditClick%27&patternType=literal)
+- PRs: [#37521](https://github.com/sourcegraph/sourcegraph/pull/37521)
+- **Version Added:** 3.41
 
 ### In-product landing page events (hover, data points click, template section clicks)
 

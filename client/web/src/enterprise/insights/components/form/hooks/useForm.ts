@@ -1,4 +1,6 @@
 import {
+    DependencyList,
+    EffectCallback,
     EventHandler,
     FormEventHandler,
     RefObject,
@@ -47,9 +49,15 @@ interface UseFormProps<FormValues extends object> {
 
     /**
      * Change handler will be called every time when some field withing the form
-     * has been changed with last fields values.
+     * has been changed.
      */
     onChange?: ChangeHandler<FormValues>
+
+    /**
+     * It fires whenever a user is changing some form field value through typing.
+     * @param values - aggregated all fields form values
+     */
+    onPureValueChange?: (values: FormValues) => void
 }
 
 /**
@@ -113,7 +121,7 @@ export interface FormAPI<FormValues> {
 
     /**
      * State to understand that form submitting is going on.
-     * Also might be used as a sign to disable or show loading
+     * Also, might be used as a sign to disable or show loading
      * state for submit button.
      */
     submitting: boolean
@@ -199,7 +207,7 @@ type FieldsState<FormValues> = {
  * hook.
  */
 export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): Form<FormValues> {
-    const { onSubmit = noop, initialValues, touched = false, onChange = noop } = props
+    const { onSubmit = noop, initialValues, touched = false, onChange = noop, onPureValueChange = noop } = props
 
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -212,6 +220,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
 
     // Debounced onChange handler.
     const onChangeReference = useRef<DebouncedFunc<ChangeHandler<FormValues>>>(debounce(onChange, 0))
+    const onPureValueChangeReference = useRef<(values: FormValues) => void>(onPureValueChange)
 
     // Track unmounted state to prevent setState if async validation or async submitting
     // will be resolved after component has been unmounted.
@@ -229,7 +238,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
         })
     }
 
-    const values = useMemo(() => getFormValues<FormValues>(fields), [fields])
+    const values = useDistinctValue(useMemo(() => getFormValues<FormValues>(fields), [fields]))
 
     const changeEvent = useDistinctValue(
         useMemo<{ values: FormValues; valid: boolean }>(
@@ -243,13 +252,8 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
         )
     )
 
-    useEffect(() => {
-        if (Object.keys(changeEvent.values).length === 0) {
-            return
-        }
-
-        onChangeReference.current?.(changeEvent)
-    }, [changeEvent])
+    useEffect(() => onChangeReference.current?.(changeEvent), [changeEvent])
+    useUpdateEffect(() => onPureValueChangeReference.current?.(values), [values])
 
     useEffect(
         () => () => {
@@ -333,4 +337,18 @@ export function generateInitialFieldsState<FormValues extends {}>(initialValues:
 
         return store
     }, {} as FieldsState<FormValues>)
+}
+
+function useUpdateEffect(effect: EffectCallback, deps?: DependencyList): void {
+    const isInitialMount = useRef(true)
+    const effectReference = useRef(effect)
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false
+        } else {
+            return effectReference.current?.()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, deps)
 }
