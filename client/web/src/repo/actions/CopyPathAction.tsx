@@ -39,7 +39,7 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
 
     return (
         <Tooltip content={label}>
-            <Button variant="icon" className="p-2" onClick={onClick} size="sm">
+            <Button aria-label={label} variant="icon" className="p-2" onClick={onClick} size="sm">
                 <Icon className={styles.copyIcon} aria-hidden={true} svgPath={mdiContentCopy} />
             </Button>
         </Tooltip>

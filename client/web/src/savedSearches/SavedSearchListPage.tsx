@@ -98,6 +98,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Tooltip>{' '}
                     <Tooltip content="Delete saved search">
                         <Button
+                            aria-label="Delete"
                             className="test-delete-saved-search-button"
                             onClick={this.onDelete}
                             disabled={this.state.isDeleting}

@@ -311,6 +311,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                         {node.tree && (
                                             <Tooltip content="View files at this commit">
                                                 <Button
+                                                    aria-label="View files"
                                                     to={node.tree.canonicalURL}
                                                     variant="secondary"
                                                     size="sm"

@@ -81,7 +81,13 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content="Delete organization">
-                        <Button onClick={deleteOrg} disabled={loading === true} variant="danger" size="sm">
+                        <Button
+                            aria-label="Delete"
+                            onClick={deleteOrg}
+                            disabled={loading === true}
+                            variant="danger"
+                            size="sm"
+                        >
                             <Icon as={DeleteIcon} aria-hidden={true} />
                         </Button>
                     </Tooltip>

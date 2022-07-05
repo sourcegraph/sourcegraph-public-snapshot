@@ -445,6 +445,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     placement="bottom"
                                 >
                                     <Button
+                                        aria-label={props.allExpanded ? 'Collapse' : 'Expand'}
                                         onClick={props.onExpandAllResultsToggle}
                                         className="text-decoration-none"
                                         aria-live="polite"

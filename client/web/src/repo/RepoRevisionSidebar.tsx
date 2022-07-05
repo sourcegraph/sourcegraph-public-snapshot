@@ -78,6 +78,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
         return (
             <Tooltip content="Show sidebar">
                 <Button
+                    aria-label="Show sidebar"
                     variant="icon"
                     className={classNames(
                         'position-absolute border-top border-bottom border-right mt-4',
@@ -110,6 +111,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                         actions={
                             <Tooltip content="Hide sidebar" placement="right">
                                 <Button
+                                    aria-label="Hide sidebar"
                                     onClick={() => handleSidebarToggle(false)}
                                     className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
                                 >
