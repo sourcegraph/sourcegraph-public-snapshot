@@ -31,7 +31,7 @@ import (
 //
 // OTEL_EXPORTER_OTLP_ENDPOINT is the name chosen because it is used in other
 // projects: https://sourcegraph.com/search?q=OTEL_EXPORTER_OTLP_ENDPOINT+-f:vendor
-var otelCollectorEndpoint = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317", "Address of OpenTelemetry collector")
+var otelCollectorEndpoint = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "127.0.0.1:4317", "Address of OpenTelemetry collector")
 
 // newOTelBridgeTracer creates an opentracing.Tracer that exports all OpenTracing traces
 // as OpenTelemetry traces to an OpenTelemetry collector (effectively "bridging" the two
