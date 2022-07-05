@@ -97,14 +97,7 @@ func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath
 	}
 }
 
-func toTextResult(
-	ctx context.Context,
-	content string,
-	matchPattern MatchPattern,
-	outputPattern,
-	separator,
-	selector string,
-) (Result, error) {
+func toTextResult(ctx context.Context, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (Result, error) {
 	if selector != "" {
 		// Don't run the search pattern over the search result content
 		// when there's an explicit `select:` value.
@@ -143,7 +136,7 @@ func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Resul
 	}
 
 	switch c.Kind {
-	case "output.ci":
+	case "output.extra":
 		return toTextExtraResult(result.(*Text), r), nil
 	default:
 		return result, nil

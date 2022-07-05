@@ -103,7 +103,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 		"output":             func() query.Predicate { return query.EmptyPredicate{} },
 		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
 		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
-		"output.ci":          func() query.Predicate { return query.EmptyPredicate{} },
+		"output.extra":       func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -181,7 +181,7 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 
 	var matchPattern MatchPattern
 	switch name {
-	case "output", "output.regexp", "output.ci":
+	case "output", "output.regexp", "output.extra":
 		var err error
 		matchPattern, err = toRegexpPattern(left)
 		if err != nil {

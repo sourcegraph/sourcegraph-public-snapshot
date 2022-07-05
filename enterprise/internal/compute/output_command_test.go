@@ -128,7 +128,7 @@ func TestRun(t *testing.T) {
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
 
 	autogold.Want(
-		"use output.ci",
+		"use output.extra",
 		`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
-		Equal(t, test(`content:output.ci((.|\n)* -> $lang)`, fileMatch("anything")))
+		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
 }

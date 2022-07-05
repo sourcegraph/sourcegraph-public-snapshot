@@ -7,6 +7,7 @@ import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { createDefaultSuggestionSources, searchQueryAutocompletion } from './completion'
+import { loadingIndicator } from './loading-indicator'
 
 export { createDefaultSuggestionSources, searchQueryAutocompletion }
 
@@ -67,7 +68,7 @@ export const createDefaultSuggestions = ({
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
     disableSymbolCompletion?: true
     disableFilterCompletion?: true
-}): Extension =>
+}): Extension => [
     searchQueryAutocompletion(
         createDefaultSuggestionSources({
             fetchSuggestions: createCancelableFetchSuggestions(fetchSuggestions),
@@ -76,7 +77,9 @@ export const createDefaultSuggestions = ({
             disableSymbolCompletion,
             disableFilterCompletion,
         })
-    )
+    ),
+    loadingIndicator(),
+]
 
 /**
  * A helper function for creating an extension that operates on the value which
