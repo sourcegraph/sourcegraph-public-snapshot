@@ -13,7 +13,8 @@ import (
 )
 
 // RepoNamer returns a best-effort function which translates repository IDs into names.
-func RepoNamer(ctx context.Context, logger log.Logger, db database.DB) streamapi.RepoNamer {
+func RepoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
+	logger := log.Scoped("RepoNamer", "translate repository IDs into names")
 	cache := map[api.RepoID]api.RepoName{}
 
 	return func(ids []api.RepoID) []api.RepoName {

@@ -351,6 +351,20 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 	return include, exclude
 }
 
+func (p Parameters) RepoContainsCommitAfter() (value string) {
+	nodes := toNodes(p)
+
+	// Look for values of repohascommitafter:
+	value = p.FindValue(FieldRepoHasCommitAfter)
+
+	// Look for values of repo:contains.commit.after()
+	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate, _ bool) {
+		value = pred.TimeRef
+	})
+
+	return value
+}
+
 // Exists returns whether a parameter exists in the query (whether negated or not).
 func (p Parameters) Exists(field string) bool {
 	found := false
