@@ -38,7 +38,7 @@ var Targets = []Target{
 			goEnterpriseImport,
 			noLocalHost,
 			lintGoDirectives(),
-			// lintLoggingLibraries(),
+			lintLoggingLibraries(),
 			goModGuards(),
 			lintSGExit(),
 		},

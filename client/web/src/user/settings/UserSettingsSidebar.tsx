@@ -44,6 +44,9 @@ export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useTemporarySetting(
+        'coreWorkflowImprovements.enabled'
+    )
 
     if (!props.authenticatedUser) {
         return null
@@ -105,6 +108,12 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
+                <Button
+                    className="text-left sidebar__link--inactive d-flex w-100"
+                    onClick={() => setCoreWorkflowImprovementsEnabled(!coreWorkflowImprovementsEnabled)}
+                >
+                    {coreWorkflowImprovementsEnabled ? 'Disable' : 'Enable'} workflow improvements
+                </Button>
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>

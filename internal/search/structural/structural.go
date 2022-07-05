@@ -3,7 +3,6 @@ package structural
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
@@ -133,7 +132,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			clients.Logger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
@@ -170,6 +169,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
+			clients.Logger,
 			page.RepoRevs,
 			clients.Zoekt,
 			search.TextRequest,

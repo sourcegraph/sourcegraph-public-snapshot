@@ -17,6 +17,7 @@ public class JSToJavaBridge implements Disposable {
                           JSToJavaBridgeRequestHandler requestHandler,
                           String jsCodeToRunAfterBridgeInit) {
         // Using a deprecated method because JBCefBrowserBase is not present in older JetBrains versions
+        //noinspection removal - Using this old method intentionally for backwards compatibility
         query = JBCefJSQuery.create(browser);
         query.addHandler((String requestAsString) -> {
             try {
