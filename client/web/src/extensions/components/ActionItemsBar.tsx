@@ -288,6 +288,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     <div className={styles.listItem}>
                         <Tooltip content="Add extensions">
                             <Link
+                                aria-label="Add"
                                 to="/extensions"
                                 className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
                             >
@@ -331,8 +332,8 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                         <ButtonLink
                             aria-label={
                                 isOpen
-                                    ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
-                                    : undefined
+                                    ? 'Close panel. Press the down arrow key to enter the extensions panel.'
+                                    : 'Open panel'
                             }
                             className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                             onSelect={toggle}
