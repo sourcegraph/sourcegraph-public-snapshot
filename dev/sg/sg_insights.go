@@ -26,7 +26,7 @@ var (
 		Subcommands: []*cli.Command{
 			{
 				Name:        "decode-id",
-				Usage:       "Decodes an encoded insight ID found on the frontend into an insight_view_id",
+				Usage:       "Decodes an encoded insight ID found on the frontend into a view unique_id",
 				Description: `Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries`,
 				Action:      decodeInsightIDAction,
 			},
@@ -45,9 +45,9 @@ func decodeInsightIDAction(cmd *cli.Context) error {
 	if len(ids) == 0 {
 		return errors.New("Expected at least 1 id to decode")
 	}
-	std.Out.WriteNoticef("Decoding %d IDs into insight_view_ids", len(ids))
+	std.Out.WriteNoticef("Decoding %d IDs into unique view IDs", len(ids))
 	for _, id := range ids {
-		cleanDecoded, err := decodeIDIntoSeriesID(id)
+		cleanDecoded, err := decodeIDIntoUniqueViewID(id)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func getInsightSeriesIDAction(cmd *cli.Context) error {
 	if len(ids) != 1 {
 		return errors.New("Expected 1 id to decode")
 	}
-	std.Out.WriteNoticef("Finding all insight_series_ids for %s", ids[0])
+	std.Out.WriteNoticef("Finding the series_id for %s", ids[0])
 
 	ctx := cmd.Context
 	logger := log.Scoped("getInsightSeriesIDAction", "")
@@ -88,7 +88,7 @@ SELECT series_id from insight_series where id IN
 );
 	`
 
-	cleanDecoded, err := decodeIDIntoSeriesID(ids[0])
+	cleanDecoded, err := decodeIDIntoUniqueViewID(ids[0])
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ SELECT series_id from insight_series where id IN
 	return nil
 }
 
-func decodeIDIntoSeriesID(id string) (string, error) {
+func decodeIDIntoUniqueViewID(id string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(id)
 	if err != nil {
 		return "", errors.Newf("could not decode id %q: %v", id, err)
