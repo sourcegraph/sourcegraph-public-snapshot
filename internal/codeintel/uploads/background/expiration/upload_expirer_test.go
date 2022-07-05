@@ -28,7 +28,7 @@ func init() {
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
 	uploadSvc := setupMockUploadService(now)
-	policySvc := setupMockPolicyService(now)
+	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
 
 	uploadExpirer := &expirer{
@@ -87,7 +87,7 @@ func TestUploadExpirer(t *testing.T) {
 	}
 }
 
-func setupMockPolicyService(now time.Time) *MockPolicyService {
+func setupMockPolicyService() *MockPolicyService {
 	policies := []policyShared.ConfigurationPolicy{
 		{ID: 1, RepositoryID: nil},
 		{ID: 2, RepositoryID: intPtr(53)},
