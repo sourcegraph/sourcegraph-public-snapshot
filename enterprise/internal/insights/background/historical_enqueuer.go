@@ -580,14 +580,6 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 	return jobs, preempted, nil, softErr
 }
 
-func (h historicalEnqueuer) writePreempted() {
-
-}
-
-func analyzeRepoSeries(ctx context.Context) {
-
-}
-
 // buildSeriesContext describes context/parameters for a call to analyzeSeries()
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
