@@ -20,6 +20,6 @@
     "lint": "yarn run lint:js && yarn run lint:css",
     "lint:js": "eslint --cache 'webview/**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'webview/**/*.scss'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -b"
   }
 }
