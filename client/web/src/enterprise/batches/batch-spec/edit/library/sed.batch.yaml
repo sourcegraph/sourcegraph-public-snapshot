@@ -2,7 +2,7 @@ name: apply-regex-sed
 description: Apply a regex using sed
 
 on:
-  - repositoriesMatchingQuery: TODO
+  - repositoriesMatchingQuery: <<CHANGE_ME>>
 
 steps:
   # In each repo, iterate over search results files using templating
