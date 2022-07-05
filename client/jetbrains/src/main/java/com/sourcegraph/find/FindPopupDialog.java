@@ -107,6 +107,7 @@ public class FindPopupDialog extends DialogWrapper {
         }
         if (parent != null && showPoint == null) {
             int height = UISettings.getInstance().getShowNavigationBar() ? 135 : 115;
+            //noinspection UnstableApiUsage
             if (parent instanceof IdeFrameImpl && ((IdeFrameImpl) parent).isInFullScreen()) {
                 height -= 20;
             }
