@@ -97,6 +97,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
+                        exceedsLicense={spec.exceedsLicense}
                         telemetryService={telemetryService}
                     />
                     <Description description={spec.description.description} />
@@ -179,6 +180,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
+                        exceedsLicense={spec.exceedsLicense}
                         telemetryService={telemetryService}
                     />
                     <PreviewList
