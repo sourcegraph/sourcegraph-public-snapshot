@@ -6,9 +6,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -94,5 +96,14 @@ func validateUpgrade(ctx context.Context, r Runner, version string) error {
 		return err
 	}
 
-	return upgradestore.NewWith(store.Handle()).ValidateUpgrade(ctx, "frontend", version)
+	// NOTE: this is a dynamic type check as requiring basestore.ShareableStore
+	// causes a cyclic import in internal/database/connections/test. Doing this
+	// at runtime has the same effect, just with a missing ShareableStore iface
+	// embedded in the store.
+	shareableStore, ok := store.(basestore.ShareableStore)
+	if !ok {
+		return errors.New("store does not support direct database handle access")
+	}
+
+	return upgradestore.NewWith(shareableStore.Handle()).ValidateUpgrade(ctx, "frontend", version)
 }

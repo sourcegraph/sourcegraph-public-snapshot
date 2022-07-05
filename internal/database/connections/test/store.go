@@ -6,7 +6,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -35,10 +34,6 @@ func (s *memoryStore) Transact(ctx context.Context) (runner.Store, error) {
 
 func (s *memoryStore) Done(err error) error {
 	return err
-}
-
-func (s *memoryStore) Handle() basestore.TransactableHandle {
-	panic("memory store (test-only mock of runner.Store) does not support direct database handle access")
 }
 
 func (s *memoryStore) Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error) {
