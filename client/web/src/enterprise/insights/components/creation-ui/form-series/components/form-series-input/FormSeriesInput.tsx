@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'rxjs'
@@ -28,6 +28,14 @@ interface FormSeriesInputProps {
      */
     repositories: string
 
+    /**
+     * This field is only needed for specifying a special compute-specific
+     * query field description when this component is used on the compute-powered insight.
+     * This prop should be removed when we will have a better form series management
+     * solution, see https://github.com/sourcegraph/sourcegraph/issues/38236
+     */
+    queryFieldDescription?: ReactNode
+
     /** Enable autofocus behavior of the first input element of series form. */
     autofocus?: boolean
 
@@ -56,6 +64,7 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
         cancel = false,
         autofocus = true,
         repositories,
+        queryFieldDescription,
         onCancel = noop,
         onSubmit = noop,
         onChange = noop,
@@ -128,10 +137,12 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 message={
-                    <span>
-                        Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed,{' '}
-                        <Code>repo:</Code> will be added automatically.
-                    </span>
+                    queryFieldDescription ?? (
+                        <span>
+                            Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed,{' '}
+                            <Code>repo:</Code> will be added automatically.
+                        </span>
+                    )
                 }
                 className="mt-4"
                 {...getDefaultInputProps(queryField)}
