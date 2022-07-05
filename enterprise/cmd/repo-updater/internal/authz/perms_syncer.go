@@ -64,7 +64,15 @@ type PermsSyncer struct {
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 
-	// TODO: docstring
+	// The lock to ensure there is no concurrent updates (i.e. only one) to the
+	// permissions tables. The mutex is used to prevent any potential deadlock that
+	// could be caused by concurrent database updates, and it is a simpler and more
+	// intuitive approach than trying to solve deadlocks caused by how permissions
+	// are stored in the database at the time of writing. In a production setup with
+	// thousands of repositories and users, this approach is more effective as the
+	// biggest contributor and bottleneck of background permissions syncing slowness
+	// is the time spent on API calls (usually minutes) vs a database update
+	// operation (usually <1s).
 	permsUpdateLock sync.Mutex
 	// The database interface for any permissions operations.
 	permsStore edb.PermsStore
@@ -799,6 +807,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
 	}
 
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
 
@@ -982,6 +991,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		pendingAccountIDs = append(pendingAccountIDs, aid)
 	}
 
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
 
@@ -1036,9 +1046,11 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 	return nil
 }
 
-// syncPerms processes the permissions syncing request and remove the request from
-// the queue once it is done (independent of success or failure).
-// TODO: update docstring
+// syncPerms processes the permissions syncing request and removes the request
+// from the queue once the process is done (regardless of success or failure).
+// The given sync groups are used to control the max concurrency, this method
+// only returns when the sync process is spawned, and blocks when reached max
+// concurrency defined by the sync group.
 func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	defer s.queue.remove(request.Type, request.ID, true)
 
