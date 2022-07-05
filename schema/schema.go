@@ -448,12 +448,6 @@ type CustomGitFetchMapping struct {
 	Fetch string `json:"fetch"`
 }
 
-// Datadog description: Datadog configuration
-type Datadog struct {
-	// RUM description: Datadog RUM configuration
-	RUM *RUM `json:"RUM,omitempty"`
-}
-
 // DebugLog description: Turns on debug logging for specific debugging scenarios.
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
@@ -1258,12 +1252,6 @@ type ObservabilityAlerts struct {
 	Owners []string `json:"owners,omitempty"`
 }
 
-// ObservabilityLogging description: Configuration for logging to external services.
-type ObservabilityLogging struct {
-	// Datadog description: Datadog configuration
-	Datadog *Datadog `json:"datadog,omitempty"`
-}
-
 // ObservabilityTracing description: Controls the settings for distributed tracing.
 type ObservabilityTracing struct {
 	// Debug description: Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.
@@ -1488,14 +1476,6 @@ type QuickLink struct {
 	Name string `json:"name"`
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
-}
-
-// RUM description: Datadog RUM configuration
-type RUM struct {
-	// ApplicationId description: Datadog application ID required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).
-	ApplicationId string `json:"applicationId"`
-	// ClientToken description: Datadog client token required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).
-	ClientToken string `json:"clientToken"`
 }
 
 // Ranking description: Experimental search result ranking options.
@@ -1965,8 +1945,6 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
-	// ObservabilityLogging description: Configuration for logging to external services.
-	ObservabilityLogging *ObservabilityLogging `json:"observability.logging,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.

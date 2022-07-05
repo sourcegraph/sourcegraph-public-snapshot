@@ -8,7 +8,7 @@ declare global {
     interface Window {
         initializeSourcegraph: () => Promise<void>
         callJava: (request: Request) => Promise<object>
-        callJS: (action: ActionName, data: string, callback: (result: string) => void) => void
+        callJS: (action: ActionName, data: string, callback: (result: string) => void) => Promise<void>
     }
 }
 

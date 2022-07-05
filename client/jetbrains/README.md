@@ -2,6 +2,7 @@
 
 # Sourcegraph for JetBrains IDEs
 
+- **New:** Search with Sourcegraph directly from inside your JetBrains product.
 - Instantly search in all open source repos and your private code.
 - Peek into any remote repo in the IDE, without checking it out.
 - Create URLs to specific code blocks to share them with your teammates.
@@ -79,7 +80,7 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
 - Clone `https://github.com/sourcegraph/sourcegraph`
 - Run `yarn install` in the root directory to get all dependencies
 - Run `yarn generate` in the root directory to generate graphql files
-- Go to `client/jetbrains/` and run `yarn build` to generate the JS files
+- Go to `client/jetbrains/` and run `yarn build` to generate the JS files, or `yarn watch` to watch for changes and regenerate on the fly
 - You can test the “Find on Sourcegraph” window by running `yarn standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
 - Run the plugin in a sandboxed IDE by running `./gradlew runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
   - Note: 2021.3 or later is required for Macs with Apple Silicon chips.
@@ -89,13 +90,11 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
 
 The publishing process is based on the [intellij-platform-plugin-template](https://github.com/JetBrains/intellij-platform-plugin-template).
 
-1. Update `pluginVersion` in `gradle.properties`.
-2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md`.
-3. **TODO: The following steps are obsolete now that we merged the project in the monorepo. Figure out a new process!**
-4. ~~Create a [new release](https://github.com/sourcegraph/sourcegraph/releases/new) on GitHub.~~
-5. ~~Pick the new version number as the git tag (e.g. `v1.2.3`).~~
-6. ~~Copy/paste the `[Unreleased]` section of [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/CHANGELOG.md) into the GitHub release text.~~
-7. ~~Once published, a GitHub action is triggered that will publish the release automatically and create a PR to update the changelog and version text. You may need to manually fix the content.~~
+### Publishing from your local machine
+
+1. Update `pluginVersion` in `gradle.properties`
+2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md`
+3. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
 
 ## Version History
 
