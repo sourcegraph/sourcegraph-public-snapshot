@@ -442,6 +442,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 row.classList.add('selected')
             }
         }
+        // It looks like `parsedHash` is updated _before_ `blobInfo` when
+        // navigating between files. That means we have to make this effect
+        // dependent on `blobInfo` even if it is not used inside the effect,
+        // otherwise the highlighting would not be updated when the new file
+        // content is available.
     }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
