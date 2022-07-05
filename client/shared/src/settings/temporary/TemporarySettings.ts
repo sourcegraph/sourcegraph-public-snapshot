@@ -39,6 +39,7 @@ export interface TemporarySettingsSchema {
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
+    'coreWorkflowImprovements.enabled': boolean
 }
 
 /**

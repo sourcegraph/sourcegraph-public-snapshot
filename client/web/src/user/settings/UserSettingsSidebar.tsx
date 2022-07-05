@@ -48,6 +48,9 @@ export const UserSettingsSidebar: React.FunctionComponent<
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
     const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useTemporarySetting(
+        'coreWorkflowImprovements.enabled'
+    )
 
     if (!props.authenticatedUser) {
         return null
@@ -118,6 +121,12 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         Show search tour
                     </Button>
                 )}
+                <Button
+                    className="text-left sidebar__link--inactive d-flex w-100"
+                    onClick={() => setCoreWorkflowImprovementsEnabled(!coreWorkflowImprovementsEnabled)}
+                >
+                    {coreWorkflowImprovementsEnabled ? 'Disable' : 'Enable'} workflow improvements
+                </Button>
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>
