@@ -152,6 +152,7 @@ export const WORKSPACES = gql`
         ignored
         unsupported
         cachedResultFound
+        stepCacheResultCount
     }
 
     fragment PreviewVisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {

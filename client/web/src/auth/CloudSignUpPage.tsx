@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
@@ -118,7 +118,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} aria-hidden={true} />
                     Go back
                 </Link>
             </small>
@@ -138,7 +138,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
                 <div className={styles.leftOrRight}>
                     <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    <Typography.H2
+                    <H2
                         className={classNames(
                             'd-flex',
                             'align-items-center',
@@ -159,7 +159,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                         ) : (
                             title
                         )}
-                    </Typography.H2>
+                    </H2>
 
                     {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
@@ -184,7 +184,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 </div>
 
                 <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
-                    <Typography.H2>Create a free account</Typography.H2>
+                    <H2>Create a free account</H2>
                     {renderAuthMethod()}
 
                     <small className="text-muted">

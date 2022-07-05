@@ -15,7 +15,6 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -24,9 +23,11 @@ import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegr
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, Code } from '@sourcegraph/wildcard'
 
+import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './FileMatchChildren.module.scss'
@@ -265,6 +266,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         [props.openInNewTab, history]
     )
 
+    const logEventOnCopy = useCallback(() => {
+        telemetryService.log(...codeCopiedEvent('file-match'))
+    }, [telemetryService])
+
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
@@ -286,11 +291,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     data-testid="file-match-children-item"
                     {...openInNewTabProps}
                 >
-                    <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <Typography.Code>
+                    <SymbolIcon kind={symbol.kind} className="mr-1 flex-shrink-0" />
+                    <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Typography.Code>
+                    </Code>
                 </Link>
             ))}
 
@@ -330,6 +335,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}
+                                    onCopy={logEventOnCopy}
                                 />
                             </div>
                         </div>

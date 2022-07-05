@@ -14,11 +14,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 // initHTTPTestGitServer instantiates an httptest.Server to make it return an HTTP response as set
@@ -249,10 +248,10 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{}, os.ErrNotExist
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+			return &fileutil.FileInfo{}, os.ErrNotExist
 		}
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -273,19 +272,19 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{Mode_: os.ModeDir}, nil
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+			return &fileutil.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
 		gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
-				&util.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
-				&util.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
-				&util.FileInfo{Name_: "c.go", Mode_: 0},
+				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
+				&fileutil.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
+				&fileutil.FileInfo{Name_: "c.go", Mode_: 0},
 			}, nil
 		}
 
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -314,15 +313,15 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{Mode_: 0}, nil
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+			return &fileutil.FileInfo{Mode_: 0}, nil
 		}
 
-		git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		}
 
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -351,15 +350,15 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{Mode_: 0}, nil
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+			return &fileutil.FileInfo{Mode_: 0}, nil
 		}
 
-		git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		}
 
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()

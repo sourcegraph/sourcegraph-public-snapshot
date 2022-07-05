@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useState } from 'react'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
 import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
-import { Input, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Input, Alert, H2, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
 import { Maybe, OrganizationVariables } from '../../graphql-operations'
@@ -108,7 +108,7 @@ export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
 
     return (
         <Form onSubmit={onSubmit}>
-            <Typography.H2>Organizations code early access</Typography.H2>
+            <H2>Organizations code early access</H2>
             <Text>
                 Type in an organization name to enable early access for organization code host and repositories.
             </Text>

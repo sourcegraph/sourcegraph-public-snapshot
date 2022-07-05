@@ -1,17 +1,15 @@
 package streaming
 
 import (
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func BenchmarkBatchingStream(b *testing.B) {
@@ -117,15 +115,13 @@ func TestBatchingStream(t *testing.T) {
 			count.Add(int64(len(event.Results)))
 		}))
 
-		var wg sync.WaitGroup
-		wg.Add(10)
+		g := group.New()
 		for i := 0; i < 10; i++ {
-			go func() {
+			g.Go(func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
-				wg.Done()
-			}()
+			})
 		}
-		wg.Wait()
+		g.Wait()
 
 		// One should be sent immediately
 		require.Equal(t, count.Load(), int64(1))
@@ -134,206 +130,4 @@ func TestBatchingStream(t *testing.T) {
 		s.Done()
 		require.Equal(t, count.Load(), int64(10))
 	})
-}
-
-func TestWithSelect(t *testing.T) {
-	dataCopy := func() SearchEvent {
-		return SearchEvent{
-			Results: []result.Match{
-				&result.FileMatch{
-					File:        result.File{Path: "pokeman/charmandar"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
-				},
-				&result.FileMatch{
-					File:        result.File{Path: "pokeman/charmandar"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
-				},
-				&result.FileMatch{
-					File:        result.File{Path: "pokeman/bulbosaur"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
-				},
-				&result.FileMatch{
-					File:        result.File{Path: "digiman/ummm"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
-				},
-			},
-		}
-	}
-
-	test := func(selector string) string {
-		selectPath, _ := filter.SelectPathFromString(selector)
-		agg := NewAggregatingStream()
-		selectAgg := WithSelect(agg, selectPath)
-		selectAgg.Send(dataCopy())
-		s, _ := json.MarshalIndent(agg.Results, "", "  ")
-		return string(s)
-	}
-
-	autogold.Want("dedupe paths for select:file.directory", `[
-  {
-    "Path": "pokeman/",
-    "HunkMatches": null,
-    "LimitHit": false
-  },
-  {
-    "Path": "digiman/",
-    "HunkMatches": null,
-    "LimitHit": false
-  }
-]`).Equal(t, test("file.directory"))
-
-	autogold.Want("dedupe paths select:file", `[
-  {
-    "Path": "pokeman/charmandar",
-    "HunkMatches": null,
-    "LimitHit": false
-  },
-  {
-    "Path": "pokeman/bulbosaur",
-    "HunkMatches": null,
-    "LimitHit": false
-  },
-  {
-    "Path": "digiman/ummm",
-    "HunkMatches": null,
-    "LimitHit": false
-  }
-]`).Equal(t, test("file"))
-
-	autogold.Want("don't dedupe file matches for select:content", `[
-  {
-    "Path": "pokeman/charmandar",
-    "HunkMatches": [
-      {
-        "Content": "",
-        "ContentStart": [
-          0,
-          0,
-          0
-        ],
-        "Ranges": [
-          {
-            "start": [
-              0,
-              0,
-              0
-            ],
-            "end": [
-              0,
-              0,
-              0
-            ]
-          }
-        ]
-      },
-      {
-        "Content": "",
-        "ContentStart": [
-          0,
-          0,
-          0
-        ],
-        "Ranges": [
-          {
-            "start": [
-              0,
-              0,
-              0
-            ],
-            "end": [
-              0,
-              0,
-              0
-            ]
-          }
-        ]
-      }
-    ],
-    "LimitHit": false
-  },
-  {
-    "Path": "pokeman/charmandar",
-    "HunkMatches": [
-      {
-        "Content": "",
-        "ContentStart": [
-          0,
-          0,
-          0
-        ],
-        "Ranges": [
-          {
-            "start": [
-              0,
-              0,
-              0
-            ],
-            "end": [
-              0,
-              0,
-              0
-            ]
-          }
-        ]
-      }
-    ],
-    "LimitHit": false
-  },
-  {
-    "Path": "pokeman/bulbosaur",
-    "HunkMatches": [
-      {
-        "Content": "",
-        "ContentStart": [
-          0,
-          0,
-          0
-        ],
-        "Ranges": [
-          {
-            "start": [
-              0,
-              0,
-              0
-            ],
-            "end": [
-              0,
-              0,
-              0
-            ]
-          }
-        ]
-      }
-    ],
-    "LimitHit": false
-  },
-  {
-    "Path": "digiman/ummm",
-    "HunkMatches": [
-      {
-        "Content": "",
-        "ContentStart": [
-          0,
-          0,
-          0
-        ],
-        "Ranges": [
-          {
-            "start": [
-              0,
-              0,
-              0
-            ],
-            "end": [
-              0,
-              0,
-              0
-            ]
-          }
-        ]
-      }
-    ],
-    "LimitHit": false
-  }
-]`).Equal(t, test("content"))
 }

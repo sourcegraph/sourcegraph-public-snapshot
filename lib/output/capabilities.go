@@ -49,6 +49,8 @@ func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
 			} else {
 				err = errors.New("unexpected nil size from GetWinsize")
 			}
+		} else {
+			err = errors.Wrap(err, "GetWinsize")
 		}
 	}
 	// Set overrides

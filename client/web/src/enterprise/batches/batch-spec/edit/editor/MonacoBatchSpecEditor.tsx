@@ -80,7 +80,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <MonacoEditor
-                className={classNames(styles.editor, this.props.className)}
+                className={classNames('percy-hide chromatic-ignore', styles.editor, this.props.className)}
                 language="yaml"
                 height="auto"
                 isLightTheme={this.props.isLightTheme}
@@ -153,6 +153,11 @@ function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string): 
     schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
         type => type.type !== 'string'
     )
+
+    // Temporarily remove the mount field from the schema, so it does not show up in the auto-suggestion.
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete schema.properties.steps.items.properties.mount
 
     // Enforce the exact name match. The user must use the settings UI to change the name.
     schema.properties.name.pattern = `^${batchChangeName}$`

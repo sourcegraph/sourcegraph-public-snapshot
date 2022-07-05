@@ -1,12 +1,12 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import { mdiCheckboxBlankCircle } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -78,7 +78,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
             />
 
             <Container className="mb-3">
-                <Typography.H3>Setting up executors</Typography.H3>
+                <H3>Setting up executors</H3>
                 <Text className="mb-0">
                     Executors enable{' '}
                     <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
@@ -129,21 +129,19 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <Typography.H4 className="mb-0">
+                        <H4 className="mb-0">
                             {node.active ? (
                                 <Icon
-                                    role="img"
                                     aria-hidden={true}
                                     className="text-success mr-2"
-                                    as={CheckboxBlankCircleIcon}
+                                    svgPath={mdiCheckboxBlankCircle}
                                 />
                             ) : (
                                 <Icon
-                                    role="img"
                                     className="text-warning mr-2"
                                     aria-label="This executor missed at least three heartbeats."
                                     data-tooltip="This executor missed at least three heartbeats."
-                                    as={CheckboxBlankCircleIcon}
+                                    svgPath={mdiCheckboxBlankCircle}
                                 />
                             )}
                             {node.hostname}{' '}
@@ -153,7 +151,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                             >
                                 {node.queueName}
                             </Badge>
-                        </Typography.H4>
+                        </H4>
                     </div>
                     <span>
                         last seen <Timestamp date={node.lastSeenAt} />

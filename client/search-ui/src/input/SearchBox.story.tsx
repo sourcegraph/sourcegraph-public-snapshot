@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
@@ -9,14 +9,19 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { Typography } from '@sourcegraph/wildcard'
+import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
-const { add } = storiesOf('search-ui/input/SearchBox', module).addParameters({
-    chromatic: { viewports: [575, 700], disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'search-ui/input/SearchBox',
+    parameters: {
+        chromatic: { viewports: [575, 700], disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -50,7 +55,7 @@ const defaultProps: SearchBoxProps = {
     editorComponent: 'monaco',
 }
 
-add('SearchBox', () => (
+export const SearchBoxStory: Story = () => (
     <BrandedStory>
         {props => (
             <>
@@ -59,13 +64,13 @@ add('SearchBox', () => (
 
                     return (
                         <div key={editorComponent}>
-                            <Typography.H1>{editorComponent}</Typography.H1>
-                            <Typography.H2>Default</Typography.H2>
+                            <H1>{editorComponent}</H1>
+                            <H2>Default</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <Typography.H2>Regexp enabled</Typography.H2>
+                            <H2>Regexp enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -74,7 +79,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <Typography.H2>Structural enabled</Typography.H2>
+                            <H2>Structural enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -83,12 +88,12 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <Typography.H2>Case sensitivity enabled</Typography.H2>
+                            <H2>Case sensitivity enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} caseSensitive={true} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <Typography.H2>With search contexts</Typography.H2>
+                            <H2>With search contexts</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -98,7 +103,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <Typography.H2>With search contexts, user context selected</Typography.H2>
+                            <H2>With search contexts, user context selected</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -108,7 +113,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <Typography.H2>With search contexts, disabled based on query</Typography.H2>
+                            <H2>With search contexts, disabled based on query</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -124,4 +129,6 @@ add('SearchBox', () => (
             </>
         )}
     </BrandedStory>
-))
+)
+
+SearchBoxStory.storyName = 'SearchBox'

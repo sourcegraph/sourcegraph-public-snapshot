@@ -18,7 +18,9 @@ exports[`LoaderButton should render a loading spinner when loading prop is true 
     type="button"
   >
     <div
+      aria-label="Loading"
       class="iconInline loadingSpinner"
+      role="img"
     />
   </button>
 </DocumentFragment>

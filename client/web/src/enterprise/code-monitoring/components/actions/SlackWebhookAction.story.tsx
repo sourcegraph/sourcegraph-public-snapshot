@@ -1,7 +1,7 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
 import { mockAuthenticatedUser } from '../../testing/util'
@@ -9,9 +9,14 @@ import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/SlackWebhookAction', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/SlackWebhookAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -29,38 +34,40 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-add('SlackWebhookAction', () => (
+export const SlackWebhookActionStory: Story = () => (
     <WebStory>
         {() => (
             <>
-                <Typography.H2>Action card disabled</Typography.H2>
+                <H2>Action card disabled</H2>
                 <SlackWebhookAction {...defaultProps} disabled={true} />
 
-                <Typography.H2>Closed, not populated</Typography.H2>
+                <H2>Closed, not populated</H2>
                 <SlackWebhookAction {...defaultProps} />
 
-                <Typography.H2>Open, not populated</Typography.H2>
+                <H2>Open, not populated</H2>
                 <SlackWebhookAction {...defaultProps} _testStartOpen={true} />
 
-                <Typography.H2>Closed, populated, enabled</Typography.H2>
+                <H2>Closed, populated, enabled</H2>
                 <SlackWebhookAction {...defaultProps} action={action} />
 
-                <Typography.H2>Open, populated, enabled</Typography.H2>
+                <H2>Open, populated, enabled</H2>
                 <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} />
 
-                <Typography.H2>Open, populated with error, enabled</Typography.H2>
+                <H2>Open, populated with error, enabled</H2>
                 <SlackWebhookAction
                     {...defaultProps}
                     _testStartOpen={true}
                     action={{ ...action, url: 'https://example.com' }}
                 />
 
-                <Typography.H2>Closed, populated, disabled</Typography.H2>
+                <H2>Closed, populated, disabled</H2>
                 <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
 
-                <Typography.H2>Open, populated, disabled</Typography.H2>
+                <H2>Open, populated, disabled</H2>
                 <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
             </>
         )}
     </WebStory>
-))
+)
+
+SlackWebhookActionStory.storyName = 'SlackWebhookAction'

@@ -195,6 +195,7 @@ type InsightViewResolver interface {
 	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
+	SeriesCount(ctx context.Context) (int32, error)
 }
 
 type InsightDataSeriesDefinition interface {
@@ -224,6 +225,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 	GeneratedFromCaptureGroups() (bool, error)
 	IsCalculated() (bool, error)
+	GroupBy() (*string, error)
 }
 
 type InsightPresentation interface {
@@ -399,6 +401,7 @@ type LineChartSearchInsightDataSeriesInput struct {
 	RepositoryScope            RepositoryScopeInput
 	Options                    LineChartDataSeriesOptionsInput
 	GeneratedFromCaptureGroups *bool
+	GroupBy                    *string
 }
 
 type LineChartDataSeriesOptionsInput struct {

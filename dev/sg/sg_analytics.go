@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var analyticsCommand = &cli.Command{
@@ -22,7 +24,7 @@ var analyticsCommand = &cli.Command{
 			Name:        "submit",
 			ArgsUsage:   "[github username]",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
-			Description: "Uses OKAYHQ_TOKEN, or fetches a token from gcloud.",
+			Description: "Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.",
 			Action: func(cmd *cli.Context) error {
 				if cmd.Args().Len() != 1 {
 					return cli.ShowSubcommandHelp(cmd)
@@ -34,20 +36,52 @@ var analyticsCommand = &cli.Command{
 					if err != nil {
 						return err
 					}
-					okayToken, err = store.GetExternal(cmd.Context, secrets.ExternalSecret{
-						Provider: "gcloud",
-						Project:  "sourcegraph-ci",
-						Name:     "CI_OKAYHQ_TOKEN",
-					})
-					if err != nil {
-						return err
+
+					pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Fetching a secret"))
+
+					var errs error
+					for _, secret := range []secrets.ExternalSecret{
+						{
+							Provider: secrets.ExternalProvider1Pass,
+							Project:  "Shared",
+							Name:     "ttdgfcufz3jggx3d57g6rwodwi",
+							Field:    "credential",
+						},
+						{
+							Provider: secrets.ExternalProviderGCloud,
+							Project:  "sourcegraph-ci",
+							Name:     "CI_OKAYHQ_TOKEN",
+						},
+					} {
+						pending.Updatef("Trying to get the secret from %s", string(secret.Provider))
+						okayToken, err = store.GetExternal(cmd.Context, secret)
+						if err != nil {
+							pending.Writef("Didn't get the secret we wanted from %s", string(secret.Provider))
+							errs = errors.Append(errs, err)
+							continue // try the next provider
+						}
+						if okayToken != "" {
+							pending.Updatef("Got our secret from %s", string(secret.Provider))
+							break // done!
+						}
 					}
+
+					// If we've tried all providers and still don't have the token, we
+					// return the error.
+					if okayToken == "" {
+						pending.Destroy()
+						return errors.Wrap(errs, "failed to get OkayHQ token")
+					}
+					pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Secret retrieved"))
+
 				}
 
+				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))
 				if err := analytics.Submit(okayToken, cmd.Args().First()); err != nil {
+					pending.Destroy()
 					return err
 				}
-				std.Out.WriteSuccessf("Analytics successfully submitted!")
+				pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Your analytics have been successfully submitted!"))
 				return analytics.Reset()
 			},
 		},
@@ -93,9 +127,11 @@ var analyticsCommand = &cli.Command{
 							metrics = append(metrics, fmt.Sprintf("%s: %s", k, v.ValueString()))
 						}
 
-						entry := fmt.Sprintf("- [%s] `%s`: %s _(%s)_",
-							ts, ev.Name, strings.Join(ev.Labels, ", "), strings.Join(metrics, ", "))
-						out.WriteString(entry)
+						entry := fmt.Sprintf("- [%s] `%s`", ts, ev.Name)
+						if len(ev.Labels) > 0 {
+							entry += fmt.Sprintf(": %s", strings.Join(ev.Labels, ", "))
+						}
+						out.WriteString(entry + fmt.Sprintf(" _(%s)_", strings.Join(metrics, ", ")))
 
 						out.WriteString("\n")
 					}

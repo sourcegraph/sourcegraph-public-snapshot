@@ -106,9 +106,11 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
 	case gitlab.TokenTypeOAuth:
-		if err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc); err != nil {
+		refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc)
+		if err != nil {
 			return nil, errors.Wrap(err, "refreshing OAuth token")
 		}
+		c.Token = refreshed
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -395,25 +397,21 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	return out, nil
 }
 
-func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.DB, svc *types.ExternalService) (err error) {
-	if svc.Kind != extsvc.KindGitLab {
-		return nil
-	}
-
+func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.DB, svc *types.ExternalService) (accessToken string, err error) {
 	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 	if err != nil {
-		return errors.Wrap(err, "parsing external service config")
+		return "", errors.Wrap(err, "parsing external service config")
 	}
 
 	config, ok := parsed.(*schema.GitLabConnection)
 	if !ok {
-		return errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
+		return "", errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
 	}
 
 	// We may have old config without a refresh token
 	if config.TokenOauthRefresh == "" {
 		gitlab.TokenMissingRefreshCounter.Inc()
-		return nil
+		return config.Token, nil
 	}
 
 	var oauthConfig *oauth2.Config
@@ -430,7 +428,7 @@ func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.D
 		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
 			"externalServiceID", svc.ID,
 		)
-		return nil
+		return config.Token, nil
 	}
 
 	tok := &oauth2.Token{
@@ -441,7 +439,7 @@ func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.D
 
 	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 	if err != nil {
-		return errors.Wrap(err, "refresh token")
+		return "", errors.Wrap(err, "refresh token")
 	}
 
 	if refreshedToken.AccessToken != tok.AccessToken {
@@ -451,22 +449,22 @@ func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.D
 		}()
 		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
 		if err != nil {
-			return errors.Wrap(err, "updating OAuth token")
+			return "", errors.Wrap(err, "updating OAuth token")
 		}
 		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
 		if err != nil {
-			return errors.Wrap(err, "updating OAuth refresh token")
+			return "", errors.Wrap(err, "updating OAuth refresh token")
 		}
 		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
 		if err != nil {
-			return errors.Wrap(err, "updating OAuth token expiry")
+			return "", errors.Wrap(err, "updating OAuth token expiry")
 		}
 		svc.UpdatedAt = time.Now()
 		if err := db.ExternalServices().Upsert(ctx, svc); err != nil {
-			return errors.Wrap(err, "upserting external service")
+			return "", errors.Wrap(err, "upserting external service")
 		}
 	}
-	return nil
+	return refreshedToken.AccessToken, nil
 }
 
 func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {

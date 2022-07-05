@@ -1,48 +1,36 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, DecoratorFn, Story } from '@storybook/react'
 import classNames from 'classnames'
 
 import { WebStory } from '../../../../components/WebStory'
-import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
+import { hiddenChangesetApplyPreviewStories } from './storyData'
 
 import styles from './PreviewList.module.scss'
 
-const { add } = storiesOf('web/batches/preview/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
-))
-
-export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {
-    'Import changeset': {
-        __typename: 'HiddenChangesetApplyPreview',
-        targets: {
-            __typename: 'HiddenApplyPreviewTargetsAttach',
-            changesetSpec: {
-                __typename: 'HiddenChangesetSpec',
-                id: 'someidh1',
-                type: ChangesetSpecType.EXISTING,
-            },
-        },
-    },
-    'Create changeset': {
-        __typename: 'HiddenChangesetApplyPreview',
-        targets: {
-            __typename: 'HiddenApplyPreviewTargetsAttach',
-            changesetSpec: {
-                __typename: 'HiddenChangesetSpec',
-                id: 'someidh2',
-                type: ChangesetSpecType.BRANCH,
-            },
-        },
-    },
+)
+const config: Meta = {
+    title: 'web/batches/preview/HiddenChangesetApplyPreviewNode',
+    decorators: [decorator],
 }
 
-for (const storyName of Object.keys(hiddenChangesetApplyPreviewStories)) {
-    add(storyName, () => (
-        <WebStory>
-            {props => (
-                <HiddenChangesetApplyPreviewNode {...props} node={hiddenChangesetApplyPreviewStories[storyName]} />
-            )}
-        </WebStory>
-    ))
+export default config
+
+const Template: Story<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
+    <WebStory>{props => <HiddenChangesetApplyPreviewNode {...props} node={node} />}</WebStory>
+)
+
+export const ImportChangeset = Template.bind({})
+ImportChangeset.args = {
+    node: hiddenChangesetApplyPreviewStories['Import changeset'],
 }
+ImportChangeset.storyName = 'Import changeset'
+
+export const CreateChangeset = Template.bind({})
+CreateChangeset.args = {
+    node: hiddenChangesetApplyPreviewStories['Create changeset'],
+}
+CreateChangeset.storyName = 'Create changeset'

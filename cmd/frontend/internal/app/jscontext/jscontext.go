@@ -56,13 +56,12 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	Datadog       schema.RUM `json:"datadog,omitempty"`
-	SentryDSN     *string    `json:"sentryDSN"`
-	SiteID        string     `json:"siteID"`
-	SiteGQLID     string     `json:"siteGQLID"`
-	Debug         bool       `json:"debug"`
-	NeedsSiteInit bool       `json:"needsSiteInit"`
-	EmailEnabled  bool       `json:"emailEnabled"`
+	SentryDSN     *string `json:"sentryDSN"`
+	SiteID        string  `json:"siteID"`
+	SiteGQLID     string  `json:"siteGQLID"`
+	Debug         bool    `json:"debug"`
+	NeedsSiteInit bool    `json:"needsSiteInit"`
+	EmailEnabled  bool    `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -94,8 +93,11 @@ type JSContext struct {
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	CodeIntelLockfileIndexingEnabled         bool `json:"codeIntelLockfileIndexingEnabled"`
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
+
+	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
@@ -143,13 +145,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
+
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
-	}
-
-	var datadogRUM schema.RUM
-	if siteConfig.ObservabilityLogging != nil && siteConfig.ObservabilityLogging.Datadog != nil && siteConfig.ObservabilityLogging.Datadog.RUM != nil {
-		datadogRUM = *siteConfig.ObservabilityLogging.Datadog.RUM
 	}
 
 	var githubAppCloudSlug string
@@ -165,16 +163,16 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:         globals.ExternalURL().String(),
-		XHRHeaders:          headers,
-		UserAgentIsBot:      isBot(req.UserAgent()),
-		AssetsRoot:          assetsutil.URL("").String(),
-		Version:             version.Version(),
-		IsAuthenticatedUser: actor.IsAuthenticated(),
-		Datadog:             datadogRUM,
-		SentryDSN:           sentryDSN,
-		Debug:               env.InsecureDev,
-		SiteID:              siteID,
+		ExternalURL:                globals.ExternalURL().String(),
+		XHRHeaders:                 headers,
+		UserAgentIsBot:             isBot(req.UserAgent()),
+		AssetsRoot:                 assetsutil.URL("").String(),
+		Version:                    version.Version(),
+		IsAuthenticatedUser:        actor.IsAuthenticated(),
+		SentryDSN:                  sentryDSN,
+		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
+		Debug:                      env.InsecureDev,
+		SiteID:                     siteID,
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
@@ -212,6 +210,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		CodeIntelLockfileIndexingEnabled:         conf.CodeIntelLockfileIndexingEnabled(),
 
 		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 

@@ -1,10 +1,10 @@
 import React, { useState, useLayoutEffect } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { useLocation } from 'react-router'
 
-import { Button, TooltipController, Icon, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, DeprecatedTooltipController, Icon, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -19,7 +19,7 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
     const [copied, setCopied] = useState(false)
 
     useLayoutEffect(() => {
-        TooltipController.forceUpdate()
+        DeprecatedTooltipController.forceUpdate()
     }, [copied])
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -39,7 +39,7 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
 
     return (
         <Button variant="icon" className="p-2" data-tooltip={label} aria-label={label} onClick={onClick} size="sm">
-            <Icon role="img" className={styles.copyIcon} as={ContentCopyIcon} aria-hidden={true} />
+            <Icon className={styles.copyIcon} aria-hidden={true} svgPath={mdiContentCopy} />
         </Button>
     )
 }

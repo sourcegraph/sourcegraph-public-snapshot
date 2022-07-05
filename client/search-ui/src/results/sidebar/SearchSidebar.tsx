@@ -19,7 +19,7 @@ import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSide
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Typography } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -181,7 +181,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                         noResultText={
                             <span>
                                 None of the top {repoFilterLinks.length} repositories in your results match this filter.
-                                Try a <Typography.Code>repo:</Typography.Code> search in the main search bar instead.
+                                Try a <Code>repo:</Code> search in the main search bar instead.
                             </span>
                         }
                     >
@@ -240,9 +240,9 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     }
 
     return (
-        <div className={classNames(styles.searchSidebar, props.className)}>
+        <aside className={classNames(styles.searchSidebar, props.className)} role="region" aria-label="Search sidebar">
             {props.prefixContent}
             {body}
-        </div>
+        </aside>
     )
 }

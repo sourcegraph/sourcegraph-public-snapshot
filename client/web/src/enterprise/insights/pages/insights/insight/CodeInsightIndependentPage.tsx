@@ -1,4 +1,4 @@
-import { FunctionComponent, useContext, useMemo } from 'react'
+import { FunctionComponent, useContext, useEffect, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
@@ -9,6 +9,7 @@ import { CodeInsightsPage } from '../../../components/code-insights-page/CodeIns
 import { CodeInsightsBackendContext } from '../../../core'
 
 import { CodeInsightIndependentPageActions } from './components/actions/CodeInsightIndependentPageActions'
+import { StandaloneInsightDashboardPills } from './components/dashboard-pills/StandaloneInsightDashboardPills'
 import { SmartStandaloneInsight } from './components/SmartStandaloneInsight'
 import { Standalone404Insight } from './components/standalone-404-insight/Standalone404Insight'
 
@@ -24,6 +25,10 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
 
     const insight = useObservable(useMemo(() => getInsightById(insightId), [getInsightById, insightId]))
 
+    useEffect(() => {
+        telemetryService.logPageView('StandaloneInsightPage')
+    }, [telemetryService])
+
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />
     }
@@ -34,10 +39,17 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
 
     return (
         <CodeInsightsPage className={styles.root}>
-            <PageTitle title={`Configure ${insight.title} - Code Insights`} />
+            <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
                 path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
-                actions={<CodeInsightIndependentPageActions insight={insight} />}
+                actions={<CodeInsightIndependentPageActions insight={insight} telemetryService={telemetryService} />}
+            />
+
+            <StandaloneInsightDashboardPills
+                telemetryService={telemetryService}
+                dashboards={insight.dashboards}
+                insightId={insight.id}
+                className={styles.dashboards}
             />
 
             <div className={styles.content}>

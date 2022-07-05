@@ -13,11 +13,13 @@ import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
 // eslint-disable-next-line no-restricted-imports
 import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
 
+import { getConfig } from '../config'
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'
 import { readEnvironmentString } from '../utils'
@@ -30,8 +32,6 @@ util.inspect.defaultOptions.maxStringLength = 80
 
 Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
-
-const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
 const checkPollyMode = (mode: string): MODE => {
     if (mode === 'record' || mode === 'replay' || mode === 'passthrough' || mode === 'stopped') {
@@ -115,6 +115,7 @@ export const createSharedIntegrationTestContext = async <
     currentTest,
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
+    const config = getConfig('keepBrowser', 'disableAppAssetsMocking')
     await driver.newPage()
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (pollyMode === 'record') {
@@ -173,30 +174,32 @@ export const createSharedIntegrationTestContext = async <
             .send('')
     })
 
-    // Serve assets from disk
-    server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
-        const asset = request.params.path
-        // Cache all responses for the entire lifetime of the test run
-        response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-        try {
-            const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
-                // Polly doesn't support Buffers or streams at the moment
-                encoding: 'utf-8',
-            })
-            const contentType = mime.contentType(path.basename(asset))
-            if (contentType) {
-                response.type(contentType)
+    if (!config.disableAppAssetsMocking) {
+        // Serve assets from disk
+        server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
+            const asset = request.params.path
+            // Cache all responses for the entire lifetime of the test run
+            response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+            try {
+                const content = await readFile(path.join(STATIC_ASSETS_PATH, asset), {
+                    // Polly doesn't support Buffers or streams at the moment
+                    encoding: 'utf-8',
+                })
+                const contentType = mime.contentType(path.basename(asset))
+                if (contentType) {
+                    response.type(contentType)
+                }
+                response.send(content)
+            } catch (error) {
+                if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
+                    response.sendStatus(404)
+                } else {
+                    console.error(error)
+                    response.status(500).send(asError(error).message)
+                }
             }
-            response.send(content)
-        } catch (error) {
-            if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
-                response.sendStatus(404)
-            } else {
-                console.error(error)
-                response.status(500).send(asError(error).message)
-            }
-        }
-    })
+        })
+    }
 
     // GraphQL requests are not handled by HARs, but configured per-test.
     interface GraphQLRequestEvent<O extends TGraphQlOperationNames> {
@@ -284,6 +287,10 @@ export const createSharedIntegrationTestContext = async <
             return variables
         },
         dispose: async () => {
+            if (config.keepBrowser) {
+                return
+            }
+
             subscriptions.unsubscribe()
             await pTimeout(
                 recordCoverage(driver.browser),

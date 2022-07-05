@@ -26,7 +26,6 @@ func Submit(okayToken string, gitHubLogin string) error {
 		}
 
 		// clean up data
-		ev.Labels = append(ev.Labels, "sg-analytics")
 		for k, v := range ev.Properties {
 			if len(v) == 0 {
 				delete(ev.Properties, k)
@@ -57,6 +56,11 @@ func Reset() error {
 	if err != nil {
 		return err
 	}
+
+	if _, err := os.Stat(p); os.IsNotExist(err) {
+		// don't have to remove something that doesn't exist
+		return nil
+	}
 	return os.Remove(p)
 }
 
@@ -79,9 +83,19 @@ func Load() ([]*okay.Event, error) {
 		// Don't worry too much about malformed events, analytics are relatively optional
 		// so just grab what we can.
 		var event okay.Event
-		if err := json.Unmarshal(scanner.Bytes(), &event); err == nil {
-			events = append(events, &event)
+		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
+			continue // drop malformed data
 		}
+
+		// Now we ensure that this event is something we want to keep
+		if event.Properties == nil {
+			continue
+		}
+		if event.Properties[eventVersionPropertyKey] != eventVersion {
+			continue
+		}
+
+		events = append(events, &event)
 	}
 	return events, nil
 }

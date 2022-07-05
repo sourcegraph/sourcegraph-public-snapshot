@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiClose } from '@mdi/js'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Input, LoadingSpinner, Modal, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -64,16 +64,15 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
             data-testid="delete-org-modal"
         >
             <div>
-                <Typography.H3 className="text-danger" id={deleteLabelId}>
+                <H3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
-                </Typography.H3>
+                </H3>
                 <Icon
-                    role="img"
                     className="position-absolute cursor-pointer"
                     style={{ top: '1rem', right: '1rem' }}
                     onClick={toggleDeleteModal}
-                    as={CloseIcon}
                     aria-label="Close"
+                    svgPath={mdiClose}
                 />
                 <Text className="pt-3">
                     <strong>You are going to delete {org.name} from Sourcegraph.</strong>

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -11,11 +13,12 @@ import (
 
 func TestUserPublicRepos_Set(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	u := Users(db)
+	u := db.Users()
 	r := db.Repos()
-	upr := UserPublicRepos(db)
+	upr := db.UserPublicRepos()
 
 	user, err := u.Create(ctx, NewUser{
 		Username: "u",
@@ -61,11 +64,12 @@ func TestUserPublicRepos_Set(t *testing.T) {
 
 func TestUserPublicRepos_SetUserRepos(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	u := Users(db)
+	u := db.Users()
 	r := db.Repos()
-	upr := UserPublicRepos(db)
+	upr := db.UserPublicRepos()
 
 	user, err := u.Create(ctx, NewUser{
 		Username: "u",

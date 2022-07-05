@@ -35,7 +35,10 @@ const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContent
     latestSettings: { id: 3, contents: '.' },
 }
 
-const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([new Error('parse error (code: 0, offset: 0, length: 1)')])
+const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([
+    new Error('parse error (code: 1, error: InvalidSymbol, offset: 0, length: 1)'),
+    new Error('parse error (code: 4, error: ValueExpected, offset: 1, length: 0)'),
+])
 
 describe('gqlToCascade', () => {
     test('converts a value', () => {

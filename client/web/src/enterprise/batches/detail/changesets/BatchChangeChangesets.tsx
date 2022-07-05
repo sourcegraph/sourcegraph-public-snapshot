@@ -310,13 +310,14 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
                                 first={BATCH_COUNT}
+                                centered={true}
                                 connection={connection}
                                 noun="changeset"
                                 pluralNoun="changesets"
                                 hasNextPage={hasNextPage}
                                 emptyElement={emptyElement}
                             />
-                            {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                         </SummaryContainer>
                     )}
                 </ConnectionContainer>

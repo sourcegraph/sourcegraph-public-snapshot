@@ -13,7 +13,9 @@ import {
     Card,
     Link,
     Container,
-    Typography,
+    H2,
+    H3,
+    H4,
     Text,
     screenReaderAnnounce,
 } from '@sourcegraph/wildcard'
@@ -152,7 +154,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+                // TODO: As we haven't finished implementing support for orgs, we've
+                // temporary disabled setting a different namespace. Replace this line
+                // with the commented-out one that follows it to restore the preselected
+                // namespace behavior for orgs.
+                actions={canCreate ? <NewBatchChangeButton to="/batch-changes/create" /> : null}
+                // actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
@@ -164,13 +171,13 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <Typography.H3 as={Typography.H2} className="align-self-end flex-1">
+                                <H3 as={H2} className="align-self-end flex-1">
                                     {`${lastTotalCount} batch changes`}
-                                </Typography.H3>
+                                </H3>
                             )}
-                            <Typography.H4 as={Typography.H3} className="mb-0 mr-2">
+                            <H4 as={H3} className="mb-0 mr-2">
                                 Status
-                            </Typography.H4>
+                            </H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
@@ -205,6 +212,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         {connection && (
                             <SummaryContainer centered={true}>
                                 <ConnectionSummary
+                                    centered={true}
                                     noSummaryIfAllNodesVisible={true}
                                     first={BATCH_CHANGES_PER_PAGE_COUNT}
                                     connection={connection}
@@ -215,7 +223,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                         <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
                                     }
                                 />
-                                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                             </SummaryContainer>
                         )}
                     </ConnectionContainer>
@@ -320,11 +328,11 @@ const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>>
             <Card>
                 <CardBody className="text-center">
                     <Text>Create your first batch change</Text>
-                    <Typography.H2 className="mb-0">
+                    <H2 className="mb-0">
                         <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
-                    </Typography.H2>
+                    </H2>
                 </CardBody>
             </Card>
         </div>

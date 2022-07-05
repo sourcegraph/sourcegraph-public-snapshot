@@ -1,0 +1,24 @@
+{
+  "OR": [
+    {
+      "GeneratedSearchJob": {
+        "Child": {},
+        "ProposedQuery": {
+          "Description": "unquote patterns",
+          "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ monitor *Monitor",
+          "PatternType": 3
+        }
+      }
+    },
+    {
+      "GeneratedSearchJob": {
+        "Child": {},
+        "ProposedQuery": {
+          "Description": "AND patterns together",
+          "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ (\"monitor\" AND \"*Monitor\")",
+          "PatternType": 3
+        }
+      }
+    }
+  ]
+}

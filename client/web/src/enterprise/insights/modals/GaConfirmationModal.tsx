@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Modal, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, H1, Text } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../core'
 
@@ -48,7 +48,7 @@ export const GaConfirmationModalContent: React.FunctionComponent<
 
     return (
         <>
-            <Typography.H1 className={styles.title}>Thank you for trying Code Insights!</Typography.H1>
+            <H1 className={styles.title}>Thank you for trying Code Insights!</H1>
 
             <div className={styles.mediaHeroWrapper}>
                 <div className={styles.mediaHeroContent}>

@@ -83,7 +83,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOpts)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
@@ -106,9 +106,9 @@ func (*GlobalSymbolSearchJob) Name() string {
 
 func (s *GlobalSymbolSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", s.GlobalZoektQuery.query),
-		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.repoScope),
-		log.Bool("includePrivate", s.GlobalZoektQuery.includePrivate),
+		trace.Stringer("query", s.GlobalZoektQuery.Query),
+		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),
+		log.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
 		log.String("type", string(s.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", s.ZoektArgs.Select),

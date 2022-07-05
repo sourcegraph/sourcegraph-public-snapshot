@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -31,13 +32,16 @@ func noOpAnyChar(re *syntax.Regexp) {
 	}
 }
 
+const regexpFlags = syntax.ClassNL | syntax.PerlX | syntax.UnicodeGroups
+
 func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	// these are the flags used by zoekt, which differ to searcher.
-	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	re, err := syntax.Parse(pattern, regexpFlags)
 	if err != nil {
 		return nil, err
 	}
 	noOpAnyChar(re)
+
 	// zoekt decides to use its literal optimization at the query parser
 	// level, so we check if our regex can just be a literal.
 	if re.Op == syntax.OpLiteral {
@@ -57,7 +61,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 }
 
 func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
-	if !ot.ShouldTrace(ctx) {
+	if !policy.ShouldTrace(ctx) {
 		return false, nil
 	}
 

@@ -12,7 +12,6 @@ import (
 type DBStore interface {
 	basestore.ShareableStore
 
-	Handle() *basestore.TransactableHandle
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 

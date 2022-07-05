@@ -18,12 +18,11 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
+import { Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
-    BackendInsightData,
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
@@ -50,7 +49,6 @@ import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
-import { getBackendInsightData } from './methods/get-backend-insight-data/get-backend-insight-data'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
 import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
@@ -72,7 +70,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         // we need to use here insightViews query to fetch all available insights
         if (dashboardId === ALL_INSIGHTS_DASHBOARD.id) {
             return fromObservableQuery(
-                this.apolloClient.watchQuery<GetInsightsResult>({ query: GET_INSIGHTS_GQL })
+                this.apolloClient.watchQuery<GetInsightsResult>({
+                    query: GET_INSIGHTS_GQL,
+                    // Prevent unnecessary network request after mutation over dashboard or insights within
+                    // current dashboard
+                    nextFetchPolicy: 'cache-first',
+                })
             ).pipe(map(({ data }) => data.insightViews.nodes.map(createInsightView)))
         }
 
@@ -105,7 +108,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return createInsightView(insightData) ?? null
+                return createInsightView(insightData)
             }),
             catchError(() => of(null))
         )
@@ -161,9 +164,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 }))
             )
         )
-
-    public getBackendInsightData = (insight: BackendInsight): Observable<BackendInsightData> =>
-        getBackendInsightData(this.apolloClient, insight)
 
     public getBuiltInInsightData = getBuiltInInsight
 

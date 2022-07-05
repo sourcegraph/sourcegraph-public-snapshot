@@ -1,12 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper } from '@mdi/js'
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
-import BlockHelperIcon from 'mdi-react/BlockHelperIcon'
-import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
-import LockIcon from 'mdi-react/LockIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable } from 'rxjs'
 
@@ -16,7 +12,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { IUser } from '@sourcegraph/shared/src/schema'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
 
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
@@ -159,13 +155,13 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             <section className="d-flex">
                 <div className={styles.splitSectionPart}>
                     <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
-                        <Icon role="img" className="mr-2" as={EarthIcon} aria-hidden={true} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiEarth} />
                         Sourcegraph Cloud
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
                     <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
-                        <Icon role="img" className="mr-2" as={BookOpenPageVariantIcon} aria-hidden={true} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiBookOpenPageVariant} />
                         Documentation
                     </Link>
                 </div>
@@ -186,9 +182,9 @@ const PermissionAlert: React.FunctionComponent<React.PropsWithChildren<Permissio
     onClickGrantPermissions,
 }) => (
     <section className={classNames('bg-2', styles.section)}>
-        <Typography.H4>
-            {AlertIcon && <Icon role="img" className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
-        </Typography.H4>
+        <H4>
+            {AlertIcon && <Icon className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
+        </H4>
         <Text className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
         </Text>
@@ -212,10 +208,10 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 
     return (
         <section className={classNames('bg-2', styles.section)}>
-            <Typography.H4>
-                <Icon role="img" aria-hidden={true} className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
+            <H4>
+                <Icon aria-hidden={true} className="mr-2" svgPath={isDefaultURL ? mdiLock : mdiBlockHelper} />
                 {isDefaultURL ? 'Private repository' : 'Repository not found'}
-            </Typography.H4>
+            </H4>
             <Text className="mb-0">
                 {isDefaultURL ? (
                     <>
@@ -262,10 +258,10 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 
 const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
-        <Typography.H4>
-            <Icon role="img" aria-hidden={true} className="mr-2" as={CheckCircleOutlineIcon} />
+        <H4>
+            <Icon aria-hidden={true} className="mr-2" svgPath={mdiCheckCircleOutline} />
             You're on Sourcegraph Cloud
-        </Typography.H4>
+        </H4>
         <Text>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</Text>
     </section>
 )
@@ -332,7 +328,7 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
     return (
         // eslint-disable-next-line react/forbid-elements
         <form onSubmit={preventDefault} noValidate={true}>
-            <Typography.Label htmlFor="sourcegraph-url">Sourcegraph URL</Typography.Label>
+            <Label htmlFor="sourcegraph-url">Sourcegraph URL</Label>
             <Combobox openOnFocus={true} onSelect={nextUrlFieldChange}>
                 <LoaderInput loading={urlState.kind === 'LOADING'} className={deriveInputClassName(urlState)}>
                     <ComboboxInput

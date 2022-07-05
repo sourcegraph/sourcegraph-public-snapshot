@@ -1,11 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
 // eslint-disable-next-line no-restricted-imports
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -13,7 +9,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, H4 } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -69,25 +65,23 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                             outline={true}
                             variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
                         >
-                            <Typography.H4 className="d-flex align-items-center mb-0 w-100">
+                            <H4 className="d-flex align-items-center mb-0 w-100">
                                 <Icon
-                                    role="img"
                                     aria-label={skipped.severity === 'info' ? 'Information' : 'Alert'}
                                     className={classNames(styles.icon, 'flex-shrink-0')}
-                                    as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
+                                    svgPath={skipped.severity === 'info' ? mdiInformationOutline : mdiAlertCircle}
                                 />
 
                                 <span className="flex-grow-1 text-left">{skipped.title}</span>
 
                                 {skipped.message && (
                                     <Icon
-                                        role="img"
                                         aria-hidden={true}
                                         className={classNames('flex-shrink-0', styles.chevron)}
-                                        as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
+                                        svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
                                     />
                                 )}
-                            </Typography.H4>
+                            </H4>
                         </CollapseHeader>
 
                         {skipped.message && (
@@ -178,7 +172,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <Icon role="img" aria-hidden={true} className="mr-1" as={SearchIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
                         Search again
                     </Button>
                 </Form>

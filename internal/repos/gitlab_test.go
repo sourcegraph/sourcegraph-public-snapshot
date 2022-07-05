@@ -281,6 +281,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		}
 	})
 }
+
 func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -378,7 +379,7 @@ func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
  }`, server.URL, expiryDate.Unix()),
 			}
 
-			err := maybeRefreshGitLabOAuthTokenFromCodeHost(context.Background(), db, svc)
+			refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(context.Background(), db, svc)
 			if err != nil {
 				t.Error(err)
 			}
@@ -392,7 +393,9 @@ func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
 				t.Errorf("HTTP Server hit:\ngot: %v\nwant: %v", httpServerHit, want)
 			}
 			if test.expired {
-				assert.Equal(t, "cafebabea66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c", newToken)
+				wantToken := "cafebabea66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c"
+				assert.Equal(t, wantToken, newToken)
+				assert.Equal(t, wantToken, refreshed)
 			}
 		})
 	}

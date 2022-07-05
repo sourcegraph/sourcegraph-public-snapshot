@@ -5,7 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	"github.com/sourcegraph/log/logtest"
+
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -13,10 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestReconcilerProcess_IntegrationTest(t *testing.T) {
@@ -25,8 +26,8 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	log := logtest.Scoped(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -45,7 +46,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
-	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
+	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
 
 	type testCase struct {
 		changeset    ct.TestChangesetOpts
@@ -132,13 +133,13 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &sources.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
+			fakeSource := &stesting.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := sources.NewFakeSourcer(nil, fakeSource)
+			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
 			rec := Reconciler{
@@ -147,7 +148,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				sourcer:           sourcer,
 				store:             store,
 			}
-			err := rec.process(ctx, log, store, changeset)
+			err := rec.process(ctx, logger, store, changeset)
 			if err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}

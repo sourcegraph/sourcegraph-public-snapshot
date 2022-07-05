@@ -28,6 +28,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -172,6 +174,7 @@ func TestClient_Archive(t *testing.T) {
 	}
 
 	srv := httptest.NewServer((&server.Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			testData := tests[name]
@@ -538,6 +541,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	}}
 
 	srv := httptest.NewServer((&server.Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			return remote, nil

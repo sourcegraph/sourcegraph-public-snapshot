@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
@@ -18,20 +18,20 @@ import {
     Link,
     Icon,
     Checkbox,
-    Typography,
+    Input,
     Text,
+    Label,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
-import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
 interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+    extends Pick<UserSettingsAreaRouteContext, 'user'>,
         Pick<RouteComponentProps<{}>, 'history' | 'match'>,
         TelemetryProps {
     /**
@@ -46,7 +46,6 @@ interface Props
 export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     onDidCreateAccessToken,
-    authenticatedUser,
     user,
     history,
     match,
@@ -96,42 +95,28 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         )
     )
 
-    const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
-
     return (
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
             <PageHeader path={[{ text: 'New access token' }]} headingElement="h2" className="mb-3" />
 
-            {siteAdminViewingOtherUser && (
-                <SiteAdminAlert className="sidebar__alert">
-                    Creating access token for other user <strong>{user.username}</strong>
-                </SiteAdminAlert>
-            )}
-
             <Form onSubmit={onSubmit}>
                 <Container className="mb-3">
-                    <div className="form-group">
-                        <Typography.Label htmlFor="user-settings-create-access-token-page__note">
-                            Token description
-                        </Typography.Label>
-                        <input
-                            type="text"
-                            className="form-control test-create-access-token-description"
-                            id="user-settings-create-access-token-page__note"
-                            onChange={onNoteChange}
-                            required={true}
-                            autoFocus={true}
-                            placeholder="What's this token for?"
-                        />
-                    </div>
+                    <Input
+                        data-testid="test-create-access-token-description"
+                        id="user-settings-create-access-token-page__note"
+                        onChange={onNoteChange}
+                        required={true}
+                        autoFocus={true}
+                        placeholder="What's this token for?"
+                        className="form-group"
+                        label="Token description"
+                    />
+
                     <div className="form-group mb-0">
-                        <Typography.Label
-                            htmlFor="user-settings-create-access-token-page__scope-user:all"
-                            className="mb-0"
-                        >
+                        <Label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
                             Token scope
-                        </Typography.Label>
+                        </Label>
                         <Text>
                             <small className="form-help text-muted">
                                 Tokens with limited user scopes are not yet supported.
@@ -178,7 +163,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         {creationOrError === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <Icon role="img" as={AddIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
                         )}{' '}
                         Generate token
                     </Button>

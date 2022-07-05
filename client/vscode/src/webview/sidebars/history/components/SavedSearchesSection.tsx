@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H5, useObservable } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -91,13 +90,8 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
-                <Typography.H5 className="flex-grow-1">Saved Searches</Typography.H5>
-                <Icon
-                    role="img"
-                    aria-hidden={true}
-                    className="mr-1"
-                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
-                />
+                <H5 className="flex-grow-1">Saved Searches</H5>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
             </button>
 
             {!collapsed && savedSearches && (

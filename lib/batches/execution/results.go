@@ -1,8 +1,6 @@
 package execution
 
 import (
-	"bytes"
-
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
@@ -11,9 +9,9 @@ type StepResult struct {
 	// Files are the changes made to Files by the step.
 	Files *git.Changes
 	// Stdout is the output produced by the step on standard out.
-	Stdout *bytes.Buffer
+	Stdout string
 	// Stderr is the output produced by the step on standard error.
-	Stderr *bytes.Buffer
+	Stderr string
 }
 
 // ModifiedFiles returns the files modified by a step.
@@ -57,9 +55,8 @@ type AfterStepResult struct {
 	Diff string `json:"diff"`
 	// Outputs is a copy of the Outputs after executing the Step.
 	Outputs map[string]any `json:"outputs"`
-	// PreviousStepResult is the StepResult of the step before Step, if
-	// StepIndex != 0.
-	PreviousStepResult StepResult `json:"previousStepResult"`
+	// StepResult is the StepResult of this step.
+	StepResult StepResult `json:"stepResult"`
 }
 
 // Result is the result of executing all executable steps in a workspace.

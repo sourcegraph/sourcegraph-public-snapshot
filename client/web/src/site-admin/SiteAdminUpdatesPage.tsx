@@ -7,7 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert, Icon, Code, H2, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -37,7 +37,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
     return (
         <div>
             <PageTitle title="Updates - Admin" />
-            <Typography.H2>Updates</Typography.H2>
+            <H2>Updates</H2>
             {isErrorLike(state) && <ErrorAlert error={state} />}
             {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
                 <div>
@@ -49,7 +49,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
                             <Alert className={styles.alert} variant="success">
-                                <Icon role="img" as={CloudDownloadIcon} aria-hidden={true} /> Update available:{' '}
+                                <Icon as={CloudDownloadIcon} aria-hidden={true} /> Update available:{' '}
                                 <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
                             </Alert>
                         ) : (
@@ -90,8 +90,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                 <br />
                 <small>
                     <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
-                    <Link to="/site-admin/configuration">Configure</Link>{' '}
-                    <Typography.Code>update.channel</Typography.Code> to{' '}
+                    <Link to="/site-admin/configuration">Configure</Link> <Code>update.channel</Code> to{' '}
                     {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                 </small>
             </Text>

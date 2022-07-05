@@ -16,7 +16,35 @@ You can always try Rockskip for a while and if it doesn't help then you can disa
 
 ## How do I enable Rockskip?
 
-To enable it, set these environment variables on the `symbols` container:
+**Step 1:** Set environment variables on the `symbols` container:
+
+For Docker Compose:
+
+```yaml
+services:
+
+  symbols-0:
+    environment:
+      # 👇 Enables Rockskip
+      - USE_ROCKSKIP=true
+      # 👇 Uses Rockskip for the repositories in the comma separated list
+      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
+```
+
+For Helm:
+
+
+```yaml
+# overrides.yaml
+symbols:
+  env:
+    # 👇 Enables Rockskip
+    USE_ROCKSHIP:
+      value: "true"
+    # 👇 Uses Rockskip for the repositories in the comma separated list
+    ROCKSKIP_REPOS:
+      value: "github.com/crossplane/crossplane,github.com/sgtest/megarepo"
+```
 
 For Kubernetes:
 
@@ -28,31 +56,31 @@ spec:
       containers:
       - name: symbols
         env:
-        # Enables Rockskip
+        # 👇 Enables Rockskip
         - name: USE_ROCKSKIP
           value: "true"
-        # Uses Rockskip for the repositories in the comma separated list
+        # 👇 Uses Rockskip for the repositories in the comma separated list
         - name: ROCKSKIP_REPOS
           value: "github.com/torvalds/linux,github.com/pallets/flask"
 ```
 
-For Docker Compose:
+For all deployments, make sure that:
 
-```yaml
-services:
-  symbols-0:
-    environment:
-      # Enables Rockskip
-      - USE_ROCKSKIP=true
-      # Uses Rockskip for the repositories in the comma separated list
-      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
-```
+- The `symbols` service has access to the codeintel DB
+- The `symbols` service has the environment variables set
+- The `codeintel-db` has a few extra GB of RAM
 
-For other deployments, make sure the `symbols` service has access to the codeintel DB then set the environment variables.
+**Step 2:** Kick off indexing
 
-## How do I use Rockskip?
+1. Visit your repository in the Sourcegraph UI
+1. Click on the branch selector, click **Commits**, and select the second most recent commit (this avoids routing the request to Zoekt)
+1. Open the symbols sidebar to kick off indexing (it's ok to see a loading spinner, that probably means indexing is in progress)
 
-Simply visit your repository in Sourcegraph and open the symbols sidebar to kick off indexing.
+**Step 3:** Check the indexing status by following the [instructions below](#how-do-i-check-the-indexing-status).
+
+**Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
+
+That's it! New commits will be indexed automatically when users visit them.
 
 ## How long does indexing take?
 

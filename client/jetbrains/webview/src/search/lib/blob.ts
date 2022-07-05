@@ -1,10 +1,14 @@
-const cachedContentRequests = new Map<string, Promise<string>>()
-
+import { gql } from '@sourcegraph/http-client'
 import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
+import { BlobContentResult, BlobContentVariables } from '../../graphql-operations'
 import { getMatchId } from '../results/utils'
 
-export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string> {
+import { requestGraphQL } from './requestGraphQl'
+
+const cachedContentRequests = new Map<string, Promise<string | null>>()
+
+export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
     const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
@@ -20,32 +24,34 @@ export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch)
     return loadPromise
 }
 
-async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const response: any = await fetch('https://sourcegraph.com/.api/graphql', {
-        method: 'post',
-        body: JSON.stringify({
-            query: `
-                query Blob($repoName: String!, $commitID: String!, $filePath: String!) {
-                    repository(name: $repoName) {
-                        commit(rev: $commitID) {
-                            file(path: $filePath) {
-                                content
-                            }
-                        }
-                    }
-                }`,
-            variables: {
-                commitID: match.commit,
-                filePath: match.path,
-                repoName: match.repository,
-            },
-        }),
-    }).then(response => response.json())
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-    const content: undefined | string = response?.data?.repository?.commit?.file?.content
+async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
+    const response = await requestGraphQL<BlobContentResult, BlobContentVariables>(blobContentQuery, {
+        commitID: match.commit ?? '',
+        filePath: match.path,
+        repoName: match.repository,
+    })
+
+    const content: undefined | string = response.data?.repository?.commit?.file?.content
     if (content === undefined) {
-        throw new Error('No content found in query response')
+        console.error('No content found in query response', response)
+        return null
     }
     return content
 }
+
+const blobContentQuery = gql`
+    query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
+        repository(name: $repoName) {
+            commit(rev: $commitID) {
+                file(path: $filePath) {
+                    content
+                    # We include the highlight part here even though it is not used to get a server side
+                    # error when previewing binary files.
+                    highlight(disableTimeout: false) {
+                        aborted
+                    }
+                }
+            }
+        }
+    }
+`

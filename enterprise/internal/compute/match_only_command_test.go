@@ -34,7 +34,7 @@ func Test_matchOnly(t *testing.T) {
 			ID:   5,
 			Name: "codehost.com/myorg/myrepo",
 		}},
-		HunkMatches: result.HunkMatches{{
+		ChunkMatches: result.ChunkMatches{{
 			Content:      "abcdefgh",
 			ContentStart: result.Location{Line: 1},
 			Ranges: result.Ranges{{

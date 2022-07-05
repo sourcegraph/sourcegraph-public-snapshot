@@ -12,12 +12,6 @@ import (
 )
 
 type CodeIntelResolver interface {
-	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
-
-	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitBlobCodeIntelSupportResolver, error)
 	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitTreeCodeIntelSupportResolver, error)
@@ -50,10 +44,10 @@ type ExecutorResolver interface {
 
 type UploadsServiceResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
 	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
 	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 }
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
@@ -73,6 +67,7 @@ type LSIFUploadsQueryArgs struct {
 	DependencyOf    *graphql.ID
 	DependentOf     *graphql.ID
 	After           *string
+	IncludeDeleted  *bool
 }
 
 type LSIFRepositoryUploadsQueryArgs struct {
@@ -105,6 +100,7 @@ type LSIFUploadResolver interface {
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
+	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -120,6 +116,26 @@ type LSIFUploadDocumentPathsQueryArgs struct {
 type LSIFUploadDocumentPathsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]string, error)
 	TotalCount(ctx context.Context) (*int32, error)
+}
+
+type LSIFUploadsAuditLogsResolver interface {
+	LogTimestamp() DateTime
+	UploadDeletedAt() *DateTime
+	Reason() *string
+	ChangedColumns() []AuditLogColumnChange
+	UploadID() graphql.ID
+	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
+	UploadedAt() DateTime
+	Operation() string
+	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+}
+
+type AuditLogColumnChange interface {
+	Column() string
+	Old() *string
+	New() *string
 }
 
 type LSIFIndexesQueryArgs struct {
@@ -286,6 +302,7 @@ type CodeIntelConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
+	LockfileIndexingEnabled   bool
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
@@ -385,6 +402,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
+	LockfileIndexingEnabled() bool
 }
 
 type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {

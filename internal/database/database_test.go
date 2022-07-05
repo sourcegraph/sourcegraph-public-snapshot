@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,9 +20,10 @@ func init() {
 
 func TestDBTransactions(t *testing.T) {
 	ctx := context.Background()
+	logger := logtest.Scoped(t)
 	t.Run("no transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		err := db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
 		require.NoError(t, err)
@@ -31,8 +34,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("basic transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
 		{
@@ -63,8 +66,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("rolled back transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
 		{
@@ -94,8 +97,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("nested transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
 		{
@@ -158,8 +161,8 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("nested transaction rollback works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
+		sqlDB := dbtest.NewDB(logger, t)
+		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
 		{
@@ -213,41 +216,6 @@ func TestDBTransactions(t *testing.T) {
 		}
 
 		// After committing the transaction, repo 1 should be visible
-		// outisde the transaction
-		r, err := db.Repos().Get(ctx, 1)
-		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
-	})
-
-	t.Run("basic transaction works with nested database.DB", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
-		// this ill-advised, but possible, so make sure we can handle it.
-		// In the future, this ideally not be possible by typing this more strictly.
-		db = NewDB(db)
-
-		// Lifetime of tx
-		{
-			tx, err := db.Repos().Transact(ctx)
-			require.NoError(t, err)
-
-			err = tx.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
-			require.NoError(t, err)
-
-			// Get inside the transaction should work
-			r, err := tx.Get(ctx, 1)
-			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
-
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
-			_, err = db.Repos().Get(ctx, 1)
-			require.Error(t, err)
-
-			tx.Done(nil)
-		}
-
-		// After committing the transaction, the repo should be visible
 		// outisde the transaction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)

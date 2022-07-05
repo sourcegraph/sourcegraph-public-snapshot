@@ -13,7 +13,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -130,7 +130,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <Typography.H2>Out-of-band migrations</Typography.H2>
+                    <H2>Out-of-band migrations</H2>
 
                     <Text>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
@@ -209,7 +209,7 @@ const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<Mi
 }) => (
     <Alert variant="danger">
         <Text>
-            <Icon role="img" className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
+            <Icon className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
@@ -255,7 +255,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<
 > = ({ migrations }) => (
     <Alert variant="warning">
         <Text>
-            <Icon role="img" className="mr-2" as={WarningIcon} aria-hidden={true} />
+            <Icon className="mr-2" as={WarningIcon} aria-hidden={true} />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
                 format. Your Sourcegraph instance must undo the following migrations to ensure your data can be read by
@@ -285,7 +285,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
 
         <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
-                <Typography.H3>{node.description}</Typography.H3>
+                <H3>{node.description}</H3>
 
                 <Text className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}
@@ -312,9 +312,9 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
                     {node.applyReverse ? (
-                        <Icon role="img" className="mr-1 text-danger" as={ArrowLeftBoldIcon} aria-hidden={true} />
+                        <Icon className="mr-1 text-danger" as={ArrowLeftBoldIcon} aria-hidden={true} />
                     ) : (
-                        <Icon role="img" className="mr-1" as={ArrowRightBoldIcon} aria-hidden={true} />
+                        <Icon className="mr-1" as={ArrowRightBoldIcon} aria-hidden={true} />
                     )}
                     {Math.floor(node.progress * 100)}%
                 </div>
@@ -366,7 +366,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
                                 </div>
 
                                 <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                    <Typography.Code>{error.message}</Typography.Code>
+                                    <Code>{error.message}</Code>
                                 </span>
                             </React.Fragment>
                         ))}

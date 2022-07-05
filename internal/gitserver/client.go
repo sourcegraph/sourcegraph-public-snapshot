@@ -19,16 +19,16 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
@@ -81,6 +81,7 @@ func ResetClientMocks() {
 // and httpcli.Doer.
 func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
+		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
@@ -104,6 +105,7 @@ func NewClient(db database.DB) *ClientImplementor {
 
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
+		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
 			return addrs
 		},
@@ -129,6 +131,9 @@ type ClientImplementor struct {
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// logger is used for all logging and logger creation
+	logger sglog.Logger
 
 	// addrs is a function which should return the addresses for gitservers. It
 	// is called each time a request is made. The function must be safe for
@@ -157,7 +162,6 @@ type RawBatchLogResult struct {
 }
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
@@ -169,13 +173,16 @@ type Client interface {
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 
+	// ArchiveReader streams back the file contents of an archived git repo.
+	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
+
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
 	// BlameFile returns Git blame information about a file.
-	BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error)
+	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
 
 	// GitCommand creates a new GitCommand.
 	GitCommand(repo api.RepoName, args ...string) GitCommand
@@ -183,6 +190,13 @@ type Client interface {
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+
+	// GetDefaultBranch returns the name of the default branch and the commit it's
+	// currently at from the given repository.
+	//
+	// If the repository is empty or currently being cloned, empty values and no
+	// error are returned.
+	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
 
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
@@ -197,6 +211,15 @@ type Client interface {
 
 	// ListGitolite lists Gitolite repositories.
 	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+
+	// ListRefs returns a list of all refs in the repository.
+	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
+
+	// ListBranches returns a list of all branches in the repository.
+	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error)
+
+	// MergeBase returns the merge base commit for the specified commits.
+	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 
 	// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
@@ -262,12 +285,15 @@ type Client interface {
 	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 
+	// Stat returns a FileInfo describing the named file at commit.
+	Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
+
 	// DiffPath returns a position-ordered slice of changes (additions or deletions)
 	// of the given path between the given source and target commits.
-	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error)
+	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
 
 	// ReadDir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 }
 
 func (c *ClientImplementor) Addrs() []string {
@@ -446,7 +472,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.LogFields(log.Error(err))
 		}
 		span.Finish()
 	}()
@@ -1357,6 +1383,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+
 	if err != nil {
 		return "", err
 	}
@@ -1364,14 +1391,14 @@ func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
+		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		log15.Warn("decoding gitserver create-commit-from-patch response", "err", err.Error())
+		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
 	}
 
@@ -1398,14 +1425,14 @@ func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log15.Warn("reading gitserver get-object response", "err", err.Error())
+		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.GetObjectResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		log15.Warn("decoding gitserver get-object response", "err", err.Error())
+		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
 	}
 

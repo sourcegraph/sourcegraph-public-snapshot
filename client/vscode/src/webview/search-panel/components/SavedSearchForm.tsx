@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Checkbox, Container, Icon, PageHeader, Typography } from '@sourcegraph/wildcard'
+import { Checkbox, Container, Icon, PageHeader, Code, Label, Input } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -168,7 +168,8 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                 className="position-absolute cursor-pointer"
                 style={{ top: '1rem', right: '1rem' }}
                 onClick={props.onComplete}
-                as={CloseIcon}
+                aria-label="Close"
+                svgPath={mdiClose}
             />
             <Form onSubmit={handleSubmit}>
                 <Container className={styles.container}>
@@ -178,44 +179,35 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                         description="Get notifications when there are new results for specific search queries."
                         className="mb-3"
                     />
-                    <div className="form-group">
-                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-description">
-                            Description
-                        </Typography.Label>
-                        <input
-                            id="saved-search-form-input-description"
-                            type="text"
-                            name="description"
-                            className="form-control test-saved-search-form-input-description"
-                            placeholder="Description"
-                            required={true}
-                            value={description}
-                            onChange={createInputChangeHandler('description')}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-query">
-                            Query
-                        </Typography.Label>
-                        <input
-                            id="saved-search-form-input-query"
-                            type="text"
-                            name="query"
-                            className="form-control test-saved-search-form-input-query"
-                            placeholder="Query"
-                            required={true}
-                            value={query}
-                            onChange={createInputChangeHandler('query')}
-                        />
-                    </div>
+                    <Input
+                        id="saved-search-form-input-description"
+                        name="description"
+                        data-testid="test-saved-search-form-input-description"
+                        placeholder="Description"
+                        required={true}
+                        value={description}
+                        onChange={createInputChangeHandler('description')}
+                        label="Description"
+                        className={classNames('mb-0 form-group', styles.label)}
+                    />
+                    <Input
+                        id="saved-search-form-input-query"
+                        name="query"
+                        placeholder="Query"
+                        required={true}
+                        value={query}
+                        onChange={createInputChangeHandler('query')}
+                        label="Query"
+                        className={classNames('mb-0 form-group', styles.label)}
+                    />
 
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <Typography.Label className={styles.label} id="saved-search-form-email-notifications">
+                            <Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
-                            </Typography.Label>
+                            </Label>
                             <div aria-labelledby="saved-search-form-email-notifications">
                                 <Checkbox
                                     name="Notify owner"
@@ -231,29 +223,21 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                     )}
 
                     {notifySlack && slackWebhookURL && (
-                        <div className="form-group mt-3 mb-0">
-                            <Typography.Label className={styles.label} htmlFor="saved-search-form-input-slack">
-                                Slack notifications
-                            </Typography.Label>
-                            <input
-                                id="saved-search-form-input-slack"
-                                type="text"
-                                name="Slack webhook URL"
-                                className="form-control"
-                                value={slackWebhookURL}
-                                disabled={true}
-                                onChange={createInputChangeHandler('slackWebhookURL')}
-                            />
-                            <small>
-                                Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
-                            </small>
-                        </div>
+                        <Input
+                            id="saved-search-form-input-slack"
+                            name="Slack webhook URL"
+                            value={slackWebhookURL}
+                            disabled={true}
+                            onChange={createInputChangeHandler('slackWebhookURL')}
+                            label="Slack notifications"
+                            message="Slack webhooks are deprecated and will be removed in a future Sourcegraph version."
+                            className={classNames('mb-0 form-group mt-3', styles.label)}
+                        />
                     )}
                     {isUnsupportedNotifyQuery && (
                         <div className="alert alert-warning mt-3 mb-0">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <Typography.Code>type:diff</Typography.Code> or{' '}
-                            <Typography.Code>type:commit</Typography.Code> to your query.
+                            Consider adding <Code>type:diff</Code> or <Code>type:commit</Code> to your query.
                         </div>
                     )}
                     {notify && !isUnsupportedNotifyQuery && (

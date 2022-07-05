@@ -199,6 +199,48 @@ changesetTemplate:
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
 		}
 	})
+
+	t.Run("mount path contains comma", func(t *testing.T) {
+		const spec = `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /foo,bar/
+        mountpoint: /tmp
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		assert.Equal(t, "step 1 mount path contains invalid characters", err.Error())
+	})
+
+	t.Run("mount mountpoint contains comma", func(t *testing.T) {
+		const spec = `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/foo,bar/sample.sh
+    container: alpine:3
+    mount:
+      - path: /valid/sample.sh
+        mountpoint: /tmp/foo,bar/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		assert.Equal(t, "step 1 mount mountpoint contains invalid characters", err.Error())
+	})
 }
 
 func TestOnQueryOrRepository_Branches(t *testing.T) {

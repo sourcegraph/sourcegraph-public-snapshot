@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { PRODUCT_STATUSES, Typography, Text } from '@sourcegraph/wildcard'
+import { PRODUCT_STATUSES, H1, Text } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '.'
 
@@ -40,7 +40,7 @@ export default config
 
 export const FeedbackBadgeExample: Story = () => (
     <>
-        <Typography.H1>FeedbackBadges</Typography.H1>
+        <H1>FeedbackBadges</H1>
         <Text>Our badges come in different status.</Text>
         {PRODUCT_STATUSES.map(status => (
             <FeedbackBadge

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -11,18 +12,19 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,7 +34,7 @@ type RepoStore interface {
 
 type CommitIndexer struct {
 	db                database.DB
-	limiter           *rate.Limiter
+	limiter           *ratelimit.InstrumentedLimiter
 	allReposIterator  func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
 	getCommits        func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
 	commitStore       CommitStore
@@ -42,7 +44,7 @@ type CommitIndexer struct {
 	clock             func() time.Time
 }
 
-func NewCommitIndexer(background context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
+func NewCommitIndexer(background context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
@@ -51,7 +53,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 	commitStore := NewCommitStore(insights)
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(repoStore),
+		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -62,7 +64,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 			Help:      "Counter of the number of repositories analyzed in the commit indexer.",
 		})
 
-	limiter := rate.NewLimiter(10, 1)
+	limiter := ratelimit.NewInstrumentedLimiter("CommitIndexer", rate.NewLimiter(10, 1))
 
 	operations := newOperations(observationContext)
 
@@ -81,7 +83,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	indexer := NewCommitIndexer(ctx, base, insights, clock, observationContext)
 
 	return indexer.Handler(ctx, observationContext)
@@ -116,15 +118,15 @@ const maxWindowsPerRepo = 25
 // This method will absorb any errors that occur during execution and skip any remaining windows.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
 func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
-	windowsProccssed := 0
+	windowsProcessed := 0
 	additionalWindows := true
 	// It is important that the window size stays consistent during processing
 	// so that it can correctly determine the time the repository has been indexed though
 	windowDuration := conf.Get().InsightsCommitIndexerWindowDuration
-	for additionalWindows && windowsProccssed < maxWindowsPerRepo {
+	for additionalWindows && windowsProcessed < maxWindowsPerRepo {
 		var err error
 		additionalWindows, err = i.indexNextWindow(name, id, windowDuration)
-		windowsProccssed++
+		windowsProcessed++
 		if err != nil {
 			log15.Error(err.Error())
 			return nil
@@ -196,6 +198,31 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 	return moreWindows, nil
 }
 
+const (
+	emptyRepoErrMessagePrefix = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
+	emptyRepoErrMessageSuffix = ` --date-order] failed (output: ""): exit status 128`
+)
+
+func generateEmptyRepoErrorMessage(after time.Time, until *time.Time) string {
+	fullEmptyRepoErrMessage := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
+	if until != nil {
+		fullEmptyRepoErrMessage += " --before=" + until.Format(time.RFC3339Nano)
+	}
+	return fullEmptyRepoErrMessage + emptyRepoErrMessageSuffix
+}
+
+func isCommitEmptyRepoError(err error, after time.Time, until *time.Time) bool {
+	emptyRepoErrMessage := generateEmptyRepoErrorMessage(after, until)
+	unwrappedErr := err
+	for unwrappedErr != nil {
+		if strings.Contains(err.Error(), emptyRepoErrMessage) {
+			return true
+		}
+		unwrappedErr = errors.Unwrap(unwrappedErr)
+	}
+	return false
+}
+
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.
 func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
 	ctx, _, endObservation := operation.With(ctx, &err, observation.Args{})
@@ -206,7 +233,16 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 		before = until.Format(time.RFC3339)
 	}
 
-	return git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	commits, err := gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		if isCommitEmptyRepoError(err, after, until) {
+			log15.Info("insights-job.background.CommitIndexer.getCommits: empty repo - updating success metadata", "repository", name)
+			err = nil
+		} else {
+			return nil, err
+		}
+	}
+	return commits, err
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as

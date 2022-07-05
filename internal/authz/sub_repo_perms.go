@@ -28,8 +28,6 @@ type RepoContent struct {
 
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
-//
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms_checker.go
 type SubRepoPermissionChecker interface {
 	// Permissions returns the level of access the provided user has for the requested
 	// content.
@@ -74,8 +72,6 @@ func (*noopPermsChecker) EnabledForRepo(ctx context.Context, repo api.RepoName) 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
-//
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionsGetter -o mock_sub_repo_perms_getter.go
 type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
@@ -305,6 +301,24 @@ func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
 	return s.permissionsGetter.RepoSupported(ctx, repo)
+}
+
+// NewSimpleChecker is exposed for testing and allows creation of a simple
+// checker based on the rules provided. The rules are expected to be in glob
+// format.
+func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+	getter := NewMockSubRepoPermissionsGetter()
+	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+		return map[api.RepoName]SubRepoPermissions{
+			repo: {
+				PathIncludes: includes,
+				PathExcludes: excludes,
+			},
+		}, nil
+	})
+	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
+	getter.RepoIdSupportedFunc.SetDefaultReturn(true, nil)
+	return NewSubRepoPermsClient(getter)
 }
 
 // ActorPermissions returns the level of access the given actor has for the requested

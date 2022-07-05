@@ -11,6 +11,8 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -36,37 +38,41 @@ type GenerateOptions struct {
 }
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
-func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboard) error {
-	logger.Info("Regenerating monitoring", "options", opts, "containers", len(containers))
+func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
+	logger.Info("Regenerating monitoring", "options", opts, "dashboards", len(dashboards))
 
 	var generatedAssets []string
 
-	// Generate output for all containers
-	for _, container := range containers {
-		// Logger for container
-		clog := logger.New("container", container.Name)
-
-		// Verify container configuration
-		if err := container.validate(); err != nil {
-			clog.Crit("Failed to validate Container", "err", err)
-			return err
+	// Verify dashboard configuration
+	var validationErrors error
+	for _, dashboard := range dashboards {
+		if err := dashboard.validate(); err != nil {
+			validationErrors = errors.Append(validationErrors,
+				errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name))
 		}
+	}
+	if validationErrors != nil {
+		return errors.Wrap(validationErrors, "Validation failed")
+	}
+
+	// Generate output for all dashboards
+	for _, dashboard := range dashboards {
+		// Logger for dashboard
+		clog := logger.New("dashboard", dashboard.Name)
 
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
 			clog.Debug("Rendering Grafana assets")
-			board := container.renderDashboard()
+			board := dashboard.renderDashboard()
 			data, err := json.MarshalIndent(board, "", "  ")
 			if err != nil {
-				clog.Crit("Invalid dashboard", "err", err)
-				return err
+				return errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name)
 			}
 			// #nosec G306  prometheus runs as nobody
-			generatedDashboard := container.Name + ".json"
+			generatedDashboard := dashboard.Name + ".json"
 			err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
 			if err != nil {
-				clog.Crit("Could not write dashboard to output", "error", err)
-				return err
+				return errors.Wrapf(err, "Could not write dashboard %q to output", dashboard.Name)
 			}
 			generatedAssets = append(generatedAssets, generatedDashboard)
 
@@ -76,13 +82,11 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboar
 				crlog.Debug("Reloading Grafana instance")
 				client, err := sdk.NewClient(localGrafanaURL, localGrafanaCredentials, sdk.DefaultHTTPClient)
 				if err != nil {
-					crlog.Crit("Failed to initialize Grafana client", "error", err)
-					return err
+					return errors.Wrapf(err, "Failed to initialize Grafana client for dashboard %q", dashboard.Title)
 				}
 				_, err = client.SetDashboard(context.Background(), *board, sdk.SetDashboardParams{Overwrite: true})
 				if err != nil {
-					crlog.Crit("Could not reload Grafana instance", "error", err)
-					return err
+					return errors.Wrapf(err, "Could not reload Grafana instance for dashboard %q", dashboard.Title)
 				} else {
 					crlog.Info("Reloaded Grafana instance")
 				}
@@ -92,22 +96,19 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboar
 		// Prepare Prometheus assets
 		if opts.PrometheusDir != "" {
 			clog.Debug("Rendering Prometheus assets")
-			promAlertsFile, err := container.renderRules()
+			promAlertsFile, err := dashboard.renderRules()
 			if err != nil {
-				clog.Crit("Unable to generate alerts", "err", err)
-				return err
+				return errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
 			}
 			data, err := yaml.Marshal(promAlertsFile)
 			if err != nil {
-				clog.Crit("Invalid rules", "err", err)
-				return err
+				return errors.Wrapf(err, "Invalid rules for dashboard %q", dashboard.Title)
 			}
-			fileName := strings.ReplaceAll(container.Name, "-", "_") + alertRulesFileSuffix
+			fileName := strings.ReplaceAll(dashboard.Name, "-", "_") + alertRulesFileSuffix
 			generatedAssets = append(generatedAssets, fileName)
 			err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
 			if err != nil {
-				clog.Crit("Could not write rules to output", "error", err)
-				return err
+				return errors.Wrapf(err, "Could not write rules to output for dashboard %q", dashboard.Title)
 			}
 		}
 	}
@@ -119,13 +120,11 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboar
 		rlog.Debug("Reloading Prometheus instance", "instance", localPrometheusURL)
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
 		if err != nil {
-			rlog.Crit("Could not reload Prometheus", "error", err)
-			return err
+			return errors.Wrapf(err, "Could not reload Prometheus at %q", localPrometheusURL)
 		} else {
 			defer resp.Body.Close()
 			if resp.StatusCode != 200 {
-				rlog.Crit("Unexpected status code while reloading Prometheus rules", "code", resp.StatusCode)
-				return err
+				return errors.Newf("Unexpected status code %d while reloading Prometheus rules", resp.StatusCode)
 			}
 			rlog.Info("Reloaded Prometheus instance")
 		}
@@ -134,22 +133,20 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboar
 	// Generate documentation
 	if opts.DocsDir != "" {
 		logger.Debug("Rendering docs")
-		docs, err := renderDocumentation(containers)
+		docs, err := renderDocumentation(dashboards)
 		if err != nil {
-			logger.Crit("Failed to generate docs", "error", err)
-			return err
+			return errors.Wrap(err, "Failed to generate docs")
 		}
 		for _, docOut := range []struct {
 			path string
 			data []byte
 		}{
-			{path: filepath.Join(opts.DocsDir, alertSolutionsFile), data: docs.alertSolutions.Bytes()},
+			{path: filepath.Join(opts.DocsDir, alertsDocsFile), data: docs.alertDocs.Bytes()},
 			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
 		} {
 			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)
 			if err != nil {
-				logger.Crit("Could not write docs to path", "path", docOut.path, "error", err)
-				return err
+				return errors.Wrapf(err, "Could not write docs to path %q", docOut.path)
 			}
 			generatedAssets = append(generatedAssets, docOut.path)
 		}
@@ -159,8 +156,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboar
 	if !opts.DisablePrune {
 		logger.Debug("Pruning dangling assets")
 		if err := pruneAssets(logger, generatedAssets, opts.GrafanaDir, opts.PrometheusDir); err != nil {
-			logger.Crit("Failed to prune assets, resolve manually or disable pruning", "error", err)
-			return err
+			return errors.Wrap(err, "Failed to prune assets, resolve manually or disable pruning")
 		}
 	}
 

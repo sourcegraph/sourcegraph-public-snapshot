@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -88,7 +88,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <Typography.H2 className="mb-0">Manage code hosts</Typography.H2>
+                <H2 className="mb-0">Manage code hosts</H2>
                 {!isManagingOtherUser && (
                     <Button
                         className="test-goto-add-external-service-page"
@@ -96,7 +96,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         variant="primary"
                         as={Link}
                     >
-                        <Icon role="img" as={AddIcon} aria-hidden={true} /> Add code host
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
                     </Button>
                 )}
             </div>

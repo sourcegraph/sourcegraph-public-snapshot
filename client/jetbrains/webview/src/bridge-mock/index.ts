@@ -1,17 +1,29 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import type { MatchRequest, Request, SaveLastSearchRequest } from '../search/js-to-java-bridge'
-import type { Search } from '../search/types'
+import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
+import type { Search, Theme } from '../search/types'
 
-let savedSearch: Search = {
-    query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
-    caseSensitive: false,
-    patternType: SearchPatternType.literal,
-    selectedSearchContextSpec: 'global',
-}
+import { renderColorDebugger } from './renderColorDebugger'
+import { dark } from './theme-snapshots/dark'
+import { light } from './theme-snapshots/light'
+
+const instanceURL = 'https://sourcegraph.com'
+
+let isDarkTheme = false
 
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
+
+const savedSearchFromLocalStorage = localStorage.getItem('savedSearch')
+let savedSearch: Search = savedSearchFromLocalStorage
+    ? (JSON.parse(savedSearchFromLocalStorage) as Search)
+    : {
+          query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
+          caseSensitive: false,
+          patternType: SearchPatternType.literal,
+          selectedSearchContextSpec: 'global',
+      }
+let previewContent: PreviewRequest['arguments'] | null = null
 
 function callJava(request: Request): Promise<object> {
     return new Promise((resolve, reject) => {
@@ -37,66 +49,81 @@ function handleRequest(
         case 'getConfig': {
             onSuccessCallback(
                 JSON.stringify({
-                    instanceURL: 'https://sourcegraph.com',
+                    instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
+                    anonymousUserId: 'test',
+                    pluginVersion: '1.2.3',
                 })
             )
             break
         }
 
         case 'getTheme': {
-            onSuccessCallback(
-                JSON.stringify({
-                    isDarkTheme: true,
-                    backgroundColor: 'blue',
-                    buttonArc: '2px',
-                    buttonColor: 'red',
-                    color: 'green',
-                    font: 'Times New Roman',
-                    fontSize: '12px',
-                    labelBackground: 'gray',
-                })
-            )
+            const theme: Theme = isDarkTheme ? dark : light
+            onSuccessCallback(JSON.stringify(theme))
+            break
+        }
+
+        case 'previewLoading': {
+            codeDetailsNode.innerHTML = 'Loading...'
+            onSuccessCallback('null')
             break
         }
 
         case 'preview': {
-            const { content, absoluteOffsetAndLengths } = (request as MatchRequest).arguments
+            previewContent = request.arguments
 
-            const start = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][0] : 0
-            const length = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][1] : 0
+            const start =
+                previewContent.absoluteOffsetAndLengths && previewContent.absoluteOffsetAndLengths.length > 0
+                    ? previewContent.absoluteOffsetAndLengths[0][0]
+                    : 0
+            const length =
+                previewContent.absoluteOffsetAndLengths && previewContent.absoluteOffsetAndLengths.length > 0
+                    ? previewContent.absoluteOffsetAndLengths[0][1]
+                    : 0
 
-            let htmlContent: string = escapeHTML(content.slice(0, start))
-            htmlContent += `<span id="code-details-highlight">${escapeHTML(
-                content.slice(start, start + length)
-            )}</span>`
-            htmlContent += escapeHTML(content.slice(start + length))
+            let htmlContent: string
+            if (previewContent.content === null) {
+                htmlContent = 'No preview available'
+            } else {
+                const decodedContent = atob(previewContent.content || '')
+                htmlContent = escapeHTML(decodedContent.slice(0, start))
+                htmlContent += `<span id="code-details-highlight">${escapeHTML(
+                    decodedContent.slice(start, start + length)
+                )}</span>`
+                htmlContent += escapeHTML(decodedContent.slice(start + length))
+            }
 
             codeDetailsNode.innerHTML = htmlContent
 
             document.querySelector('#code-details-highlight')?.scrollIntoView({ block: 'center', inline: 'center' })
 
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'clearPreview': {
             codeDetailsNode.textContent = ''
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'open': {
-            const { path } = (request as MatchRequest).arguments
-            alert(`Opening ${path}`)
-            onSuccessCallback('{}')
+            previewContent = request.arguments
+            if (previewContent.fileName) {
+                alert(`Now the IDE would open ${previewContent.path} in the editor...`)
+            } else {
+                window.open(instanceURL + (previewContent.relativeUrl || ''), '_blank')
+            }
+            onSuccessCallback('null')
             break
         }
 
         case 'saveLastSearch': {
-            savedSearch = (request as SaveLastSearchRequest).arguments
-            onSuccessCallback('{}')
+            savedSearch = request.arguments
+            localStorage.setItem('savedSearch', JSON.stringify(savedSearch))
+            onSuccessCallback('null')
             break
         }
 
@@ -106,7 +133,13 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
+            break
+        }
+
+        case 'windowClose': {
+            console.log('Closing window')
+            onSuccessCallback('null')
             break
         }
 
@@ -117,14 +150,29 @@ function handleRequest(
     }
 }
 
-/* Initialize app for standalone server */
+// Initialize app for standalone server
 iframeNode.addEventListener('load', () => {
     const iframeWindow = iframeNode.contentWindow
     if (iframeWindow !== null) {
         iframeWindow.callJava = callJava
-        iframeWindow.initializeSourcegraph()
+        iframeWindow
+            .initializeSourcegraph()
+            .then(() => {})
+            .catch(() => {})
     }
 })
+
+// Detect dark or light mode preference
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    isDarkTheme = true
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    document.body.parentElement!.className = 'dark'
+}
+
+// Render the theme color debuggerwhen the URL contains `?color-debug`
+if (location.href.includes('color-debug')) {
+    renderColorDebugger()
+}
 
 function escapeHTML(unsafe: string): string {
     return unsafe.replace(

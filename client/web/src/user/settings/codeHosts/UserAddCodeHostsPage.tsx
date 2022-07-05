@@ -4,7 +4,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, H4, Text } from '@sourcegraph/wildcard'
 
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
@@ -270,7 +270,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
         if (serviceConfig.pending) {
             return (
                 <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
-                    <Typography.H4>GitHub code host connection pending</Typography.H4>
+                    <H4>GitHub code host connection pending</H4>
                     An installation request was sent to your GitHub organization’s owners. After the request is
                     approved, finish connecting with GitHub to choose repositories to sync with Sourcegraph.
                 </Alert>
@@ -297,7 +297,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
             <Alert className="my-3" role="alert" key="add-repos" variant="success">
-                <Typography.H4 className="align-middle mb-1">Connected with {services.join(', ')}</Typography.H4>
+                <H4 className="align-middle mb-1">Connected with {services.join(', ')}</H4>
                 <Text className="align-middle mb-0">
                     Next,{' '}
                     <Link
@@ -402,7 +402,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <Alert className="my-3" key={service.id} variant="warning">
-            <Typography.H4 className="align-middle mb-1">Can’t connect with {service.displayName}</Typography.H4>
+            <H4 className="align-middle mb-1">Can’t connect with {service.displayName}</H4>
             <Text className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
@@ -425,9 +425,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
         <Alert className="my-3" key={servicesDown[0]} variant="warning">
             {servicesDown?.map(svc => (
                 <div key={svc}>
-                    <Typography.H4 className="align-middle mb-1">
-                        We’re having trouble connecting to {svc}{' '}
-                    </Typography.H4>
+                    <H4 className="align-middle mb-1">We’re having trouble connecting to {svc} </H4>
                     <Text className="align-middle mb-0">
                         <span className="align-middle">Verify that</span> {svc}
                         <span className="align-middle">

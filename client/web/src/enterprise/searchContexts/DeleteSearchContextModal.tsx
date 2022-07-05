@@ -8,7 +8,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
 
@@ -53,9 +53,9 @@ export const DeleteSearchContextModal: React.FunctionComponent<
             aria-labelledby={deleteLabelId}
             data-testid="delete-search-context-modal"
         >
-            <Typography.H3 className="text-danger" id={deleteLabelId}>
+            <H3 className="text-danger" id={deleteLabelId}>
                 Delete search context?
-            </Typography.H3>
+            </H3>
 
             <Text>
                 <strong>This action cannot be undone.</strong>

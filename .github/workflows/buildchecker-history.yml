@@ -2,11 +2,11 @@
 name: buildchecker-history
 on:
   schedule:
-  - cron: '* * * * SUN'
+  - cron: '0 0 * * SUN'
   workflow_dispatch:
 
 jobs:
-  run:
+  report:
     runs-on: ubuntu-latest
 
     # secrets for this workflow are configured in the 'autobuildsherrif' environment.
@@ -24,3 +24,4 @@ jobs:
           BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
           HONEYCOMB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_HONEYCOMB_TOKEN }}
           CI_OKAYHQ_TOKEN: ${{ secrets.CI_OKAYHQ_TOKEN }}
+          SLACK_REPORT_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_REPORT_WEBHOOK}},${{secrets.AUTOBUILDSHERRIF_SLACK_DX_WEBHOOK}}

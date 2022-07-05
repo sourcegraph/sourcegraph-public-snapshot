@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -12,7 +12,7 @@ import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -46,6 +46,10 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
                                 ref {
                                     displayName
                                     url
+                                }
+                                skippedIndexed {
+                                    count
+                                    query
                                 }
                                 indexed
                                 current
@@ -84,25 +88,35 @@ const TextSearchIndexedReference: React.FunctionComponent<
     return (
         <li className={styles.ref}>
             <Icon
-                role="img"
                 className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
-                as={isCurrent ? CheckCircleIcon : LoadingSpinner}
+                svgPath={isCurrent ? mdiCheckCircle : undefined}
+                as={!isCurrent ? LoadingSpinner : undefined}
                 aria-hidden={true}
             />
             <LinkOrSpan to={indexedRef.ref.url}>
-                <Typography.Code weight="bold">{indexedRef.ref.displayName}</Typography.Code>
+                <Code weight="bold">{indexedRef.ref.displayName}</Code>
             </LinkOrSpan>{' '}
             {indexedRef.indexed ? (
                 <span>
                     &nbsp;&mdash; indexed at{' '}
-                    <Typography.Code>
+                    <Code>
                         <LinkOrSpan
                             to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>
-                    </Typography.Code>{' '}
+                    </Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                    {indexedRef.skippedIndexed && indexedRef.skippedIndexed.count > 0 ? (
+                        <span>
+                            .&nbsp;
+                            <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
+                                {indexedRef.skippedIndexed.count} {pluralize('file', indexedRef.skippedIndexed.count)}{' '}
+                                not indexed
+                            </Link>
+                            .
+                        </span>
+                    ) : null}
                 </span>
             ) : (
                 <span>&nbsp;&mdash; initial indexing in progress</span>
@@ -200,7 +214,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 )}
                                 {this.state.textSearchIndex.status && (
                                     <>
-                                        <Typography.H3>Statistics</Typography.H3>
+                                        <H3>Statistics</H3>
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
@@ -214,25 +228,21 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     <td>
                                                         {prettyBytesBigint(
                                                             BigInt(this.state.textSearchIndex.status.contentByteSize)
-                                                        )}{' '}
-                                                        ({this.state.textSearchIndex.status.contentFilesCount}{' '}
-                                                        {pluralize(
-                                                            'file',
-                                                            this.state.textSearchIndex.status.contentFilesCount
                                                         )}
-                                                        )
                                                     </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Shards</th>
+                                                    <td>{this.state.textSearchIndex.status.indexShardsCount}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Files</th>
+                                                    <td>{this.state.textSearchIndex.status.contentFilesCount}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Index size</th>
                                                     <td>
-                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
-                                                        {this.state.textSearchIndex.status.indexShardsCount}{' '}
-                                                        {pluralize(
-                                                            'shard',
-                                                            this.state.textSearchIndex.status.indexShardsCount
-                                                        )}
-                                                        )
+                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)}
                                                     </td>
                                                 </tr>
                                                 <tr>

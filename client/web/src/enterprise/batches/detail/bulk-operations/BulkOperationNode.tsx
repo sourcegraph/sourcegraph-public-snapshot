@@ -1,17 +1,12 @@
 import React from 'react'
 
+import { mdiCommentOutline, mdiLinkVariantRemove, mdiSync, mdiSourceBranch, mdiUpload, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
-import UploadIcon from 'mdi-react/UploadIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, AlertLink, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -22,32 +17,32 @@ import styles from './BulkOperationNode.module.scss'
 const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     COMMENT: (
         <>
-            <Icon role="img" aria-hidden={true} className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiCommentOutline} /> Comment on changesets
         </>
     ),
     DETACH: (
         <>
-            <Icon role="img" aria-hidden={true} className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiLinkVariantRemove} /> Detach changesets
         </>
     ),
     REENQUEUE: (
         <>
-            <Icon role="img" aria-hidden={true} className="text-muted" as={SyncIcon} /> Retry changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiSync} /> Retry changesets
         </>
     ),
     MERGE: (
         <>
-            <Icon role="img" aria-hidden={true} className="text-muted" as={SourceBranchIcon} /> Merge changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiSourceBranch} /> Merge changesets
         </>
     ),
     CLOSE: (
         <>
-            <Icon role="img" aria-hidden={true} className="text-danger" as={SourceBranchIcon} /> Close changesets
+            <Icon aria-hidden={true} className="text-danger" svgPath={mdiSourceBranch} /> Close changesets
         </>
     ),
     PUBLISH: (
         <>
-            <Icon role="img" aria-hidden={true} className="text-muted" as={UploadIcon} /> Publish changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiUpload} /> Publish changesets
         </>
     ),
 }
@@ -74,7 +69,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
             </div>
             <div className={styles.bulkOperationNodeDivider} />
             <div className="flex-grow-1 ml-3">
-                <Typography.H4>{OPERATION_TITLES[node.type]}</Typography.H4>
+                <H4>{OPERATION_TITLES[node.type]}</H4>
                 <Text className="mb-0">
                     <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
                 </Text>
@@ -102,11 +97,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
             <div className={classNames(styles.bulkOperationNodeErrors, 'px-4')}>
                 <Collapsible
                     titleClassName="flex-grow-1 p-3"
-                    title={
-                        <Typography.H4 className="mb-0">
-                            The following errors occured while running this task:
-                        </Typography.H4>
-                    }
+                    title={<H4 className="mb-0">The following errors occured while running this task:</H4>}
                 >
                     {node.errors.map((error, index) => (
                         <Alert className="mt-2" key={index} variant="danger">
@@ -116,8 +107,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
                                 ) : (
                                     <>
                                         <AlertLink to={error.changeset.externalURL?.url ?? ''}>
-                                            {error.changeset.title}{' '}
-                                            <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
+                                            {error.changeset.title} <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                         </AlertLink>{' '}
                                         on{' '}
                                         <AlertLink to={error.changeset.repository.url}>

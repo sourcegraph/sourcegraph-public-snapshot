@@ -11,7 +11,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Typography } from '@sourcegraph/wildcard'
+import { Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
@@ -30,6 +30,7 @@ export interface SearchContextDropdownProps
     className?: string
     onEscapeMenuClose?: () => void
     isExternalServicesUserModeAll?: boolean
+    menuClassName?: string
 }
 
 export const SearchContextDropdown: React.FunctionComponent<
@@ -51,6 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<
         onEscapeMenuClose,
         showSearchContextManagement,
         isExternalServicesUserModeAll,
+        menuClassName,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -115,36 +117,38 @@ export const SearchContextDropdown: React.FunctionComponent<
             a11y={false} /* Override default keyboard events in reactstrap */
             className={className}
         >
-            <DropdownToggle
-                className={classNames(
-                    styles.button,
-                    'dropdown-toggle',
-                    'test-search-context-dropdown',
-                    isOpen && styles.buttonOpen
-                )}
-                data-testid="dropdown-toggle"
-                color="link"
-                disabled={isContextFilterInQuery}
-                data-tooltip={disabledTooltipText}
-            >
-                <Typography.Code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
-                    {
-                        // a11y-ignore
-                        // Rule: "color-contrast" (Elements must have sufficient color contrast)
-                        // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
-                    }
-                    <span className="a11y-ignore search-filter-keyword">context</span>
-                    <span className="search-filter-separator">:</span>
-                    {selectedSearchContextSpec?.startsWith('@') ? (
-                        <>
-                            <span className="search-keyword">@</span>
-                            {selectedSearchContextSpec?.slice(1)}
-                        </>
-                    ) : (
-                        selectedSearchContextSpec
+            <Tooltip content={disabledTooltipText}>
+                <DropdownToggle
+                    className={classNames(
+                        styles.button,
+                        'dropdown-toggle',
+                        'test-search-context-dropdown',
+                        isOpen && styles.buttonOpen
                     )}
-                </Typography.Code>
-            </DropdownToggle>
+                    data-testid="dropdown-toggle"
+                    data-test-tooltip-content={disabledTooltipText}
+                    color="link"
+                    disabled={isContextFilterInQuery}
+                >
+                    <Code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
+                        {
+                            // a11y-ignore
+                            // Rule: "color-contrast" (Elements must have sufficient color contrast)
+                            // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                        }
+                        <span className="a11y-ignore search-filter-keyword">context</span>
+                        <span className="search-filter-separator">:</span>
+                        {selectedSearchContextSpec?.startsWith('@') ? (
+                            <>
+                                <span className="search-keyword">@</span>
+                                {selectedSearchContextSpec?.slice(1)}
+                            </>
+                        ) : (
+                            selectedSearchContextSpec
+                        )}
+                    </Code>
+                </DropdownToggle>
+            </Tooltip>
             {/*
                a11y-ignore
                Rule: "aria-required-children" (Certain ARIA roles must contain particular children)
@@ -158,6 +162,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}
                     closeMenu={onCloseMenu}
+                    className={menuClassName}
                 />
                 {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
                     <SearchContextCtaPrompt

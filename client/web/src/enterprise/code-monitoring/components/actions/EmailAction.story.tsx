@@ -1,7 +1,7 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
 import { mockAuthenticatedUser } from '../../testing/util'
@@ -9,9 +9,14 @@ import { ActionProps } from '../FormActionArea'
 
 import { EmailAction } from './EmailAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/EmailAction', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/EmailAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -29,31 +34,33 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-add('EmailAction', () => (
+export const EmailActionStory: Story = () => (
     <WebStory>
         {() => (
             <>
-                <Typography.H2>Action card disabled</Typography.H2>
+                <H2>Action card disabled</H2>
                 <EmailAction {...defaultProps} disabled={true} />
 
-                <Typography.H2>Closed, not populated</Typography.H2>
+                <H2>Closed, not populated</H2>
                 <EmailAction {...defaultProps} />
 
-                <Typography.H2>Open, not populated</Typography.H2>
+                <H2>Open, not populated</H2>
                 <EmailAction {...defaultProps} _testStartOpen={true} />
 
-                <Typography.H2>Closed, populated, enabled</Typography.H2>
+                <H2>Closed, populated, enabled</H2>
                 <EmailAction {...defaultProps} action={action} />
 
-                <Typography.H2>Open, populated, enabled</Typography.H2>
+                <H2>Open, populated, enabled</H2>
                 <EmailAction {...defaultProps} _testStartOpen={true} action={action} />
 
-                <Typography.H2>Closed, populated, disabled</Typography.H2>
+                <H2>Closed, populated, disabled</H2>
                 <EmailAction {...defaultProps} action={{ ...action, enabled: false }} />
 
-                <Typography.H2>Open, populated, disabled</Typography.H2>
+                <H2>Open, populated, disabled</H2>
                 <EmailAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
             </>
         )}
     </WebStory>
-))
+)
+
+EmailActionStory.storyName = 'EmailAction'

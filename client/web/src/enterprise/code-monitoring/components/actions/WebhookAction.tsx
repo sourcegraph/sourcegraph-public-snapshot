@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge, Typography } from '@sourcegraph/wildcard'
+import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -101,11 +101,10 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
     return (
         <ActionEditor
             title={
-                <div className="d-flex align-items-center">
-                    Call a webhook <ProductStatusBadge className="ml-1" status="experimental" />{' '}
+                <div>
+                    Call a webhook <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
-            label="Call a webhook"
             subtitle="Calls the specified URL with a JSON payload."
             idName="webhook"
             disabled={disabled}
@@ -127,7 +126,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
             onTest={onSendTestMessage}
             _testStartOpen={_testStartOpen}
         >
-            <Alert variant="info" className="mt-4">
+            <Alert aria-live="off" variant="info" className="mt-4">
                 The specified webhook URL will be called with a JSON payload.
                 <br />
                 <Link to="/help/code_monitoring/how-tos/webhook" target="_blank" rel="noopener">
@@ -135,7 +134,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
                 </Link>
             </Alert>
             <div className="form-group">
-                <Typography.Label htmlFor="code-monitor-webhook-url">Webhook URL</Typography.Label>
+                <Label htmlFor="code-monitor-webhook-url">Webhook URL</Label>
                 <Input
                     id="code-monitor-webhook-url"
                     type="url"

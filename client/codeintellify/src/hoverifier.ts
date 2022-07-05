@@ -40,7 +40,7 @@ import { Key } from 'ts-key-enum'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
+import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
 import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'
 import { PositionEvent, SupportedMouseEvent } from './positions'
@@ -444,7 +444,7 @@ export function createHoverifier<C extends object, D, A>({
     const allPositionsFromEvents = new Subject<MouseEventTrigger>()
 
     // This keeps the overlay open while the mouse moves over another token on the way to the overlay
-    // eslint-disable-next-line unicorn/consistent-function-scoping
+
     const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => observable =>
         observable.pipe(
             withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
@@ -468,7 +468,7 @@ export function createHoverifier<C extends object, D, A>({
     const allCodeMouseOvers = allPositionsFromEvents.pipe(filter(isEventType('mouseover')), suppressWhileOverlayShown())
     const allCodeClicks = allPositionsFromEvents.pipe(filter(isEventType('click')))
 
-    const allPositionJumps = new Subject<PositionJump & EventOptions<C>>()
+    const positionJumps = new Subject<PositionJump & EventOptions<C>>()
 
     /**
      * Whenever a Subscription returned by `hoverify()` is unsubscribed,
@@ -535,7 +535,10 @@ export function createHoverifier<C extends object, D, A>({
      * disabled, this does not emit at all because the tooltip doesn't get
      * pinned at the jump target.
      */
-    const jumpTargets = allPositionJumps.pipe(
+    const jumpTargets = positionJumps.pipe(
+        withLatestFrom(container.updates),
+        filter(([, { pinned }]) => pinned),
+        map(([position]) => position),
         // Only use line and character for comparison
         map(({ position: { line, character, part }, ...rest }) => ({
             position: { line, character, part },
@@ -1054,7 +1057,7 @@ export function createHoverifier<C extends object, D, A>({
 
     // LOCATION CHANGES
     subscription.add(
-        allPositionJumps.subscribe(
+        positionJumps.subscribe(
             ({ position, scrollElement, codeView, dom: { getCodeElementFromLineNumber }, overrideTokenize }) => {
                 container.update({
                     // Remember active position in state for blame and range expansion
@@ -1068,7 +1071,16 @@ export function createHoverifier<C extends object, D, A>({
                 }
                 // Scroll into view
                 if (codeElements.length > 0) {
-                    scrollIntoCenterIfNeeded(scrollElement, codeView, codeElements[0].element)
+                    // We assume that the first element is always the top most
+                    // element and the last element is the bottom most element.
+                    const topRectangle = codeElements[0].element.getBoundingClientRect()
+                    const bottomRectangle = codeElements[codeElements.length - 1].element.getBoundingClientRect()
+                    const rectangle = {
+                        top: topRectangle.top,
+                        bottom: bottomRectangle.bottom,
+                        height: bottomRectangle.bottom - topRectangle.top,
+                    }
+                    scrollRectangleIntoCenterIfNeeded(scrollElement, codeView, rectangle)
                 }
             }
         )
@@ -1089,7 +1101,11 @@ export function createHoverifier<C extends object, D, A>({
             map(internalToExternalState),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        hoverify({ positionEvents, positionJumps = EMPTY, ...eventOptions }: HoverifyOptions<C>): Subscription {
+        hoverify({
+            positionEvents,
+            positionJumps: positionJumpsArgument = EMPTY,
+            ...eventOptions
+        }: HoverifyOptions<C>): Subscription {
             const codeViewId = Symbol('CodeView')
             const subscription = new Subscription()
             // Broadcast all events from this code view
@@ -1099,9 +1115,9 @@ export function createHoverifier<C extends object, D, A>({
                     .subscribe(allPositionsFromEvents)
             )
             subscription.add(
-                from(positionJumps)
+                from(positionJumpsArgument)
                     .pipe(map(jump => ({ ...jump, ...eventOptions, codeViewId })))
-                    .subscribe(allPositionJumps)
+                    .subscribe(positionJumps)
             )
             subscription.add(() => {
                 // Make sure hover is hidden and associated subscriptions unsubscribed

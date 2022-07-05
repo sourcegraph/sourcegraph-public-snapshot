@@ -417,7 +417,7 @@ User pending permission is a composite entity comprising:
 - `permission` (access level, e.g. "read")
 - `object_type` (type of what is enumerated in `object_ids_ints` column; for now it is `repos`)
 - `bind_id`
- 
+
 All of which are included as a unique constraint. This entity is addressed in `user_ids_ints` column of [`repo_pending_permissions` table](#repo-pending-permissions) by `id`. Please see [this godoc](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@8e128dd3434b9e548176f8f1148ead3981458db9/-/blob/internal/authz/perms.go?L190-218=) for more information.
 
 Overall, one entry of `user_pending_permissions` table means that _"There is a user with `bind_id` ID of this exact (`service_id`) external code host of this (`service_type`) type with such permissions for this (`object_ids_ints`) set of repos"_.
@@ -428,7 +428,7 @@ Overall, one entry of `user_pending_permissions` table means that _"There is a u
 
 ## Explicit permissions API
 
-Sourcegraph exposes a GraphQL API to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
+Sourcegraph exposes a set of GraphQL APIs to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
 
 To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
 
@@ -450,6 +450,8 @@ After you enable the permissions API, you must [set permissions](#settings-repos
 
 > NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
 
+> NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for some repositories and inherit code host permissions for others. (See [RFC 626: Permissions mechanisms in parallel](https://docs.google.com/document/d/1nWbmfM5clAH4pi_4tEt6zDtqN1-z1DuHlQ7A5KAijf8/edit#) for a design document about future support for this situation.)
+
 ### Setting a repository as unrestricted
 
 Sometimes it can be useful to mark a repository as `unrestricted`, meaning that it is available to all Sourcegraph users. This can be done with the `setRepositoryPermissionsUnrestricted` mutation. Marking a repository as unrestricted will disregard any previously set explicit or synced permissions. Setting `unrestricted` back to `false` will restore the previous behaviour.
@@ -458,7 +460,7 @@ For example:
 
 ```graphql
 mutation {
-  setRepositoryPermissionsUnrestricted(repositories: ["A","B","C"], unrestricted: true)
+  setRepositoryPermissionsUnrestricted(repositories: ["<repo ID>", "<repo ID>", "<repo ID>"], unrestricted: true)
 }
 ```
 
@@ -481,7 +483,7 @@ Next, set the list of users allowed to view the repository:
 ```graphql
 mutation {
   setRepositoryPermissionsForUsers(
-    repository: "<repo ID>", 
+    repository: "<repo ID>",
     userPermissions: [
       { bindID: "user@example.com" }
     ]) {
@@ -505,6 +507,98 @@ query {
       name
     }
     totalCount
+  }
+}
+```
+
+<br />
+
+### Bitbucket project based permissions
+
+Sourcegraph supports setting project wide permissions for Bitbucket code host connections.
+
+#### Setting repository permissions for a project
+
+This API lets site admins set the same permissions for all the users across all the repositories under the project.
+
+First, obtain the project key from the Bitbucket code host.
+
+Next, get the code host ID. Visit the **Manage code hosts** page from the site admin panel in the Sourcegraph instance and click on "Edit" for the code host under which the above project is located. Copy the ID from the URL. For example in the URL https://sourcegraph.example.com/site-admin/external-services/RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==, the code host ID is `RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==`.
+
+Next, set the list of users allowed to access all repositories under the project:
+
+```graphql
+mutation {
+    setRepositoryPermissionsForBitbucketProject(
+        projectKey: "<project key>",
+        codeHost: "<code host ID>",
+        userPermissions: [
+            { bindID: "user@example.com" }
+        ]
+    ) {
+      alwaysNil
+    }
+}
+```
+
+This will return an empty respoinse immediately while also enqueuing a background task to set permissions for all the repositories that belong to the project as identified by the `projectKey` in the API request.
+
+#### Querying project permissions task status
+
+To get the state of currently queued or running tasks you can run the following query with a list of project keys (one or more):
+
+```graphql
+query {
+    bitbucketProjectPermissionJobs(projectKeys: ["<project key 1>", "<project key 2>"]) {
+    nodes{
+      InternalJobID,
+      State,
+      FailureMessage,
+      QueuedAt,
+      StartedAt,
+      FinishedAt,
+      ProcessAfter,
+      ExternalServiceID,
+      Permissions{
+        bindID,
+        permission,
+      },
+      Unrestricted,
+    }
+  }
+}
+```
+
+The API also supports filtering against task `status`, which can be one of the following:
+
+- `queued`
+- `canceled`
+- `errored`
+- `failed`
+- `completed`
+
+Additionally, the API supports users to control the number of tasks returned in the output by using the argument `count` upto an upper limit of 500 with a default value of 100.
+
+Here's an example with all the query arguments in the API call:
+
+```graphql
+query {
+    bitbucketProjectPermissionJobs(projectKeys: ["a", "b"], status: "queued", count: 200) {
+    nodes{
+      InternalJobID,
+      State,
+      FailureMessage,
+      QueuedAt,
+      StartedAt,
+      FinishedAt,
+      ProcessAfter,
+      ExternalServiceID,
+      Permissions{
+        bindID,
+        permission,
+      },
+      Unrestricted,
+    }
   }
 }
 ```

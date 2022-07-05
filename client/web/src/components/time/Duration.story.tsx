@@ -1,38 +1,45 @@
 import { date } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H3, Code } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 
 import { Duration } from './Duration'
 
-const { add } = storiesOf('web/Duration', module).addDecorator(story => <div className="p-3 container">{story()}</div>)
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/Duration',
+    decorators: [decorator],
+}
+
+export default config
 
 const now = new Date()
 
-add('fixed', () => (
+export const Fixed: Story = () => (
     <WebStory>
         {props => (
             <Duration {...props} start={new Date(date('start', subDays(now, 1)))} end={new Date(date('end', now))} />
         )}
     </WebStory>
-))
+)
 
-add('active', () => (
+export const Active: Story = () => (
     <WebStory>
         {props => (
             <>
-                <Typography.H3>Borders demonstrate how the time changing does not cause layout shift.</Typography.H3>
+                <H3>Borders demonstrate how the time changing does not cause layout shift.</H3>
                 <div className="d-flex">
                     <span style={{ backgroundColor: 'red', width: 100 }} />
                     <Duration {...props} start={new Date(date('start', subDays(now, 1)))} />
                     <span style={{ backgroundColor: 'red', width: 100 }} />
                 </div>
-                <Typography.H3 className="mt-4">
-                    <Typography.Code>stableWidth=false</Typography.Code>
-                </Typography.H3>
+                <H3 className="mt-4">
+                    <Code>stableWidth=false</Code>
+                </H3>
                 <div className="d-flex">
                     <span style={{ backgroundColor: 'red', width: 100 }} />
                     <Duration {...props} start={new Date(date('start', subDays(now, 1)))} stableWidth={false} />
@@ -41,4 +48,4 @@ add('active', () => (
             </>
         )}
     </WebStory>
-))
+)

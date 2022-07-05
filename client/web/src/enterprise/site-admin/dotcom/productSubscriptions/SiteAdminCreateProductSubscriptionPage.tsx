@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -95,7 +95,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
                                 variant="secondary"
                                 size="sm"
                             >
-                                <Icon role="img" aria-hidden={true} as={AddIcon} /> Create new subscription
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Create new subscription
                             </Button>
                         </Form>
                     </div>
@@ -132,7 +132,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     return (
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
-            <Typography.H2>Create product subscription</Typography.H2>
+            <H2>Create product subscription</H2>
             <FilteredUserConnection
                 {...props}
                 className="list-group list-group-flush mt-3"

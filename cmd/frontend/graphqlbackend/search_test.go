@@ -12,6 +12,7 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -110,7 +111,7 @@ func TestSearch(t *testing.T) {
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := &schemaResolver{db: db}
+			sr := newSchemaResolver(db)
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)
@@ -293,9 +294,9 @@ func TestExactlyOneRepo(t *testing.T) {
 }
 
 func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *result.FileMatch {
-	var hms result.HunkMatches
+	var hms result.ChunkMatches
 	for _, n := range lineNumbers {
-		hms = append(hms, result.HunkMatch{
+		hms = append(hms, result.ChunkMatch{
 			Ranges: []result.Range{{
 				Start: result.Location{Line: n},
 				End:   result.Location{Line: n},
@@ -308,7 +309,7 @@ func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *resul
 			Path: path,
 			Repo: repo,
 		},
-		HunkMatches: hms,
+		ChunkMatches: hms,
 	}
 }
 
@@ -338,7 +339,8 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			db: db,
+			db:     db,
+			logger: logtest.Scoped(b),
 			SearchInputs: &run.SearchInputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),

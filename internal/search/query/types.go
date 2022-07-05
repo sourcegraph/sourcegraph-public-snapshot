@@ -30,18 +30,24 @@ type SearchType int
 
 const (
 	SearchTypeRegex SearchType = iota
-	SearchTypeLiteralDefault
+	SearchTypeLiteral
 	SearchTypeStructural
+	SearchTypeLucky
+	SearchTypeStandard
 )
 
 func (s SearchType) String() string {
 	switch s {
+	case SearchTypeStandard:
+		return "standard"
 	case SearchTypeRegex:
 		return "regex"
-	case SearchTypeLiteralDefault:
+	case SearchTypeLiteral:
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
+	case SearchTypeLucky:
+		return "lucky"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -186,9 +192,9 @@ func (p Plan) ToQ() Q {
 	nodes := make([]Node, 0, len(p))
 	for _, basic := range p {
 		operands := basic.ToParseTree()
-		nodes = append(nodes, newOperator(operands, And)...)
+		nodes = append(nodes, NewOperator(operands, And)...)
 	}
-	return Q(newOperator(nodes, Or))
+	return Q(NewOperator(nodes, Or))
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
@@ -322,6 +328,41 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 		}
 	})
 	return include, exclude
+}
+
+func (p Parameters) RepoContainsFile() (include, exclude []string) {
+	nodes := toNodes(p)
+	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+		if negated {
+			exclude = append(exclude, pred.Pattern)
+		} else {
+			include = append(include, pred.Pattern)
+		}
+	})
+
+	return include, exclude
+}
+
+func (p Parameters) RepoContainsCommitAfter() (value string) {
+	nodes := toNodes(p)
+
+	// Look for values of repohascommitafter:
+	value = p.FindValue(FieldRepoHasCommitAfter)
+
+	// Look for values of repo:contains.commit.after()
+	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate, _ bool) {
+		value = pred.TimeRef
+	})
+
+	return value
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).

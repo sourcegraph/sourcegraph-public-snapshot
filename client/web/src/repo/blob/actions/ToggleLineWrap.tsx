@@ -1,11 +1,11 @@
 import * as React from 'react'
 
-import WrapIcon from 'mdi-react/WrapIcon'
+import { mdiWrap } from '@mdi/js'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { TooltipController, Icon } from '@sourcegraph/wildcard'
+import { DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -52,7 +52,7 @@ export class ToggleLineWrap extends React.PureComponent<
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)
-                TooltipController.forceUpdate()
+                DeprecatedTooltipController.forceUpdate()
             })
         )
 
@@ -76,7 +76,11 @@ export class ToggleLineWrap extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <Icon role="img" as={this.state.value ? WrapDisabledIcon : WrapIcon} aria-hidden={true} />
+                    <Icon
+                        as={this.state.value ? WrapDisabledIcon : undefined}
+                        svgPath={!this.state.value ? mdiWrap : undefined}
+                        aria-hidden={true}
+                    />
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -90,7 +94,11 @@ export class ToggleLineWrap extends React.PureComponent<
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
                 aria-label={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
             >
-                <Icon role="img" as={this.state.value ? WrapDisabledIcon : WrapIcon} aria-hidden={true} />
+                <Icon
+                    as={this.state.value ? WrapDisabledIcon : undefined}
+                    svgPath={!this.state.value ? mdiWrap : undefined}
+                    aria-hidden={true}
+                />
             </RepoHeaderActionButtonLink>
         )
     }

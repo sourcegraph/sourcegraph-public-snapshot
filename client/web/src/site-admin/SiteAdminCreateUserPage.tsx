@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Label, H2, Text } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'
@@ -94,7 +94,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
         return (
             <div className="site-admin-create-user-page">
                 <PageTitle title="Create user - Admin" />
-                <Typography.H2>Create user account</Typography.H2>
+                <H2>Create user account</H2>
                 <Text>
                     Create a new user account
                     {window.context.resetPasswordEnabled
@@ -125,9 +125,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
                         <div className={classNames('form-group', styles.formGroup)}>
-                            <Typography.Label htmlFor="site-admin-create-user-page__form-username">
-                                Username
-                            </Typography.Label>
+                            <Label htmlFor="site-admin-create-user-page__form-username">Username</Label>
                             <UsernameInput
                                 id="site-admin-create-user-page__form-username"
                                 onChange={this.onUsernameFieldChange}
@@ -142,7 +140,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                             </small>
                         </div>
                         <div className={classNames('form-group', styles.formGroup)}>
-                            <Typography.Label htmlFor="site-admin-create-user-page__form-email">Email</Typography.Label>
+                            <Label htmlFor="site-admin-create-user-page__form-email">Email</Label>
                             <EmailInput
                                 id="site-admin-create-user-page__form-email"
                                 onChange={this.onEmailFieldChange}

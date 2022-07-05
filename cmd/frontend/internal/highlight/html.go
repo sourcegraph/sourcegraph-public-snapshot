@@ -133,10 +133,11 @@ func lsifToHTML(
 		splitLines[idx] = []rune(line)
 	}
 
-	occurences := document.Occurrences
+	occurrences := document.Occurrences
 
+	rowCount := int32(len(splitLines))
 	row, occIndex := int32(0), 0
-	for row < int32(len(splitLines)) {
+	for row < rowCount {
 		// skip invalid lines, when passed
 		if validLines != nil && !validLines[row] {
 			row += 1
@@ -148,11 +149,17 @@ func lsifToHTML(
 		addRow(row)
 
 		lineCharacter := int32(0)
-		for occIndex < len(occurences) && occurences[occIndex].Range[0] < row+1 {
-			occ := occurences[occIndex]
+		for occIndex < len(occurrences) && occurrences[occIndex].Range[0] < row+1 {
+			occ := occurrences[occIndex]
 			occIndex += 1
 
 			startRow, startCharacter, endRow, endCharacter := normalizeSCIPRange(occ.Range)
+
+			// We may not have handled all the occurrences up until now
+			// so skip the ones where the ranges do not overlap.
+			if endRow < row {
+				continue
+			}
 
 			addText(occ.SyntaxKind, safeSlice(line, lineCharacter, startCharacter))
 
@@ -161,12 +168,22 @@ func lsifToHTML(
 
 				row += 1
 				for row < endRow {
+					// We've reached the end of the lines, so we can return now
+					if row >= rowCount {
+						return
+					}
+
 					line = splitLines[row]
 
 					addRow(row)
 					addText(occ.SyntaxKind, string(line))
 
 					row += 1
+				}
+
+				// We've reached the end of the lines, so we can return now
+				if row >= rowCount {
+					return
 				}
 
 				line = splitLines[row]

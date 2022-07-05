@@ -29,7 +29,9 @@ const DEFAULT_CONTEXT_VALUE: CollapseContextData = {
 
 const CollapseContext = createContext<CollapseContextData>(DEFAULT_CONTEXT_VALUE)
 
-export const Collapse: React.FunctionComponent<React.PropsWithChildren<CollapseProps>> = React.memo(props => {
+export const Collapse: React.FunctionComponent<React.PropsWithChildren<CollapseProps>> = React.memo(function Collapse(
+    props
+) {
     const { children, isOpen, openByDefault, onOpenChange = noop } = props
     const [isInternalOpen, setInternalOpen] = useState<boolean>(Boolean(openByDefault))
     const isControlled = isOpen !== undefined
@@ -64,7 +66,7 @@ interface CollapseHeaderProps extends React.HTMLAttributes<HTMLButtonElement> {
     focusLocked?: boolean
 }
 
-export const CollapseHeader = React.forwardRef((props, reference) => {
+export const CollapseHeader = React.forwardRef(function CollapseHeader(props, reference) {
     const { children, className, as: Component = 'button', onClick = noop, focusLocked, ...attributes } = props
     const { setOpen, isOpen } = useContext(CollapseContext)
     const [focusLock, setFocusLock] = useState(false)
@@ -110,18 +112,19 @@ export const CollapseHeader = React.forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'button', CollapseHeaderProps>
 
-export const CollapsePanel = React.forwardRef(
-    ({ children, className, as: Component = 'div', ...attributes }, reference) => {
-        const { isOpen } = useContext(CollapseContext)
+export const CollapsePanel = React.forwardRef(function CollapsePanel(
+    { children, className, as: Component = 'div', ...attributes },
+    reference
+) {
+    const { isOpen } = useContext(CollapseContext)
 
-        return (
-            <Component
-                className={classNames(styles.collapse, isOpen && styles.show, className)}
-                ref={reference}
-                {...attributes}
-            >
-                {children}
-            </Component>
-        )
-    }
-) as ForwardReferenceComponent<'div'>
+    return (
+        <Component
+            className={classNames(styles.collapse, isOpen && styles.show, className)}
+            ref={reference}
+            {...attributes}
+        >
+            {children}
+        </Component>
+    )
+}) as ForwardReferenceComponent<'div'>

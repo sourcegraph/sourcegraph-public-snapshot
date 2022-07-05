@@ -5,7 +5,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, Icon, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 import { ThemePreference } from '../../stores/themeState'
@@ -93,12 +93,12 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         </video>
                     </div>
                     <div className="col-12 col-md-6">
-                        <Typography.H2>Create living documentation effortlessly</Typography.H2>
+                        <H2>Create living documentation effortlessly</H2>
                         <Text>
                             Notebooks make creating and sharing knowledge something you'll want to do, not something you
                             avoid.
                         </Text>
-                        <Typography.H3>Use notebooks to&hellip;</Typography.H3>
+                        <H3>Use notebooks to&hellip;</H3>
                         <ul className={classNames(styles.narrowList, 'mb-0')}>
                             <li className="mb-1">Create focused onboarding docs that stay up to date</li>
                             <li className="mb-1">Prepare pull request walkthroughs for your teammates</li>
@@ -118,7 +118,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            <Typography.H3>Example notebooks</Typography.H3>
+            <H3>Example notebooks</H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 <div className="col-12 col-md-6">
                     <Container>
@@ -127,7 +127,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             rel="noopener noreferrer"
                             to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ=="
                         >
-                            Find Log4J dependencies <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                            Find Log4J dependencies <Icon aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                         <div className="mt-2">Find Log4J dependencies across all your code.</div>
                     </Container>
@@ -140,13 +140,13 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM="
                         >
                             Learn Sourcegraph / Find code across all of your repositories{' '}
-                            <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                            <Icon aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                         <div className="mt-2">Learn how to find and reference code across all your repositories.</div>
                     </Container>
                 </div>
             </div>
-            <Typography.H3>Powerful creation features</Typography.H3>
+            <H3>Powerful creation features</H3>
             <Container className="mb-4">
                 <div className={classNames(styles.row, 'row', 'mb-4')}>
                     <div className="col-12 col-md-6">
@@ -174,7 +174,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            <Typography.H3>Functionality</Typography.H3>
+            <H3>Functionality</H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 {functionalityPanels.map(panel => (
                     <div key={panel.title} className="col-12 col-md-4">
@@ -208,7 +208,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                     <div className="mb-2">Read in-depth material about all of notebooks' features.</div>
                     <Link target="_blank" rel="noopener noreferrer" to="/help/notebooks">
-                        Documentation <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                        Documentation <Icon aria-hidden={true} as={OpenInNewIcon} />
                     </Link>
                 </div>
             </div>

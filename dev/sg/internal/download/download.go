@@ -3,6 +3,7 @@ package download
 import (
 	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -16,8 +17,12 @@ import (
 
 // Executable downloads a binary from the given URL, updates the given path if different, and
 // makes the downloaded file executable.
-func Executable(url string, path string) error {
-	resp, err := http.Get(url)
+func Executable(ctx context.Context, url string, path string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -36,7 +41,7 @@ func Executable(url string, path string) error {
 		return errors.Wrapf(err, "saving to %q", path)
 	}
 	if updated {
-		return exec.Command("chmod", "+x", path).Run()
+		return exec.CommandContext(ctx, "chmod", "+x", path).Run()
 	}
 
 	return nil
@@ -89,11 +94,11 @@ func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive stri
 		return errors.Newf("expected %s to exist in extracted archive at %s, but does not", fileInArchivePath, tmpDirName)
 	}
 
-	if err := os.Rename(fileInArchivePath, targetFile); err != nil {
+	if err := safeRename(fileInArchivePath, targetFile); err != nil {
 		return err
 	}
 
-	return exec.Command("chmod", "+x", targetFile).Run()
+	return exec.CommandContext(ctx, "chmod", "+x", targetFile).Run()
 }
 
 func fileExists(path string) (bool, error) {
@@ -105,4 +110,34 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// safeRename copies src into dst before finally removing src.
+// This is needed because in some cause, the tmp folder is living
+// on a different filesystem.
+func safeRename(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	inStat, err := in.Stat()
+	perm := inStat.Mode() & os.ModePerm
+	if err != nil {
+		return err
+	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		closeErr := in.Close()
+		return errors.Append(err, closeErr)
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	closeErr := in.Close()
+	if err != nil {
+		return errors.Append(err, closeErr)
+	}
+	return os.Remove(src)
 }

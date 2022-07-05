@@ -4,7 +4,7 @@ import { of } from 'rxjs'
 import { GitObjectType, LSIFIndexState } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'
-import { LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
+import { LsifUploadFields, LSIFUploadState, AuditLogOperation } from '../../../../graphql-operations'
 
 import { CodeIntelUploadPage, CodeIntelUploadPageProps } from './CodeIntelUploadPage'
 
@@ -34,6 +34,7 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
+    auditLogs: [],
 }
 
 const dependendentPrototype = {
@@ -308,5 +309,82 @@ AssociatedIndex.args = {
                 finishedAt: '2020-06-15T12:25:30+00:00',
                 placeInQueue: null,
             },
+        }),
+}
+
+export const WithAuditLogs = Template.bind({})
+WithAuditLogs.args = {
+    ...defaults,
+    queryLisfUploadFields: () =>
+        of({
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.PROCESSING,
+            uploadedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: '2020-06-15T12:25:30+00:00',
+            auditLogs: [
+                {
+                    logTimestamp: '2020-06-15T12:20:30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'state',
+                            old: null,
+                            new: 'UPLOADING',
+                        },
+                    ],
+                    operation: AuditLogOperation.CREATE,
+                },
+                {
+                    logTimestamp: '2020-06-15T12:20:30+00:00',
+                    uploadDeletedAt: null,
+                    reason: 'because I feel like it, and it was a Wednesday evening',
+                    changedColumns: [
+                        {
+                            column: 'state',
+                            old: 'UPLOADING',
+                            new: 'PROCESSING',
+                        },
+                    ],
+                    operation: AuditLogOperation.MODIFY,
+                },
+                {
+                    logTimestamp: '2020-06-16T12.00.30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'banana',
+                            old: 'hello',
+                            new: 'goodbye and good riddance',
+                        },
+                    ],
+                    operation: AuditLogOperation.MODIFY,
+                },
+                {
+                    logTimestamp: '2020-12-16T12.00.30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'some_long_column_name',
+                            old: null,
+                            new: 'Lorem ipsum dolor sit amet.',
+                        },
+                        {
+                            column: 'ipsum',
+                            old: 'that last one was quite something',
+                            new: 'that last one was truncated before publishing',
+                        },
+                        {
+                            column: 'lorem',
+                            old: '500',
+                            new: '501',
+                        },
+                    ],
+                    operation: AuditLogOperation.MODIFY,
+                },
+            ],
         }),
 }

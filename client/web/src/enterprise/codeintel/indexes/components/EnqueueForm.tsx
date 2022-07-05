@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Alert, Input, Typography } from '@sourcegraph/wildcard'
+import { Button, Alert, Input, Label } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
@@ -53,7 +53,7 @@ export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormP
             {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
 
             <div className="form-inline">
-                <Typography.Label htmlFor="revlike">Git revlike</Typography.Label>
+                <Label htmlFor="revlike">Git revlike</Label>
 
                 <Input
                     id="revlike"
@@ -74,11 +74,19 @@ export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormP
                 </Button>
             </div>
 
-            {state === State.Queued && queueResult !== undefined && (
-                <Alert className="mt-3 mb-0" variant="success">
-                    {queueResult} index jobs enqueued.
-                </Alert>
-            )}
+            {state === State.Queued &&
+                queueResult !== undefined &&
+                (queueResult > 0 ? (
+                    <Alert className="mt-3 mb-0" variant="success">
+                        {queueResult} auto-indexing jobs enqueued.
+                    </Alert>
+                ) : (
+                    <Alert className="mt-3 mb-0" variant="info">
+                        Failed to enqueue any auto-indexing jobs.
+                        <br />
+                        Check if the auto-index configuration is up-to-date.
+                    </Alert>
+                ))}
         </>
     )
 }

@@ -1,39 +1,43 @@
 package com.sourcegraph.browser;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
-import com.sourcegraph.find.BrowserAndLoadingPanel;
+import com.sourcegraph.find.FindPopupPanel;
+import com.sourcegraph.find.FindService;
 import com.sourcegraph.find.PreviewContent;
-import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
-    private final PreviewPanel previewPanel;
-    private final BrowserAndLoadingPanel topPanel;
+    private final FindPopupPanel findPopupPanel;
+    private final FindService findService;
+
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel, @NotNull FindService findService) {
+        this.project = project;
+        this.findPopupPanel = findPopupPanel;
+        this.findService = findService;
+    }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
         JsonObject arguments;
-        Gson gson = new Gson();
         PreviewContent previewContent;
         try {
             switch (action) {
                 case "getConfig":
-                    JsonObject configAsJson = new JsonObject();
-                    configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
-                    configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(this.project));
-                    configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(this.project));
-                    return createSuccessResponse(configAsJson);
+                    return createSuccessResponse(ConfigUtil.getConfigAsJson(project));
                 case "getTheme":
                     JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                     return createSuccessResponse(currentThemeAsJson);
@@ -53,7 +57,7 @@ public class JSToJavaBridgeRequestHandler {
                 case "loadLastSearch":
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
 
-                    if (lastSearch != null) {
+                    if (lastSearch == null) {
                         return createSuccessResponse(null);
                     }
 
@@ -63,21 +67,43 @@ public class JSToJavaBridgeRequestHandler {
                     lastSearchAsJson.addProperty("patternType", lastSearch.getPatternType());
                     lastSearchAsJson.addProperty("selectedSearchContextSpec", lastSearch.getSelectedSearchContextSpec());
                     return createSuccessResponse(lastSearchAsJson);
+                case "previewLoading":
+                    arguments = request.getAsJsonObject("arguments");
+                    // Wait a bit to avoid flickering in case of a fast network
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException ignored) {
+                        }
+                        ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateLoadingIfInTime(Date.from(
+                            Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
+                    }).start();
+                    return createSuccessResponse(null);
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, false);
+                    previewContent = PreviewContent.fromJson(project, arguments);
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.setPreviewContentIfInTime(previewContent));
                     return createSuccessResponse(null);
                 case "clearPreview":
-                    previewPanel.clearContent();
+                    arguments = request.getAsJsonObject("arguments");
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.clearPreviewContentIfInTime(Date.from(
+                        Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, true);
+                    previewContent = PreviewContent.fromJson(project, arguments);
+                    try {
+                        previewContent.openInEditorOrBrowser();
+                    } catch (Exception e) {
+                        return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                    }
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
-                    topPanel.setBrowserVisible(true);
+                    arguments = request.getAsJsonObject("arguments");
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(arguments.get("wasServerAccessSuccessful").getAsBoolean(), arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
+                    return createSuccessResponse(null);
+                case "windowClose":
+                    ApplicationManager.getApplication().invokeLater(() -> findService.hidePopup());
                     return createSuccessResponse(null);
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
@@ -87,13 +113,12 @@ public class JSToJavaBridgeRequestHandler {
         }
     }
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
-        this.project = project;
-        this.previewPanel = previewPanel;
-        this.topPanel = topPanel;
+    @NotNull
+    public Project getProject() {
+        return project;
     }
 
-    public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
+    public JBCefJSQuery.Response handleInvalidRequest(@NotNull Exception e) {
         return createErrorResponse("Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage(), convertStackTraceToString(e));
     }
 

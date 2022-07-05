@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import { useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
@@ -38,7 +38,7 @@ export const CodeInsightsExamples: FunctionComponent<CodeInsightsExamplesProps> 
 
     return (
         <section {...otherProps}>
-            <Typography.H2>Example insights</Typography.H2>
+            <H2>Example insights</H2>
             <Text className="text-muted">
                 Here are a few example insights to show you what the tool can do.{' '}
                 <Link to={`${pathname}${search}#code-insights-templates`}>Explore more use cases.</Link>

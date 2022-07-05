@@ -1,9 +1,9 @@
 import * as React from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -13,17 +13,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import {
-    Button,
-    LoadingSpinner,
-    Link,
-    CardHeader,
-    CardBody,
-    Card,
-    Alert,
-    Icon,
-    Typography,
-} from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -165,7 +155,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             return (
                 <div className="registry-extension-manage-page">
                     <PageTitle title="Manage extension" />
-                    <Typography.H2>Manage extension</Typography.H2>
+                    <H2>Manage extension</H2>
                     <Form onSubmit={this.onSubmit}>
                         <RegistryPublisherFormGroup
                             className={styles.input}
@@ -184,9 +174,9 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             this.state.name !== this.props.extension.registryExtension.name && (
                                 <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
-                                    <Typography.Code id="registry-extension__extensionID" weight="bold">
+                                    <Code id="registry-extension__extensionID" weight="bold">
                                         {extensionID}
-                                    </Typography.Code>
+                                    </Code>
                                 </Alert>
                             )}
                         <div aria-live="polite">
@@ -204,7 +194,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                     <LoadingSpinner />
                                 ) : (
                                     <span className="text-success ml-2">
-                                        <Icon role="img" aria-hidden={true} as={CheckCircleIcon} /> Updated extension
+                                        <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Updated extension
                                         successfully.
                                     </span>
                                 ))}

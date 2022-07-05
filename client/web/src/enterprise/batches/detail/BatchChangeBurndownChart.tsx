@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Checkbox, Container, LoadingSpinner, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Checkbox, Container, LoadingSpinner, Label, useObservable } from '@sourcegraph/wildcard'
 
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
@@ -239,9 +239,9 @@ const IncludeArchivedToggle: React.FunctionComponent<
     }>
 > = ({ includeArchived, onToggle }) => (
     <div className="d-flex align-items-center justify-content-between text-nowrap mb-2 pt-1">
-        <Typography.Label htmlFor="include-archived" className="mb-0">
+        <Label htmlFor="include-archived" className="mb-0">
             Include archived
-        </Typography.Label>
+        </Label>
         <Toggle
             id="include-archived"
             value={includeArchived}

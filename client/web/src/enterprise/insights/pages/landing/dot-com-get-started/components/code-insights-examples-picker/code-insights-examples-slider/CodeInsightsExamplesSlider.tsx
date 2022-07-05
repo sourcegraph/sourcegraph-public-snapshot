@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ForwardReferenceComponent, Typography } from '@sourcegraph/wildcard'
+import { Button, ForwardReferenceComponent, H3 } from '@sourcegraph/wildcard'
 
 import { CodeInsightExampleCard } from '../../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 import { EXAMPLES } from '../examples'
@@ -58,7 +58,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<
                     <ArrowIcon side="left" />
                 </Button>
 
-                <Typography.H3 className={styles.headerTitle}>{activeExample.content.title}</Typography.H3>
+                <H3 className={styles.headerTitle}>{activeExample.content.title}</H3>
 
                 <Button
                     variant="icon"

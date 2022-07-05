@@ -7,7 +7,9 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -29,7 +31,7 @@ func TestSavedSearches(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
-	savedSearches, err := (&schemaResolver{db: db}).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)))
+	savedSearches, err := newSchemaResolver(db).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +78,7 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 		UID: userID,
 	})
 
-	savedSearch, err := (&schemaResolver{db: db}).savedSearchByID(ctx, ssID)
+	savedSearch, err := newSchemaResolver(db).savedSearchByID(ctx, ssID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +129,7 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 		UID: adminID,
 	})
 
-	_, err := (&schemaResolver{db: db}).savedSearchByID(ctx, ssID)
+	_, err := newSchemaResolver(db).savedSearchByID(ctx, ssID)
 	t.Log(err)
 	if err == nil {
 		t.Fatal("expected an error")
@@ -159,7 +161,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	userID := MarshalUserID(key)
-	savedSearches, err := (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
+	savedSearches, err := newSchemaResolver(db).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -187,7 +189,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure create saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
+	_, err = newSchemaResolver(db).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -219,13 +221,18 @@ func TestUpdateSavedSearch(t *testing.T) {
 			OrgID:       savedSearch.OrgID,
 		}, nil
 	})
+	ss.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{
+		Config: api.ConfigSavedQuery{
+			UserID: &key,
+		},
+	}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	userID := MarshalUserID(key)
-	savedSearches, err := (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
+	savedSearches, err := newSchemaResolver(db).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -233,7 +240,13 @@ func TestUpdateSavedSearch(t *testing.T) {
 		NotifySlack bool
 		OrgID       *graphql.ID
 		UserID      *graphql.ID
-	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff patternType:regexp", OrgID: nil, UserID: &userID})
+	}{
+		ID:          marshalSavedSearchID(key),
+		Description: "updated query description",
+		Query:       "test type:diff patternType:regexp",
+		OrgID:       nil,
+		UserID:      &userID,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +266,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure update saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
+	_, err = newSchemaResolver(db).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -264,6 +277,106 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &userID})
 	if err == nil {
 		t.Error("Expected error for updateSavedSearch when query does not provide a patternType: field.")
+	}
+}
+
+func TestUpdateSavedSearchPermissions(t *testing.T) {
+	user1 := &types.User{ID: 42}
+	user2 := &types.User{ID: 43}
+	admin := &types.User{ID: 44, SiteAdmin: true}
+	org1 := &types.Org{ID: 42}
+	org2 := &types.Org{ID: 43}
+
+	cases := []struct {
+		execUser *types.User
+		ssUserID *int32
+		ssOrgID  *int32
+		errIs    error
+	}{{
+		execUser: user1,
+		ssUserID: &user1.ID,
+		errIs:    nil,
+	}, {
+		execUser: user1,
+		ssUserID: &user2.ID,
+		errIs:    &backend.InsufficientAuthorizationError{},
+	}, {
+		execUser: user1,
+		ssOrgID:  &org1.ID,
+		errIs:    nil,
+	}, {
+		execUser: user1,
+		ssOrgID:  &org2.ID,
+		errIs:    backend.ErrNotAnOrgMember,
+	}, {
+		execUser: admin,
+		ssOrgID:  &user1.ID,
+		errIs:    nil,
+	}, {
+		execUser: admin,
+		ssOrgID:  &org1.ID,
+		errIs:    nil,
+	}}
+
+	for _, tt := range cases {
+		t.Run("", func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), actor.FromUser(tt.execUser.ID))
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+				switch actor.FromContext(ctx).UID {
+				case user1.ID:
+					return user1, nil
+				case user2.ID:
+					return user2, nil
+				case admin.ID:
+					return admin, nil
+				default:
+					panic("bad actor")
+				}
+			})
+
+			savedSearches := database.NewMockSavedSearchStore()
+			savedSearches.UpdateFunc.SetDefaultHook(func(_ context.Context, ss *types.SavedSearch) (*types.SavedSearch, error) {
+				return ss, nil
+			})
+			savedSearches.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{
+				Config: api.ConfigSavedQuery{
+					UserID: tt.ssUserID,
+					OrgID:  tt.ssOrgID,
+				},
+			}, nil)
+
+			orgMembers := database.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+				if orgID == userID {
+					return &types.OrgMembership{}, nil
+				}
+				return nil, nil
+			})
+
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.SavedSearchesFunc.SetDefaultReturn(savedSearches)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+			_, err := newSchemaResolver(db).UpdateSavedSearch(ctx, &struct {
+				ID          graphql.ID
+				Description string
+				Query       string
+				NotifyOwner bool
+				NotifySlack bool
+				OrgID       *graphql.ID
+				UserID      *graphql.ID
+			}{
+				ID:    marshalSavedSearchID(1),
+				Query: "patterntype:literal",
+			})
+			if tt.errIs == nil {
+				require.NoError(t, err)
+			} else {
+				require.ErrorAs(t, err, &tt.errIs)
+			}
+		})
 	}
 }
 
@@ -296,7 +409,7 @@ func TestDeleteSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	firstSavedSearchGraphqlID := graphql.ID("U2F2ZWRTZWFyY2g6NTI=")
-	_, err := (&schemaResolver{db: db}).DeleteSavedSearch(ctx, &struct {
+	_, err := newSchemaResolver(db).DeleteSavedSearch(ctx, &struct {
 		ID graphql.ID
 	}{ID: firstSavedSearchGraphqlID})
 	if err != nil {

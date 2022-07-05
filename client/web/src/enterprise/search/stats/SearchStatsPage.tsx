@@ -1,13 +1,13 @@
 import React, { useCallback, useState, useMemo } from 'react'
 
+import { mdiChartLine } from '@mdi/js'
 import * as H from 'history'
-import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, LoadingSpinner, useObservable, Alert, Icon, Typography, Input, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Code, H2, Input } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -55,12 +55,12 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
     return (
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
-                <Typography.H2 className="d-flex align-items-center mb-0">
-                    <Icon role="img" aria-hidden={true} className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
+                <H2 className="d-flex align-items-center mb-0">
+                    <Icon aria-hidden={true} className="mr-2" svgPath={mdiChartLine} /> Code statistics{' '}
                     <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>
-                </Typography.H2>
+                </H2>
             </header>
             <Form onSubmit={onSubmit} className="form">
                 <div className="form-group d-flex">
@@ -90,8 +90,8 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 <Alert variant="danger">{stats.message}</Alert>
             ) : stats.limitHit ? (
                 <Alert variant="warning">
-                    Limit hit. Add <Typography.Code>count:{DEFAULT_COUNT * 5}</Typography.Code> (or an even larger
-                    number) to your query to retry with a higher limit.
+                    Limit hit. Add <Code>count:{DEFAULT_COUNT * 5}</Code> (or an even larger number) to your query to
+                    retry with a higher limit.
                 </Alert>
             ) : (
                 <SearchStatsLanguages query={query} stats={stats} />

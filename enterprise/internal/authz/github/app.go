@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -13,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // newAppProvider creates a new authz Provider for GitHub App.
@@ -39,7 +40,7 @@ func newAppProvider(
 
 	apiURL, _ := github.APIRoot(baseURL)
 	appClient := github.NewV3Client(
-		log.Scoped("app.github.v3", "github v3 client for github app").
+		log.Scoped("app", "github client for github app").
 			With(log.String("appID", appID)),
 		urn, apiURL, auther, cli)
 	return &Provider{
@@ -51,7 +52,7 @@ func newAppProvider(
 				return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 			}
 
-			logger := log.Scoped("installation.github.v3", "github v3 client for installation").
+			logger := log.Scoped("installation", "github client for installation").
 				With(log.String("appID", appID), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{

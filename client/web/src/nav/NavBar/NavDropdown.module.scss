@@ -28,6 +28,10 @@
         display: flex;
         align-items: center;
         z-index: 1;
+
+        &:hover {
+            text-decoration: none;
+        }
     }
     &-icon-button {
         // - we show this button under the actual link

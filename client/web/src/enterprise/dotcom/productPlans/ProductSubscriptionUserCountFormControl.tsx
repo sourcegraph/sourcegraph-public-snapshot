@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Typography, Input } from '@sourcegraph/wildcard'
+import { Label, Input } from '@sourcegraph/wildcard'
 
 interface Props {
     /** The user count input by the user. */
@@ -44,13 +44,9 @@ export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Re
 
     return (
         <div className={classNames('product-subscription-user-count-control form-group align-items-center', className)}>
-            <Typography.Label
-                htmlFor="product-subscription-user-count-control__userCount"
-                className="mb-0 mr-2"
-                weight="bold"
-            >
+            <Label htmlFor="product-subscription-user-count-control__userCount" className="mb-0 mr-2" weight="bold">
                 Users
-            </Typography.Label>
+            </Label>
             <div className="d-flex align-items-center">
                 <Input
                     id="product-subscription-user-count-control__userCount"

@@ -2,7 +2,7 @@ import React, { ElementType } from 'react'
 
 import classNames from 'classnames'
 
-import { Typography, Text } from '@sourcegraph/wildcard'
+import { Code, Text } from '@sourcegraph/wildcard'
 
 import styles from './TextVariants.module.scss'
 
@@ -88,7 +88,7 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
             </tr>
             <tr>
                 <td>
-                    <Typography.Code>{'<label>'}</Typography.Code>
+                    <Code>{'<label>'}</Code>
                 </td>
                 <td>
                     <TextVariations component="label" name="Label" />
@@ -97,7 +97,7 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
             </tr>
             <tr>
                 <td>
-                    <Typography.Code>{'<input class="form-control">'}</Typography.Code>
+                    <Code>{'<input class="form-control">'}</Code>
                 </td>
                 <td>
                     <span className={classNames('form-control', styles.inputVariant, styles.textVariant)}>
@@ -112,7 +112,7 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
             </tr>
             <tr>
                 <td>
-                    <Typography.Code>{'<code>'}</Typography.Code>
+                    <Code>{'<code>'}</Code>
                 </td>
                 <td>
                     <TextVariations component="code" name="Code" weights={['Regular', 'Strong']} />

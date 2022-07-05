@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -28,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -72,7 +74,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		p := GetProvider(serviceType, id)
 		if p == nil {
 			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
-			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
+			msg := fmt.Sprintf("Misconfigured %s auth provider.", serviceType)
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		op := LoginStateOp(req.URL.Query().Get("op"))
@@ -141,7 +144,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 
 		conn := esConfg.(*schema.GitHubConnection)
 		auther := &eauth.OAuthBearerToken{Token: conn.Token}
-		client := github.NewV3Client(logger.Scoped("github.v3", "github v3 client for getting user orgs"),
+		client := github.NewV3Client(logger,
 			extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
 
 		installs, err := client.GetUserInstallations(req.Context())
@@ -209,7 +212,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		client := github.NewV3Client(logger.Scoped("github.v3", "github v3 client for getting github app installations"),
+		client := github.NewV3Client(logger,
 			extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
 
 		installation, err := client.GetAppInstallation(req.Context(), installationID)

@@ -1,12 +1,13 @@
 import React from 'react'
 
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
 // Add root Tooltip for Storybook
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import brandedStyles from '../global-styles/index.scss'
 
@@ -33,8 +34,10 @@ export const BrandedStory: React.FunctionComponent<React.PropsWithChildren<Brand
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
-                    <Tooltip />
-                    <Children isLightTheme={isLightTheme} />
+                    <CompatRouter>
+                        <DeprecatedTooltip />
+                        <Children isLightTheme={isLightTheme} />
+                    </CompatRouter>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>

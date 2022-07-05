@@ -1,34 +1,32 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"path"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	logger := log.Scoped("serveReposGetByName", "")
 	return func(w http.ResponseWriter, r *http.Request) error {
 		repoName := api.RepoName(mux.Vars(r)["RepoName"])
-		repo, err := backend.NewRepos(db).GetByName(r.Context(), repoName)
+		repo, err := backend.NewRepos(logger, db).GetByName(r.Context(), repoName)
 		if err != nil {
 			return err
 		}
@@ -214,24 +212,6 @@ func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func serveUsersGetByUsername(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var username string
-		err := json.NewDecoder(r.Body).Decode(&username)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		user, err := database.Users(db).GetByUsername(r.Context(), username)
-		if err != nil {
-			return errors.Wrap(err, "Users.GetByUsername")
-		}
-		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
 func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var userID int32
@@ -252,13 +232,6 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
@@ -288,54 +261,6 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(commitID))
-		return nil
-	}
-}
-
-func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		defer r.Body.Close()
-		req := protocol.ExecRequest{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-
-		vars := mux.Vars(r)
-		repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
-		if err != nil {
-			http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
-			return nil
-		}
-
-		ctx := r.Context()
-		repo, err := db.Repos().Get(ctx, api.RepoID(repoID))
-		if err != nil {
-			return err
-		}
-
-		// Set repo name in gitserver request payload
-		req.Repo = repo.Name
-
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(req); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-
-		// Find the correct shard to query
-		addr, err := gitserver.NewClient(db).AddrForRepo(ctx, repo.Name)
-		if err != nil {
-			return err
-		}
-
-		director := func(req *http.Request) {
-			req.URL.Scheme = "http"
-			req.URL.Host = addr
-			req.URL.Path = "/exec"
-			req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
-			req.ContentLength = int64(buf.Len())
-		}
-
-		gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
 		return nil
 	}
 }

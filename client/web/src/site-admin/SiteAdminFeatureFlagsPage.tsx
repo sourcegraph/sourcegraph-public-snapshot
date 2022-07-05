@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Typography, Text } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Code, H3, Text } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -240,7 +240,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
         <React.Fragment key={name}>
             <div className={classNames('d-flex flex-column', styles.information)}>
                 <div>
-                    <Typography.H3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</Typography.H3>
+                    <H3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</H3>
 
                     {hasOverridesOrReferences && (
                         <Text className="m-0">
@@ -259,9 +259,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
             <span className={classNames('d-none d-md-inline', styles.progress)}>
                 <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                     <div>
-                        {node.__typename === 'FeatureFlagBoolean' && (
-                            <Typography.Code>{JSON.stringify(node.value)}</Typography.Code>
-                        )}
+                        {node.__typename === 'FeatureFlagBoolean' && <Code>{JSON.stringify(node.value)}</Code>}
                         {node.__typename === 'FeatureFlagRollout' && node.rolloutBasisPoints}
                     </div>
 

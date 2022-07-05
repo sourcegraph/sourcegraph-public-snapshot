@@ -86,11 +86,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
 
         return (
             <Form
-                className={classNames(
-                    'w-100 d-inline-flex justify-content-between flex-row',
-                    !compact && styles.noncompact,
-                    formClassName
-                )}
+                className={classNames(styles.form, !compact && styles.noncompact, formClassName)}
                 onSubmit={handleSubmit}
             >
                 {filters && onValueSelect && values && (
@@ -100,7 +96,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                 )}
                 {!hideSearch && (
                     <Input
-                        className={inputClassName}
+                        className={classNames(styles.input, inputClassName)}
                         type="search"
                         placeholder={inputPlaceholder}
                         name="query"

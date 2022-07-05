@@ -186,7 +186,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Group**. Groups together multiple expressions to match."
+                  "value": "**Delimiter**. Delimits regular expressions to match."
                 }
               ],
               "range": {

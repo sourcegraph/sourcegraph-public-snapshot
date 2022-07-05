@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Badge, Link, Typography } from '@sourcegraph/wildcard'
+import { Badge, Link, H3 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
@@ -127,7 +127,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             )}
             <div className={styles.batchChangeNodeContent}>
                 <div className="m-0 d-md-flex d-block align-items-baseline">
-                    <Typography.H3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
+                    <H3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
                         {displayNamespace && (
                             <div className="d-md-inline-block d-block">
                                 <Link
@@ -142,7 +142,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                         <Link className="test-batches-link mr-2" to={nodeLink}>
                             {node.name}
                         </Link>
-                    </Typography.H3>
+                    </H3>
                     <small className="text-muted d-sm-block">
                         created <Timestamp date={node.createdAt} now={now} />
                     </small>

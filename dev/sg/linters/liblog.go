@@ -4,15 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// lintLoggingLibraries enforces that only usages of lib/log are added
-func lintLoggingLibraries() lint.Runner {
-	const header = "Logging library linter"
-
+// lintLoggingLibraries enforces that only usages of github.com/sourcegraph/log are added
+func lintLoggingLibraries() *linter {
 	var (
 		bannedImports = []string{
 			// No standard log library
@@ -20,16 +18,16 @@ func lintLoggingLibraries() lint.Runner {
 			// No log15 - we only catch import changes for now, checking for 'log15.' is
 			// too sensitive to just code moves.
 			`"github.com/inconshreveable/log15"`,
-			// No zap - we re-rexport everything via lib/log
+			// No zap - we re-rexport everything via github.com/sourcegraph/log
 			`"go.uber.org/zap"`,
 			`"go.uber.org/zap/zapcore"`,
 		}
 
 		allowedFiles = []string{
+			// Let everything in dev use whatever they want
+			"dev", "enterprise/dev",
 			// Banned imports will match on the linter here
 			"dev/sg/linters/liblog.go",
-			// We re-export things here
-			"lib/log",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
 		}
@@ -46,7 +44,7 @@ func lintLoggingLibraries() lint.Runner {
 		for _, l := range hunk.AddedLines {
 			for _, banned := range bannedImports {
 				if strings.TrimSpace(l) == banned {
-					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
+					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
 						banned)
 				}
 			}
@@ -54,27 +52,16 @@ func lintLoggingLibraries() lint.Runner {
 		return nil
 	}
 
-	return func(ctx context.Context, state *repo.State) *lint.Report {
+	return runCheck("Logging library linter", func(ctx context.Context, out *std.Output, state *repo.State) error {
 		diffs, err := state.GetDiff("**/*.go")
 		if err != nil {
-			return &lint.Report{
-				Header: header,
-				Err:    err,
-			}
+			return err
 		}
 
 		errs := diffs.IterateHunks(checkHunk)
-
-		return &lint.Report{
-			Header: header,
-			Output: func() string {
-				if errs != nil {
-					return strings.TrimSpace(errs.Error()) +
-						"\n\nLearn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging"
-				}
-				return ""
-			}(),
-			Err: errs,
+		if errs != nil {
+			out.Write("Learn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging")
 		}
-	}
+		return errs
+	})
 }

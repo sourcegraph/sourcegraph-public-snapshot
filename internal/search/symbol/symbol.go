@@ -9,13 +9,14 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -95,7 +96,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
-		Trace:                  ot.ShouldTrace(ctx),
+		Trace:                  policy.ShouldTrace(ctx),
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     match * 25,
 		TotalMaxMatchCount:     match * 25,
@@ -150,11 +151,14 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
 	}
 
-	ctx, done := context.WithTimeout(ctx, 5*time.Second)
+	serverTimeout := 5 * time.Second
+	clientTimeout := 2 * serverTimeout
+
+	ctx, done := context.WithTimeout(ctx, clientTimeout)
 	defer done()
 	defer func() {
 		if ctx.Err() != nil && len(res) == 0 {
-			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
+			err = errors.Newf("The symbols service appears unresponsive, check the logs for errors.")
 		}
 	}()
 	var includePatternsSlice []string
@@ -167,6 +171,7 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
+		Timeout:         int(serverTimeout.Seconds()),
 	}
 	if query != nil {
 		searchArgs.Query = *query

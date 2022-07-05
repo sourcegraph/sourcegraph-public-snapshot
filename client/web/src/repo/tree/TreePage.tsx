@@ -1,10 +1,9 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
+import { mdiCodeJson, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
@@ -204,7 +203,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featurFlag named 'new-repo-page' and set its value to true.
+    // create a new featureFlag named 'new-repo-page' and set its value to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
     const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
@@ -276,7 +275,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             as={Link}
                             className="ml-1"
                         >
-                            <Icon role="img" as={CodeJsonIcon} aria-hidden={true} /> Search dependencies{' '}
+                            <Icon aria-hidden={true} svgPath={mdiCodeJson} /> Search dependencies{' '}
                             <Badge variant="info" className={classNames('text-uppercase')}>
                                 NEW
                             </Badge>
@@ -290,7 +289,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 as={Link}
                                 className="ml-1"
                             >
-                                <Icon role="img" as={BatchChangesIcon} aria-hidden={true} /> Create batch change
+                                <Icon as={BatchChangesIcon} aria-hidden={true} /> Create batch change
                             </Button>
                         )}
 
@@ -303,7 +302,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 className="ml-1"
                                 aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} role="img" aria-hidden={true} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />
                             </Button>
                         )}
                     </ButtonGroup>

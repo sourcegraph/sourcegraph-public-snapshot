@@ -22,7 +22,7 @@ func TestNewPlanJob(t *testing.T) {
 	}{{
 		query:      `foo context:@userA`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteralDefault,
+		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("user search context", `
 (ALERT
   (TIMEOUT
@@ -30,17 +30,19 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           RepoSearchJob)))))`),
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteralDefault,
+		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("global search explicit context", `
 (ALERT
   (TIMEOUT
@@ -54,7 +56,7 @@ func TestNewPlanJob(t *testing.T) {
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteralDefault,
+		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("global search implicit context", `
 (ALERT
   (TIMEOUT
@@ -68,7 +70,7 @@ func TestNewPlanJob(t *testing.T) {
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteralDefault,
+		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("nonglobal repo", `
 (ALERT
   (TIMEOUT
@@ -76,12 +78,14 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           RepoSearchJob)))))`),
 	}, {
 		query:      `ok ok`,
@@ -100,7 +104,7 @@ func TestNewPlanJob(t *testing.T) {
 	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteralDefault,
+		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("supported repo job literal", `
 (ALERT
   (TIMEOUT
@@ -207,15 +211,17 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         (REPOPAGER
           ZoektSymbolSearchJob)
         CommitSearchJob
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           (REPOPAGER
             SearcherSymbolSearchJob)
           RepoSearchJob)))))`),
@@ -245,15 +251,17 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         (REPOPAGER
           ZoektSymbolSearchJob)
         CommitSearchJob
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           (REPOPAGER
             SearcherSymbolSearchJob)
           RepoSearchJob)))))`),
@@ -332,7 +340,7 @@ func TestNewPlanJob(t *testing.T) {
 
 			inputs := &run.SearchInputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteralDefault,
+				PatternType:         query.SearchTypeLiteral,
 				Protocol:            tc.protocol,
 				OnSourcegraphDotCom: true,
 			}
@@ -350,7 +358,7 @@ func TestToEvaluateJob(t *testing.T) {
 		q, _ := query.ParseLiteral(input)
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteralDefault,
+			PatternType:         query.SearchTypeLiteral,
 			Protocol:            protocol,
 			OnSourcegraphDotCom: true,
 		}
@@ -501,10 +509,16 @@ func TestToTextPatternInfo(t *testing.T) {
 	}, {
 		input:  `patterntype:regexp // literal slash`,
 		output: autogold.Want("107", `{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+	}, {
+		input:  `repo:contains.file(Dockerfile)`,
+		output: autogold.Want("108", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":["Dockerfile"],"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+	}, {
+		input:  `repohasfile:Dockerfile`,
+		output: autogold.Want("109", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":["Dockerfile"],"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}}
 
 	test := func(input string) string {
-		searchType := overrideSearchType(input, query.SearchTypeLiteralDefault)
+		searchType := overrideSearchType(input, query.SearchTypeLiteral)
 		plan, err := query.Pipeline(query.Init(input, searchType))
 		if err != nil {
 			return "Error"
@@ -515,7 +529,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		b := plan[0]
 		types, _ := b.ToParseTree().StringValues(query.FieldType)
 		mode := search.Batch
-		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteralDefault)
+		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteral)
 		p := toTextPatternInfo(b, resultTypes, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
@@ -529,7 +543,7 @@ func TestToTextPatternInfo(t *testing.T) {
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteralDefault)
+	q, err := query.Parse(input, query.SearchTypeLiteral)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -541,7 +555,7 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
-			searchType = query.SearchTypeLiteralDefault
+			searchType = query.SearchTypeLiteral
 		case "structural":
 			searchType = query.SearchTypeStructural
 		}

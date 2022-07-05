@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H5, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -63,13 +62,8 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
-                <Typography.H5 className="flex-grow-1">Recent Searches</Typography.H5>
-                <Icon
-                    role="img"
-                    className="mr-1"
-                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
-                    aria-hidden={true}
-                />
+                <H5 className="flex-grow-1">Recent Searches</H5>
+                <Icon className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} aria-hidden={true} />
             </button>
 
             {!collapsed && (

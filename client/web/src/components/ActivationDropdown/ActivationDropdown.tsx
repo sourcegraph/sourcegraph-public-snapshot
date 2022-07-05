@@ -9,7 +9,7 @@ import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/op
 
 import { Activation, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { Menu, MenuButton, MenuList, Typography, Text } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuList, H3, Text } from '@sourcegraph/wildcard'
 
 import styles from './ActivationDropdown.module.scss'
 
@@ -132,11 +132,11 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                             isOpen={isOpen || this.props.alwaysShow}
                         >
                             <div className={classNames('dropdown-item-text', styles.activationDropdownHeader)}>
-                                <Typography.H3 className="mb-0">
+                                <H3 className="mb-0">
                                     {percentageDone(this.props.activation.completed) > 0
                                         ? 'Almost there!'
                                         : 'Welcome to Sourcegraph'}
-                                </Typography.H3>
+                                </H3>
                                 <Text className="mb-2">Complete the steps below to finish onboarding!</Text>
                             </div>
                             <ActivationChecklist

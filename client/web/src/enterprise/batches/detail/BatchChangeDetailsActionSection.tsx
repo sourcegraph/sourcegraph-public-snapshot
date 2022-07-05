@@ -1,9 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiInformation, mdiDelete, mdiPencil } from '@mdi/js'
 import * as H from 'history'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import InformationIcon from 'mdi-react/InformationIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -63,9 +61,9 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                 variant="danger"
             >
                 {isErrorLike(isDeleting) && (
-                    <Icon role="img" aria-hidden={true} data-tooltip={isDeleting} as={InformationIcon} />
+                    <Icon aria-hidden={true} data-tooltip={isDeleting} svgPath={mdiInformation} />
                 )}
-                <Icon role="img" aria-hidden={true} as={DeleteIcon} /> Delete
+                <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
             </Button>
         )
     }
@@ -73,7 +71,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
         <div className="d-flex">
             {showEditButton && (
                 <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
-                    <Icon role="img" aria-hidden={true} as={PencilIcon} /> Edit
+                    <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
                 </Button>
             )}
             <Button
@@ -84,7 +82,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                 outline={true}
                 as={Link}
             >
-                <Icon role="img" aria-hidden={true} as={DeleteIcon} /> Close
+                <Icon aria-hidden={true} svgPath={mdiDelete} /> Close
             </Button>
         </div>
     )

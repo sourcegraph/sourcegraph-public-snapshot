@@ -134,6 +134,14 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	return strptr(info.CloneProgress), nil
 }
 
+func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {
+	info, err := r.gitserverRepoInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return strptr(info.LastError), nil
+}
+
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
 	info, err := r.gitserverRepoInfo(ctx)
 	if err != nil {
@@ -221,7 +229,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		if err != nil {
 			return nil, err
 		}
-		repo, err = backend.NewRepos(r.db).Get(ctx, repoID)
+		repo, err = backend.NewRepos(r.logger, r.db).Get(ctx, repoID)
 		if err != nil {
 			return nil, err
 		}

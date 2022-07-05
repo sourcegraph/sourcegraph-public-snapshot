@@ -1,17 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import {
+    mdiCardTextOutline,
+    mdiFileDocumentEditOutline,
+    mdiAccountEdit,
+    mdiCheckboxBlankCircle,
+    mdiChevronDown,
+    mdiChevronRight,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import AccountEditIcon from 'mdi-react/AccountEditIcon'
-import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -77,7 +79,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -127,10 +129,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The commit message changed"
                             aria-label="The commit message changed"
-                            as={CardTextOutlineIcon}
+                            svgPath={mdiCardTextOutline}
                         />
                         <span className="text-nowrap">Message</span>
                     </div>
@@ -143,10 +144,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The diff changed"
                             aria-label="The diff changed"
-                            as={FileDocumentEditOutlineIcon}
+                            svgPath={mdiFileDocumentEditOutline}
                         />
                         <span className="text-nowrap">Diff</span>
                     </div>
@@ -159,10 +159,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The commit author details changed"
                             aria-label="The commit author details changed"
-                            as={AccountEditIcon}
+                            svgPath={mdiAccountEdit}
                         />
                         <span className="text-nowrap">Author</span>
                     </div>
@@ -186,7 +185,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -301,10 +300,9 @@ const ExpandedSection: React.FunctionComponent<
                     {node.delta.diffChanged && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
+                                svgPath={mdiCheckboxBlankCircle}
                             />
                         </small>
                     )}
@@ -317,10 +315,9 @@ const ExpandedSection: React.FunctionComponent<
                     {(node.delta.titleChanged || node.delta.bodyChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
+                                svgPath={mdiCheckboxBlankCircle}
                             />
                         </small>
                     )}
@@ -335,10 +332,9 @@ const ExpandedSection: React.FunctionComponent<
                         node.delta.commitMessageChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
+                                svgPath={mdiCheckboxBlankCircle}
                             />
                         </small>
                     )}
@@ -367,15 +363,15 @@ const ExpandedSection: React.FunctionComponent<
                         node.targets.changeset.currentSpec?.description.__typename ===
                             'GitBranchChangesetDescription' && (
                             <>
-                                <Typography.H3 className="text-muted">
+                                <H3 className="text-muted">
                                     <del>{node.targets.changeset.currentSpec.description.title}</del>
-                                </Typography.H3>
+                                </H3>
                                 <del className="text-muted">
                                     <Description description={node.targets.changeset.currentSpec.description.body} />
                                 </del>
                             </>
                         )}
-                    <Typography.H3>
+                    <H3>
                         {node.targets.changesetSpec.description.title}{' '}
                         <small>
                             by{' '}
@@ -392,7 +388,7 @@ const ExpandedSection: React.FunctionComponent<
                                 }
                             />
                         </small>
-                    </Typography.H3>
+                    </H3>
                     <Description description={node.targets.changesetSpec.description.body} />
                 </TabPanel>
 
@@ -415,7 +411,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         // An import changeset does not display a regular title
         if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
-            return <Typography.H3>Import changeset #{spec.targets.changesetSpec.description.externalID}</Typography.H3>
+            return <H3>Import changeset #{spec.targets.changesetSpec.description.externalID}</H3>
         }
 
         title = spec.targets.changesetSpec.description.title
@@ -434,7 +430,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
             : null
 
     return (
-        <Typography.H3>
+        <H3>
             {newTitle ? (
                 <>
                     <del className="mr-1">
@@ -450,7 +446,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
             ) : (
                 <ExternalChangesetTitle externalID={externalID} externalURL={externalURL} title={title} />
             )}
-        </Typography.H3>
+        </H3>
     )
 }
 

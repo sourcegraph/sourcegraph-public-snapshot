@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 
 # setup DIR for easier pathing test dir
 test_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
@@ -33,14 +33,19 @@ function cluster_cleanup() {
 function cluster_setup() {
   gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
-  kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
+  echo "--- create namespace"
+  kubectl create ns "$NAMESPACE" -oyaml --dry-run=client | kubectl apply -f -
   trap cluster_cleanup exit
+
+  echo "--- create storageclass"
   kubectl apply -f "$test_dir/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
   kubectl config current-context
-  sleep 15 #wait for namespace to come up
+  echo "--- wait for namespace to come up and check pods"
+  sleep 15 # wait for namespace to come up
   kubectl get -n "$NAMESPACE" pods
 
+  echo "--- rewrite manifests"
   pushd "$test_dir/deploy-sourcegraph"
   set +e
   set +o pipefail
@@ -85,7 +90,7 @@ function test_setup() {
   set +x +u
   # shellcheck disable=SC1091
   source /root/.sg_envrc
-  set -x -u
+  set -u
 
   echo "--- TEST: Checking Sourcegraph instance is accessible"
 

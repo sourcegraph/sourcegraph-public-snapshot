@@ -46,13 +46,15 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Typography,
+    Code,
+    H4,
     Text,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
@@ -90,6 +92,7 @@ interface ReferencesPanelProps
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
     React.PropsWithChildren<ReferencesPanelProps>
 > = props => (
+    // TODO: this won't be working with Router V6
     <MemoryRouter
         // Force router to remount the Panel when external location changes
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
@@ -383,7 +386,6 @@ export const ReferencesList: React.FunctionComponent<
                 <div className={classNames('d-flex justify-content-start mt-2', styles.filter)}>
                     <small>
                         <Icon
-                            role="img"
                             aria-hidden={true}
                             as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
                             size="sm"
@@ -456,13 +458,7 @@ export const ReferencesList: React.FunctionComponent<
                                 data-placement="left"
                                 size="sm"
                             >
-                                <Icon
-                                    role="img"
-                                    aria-hidden={true}
-                                    size="sm"
-                                    as={ArrowCollapseRightIcon}
-                                    className="border-0"
-                                />
+                                <Icon aria-hidden={true} size="sm" as={ArrowCollapseRightIcon} className="border-0" />
                             </Button>
                             <Link
                                 to={activeLocation.url}
@@ -529,11 +525,11 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
                         ) : (
-                            <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
+                        <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
                         </span>
@@ -617,7 +613,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <Text alignment="center" className="text-muted">
                     <i>
-                        Loading <Typography.Code>{props.activeLocation.file}</Typography.Code>...
+                        Loading <Code>{props.activeLocation.file}</Code>...
                     </i>
                 </Text>
             </>
@@ -629,7 +625,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <Text className="text-danger">
-                    Loading <Typography.Code>{props.activeLocation.file}</Typography.Code> failed:
+                    Loading <Code>{props.activeLocation.file}</Code> failed:
                 </Text>
                 <pre>{error.message}</pre>
             </div>
@@ -646,7 +642,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <Text alignment="center" className="text-warning">
                 <i>
-                    Highlighting <Typography.Code>{props.activeLocation.file}</Typography.Code> failed
+                    Highlighting <Code>{props.activeLocation.file}</Code> failed
                 </i>
             </Text>
         )
@@ -659,6 +655,7 @@ const SideBlob: React.FunctionComponent<
             history={props.history}
             location={props.location}
             disableStatusBar={true}
+            disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
             wrapCode={true}
             className={styles.sideBlobCode}
             blobInfo={{
@@ -748,9 +745,9 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
                     {open ? (
-                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small>
                         <Link
@@ -818,9 +815,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
@@ -844,7 +841,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             </Link>
                             <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
-                                {pluralize('occurrence', group.locations.length, 'occurences')})
+                                {pluralize('occurrence', group.locations.length, 'occurrences')})
                             </span>
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
@@ -859,25 +856,25 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             {group.locations.map(reference => {
                                 const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                                const locationLine = getPrePostLineContent(reference)
+                                const locationLine = getLineContent(reference)
                                 const lineWithHighlightedToken = locationLine.prePostToken ? (
                                     <>
                                         {locationLine.prePostToken.pre === '' ? (
                                             <></>
                                         ) : (
-                                            <Typography.Code>{locationLine.prePostToken.pre}</Typography.Code>
+                                            <Code>{locationLine.prePostToken.pre}</Code>
                                         )}
                                         <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                            <Typography.Code>{searchToken}</Typography.Code>
+                                            <Code>{locationLine.prePostToken.token}</Code>
                                         </mark>
                                         {locationLine.prePostToken.post === '' ? (
                                             <></>
                                         ) : (
-                                            <Typography.Code>{locationLine.prePostToken.post}</Typography.Code>
+                                            <Code>{locationLine.prePostToken.post}</Code>
                                         )}
                                     </>
                                 ) : locationLine.line ? (
-                                    <Typography.Code>{locationLine.line}</Typography.Code>
+                                    <Code>{locationLine.line}</Code>
                                 ) : (
                                     ''
                                 )
@@ -887,13 +884,12 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
                                     >
-                                        <Link
-                                            as={Button}
+                                        <Button
                                             onClick={event => {
                                                 event.preventDefault()
                                                 setActiveLocation(reference)
                                             }}
-                                            to={reference.url}
+                                            data-test-reference-url={reference.url}
                                             className={styles.locationLink}
                                         >
                                             <span className={styles.locationLinkLineNumber}>
@@ -901,7 +897,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                 {': '}
                                             </span>
                                             {lineWithHighlightedToken}
-                                        </Link>
+                                        </Button>
                                     </li>
                                 )
                             })}
@@ -914,11 +910,11 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 }
 
 interface LocationLine {
-    prePostToken?: { pre: string; post: string }
+    prePostToken?: { pre: string; token: string; post: string }
     line?: string
 }
 
-const getPrePostLineContent = (location: Location): LocationLine => {
+export const getLineContent = (location: Location): LocationLine => {
     const range = location.range
     if (range !== undefined) {
         const line = location.lines[range.start.line]
@@ -927,13 +923,18 @@ const getPrePostLineContent = (location: Location): LocationLine => {
             return {
                 prePostToken: {
                     pre: line.slice(0, range.start.character).trimStart(),
+                    token: line.slice(range.start.character, range.end.character),
                     post: line.slice(range.end.character),
                 },
                 line: line.trimStart(),
             }
         }
         return {
-            prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
+            prePostToken: {
+                pre: line.slice(0, range.start.character).trimStart(),
+                token: line.slice(range.start.character),
+                post: '',
+            },
             line: line.trimStart(),
         }
     }

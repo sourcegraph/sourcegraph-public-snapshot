@@ -1058,6 +1058,17 @@ type RandomizeUserPasswordResult {
 }
 
 """
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
+"""
+enum SurveyUseCase {
+    UNDERSTAND_NEW_CODE
+    FIX_SECURITY_VULNERABILITIES
+    REUSE_CODE
+    RESPOND_TO_INCIDENTS
+    IMPROVE_CODE_QUALITY
+}
+
+"""
 Input for a user satisfaction (NPS) survey submission.
 """
 input SurveySubmissionInput {
@@ -1071,11 +1082,15 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "What is the most important reason for the score you gave".
+    The answer to "You use Sourcegraph to...".
     """
-    reason: String
+    useCases: [SurveyUseCase!]
     """
-    The answer to "What can Sourcegraph do to provide a better product"
+    The answer to "What else do you use Sourcegraph to do?".
+    """
+    otherUseCase: String
+    """
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -1422,9 +1437,20 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
-    Retrieve the values of all feature flags for the current user
+    Retrieve a feature flag
     """
-    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+    featureFlag(name: String!): FeatureFlag!
+
+    """
+    Evaluates a feature flag for the current user
+    Returns null if feature flag does not exist
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean
+
+    """
+    Retrieve all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
     Retrieve the value of a feature flag for the organization
@@ -1849,9 +1875,11 @@ enum SearchVersion {
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
+    lucky
 }
 
 """
@@ -2118,6 +2146,10 @@ type SearchAlert {
     """
     description: String
     """
+    An identifier indicating the kind of alert
+    """
+    kind: String
+    """
     "Did you mean: ____" query proposals
     """
     proposedQueries: [SearchQueryDescription!]
@@ -2299,6 +2331,7 @@ enum ExternalServiceKind {
     PERFORCE
     PHABRICATOR
     PYTHONPACKAGES
+    RUSTPACKAGES
 }
 
 """
@@ -2642,7 +2675,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """
@@ -2772,6 +2805,10 @@ type MirrorRepositoryInfo {
     The state of this repository in the update queue.
     """
     updateQueue: UpdateQueue
+    """
+    The last error message, if any, returned when fetching or cloning the repo
+    """
+    lastError: String
 }
 
 """
@@ -2920,6 +2957,24 @@ type RepositoryTextSearchIndexedRef {
     indexed is false, this field's value is null.
     """
     indexedCommit: GitObject
+    """
+    EXPERIMENTAL: Information about the files that were not indexed.
+    """
+    skippedIndexed: SkippedIndexed
+}
+
+"""
+EXPERIMENTAL: Information about the files that were not indexed.
+"""
+type SkippedIndexed {
+    """
+    The count of files that were not indexed.
+    """
+    count: BigInt!
+    """
+    The query to retrieve the list of files that were not indexed.
+    """
+    query: String!
 }
 
 """
@@ -2967,6 +3022,10 @@ type PreviewRepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3011,6 +3070,10 @@ type RepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3864,6 +3927,16 @@ type GitCommit implements Node {
         """
         includePatterns: [String!]
     ): SymbolConnection!
+
+    """
+    Returns the comparison with another revision.
+    """
+    diff(
+        """
+        The base commit to compare to. Defaults to the commit's first parent.
+        """
+        base: String
+    ): RepositoryComparison!
 }
 
 """
@@ -4465,6 +4538,11 @@ type FileMatch {
     """
     lineMatches: [LineMatch!]!
     """
+    EXPERIMENTAL: This field is experimental and may be unstable.
+    The chunk matches.
+    """
+    chunkMatches: [ChunkMatch!]!
+    """
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
@@ -4491,6 +4569,24 @@ type LineMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean! @deprecated(reason: "will always be false")
+}
+
+"""
+A set of matched ranges contained in a chunk of contiguous lines.
+"""
+type ChunkMatch {
+    """
+    The contiguous set of full lines which contain the matches in ranges.
+    """
+    content: String!
+    """
+    The location of the beginning of content.
+    """
+    contentStart: Position!
+    """
+    The set of ranges within the content that matched the search query.
+    """
+    ranges: [Range!]!
 }
 
 """
@@ -5893,6 +5989,14 @@ type SurveyResponse {
     The answer to "What can Sourcegraph do to provide a better product"
     """
     better: String
+    """
+    The answer to "You use Sourcegraph to...".
+    """
+    useCases: [SurveyUseCase!]
+    """
+    The answer to "What else do you use Sourcegraph to do?".
+    """
+    otherUseCase: String
     """
     The time when this response was created.
     """

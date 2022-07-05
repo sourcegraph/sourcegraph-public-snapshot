@@ -1,12 +1,12 @@
 import React from 'react'
 
-import { Typography, Text } from '@sourcegraph/wildcard'
+import { H2, Text } from '@sourcegraph/wildcard'
 
 import styles from './EmptyChangesetListElement.module.scss'
 
 export const EmptyChangesetListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className={styles.emptyChangesetListElementBody}>
-        <Typography.H2 className="text-center mb-4">This batch change does not contain changesets</Typography.H2>
+        <H2 className="text-center mb-4">This batch change does not contain changesets</H2>
         <Text>This can occur for several reasons:</Text>
         <Text>
             <strong>

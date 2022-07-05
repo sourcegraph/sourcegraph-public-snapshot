@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { getInputStatus, Input } from '@sourcegraph/wildcard'
 
-import { InsightStep } from '../../../pages/insights/creation/search-insight/types'
+import { InsightStep } from '../../../pages/insights/creation/search-insight'
 import { FormGroup } from '../../form/form-group/FormGroup'
 import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 

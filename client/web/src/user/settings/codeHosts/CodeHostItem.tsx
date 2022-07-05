@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiAlertCircle, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Badge, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Badge, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -130,30 +129,28 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
             )}
             <div className="align-self-center">
                 {serviceConfig.pending ? (
-                    <Icon role="img" className="mb-0 mr-2 text-info" as={AlertCircleIcon} aria-label="Pending" />
+                    <Icon className="mb-0 mr-2 text-info" aria-label="Pending" svgPath={mdiAlertCircle} />
                 ) : service?.warning || service?.lastSyncError ? (
                     <Icon
-                        role="img"
                         className="mb-0 mr-2 text-warning"
-                        as={AlertCircleIcon}
                         aria-label="Warning or last sync error"
+                        svgPath={mdiAlertCircle}
                     />
                 ) : service?.id ? (
-                    <Icon role="img" className="mb-0 mr-2 text-success" as={CheckCircleIcon} aria-label="Success" />
+                    <Icon className="mb-0 mr-2 text-success" aria-label="Success" svgPath={mdiCheckCircle} />
                 ) : (
                     <Icon
-                        role="img"
                         className={classNames('mb-0 mr-2', styles.iconDashed)}
                         as={CircleDashedIcon}
                         aria-hidden={true}
                     />
                 )}
-                <Icon role="img" className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
+                <Icon className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
             </div>
             <div className="flex-1 align-self-center">
-                <Typography.H3 className="m-0">
+                <H3 className="m-0">
                     {name} {serviceConfig.pending ? <Badge color="secondary">Pending</Badge> : null}
-                </Typography.H3>
+                </H3>
             </div>
             <div className="align-self-center">
                 {/* Show one of: update, updating, connect, connecting buttons */}

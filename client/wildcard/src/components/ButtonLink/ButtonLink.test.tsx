@@ -39,7 +39,6 @@ describe('<ButtonLink />', () => {
                 size="lg"
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
                 data-pressed="true"
             >
                 Button link
@@ -58,7 +57,6 @@ describe('<ButtonLink />', () => {
                 size="lg"
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
                 data-pressed="true"
                 onClick={onSelect}
                 data-testid="button-link"

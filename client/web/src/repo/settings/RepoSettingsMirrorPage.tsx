@@ -1,8 +1,8 @@
 import * as React from 'react'
 
+import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import LockIcon from 'mdi-react/LockIcon'
 import { RouteComponentProps } from 'react-router'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
@@ -19,10 +19,12 @@ import {
     Link,
     Alert,
     Icon,
-    Typography,
+    Input,
     Text,
+    Code,
 } from '@sourcegraph/wildcard'
 
+import { TerminalLine } from '../../auth/Terminal'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -72,7 +74,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
             description =
-                <Typography.Code>{this.props.repo.mirrorInfo.cloneProgress}</Typography.Code> ||
+                <Code>{this.props.repo.mirrorInfo.cloneProgress}</Code> ||
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
@@ -235,7 +237,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                                     <Text>The remote repository is unreachable. Logs follow.</Text>
                                     <div>
                                         <pre className={styles.log}>
-                                            <Typography.Code>{this.state.result.error}</Typography.Code>
+                                            <Code>{this.state.result.error}</Code>
                                         </pre>
                                     </div>
                                 </Alert>
@@ -312,17 +314,21 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                 <Container className="repo-settings-mirror-page">
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
+
                     <div className="form-group">
-                        <Typography.Label>
-                            Remote repository URL{' '}
-                            <small className="text-info">
-                                <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
-                            </small>
-                        </Typography.Label>
-                        <input
-                            className="form-control"
+                        <Input
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
                             readOnly={true}
+                            className="mb-0"
+                            label={
+                                <>
+                                    {' '}
+                                    Remote repository URL{' '}
+                                    <small className="text-info">
+                                        <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
+                                    </small>
+                                </>
+                            }
                         />
                         {this.state.repo.viewerCanAdminister && (
                             <small className="form-text text-muted">
@@ -331,6 +337,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                             </small>
                         )}
                     </div>
+                    {this.state.repo.mirrorInfo.lastError && (
+                        <Alert variant="warning">
+                            <TerminalLine>Error updating repo:</TerminalLine>
+                            <TerminalLine>{this.state.repo.mirrorInfo.lastError}</TerminalLine>
+                        </Alert>
+                    )}
                     <UpdateMirrorRepositoryActionContainer
                         repo={this.state.repo}
                         onDidUpdateRepository={this.onDidUpdateRepository}
@@ -356,15 +368,15 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     repository is not reachable.
                                 </li>
                                 <li className={styles.step}>
-                                    <Typography.Code weight="bold">
+                                    <Code weight="bold">
                                         No ECDSA host key is known ... Host key verification failed?
-                                    </Typography.Code>{' '}
+                                    </Code>{' '}
                                     See{' '}
                                     <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
                                     </Link>{' '}
-                                    for how to provide an SSH <Typography.Code>known_hosts</Typography.Code> file with
-                                    the remote host's SSH host key.
+                                    for how to provide an SSH <Code>known_hosts</Code> file with the remote host's SSH
+                                    host key.
                                 </li>
                                 <li className={styles.step}>
                                     Consult{' '}

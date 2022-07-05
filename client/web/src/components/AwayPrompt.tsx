@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import * as H from 'history'
 import { useHistory } from 'react-router'
 
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, H3 } from '@sourcegraph/wildcard'
 
 type Func = () => void
 interface Props {
@@ -58,7 +58,7 @@ export const AwayPrompt: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     return pendingLocation ? (
         <Modal aria-labelledby={header}>
-            <Typography.H3 className="text-dark mb-4">{header}</Typography.H3>
+            <H3 className="text-dark mb-4">{header}</H3>
             <div className="form-group mb-4">{message}</div>
             <div className="d-flex justify-content-end">
                 <Button className="mr-2" onClick={() => closeModal(false)} outline={true} variant="secondary">

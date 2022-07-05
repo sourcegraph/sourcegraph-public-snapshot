@@ -4,7 +4,7 @@ import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Typography } from '@sourcegraph/wildcard'
+import { Label } from '@sourcegraph/wildcard'
 
 import { Toggle } from './Toggle'
 
@@ -12,9 +12,9 @@ const ToggleExample: typeof Toggle = ({ value, disabled, onToggle }) => (
     <div className="d-flex align-items-baseline mb-2">
         <Toggle value={value} onToggle={onToggle} disabled={disabled} title="Hello" className="mr-2" />
         <div>
-            <Typography.Label className="mb-0">
+            <Label className="mb-0">
                 {disabled ? 'Disabled ' : ''}Toggle {value ? 'on' : 'off'}
-            </Typography.Label>
+            </Label>
             <small className="field-message mt-0">This is helper text as needed</small>
         </div>
     </div>

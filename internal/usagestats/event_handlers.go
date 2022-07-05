@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,11 +33,11 @@ type Event struct {
 	FirstSourceURL *string
 	// LastSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
-	LastSourceURL *string
-	URL           string
-	Source        string
-	FeatureFlags  featureflag.FlagSet
-	CohortID      *string
+	LastSourceURL    *string
+	URL              string
+	Source           string
+	EvaluatedFlagSet featureflag.EvaluatedFlagSet
+	CohortID         *string
 	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
 	Referrer       *string
@@ -49,24 +50,24 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
 	return LogEvent(context.Background(), db, Event{
-		EventName:      eventName,
-		UserID:         userID,
-		UserCookieID:   "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
-		URL:            "",
-		Source:         "BACKEND",
-		Argument:       argument,
-		PublicArgument: publicArgument,
-		UserProperties: json.RawMessage("{}"),
-		FeatureFlags:   featureFlags,
-		CohortID:       cohortID,
-		DeviceID:       &deviceID,
-		InsertID:       &insertIDFinal,
-		EventID:        &eventID,
+		EventName:        eventName,
+		UserID:           userID,
+		UserCookieID:     "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
+		URL:              "",
+		Source:           "BACKEND",
+		Argument:         argument,
+		PublicArgument:   publicArgument,
+		UserProperties:   json.RawMessage("{}"),
+		EvaluatedFlagSet: evaluatedFlagSet,
+		CohortID:         cohortID,
+		DeviceID:         &deviceID,
+		InsertID:         &insertIDFinal,
+		EventID:          &eventID,
 	})
 }
 
@@ -152,7 +153,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if event.Referrer != nil {
 			referrer = *event.Referrer
 		}
-		featureFlagJSON, err := json.Marshal(event.FeatureFlags)
+		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return nil, err
 		}
@@ -214,16 +215,16 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 		}
 
 		databaseEvents = append(databaseEvents, &database.Event{
-			Name:            event.EventName,
-			URL:             event.URL,
-			UserID:          uint32(event.UserID),
-			AnonymousUserID: event.UserCookieID,
-			Source:          event.Source,
-			Argument:        event.Argument,
-			Timestamp:       timeNow().UTC(),
-			FeatureFlags:    event.FeatureFlags,
-			CohortID:        event.CohortID,
-			PublicArgument:  event.PublicArgument,
+			Name:             event.EventName,
+			URL:              event.URL,
+			UserID:           uint32(event.UserID),
+			AnonymousUserID:  event.UserCookieID,
+			Source:           event.Source,
+			Argument:         event.Argument,
+			Timestamp:        timeNow().UTC(),
+			EvaluatedFlagSet: event.EvaluatedFlagSet,
+			CohortID:         event.CohortID,
+			PublicArgument:   event.PublicArgument,
 		})
 	}
 
@@ -234,6 +235,8 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // may contain sensitive info on Sourcegraph Cloud. We replace all paths,
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
+//
+// Note that URL redaction also happens in web/src/tracking/util.ts.
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -244,8 +247,19 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return rawURL, nil
 	}
 
-	parsedURL.RawPath = "/redacted"
-	parsedURL.Path = "/redacted"
+	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
+	if strings.HasPrefix(parsedURL.Path, "/github.com") {
+		parsedURL.RawPath = "/github.com/redacted"
+		parsedURL.Path = "/github.com/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
+		parsedURL.RawPath = "/gitlab.com/redacted"
+		parsedURL.Path = "/gitlab.com/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/search") {
+		parsedURL.RawPath = "/search/redacted"
+		parsedURL.Path = "/search/redacted"
+	} else {
+		return rawURL, nil
+	}
 
 	marketingQueryParameters := map[string]struct{}{
 		"utm_source":   {},

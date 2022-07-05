@@ -66,7 +66,11 @@ func Test_setRepos(t *testing.T) {
           }
         ],
         "Indexed": false,
-        "UseFullDeadline": false
+        "UseFullDeadline": false,
+        "Features": {
+          "ContentBasedLangFilters": false,
+          "HybridSearch": false
+        }
       }
     }
   ]

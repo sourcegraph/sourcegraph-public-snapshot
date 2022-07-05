@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
 
@@ -16,6 +17,9 @@ import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -54,8 +58,10 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
+    const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
 
     // Only update processed results when results are valid to prevent
     // flashing loading screen when "Show more" button is clicked
@@ -92,10 +98,11 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         const newItemsToLoad = itemsToLoad + RECENT_FILES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
+        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentFiles: newItemsToLoad,
         })
-
+        setIsLoadingMore(false)
         if (data === undefined) {
             return
         }
@@ -103,33 +110,46 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         if (node === null || node.__typename !== 'User') {
             return
         }
+
         setRecentFiles(node.recentFilesLogs)
     }
 
     const contentDisplay = (
-        <div>
-            <div className="mb-1 mt-2">
-                <small>File</small>
-            </div>
-            {processedResults?.length && (
-                <ul className="list-group-flush list-group mb-2">
-                    {processedResults.map((recentFile, index) => (
-                        <li key={index} className="text-monospace mb-2 d-block">
-                            <small>
-                                <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
-                                    {recentFile.repoName} › {recentFile.filePath}
-                                </Link>
-                            </small>
-                        </li>
+        <>
+            <table className={classNames('mt-2', styles.resultsTable)}>
+                <thead>
+                    <tr className={styles.resultsTableRow}>
+                        <th>
+                            <small>File</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {processedResults?.map((recentFile, index) => (
+                        <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                            <td>
+                                <small>
+                                    <Link
+                                        to={recentFile.url}
+                                        ref={getItemRef(index)}
+                                        onClick={logFileClicked}
+                                        data-testid="recent-files-item"
+                                    >
+                                        {recentFile.repoName} › {recentFile.filePath}
+                                    </Link>
+                                </small>
+                            </td>
+                        </tr>
                     ))}
-                </ul>
-            )}
+                </tbody>
+            </table>
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent files</VisuallyHidden>}
             {recentFiles?.pageInfo.hasNextPage && (
                 <div>
                     <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
                 </div>
             )}
-        </div>
+        </>
     )
 
     return (

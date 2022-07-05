@@ -1,18 +1,23 @@
 import React from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { upperFirst } from 'lodash'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H3 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState, BatchSpecState } from '../../../graphql-operations'
 
 import { BatchChangeStatePill, BatchChangeStatePillProps } from './BatchChangeStatePill'
 
-const { add } = storiesOf('web/batches/list', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/list',
+    decorators: [decorator],
+}
+
+export default config
 
 const buildTestProps = (
     state: BatchChangeState,
@@ -39,17 +44,17 @@ const STATE_COMBINATIONS: BatchChangeStatePillProps[] = Object.values(BatchChang
     ])
 )
 
-add('BatchChangeStatePill', () => (
+export const BatchChangeStatePillStory: Story = () => (
     <WebStory>
         {props => (
             <div className="d-flex flex-column align-items-start">
                 {STATE_COMBINATIONS.map(({ state, latestExecutionState, currentSpecID, latestSpecID }) => (
                     <React.Fragment key={`${state}-${latestExecutionState || ''}`}>
-                        <Typography.H3>
+                        <H3>
                             {upperFirst(state.toLowerCase())}
                             {latestExecutionState ? `, ${upperFirst(latestExecutionState.toLowerCase())}` : ''}
                             {currentSpecID === latestSpecID ? '' : ' (latest is not applied)'}
-                        </Typography.H3>
+                        </H3>
                         <BatchChangeStatePill
                             className="mt-1 mb-3"
                             {...props}
@@ -63,4 +68,6 @@ add('BatchChangeStatePill', () => (
             </div>
         )}
     </WebStory>
-))
+)
+
+BatchChangeStatePillStory.storyName = 'BatchChangeStatePill'

@@ -2,8 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Text } from '../Typography'
-import { HeadingElement } from '../Typography/Heading/Heading'
+import { Text, HeadingElement } from '../Typography'
 
 import { Breadcrumb, BreadcrumbIcon, BreadcrumbText } from './Breadcrumb'
 import { Heading } from './Heading'

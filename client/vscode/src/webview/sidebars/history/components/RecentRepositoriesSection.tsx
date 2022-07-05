@@ -1,15 +1,14 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H5, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -67,13 +66,8 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
-                <Typography.H5 className="flex-grow-1">Recent Repositories</Typography.H5>
-                <Icon
-                    role="img"
-                    aria-hidden={true}
-                    className="mr-1"
-                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
-                />
+                <H5 className="flex-grow-1">Recent Repositories</H5>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
             </button>
 
             {!collapsed && (

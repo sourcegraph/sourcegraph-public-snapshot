@@ -14,30 +14,36 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// simpleParse converts each line into a symbol.
-func simpleParse(path string, bytes []byte) ([]Symbol, error) {
-	symbols := []Symbol{}
+// mockParser converts each line to a symbol.
+type mockParser struct{}
 
-	for _, line := range strings.Split(string(bytes), "\n") {
+func (mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
+	symbols := []*ctags.Entry{}
+
+	for lineNumber, line := range strings.Split(string(bytes), "\n") {
 		if line == "" {
 			continue
 		}
 
-		symbols = append(symbols, Symbol{Name: line})
+		symbols = append(symbols, &ctags.Entry{Name: line, Line: lineNumber + 1})
 	}
 
 	return symbols, nil
 }
+
+func (mockParser) Close() {}
 
 func TestIndex(t *testing.T) {
 	fatalIfError := func(err error, message string) {
@@ -45,6 +51,8 @@ func TestIndex(t *testing.T) {
 			t.Fatal(errors.Wrap(err, message))
 		}
 	}
+
+	logger := logtest.Scoped(t)
 
 	gitDir, err := os.MkdirTemp("", "rockskip-test-index")
 	fatalIfError(err, "faiMkdirTemp")
@@ -82,7 +90,7 @@ func TestIndex(t *testing.T) {
 	add := func(filename string, contents string) {
 		fatalIfError(os.WriteFile(path.Join(gitDir, filename), []byte(contents), 0644), "os.WriteFile")
 		gitRun("add", filename)
-		symbols, err := simpleParse(filename, []byte(contents))
+		symbols, err := mockParser{}.Parse(filename, []byte(contents))
 		fatalIfError(err, "simpleParse")
 		state[filename] = []string{}
 		for _, symbol := range symbols {
@@ -101,10 +109,10 @@ func TestIndex(t *testing.T) {
 	fatalIfError(err, "NewSubprocessGit")
 	defer git.Close()
 
-	db := dbtest.NewDB(t)
+	db := dbtest.NewDB(logger, t)
 	defer db.Close()
 
-	createParser := func() ParseSymbolsFunc { return simpleParse }
+	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
 
 	service, err := NewService(db, git, createParser, 1, 1, false, 1, 1, 1)
 	fatalIfError(err, "NewService")
@@ -112,7 +120,7 @@ func TestIndex(t *testing.T) {
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
-		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+		args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
 		symbols, err := service.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
@@ -247,7 +255,7 @@ func (g SubprocessGit) LogReverseEach(repo string, db database.DB, givenCommit s
 }
 
 func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
-	revList := exec.Command("git", git.RevListArgs(givenCommit)...)
+	revList := exec.Command("git", gitserver.RevListArgs(givenCommit)...)
 	revList.Dir = g.gitDir
 	output, err := revList.StdoutPipe()
 	if err != nil {
@@ -265,7 +273,7 @@ func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit stri
 		}
 	}()
 
-	return git.RevListEach(output, onCommit)
+	return gitserver.NewClient(db).RevListEach(output, onCommit)
 }
 
 func (g SubprocessGit) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {

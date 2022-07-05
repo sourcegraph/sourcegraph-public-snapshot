@@ -8,7 +8,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -120,7 +120,7 @@ export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren
                                         </span>
                                     ) : successfulInvites.has(person.email) ? (
                                         <span className="text-success ml-auto mr-3">
-                                            <Icon role="img" aria-hidden={true} className="mr-1" as={EmailCheckIcon} />
+                                            <Icon aria-hidden={true} className="mr-1" as={EmailCheckIcon} />
                                             Invited
                                         </span>
                                     ) : (
@@ -129,7 +129,7 @@ export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren
                                                 {person.email}
                                             </div>
                                             <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
-                                                <Icon role="img" aria-hidden={true} className="mr-1" as={EmailIcon} />
+                                                <Icon aria-hidden={true} className="mr-1" as={EmailIcon} />
                                                 Invite to Sourcegraph
                                             </div>
                                         </>
@@ -210,15 +210,10 @@ const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ 
                 <Card>
                     <CardBody>
                         <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
-                            <Typography.H2 className={classNames(styles.infoBox, 'mb-0')}>
-                                <Icon
-                                    role="img"
-                                    aria-hidden={true}
-                                    className="mr-2 text-muted"
-                                    as={InformationOutlineIcon}
-                                />
+                            <H2 className={classNames(styles.infoBox, 'mb-0')}>
+                                <Icon aria-hidden={true} className="mr-2 text-muted" as={InformationOutlineIcon} />
                                 What is this?
-                            </Typography.H2>
+                            </H2>
                             <div className="flex-grow-1" />
                             <Button
                                 variant="icon"
@@ -257,7 +252,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ 
             <div className={classNames('text-muted', styles.info)}>Collaborators from your repositories</div>
             <div className="flex-grow-1" />
             <div>
-                <Icon role="img" aria-hidden={true} className="mr-1 text-muted" as={InformationOutlineIcon} />
+                <Icon aria-hidden={true} className="mr-1 text-muted" as={InformationOutlineIcon} />
                 <Button
                     variant="link"
                     className={classNames(styles.info, 'p-0')}

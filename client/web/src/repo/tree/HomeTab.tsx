@@ -11,7 +11,7 @@ import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegr
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, H2, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -199,7 +199,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
     const RecentCommits: React.FunctionComponent<React.PropsWithChildren<RecentCommitsProps>> = ({ isSidebar }) => (
         <div className="mb-3">
-            <Typography.H2>Recent commits</Typography.H2>
+            <H2>Recent commits</H2>
             <FilteredConnection<
                 GitCommitFields,
                 Pick<
@@ -246,7 +246,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
             {!richHTML && richHTML !== 'loading' && (
                 <div className="text-center mt-5">
                     <img src="https://i.ibb.co/tztztYB/eric.png" alt="winner" className="mb-3 w-25" />
-                    <Typography.H2>No README available :)</Typography.H2>
+                    <H2>No README available :)</H2>
                 </div>
             )}
             {blobInfoOrError && richHTML && aborted && (
@@ -267,7 +267,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         return (
             <div className="container mw-100">
                 <RecentCommits isSidebar={false} />
-                <Typography.H2 className="mt-5">README.md</Typography.H2>
+                <H2 className="mt-5">README.md</H2>
                 <READMEFile />
             </div>
         )
@@ -286,7 +286,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         <RecentCommits isSidebar={true} />
                         {/* CODE-INTEL */}
                         <div className="mb-3">
-                            <Typography.H2>Code intel</Typography.H2>
+                            <H2>Code intel</H2>
                             {CodeIntelligenceBadge && (
                                 <CodeIntelligenceBadge
                                     repoName={repo.name}
@@ -298,7 +298,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">
-                            <Typography.H2>Batch changes</Typography.H2>
+                            <H2>Batch changes</H2>
                             {batchChangesEnabled ? (
                                 <HomeTabBatchChangeBadge repoName={repo.name} />
                             ) : (

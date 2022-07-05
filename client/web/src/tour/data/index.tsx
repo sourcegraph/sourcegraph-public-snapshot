@@ -5,7 +5,7 @@ import NotebookIcon from 'mdi-react/NotebookIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import ShieldSearchIcon from 'mdi-react/ShieldSearchIcon'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
@@ -209,6 +209,93 @@ export const visitorsTasks: TourTaskType[] = [
 ]
 
 /**
+ * Tour tasks for non-authenticated users
+ */
+export const visitorsTasksWithNotebook: TourTaskType[] = [
+    {
+        dataAttributes: {
+            order: 1,
+        },
+        steps: [
+            {
+                id: 'FindAcrossYourReposNotebook',
+                label: 'Find code across all your repos',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM=',
+                },
+            },
+        ],
+    },
+    {
+        dataAttributes: {
+            order: 2,
+        },
+        steps: [
+            {
+                id: 'SearchAndReviewCommitsNotebook',
+                label: 'Search & review commits',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTI=',
+                },
+            },
+        ],
+    },
+    {
+        dataAttributes: {
+            order: 3,
+        },
+        steps: [
+            {
+                id: 'RefineQueriesByFilteringNotebook',
+                label: 'Refine queries by filtering',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTQ=',
+                },
+            },
+        ],
+    },
+    {
+        dataAttributes: {
+            order: 4,
+        },
+        steps: [
+            {
+                id: 'StructuralSearchBasicsNotebook',
+                label: 'Structural search basics',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6Mzk4',
+                },
+            },
+        ],
+    },
+]
+
+export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
+    title: 'All done!',
+    icon: <CheckCircleIcon size="2.3rem" className="text-success" />,
+    steps: [
+        {
+            id: 'InstallOrSignUp',
+            label: 'Register for a free account',
+            tooltip:
+                'Registration unlocks additional features like IDE integrations, browser extensions, saved searches and more.',
+            action: {
+                type: 'new-tab-link',
+                variant: 'button-primary',
+                value:
+                    'https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
+            },
+            // This is done to mimic user creating an account, and signed in there is a different tour
+            completeAfterEvents: ['non-existing-event'],
+        },
+    ],
+}
+
+/**
  * Tour tasks for authenticated users. Extended/all use-cases.
  */
 export const authenticatedTasks: TourTaskType[] = [
@@ -241,14 +328,13 @@ export const authenticatedTasks: TourTaskType[] = [
                     <>
                         <strong>Discover code across multiple repositories</strong>
                         <br />
-                        The <Typography.Code>repo:</Typography.Code> keyword allows searching in multiple repositories
-                        matching a term. Use it to reference all of your projects or find open source examples.
+                        The <Code>repo:</Code> keyword allows searching in multiple repositories matching a term. Use it
+                        to reference all of your projects or find open source examples.
                     </>
                 ),
             },
         ],
     },
-
     {
         title: 'Install an IDE extension',
         icon: <PuzzleOutlineIcon size="2.3rem" />,

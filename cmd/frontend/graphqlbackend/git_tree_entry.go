@@ -23,11 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -84,9 +84,8 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		r.content, r.contentErr = git.ReadFile(
+		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
 			ctx,
-			r.db,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
@@ -193,7 +192,7 @@ func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
-	if submoduleInfo, ok := r.stat.Sys().(git.Submodule); ok {
+	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
 		return &gitSubmoduleResolver{submodule: submoduleInfo}
 	}
 	return nil
@@ -224,15 +223,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := gitserver.NewClient(r.db).ReadDir(
-		ctx,
-		r.db,
-		authz.DefaultSubRepoPermsChecker,
-		r.commit.repoResolver.RepoName(),
-		api.CommitID(r.commit.OID()),
-		path.Dir(r.Path()),
-		false,
-	)
+	entries, err := gitserver.NewClient(r.db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
@@ -358,14 +349,45 @@ func (r *symbolInfoResolver) Hover(ctx context.Context) (*string, error) {
 	return r.symbolInfo.Hover, nil
 }
 
-type symbolLocationResolver struct{ location types.RepoCommitPathRange }
+type symbolLocationResolver struct {
+	location types.RepoCommitPathMaybeRange
+}
 
-func (r *symbolLocationResolver) Repo() string     { return r.location.Repo }
-func (r *symbolLocationResolver) Commit() string   { return r.location.Commit }
-func (r *symbolLocationResolver) Path() string     { return r.location.Path }
-func (r *symbolLocationResolver) Line() int32      { return int32(r.location.Row) }
-func (r *symbolLocationResolver) Character() int32 { return int32(r.location.Column) }
-func (r *symbolLocationResolver) Length() int32    { return int32(r.location.Length) }
+func (r *symbolLocationResolver) Repo() string   { return r.location.Repo }
+func (r *symbolLocationResolver) Commit() string { return r.location.Commit }
+func (r *symbolLocationResolver) Path() string   { return r.location.Path }
+func (r *symbolLocationResolver) Line() int32 {
+	if r.location.Range == nil {
+		return 0
+	}
+	return int32(r.location.Range.Row)
+}
+func (r *symbolLocationResolver) Character() int32 {
+	if r.location.Range == nil {
+		return 0
+	}
+	return int32(r.location.Range.Column)
+}
+func (r *symbolLocationResolver) Length() int32 {
+	if r.location.Range == nil {
+		return 0
+	}
+	return int32(r.location.Range.Length)
+}
+func (r *symbolLocationResolver) Range() (*lineRangeResolver, error) {
+	if r.location.Range == nil {
+		return nil, nil
+	}
+	return &lineRangeResolver{rnge: r.location.Range}, nil
+}
+
+type lineRangeResolver struct {
+	rnge *types.Range
+}
+
+func (r *lineRangeResolver) Line() int32      { return int32(r.rnge.Row) }
+func (r *lineRangeResolver) Character() int32 { return int32(r.rnge.Column) }
+func (r *lineRangeResolver) Length() int32    { return int32(r.rnge.Length) }
 
 type fileInfo struct {
 	path  string

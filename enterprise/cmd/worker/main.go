@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -15,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -24,39 +27,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 
-	go setAuthzProviders()
+	go setAuthzProviders(logger)
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-janitor":          codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
-		"codehost-version-syncing":   versions.NewSyncingJob(),
-		"insights-job":               workerinsights.NewInsightsJob(),
-		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
-		"batches-janitor":            batches.NewJanitorJob(),
-		"batches-scheduler":          batches.NewSchedulerJob(),
-		"batches-reconciler":         batches.NewReconcilerJob(),
-		"batches-bulk-processor":     batches.NewBulkOperationProcessorJob(),
-		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
-		"executors-janitor":          executors.NewJanitorJob(),
-		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
+		"codehost-version-syncing":      versions.NewSyncingJob(),
+		"insights-job":                  workerinsights.NewInsightsJob(),
+		"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
+		"batches-janitor":               batches.NewJanitorJob(),
+		"batches-scheduler":             batches.NewSchedulerJob(),
+		"batches-reconciler":            batches.NewReconcilerJob(),
+		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
+		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
+		"executors-janitor":             executors.NewJanitorJob(),
+		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
+		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
+
+		// temporary
+		"codeintel-janitor":       codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {
@@ -73,14 +78,14 @@ func init() {
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func setAuthzProviders() {
+func setAuthzProviders(logger log.Logger) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)

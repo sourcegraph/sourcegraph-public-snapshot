@@ -24,8 +24,8 @@ import {
     Button,
     Link,
     Alert,
+    H3,
     Input,
-    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
@@ -99,12 +99,12 @@ const SearchContextRepositories: React.FunctionComponent<
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 {filteredRepositories.length > 0 && (
-                    <Typography.H3>
+                    <H3>
                         <span>
                             {filteredRepositories.length}{' '}
                             {pluralize('repository', filteredRepositories.length, 'repositories')}
                         </span>
-                    </Typography.H3>
+                    </H3>
                 )}
                 {repositories.length > 0 && (
                     <Input
@@ -155,7 +155,7 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
                             <LoadingSpinner inline={false} />
@@ -183,13 +183,20 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                     <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
                                     <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
                                     <PageHeader.Breadcrumb>
-                                        <div className="d-flex align-items-center">
-                                            <span>{searchContextOrError.spec}</span>
+                                        <div>
+                                            <span
+                                                className={classNames(
+                                                    !searchContextOrError.public && 'mr-2',
+                                                    styles.searchContextPageTitleSpec
+                                                )}
+                                            >
+                                                {searchContextOrError.spec}
+                                            </span>
                                             {!searchContextOrError.public && (
                                                 <Badge
                                                     variant="secondary"
                                                     pill={true}
-                                                    className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
+                                                    className={styles.searchContextPagePrivateBadge}
                                                     as="div"
                                                 >
                                                     Private

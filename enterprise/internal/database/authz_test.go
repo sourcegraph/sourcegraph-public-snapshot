@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -14,11 +16,12 @@ import (
 )
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create user with initially verified email
-	user, err := database.Users(db).Create(ctx, database.NewUser{
+	user, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,
@@ -69,7 +72,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := NewAuthzStore(db, clock).(*authzStore)
+	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	// Each update corresponds to a SetRepoPendingPermssions call
 	type update struct {
@@ -221,10 +224,11 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 }
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	s := NewAuthzStore(db, clock).(*authzStore)
+	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	type update struct {
 		repoID  int32
@@ -315,10 +319,11 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 }
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	s := NewAuthzStore(db, clock).(*authzStore)
+	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	// Set both effective and pending permissions for a user
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{

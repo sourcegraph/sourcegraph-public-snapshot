@@ -1,19 +1,18 @@
 import * as React from 'react'
 
-import * as jsonc from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import classNames from 'classnames'
 import * as H from 'history'
+import * as jsonc from 'jsonc-parser'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Alert, Code, H2, Text } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -25,10 +24,12 @@ import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: jsonc.ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 function editWithComments(
@@ -37,7 +38,7 @@ function editWithComments(
     value: any,
     comments: { [key: string]: string }
 ): jsonc.Edit {
-    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    const edit = jsonc.modify(config, path, value, defaultModificationOptions)[0]
     for (const commentKey of Object.keys(comments)) {
         edit.content = edit.content.replace(`"${commentKey}": true,`, comments[commentKey])
         edit.content = edit.content.replace(`"${commentKey}": true`, comments[commentKey])
@@ -55,7 +56,7 @@ const quickConfigureActions: {
         label: 'Set external URL',
         run: config => {
             const value = '<external URL>'
-            const edits = setProperty(config, ['externalURL'], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, ['externalURL'], value, defaultModificationOptions)
             return { edits, selectText: '<external URL>' }
         },
     },
@@ -64,7 +65,7 @@ const quickConfigureActions: {
         label: 'Set license key',
         run: config => {
             const value = '<license key>'
-            const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, ['licenseKey'], value, defaultModificationOptions)
             return { edits, selectText: '<license key>' }
         },
     },
@@ -226,7 +227,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     }
 
     private remoteRefreshes = new Subject<void>()
-    private remoteUpdates = new Subject<string>()
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -235,71 +235,17 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
-                site =>
+                site => {
                     this.setState({
                         site,
                         error: undefined,
                         loading: false,
-                    }),
+                    })
+                },
                 error => this.setState({ error, loading: false })
             )
         )
         this.remoteRefreshes.next()
-
-        this.subscriptions.add(
-            this.remoteUpdates
-                .pipe(
-                    tap(() => this.setState({ saving: true, error: undefined })),
-                    concatMap(newContents => {
-                        const lastConfiguration = this.state.site?.configuration
-                        const lastConfigurationID = lastConfiguration?.id || 0
-
-                        return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                this.setState({ saving: false, error })
-                                return []
-                            }),
-                            tap(() => {
-                                const oldContents = lastConfiguration?.effectiveContents || ''
-                                const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
-                                const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
-
-                                // Flipping these feature flags require a reload for the
-                                // UI to be rendered correctly in the navbar and the sidebar.
-                                const keys: (keyof SiteConfiguration)[] = [
-                                    'batchChanges.enabled',
-                                    'codeIntelAutoIndexing.enabled',
-                                ]
-
-                                if (
-                                    !keys.every(
-                                        key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key])
-                                    )
-                                ) {
-                                    window.location.reload()
-                                }
-                            })
-                        )
-                    }),
-                    tap(restartToApply => {
-                        if (restartToApply) {
-                            window.context.needServerRestart = restartToApply
-                        } else {
-                            // Refresh site flags so that global site alerts
-                            // reflect the latest configuration.
-                            // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
-                            refreshSiteFlags().subscribe({ error: error => console.error(error) })
-                        }
-                        this.setState({ restartToApply })
-                        this.remoteRefreshes.next()
-                    })
-                )
-                .subscribe(
-                    () => this.setState({ saving: false }),
-                    error => this.setState({ saving: false, error })
-                )
-        )
 
         this.subscriptions.add(
             this.siteReloads
@@ -418,9 +364,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             alerts.push(
                 <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
                     The configuration contains properties that are valid only in the
-                    <Typography.Code>values.yaml</Typography.Code> config file used for Kubernetes cluster deployments
-                    of Sourcegraph: <Typography.Code>{legacyKubernetesConfigProps.join(' ')}</Typography.Code>. You can
-                    disregard the validation warnings for these properties reported by the configuration editor.
+                    <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
+                    <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings for
+                    these properties reported by the configuration editor.
                 </Alert>
             )
         }
@@ -430,7 +376,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div>
                 <PageTitle title="Configuration - Admin" />
-                <Typography.H2>Site configuration</Typography.H2>
+                <H2>Site configuration</H2>
                 <Text>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.
@@ -465,9 +411,63 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
     }
 
-    private onSave = (value: string): void => {
+    private onSave = async (newContents: string): Promise<string> => {
         eventLogger.log('SiteConfigurationSaved')
-        this.remoteUpdates.next(value)
+
+        this.setState({ saving: true, error: undefined })
+
+        const lastConfiguration = this.state.site?.configuration
+        const lastConfigurationID = lastConfiguration?.id || 0
+
+        let restartToApply = false
+        try {
+            restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
+        } catch (error) {
+            console.error(error)
+            this.setState({ saving: false, error })
+        }
+
+        const oldContents = lastConfiguration?.effectiveContents || ''
+        const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
+        const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
+
+        // Flipping these feature flags require a reload for the
+        // UI to be rendered correctly in the navbar and the sidebar.
+        const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
+
+        if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
+            window.location.reload()
+        }
+
+        if (restartToApply) {
+            window.context.needServerRestart = restartToApply
+        } else {
+            // Refresh site flags so that global site alerts
+            // reflect the latest configuration.
+            try {
+                await refreshSiteFlags().toPromise()
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        this.setState({ restartToApply })
+
+        try {
+            const site = await fetchSite().toPromise()
+
+            this.setState({
+                site,
+                error: undefined,
+                loading: false,
+            })
+
+            this.setState({ saving: false })
+
+            return site.configuration.effectiveContents
+        } catch (error) {
+            this.setState({ error, loading: false })
+            throw error
+        }
     }
 
     private reloadSite = (): void => {

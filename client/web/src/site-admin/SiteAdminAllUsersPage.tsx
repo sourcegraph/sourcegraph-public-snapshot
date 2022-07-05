@@ -13,7 +13,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -152,7 +152,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                                    <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                                 </Button>
                             ) &&
                             ' '}
@@ -207,7 +207,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 size="sm"
                                 aria-label="Delete User"
                             >
-                                <Icon role="img" as={DeleteIcon} aria-hidden={true} />
+                                <Icon as={DeleteIcon} aria-hidden={true} />
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -220,7 +220,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 size="sm"
                                 aria-label="Nuke user (click for more information)"
                             >
-                                <Icon role="img" as={RadioactiveIcon} aria-hidden={true} />
+                                <Icon as={RadioactiveIcon} aria-hidden={true} />
                             </Button>
                         )}
                     </div>
@@ -417,10 +417,10 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
             <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Typography.H2 className="mb-0">Users</Typography.H2>
+                    <H2 className="mb-0">Users</H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <Icon role="img" as={AddIcon} aria-hidden={true} /> Create user account
+                            <Icon as={AddIcon} aria-hidden={true} /> Create user account
                         </Button>
                     </div>
                 </div>

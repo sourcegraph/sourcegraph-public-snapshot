@@ -42,6 +42,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
+		clients.Logger,
 		repos,
 		clients.Zoekt,
 		search.TextRequest,
@@ -55,6 +56,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 	searcherArgs := &search.SearcherParameters{
 		PatternInfo:     &p,
 		UseFullDeadline: true,
+		Features:        s.Features,
 	}
 
 	agg := streaming.NewAggregatingStream()
@@ -106,6 +108,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 			Repos:           unindexed,
 			Indexed:         false,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
+			Features:        searcherArgs.Features,
 		}
 
 		_, err := searcherJob.Run(ctx, clients, agg)

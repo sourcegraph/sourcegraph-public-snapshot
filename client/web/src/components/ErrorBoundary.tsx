@@ -5,9 +5,9 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 
 import { asError } from '@sourcegraph/common'
-import { Button, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Code, Text } from '@sourcegraph/wildcard'
 
-import { DatadogClient, isWebpackChunkError } from '../monitoring'
+import { isWebpackChunkError } from '../monitoring'
 
 import { HeroPage } from './HeroPage'
 
@@ -61,8 +61,6 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                 Sentry.captureException(error)
             })
         }
-
-        DatadogClient.addError(error, { errorInfo, originalException: error })
     }
 
     public componentDidUpdate(previousProps: Props): void {
@@ -112,7 +110,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                                 contact your site admin or Sourcegraph support.
                             </Text>
                             <Text>
-                                <Typography.Code className="text-wrap">{this.state.error.message}</Typography.Code>
+                                <Code className="text-wrap">{this.state.error.message}</Code>
                             </Text>
                             {this.props.extraContext}
                         </div>

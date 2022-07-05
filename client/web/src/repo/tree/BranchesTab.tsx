@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import * as H from 'history'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
@@ -90,7 +90,6 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithCh
         <div>
             <PageTitle title="All branches" />
             <FilteredConnection<GitRefFields>
-                inputClassName="w-100"
                 listClassName="list-group list-group-flush"
                 noun="branch"
                 pluralNoun="branches"
@@ -167,7 +166,7 @@ export const RepositoryBranchesOverviewTab: React.FunctionComponent<React.PropsW
                                         className="list-group-item list-group-item-action py-2 d-flex"
                                     >
                                         View more branches
-                                        <Icon role="img" as={ChevronRightIcon} aria-hidden={true} />
+                                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                                     </Button>
                                 )}
                             </div>

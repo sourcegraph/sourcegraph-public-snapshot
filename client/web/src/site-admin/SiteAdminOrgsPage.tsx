@@ -11,7 +11,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -72,7 +72,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>{' '}
                     <Button
                         to={`${orgURL(node.name)}/settings/members`}
@@ -81,7 +81,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={AccountIcon} aria-hidden={true} />{' '}
+                        <Icon as={AccountIcon} aria-hidden={true} />{' '}
                         {node.members && (
                             <>
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}
@@ -96,7 +96,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         aria-label="Delete organization"
                     >
-                        <Icon role="img" as={DeleteIcon} aria-hidden={true} />
+                        <Icon as={DeleteIcon} aria-hidden={true} />
                     </Button>
                 </div>
             </div>
@@ -126,9 +126,9 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
         <div className="site-admin-orgs-page">
             <PageTitle title="Organizations - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <Typography.H2 className="mb-0">Organizations</Typography.H2>
+                <H2 className="mb-0">Organizations</H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <Icon role="img" as={AddIcon} aria-hidden={true} /> Create organization
+                    <Icon as={AddIcon} aria-hidden={true} /> Create organization
                 </Button>
             </div>
             <Text>
@@ -139,7 +139,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
             {window.context.sourcegraphDotComMode ? (
                 <>
                     <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
-                    <Typography.H3>Enable early access</Typography.H3>
+                    <H3>Enable early access</H3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <Text>
                             Enable early access for organization code host connections and repositories on Cloud.

@@ -138,6 +138,7 @@ export const NotebookCommandPaletteInput = React.forwardRef<HTMLInputElement, No
                         onKeyDown={onKeyDown}
                         onChange={event => setInput(event.target.value)}
                         placeholder="Type something to get started, paste a file URL, or use / to open the command palette"
+                        aria-label="Type something to get started, paste a file URL, or use / to open the command palette"
                         onFocus={openCommandPalette}
                         data-testid="command-palette-input"
                     />

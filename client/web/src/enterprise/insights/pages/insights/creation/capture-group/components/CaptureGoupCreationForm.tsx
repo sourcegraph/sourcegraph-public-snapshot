@@ -3,18 +3,22 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Checkbox, Input, Typography, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
-import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
-import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
-import { useFieldAPI } from '../../../../../components/form/hooks/useField'
-import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import {
+    CodeInsightTimeStepPicker,
+    CodeInsightDashboardsVisibility,
+    FormGroup,
+    getDefaultInputProps,
+    useFieldAPI,
+    Form,
+    FORM_ERROR,
+    RepositoriesField,
+    LimitedAccessLabel,
+} from '../../../../../components'
 import { Insight } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks/use-ui-features'
+import { useUiFeatures } from '../../../../../hooks'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
@@ -140,7 +144,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                 }
             >
                 <Card className="p-3">
-                    <Typography.Label className="w-100">
+                    <Label className="w-100">
                         <div className="mb-2">Search query</div>
                         <QueryFieldSubtitle className="mb-3" />
 
@@ -152,7 +156,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                             className="mb-3"
                             {...getDefaultInputProps(query)}
                         />
-                    </Typography.Label>
+                    </Label>
 
                     <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
@@ -230,7 +234,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                     type="submit"
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"

@@ -1,9 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiPlus, mdiEmailOpenOutline, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import AddIcon from 'mdi-react/AddIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import { map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -11,7 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -104,13 +102,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     return (
         <div>
             <div className={styles.container}>
-                <Typography.Label htmlFor="invite-form__username">
-                    {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
-                </Typography.Label>
-                <Form className="form-inline align-items-start" onSubmit={onSubmit}>
-                    <input
-                        type="text"
-                        className="form-control mb-2 mr-sm-2"
+                <Form className="form-inline align-items-end" onSubmit={onSubmit}>
+                    <Input
+                        inputClassName="mb-2 mr-sm-2"
                         id="invite-form__username"
                         placeholder="Username"
                         onChange={onUsernameChange}
@@ -121,8 +115,10 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                         required={true}
                         spellCheck={false}
                         size={30}
+                        className="mb-0 w-auto flex-column align-items-start"
+                        label={viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
                     />
-                    <div className="d-block d-md-inline">
+                    <div className="d-block d-md-inline mb-sm-2">
                         {viewerCanAddUserToOrganization && (
                             <Button
                                 type="submit"
@@ -134,7 +130,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {loading === 'addUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon role="img" as={AddIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                                 )}{' '}
                                 Add member
                             </Button>
@@ -155,7 +151,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {loading === 'inviteUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon role="img" as={EmailOpenOutlineIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiEmailOpenOutline} />
                                 )}{' '}
                                 {emailInvitesEnabled
                                     ? viewerCanAddUserToOrganization
@@ -170,9 +166,8 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
                     <Text className="mb-0">
-                        Set <Typography.Code>email.smtp</Typography.Code> in{' '}
-                        <Link to="/site-admin/configuration">site configuration</Link> to send email notifications about
-                        invitations.
+                        Set <Code>email.smtp</Code> in <Link to="/site-admin/configuration">site configuration</Link> to
+                        send email notifications about invitations.
                     </Text>
                 </DismissibleAlert>
             )}
@@ -278,7 +273,7 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             <CopyableText label="Invitation URL" text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <Icon role="img" as={CloseIcon} aria-hidden={true} />
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )

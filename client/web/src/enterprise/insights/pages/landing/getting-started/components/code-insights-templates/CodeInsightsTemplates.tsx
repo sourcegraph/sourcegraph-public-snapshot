@@ -1,7 +1,7 @@
 import React, { MouseEvent, useContext, useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,11 +16,11 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    TooltipController,
+    DeprecatedTooltipController,
     Icon,
     Link,
     ProductStatusBadge,
-    Typography,
+    H2,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -64,7 +64,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChild
 
     return (
         <section {...otherProps}>
-            <Typography.H2 id="code-insights-templates">Templates</Typography.H2>
+            <H2 id="code-insights-templates">Templates</H2>
             <Text className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
@@ -208,7 +208,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
 
         requestAnimationFrame(() => {
-            TooltipController.forceUpdate()
+            DeprecatedTooltipController.forceUpdate()
         })
 
         event.preventDefault()
@@ -226,7 +226,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
                 aria-label="Copy Docker command to clipboard"
                 variant="icon"
             >
-                <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
+                <Icon aria-hidden={true} svgPath={mdiContentCopy} />
             </Button>
         </CodeInsightsQueryBlock>
     )

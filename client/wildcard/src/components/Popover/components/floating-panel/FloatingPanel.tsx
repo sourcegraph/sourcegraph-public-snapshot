@@ -15,6 +15,15 @@ export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element'>, 
      * Renders nothing if target isn't specified.
      */
     target: HTMLElement | null
+
+    /**
+     * The root element where Popover renders popover content element.
+     * This element is used when we render popover with fixed strategy -
+     * outside the dom tree.
+     */
+    rootRender?: HTMLElement | null
+
+    forceHidden?: boolean
 }
 
 /**
@@ -37,6 +46,8 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constraintPadding,
         targetPadding,
         constraint,
+        rootRender,
+        forceHidden,
         ...otherProps
     } = props
 
@@ -64,6 +75,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
             constrainToScrollParents,
             overflowToScrollParents,
             flipping,
+            forceHidden,
         })
 
         return unsubscribe
@@ -82,6 +94,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constrainToScrollParents,
         overflowToScrollParents,
         flipping,
+        forceHidden,
     ])
 
     if (strategy === Strategy.Absolute) {
@@ -100,6 +113,6 @@ export const FloatingPanel = forwardRef((props, reference) => {
         <Component {...otherProps} ref={references} className={classNames(styles.floatingPanel, otherProps.className)}>
             {props.children}
         </Component>,
-        document.body
+        rootRender ?? document.body
     )
 }) as ForwardReferenceComponent<'div', PropsWithChildren<FloatingPanelProps>>

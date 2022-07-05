@@ -1,4 +1,4 @@
-import { parse as parseJSONC } from '@sqs/jsonc-parser'
+import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 
@@ -161,6 +161,7 @@ const siteAdminRepositoryFieldsFragment = gql`
             cloned
             cloneInProgress
             updatedAt
+            lastError
         }
         externalRepository {
             serviceType

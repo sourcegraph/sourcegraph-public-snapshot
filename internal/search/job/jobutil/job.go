@@ -39,7 +39,14 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 		}
 		children = append(children, child)
 	}
-	return NewAlertJob(inputs, NewOrJob(children...)), nil
+
+	jobTree := NewOrJob(children...)
+
+	if inputs.PatternType == query.SearchTypeLucky {
+		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+	}
+
+	return NewAlertJob(inputs, jobTree), nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -126,9 +133,9 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
-				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Concurrency:          4,
 			})
 		}
 
@@ -174,7 +181,80 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		basicJob = NewTimeoutJob(timeout, basicJob)
 	}
 
+	{
+		// WORKAROUND: On Sourcegraph.com not all repositories are
+		// indexed. So searcher (which does no ranking) can race with
+		// Zoekt (which does ranking). This leads to unpleasant results,
+		// especially due to the large index on Sourcegraph.com. We have
+		// this hacky workaround here to ensure we search Zoekt first.
+		// Context:
+		// https://github.com/sourcegraph/sourcegraph/issues/35993
+		// https://github.com/sourcegraph/sourcegraph/issues/35994
+
+		if inputs.OnSourcegraphDotCom && b.Pattern != nil {
+			if _, ok := b.Pattern.(query.Pattern); ok {
+				basicJob = orderSearcherJob(basicJob)
+			}
+		}
+
+	}
+
 	return basicJob, nil
+}
+
+// orderSearcherJob ensures that, if a searcher job exists, then it is only ever
+// run sequentially after a Zoekt search has returned all its results.
+func orderSearcherJob(j job.Job) job.Job {
+	// First collect the searcher job, if any, and delete it from the tree.
+	// This job will be sequentially ordered after any Zoekt jobs. We assume
+	// at most one searcher job exists.
+	var pagedSearcherJob job.Job
+	collector := Mapper{
+		MapJob: func(current job.Job) job.Job {
+			if pager, ok := current.(*repoPagerJob); ok {
+				if _, ok := pager.child.(*searcher.TextSearchJob); ok {
+					pagedSearcherJob = pager
+					return &NoopJob{}
+				}
+			}
+			return current
+		},
+	}
+
+	newJob := collector.Map(j)
+
+	if pagedSearcherJob == nil {
+		// No searcher job, nothing to worry about.
+		return j
+	}
+
+	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
+	// We assume at most one of either two Zoekt search jobs may exist.
+	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
+	orderer := Mapper{
+		MapJob: func(current job.Job) job.Job {
+			if pager, ok := current.(*repoPagerJob); ok {
+				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
+					seenZoektRepoSearch = true
+					return NewSequentialJob(false, current, pagedSearcherJob)
+				}
+			}
+			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
+				seenZoektGlobalSearch = true
+				return NewSequentialJob(false, current, pagedSearcherJob)
+			}
+			return current
+		},
+	}
+
+	newJob = orderer.Map(newJob)
+
+	if !seenZoektRepoSearch && !seenZoektGlobalSearch {
+		// There were no Zoekt jobs, so no need to modify the tree. Return original.
+		return j
+	}
+
+	return newJob
 }
 
 // NewFlatJob creates all jobs that are built from a query.Flat.
@@ -215,6 +295,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
+					Features:        features,
 				}
 
 				addJob(&repoPagerJob{
@@ -260,6 +341,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
+				Features:        features,
 			}
 
 			addJob(&structural.SearchJob{
@@ -445,7 +527,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 
@@ -541,7 +623,6 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	}
 
 	visibility := b.Visibility()
-	commitAfter := b.FindValue(query.FieldRepoHasCommitAfter)
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
@@ -557,7 +638,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		OnlyArchived:      archived == query.Only,
 		NoArchived:        archived == query.No,
 		Visibility:        visibility,
-		CommitAfter:       commitAfter,
+		CommitAfter:       b.RepoContainsCommitAfter(),
 	}
 }
 
@@ -706,15 +787,16 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
-func toFeatures(flags featureflag.FlagSet) search.Features {
-	if flags == nil {
-		flags = featureflag.FlagSet{}
+func toFeatures(flagSet *featureflag.FlagSet) search.Features {
+	if flagSet == nil {
+		flagSet = &featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
 		log15.Warn("search feature flags are not available")
 	}
 
 	return search.Features{
-		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 	}
 }
 

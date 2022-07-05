@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 
-import { SourcegraphIcon, Card, CardBody, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { SourcegraphIcon, Card, CardBody, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -55,9 +55,7 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWit
                             <GithubIcon className={classNames(styles.appLogo)} />
                         )}
                     </div>
-                    <Typography.H2 className="text-center">
-                        Sourcegraph Cloud for GitHub installed on {data?.account.login}
-                    </Typography.H2>
+                    <H2 className="text-center">Sourcegraph Cloud for GitHub installed on {data?.account.login}</H2>
                     <br />
                     <Text alignment="center" className="mr-3 ml-3">
                         <b>One more thing:</b> to finish setup, let the requestor know that the Sourcegraph Cloud for

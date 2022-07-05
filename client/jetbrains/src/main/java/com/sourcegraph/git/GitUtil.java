@@ -20,28 +20,24 @@ public class GitUtil {
         String remoteUrl = "";
         String branchName = "";
         try {
-            String defaultBranchNameSetting = ConfigUtil.getDefaultBranchName(project);
-            String repoRootPath = getRepoRootPath(filePath);
+            String directoryPath = filePath.substring(0, filePath.lastIndexOf("/"));
+            String repoRootPath = getRepoRootPath(directoryPath);
 
             // Determine file path, relative to repository root.
             relativePath = filePath.substring(repoRootPath.length() + 1);
 
-            // TODO: It’d make more sense to default to the current branch if it exists on the remote, and only fall back to the default branch if it doesn’t.
-            branchName = defaultBranchNameSetting != null ? defaultBranchNameSetting : getCurrentBranchName(repoRootPath);
-            // If there’s no default branch name setting and the current branch doesn’t exist on the remote, use the default branch.
-            if (!doesRemoteBranchExist(branchName, repoRootPath) && defaultBranchNameSetting == null) {
-                branchName = "master"; // TODO: Make this dynamic!
+            // If the current branch doesn’t exist on the remote, use the default branch.
+            branchName = getCurrentBranchName(repoRootPath);
+            if (!doesRemoteBranchExist(branchName, repoRootPath)) {
+                branchName = ConfigUtil.getDefaultBranchName(project);
             }
 
             remoteUrl = getConfiguredRemoteUrl(repoRootPath);
-            // replace remoteURL if config option is not null
             String r = ConfigUtil.getRemoteUrlReplacements(project);
-            if (r != null) {
-                String[] replacements = r.trim().split("\\s*,\\s*");
-                // Check if the entered values are pairs
-                for (int i = 0; i < replacements.length && replacements.length % 2 == 0; i += 2) {
-                    remoteUrl = remoteUrl.replace(replacements[i], replacements[i + 1]);
-                }
+            String[] replacements = r.trim().split("\\s*,\\s*");
+            // Check if the entered values are pairs
+            for (int i = 0; i < replacements.length && replacements.length % 2 == 0; i += 2) {
+                remoteUrl = remoteUrl.replace(replacements[i], replacements[i + 1]);
             }
         } catch (Exception err) {
             Logger.getInstance(GitUtil.class).info(err);

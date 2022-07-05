@@ -13,7 +13,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -105,7 +104,7 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
+	conditions := []*sqlf.Query{sqlf.Sprintf("workerutil_test.id < 4")}
 	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, conditions)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
@@ -257,7 +256,7 @@ func TestStoreDequeueConditions(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
+	conditions := []*sqlf.Query{sqlf.Sprintf("workerutil_test.id < 4")}
 	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", conditions)
 	assertDequeueRecordResult(t, 3, record, ok, err)
 }
@@ -395,9 +394,9 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	options.MaxNumRetries = 5
 	options.RetryAfter = 5 * time.Minute
 	options.ColumnExpressions = []*sqlf.Query{
-		sqlf.Sprintf("w.id"),
-		sqlf.Sprintf("w.state"),
-		sqlf.Sprintf("w.num_resets"),
+		sqlf.Sprintf("workerutil_test.id"),
+		sqlf.Sprintf("workerutil_test.state"),
+		sqlf.Sprintf("workerutil_test.num_resets"),
 	}
 	store := testStore(db, options)
 
@@ -434,9 +433,9 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	options.MaxNumRetries = 5
 	options.RetryAfter = 0
 	options.ColumnExpressions = []*sqlf.Query{
-		sqlf.Sprintf("w.id"),
-		sqlf.Sprintf("w.state"),
-		sqlf.Sprintf("w.num_resets"),
+		sqlf.Sprintf("workerutil_test.id"),
+		sqlf.Sprintf("workerutil_test.state"),
+		sqlf.Sprintf("workerutil_test.num_resets"),
 	}
 
 	store := testStore(db, options)
@@ -966,7 +965,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	tx, err := db.(dbutil.TxBeginner).BeginTx(context.Background(), nil)
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
