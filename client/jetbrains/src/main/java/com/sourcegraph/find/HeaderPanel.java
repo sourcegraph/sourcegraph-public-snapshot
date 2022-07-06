@@ -23,13 +23,13 @@ public class HeaderPanel extends BorderLayoutPanel {
         super();
         setBorder(new JBEmptyBorder(5));
 
-        openAuthenticationSettingsAction = new DumbAwareAction("Set Up Your Sourcegraph Account", "Opens plugin settings page in Settings/Preferences", AllIcons.General.User) {
+        openAuthenticationSettingsAction = new DumbAwareAction("Set Up Your Sourcegraph Account", "Opens plugin settings page in Settings/Preferences", Icons.Account) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
             }
         };
-        AnAction openPluginSettingsAction = new DumbAwareAction("Open Plugin Settings", "Opens the plugin settings page in Settings/Preferences", AllIcons.General.GearPlain) {
+        AnAction openPluginSettingsAction = new DumbAwareAction("Open Plugin Settings", "Opens the plugin settings page in Settings/Preferences", Icons.GearPlain) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
@@ -37,7 +37,7 @@ public class HeaderPanel extends BorderLayoutPanel {
         };
         actionGroup = new DefaultActionGroup(openAuthenticationSettingsAction, openPluginSettingsAction);
         ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("find-on-sourcegraph-popup-toolbar", actionGroup, true);
-        toolbar.setMinimumButtonSize(JBUI.size(14, 14));
+        toolbar.setMinimumButtonSize(JBUI.size(22, 22));
         toolbar.setTargetComponent(this);
         actionGroup.remove(openAuthenticationSettingsAction);
 
