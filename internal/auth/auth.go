@@ -8,32 +8,34 @@ import (
 
 type TryToSaveToken func(string) string
 
-type TokenWithRefresherer struct {
-	Token       string
-	Refresherer TryToSaveToken
+type TokenWithRefresher struct {
+	Token     string
+	Refresher TryToSaveToken
 }
 
-type AuthenticatorWithRefresherer interface {
+type AuthenticatorWithRefresher interface {
 	Authenticate(*http.Request) error
 	Hash() string
 }
 
-var _ AuthenticatorWithRefresherer = &TokenWithRefresherer{}
+var _ AuthenticatorWithRefresher = &TokenWithRefresher{}
 
-func (t *TokenWithRefresherer) Authenticate(req *http.Request) error {
+func (t *TokenWithRefresher) Authenticate(req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+t.Token)
-	// TODO: add steps for auth, retry, refresh
 
-	//TODO - block bellow to be used in other parts of the code, to save the updated tok to the db.
-	// saveFunction := func(token string) string { return token }
-	// t.Refresherer = saveFunction
+	// TODO 1: add steps for auth, retry, refresh
+
+	saveFunction := func(string) string { return t.Token }
+	t.Refresher = saveFunction
+
+	//TODO 1: try to use the examples bellow in other parts of the code where the client is used...
 	// auth := CustomAuthenticator{token, saveFunc}
 	// client := client.WithAuthenticator(auth)
 
 	return nil
 }
 
-func (t *TokenWithRefresherer) Hash() string {
+func (t *TokenWithRefresher) Hash() string {
 	key := sha256.Sum256([]byte(t.Token))
 	return hex.EncodeToString(key[:])
 }
