@@ -7,6 +7,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -150,7 +152,7 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	return secretsEnv, errs
 }
 
-func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string]string) (*startedCmd, error) {
+func startCmd(ctx context.Context, dir string, cmd Command, parentEnv, envOverrides map[string]string) (*startedCmd, error) {
 	sc := &startedCmd{
 		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
 		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
@@ -168,7 +170,8 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 			cmd.Name, output.EmojiFailure, err.Error()))
 	}
 
-	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
+	sc.Cmd.Env = envToEnviron(makeEnv(parentEnv, secretsEnv, cmd.Env, envOverrides))
+	spew.Dump(envOverrides)
 
 	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(commandCtx, cmd.Name, std.Out.Output)

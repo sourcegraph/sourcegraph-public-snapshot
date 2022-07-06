@@ -50,10 +50,11 @@ func parseConfig(data []byte) (*Config, error) {
 }
 
 type Commandset struct {
-	Name     string            `yaml:"-"`
-	Commands []string          `yaml:"commands"`
-	Checks   []string          `yaml:"checks"`
-	Env      map[string]string `yaml:"env"`
+	Name         string            `yaml:"-"`
+	Commands     []string          `yaml:"commands"`
+	Checks       []string          `yaml:"checks"`
+	Env          map[string]string `yaml:"env"`
+	EnvOverrides map[string]string `yaml:"envOverrides"`
 
 	// If this is set to true, then the commandset requires the dev-private
 	// repository to be cloned at the same level as the sourcegraph repository.
@@ -97,6 +98,9 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 
 	for k, v := range other.Env {
 		merged.Env[k] = v
+	}
+	for k, v := range other.EnvOverrides {
+		merged.EnvOverrides[k] = v
 	}
 
 	merged.RequiresDevPrivate = other.RequiresDevPrivate

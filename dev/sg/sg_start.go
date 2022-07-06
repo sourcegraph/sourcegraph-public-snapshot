@@ -227,7 +227,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, verbose, cmds...)
+	return run.Commands(ctx, env, set.EnvOverrides, verbose, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

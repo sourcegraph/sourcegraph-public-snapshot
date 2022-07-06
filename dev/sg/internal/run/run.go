@@ -27,7 +27,7 @@ import (
 
 const MAX_CONCURRENT_BUILD_PROCS = 4
 
-func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
+func Commands(ctx context.Context, parentEnv, overrideEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -62,6 +62,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		okayToStart:      okayToStart,
 		repositoryRoot:   root,
 		parentEnv:        parentEnv,
+		overrideEnv:      overrideEnv,
 	}
 
 	cmdNames := make(map[string]struct{}, len(cmds))
@@ -119,6 +120,7 @@ type cmdRunner struct {
 
 	repositoryRoot string
 	parentEnv      map[string]string
+	overrideEnv    map[string]string
 }
 
 func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan struct{}) error {
@@ -158,15 +160,18 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 				if startedOnce {
 					std.Out.WriteLine(output.Styledf(output.StylePending, "Installing %s...", cmd.Name))
 				}
+
+				finalEnv := makeEnv(c.parentEnv, cmd.Env, c.overrideEnv)
+
 				if cmd.Install != "" && cmd.InstallFunc == "" {
-					return BashInRoot(ctx, cmd.Install, makeEnv(c.parentEnv, cmd.Env))
+					return BashInRoot(ctx, cmd.Install, envToEnviron(finalEnv))
 				} else if cmd.Install == "" && cmd.InstallFunc != "" {
 					fn, ok := installFuncs[cmd.InstallFunc]
 					if !ok {
 						c.installSemaphore.Release(1)
 						return "", errors.Newf("no install func with name %q found", cmd.InstallFunc)
 					}
-					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
+					return "", fn(ctx, finalEnv)
 				}
 
 				return "", nil
@@ -223,7 +228,7 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 			// Run it
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", cmd.Name))
 
-			sc, err := startCmd(ctx, c.repositoryRoot, cmd, c.parentEnv)
+			sc, err := startCmd(ctx, c.repositoryRoot, cmd, c.parentEnv, c.overrideEnv)
 			if err != nil {
 				return err
 			}
@@ -536,39 +541,20 @@ var installFuncs = map[string]installFunc{
 	},
 }
 
+func envToEnviron(env map[string]string) (environ []string) {
+	for k, v := range env {
+		environ = append(environ, fmt.Sprintf("%s=%s", k, v))
+	}
+	return environ
+}
+
 // makeEnv merges environments starting from the left, meaning the first environment will be overriden by the second one, skipping
 // any key that has been explicitly defined in the current environment of this process. This enables users to manually overrides
 // environment variables explictly, i.e FOO=1 sg start will have FOO=1 set even if a command or commandset sets FOO.
-func makeEnv(envs ...map[string]string) (combined []string) {
-	for k, v := range makeEnvMap(envs...) {
-		combined = append(combined, fmt.Sprintf("%s=%s", k, v))
-	}
-	return combined
-}
-
-func makeEnvMap(envs ...map[string]string) map[string]string {
+func makeEnv(envs ...map[string]string) map[string]string {
 	combined := map[string]string{}
-	for _, pair := range os.Environ() {
-		elems := strings.SplitN(pair, "=", 2)
-		if len(elems) != 2 {
-			panic("space/time continuum wrong")
-		}
-
-		combined[elems[0]] = elems[1]
-	}
-
 	for _, env := range envs {
 		for k, v := range env {
-			if _, ok := os.LookupEnv(k); ok {
-				// If the key is already set in the process env, we don't
-				// overwrite it. That way we can do something like:
-				//
-				//	SRC_LOG_LEVEL=debug sg run enterprise-frontend
-				//
-				// to overwrite the default value in sg.config.yaml
-				continue
-			}
-
 			// Expand env vars and keep track of previously set env vars
 			// so they can be used when expanding too.
 			// TODO: using range to iterate over the env is not stable and thus
@@ -585,8 +571,25 @@ func makeEnvMap(envs ...map[string]string) map[string]string {
 				}
 				return os.Getenv(lookup)
 			})
+
+			// Set directly, overriding whatever was provided before.
 			combined[k] = expanded
 		}
+	}
+
+	// If the key is already set in the process env, we overwrite whatever is provided
+	// by config. That way we can do something like:
+	//
+	//	SRC_LOG_LEVEL=debug sg run enterprise-frontend
+	//
+	// to overwrite the default value in sg.config.yaml
+	for _, pair := range os.Environ() {
+		elems := strings.SplitN(pair, "=", 2)
+		if len(elems) != 2 {
+			panic("space/time continuum wrong")
+		}
+
+		combined[elems[0]] = elems[1]
 	}
 
 	return combined
@@ -727,7 +730,7 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
+	c.Env = envToEnviron(makeEnv(parentEnv, secretsEnv, cmd.Env))
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
