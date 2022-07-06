@@ -21,9 +21,8 @@ type fieldStringEncoder struct {
 }
 
 func (e fieldStringEncoder) EmitString(key, value string) {
-	e.w.Write(key, value)
+	e.w.Write(key, strconv.Quote(value))
 }
-
 func (e fieldStringEncoder) EmitBool(key string, value bool) {
 	e.w.Write(key, strconv.FormatBool(value))
 }
