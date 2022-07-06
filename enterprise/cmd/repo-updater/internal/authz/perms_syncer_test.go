@@ -1023,12 +1023,16 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 
 	t.Run("max concurrency", func(t *testing.T) {
 		// Enough buffer to make two goroutines to send data without being blocked by
-		// default, but our imposed max concurrency (1, default) should have one
-		// goroutine blocked.
+		// default, but our imposed max concurrency (1) should make one of the goroutines
+		// blocked.
 		called := make(chan struct{}, 2)
 		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			called <- struct{}{}
+
+			// We only log errors in `syncPerms` method and return an error here would
+			// effectively stop/finish the method call, so we don't need to mock tons of
+			// other things.
 			return nil, errors.New("fail")
 		})
 		db := database.NewMockDB()
