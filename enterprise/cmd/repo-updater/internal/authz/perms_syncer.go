@@ -1089,6 +1089,12 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 			return nil
 		},
 	)
+
+	// NOTE: We do not need to call Wait method of the sync group because all we need
+	// here is to control the max concurrency rather than sending out a batch of jobs
+	// and collecting their results at the same point in time. Especially true when
+	// the background permissions syncing is a never-ending process, and it is
+	// desired to abort and give up any running jobs ASAP upon quitting the program.
 }
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
