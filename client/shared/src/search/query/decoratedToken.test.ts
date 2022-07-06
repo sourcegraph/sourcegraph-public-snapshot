@@ -1520,6 +1520,41 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('highlight repo:description predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:description(.*)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
     test('highlight regex delimited pattern for standard search', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('/f.*/ x', false, SearchPatternType.standard))))
             .toMatchInlineSnapshot(`

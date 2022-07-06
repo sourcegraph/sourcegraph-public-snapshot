@@ -38,6 +38,9 @@ export const PREDICATES: Access[] = [
             {
                 name: 'revdeps',
             },
+            {
+                name: 'description',
+            }
         ],
     },
     {
@@ -196,6 +199,11 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'dependents(${1})',
                 asSnippet: true,
             },
+            {
+                label: 'description(...)',
+                insertText: 'description(${1})',
+                asSnippet: true,
+            }
         ]
     }
     return []
