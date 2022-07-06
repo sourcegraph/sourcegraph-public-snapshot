@@ -1,5 +1,6 @@
 import { FunctionComponent, useCallback, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -53,7 +54,10 @@ export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormP
             {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
 
             <div className="form-inline">
-                <Label htmlFor="revlike">Git revlike</Label>
+                <VisuallyHidden>Provide a Git rev-like to enqueue a new auto-indexing job</VisuallyHidden>
+                <Label htmlFor="revlike">
+                    <span aria-hidden={true}>Git revlike</span>
+                </Label>
 
                 <Input
                     id="revlike"
