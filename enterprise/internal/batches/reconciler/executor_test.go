@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -586,6 +587,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			tc.plan.Changeset = changeset
 			tc.plan.ChangesetSpec = changesetSpec
+
+			// Ensure we reset the state of the repo after executing the plan.
+			t.Cleanup(func() {
+				repo.Archived = false
+				_, err := repos.NewStore(logtest.Scoped(t), cstore.DatabaseDB()).UpdateRepo(ctx, repo)
+				require.NoError(t, err)
+			})
 
 			// Execute the plan
 			err := executePlan(
