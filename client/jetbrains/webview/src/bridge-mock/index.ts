@@ -7,7 +7,7 @@ import { renderColorDebugger } from './renderColorDebugger'
 import { dark } from './theme-snapshots/dark'
 import { light } from './theme-snapshots/light'
 
-const instanceURL = 'https://sourcegraph.com'
+const instanceURL = 'https://sourcegraph.com/'
 
 let isDarkTheme = false
 

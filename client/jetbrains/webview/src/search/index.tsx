@@ -23,7 +23,7 @@ import type { PluginConfig, Search, Theme } from './types'
 setLinkComponent(AnchorLink)
 
 let isDarkTheme = false
-let instanceURL = 'https://sourcegraph.com'
+let instanceURL = 'https://sourcegraph.com/'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
 let anonymousUserId: string

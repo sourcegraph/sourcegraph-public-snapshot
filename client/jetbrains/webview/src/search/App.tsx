@@ -33,6 +33,8 @@ import { SearchResultList } from './results/SearchResultList'
 import { StatusBar } from './StatusBar'
 import { Search } from './types'
 
+import { getInstanceURL } from '.'
+
 import styles from './App.module.scss'
 
 interface Props {
@@ -49,7 +51,7 @@ interface Props {
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
-    return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
+    return fetchStreamSuggestions(query, getInstanceURL() + '.api')
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -152,7 +154,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     caseSensitive: nextSearch.caseSensitive,
                     patternType: nextSearch.patternType,
                     trace: undefined,
-                    sourcegraphURL: 'https://sourcegraph.com/.api',
+                    sourcegraphURL: instanceURL + '.api',
                     decorationContextLines: 0,
                 }
             ).subscribe(searchResults => {
@@ -165,7 +167,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             saveLastSearch(nextSearch)
             telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query, telemetryService]
+        [lastSearch, userQueryState.query, telemetryService, instanceURL]
     )
 
     const [lastInitialSubmitUser, setLastInitialSubmitUser] = useState<AuthenticatedUser | null>(null)
@@ -218,6 +220,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         }}
                     >
                         <JetBrainsSearchBox
+                            // Make sure we recreate the search box component when the instance URL changes
+                            key={instanceURL}
                             caseSensitive={lastSearch.caseSensitive}
                             setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
                             patternType={lastSearch.patternType}
