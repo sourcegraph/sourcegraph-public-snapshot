@@ -105,7 +105,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     )
 
-    const { trackMouseLeave, trackMouseEnter, trackDatumClicks, trackFilterChanges } = useCodeInsightViewPings({
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
