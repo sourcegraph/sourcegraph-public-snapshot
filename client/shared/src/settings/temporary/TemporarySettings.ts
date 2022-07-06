@@ -15,7 +15,6 @@ export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
-    'search.onboarding.tourCancelled': boolean
     'search.contexts.ctaDismissed': boolean
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
@@ -39,6 +38,7 @@ export interface TemporarySettingsSchema {
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
+    'coreWorkflowImprovements.enabled': boolean
 }
 
 /**

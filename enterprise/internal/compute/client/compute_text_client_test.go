@@ -29,8 +29,8 @@ data: {}`
 	alertCount := 0
 	errorCount := 0
 	unknownCount := 0
-	decoder := ComputeTextStreamDecoder{
-		OnResult: func(results []compute.Text) {
+	decoder := ComputeTextExtraStreamDecoder{
+		OnResult: func(results []compute.TextExtra) {
 			resultCount += len(results)
 		},
 		OnAlert: func(event *http.EventAlert) {

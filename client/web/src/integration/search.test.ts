@@ -420,13 +420,6 @@ describe('Search', () => {
     })
 
     describe('Search results snapshots', () => {
-        // To avoid covering the Percy snapshots
-        const hideCreateCodeMonitorFeatureTour = () =>
-            driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'true')
-                location.reload()
-            })
-
         test('diff search syntax highlighting', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
@@ -437,7 +430,6 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test%20type:diff&patternType=regexp', {
                 waitUntil: 'networkidle0',
             })
-            await hideCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
@@ -457,7 +449,6 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=graph%20type:commit&patternType=regexp', {
                 waitUntil: 'networkidle0',
             })
-            await hideCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
@@ -505,53 +496,6 @@ describe('Search', () => {
                 waitForCodeHighlighting: true,
             })
             await accessibilityAudit(driver.page)
-        })
-    })
-
-    describe('Feature tour', () => {
-        const resetCreateCodeMonitorFeatureTour = (dismissSearchContextsFeatureTour = true) =>
-            driver.page.evaluate((dismissSearchContextsFeatureTour: boolean) => {
-                localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'false')
-                localStorage.setItem(
-                    'has-seen-search-contexts-dropdown-highlight-tour-step',
-                    dismissSearchContextsFeatureTour ? 'true' : 'false'
-                )
-                location.reload()
-            }, dismissSearchContextsFeatureTour)
-
-        const isCreateCodeMonitorFeatureTourVisible = () =>
-            driver.page.evaluate(
-                () =>
-                    document.querySelector<HTMLDivElement>(
-                        'div[data-shepherd-step-id="create-code-monitor-feature-tour"]'
-                    ) !== null
-            )
-
-        test('Do not show create code monitor button feature tour with missing search type', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
-                waitUntil: 'networkidle0',
-            })
-            await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.test-search-result-label', { visible: true })
-            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
-        })
-
-        test('Show create code monitor button feature tour with valid search type', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
-                waitUntil: 'networkidle0',
-            })
-            await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.test-search-result-label', { visible: true })
-            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
-        })
-
-        test('Do not show create code monitor button feature tour if search contexts feature tour is not dismissed', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
-                waitUntil: 'networkidle0',
-            })
-            await resetCreateCodeMonitorFeatureTour(false)
-            await driver.page.waitForSelector('.test-search-result-label', { visible: true })
-            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
     })
 

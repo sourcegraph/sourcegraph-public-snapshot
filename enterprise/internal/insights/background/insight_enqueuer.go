@@ -139,14 +139,20 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	seriesID := series.SeriesID
 	var modifiedQuery string
 	var err error
+
 	if len(series.Repositories) > 0 {
 		modifiedQuery, err = querybuilder.MultiRepoQuery(series.Query, series.Repositories, defaultQueryParams)
 	} else {
 		modifiedQuery, err = querybuilder.GlobalQuery(series.Query, defaultQueryParams)
 	}
-
 	if err != nil {
 		return errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID)
+	}
+	if series.GroupBy != nil {
+		modifiedQuery, err = querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy))
+		if err != nil {
+			return errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID)
+		}
 	}
 
 	err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
