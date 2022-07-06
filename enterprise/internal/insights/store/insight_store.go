@@ -704,13 +704,6 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
 		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
 	}
-	if series.GroupBy != nil {
-		// We want to disable interval recording for compute types.
-		// December 31, 9999 is the maximum possible date in postgres.
-		series.NextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
-		series.NextSnapshotAfter = time.Now()
-		series.OldestHistoricalAt = time.Now()
-	}
 	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
 		series.SeriesID,
 		series.Query,

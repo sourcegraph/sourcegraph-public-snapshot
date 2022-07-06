@@ -169,6 +169,6 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 		return errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID)
 	}
 
-	log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
+	log15.Info("queued global search for insight "+string(mode), "series_id", series.SeriesID)
 	return nil
 }
