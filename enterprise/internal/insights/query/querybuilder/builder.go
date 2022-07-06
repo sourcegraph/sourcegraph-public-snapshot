@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
@@ -72,7 +74,7 @@ func forRepoRevision(query, repo, revision string) string {
 	return fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repo), revision)
 }
 
-//forRepos appends a single repo filter making an OR condition for all repos passed
+// forRepos appends a single repo filter making an OR condition for all repos passed
 func forRepos(query string, repos []string) string {
 	escapedRepos := make([]string, len(repos))
 	for i, repo := range repos {
