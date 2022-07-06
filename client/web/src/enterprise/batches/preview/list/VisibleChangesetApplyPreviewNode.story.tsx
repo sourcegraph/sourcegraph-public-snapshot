@@ -3,15 +3,6 @@ import classNames from 'classnames'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
-import {
-    ChangesetSpecOperation,
-    ChangesetSpecType,
-    ChangesetState,
-    Maybe,
-    Scalars,
-    VisibleChangesetApplyPreviewFields,
-    VisibleChangesetSpecFields,
-} from '../../../../graphql-operations'
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
 import { visibleChangesetApplyPreviewNodeStories } from './storyData'
@@ -111,3 +102,7 @@ UpdateCommitAuthor.storyName = 'Update commit author'
 export const ForkedRepo = Template.bind({})
 ForkedRepo.args = { node: stories['Forked repo'] }
 ForkedRepo.storyName = 'Forked repo'
+
+export const ReattachedChangeset = Template.bind({})
+ForkedRepo.args = { node: stories['Reattach changeset'] }
+ForkedRepo.storyName = 'Reattach Changeseet'
