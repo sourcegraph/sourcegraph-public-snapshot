@@ -12,7 +12,6 @@ import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../componen
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
@@ -45,8 +44,6 @@ export interface UserSettingsSidebarProps
 export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
-    const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
     const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useTemporarySetting(
         'coreWorkflowImprovements.enabled'
@@ -66,10 +63,6 @@ export const UserSettingsSidebar: React.FunctionComponent<
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         openBetaEnabled: isOpenBetaEnabled,
-    }
-
-    function reEnableSearchTour(): void {
-        setHasCancelledTour(false)
     }
 
     return (
@@ -116,11 +109,6 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                {showOnboardingTour && (
-                    <Button className="text-left sidebar__link--inactive d-flex w-100" onClick={reEnableSearchTour}>
-                        Show search tour
-                    </Button>
-                )}
                 <Button
                     className="text-left sidebar__link--inactive d-flex w-100"
                     onClick={() => setCoreWorkflowImprovementsEnabled(!coreWorkflowImprovementsEnabled)}

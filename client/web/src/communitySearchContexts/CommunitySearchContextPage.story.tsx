@@ -137,7 +137,6 @@ const commonProps = () =>
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
         globbing: false,
-        showOnboardingTour: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,

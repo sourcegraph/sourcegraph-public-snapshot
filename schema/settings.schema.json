@@ -118,7 +118,7 @@
           }
         },
         "showOnboardingTour": {
-          "description": "Enables the onboarding tour.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": true,
           "!go": {

@@ -11,7 +11,6 @@ const defaultSettings: SettingsExperimentalFeatures = {
      * Whether we show the mulitiline editor at /search/console
      */
     showMultilineSearchConsole: false,
-    showOnboardingTour: true,
     showSearchContext: true,
     showSearchContextManagement: true,
     showSearchNotebook: true,

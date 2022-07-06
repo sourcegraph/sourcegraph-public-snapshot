@@ -1759,7 +1759,7 @@ type SettingsExperimentalFeatures struct {
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowOnboardingTour description: Enables the onboarding tour.
+	// ShowOnboardingTour description: REMOVED.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
 	// ShowQueryBuilder description: REMOVED. Previously, enabled the search query builder page. This page has been removed.
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`

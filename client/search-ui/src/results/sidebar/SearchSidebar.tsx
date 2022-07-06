@@ -37,7 +37,6 @@ export interface SearchSidebarProps
         TelemetryProps {
     filters?: Filter[]
     className?: string
-    showOnboardingTour?: boolean
 
     /**
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
