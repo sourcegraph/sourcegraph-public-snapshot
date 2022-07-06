@@ -6028,7 +6028,7 @@ type AnalyticsCodeIntelResult {
 }
 
 type AnalyticsReposSummartResult {
-    totalCount: Int!
+    count: Int!
     preciseCodeIntelCount: Int!
 }
 
@@ -6052,7 +6052,7 @@ type Analytics {
     Code-intelligence statistics.
     """
     codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
-    reposSummary: AnalyticsReposSummartResult!
+    repos: AnalyticsReposSummartResult!
 }
 
 """

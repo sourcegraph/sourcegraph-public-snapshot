@@ -13,6 +13,7 @@ import (
 type Users struct {
 	DateRange string
 	DB        database.DB
+	Cache     bool
 }
 
 var (
@@ -53,6 +54,7 @@ func (s *Users) Activity() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Users:Activity",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -84,14 +86,14 @@ var (
 	`
 )
 
-func (f *Users) Frequencies(ctx context.Context, cache bool) ([]*UsersFrequencyNode, error) {
+func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
 	_, dateRangeCond, err := makeDateParameters(f.DateRange, "event_logs.timestamp")
 	if err != nil {
 		return nil, err
 	}
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond)
 	cacheKey := fmt.Sprintf("Users:%s:%s", f.DateRange, "Frequencies")
-	if cache == true {
+	if f.Cache == true {
 		if nodes, err := getArrayFromCache[UsersFrequencyNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -206,7 +208,7 @@ var (
 	`
 )
 
-func (s *Users) Summary(ctx context.Context, cache bool) (*UsersSummary, error) {
+func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 	now := time.Now()
 	from, err := getFromDate(s.DateRange, now)
 	if err != nil {
@@ -215,12 +217,12 @@ func (s *Users) Summary(ctx context.Context, cache bool) (*UsersSummary, error) 
 
 	cacheKey := fmt.Sprintf("Users:%s:%s", s.DateRange, "Summary")
 
-	if cache == true {
+	if s.Cache == true {
 		if summary, err := getItemFromCache[UsersSummary](cacheKey); err == nil {
 			return summary, nil
 		}
 	}
-	days := int(now.Sub(from).Hours() / 24) + 1
+	days := int(now.Sub(from).Hours()/24) + 1
 	query := sqlf.Sprintf(fmt.Sprintf(avgUsersByPeriodQuery, days))
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -269,26 +271,25 @@ func (s *UsersSummary) AvgDAU() *AnalyticsSummary { return &s.Data.AvgDAU }
 func (s *UsersSummary) AvgWAU() *AnalyticsSummary { return &s.Data.AvgWAU }
 func (s *UsersSummary) AvgMAU() *AnalyticsSummary { return &s.Data.AvgMAU }
 
-
 func (u *Users) CacheAll(ctx context.Context) error {
 	activityFetcher, err := u.Activity()
 	if err != nil {
 		return err
 	}
 
-	if _, err := activityFetcher.GetNodes(ctx, false); err != nil {
+	if _, err := activityFetcher.Nodes(ctx); err != nil {
 		return err
 	}
 
-	if _, err := activityFetcher.GetSummary(ctx, false); err != nil {
+	if _, err := activityFetcher.Summary(ctx); err != nil {
 		return err
 	}
 
-	if _, err := u.Frequencies(ctx, false); err != nil {
+	if _, err := u.Frequencies(ctx); err != nil {
 		return err
 	}
 
-	if _, err := u.Summary(ctx, false); err != nil {
+	if _, err := u.Summary(ctx); err != nil {
 		return err
 	}
 	return nil

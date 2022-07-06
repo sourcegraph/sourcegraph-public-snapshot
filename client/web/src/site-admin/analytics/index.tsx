@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState, useEffect } from 'react'
 
-import { mdiChartLineVariant, mdiChartTimelineVariantShimmer } from '@mdi/js'
+import { mdiChartLineVariant, mdiChartTimelineVariantShimmer, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
 import { upperFirst } from 'lodash'
@@ -350,9 +350,18 @@ const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
             color="var(--link-color)"
             svgPath={mdiChartLineVariant}
             size="sm"
-            aria-label="Search Statistics"
+            aria-label="Analytics icon"
         />
         {children}
+        <Tooltip content="Data is updated every 24 hour.">
+            <Icon
+                className="ml-1"
+                svgPath={mdiInformationOutline}
+                aria-label="Analytics info icon"
+                size="sm"
+                color="var(--link-color)"
+            />
+        </Tooltip>
     </H2>
 )
 
@@ -1045,7 +1054,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         return <LoadingSpinner />
     }
 
-    const reposSummary = data?.site.analytics.reposSummary
+    const repos = data?.site.analytics.repos
     const orgMembersCount = data?.currentUser?.organizationMemberships?.totalCount || 0
     const browserExtensionInstalls =
         data?.site.analytics.codeIntel.browserExtensionInstalls.summary.registeredUsers || 0
@@ -1108,10 +1117,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             Promote installation of the browser extesion to increase value.
                         </AnchorLink>
                     </Text>
-                    {reposSummary && (
+                    {repos && (
                         <Text as="li">
-                            <b>{reposSummary.preciseCodeIntelCount}</b> of your <b>{reposSummary.totalCount}</b>{' '}
-                            repositories have precise code intel.{' '}
+                            <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have precise
+                            code intel.{' '}
                             <AnchorLink
                                 to="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
                                 target="_blank"

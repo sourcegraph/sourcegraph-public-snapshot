@@ -9,6 +9,7 @@ import (
 type CodeIntel struct {
 	DateRange string
 	DB        database.DB
+	Cache     bool
 }
 
 func (s *CodeIntel) ReferenceClicks() (*AnalyticsFetcher, error) {
@@ -23,6 +24,7 @@ func (s *CodeIntel) ReferenceClicks() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:ReferenceClicks",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -38,6 +40,7 @@ func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:DefinitionClicks",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -53,6 +56,7 @@ func (s *CodeIntel) BrowserExtensionInstalls() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:BrowserExtensionInstalls",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -64,11 +68,11 @@ func (s *CodeIntel) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.GetNodes(ctx, false); err != nil {
+		if _, err := fetcher.Nodes(ctx); err != nil {
 			return err
 		}
 
-		if _, err := fetcher.GetSummary(ctx, false); err != nil {
+		if _, err := fetcher.Summary(ctx); err != nil {
 			return err
 		}
 	}

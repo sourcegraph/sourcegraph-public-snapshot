@@ -16,6 +16,7 @@ type AnalyticsFetcher struct {
 	dateRange    string
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
+	cache        bool
 }
 
 type AnalyticsNodeData struct {
@@ -37,9 +38,9 @@ func (n *AnalyticsNode) UniqueUsers() int32 { return n.Data.UniqueUsers }
 
 func (n *AnalyticsNode) RegisteredUsers() int32 { return n.Data.RegisteredUsers }
 
-func (f *AnalyticsFetcher) GetNodes(ctx context.Context, cache bool) ([]*AnalyticsNode, error) {
+func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "nodes")
-	if cache == true {
+	if f.cache == true {
 		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -87,9 +88,9 @@ func (s *AnalyticsSummary) TotalUniqueUsers() int32 { return s.Data.TotalUniqueU
 
 func (s *AnalyticsSummary) TotalRegisteredUsers() int32 { return s.Data.TotalRegisteredUsers }
 
-func (f *AnalyticsFetcher) GetSummary(ctx context.Context, cache bool) (*AnalyticsSummary, error) {
+func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "summary")
-	if cache == true {
+	if f.cache == true {
 		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
 			return summary, nil
 		}

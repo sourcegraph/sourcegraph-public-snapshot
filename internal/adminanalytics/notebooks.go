@@ -9,6 +9,7 @@ import (
 type Notebooks struct {
 	DateRange string
 	DB        database.DB
+	Cache     bool
 }
 
 func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
@@ -23,6 +24,7 @@ func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:Creations",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -38,6 +40,7 @@ func (s *Notebooks) Views() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:Views",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -56,6 +59,7 @@ func (s *Notebooks) BlockRuns() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:BlockRuns",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -67,11 +71,11 @@ func (s *Notebooks) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.GetNodes(ctx, false); err != nil {
+		if _, err := fetcher.Nodes(ctx); err != nil {
 			return err
 		}
 
-		if _, err := fetcher.GetSummary(ctx, false); err != nil {
+		if _, err := fetcher.Summary(ctx); err != nil {
 			return err
 		}
 	}

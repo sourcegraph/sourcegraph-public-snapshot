@@ -12,6 +12,9 @@ type siteAnalyticsResolver struct {
 	db database.DB
 }
 
+var cache = false // TODO: change before merging
+
+/* Analytics root resolver */
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -19,211 +22,42 @@ func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, e
 	return &siteAnalyticsResolver{r.db}, nil
 }
 
-type siteAnalyticsStatItemResolver struct {
-	fetcher *adminanalytics.AnalyticsFetcher
-}
-
-func (r *siteAnalyticsStatItemResolver) Nodes(ctx context.Context) ([]*adminanalytics.AnalyticsNode, error) {
-	nodes, err := r.fetcher.GetNodes(ctx, false)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return nodes, nil
-}
-
-func (r *siteAnalyticsStatItemResolver) Summary(ctx context.Context) (*adminanalytics.AnalyticsSummary, error) {
-	summary, err := r.fetcher.GetSummary(ctx, false)
-	if err != nil {
-		return nil, err
-	}
-
-	return summary, nil
-}
-
-/* Code Search Analytics */
+/* Search */
 
 func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
 	DateRange *string
-}) (*siteAnalyticsSearchResolver, error) {
-	return &siteAnalyticsSearchResolver{store: &adminanalytics.Search{DateRange: *args.DateRange, DB: r.db}}, nil
+}) *adminanalytics.Search {
+	return &adminanalytics.Search{DateRange: *args.DateRange, DB: r.db, Cache: cache}
 }
 
-type siteAnalyticsSearchResolver struct {
-	store *adminanalytics.Search
-}
-
-func (r *siteAnalyticsSearchResolver) Searches(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.Searches()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsSearchResolver) ResultClicks(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.ResultClicks()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsSearchResolver) FileViews(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.FileViews()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsSearchResolver) FileOpens(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.FileOpens()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-/* Notebooks Analytics */
+/* Notebooks */
 
 func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
 	DateRange *string
-}) (*siteAnalyticsNotebooksResolver, error) {
-	return &siteAnalyticsNotebooksResolver{store: &adminanalytics.Notebooks{DateRange: *args.DateRange, DB: r.db}}, nil
+}) *adminanalytics.Notebooks {
+	return &adminanalytics.Notebooks{DateRange: *args.DateRange, DB: r.db, Cache: cache}
 }
 
-type siteAnalyticsNotebooksResolver struct {
-	store *adminanalytics.Notebooks
-}
-
-func (r *siteAnalyticsNotebooksResolver) Creations(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.Creations()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsNotebooksResolver) Views(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.Views()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsNotebooksResolver) BlockRuns(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.BlockRuns()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-/* Users Analytics */
+/* Users */
 
 func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
 	DateRange *string
-}) (*siteAnalyticsUsersResolver, error) {
-	return &siteAnalyticsUsersResolver{store: &adminanalytics.Users{DateRange: *args.DateRange, DB: r.db}}, nil
+}) (*adminanalytics.Users, error) {
+	return &adminanalytics.Users{DateRange: *args.DateRange, DB: r.db, Cache: cache}, nil
 }
 
-type siteAnalyticsUsersResolver struct {
-	store *adminanalytics.Users
-}
-
-func (r *siteAnalyticsUsersResolver) Activity(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.Activity()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsUsersResolver) Frequencies(ctx context.Context) ([]*adminanalytics.UsersFrequencyNode, error) {
-	frequenceis, err := r.store.Frequencies(ctx, false)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return frequenceis, nil
-}
-
-func (r *siteAnalyticsUsersResolver) Summary(ctx context.Context) (*adminanalytics.UsersSummary, error) {
-	summary, err := r.store.Summary(ctx, false)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return summary, nil
-}
-
-/* Code-intel Analytics */
+/* Code-intel */
 
 func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
 	DateRange *string
-}) (*siteAnalyticsCodeIntelResolver, error) {
-	return &siteAnalyticsCodeIntelResolver{store: &adminanalytics.CodeIntel{DateRange: *args.DateRange, DB: r.db}}, nil
+}) *adminanalytics.CodeIntel {
+	return &adminanalytics.CodeIntel{DateRange: *args.DateRange, DB: r.db, Cache: cache}
 }
 
-type siteAnalyticsCodeIntelResolver struct {
-	store *adminanalytics.CodeIntel
-}
+/* Repos */
 
-func (r *siteAnalyticsCodeIntelResolver) ReferenceClicks(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.ReferenceClicks()
+func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.ReposSummary, error) {
+	repos := adminanalytics.Repos{DB: r.db, Cache: cache}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsCodeIntelResolver) DefinitionClicks(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.DefinitionClicks()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-func (r *siteAnalyticsCodeIntelResolver) BrowserExtensionInstalls(ctx context.Context) (*siteAnalyticsStatItemResolver, error) {
-	fetcher, err := r.store.BrowserExtensionInstalls()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &siteAnalyticsStatItemResolver{fetcher}, nil
-}
-
-/* Repos Analytics */
-
-func (r *siteAnalyticsResolver) ReposSummary(ctx context.Context) (*adminanalytics.ReposSummary, error) {
-	repos := adminanalytics.Repos{DB: r.db}
-
-	return repos.Summary(ctx, true)
+	return repos.Summary(ctx)
 }

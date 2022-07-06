@@ -97,10 +97,10 @@ type CacheAll interface {
 func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 	for _, dateRange := range dateRanges {
 		stores := []CacheAll{
-			&Search{DateRange: dateRange, DB: db},
-			&Users{DateRange: dateRange, DB: db},
-			&Notebooks{DateRange: dateRange, DB: db},
-			&CodeIntel{DateRange: dateRange, DB: db},
+			&Search{DateRange: dateRange, DB: db, Cache: true},
+			&Users{DateRange: dateRange, DB: db, Cache: true},
+			&Notebooks{DateRange: dateRange, DB: db, Cache: true},
+			&CodeIntel{DateRange: dateRange, DB: db, Cache: true},
 		}
 		for _, store := range stores {
 			if err := store.CacheAll(ctx); err != nil {
@@ -115,7 +115,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 var started bool
 
 func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
-	logger := log.Scoped("adminanalytics:cacherefresh", "admin analytics cache refresh")
+	logger := log.Scoped("adminanalytics:cache-refresh", "admin analytics cache refresh")
 	if started {
 		panic("already started")
 	}

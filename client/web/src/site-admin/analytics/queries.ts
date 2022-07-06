@@ -119,8 +119,8 @@ export const CODEINTEL_STATISTICS = gql`
         }
         site {
             analytics {
-                reposSummary {
-                    totalCount
+                repos {
+                    count
                     preciseCodeIntelCount
                 }
                 codeIntel(dateRange: $dateRange) {

@@ -9,6 +9,7 @@ import (
 type Search struct {
 	DateRange string
 	DB        database.DB
+	Cache     bool
 }
 
 func (s *Search) Searches() (*AnalyticsFetcher, error) {
@@ -23,6 +24,7 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:Searches",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -53,6 +55,7 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:FileViews",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -74,6 +77,7 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:FileOpens",
+		cache:        s.Cache,
 	}, nil
 }
 
@@ -85,11 +89,11 @@ func (s *Search) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.GetNodes(ctx, false); err != nil {
+		if _, err := fetcher.Nodes(ctx); err != nil {
 			return err
 		}
 
-		if _, err := fetcher.GetSummary(ctx, false); err != nil {
+		if _, err := fetcher.Summary(ctx); err != nil {
 			return err
 		}
 	}
