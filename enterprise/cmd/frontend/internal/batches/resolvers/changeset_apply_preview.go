@@ -269,7 +269,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 				}
 			}
 		}
-		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, r.mapping.Changeset, wantedChangeset)
+		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, wantedChangeset)
 	})
 	return r.plan, r.planErr
 }

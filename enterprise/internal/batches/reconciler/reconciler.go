@@ -75,9 +75,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 		return nil
 	}
 
-	// Pass nil since there is no "current" changeset. The changeset has already been updated in the DB to the wanted
-	// state. Current changeset is only (at the moment) used for previewing.
-	plan, err := DeterminePlan(prev, curr, nil, ch)
+	plan, err := DeterminePlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
