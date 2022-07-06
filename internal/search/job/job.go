@@ -29,7 +29,7 @@ type Job interface {
 
 // PartialJob is a partially constructed job that needs information only
 // available at runtime to resolve a fully constructed job.
-type PartialJob[P any] interface {
+type PartialJob[T any] interface {
 	// Partial returns the partially constructed job. This interface allows us
 	// to inspect the state of a parameterized job before resolving it, which
 	// happens at runtime.
@@ -37,7 +37,7 @@ type PartialJob[P any] interface {
 
 	// Resolve returns the fully constructed job using information that is only
 	// available at runtime.
-	Resolve(P) Job
+	Resolve(T) Job
 }
 
 type RuntimeClients struct {
