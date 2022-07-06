@@ -1058,8 +1058,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
-		// If this a compute type insight we do not want any kind of backfill, only a single datapoint.
 		if groupBy != nil {
+			
+			// We stamp backfill even without queueing up a backfill because we only want a single
+			// point in time.
 			_, err = tx.StampBackfill(ctx, seriesToAdd)
 			if err != nil {
 				return nil, errors.Wrap(err, "GroupBy.StampBackfill")
