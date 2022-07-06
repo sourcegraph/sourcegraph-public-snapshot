@@ -70,7 +70,9 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     // override the original publication states computed by the reconciler on the backend.
     // `BatchChangePreviewContext` is responsible for managing these publication states,
     // as well as filter arguments to the connection query, clientside.
-    const { filters, publicationStates, resolveRecalculationUpdates } = useContext(BatchChangePreviewContext)
+    const { filters, filtersChanged, setFiltersChanged, publicationStates, resolveRecalculationUpdates } = useContext(
+        BatchChangePreviewContext
+    )
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -91,7 +93,10 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                     setQueryArguments(passedArguments)
                     // Available changeset specs are all changesets specs that a user can
                     // modify the publication state of from the UI.
-                    setVisible(filterPublishableIDs(data.nodes))
+                    setVisible(filtersChanged, filterPublishableIDs(data.nodes))
+                    if (filtersChanged) {
+                        setFiltersChanged(false)
+                    }
                     // If we re-queried on account of any publication states changing, make
                     // sure to mark the timestamp record for this recalculation event as
                     // complete so that it produces a banner.
@@ -100,6 +105,8 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
             )
         },
         [
+            filtersChanged,
+            setFiltersChanged,
             batchSpecID,
             filters.search,
             filters.currentState,
