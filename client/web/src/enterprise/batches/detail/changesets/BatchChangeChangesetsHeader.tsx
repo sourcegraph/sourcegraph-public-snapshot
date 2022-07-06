@@ -1,8 +1,6 @@
 import React from 'react'
 
-import { H3, H5 } from '@sourcegraph/wildcard'
-
-import { InputTooltip } from '../../../../components/InputTooltip'
+import { H3, H5, Input, Tooltip } from '@sourcegraph/wildcard'
 
 export interface BatchChangeChangesetsHeaderProps {
     allSelected?: boolean
@@ -16,19 +14,19 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
     <>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (
-            <InputTooltip
-                type="checkbox"
-                className="ml-2"
-                checked={allSelected}
-                onChange={toggleSelectAll}
-                disabled={!!disabled}
-                tooltip={
+            <Tooltip
+                content={
                     disabled ? 'You do not have permission to perform this operation' : 'Click to select all changesets'
                 }
-                aria-label={
-                    disabled ? 'You do not have permission to perform this operation' : 'Click to select all changesets'
-                }
-            />
+            >
+                <Input
+                    type="checkbox"
+                    className="ml-2"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    disabled={!!disabled}
+                />
+            </Tooltip>
         )}
         <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
             Status

@@ -13,10 +13,22 @@ import * as H from 'history'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Alert,
+    Icon,
+    Tabs,
+    TabList,
+    TabPanels,
+    TabPanel,
+    Tab,
+    H3,
+    Tooltip,
+    Input,
+} from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
-import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { Branch, BranchMerge } from '../../Branch'
@@ -224,23 +236,18 @@ const SelectBox: React.FunctionComponent<
     }, [selectable, isPublishableResult])
 
     const input = isPublishableResult.publishable ? (
-        <InputTooltip
-            id={`select-changeset-${isPublishableResult.changesetSpecID}`}
-            type="checkbox"
-            checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
-            onChange={toggleSelected}
-            tooltip="Click to select changeset for bulk-modifying the publication state"
-            aria-label="Click to select changeset for bulk-modifying the publication state"
-        />
+        <Tooltip content="Click to select changeset for bulk-modifying the publication state">
+            <Input
+                id={`select-changeset-${isPublishableResult.changesetSpecID}`}
+                type="checkbox"
+                checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
+                onChange={toggleSelected}
+            />
+        </Tooltip>
     ) : (
-        <InputTooltip
-            id="select-changeset-hidden"
-            type="checkbox"
-            checked={false}
-            disabled={true}
-            tooltip={isPublishableResult.reason}
-            aria-label={isPublishableResult.reason}
-        />
+        <Tooltip content={isPublishableResult.reason}>
+            <Input id="select-changeset-hidden" type="checkbox" checked={false} disabled={true} />
+        </Tooltip>
     )
 
     return (

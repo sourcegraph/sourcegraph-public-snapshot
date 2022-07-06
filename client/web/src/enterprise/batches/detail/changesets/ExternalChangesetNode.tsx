@@ -13,10 +13,9 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, H4, Text, Tooltip, Input } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
-import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -95,15 +94,15 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </Button>
             {selectable ? (
                 <div className="p-2">
-                    <InputTooltip
-                        id={`select-changeset-${node.id}`}
-                        type="checkbox"
-                        checked={selected}
-                        onChange={toggleSelected}
-                        disabled={!viewerCanAdminister}
-                        tooltip={tooltipLabel}
-                        aria-label={tooltipLabel}
-                    />
+                    <Tooltip content={tooltipLabel}>
+                        <Input
+                            id={`select-changeset-${node.id}`}
+                            type="checkbox"
+                            checked={selected}
+                            onChange={toggleSelected}
+                            disabled={!viewerCanAdminister}
+                        />
+                    </Tooltip>
                 </div>
             ) : (
                 // 0-width empty element to allow us to keep the identical grid template of the parent
