@@ -131,13 +131,14 @@ const reposStatsName = "repos-stats.json"
 // 2. Remove corrupt repos.
 // 3. Remove stale lock files.
 // 4. Ensure correct git attributes
-// 5. Scrub remote URLs
-// 6. Perform garbage collection
-// 7. Re-clone repos after a while. (simulate git gc)
-// 8. Remove repos based on disk pressure.
-// 9. Perform sg-maintenance
-// 10. Git prune
-// 11. Only during first run: Set sizes of repos which don't have it in a database.
+// 5. Ensure gc.auto=0
+// 6. Scrub remote URLs
+// 7. Perform garbage collection
+// 8. Re-clone repos after a while. (simulate git gc)
+// 9. Remove repos based on disk pressure.
+// 10. Perform sg-maintenance
+// 11. Git prune
+// 12. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
@@ -240,6 +241,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
 		return false, setGitAttributes(dir)
+	}
+
+	ensureDisabledAutoGC := func(dir GitDir) (done bool, err error) {
+		return false, gitConfigSet(dir, "gc.auto", "0")
 	}
 
 	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
@@ -390,6 +395,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
+		// Disable background garbage collection. The purpose is to avoid repository
+		// corruption which can happen if several git-gc operations are running at the
+		// same time.
+		{"disable background garbage collection", ensureDisabledAutoGC},
 	}
 
 	if enableGCAuto && !enableSGMaintenance {

@@ -36,6 +36,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -2063,6 +2064,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	// Set gitattributes
 	if err := setGitAttributes(tmp); err != nil {
+		return err
+	}
+
+	// Disable background garbage collection
+	if err := gitConfigSet(tmp, "gc.auto", "0"); err != nil {
 		return err
 	}
 
