@@ -10,16 +10,13 @@ import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 import { Button, ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
-const isSelectKeyPress = (event: React.KeyboardEvent): boolean => {
-    event.preventDefault()
-    return (
-        (event.key === Key.Enter || event.key === ' ') &&
-        !event.ctrlKey &&
-        !event.shiftKey &&
-        !event.metaKey &&
-        !event.altKey
-    )
-}
+const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
+    (event.key === Key.Enter || event.key === ' ') &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.metaKey &&
+    !event.altKey
+
 export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
     Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onSelect'> & {
         /** The link destination URL. */
@@ -54,7 +51,7 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink = React.forwardRef((props, reference) => {
+export const ButtonLink = React.forwardRef(function ButtonLink(props, reference) {
     const {
         className,
         to,
@@ -78,6 +75,8 @@ export const ButtonLink = React.forwardRef((props, reference) => {
             return
         }
 
+        // Override the original key press and trigger the click event
+        event.preventDefault()
         buttonReference.current?.click()
     }
 
@@ -128,5 +127,3 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         </Button>
     )
 }) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>
-
-ButtonLink.displayName = 'ButtonLink'
