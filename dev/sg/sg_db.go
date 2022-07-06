@@ -197,7 +197,13 @@ func dbResetPGExec(ctx *cli.Context) error {
 		}
 	}
 
-	for name, dsn := range dsnMap {
+	std.Out.WriteNoticef("This will reset database(s) %s%s%s. Are you okay with this?",
+		output.StyleOrange, strings.Join(schemaNames, ", "), output.StyleReset)
+	if ok := getBool(); !ok {
+		return NewEmptyExitErr(1)
+	}
+
+	for _, dsn := range dsnMap {
 		var (
 			db  *pgx.Conn
 			err error
@@ -206,12 +212,6 @@ func dbResetPGExec(ctx *cli.Context) error {
 		db, err = pgx.Connect(ctx.Context, dsn)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to Postgres database")
-		}
-
-		std.Out.WriteNoticef("This will reset database %s%s%s. Are you okay with this?", output.StyleOrange, name, output.StyleReset)
-		ok := getBool()
-		if !ok {
-			return nil
 		}
 
 		_, err = db.Exec(ctx.Context, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
