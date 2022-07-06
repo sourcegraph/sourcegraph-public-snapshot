@@ -61,12 +61,11 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {
-        modifiedQuery = querybuilder.SingleRepoQueryIndexed(modifiedQuery, repository)
-		modifiedQuery, err := querybuilder.ComputeInsightCommandQuery(query, querybuilder.MapType(strings.ToLower(groupBy)))
+		modifiedQuery := querybuilder.SingleRepoQueryIndexed(query, repository)
+		modifiedQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(strings.ToLower(groupBy)))
 		if err != nil {
 			return nil, errors.Wrap(err, "ComputeInsightCommandQuery")
 		}
-		
 
 		grouped, err := c.computeSearch(ctx, modifiedQuery)
 		if err != nil {
