@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -24,9 +25,9 @@ func Test_setRepos(t *testing.T) {
 	}
 
 	// Test function
-	test := func(job job.Job) string {
-		job = setRepos(job, indexed, unindexed)
-		return "\n" + PrettyJSONVerbose(job)
+	test := func(j job.Job) string {
+		j = setRepos(j, indexed, unindexed)
+		return "\n" + printer.PrettyJSONVerbose(j, job.VerbosityMax)
 	}
 
 	autogold.Want("set repos for jobs that need them", `

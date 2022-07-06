@@ -3,14 +3,13 @@ package printer
 import (
 	"bytes"
 	"io"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
 
 // Sexp outputs the s-expression on a single line.
 func Sexp(j job.DescriptiveJob) string {
-	return SexpFormat(j, job.VerbosityBasic, "", " ")
+	return SexpFormat(j, job.VerbosityBasic, " ", "")
 }
 
 // PrettySexp outputs a formatted s-expression with two spaces of indentation, potentially spanning multiple lines.
@@ -27,19 +26,28 @@ func SexpFormat(j job.DescriptiveJob, verbosity job.Verbosity, sep, indent strin
 		if j == nil {
 			return
 		}
+		tags := j.Tags(verbosity)
+		children := j.Children()
+		if len(tags) == 0 && len(children) == 0 {
+			b.WriteString(j.Name())
+			return
+		}
+
 		b.WriteByte('(')
-		b.WriteString(strings.ToUpper(strings.TrimSuffix(j.Name(), "Job")))
+		b.WriteString(trimmedUpperName(j.Name()))
 		depth++
-		writeSep(b, sep, indent, depth)
-		if verbosity > job.VerbosityNone {
-			enc := fieldEncoder{sexpKeyValueWriter{b}}
-			for _, field := range j.Tags(verbosity) {
-				field.Marshal(enc)
+		if len(tags) > 0 {
+			enc := fieldStringEncoder{sexpKeyValueWriter{b}}
+			for _, field := range tags {
 				writeSep(b, sep, indent, depth)
+				field.Marshal(enc)
 			}
 		}
-		for _, child := range j.Children() {
-			writeSexp(child)
+		if len(children) > 0 {
+			for _, child := range children {
+				writeSep(b, sep, indent, depth)
+				writeSexp(child)
+			}
 		}
 		b.WriteByte(')')
 		depth--

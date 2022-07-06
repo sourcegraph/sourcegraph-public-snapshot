@@ -11,6 +11,7 @@ import (
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -52,7 +53,6 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 				}
 			}
 		}
-
 		result, _ := json.MarshalIndent(generated, "", "  ")
 		return string(result)
 	}

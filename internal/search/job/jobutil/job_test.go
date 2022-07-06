@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -348,7 +349,7 @@ func TestNewPlanJob(t *testing.T) {
 			j, err := NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 
-			tc.want.Equal(t, "\n"+PrettySexp(j))
+			tc.want.Equal(t, "\n"+printer.PrettySexp(j))
 		})
 	}
 }
@@ -365,7 +366,7 @@ func TestToEvaluateJob(t *testing.T) {
 
 		b, _ := query.ToBasicQuery(q)
 		j, _ := toFlatJobs(inputs, b)
-		return "\n" + PrettySexp(j) + "\n"
+		return "\n" + printer.PrettySexp(j) + "\n"
 	}
 
 	autogold.Want("root limit for streaming search", "\nRepoSearchJob\n").Equal(t, test("foo", search.Streaming))
