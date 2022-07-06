@@ -793,7 +793,7 @@ Setup a tunnel to forward requests from the internet to your local instance.
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--url, -u="<value>"`: URL to forward request to. (default: https://sourcegraph.test:3443) (default: https://sourcegraph.test:3443)
+* `--url, -u="<value>"`: URL to forward request to (default: https://sourcegraph.test:3443)
 
 ## sg doctor
 
