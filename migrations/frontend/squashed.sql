@@ -3611,7 +3611,7 @@ CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (e
 
 CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE (org_id IS NOT NULL);
 
-CREATE INDEX external_service_sync_jobs_state_idx ON external_service_sync_jobs USING btree (state);
+CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at);
 
 CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE (user_id IS NOT NULL);
 
