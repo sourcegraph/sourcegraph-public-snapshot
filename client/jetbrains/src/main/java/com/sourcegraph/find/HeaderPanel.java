@@ -1,10 +1,13 @@
 package com.sourcegraph.find;
 
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
@@ -16,48 +19,43 @@ import javax.swing.*;
 import java.awt.*;
 
 public class HeaderPanel extends BorderLayoutPanel {
-    private final AnAction openAuthenticationSettingsAction;
-    private final DefaultActionGroup actionGroup;
+    private final ActionButton authenticateButton;
 
     public HeaderPanel(Project project) {
         super();
-        setBorder(new JBEmptyBorder(5));
+        setBorder(new JBEmptyBorder(5, 5, 2, 5));
 
-        openAuthenticationSettingsAction = new DumbAwareAction("Set Up Your Sourcegraph Account", "Opens plugin settings page in Settings/Preferences", Icons.Account) {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
-            }
-        };
-        AnAction openPluginSettingsAction = new DumbAwareAction("Open Plugin Settings", "Opens the plugin settings page in Settings/Preferences", Icons.GearPlain) {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
-            }
-        };
-        actionGroup = new DefaultActionGroup(openAuthenticationSettingsAction, openPluginSettingsAction);
-        ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("find-on-sourcegraph-popup-toolbar", actionGroup, true);
-        toolbar.setMinimumButtonSize(JBUI.size(22, 22));
-        toolbar.setTargetComponent(this);
-        actionGroup.remove(openAuthenticationSettingsAction);
+        authenticateButton = createActionButtonThatOpensSettings(project, "Set Up Your Sourcegraph Account", Icons.Account);
+        ActionButton settingsButton = createActionButtonThatOpensSettings(project, "Open Plugin Settings", Icons.GearPlain);
 
         JPanel title = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        title.setBorder(new JBEmptyBorder(2, 0, 0, 0));
         title.add(new JLabel("Find on Sourcegraph", Icons.Logo, SwingConstants.LEFT));
 
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        buttons.add(authenticateButton);
+        buttons.add(settingsButton);
+
         add(title, BorderLayout.WEST);
-        add(toolbar.getComponent(), BorderLayout.EAST);
+        add(buttons, BorderLayout.EAST);
     }
 
     public void setAuthenticated(boolean authenticated) {
-        if (authenticated) {
-            if (actionGroup.containsAction(openAuthenticationSettingsAction)) {
-                actionGroup.remove(openAuthenticationSettingsAction);
-            }
-        } else {
-            if (!actionGroup.containsAction(openAuthenticationSettingsAction)) {
-                actionGroup.add(openAuthenticationSettingsAction, Constraints.FIRST);
-            }
-        }
+        authenticateButton.setVisible(!authenticated);
+    }
 
+    @NotNull
+    private ActionButton createActionButtonThatOpensSettings(@NotNull Project project, @NotNull String label, @NotNull Icon icon) {
+        JBDimension actionButtonSize = JBUI.size(22, 22);
+
+        AnAction action = new DumbAwareAction() {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
+            }
+        };
+        Presentation presentation = new Presentation(label);
+        presentation.setIcon(icon);
+        return new ActionButton(action, presentation, "Find with Sourcegraph popup header", actionButtonSize);
     }
 }
