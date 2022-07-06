@@ -119,12 +119,15 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 // computeExternalState computes the external state for the changeset and its
 // associated events.
 func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime, repo *types.Repo) (btypes.ChangesetExternalState, error) {
+	if repo.Archived {
+		return btypes.ChangesetExternalStateReadOnly, nil
+	}
 	if len(history) == 0 {
-		return computeSingleChangesetExternalState(c, repo)
+		return computeSingleChangesetExternalState(c)
 	}
 	newestDataPoint := history[len(history)-1]
 	if c.UpdatedAt.After(newestDataPoint.t) {
-		return computeSingleChangesetExternalState(c, repo)
+		return computeSingleChangesetExternalState(c)
 	}
 	return newestDataPoint.externalState, nil
 }
@@ -467,12 +470,9 @@ func parseGitLabPipelineStatus(status gitlab.PipelineStatus) btypes.ChangesetChe
 
 // computeSingleChangesetExternalState of a Changeset based on the metadata.
 // It does NOT reflect the final calculated state, use `ExternalState` instead.
-func computeSingleChangesetExternalState(c *btypes.Changeset, repo *types.Repo) (s btypes.ChangesetExternalState, err error) {
+func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.ChangesetExternalState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
 		return btypes.ChangesetExternalStateDeleted, nil
-	}
-	if repo.Archived {
-		return btypes.ChangesetExternalStateReadOnly, nil
 	}
 
 	switch m := c.Metadata.(type) {
