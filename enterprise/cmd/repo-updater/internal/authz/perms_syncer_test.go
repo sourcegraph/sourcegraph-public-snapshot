@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -1022,13 +1023,19 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	})
 
 	t.Run("max concurrency", func(t *testing.T) {
-		// Enough buffer to make two goroutines to send data without being blocked by
-		// default, but our imposed max concurrency (1) should make one of the goroutines
-		// blocked.
-		called := make(chan struct{}, 2)
+		// Enough buffer to make two goroutines to send data without being blocked, to
+		// avoid the case that the second goroutine is blocked by trying to send data to
+		// channel rather than being throttled by the max concurrency (1) we imposed.
+		wait := make(chan struct{}, 2)
+		// Enough buffer to send data twice to avoid blocking on failing test
+		ready := make(chan struct{}, 2)
+		called := 0
+
 		users := database.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-			called <- struct{}{}
+		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32) (*types.User, error) {
+			wait <- struct{}{}
+			called++
+			<-ready
 
 			// We only log errors in `syncPerms` method and return an error here would
 			// effectively stop/finish the method call, so we don't need to mock tons of
@@ -1071,24 +1078,29 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 			s.syncPerms(ctx, logtest.NoOp(t), syncGroups, request2)
 		}()
 
-		getOrFail := func(c <-chan struct{}) {
+		getOrFail := func(c <-chan struct{}) (failed bool) {
 			select {
 			case <-c:
-			case <-time.After(time.Second): // Fail fast if something went wrong
+				return false
+			case <-time.After(100 * time.Millisecond): // Fail fast if something went wrong
+				return true
 			}
 		}
 
 		// Wait until two goroutine are started
-		getOrFail(started)
-		getOrFail(started)
+		require.False(t, getOrFail(started))
+		require.False(t, getOrFail(started))
 
 		// Only one goroutine should have been called
-		getOrFail(called)
-		mockrequire.CalledN(t, users.GetByIDFunc, 1)
+		require.False(t, getOrFail(wait))
+		require.True(t, getOrFail(wait)) // There should be no second signal coming in
+		require.Equal(t, 1, called)
+		ready <- struct{}{} // Unblock the execution of the first goroutine
 
-		// Now unblock the second goroutine
-		getOrFail(called)
-		mockrequire.CalledN(t, users.GetByIDFunc, 2)
+		// Now the second goroutine should be called
+		require.False(t, getOrFail(wait))
+		require.Equal(t, 2, called)
+		ready <- struct{}{}
 	})
 }
 
