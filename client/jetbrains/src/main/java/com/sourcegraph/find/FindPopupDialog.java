@@ -38,6 +38,8 @@ public class FindPopupDialog extends DialogWrapper {
         this.project = project;
         this.mainPanel = myMainPanel;
 
+        setTitle("Find with Sourcegraph");
+
         getWindow().setMinimumSize(new Dimension(750, 420));
 
         init();
