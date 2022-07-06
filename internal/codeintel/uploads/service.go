@@ -236,7 +236,7 @@ func (s *Service) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repo
 		err = unlock(err)
 	}()
 
-	// update pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
+	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
 	// upload objects for the given repository from Postgres, and correlates them into a visibility
 	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
 	//
