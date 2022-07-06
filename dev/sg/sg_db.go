@@ -228,7 +228,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNs(log.Scoped("dbResetPGExec", ""), dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}
