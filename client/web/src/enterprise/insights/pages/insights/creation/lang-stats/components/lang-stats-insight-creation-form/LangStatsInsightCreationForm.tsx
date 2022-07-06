@@ -6,14 +6,17 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { CodeInsightDashboardsVisibility } from '../../../../../../components/creation-ui-kit'
-import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
-import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
-import { RepositoryField } from '../../../../../../components/form/repositories-field/RepositoryField'
-import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
-import { Insight } from '../../../../../../core/types'
-import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
+import {
+    CodeInsightDashboardsVisibility,
+    getDefaultInputProps,
+    useFieldAPI,
+    FORM_ERROR,
+    SubmissionErrors,
+    RepositoryField,
+    LimitedAccessLabel,
+} from '../../../../../../components'
+import { Insight } from '../../../../../../core'
+import { useUiFeatures } from '../../../../../../hooks'
 import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'

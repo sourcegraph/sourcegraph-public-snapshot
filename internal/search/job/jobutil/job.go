@@ -623,7 +623,6 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	}
 
 	visibility := b.Visibility()
-	commitAfter := b.FindValue(query.FieldRepoHasCommitAfter)
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
@@ -639,7 +638,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		OnlyArchived:      archived == query.Only,
 		NoArchived:        archived == query.No,
 		Visibility:        visibility,
-		CommitAfter:       commitAfter,
+		CommitAfter:       b.RepoContainsCommitAfter(),
 	}
 }
 

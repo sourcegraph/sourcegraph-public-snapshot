@@ -8,6 +8,7 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,8 +24,9 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewComputeStreamHandler is an http handler which streams back compute results.
-func NewComputeStreamHandler(db database.DB) http.Handler {
+func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
 	return &streamHandler{
+		logger:              logger,
 		db:                  db,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
@@ -32,6 +34,7 @@ func NewComputeStreamHandler(db database.DB) http.Handler {
 }
 
 type streamHandler struct {
+	logger              log.Logger
 	db                  database.DB
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
@@ -77,7 +80,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	events, getResults := NewComputeStream(ctx, h.db, args.Query)
+	events, getResults := NewComputeStream(ctx, h.logger, h.db, args.Query)
 	events = batchEvents(events, 50*time.Millisecond)
 
 	// Store marshalled matches and flush periodically or when we go over

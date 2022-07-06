@@ -1,8 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router-dom'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -31,15 +30,11 @@ interface ResetPasswordInitFormState {
     submitOrError: undefined | 'loading' | ErrorLike | null
 }
 
-interface ResetPasswordInitFormProps {
-    history: H.History
-}
-
 /**
  * A form where the user can initiate the reset-password flow. This is the 1st step in the
  * reset-password flow; ResetPasswordCodePage is the 2nd step.
  */
-class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormProps, ResetPasswordInitFormState> {
+class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFormState> {
     public state: ResetPasswordInitFormState = {
         email: '',
         submitOrError: undefined,
@@ -151,7 +146,6 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
 interface ResetPasswordCodeFormProps {
     userID: number
     code: string
-    history: H.History
 }
 
 interface ResetPasswordCodeFormState {
@@ -252,7 +246,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
     }
 }
 
-interface ResetPasswordPageProps extends RouteComponentProps<{}> {
+interface ResetPasswordPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -260,49 +254,47 @@ interface ResetPasswordPageProps extends RouteComponentProps<{}> {
  * A page that implements the reset-password flow for a user: (1) initiate the flow by providing the email address
  * of the account whose password to reset, and (2) complete the flow by providing the password-reset code.
  */
-export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProps> {
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('ResetPassword', false)
-    }
+export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> = props => {
+    const location = useLocation()
 
-    public render(): JSX.Element | null {
-        let body: JSX.Element
-        if (this.props.authenticatedUser) {
-            body = <Alert variant="danger">Authenticated users may not perform password reset.</Alert>
-        } else if (window.context.resetPasswordEnabled) {
-            const searchParameters = new URLSearchParams(this.props.location.search)
-            if (searchParameters.has('code') || searchParameters.has('userID')) {
-                const code = searchParameters.get('code')
-                const userID = parseInt(searchParameters.get('userID') || '', 10)
-                if (code && !isNaN(userID)) {
-                    body = <ResetPasswordCodeForm code={code} userID={userID} history={this.props.history} />
-                } else {
-                    body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
-                }
+    React.useEffect(() => {
+        eventLogger.logViewEvent('ResetPassword', false)
+    }, [])
+
+    let body: JSX.Element
+    if (props.authenticatedUser) {
+        body = <Alert variant="danger">Authenticated users may not perform password reset.</Alert>
+    } else if (window.context.resetPasswordEnabled) {
+        const searchParameters = new URLSearchParams(location.search)
+        if (searchParameters.has('code') || searchParameters.has('userID')) {
+            const code = searchParameters.get('code')
+            const userID = parseInt(searchParameters.get('userID') || '', 10)
+            if (code && !isNaN(userID)) {
+                body = <ResetPasswordCodeForm code={code} userID={userID} />
             } else {
-                body = <ResetPasswordInitForm history={this.props.history} />
+                body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
             }
         } else {
-            body = (
-                <Alert variant="warning">
-                    Password reset is disabled. Ask a site administrator to manually reset your password.
-                </Alert>
-            )
+            body = <ResetPasswordInitForm />
         }
-
-        return (
-            <>
-                <PageTitle title="Reset your password" />
-                <HeroPage
-                    icon={SourcegraphIcon}
-                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
-                    iconClassName="bg-transparent"
-                    title="Reset your password"
-                    body={
-                        <div className={classNames('mt-4', signInSignUpCommonStyles.signinPageContainer)}>{body}</div>
-                    }
-                />
-            </>
+    } else {
+        body = (
+            <Alert variant="warning">
+                Password reset is disabled. Ask a site administrator to manually reset your password.
+            </Alert>
         )
     }
+
+    return (
+        <>
+            <PageTitle title="Reset your password" />
+            <HeroPage
+                icon={SourcegraphIcon}
+                iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                iconClassName="bg-transparent"
+                title="Reset your password"
+                body={<div className={classNames('mt-4', signInSignUpCommonStyles.signinPageContainer)}>{body}</div>}
+            />
+        </>
+    )
 }

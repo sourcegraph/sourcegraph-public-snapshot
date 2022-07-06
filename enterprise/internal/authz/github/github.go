@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -243,6 +241,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
 
+	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
 		// If this is a partial cache, add self to group
@@ -257,7 +257,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			if !hasUser {
 				group.Users = append(group.Users, accountID)
 				if err := p.groupsCache.setGroup(group); err != nil {
-					log15.Warn("setting group", "error", err)
+					logger.Warn("setting group", log.Error(err))
 				}
 			}
 		}
@@ -290,8 +290,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 				// cached group as invalidated. GitHub sometimes returns 403 when requesting team
 				// or org information when the token is not allowed to see it, so we treat it the
 				// same as 404.
-				log15.Debug("list repos for group: unexpected 403/404, persisting to cache",
-					"error", err)
+				logger.Debug("list repos for group: unexpected 403/404, persisting to cache",
+					log.Error(err))
 			} else if err != nil {
 				// Add and return what we've found on this page but don't persist group
 				// to cache
@@ -310,7 +310,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 		// Persist repos affiliated with group to cache
 		if err := p.groupsCache.setGroup(group); err != nil {
-			log15.Warn("setting group", "error", err)
+			logger.Warn("setting group", log.Error(err))
 		}
 	}
 

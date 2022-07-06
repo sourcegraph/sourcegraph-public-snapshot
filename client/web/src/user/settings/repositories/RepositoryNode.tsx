@@ -1,13 +1,15 @@
 import React, { useCallback } from 'react'
 
+import {
+    mdiCloudOutline,
+    mdiCheck,
+    mdiGithub,
+    mdiGitlab,
+    mdiBitbucket,
+    mdiSourceRepository,
+    mdiChevronRight,
+} from '@mdi/js'
 import classNames from 'classnames'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import TickIcon from 'mdi-react/TickIcon'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { Badge, LoadingSpinner, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
@@ -56,13 +58,13 @@ const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProp
                 data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                 aria-label="Visit the repository to clone it. See its mirroring settings for diagnostics."
             >
-                <Icon as={CloudOutlineIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiCloudOutline} />
             </small>
         )
     }
     return (
         <small className="mr-2">
-            <Icon className={styles.check} as={TickIcon} aria-label="Success" />
+            <Icon className={styles.check} aria-label="Success" svgPath={mdiCheck} />
         </small>
     )
 }
@@ -76,25 +78,25 @@ const CodeHostIcon: React.FunctionComponent<React.PropsWithChildren<CodeHostIcon
         case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <Icon className={styles.github} as={GithubIcon} aria-hidden={true} />
+                    <Icon className={styles.github} aria-hidden={true} svgPath={mdiGithub} />
                 </small>
             )
         case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <Icon className={styles.gitlab} as={GitlabIcon} aria-hidden={true} />
+                    <Icon className={styles.gitlab} aria-hidden={true} svgPath={mdiGitlab} />
                 </small>
             )
         case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <Icon as={BitbucketIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiBitbucket} />
                 </small>
             )
         default:
             return (
                 <small className="mr-2">
-                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                 </small>
             )
     }
@@ -139,7 +141,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 Private
                             </Badge>
                         )}
-                        <Icon className="ml-2 text-primary" as={ChevronRightIcon} aria-hidden={true} />
+                        <Icon className="ml-2 text-primary" aria-hidden={true} svgPath={mdiChevronRight} />
                     </div>
                 </Link>
             </td>

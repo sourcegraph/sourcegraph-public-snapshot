@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
@@ -96,7 +96,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         variant="primary"
                         as={Link}
                     >
-                        <Icon as={AddIcon} aria-hidden={true} /> Add code host
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
                     </Button>
                 )}
             </div>

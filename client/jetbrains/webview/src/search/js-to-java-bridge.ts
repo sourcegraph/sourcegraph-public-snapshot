@@ -68,6 +68,11 @@ interface LoadLastSearchRequest {
 
 interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
+    arguments: { wasServerAccessSuccessful: boolean; wasAuthenticationSuccessful: boolean }
+}
+
+interface WindowCloseRequest {
+    action: 'windowClose'
 }
 
 export type Request =
@@ -80,6 +85,7 @@ export type Request =
     | LoadLastSearchRequest
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
+    | WindowCloseRequest
 
 let lastPreviewUpdateCallSendDateTime = new Date()
 
@@ -110,9 +116,15 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
     }
 }
 
-export async function indicateFinishedLoading(): Promise<void> {
+export async function indicateFinishedLoading(
+    wasServerAccessSuccessful: boolean,
+    wasAuthenticationSuccessful: boolean
+): Promise<void> {
     try {
-        await callJava({ action: 'indicateFinishedLoading' })
+        await callJava({
+            action: 'indicateFinishedLoading',
+            arguments: { wasServerAccessSuccessful, wasAuthenticationSuccessful },
+        })
     } catch (error) {
         console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
     }
@@ -157,6 +169,14 @@ export async function onOpen(match: SearchMatch, lineOrSymbolMatchIndex?: number
         await callJava({ action: 'open', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
+    }
+}
+
+export async function onWindowClose(): Promise<void> {
+    try {
+        await callJava({ action: 'windowClose' })
+    } catch (error) {
+        console.error(`Failed to close window: ${(error as Error).message}`)
     }
 }
 

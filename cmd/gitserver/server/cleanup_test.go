@@ -1002,7 +1002,7 @@ func makeFakeRepo(d string, sizeBytes int) error {
 	return nil
 }
 
-func TestMaybeCorruptStderrRe(t *testing.T) {
+func TestStdErrIndicatesCorruption(t *testing.T) {
 	bad := []string{
 		"error: packfile .git/objects/pack/pack-a.pack does not match index",
 		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
@@ -1011,6 +1011,8 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		`unrelated
 error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
+		"fatal: commit-graph requires overflow generation data but has none\n",
+		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
 	}
 	good := []string{
 		"",
@@ -1019,12 +1021,12 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
 	}
 	for _, stderr := range bad {
-		if !maybeCorruptStderrRe.MatchString(stderr) {
+		if !stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should contain corrupt line:\n%s", stderr)
 		}
 	}
 	for _, stderr := range good {
-		if maybeCorruptStderrRe.MatchString(stderr) {
+		if stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should not contain corrupt line:\n%s", stderr)
 		}
 	}

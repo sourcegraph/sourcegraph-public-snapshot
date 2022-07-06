@@ -14,7 +14,6 @@ import (
 type janitor struct {
 	logger    log.Logger
 	dbStore   DBStore
-	lsifStore LSIFStore
 	uploadSvc UploadService
 	indexSvc  AutoIndexingService
 	metrics   *metrics

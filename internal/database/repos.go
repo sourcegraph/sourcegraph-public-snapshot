@@ -14,6 +14,7 @@ import (
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -807,7 +808,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 }
 
 func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
-	q, err := s.listSQL(ctx, opt)
+	q, err := s.listSQL(ctx, tr, opt)
 	if err != nil {
 		return err
 	}
@@ -832,7 +833,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	return rows.Err()
 }
 
-func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
+func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
@@ -857,7 +858,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	for _, includePattern := range opt.IncludePatterns {
-		extraConds, err := parsePattern(includePattern, opt.CaseSensitivePatterns)
+		extraConds, err := parsePattern(tr, includePattern, opt.CaseSensitivePatterns)
 		if err != nil {
 			return nil, err
 		}
@@ -1505,11 +1506,19 @@ func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL str
 	return api.RepoName(name), nil
 }
 
-func parsePattern(p string, caseSensitive bool) ([]*sqlf.Query, error) {
+func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
 	}
+
+	tr.LogFields(
+		otlog.String("parsePattern", p),
+		otlog.Bool("caseSensitive", caseSensitive),
+		trace.Strings("exact", exact),
+		trace.Strings("like", like),
+		otlog.String("pattern", pattern))
+
 	var conds []*sqlf.Query
 	if exact != nil {
 		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
@@ -1598,7 +1607,7 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	if err != nil {
 		return nil, nil, "", err
 	}
-	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify(), false)
+	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify())
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -1617,10 +1626,9 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	return nil, nil, pattern, nil
 }
 
-// allMatchingStrings returns a complete list of the strings that re
-// matches, if it's possible to determine the list. The "last" argument
-// indicates if this is the last part of the original regexp.
-func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, prefix, suffix []string, err error) {
+// allMatchingStrings returns a complete list of the strings that re matches,
+// if it's possible to determine the list.
+func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
 	switch re.Op {
 	case regexpsyntax.OpEmptyMatch:
 		return []string{""}, nil, nil, nil, nil
@@ -1653,14 +1661,6 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 		}
 		return nil, nil, nil, nil, nil
 
-	case regexpsyntax.OpStar:
-		if len(re.Sub) == 1 && (re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar) {
-			if last {
-				return nil, []string{""}, nil, nil, nil
-			}
-			return nil, nil, nil, nil, nil
-		}
-
 	case regexpsyntax.OpBeginText:
 		return nil, nil, []string{""}, nil, nil
 
@@ -1668,7 +1668,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 		return nil, nil, nil, []string{""}, nil
 
 	case regexpsyntax.OpCapture:
-		return allMatchingStrings(re.Sub0[0], false)
+		return allMatchingStrings(re.Sub0[0])
 
 	case regexpsyntax.OpConcat:
 		var begin, end bool
@@ -1681,11 +1681,20 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 				end = true
 				continue
 			}
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, i == len(re.Sub)-1)
-			if err != nil {
-				return nil, nil, nil, nil, err
+			var subexact, subcontains []string
+			if isDotStar(sub) && i == len(re.Sub)-1 {
+				subcontains = []string{""}
+			} else {
+				var subprefix, subsuffix []string
+				subexact, subcontains, subprefix, subsuffix, err = allMatchingStrings(sub)
+				if err != nil {
+					return nil, nil, nil, nil, err
+				}
+				if subprefix != nil || subsuffix != nil {
+					return nil, nil, nil, nil, nil
+				}
 			}
-			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+			if subexact == nil && subcontains == nil {
 				return nil, nil, nil, nil, nil
 			}
 
@@ -1730,9 +1739,13 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 
 	case regexpsyntax.OpAlternate:
 		for _, sub := range re.Sub {
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, false)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
 			if err != nil {
 				return nil, nil, nil, nil, err
+			}
+			// If we don't understand one sub expression, we give up.
+			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+				return nil, nil, nil, nil, nil
 			}
 			exact = append(exact, subexact...)
 			contains = append(contains, subcontains...)
@@ -1743,4 +1756,10 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 	}
 
 	return nil, nil, nil, nil, nil
+}
+
+func isDotStar(re *regexpsyntax.Regexp) bool {
+	return re.Op == regexpsyntax.OpStar &&
+		len(re.Sub) == 1 &&
+		(re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar)
 }

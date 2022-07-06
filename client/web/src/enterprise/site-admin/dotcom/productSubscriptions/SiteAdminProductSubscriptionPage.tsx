@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
+import { mdiArrowLeft, mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
@@ -145,7 +144,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
             <PageTitle title="Product subscription" />
             <div className="mb-2">
                 <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <Icon aria-hidden={true} as={ArrowLeftIcon} /> All subscriptions
+                    <Icon aria-hidden={true} svgPath={mdiArrowLeft} /> All subscriptions
                 </Button>
             </div>
             {productSubscription === LOADING ? (
@@ -218,7 +217,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 </Button>
                             ) : (
                                 <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <Icon aria-hidden={true} as={AddIcon} /> Generate new license manually
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
                                 </Button>
                             )}
                         </CardHeader>
