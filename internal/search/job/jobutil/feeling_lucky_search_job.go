@@ -86,7 +86,7 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 				continue
 			}
 
-			alert, err = j.Run(ctx, clients, parentStream)
+			alert, err = j.Run(ctx, clients, stream)
 			if ctx.Err() != nil {
 				// Cancellation or Deadline hit implies it's time to stop running jobs.
 				errs = errors.Append(errs, generated)
