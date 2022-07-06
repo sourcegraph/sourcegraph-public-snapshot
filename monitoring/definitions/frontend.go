@@ -629,8 +629,8 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewGolangMonitoringGroup("job", containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerDevOps, nil),
 			{
 				Title:  "Ranking",
 				Hidden: true,

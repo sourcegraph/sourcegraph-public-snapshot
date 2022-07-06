@@ -22,8 +22,8 @@ func Symbols() *monitoring.Dashboard {
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewGolangMonitoringGroup("job", containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

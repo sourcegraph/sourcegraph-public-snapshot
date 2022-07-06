@@ -316,14 +316,14 @@ func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName
 				Standard.Count("wait")(ObservableConstructorOptions{
 					MetricNameRoot:        "executor_run_lock_wait",
 					MetricDescriptionRoot: "milliseconds",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("sg_job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of milliseconds spent waiting for the run lock every 5m
 				`).Observable(),
 
 				Standard.Count("held")(ObservableConstructorOptions{
 					MetricNameRoot:        "executor_run_lock_held",
 					MetricDescriptionRoot: "milliseconds",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("sg_job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of milliseconds spent holding for the run lock every 5m
 				`).Observable(),
 			},
@@ -807,28 +807,28 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				Standard.Count("records scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_repositories_scanned",
 					MetricDescriptionRoot: "repository",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of repositories considered for data retention scanning every 5m
 				`).Observable(),
 
 				Standard.Count("records scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_scanned",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of upload records considered for data retention scanning every 5m
 				`).Observable(),
 
 				Standard.Count("commits scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_commits_scanned",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of commits considered for data retention scanning every 5m
 				`).Observable(),
 
 				Standard.Count("records expired")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_expired",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of upload records found to be expired every 5m
 				`).Observable(),
 			},
@@ -836,28 +836,28 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_removed",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_index_records_removed",
 					MetricDescriptionRoot: "lsif index",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF index records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("data bundles deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_uploads_purged",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
 				`).Observable(),
 
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_documentation_search_records_removed",
 					MetricDescriptionRoot: "documentation search record",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of documentation search records removed from the codeintel-db database every 5m
 				`).Observable(),
 			},
@@ -865,14 +865,14 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_audit_log_records_expired",
 					MetricDescriptionRoot: "lsif upload audit log",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload audit log records deleted due to expiration every 5m
 				`).Observable(),
 
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background",
 					MetricDescriptionRoot: "janitor",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of code intelligence janitor errors every 5m
 				`).Observable(),
 			},

@@ -194,7 +194,7 @@ func Postgres() *monitoring.Dashboard {
 			},
 
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerDevOps, nil),
 		},
 	}
 }

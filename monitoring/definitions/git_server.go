@@ -254,7 +254,7 @@ func GitServer() *monitoring.Dashboard {
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
 							`,
 						},
-						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerRepoManagement).Observable(),
+						shared.FrontendInternalAPIErrorResponses("job", "gitserver", monitoring.ObservableOwnerRepoManagement).Observable(),
 					},
 				},
 			},
@@ -492,8 +492,8 @@ func GitServer() *monitoring.Dashboard {
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerRepoManagement, provisioningIndicatorsOptions),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewGolangMonitoringGroup("job", containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerRepoManagement, nil),
 		},
 	}
 }

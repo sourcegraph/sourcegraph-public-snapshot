@@ -27,7 +27,7 @@ func (standardConstructor) Count(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 			filters := makeFilters(containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
@@ -54,7 +54,7 @@ func (standardConstructor) Duration(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 			filters := makeFilters(containerName, options.Filters...)
 			by, _ := makeBy(append([]string{"le"}, options.By...)...)
 
@@ -97,7 +97,7 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 			filters := makeFilters(containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
@@ -126,7 +126,7 @@ func (standardConstructor) ErrorRate(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 			filters := makeFilters(containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 

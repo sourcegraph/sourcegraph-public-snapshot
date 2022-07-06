@@ -516,8 +516,8 @@ func RepoUpdater() *monitoring.Dashboard {
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, containerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewGolangMonitoringGroup("job", containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerRepoManagement, nil),
 		},
 	}
 }

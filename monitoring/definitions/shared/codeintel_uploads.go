@@ -144,28 +144,28 @@ func (codeIntelligence) NewUploadsCleanupTaskGroup(containerName string) monitor
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_removed",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_index_records_removed",
 					MetricDescriptionRoot: "lsif index",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF index records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("data bundles deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_uploads_purged",
 					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
 				`).Observable(),
 
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_audit_log_records_expired",
 					MetricDescriptionRoot: "lsif upload audit log",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload audit log records deleted due to expiration every 5m
 				`).Observable(),
 			},
@@ -173,7 +173,7 @@ func (codeIntelligence) NewUploadsCleanupTaskGroup(containerName string) monitor
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_background_cleanup",
 					MetricDescriptionRoot: "cleanup task",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of code intelligence cleanup task errors every 5m
 				`).Observable(),
 			},
@@ -194,28 +194,28 @@ func (codeIntelligence) NewUploadsExpirationTaskGroup(containerName string) moni
 				Standard.Count("repositories scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_repositories_scanned_total",
 					MetricDescriptionRoot: "lsif upload repository scan",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of repositories scanned for data retention
 				`).Observable(),
 
 				Standard.Count("records scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_scanned_total",
 					MetricDescriptionRoot: "lsif upload records scan",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of codeintel upload records scanned for data retention
 				`).Observable(),
 
 				Standard.Count("commits scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_commits_scanned_total",
 					MetricDescriptionRoot: "lsif upload commits scanned",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of commits reachable from a codeintel upload record scanned for data retention
 				`).Observable(),
 
 				Standard.Count("uploads scanned")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_expired_total",
 					MetricDescriptionRoot: "lsif upload records expired",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of codeintel upload records marked as expired
 				`).Observable(),
 			},

@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const DefaultMetricsExpiry = 30
+
 type Store interface {
 	prometheus.Gatherer
 }
@@ -113,5 +115,3 @@ func (d *distributedStore) Ingest(instance string, mfs []*dto.MetricFamily) erro
 
 	return nil
 }
-
-const DefaultMetricsExpiry = 30

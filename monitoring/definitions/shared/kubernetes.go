@@ -14,7 +14,7 @@ import (
 const TitleKubernetesMonitoring = "Kubernetes monitoring (only available on Kubernetes)"
 
 var (
-	KubernetesPodsAvailable sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+	KubernetesPodsAvailable sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "pods_available_percentage",
 			Description: "percentage pods available",
@@ -40,7 +40,7 @@ type KubernetesMonitoringOptions struct {
 // NewProvisioningIndicatorsGroup creates a group containing panels displaying
 // provisioning indication metrics - long and short term usage for both CPU and
 // memory usage - for the given container.
-func NewKubernetesMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *KubernetesMonitoringOptions) monitoring.Group {
+func NewKubernetesMonitoringGroup(containerLabel, containerName string, owner monitoring.ObservableOwner, options *KubernetesMonitoringOptions) monitoring.Group {
 	if options == nil {
 		options = &KubernetesMonitoringOptions{}
 	}
@@ -50,7 +50,7 @@ func NewKubernetesMonitoringGroup(containerName string, owner monitoring.Observa
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.PodsAvailable.safeApply(KubernetesPodsAvailable(containerName, owner)).Observable(),
+				options.PodsAvailable.safeApply(KubernetesPodsAvailable(containerLabel, containerName, owner)).Observable(),
 			},
 		},
 	}

@@ -15,14 +15,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/trace"
 
-	dto "github.com/prometheus/client_model/go"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 )
-
-var CurrentMetrics map[string][]*dto.MetricFamily
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
 
@@ -141,5 +137,3 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 
 	return httpserver.NewFromAddr(addr, &http.Server{Handler: handler})
 }
-
-const ExecutorsMetricsPrefixForRedis = "executors-metrics:"

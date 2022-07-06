@@ -14,11 +14,11 @@ import (
 const TitleGolangMonitoring = "Golang runtime monitoring"
 
 var (
-	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+	GoGoroutines sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:           "go_goroutines",
 			Description:    "maximum active goroutines",
-			Query:          fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
+			Query:          fmt.Sprintf(`max by(instance) (go_goroutines{%s=~".*%s"})`, containerLabel, containerName),
 			Warning:        monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
 			Panel:          monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:          owner,
@@ -27,11 +27,11 @@ var (
 		}
 	}
 
-	GoGcDuration sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+	GoGcDuration sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "go_gc_duration_seconds",
 			Description: "maximum go garbage collection duration",
-			Query:       fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
+			Query:       fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{%s=~".*%s"})`, containerLabel, containerName),
 			Warning:     monitoring.Alert().GreaterOrEqual(2),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 			Owner:       owner,
@@ -50,7 +50,7 @@ type GolangMonitoringOptions struct {
 
 // NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
 // metrics for the given container.
-func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *GolangMonitoringOptions) monitoring.Group {
+func NewGolangMonitoringGroup(containerLabel, containerName string, owner monitoring.ObservableOwner, options *GolangMonitoringOptions) monitoring.Group {
 	if options == nil {
 		options = &GolangMonitoringOptions{}
 	}
@@ -60,8 +60,8 @@ func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableO
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.Goroutines.safeApply(GoGoroutines(containerName, owner)).Observable(),
-				options.GCDuration.safeApply(GoGcDuration(containerName, owner)).Observable(),
+				options.Goroutines.safeApply(GoGoroutines(containerLabel, containerName, owner)).Observable(),
+				options.GCDuration.safeApply(GoGcDuration(containerLabel, containerName, owner)).Observable(),
 			},
 		},
 	}

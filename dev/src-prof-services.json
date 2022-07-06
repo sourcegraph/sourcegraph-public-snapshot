@@ -5,6 +5,7 @@
   { "Name": "symbols", "Host": "127.0.0.1:6071" },
   { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
   { "Name": "worker", "Host": "127.0.0.1:6089" },
+  { "Name": "worker-executors", "Host": "127.0.0.1:6969" },
   { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
   { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
   { "Name": "zoekt-indexserver-1", "Host": "127.0.0.1:6073" },

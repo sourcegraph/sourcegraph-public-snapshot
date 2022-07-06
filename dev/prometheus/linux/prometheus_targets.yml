@@ -47,6 +47,11 @@
     # worker
     - 127.0.0.1:6089
 - labels:
+    job: worker-executors
+  targets:
+    # worker
+    - 127.0.0.1:6969
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter

@@ -28,12 +28,6 @@ scrape_configs:
     metrics_path: /alertmanager/metrics
     static_configs:
       - targets: ['127.0.0.1:9093']
-  - job_name: sourcegraph-executors
-    honor_labels: true
-    metrics_path: /metrics-executors
-    static_configs:
-      - targets:
-        - host.docker.internal:6063
 
   - job_name: 'sg'
     file_sd_configs:

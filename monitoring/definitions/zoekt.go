@@ -839,7 +839,7 @@ func Zoekt() *monitoring.Dashboard {
 
 			// Note:
 			// We show pod availability here for both the webserver and indexserver as they are bundled together.
-			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewKubernetesMonitoringGroup("job", bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
 		},
 	}
 }

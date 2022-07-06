@@ -225,8 +225,8 @@ func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFa
 		}
 
 		// Attach the extra labels.
-		metricLabelInstance := "instance"
-		metricLabelJob := "job"
+		metricLabelInstance := "sg_instance"
+		metricLabelJob := "sg_job"
 		job := "sourcegraph-executors"
 		for _, m := range mf.Metric {
 			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})

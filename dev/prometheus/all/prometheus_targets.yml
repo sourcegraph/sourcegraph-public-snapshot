@@ -47,6 +47,11 @@
     # worker
     - host.docker.internal:6089
 - labels:
+    job: worker-executors
+  targets:
+    # worker
+    - host.docker.internal:6996
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter

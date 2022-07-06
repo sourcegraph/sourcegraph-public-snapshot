@@ -62,7 +62,7 @@ func SyntectServer() *monitoring.Dashboard {
 
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerDevOps, nil),
 		},
 	}
 }
