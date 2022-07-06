@@ -9,8 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
 
-// PrettyMermaid outputs a Mermaid flowchart. See https://mermaid-js.github.io.
-func PrettyMermaid(j job.DescriptiveJob) string {
+// Mermaid outputs a Mermaid flowchart. See https://mermaid-js.github.io.
+func Mermaid(j job.DescriptiveJob) string {
+	return MermaidVerbose(j, job.VerbosityNone)
+}
+
+func MermaidVerbose(j job.DescriptiveJob, verbosity job.Verbosity) string {
 	depth := 0
 	id := 0
 	b := new(bytes.Buffer)
@@ -23,7 +27,7 @@ func PrettyMermaid(j job.DescriptiveJob) string {
 		}
 		srcID := id
 		depth++
-		writeNode(b, depth, DefaultStyle, &id, buildLabel(j, job.VerbosityBasic))
+		writeNode(b, depth, DefaultStyle, &id, buildLabel(j, verbosity))
 		for _, child := range j.Children() {
 			writeEdge(b, depth, srcID, id)
 			writeMermaid(child)
@@ -66,10 +70,12 @@ func writeNode(b *bytes.Buffer, depth int, style NodeStyle, id *int, label strin
 func buildLabel(j job.DescriptiveJob, v job.Verbosity) string {
 	b := new(strings.Builder)
 	b.WriteString(trimmedUpperName(j.Name()))
-	enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
-	for _, field := range j.Tags(v) {
-		b.WriteString(" <br> ")
-		field.Marshal(enc)
+	if v > job.VerbosityNone {
+		enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
+		for _, field := range j.Tags(v) {
+			b.WriteString(" <br> ")
+			field.Marshal(enc)
+		}
 	}
 	return b.String()
 }

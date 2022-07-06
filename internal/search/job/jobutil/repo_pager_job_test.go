@@ -27,7 +27,7 @@ func Test_setRepos(t *testing.T) {
 	// Test function
 	test := func(j job.Job) string {
 		j = setRepos(j, indexed, unindexed)
-		return "\n" + printer.PrettyJSONVerbose(j, job.VerbosityMax)
+		return "\n" + printer.JSONVerbose(j, job.VerbosityMax)
 	}
 
 	autogold.Want("set repos for jobs that need them", `

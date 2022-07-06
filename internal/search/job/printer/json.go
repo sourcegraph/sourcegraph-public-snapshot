@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
 
-// PrettyJSON returns a summary of a job in formatted JSON.
-func PrettyJSON(j job.Job) string {
-	return PrettyJSONVerbose(j, job.VerbosityNone)
+// JSON returns a summary of a job in formatted JSON.
+func JSON(j job.DescriptiveJob) string {
+	return JSONVerbose(j, job.VerbosityNone)
 }
 
-// PrettyJSON returns the full fidelity of values that comprise a job in formatted JSON.
-func PrettyJSONVerbose(j job.Job, verbosity job.Verbosity) string {
+// JSONVerbose returns the full fidelity of values that comprise a job in formatted JSON.
+func JSONVerbose(j job.DescriptiveJob, verbosity job.Verbosity) string {
 	result, err := json.MarshalIndent(toNode(j, verbosity), "", "  ")
 	if err != nil {
 		panic(err)
@@ -63,7 +63,12 @@ func (n node) MarshalJSON() ([]byte, error) {
 func toNode(j job.DescriptiveJob, v job.Verbosity) node {
 	return node{
 		name: j.Name(),
-		tags: j.Tags(v),
+		tags: func() []otlog.Field {
+			if v > job.VerbosityNone {
+				return j.Tags(v)
+			}
+			return nil
+		}(),
 		children: func() []node {
 			childJobs := j.Children()
 			res := make([]node, 0, len(childJobs))

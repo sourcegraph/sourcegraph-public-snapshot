@@ -1,52 +1,40 @@
 package printer
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hexops/autogold"
 
-	. "github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
 
 func TestSexp(t *testing.T) {
-	autogold.Want("simple sexp", "(TIMEOUT (timeout . 50ms) (AND NoopJob NoopJob))").Equal(t, Sexp(
-		NewTimeoutJob(
-			50*1_000_000,
-			NewAndJob(
-				NewNoopJob(),
-				NewNoopJob()))))
+	withNon := func(s string, enabled bool) string {
+		if enabled {
+			return s
+		} else {
+			return "non" + s
+		}
+	}
 
-	autogold.Want("pretty sexp exhaustive cases", `
-(SUBREPOPERMSFILTER
-  (LIMIT
-    (limit . 100)
-    (TIMEOUT
-      (timeout . 50ms)
-      (PARALLEL
-        (AND
-          NoopJob
-          NoopJob)
-        (OR
-          NoopJob
-          NoopJob)
-        (AND
-          NoopJob
-          NoopJob)))))
-`).Equal(t, fmt.Sprintf("\n%s\n", PrettySexp(
-		NewFilterJob(
-			NewLimitJob(
-				100,
-				NewTimeoutJob(
-					50*1_000_000,
-					NewParallelJob(
-						NewAndJob(
-							NewNoopJob(),
-							NewNoopJob()),
-						NewOrJob(
-							NewNoopJob(),
-							NewNoopJob()),
-						NewAndJob(
-							NewNoopJob(),
-							NewNoopJob()))))))))
+	for _, pretty := range []bool{true, false} {
+		t.Run(withNon("pretty", pretty), func(t *testing.T) {
+			for _, verbose := range []bool{true, false} {
+				t.Run(withNon("verbose", verbose), func(t *testing.T) {
+					v := job.VerbosityNone
+					if verbose {
+						v = job.VerbosityMax
+					}
+
+					t.Run("simpleJob", func(t *testing.T) {
+						autogold.Equal(t, autogold.Raw(SexpVerbose(simpleJob, v, pretty)))
+					})
+
+					t.Run("bigJob", func(t *testing.T) {
+						autogold.Equal(t, autogold.Raw(SexpVerbose(bigJob, v, pretty)))
+					})
+				})
+			}
+		})
+	}
 }

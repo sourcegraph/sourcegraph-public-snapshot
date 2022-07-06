@@ -349,7 +349,7 @@ func TestNewPlanJob(t *testing.T) {
 			j, err := NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 
-			tc.want.Equal(t, "\n"+printer.PrettySexp(j))
+			tc.want.Equal(t, "\n"+printer.SexpPretty(j))
 		})
 	}
 }
@@ -366,7 +366,7 @@ func TestToEvaluateJob(t *testing.T) {
 
 		b, _ := query.ToBasicQuery(q)
 		j, _ := toFlatJobs(inputs, b)
-		return "\n" + printer.PrettySexp(j) + "\n"
+		return "\n" + printer.SexpPretty(j) + "\n"
 	}
 
 	autogold.Want("root limit for streaming search", "\nRepoSearchJob\n").Equal(t, test("foo", search.Streaming))

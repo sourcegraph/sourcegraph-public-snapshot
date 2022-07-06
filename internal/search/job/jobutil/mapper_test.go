@@ -11,7 +11,7 @@ import (
 
 func TestMap(t *testing.T) {
 	test := func(job job.Job, mapper Mapper) string {
-		return "\n" + printer.PrettySexp(mapper.Map(job)) + "\n"
+		return "\n" + printer.SexpPretty(mapper.Map(job)) + "\n"
 	}
 
 	andMapper := Mapper{
