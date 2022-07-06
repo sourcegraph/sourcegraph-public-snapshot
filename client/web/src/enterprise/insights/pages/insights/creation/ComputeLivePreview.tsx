@@ -27,7 +27,6 @@ interface LineChartLivePreviewProps {
     repositories: string
     stepValue: string
     step: InsightStep
-    isAllReposMode: boolean
     className?: string
     series: {
         query: string
@@ -40,7 +39,7 @@ interface LineChartLivePreviewProps {
 export const ComputeLivePreview: React.FunctionComponent<
     React.PropsWithChildren<LineChartLivePreviewProps>
 > = props => {
-    const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
+    const { disabled, repositories, stepValue, step, series, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
 
     const sanitizedSeries = series.map(srs => {
@@ -103,11 +102,7 @@ export const ComputeLivePreview: React.FunctionComponent<
                                         getDatumValue={(datum: any) => datum.value}
                                         getDatumColor={(datum: any) => datum.color}
                                     />
-                                    <LivePreviewBanner>
-                                        {isAllReposMode
-                                            ? 'Live previews are currently not available for insights running over all repositories.'
-                                            : 'The chart preview will be shown here once you have filled out the repositories and series fields.'}
-                                    </LivePreviewBanner>
+                                    <LivePreviewBanner>You’ll see your insight’s chart preview here</LivePreviewBanner>
                                 </>
                             )
                         }
@@ -117,11 +112,9 @@ export const ComputeLivePreview: React.FunctionComponent<
                 {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
             </LivePreviewCard>
 
-            {isAllReposMode && (
-                <Text className="mt-2">
-                    Previews are only displayed if you individually list up to 50 repositories.
-                </Text>
-            )}
+            <Text className="mt-4 pl-2">
+                <b>Timeframe:</b> May 20, 2022 - Oct 20, 2022
+            </Text>
         </aside>
     )
 }

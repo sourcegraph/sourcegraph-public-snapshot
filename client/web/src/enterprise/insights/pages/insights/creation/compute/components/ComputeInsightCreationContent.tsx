@@ -51,7 +51,6 @@ export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCrea
                 as={ComputeLivePreview}
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                isAllReposMode={allReposMode.input.value}
                 series={seriesToPreview(editSeries)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
