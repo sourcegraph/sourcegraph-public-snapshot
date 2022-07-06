@@ -15,7 +15,7 @@ steps:
     container: alpine:3
 
 changesetTemplate:
-  title: Apply  a regex
+  title: Apply a regex
   body: Apply a regex using sed
   branch: batch-changes/regex
   commit:
