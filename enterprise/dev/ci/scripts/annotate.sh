@@ -14,7 +14,11 @@ print_usage() {
 }
 
 generate_grafana_link() {
-    expression=$(echo "{app=\"buildkite\", build=\"$BUILDKITE_BUILD_NUMBER\", job=\"$BUILDKITE_JOB_ID\"}" | sed 's/\"/\\"/g')
+    expression="$(cat <<EOF | sed '/\"/\\"/g'
+{app="buildkite", build="$BUILDKITE_BUILD_NUMBER", branch="main", state="failed", job="$BUILDKITE_JOB_ID"} # to search the whole build remove job here!\n
+|~ "(?i)failed|panic|" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
+EOF
+)"
     # On Darwin use gdate
     begin=$(date -d '1 hour ago' "+%s")000
     end=$(date "+%s")000
@@ -24,8 +28,11 @@ generate_grafana_link() {
 }
 
 print_heading() {
-    logs="[View Grafana logs]($(generate_grafana_link))"
+    logs=""
     output="[View job output](#$BUILDKITE_JOB_ID)"
+    if [[ $BUILDKITE_BRANCH == "main" ]]; then
+        logs="[View Grafana logs]($(generate_grafana_link))"
+    fi
     printf "**%s** &bull; %s &bull; %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
 }
 
