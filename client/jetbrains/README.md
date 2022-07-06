@@ -81,7 +81,7 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
 - Run `yarn install` in the root directory to get all dependencies
 - Run `yarn generate` in the root directory to generate graphql files
 - Go to `client/jetbrains/` and run `yarn build` to generate the JS files, or `yarn watch` to watch for changes and regenerate on the fly
-- You can test the “Find on Sourcegraph” window by running `yarn standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
+- You can test the “Find with Sourcegraph” window by running `yarn standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
 - Run the plugin in a sandboxed IDE by running `./gradlew runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
   - Note: 2021.3 or later is required for Macs with Apple Silicon chips.
 - Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Sourcegraph.zip`.
