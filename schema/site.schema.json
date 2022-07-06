@@ -898,6 +898,11 @@
       "type": "integer",
       "default": 60
     },
+    "permissions.syncUsersMaxConcurrency": {
+      "description": "The maximum number of user-centric permissions syncing jobs could be spawned concurrently",
+      "type": "integer",
+      "default": 1
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",

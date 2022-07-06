@@ -1099,11 +1099,23 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
-	logger.Debug("started")
 	defer logger.Info("stopped")
 
+	userMaxConcurrency := syncUsersMaxConcurrency()
+	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
+
 	syncGroups := map[requestType]group.ContextGroup{
-		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(3), // TODO: Read MaxConcurrency from code host configuration
+		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(userMaxConcurrency),
+
+		// NOTE: This is not strictly needed as part of effort for
+		// https://github.com/sourcegraph/sourcegraph/issues/37918, but doing it this way
+		// has much simpler code logic and is much easier to reason about the behavior.
+		//
+		// It is also worth noting that naively increasing the max concurrency of
+		// repo-centric syncing for GitHub may not work as intended because all sync jobs
+		// derived from the same code host connection is sharing the same personal access
+		// token and its concurrency throttled to 1 by the github-proxy in the current
+		// architecture.
 		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
 	}
 
@@ -1536,4 +1548,12 @@ func syncRepoBackoff() time.Duration {
 		return 60 * time.Second
 	}
 	return time.Duration(seconds) * time.Second
+}
+
+func syncUsersMaxConcurrency() int {
+	n := conf.Get().PermissionsSyncUsersMaxConcurrency
+	if n <= 0 {
+		return 1
+	}
+	return n
 }
