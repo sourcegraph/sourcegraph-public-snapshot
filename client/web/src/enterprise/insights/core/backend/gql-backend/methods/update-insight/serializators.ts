@@ -22,8 +22,10 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         searchContexts: insight.filters.context ? [insight.filters.context] : [],
     }
 
-    // TODO: update when sorting all insights are supported
-    const seriesDisplayOptions: SeriesDisplayOptionsInput = {}
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+        limit: insight.seriesDisplayOptions?.limit,
+        sortOptions: insight.seriesDisplayOptions?.sortOptions,
+    }
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
