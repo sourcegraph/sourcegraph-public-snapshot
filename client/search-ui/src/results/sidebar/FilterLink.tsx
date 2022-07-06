@@ -21,8 +21,9 @@ export interface FilterLinkProps {
     value: string
     count?: number
     limitHit?: boolean
+    kind?: string
     labelConverter?: (label: string) => JSX.Element
-    onFilterChosen: (value: string) => void
+    onFilterChosen: (value: string, kind?: string) => void
 }
 
 export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterLinkProps>> = ({
@@ -31,6 +32,7 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
     value,
     count,
     limitHit,
+    kind,
     labelConverter = label => (label === value ? <SyntaxHighlightedSearchQuery query={label} /> : label),
     onFilterChosen,
 }) => {
@@ -41,7 +43,7 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
     return (
         <Button
             className={styles.sidebarSectionListItem}
-            onClick={() => onFilterChosen(value)}
+            onClick={() => onFilterChosen(value, kind)}
             data-testid="filter-link"
             value={value}
             variant="link"
@@ -60,7 +62,7 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string) => void
+    onFilterChosen: (value: string, kind?: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = CodeHostIcon({
@@ -96,7 +98,7 @@ export const getRepoFilterLinks = (
 
 export const getDynamicFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string) => void
+    onFilterChosen: (value: string, kind?: string) => void
 ): React.ReactElement[] =>
     (filters || [])
         .filter(filter => filter.kind !== 'repo')

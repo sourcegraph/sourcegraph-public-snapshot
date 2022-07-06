@@ -87,9 +87,9 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     )
 
     const onDynamicFilterClicked = useCallback(
-        (value: string) => {
+        (value: string, kind?: string) => {
             props.telemetryService.log('DynamicFilterClicked', {
-                search_filter: { value },
+                search_filter: { kind },
             })
 
             submitQueryWithProps([{ type: 'toggleSubquery', value }])
