@@ -211,7 +211,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
-                            <Icon aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            <Icon
+                                aria-hidden={true}
+                                className="mr-1"
+                                {...(typeof createCodeMonitorAction.icon === 'string'
+                                    ? { svgPath: createCodeMonitorAction.icon }
+                                    : { as: createCodeMonitorAction.icon })}
+                            />
                             {createCodeMonitorAction.label}
                         </>
                     }
@@ -352,7 +358,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 outline={true}
                                 size="sm"
                             >
-                                <Icon aria-hidden={true} className="mr-1" as={createActionButton.icon} />
+                                <Icon
+                                    aria-hidden={true}
+                                    className="mr-1"
+                                    {...(typeof createActionButton.icon === 'string'
+                                        ? { svgPath: createActionButton.icon }
+                                        : { as: createActionButton.icon })}
+                                />
                                 {createActionButton.label}
                             </ButtonLink>
                         </li>
