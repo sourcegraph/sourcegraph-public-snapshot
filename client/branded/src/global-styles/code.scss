@@ -50,3 +50,107 @@ kbd {
 .search-filter-separator {
     color: var(--search-filter-separator-color);
 }
+
+.search-path-separator {
+    color: var(--search-filter-separator-color);
+}
+
+.search-regexp-meta-assertion {
+    color: var(--search-regexp-meta-assertion-color);
+}
+
+.search-regexp-meta-alternative {
+    color: var(--search-regexp-meta-alternative-color);
+}
+
+.search-regexp-meta-delimited {
+    color: var(--search-regexp-meta-delimited-color);
+}
+
+.search-regexp-meta-escaped-character {
+    color: var(--search-regexp-meta-escaped-character-color);
+}
+
+.search-regexp-meta-character-set {
+    color: var(--search-regexp-meta-character-set-color);
+}
+
+.search-regexp-meta-character-class {
+    color: var(--search-regexp-meta-character-class-color);
+}
+
+.search-regexp-meta-character-class-range {
+    color: var(--search-regexp-meta-character-class-range-color);
+}
+
+.search-regexp-meta-character-class-range-hyphen {
+    color: var(--search-regexp-meta-character-class-range-hyphen-color);
+}
+
+.search-regexp-meta-character-class-member {
+    color: var(--search-regexp-meta-character-class-member-color);
+}
+
+.search-regexp-meta-lazy-quantifier {
+    color: var(--search-regexp-meta-character-lazy-quantifier-color);
+}
+
+.search-regexp-meta-range-quantifier {
+    color: var(--search-regexp-meta-range-quantifier-color);
+}
+
+.search-revision-separator {
+    color: var(--search-revision-separator-color);
+}
+
+.search-revision-include-glob-marker {
+    color: var(--search-revision-include-glob-marker-color);
+}
+
+.search-revision-exclude-glob-marker {
+    color: var(--search-revision-exclude-glob-marker-color);
+}
+
+.search-revision-commit-hash {
+    color: var(--search-revision-commit-hash-color);
+}
+
+.search-revision-label {
+    color: var(--search-revision-label-color);
+}
+
+.search-revision-reference-path {
+    color: var(--search-revision-reference-path-color);
+}
+
+.search-revision-wildcard {
+    color: var(--search-revision-wildcard-color);
+}
+
+.search-predicate-name-access {
+    color: var(--search-predicate-name-access-color);
+}
+
+.search-predicate-dot {
+    color: var(--search-predicate-dot-color);
+}
+
+.search-predicate-parenthesis {
+    color: var(--search-predicate-parenthesis-color);
+}
+
+.search-structural-hole {
+    color: var(--search-structural-hole-color);
+}
+
+.search-structural-regexp-hole {
+    color: var(--search-structural-regexp-hole-color);
+}
+
+.search-structural-variable {
+    color: var(--search-structural-variable-color);
+}
+
+.search-structural-regexp-separator {
+    color: var(--search-structural-regexp-separator-color);
+}
