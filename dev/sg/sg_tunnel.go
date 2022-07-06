@@ -20,7 +20,7 @@ var tunnelCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:    "url",
 			Aliases: []string{"u"},
-			Usage:   "URL to forward request to. (default: https://sourcegraph.test:3443)",
+			Usage:   "URL to forward request to",
 			Value:   "https://sourcegraph.test:3443",
 		},
 	},
