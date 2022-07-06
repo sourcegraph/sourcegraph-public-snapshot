@@ -120,43 +120,55 @@ func (ie *InsightEnqueuer) Enqueue(
 		}
 		uniqueSeries[seriesID] = series
 
-		// Construct the search query that will generate data for this repository and time (revision) tuple.
-		defaultQueryParams := querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0)
-		var modifiedQuery string
-		var err error
-		if len(series.Repositories) > 0 {
-			modifiedQuery, err = querybuilder.MultiRepoQuery(series.Query, series.Repositories, defaultQueryParams)
-		} else {
-			modifiedQuery, err = querybuilder.GlobalQuery(series.Query, defaultQueryParams)
+		if err := ie.EnqueueSingle(ctx, series, mode, stampFunc); err != nil {
+			multi = errors.Append(multi, err)
 		}
-
-		if err != nil {
-			multi = errors.Append(multi, errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID))
-			continue
-		}
-
-		err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-			SeriesID:    seriesID,
-			SearchQuery: modifiedQuery,
-			State:       "queued",
-			Priority:    int(priority.High),
-			Cost:        int(priority.Indexed),
-			PersistMode: string(mode),
-		})
-		if err != nil {
-			multi = errors.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
-			continue
-		}
-
-		// The timestamp update can't be transactional because this is a separate database currently, so we will use
-		// at-least-once semantics by waiting until the queue transaction is complete and without error.
-		_, err = stampFunc(ctx, series)
-		if err != nil {
-			multi = errors.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
-			continue // might as well try the other insights and just skip this one
-		}
-		log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
 	}
 
 	return multi
+}
+
+func (ie *InsightEnqueuer) EnqueueSingle(
+	ctx context.Context,
+	series types.InsightSeries,
+	mode store.PersistMode,
+	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
+) error {
+	// Construct the search query that will generate data for this repository and time (revision) tuple.
+	defaultQueryParams := querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0)
+	seriesID := series.SeriesID
+	var modifiedQuery string
+	var err error
+	if len(series.Repositories) > 0 {
+		modifiedQuery, err = querybuilder.MultiRepoQuery(series.Query, series.Repositories, defaultQueryParams)
+	} else {
+		modifiedQuery, err = querybuilder.GlobalQuery(series.Query, defaultQueryParams)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID)
+	}
+
+	err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+		SeriesID:    seriesID,
+		SearchQuery: modifiedQuery,
+		State:       "queued",
+		Priority:    int(priority.High),
+		Cost:        int(priority.Indexed),
+		PersistMode: string(mode),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID)
+	}
+
+	// The timestamp update can't be transactional because this is a separate database currently, so we will use
+	// at-least-once semantics by waiting until the queue transaction is complete and without error.
+	_, err = stampFunc(ctx, series)
+	if err != nil {
+		// might as well try the other insights and just skip this one
+		return errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID)
+	}
+
+	log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
+	return nil
 }

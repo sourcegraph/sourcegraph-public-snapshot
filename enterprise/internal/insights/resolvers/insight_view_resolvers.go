@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
@@ -1059,7 +1060,14 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
 		if groupBy != nil {
-			
+			enqueueQueryRunnerJob := func(ctx context.Context, job *queryrunner.Job) error {
+				_, err := queryrunner.EnqueueJob(ctx, tx.Store, job)
+				return err
+			}
+			insightEnqueuer := background.NewInsightEnqueuer(time.Now, enqueueQueryRunnerJob)
+			if err := insightEnqueuer.EnqueueSingle(ctx, seriesToAdd, store.SnapshotMode, tx.StampSnapshot); err != nil {
+				return nil, errors.Wrap(err, "GroupBy.EnqueueSingle")
+			}
 			// We stamp backfill even without queueing up a backfill because we only want a single
 			// point in time.
 			_, err = tx.StampBackfill(ctx, seriesToAdd)
