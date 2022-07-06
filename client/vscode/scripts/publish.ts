@@ -57,7 +57,7 @@ try {
         console.log(`The extension has been ${hasTokens ? 'published' : 'packaged'} successfully`)
     } else {
         // Use vsce package command instead without publishing the extension for testing
-        childProcess.execSync(commands.vscode_pacakage, { stdio: 'inherit' })
+        childProcess.execSync(commands.vscode_package, { stdio: 'inherit' })
     }
 } catch (error) {
     console.error('Failed to publish VSCE:', error)
