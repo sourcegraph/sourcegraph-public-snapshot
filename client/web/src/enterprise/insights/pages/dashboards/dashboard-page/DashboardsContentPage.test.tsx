@@ -165,14 +165,15 @@ const renderDashboardsContent = (
 
 const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
     const { user } = screen
+    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /dashboard context menu/ }))
+    user.click(dashboardMenu)
 
-    const dashboardMenu = await screen.findByRole('button', { name: /dashboard context menu/ })
-    userEvent.click(dashboardMenu)
+    const dashboardMenuItem = screen.getByRole('menuitem', { name })
 
     // We're simulating keyboard navigation here to circumvent a bug in ReachUI
     // does not respond to programmatic click events on menu items
-    screen.getByText(name).closest<HTMLButtonElement>('[role="menuitem"]')?.focus()
-    user.keyboard('{enter}')
+    dashboardMenuItem.focus()
+    user.keyboard(' ')
 }
 
 beforeEach(() => {
@@ -217,7 +218,7 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, /configure dashboard/i)
+        await triggerDashboardMenuItem(screen, /configure dashboard/)
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
@@ -237,17 +238,18 @@ describe('DashboardsContent', () => {
     it('opens delete dashboard modal', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /delete/i)
+        await triggerDashboardMenuItem(screen, /Delete/)
 
-        await waitFor(() => expect(screen.getByRole('heading', { name: /Delete/ })).toBeInTheDocument())
+        const addInsightHeader = await waitFor(() => screen.getByRole('heading', { name: /Delete/ }))
+        expect(addInsightHeader).toBeInTheDocument()
     })
 
     // copies dashboard url
     it('copies dashboard url', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /copy link/i)
+        await triggerDashboardMenuItem(screen, /Copy link/)
 
-        await waitFor(() => sinon.assert.calledOnce(mockCopyURL))
+        sinon.assert.calledOnce(mockCopyURL)
     })
 })

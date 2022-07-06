@@ -184,8 +184,8 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 >
                                     {mobileHomeItem.content}
                                 </MenuLink>
-                                {items.map((item, index) => (
-                                    <MenuLink as={Link} key={item.path} to={item.path} index={index}>
+                                {items.map(item => (
+                                    <MenuLink as={Link} key={item.path} to={item.path}>
                                         {item.content}
                                     </MenuLink>
                                 ))}
