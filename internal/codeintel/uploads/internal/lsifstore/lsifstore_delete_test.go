@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,7 +17,9 @@ import (
 )
 
 func TestDeleteLsifDataByUploadIds(t *testing.T) {
-	logger := logtest.Scoped(t)
+	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
+		Level: log.LevelError,
+	})
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
