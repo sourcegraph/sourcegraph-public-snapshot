@@ -747,7 +747,7 @@ commandsets:
 
   enterprise-e2e:
     <<: *enterprise_set
-    env:
+    envOverrides:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
       EXTSVC_CONFIG_FILE: ""
@@ -972,14 +972,19 @@ tests:
 
   frontend-e2e:
     preamble: |
-      'sg start enterprise-e2e' must be already running for these tests to work. You can also
-      run tests against an existing server image:
+      A Sourcegraph isntance must be already running for these tests to work, most
+      commonly with:
+
+        sg start enterprise-e2e
+
+      You can also run tests against an existing server image (note that this test must
+      be run with SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' for the following to work):
 
         TAG=insiders sg run server
 
       If you run into authentication issues, you can run the following commands to fix them:
 
-        sg db reset-pg && sg db add-user --username 'test' --password 'supersecurepassword'
+        sg db reset-pg && sg migration up && sg db add-user --username 'test' --password 'supersecurepassword'
 
       The above command resets the database and creates a user like so:
 
