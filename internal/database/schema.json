@@ -7797,12 +7797,12 @@
       ],
       "Indexes": [
         {
-          "Name": "external_service_sync_jobs_state_idx",
+          "Name": "external_service_sync_jobs_state_external_service_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_sync_jobs_state_idx ON external_service_sync_jobs USING btree (state)",
+          "IndexDefinition": "CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
