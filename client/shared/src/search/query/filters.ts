@@ -138,6 +138,7 @@ export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter =>
  */
 export interface Completion {
     label: string
+    description?: string
     insertText?: string
     asSnippet?: boolean
 }
@@ -188,7 +189,20 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
-        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
+        discreteValues: createValuesFunction([
+            {
+                label: 'yes',
+                description: 'include archived repositories',
+            },
+            {
+                label: 'only',
+                description: 'only search in archived repositories',
+            },
+            {
+                label: 'no',
+                description: 'exclude archived repositories (default)',
+            },
+        ]),
         singular: true,
     },
     [FilterType.author]: {
@@ -230,16 +244,30 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
+        discreteValues: createValuesFunction(predicateCompletion(FilterType.file)),
         suggestions: 'path',
     },
     [FilterType.fork]: {
-        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
+        discreteValues: createValuesFunction([
+            {
+                label: 'yes',
+                description: 'include results from forks',
+            },
+            {
+                label: 'only',
+                description: 'only include results from forks',
+            },
+            {
+                label: 'no',
+                description: 'do not include resluts from forks (default)',
+            },
+        ]),
         description: 'Include results from forked repositories.',
         singular: true,
     },
     [FilterType.lang]: {
         alias: 'l',
-        discreteValues: value => languageCompletion(value).map(toCompletionItem),
+        discreteValues: value => toCompletionItems(languageCompletion(value)),
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,
     },
@@ -259,7 +287,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         discreteValues: (_value, isSourcegraphDotCom) => [
             ...(isSourcegraphDotCom === true ? SOURCEGRAPH_DOT_COM_REPO_COMPLETION : []),
-            ...predicateCompletion('repo'),
+            ...predicateCompletion(FilterType.repo),
         ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
@@ -463,13 +491,25 @@ export const escapeSpaces = (value: string): string => {
 }
 
 /**
- * Helper function to convert a string to a completion item. It quotes the
- * string as necessary.
+ * Helper function to create a list of completion items from a list of strings or
+ * (partial) completion items.
  */
-function toCompletionItem(value: string): Completion {
-    const item: Completion = { label: value }
-    if (/\s/.test(value)) {
-        item.insertText = `"${value}"`
-    }
-    return item
+function toCompletionItems(values: string[] | Completion[]): Completion[] {
+    return values.map(value => {
+        const isString = typeof value === 'string'
+        const item: Completion = isString ? { label: value } : value
+        if (/\s/.test(item.label) && item.insertText === undefined) {
+            item.insertText = `"${value}"`
+        }
+        return item
+    })
+}
+
+/**
+ * Helper function to create a discreteValue function from a list of strings or
+ * completion items. It precomputes the list of completion items.
+ */
+function createValuesFunction(values: string[] | Completion[]): () => Completion[] {
+    const items = toCompletionItems(values)
+    return () => items
 }

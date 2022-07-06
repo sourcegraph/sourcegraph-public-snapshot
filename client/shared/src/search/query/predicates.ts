@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { Completion, resolveFieldAlias } from './filters'
+import { Completion, FilterType, resolveFieldAlias } from './filters'
 
 interface Access {
     name: string
@@ -153,50 +153,67 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     return { path, parameters }
 }
 
-export const predicateCompletion = (field: string): Completion[] => {
-    if (field === 'repo') {
-        return [
-            {
-                label: 'contains.file(...)',
-                insertText: 'contains.file(${1:CHANGELOG})',
-                asSnippet: true,
-            },
-            {
-                label: 'contains.content(...)',
-                insertText: 'contains.content(${1:TODO})',
-                asSnippet: true,
-            },
-            {
-                label: 'contains(...)',
-                insertText: 'contains(file:${1:CHANGELOG} content:${2:fix})',
-                asSnippet: true,
-            },
-            {
-                label: 'contains.commit.after(...)',
-                insertText: 'contains.commit.after(${1:1 month ago})',
-                asSnippet: true,
-            },
-            {
-                label: 'deps(...)',
-                insertText: 'deps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependencies(...)',
-                insertText: 'dependencies(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'revdeps(...)',
-                insertText: 'revdeps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependents(...)',
-                insertText: 'dependents(${1})',
-                asSnippet: true,
-            },
-        ]
+export const predicateCompletion = (filter: FilterType): Completion[] => {
+    switch (filter) {
+        case FilterType.repo:
+            return [
+                {
+                    label: 'contains.file(...)',
+                    insertText: 'contains.file(${1:CHANGELOG})',
+                    asSnippet: true,
+                    description: 'search in repos containing specific files',
+                },
+                {
+                    label: 'contains.content(...)',
+                    insertText: 'contains.content(${1:TODO})',
+                    asSnippet: true,
+                    description: 'search in repos containing specific file content',
+                },
+                {
+                    label: 'contains(...)',
+                    insertText: 'contains(file:${1:CHANGELOG} content:${2:fix})',
+                    asSnippet: true,
+                    description: 'search in repos containing file and content',
+                },
+                {
+                    label: 'contains.commit.after(...)',
+                    insertText: 'contains.commit.after(${1:1 month ago})',
+                    asSnippet: true,
+                    description: 'search in repos with commits after a specific time',
+                },
+                {
+                    label: 'deps(...)',
+                    insertText: 'deps(${1:repo})',
+                    asSnippet: true,
+                    description: 'alias for dependencies(...)',
+                },
+                {
+                    label: 'dependencies(...)',
+                    insertText: 'dependencies(${1:repo})',
+                    asSnippet: true,
+                    description: 'search only in dependencies of matching repositories',
+                },
+                {
+                    label: 'revdeps(...)',
+                    insertText: 'revdeps(${1})',
+                    asSnippet: true,
+                },
+                {
+                    label: 'dependents(...)',
+                    insertText: 'dependents(${1})',
+                    asSnippet: true,
+                },
+            ]
+        case FilterType.file:
+            return [
+                {
+                    label: 'contains.content(...)',
+                    insertText: 'contains.content(${1:TODO})',
+                    asSnippet: true,
+                    description: 'search in files with specific content',
+                },
+            ]
+        default:
+            return []
     }
-    return []
 }

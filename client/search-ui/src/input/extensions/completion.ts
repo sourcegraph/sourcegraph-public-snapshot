@@ -281,7 +281,7 @@ export function createDefaultSuggestionSources(options: {
                     filter: !hasDynamicSuggestions,
                     options: resolvedFilter.definition
                         .discreteValues(value, options.isSourcegraphDotCom)
-                        .map(({ label, insertText, asSnippet }, index) => {
+                        .map(({ label, insertText, asSnippet, description }, index) => {
                             const apply = (insertText || label) + ' '
                             return {
                                 label,
@@ -297,6 +297,7 @@ export function createDefaultSuggestionSources(options: {
                                 // displaying matching suggestions in the same
                                 // order as they have been defined in code.
                                 boost: index * -1,
+                                detail: description,
                             }
                         }),
                 }
