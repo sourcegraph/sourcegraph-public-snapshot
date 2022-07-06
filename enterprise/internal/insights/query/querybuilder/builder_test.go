@@ -62,7 +62,7 @@ func TestWithDefaults(t *testing.T) {
 				t.Fatal(err)
 			}
 			println(got)
-			if diff := cmp.Diff(test.want, got); diff != "" {
+			if diff := cmp.Diff(test.want, string(got)); diff != "" {
 				t.Fatalf("%s failed (want/got): %s", test.name, diff)
 			}
 		})
@@ -122,7 +122,7 @@ func TestMultiRepoQuery(t *testing.T) {
 				t.Fatal(err)
 			}
 			println(got)
-			if diff := cmp.Diff(test.want, got); diff != "" {
+			if diff := cmp.Diff(test.want, string(got)); diff != "" {
 				t.Fatalf("%s failed (want/got): %s", test.name, diff)
 			}
 		})
@@ -218,7 +218,7 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			if diff := cmp.Diff(test.want, got); diff != "" {
+			if diff := cmp.Diff(test.want, string(got)); diff != "" {
 				t.Errorf("%s failed (want/got): %s", test.name, diff)
 			}
 		})
