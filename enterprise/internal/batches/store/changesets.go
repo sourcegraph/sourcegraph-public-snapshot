@@ -66,6 +66,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_failures"),
 	sqlf.Sprintf("changesets.closing"),
 	sqlf.Sprintf("changesets.syncer_error"),
+	sqlf.Sprintf("changesets.detached_at"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -1173,6 +1174,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.NumFailures,
 		&t.Closing,
 		&dbutil.NullString{S: &syncErrorMessage},
+		&dbutil.NullTime{Time: &t.DetachedAt},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
