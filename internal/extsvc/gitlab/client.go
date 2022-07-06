@@ -15,13 +15,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	refresherer "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/refresherer"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -111,7 +111,7 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientPr
 
 // GetAuthenticatorClient returns a client authenticated by the given
 // authenticator.
-func (p *ClientProvider) GetAuthenticatorClient(a refresherer.Authenticator) *Client {
+func (p *ClientProvider) GetAuthenticatorClient(a refresherer.AuthenticatorWithRefresherer) *Client {
 	return p.getClient(a)
 }
 
@@ -141,7 +141,7 @@ func (p *ClientProvider) GetClient() *Client {
 	return p.getClient(nil)
 }
 
-func (p *ClientProvider) getClient(a refresherer.Authenticator) *Client {
+func (p *ClientProvider) getClient(a refresherer.AuthenticatorWithRefresherer) *Client {
 	p.gitlabClientsMu.Lock()
 	defer p.gitlabClientsMu.Unlock()
 
@@ -178,7 +178,7 @@ type Client struct {
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
-	Auth             refresherer.Authenticator
+	Auth             refresherer.AuthenticatorWithRefresherer
 	rateLimitMonitor *ratelimit.Monitor
 	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
@@ -189,7 +189,7 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a refresherer.Authenticator, httpClient httpcli.Doer) *Client {
+func (p *ClientProvider) newClient(baseURL *url.URL, a refresherer.AuthenticatorWithRefresherer, httpClient httpcli.Doer) *Client {
 
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
@@ -236,7 +236,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.Auth != nil {
-		if err := c.Auth.Authenticate(req); err != nil {
+		err := c.Auth.Authenticate(req)
+		if err != nil {
 			return nil, 0, errors.Wrap(err, "authenticating request")
 		}
 	}

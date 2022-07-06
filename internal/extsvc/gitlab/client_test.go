@@ -44,7 +44,7 @@ func createTestProvider(t *testing.T) *ClientProvider {
 func createTestClient(t *testing.T) *Client {
 	t.Helper()
 	token := os.Getenv("GITLAB_TOKEN")
-	return createTestProvider(t).GetOAuthClient(token)
+	return createTestProvider(t).GetOAuthClient(token, false)
 }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")

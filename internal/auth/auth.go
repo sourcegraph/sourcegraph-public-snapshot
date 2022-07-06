@@ -13,16 +13,16 @@ type TokenWithRefresherer struct {
 	Refresherer TryToSaveToken
 }
 
-type Authenticator interface {
+type AuthenticatorWithRefresherer interface {
 	Authenticate(*http.Request) error
 	Hash() string
 }
 
-var _ Authenticator = &TokenWithRefresherer{}
+var _ AuthenticatorWithRefresherer = &TokenWithRefresherer{}
 
 func (t *TokenWithRefresherer) Authenticate(req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+t.Token)
-	// TODO: add auth, retry, refresh steps
+	// TODO: add steps for auth, retry, refresh
 
 	//TODO - block bellow to be used in other parts of the code, to save the updated tok to the db.
 	// saveFunction := func(token string) string { return token }
