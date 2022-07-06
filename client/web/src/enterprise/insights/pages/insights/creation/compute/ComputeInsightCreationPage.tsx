@@ -23,6 +23,7 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
+    // eslint-disable-next-line no-restricted-syntax
     const [initialFormValues, setInitialFormValues] = useLocalStorage<CreateComputeInsightFormFields | undefined>(
         'insights.compute-creation-ui',
         undefined

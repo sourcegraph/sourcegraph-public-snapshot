@@ -1,6 +1,6 @@
-import { FunctionComponent, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
-import { Code } from '@sourcegraph/wildcard'
+import { Code, Input } from '@sourcegraph/wildcard'
 
 import {
     CreationUiLayout,
@@ -13,6 +13,11 @@ import {
     useForm,
     createDefaultEditSeries,
     useField,
+    insightTitleValidator,
+    insightRepositoriesValidator,
+    insightRepositoriesAsyncValidator,
+    RepositoriesField,
+    getDefaultInputProps,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 
@@ -36,7 +41,7 @@ interface ComputeInsightCreationContentProps extends NativeContainerProps {
     onCancel: () => void
 }
 
-export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCreationContentProps> = props => {
+export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProps> = props => {
     const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
     const { licensed } = useUiFeatures()
 
@@ -47,6 +52,22 @@ export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCrea
         touched: mode === 'edit',
     })
 
+    const title = useField({
+        name: 'title',
+        formApi: form.formAPI,
+        validators: { sync: insightTitleValidator },
+    })
+
+    const repositories = useField({
+        name: 'repositories',
+        formApi: form.formAPI,
+        validators: {
+            // Turn off any validations for the repositories field in we are in all repos mode
+            sync: insightRepositoriesValidator,
+            async: insightRepositoriesAsyncValidator,
+        },
+    })
+
     const series = useField({
         name: 'series',
         formApi: form.formAPI,
@@ -55,6 +76,23 @@ export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCrea
     return (
         <CreationUiLayout {...attributes}>
             <CreationUIForm>
+                <FormGroup
+                    name="insight repositories"
+                    title="Targeted repositories"
+                    subtitle="Create a list of repositories to run your search over"
+                >
+                    <Input
+                        as={RepositoriesField}
+                        autoFocus={true}
+                        required={true}
+                        label="Repositories"
+                        message="Separate repositories with commas"
+                        placeholder="Example: github.com/sourcegraph/sourcegraph"
+                        {...getDefaultInputProps(repositories)}
+                        className="mb-0 d-flex flex-column"
+                    />
+                </FormGroup>
+
                 <FormGroup
                     name="data series group"
                     title="Data series"
@@ -67,7 +105,7 @@ export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCrea
                 >
                     <FormSeries
                         seriesField={series}
-                        repositories=""
+                        repositories={repositories.input.value}
                         showValidationErrorsOnMount={false}
                         queryFieldDescription={
                             <ul className="pl-3">
@@ -83,6 +121,17 @@ export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCrea
                                 </li>
                             </ul>
                         }
+                    />
+                </FormGroup>
+
+                <FormGroup name="chart settings group" title="Chart settings">
+                    <Input
+                        label="Title"
+                        required={true}
+                        message="Shown as the title for your insight"
+                        placeholder="Example: Migration to React function components"
+                        className="d-flex flex-column"
+                        {...getDefaultInputProps(title)}
                     />
                 </FormGroup>
             </CreationUIForm>
