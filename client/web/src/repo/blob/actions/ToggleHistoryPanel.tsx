@@ -97,7 +97,12 @@ export class ToggleHistoryPanel extends React.PureComponent<
         }
         return (
             <Tooltip content={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
-                <RepoHeaderActionButtonLink className="btn-icon" file={false} onSelect={this.onClick}>
+                <RepoHeaderActionButtonLink
+                    aria-label={visible ? 'Hide' : 'Show'}
+                    className="btn-icon"
+                    file={false}
+                    onSelect={this.onClick}
+                >
                     <Icon aria-hidden={true} svgPath={mdiHistory} />
                 </RepoHeaderActionButtonLink>
             </Tooltip>

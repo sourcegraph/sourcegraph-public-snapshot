@@ -44,6 +44,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
         return (
             <Tooltip content={descriptiveText}>
                 <RepoHeaderActionAnchor
+                    aria-label={descriptiveText}
                     to={to}
                     target="_blank"
                     onClick={this.onClick.bind(this)}

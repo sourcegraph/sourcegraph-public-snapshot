@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiWrap } from '@mdi/js'
+import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -88,12 +88,13 @@ export class ToggleLineWrap extends React.PureComponent<
 
         return (
             <Tooltip content={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}>
-                <RepoHeaderActionButtonLink className="btn-icon" file={false} onSelect={this.onClick}>
-                    <Icon
-                        as={this.state.value ? WrapDisabledIcon : undefined}
-                        svgPath={!this.state.value ? mdiWrap : undefined}
-                        aria-hidden={true}
-                    />
+                <RepoHeaderActionButtonLink
+                    aria-label={this.state.value ? 'Disable' : 'Enable'}
+                    className="btn-icon"
+                    file={false}
+                    onSelect={this.onClick}
+                >
+                    <Icon svgPath={this.state.value ? mdiWrapDisabled : mdiWrap} aria-hidden={true} />
                 </RepoHeaderActionButtonLink>
             </Tooltip>
         )
