@@ -59,7 +59,9 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			b.WriteString("(REPOPAGER")
 			depth++
 			writeSep(b, sep, indent, depth)
-			writeSexp(j.child)
+			if j.child != nil {
+				writeSexp(j.child.Partial())
+			}
 			b.WriteString(")")
 			depth--
 
@@ -222,7 +224,9 @@ func PrettyMermaid(j job.Job) string {
 			depth++
 			writeNode(b, depth, RoundedStyle, &id, "REPOPAGER")
 			writeEdge(b, depth, srcId, id)
-			writeMermaid(j.child)
+			if j.child != nil {
+				writeMermaid(j.child.Partial())
+			}
 			depth--
 		case *AndJob:
 			srcId := id
@@ -341,12 +345,15 @@ func toJSON(j job.Job, verbose bool) any {
 			return j.Name()
 
 		case *repoPagerJob:
-			return struct {
+			s := struct {
 				Repopager any `json:"REPOPAGER"`
 			}{
-				Repopager: emitJSON(j.child),
+				Repopager: struct{}{},
 			}
-
+			if j.child != nil {
+				s.Repopager = emitJSON(j.child.Partial())
+			}
+			return s
 		case *AndJob:
 			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {

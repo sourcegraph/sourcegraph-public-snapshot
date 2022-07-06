@@ -17,9 +17,30 @@ import (
 
 type repoPagerJob struct {
 	repoOpts         search.RepoOptions
-	useIndex         query.YesNoOnly // whether to include indexed repos
-	containsRefGlobs bool            // whether to include repositories with refs
-	child            job.Job         // child job tree that need populating a repos field to run
+	useIndex         query.YesNoOnly               // whether to include indexed repos
+	containsRefGlobs bool                          // whether to include repositories with refs
+	child            job.PartialJob[resolvedRepos] // child job tree that need populating a repos field to run
+}
+
+// resolvedRepos is the set of information to complete the partial
+// child jobs for the repoPagerJob.
+type resolvedRepos struct {
+	indexed   *zoekt.IndexedRepoRevs
+	unindexed []*search.RepositoryRevisions
+}
+
+// reposPartialJob is a partial job that needs a set of resolved repos
+// in order to construct a complete job.
+type reposPartialJob struct {
+	inner job.Job
+}
+
+func (j *reposPartialJob) Partial() job.Job {
+	return j.inner
+}
+
+func (j *reposPartialJob) Resolve(rr resolvedRepos) job.Job {
+	return setRepos(j.inner, rr.indexed, rr.unindexed)
 }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
@@ -80,7 +101,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 			return err
 		}
 
-		job := setRepos(p.child, indexed, unindexed)
+		job := p.child.Resolve(resolvedRepos{indexed, unindexed})
 		alert, err := job.Run(ctx, clients, stream)
 		maxAlerter.Add(alert)
 		return err
