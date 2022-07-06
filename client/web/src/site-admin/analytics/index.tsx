@@ -688,7 +688,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         const legends: ValueLegendListProps['items'] = [
             {
                 value: referenceClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'References views' : 'Users using references',
+                description: eventAggregation === 'count' ? 'References' : 'Users using references',
                 color: 'var(--cyan)',
             },
             {
