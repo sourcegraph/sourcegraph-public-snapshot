@@ -18,7 +18,7 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: `Ignore a previously failed attempt if it will be immediately retried by this operation.`,
+		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 

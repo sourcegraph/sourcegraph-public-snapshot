@@ -9,21 +9,31 @@ import (
 
 type operations struct {
 	// Not used yet.
-	list             *observation.Operation
-	get              *observation.Operation
-	getBatch         *observation.Operation
-	enqueue          *observation.Operation
-	delete           *observation.Operation
+	list     *observation.Operation
+	get      *observation.Operation
+	getBatch *observation.Operation
+	enqueue  *observation.Operation
+	delete   *observation.Operation
+
 	uploadsVisibleTo *observation.Operation
 
 	// Commits
+	getOldestCommitDate       *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
-	staleSourcedCommits       *observation.Operation
+	getStaleSourcedCommits    *observation.Operation
 	updateSourcedCommits      *observation.Operation
 	deleteSourcedCommits      *observation.Operation
 
+	// Repositories
+	getRepositoriesMaxStaleAge      *observation.Operation
+	getDirtyRepositories            *observation.Operation
+	setRepositoryAsDirty            *observation.Operation
+	updateDirtyRepositories         *observation.Operation
+	setRepositoriesForRetentionScan *observation.Operation
+
 	// Uploads
 	getUploads                     *observation.Operation
+	updateUploadsVisibleToCommits  *observation.Operation
 	updateUploadRetention          *observation.Operation
 	updateUploadsReferenceCounts   *observation.Operation
 	softDeleteExpiredUploads       *observation.Operation
@@ -31,10 +41,8 @@ type operations struct {
 	deleteUploadsStuckUploading    *observation.Operation
 	hardDeleteUploads              *observation.Operation
 
-	// Repositories
-	getDirtyRepositories            *observation.Operation
-	setRepositoryAsDirty            *observation.Operation
-	setRepositoriesForRetentionScan *observation.Operation
+	// Dumps
+	findClosestDumps *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
@@ -72,13 +80,22 @@ func newOperations(observationContext *observation.Context) *operations {
 		uploadsVisibleTo: op("UploadsVisibleTo"),
 
 		// Commits
+		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
-		staleSourcedCommits:       op("StaleSourcedCommits"),
+		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
+		// Repositories
+		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
+		getDirtyRepositories:            op("GetDirtyRepositories"),
+		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
+		updateDirtyRepositories:         op("UpdateDirtyRepositories"),
+		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
+
 		// Uploads
 		getUploads:                     op("GetUploads"),
+		updateUploadsVisibleToCommits:  op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:          op("UpdateUploadRetention"),
 		updateUploadsReferenceCounts:   op("UpdateUploadsReferenceCounts"),
 		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
@@ -86,10 +103,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
 		hardDeleteUploads:              op("HardDeleteUploads"),
 
-		// Repositories
-		getDirtyRepositories:            op("GetDirtyRepositories"),
-		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
-		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
+		// Dumps
+		findClosestDumps: op("FindClosestDumps"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),

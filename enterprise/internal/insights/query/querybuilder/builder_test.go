@@ -177,3 +177,50 @@ func TestDefaults(t *testing.T) {
 		})
 	}
 }
+
+func TestComputeInsightCommandQuery(t *testing.T) {
+	tests := []struct {
+		name       string
+		inputQuery string
+		mapType    MapType
+		want       string
+	}{
+		{
+			name:       "verify archive fork map to lang",
+			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
+			mapType:    Lang,
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $lang)",
+		}, {
+			name:       "verify archive fork map to repo",
+			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
+			mapType:    Repo,
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $repo)",
+		}, {
+			name:       "verify archive fork map to path",
+			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
+			mapType:    Path,
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $path)",
+		}, {
+			name:       "verify archive fork map to author",
+			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
+			mapType:    Author,
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $author)",
+		}, {
+			name:       "verify archive fork map to date",
+			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
+			mapType:    Date,
+			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $date)",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := ComputeInsightCommandQuery(test.inputQuery, test.mapType)
+			if err != nil {
+				t.Error(err)
+			}
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Errorf("%s failed (want/got): %s", test.name, diff)
+			}
+		})
+	}
+}

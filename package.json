@@ -462,7 +462,6 @@
     "rxjs": "^6.6.3",
     "sanitize-html": "^2.0.0",
     "semver": "^7.3.2",
-    "shepherd.js": "^8.3.1",
     "stream-http": "^3.2.0",
     "string-score": "^1.0.1",
     "tabbable": "^5.1.5",
