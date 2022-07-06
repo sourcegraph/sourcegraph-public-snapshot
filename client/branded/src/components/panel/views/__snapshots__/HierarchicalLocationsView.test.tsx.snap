@@ -685,6 +685,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 <DocumentFragment>
   <div
     aria-label="Loading"
+    aria-live="polite"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
@@ -695,6 +696,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty 
 <DocumentFragment>
   <div
     aria-label="Loading"
+    aria-live="polite"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />

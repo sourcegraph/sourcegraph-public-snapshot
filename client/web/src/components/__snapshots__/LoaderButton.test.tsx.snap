@@ -19,6 +19,7 @@ exports[`LoaderButton should render a loading spinner when loading prop is true 
   >
     <div
       aria-label="Loading"
+      aria-live="polite"
       class="iconInline loadingSpinner"
       role="img"
     />
