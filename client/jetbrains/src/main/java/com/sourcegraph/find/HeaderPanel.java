@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
@@ -39,7 +38,7 @@ public class HeaderPanel extends BorderLayoutPanel {
         actionGroup = new DefaultActionGroup(openAuthenticationSettingsAction, openPluginSettingsAction);
         ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("find-on-sourcegraph-popup-toolbar", actionGroup, true);
         toolbar.setMinimumButtonSize(JBUI.size(14, 14));
-        toolbar.getComponent().setBackground(JBColor.WHITE);
+        toolbar.setTargetComponent(this);
         actionGroup.remove(openAuthenticationSettingsAction);
 
         JPanel title = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
