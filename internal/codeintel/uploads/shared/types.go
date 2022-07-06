@@ -28,6 +28,28 @@ type Upload struct {
 	AssociatedIndexID *int
 }
 
+// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
+// and stores only processed records.
+type Dump struct {
+	ID                int
+	Commit            string
+	Root              string
+	VisibleAtTip      bool
+	UploadedAt        time.Time
+	State             string
+	FailureMessage    *string
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	ProcessAfter      *time.Time
+	NumResets         int
+	NumFailures       int
+	RepositoryID      int
+	RepositoryName    string
+	Indexer           string
+	IndexerVersion    string
+	AssociatedIndexID *int
+}
+
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string

@@ -25,8 +25,9 @@ var tableNames = []string{
 	"lsif_data_implementations_schema_versions",
 }
 
-func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, trace, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
+// DeleteLsifDataByUploadIds deletes LSIF data by UploadIds from the lsif database.
+func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error) {
+	ctx, trace, endObservation := s.operations.deleteLsifDataByUploadIds.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numBundleIDs", len(bundleIDs)),
 		log.String("bundleIDs", intsToString(bundleIDs)),
 	}})
@@ -57,7 +58,7 @@ func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	for _, tableName := range tableNames {
 		trace.Log(log.String("tableName", tableName))
 
-		query := sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))
+		query := sqlf.Sprintf(deleteQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))
 		if err := tx.Exec(ctx, query); err != nil {
 			return err
 		}
@@ -66,8 +67,8 @@ func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	return nil
 }
 
-const clearQuery = `
--- source: internal/codeintel/uploads/internal/lsifstore/lsifstore_clear.go:Clear
+const deleteQuery = `
+-- source: internal/codeintel/uploads/internal/lsifstore/lsifstore_delete.go:DeleteLsifDataByUploadIds
 DELETE FROM %s WHERE dump_id IN (%s)
 `
 

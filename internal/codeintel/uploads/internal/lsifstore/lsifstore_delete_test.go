@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestClear(t *testing.T) {
+func TestDeleteLsifDataByUploadIds(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
@@ -29,7 +29,7 @@ func TestClear(t *testing.T) {
 		}
 	}
 
-	if err := store.Clear(context.Background(), 2, 4); err != nil {
+	if err := store.DeleteLsifDataByUploadIds(context.Background(), 2, 4); err != nil {
 		t.Fatalf("unexpected error clearing bundle data: %s", err)
 	}
 

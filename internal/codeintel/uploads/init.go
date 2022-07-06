@@ -9,12 +9,14 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -42,8 +44,10 @@ func GetService(db, codeIntelDB database.DB) *Service {
 
 		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
 		store := store.New(db, oc("store"))
+		gsc := gitserver.New(db, store, oc("gitserver"))
+		locker := locker.NewWith(db, "codeintel")
 
-		svc = newService(store, lsifstore, oc("service"))
+		svc = newService(store, lsifstore, gsc, locker, oc("service"))
 	})
 
 	return svc

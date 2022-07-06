@@ -161,12 +161,6 @@
     - DBStore
     - UploadService
     - AutoIndexingService
-- filename: internal/codeintel/uploads/background/commitgraph/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph
-  interfaces:
-    - DBStore
-    - GitserverClient
-    - Locker
 - filename: internal/codeintel/uploads/background/expiration/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration
   interfaces:
