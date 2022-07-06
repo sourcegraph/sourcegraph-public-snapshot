@@ -221,9 +221,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			isRepoArchived: true,
 			sourcerErr:     repoArchivedErr,
 
-			wantCreateOnCodeHost: true,
-			wantGitserverCommit:  true,
-			wantNonRetryableErr:  true,
+			wantGitserverCommit: true,
+			wantNonRetryableErr: true,
 
 			wantChangeset: ct.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,

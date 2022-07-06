@@ -185,7 +185,10 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
 			if acss.IsArchivedPushError(pce.CombinedOutput) {
-				return e.handleArchivedRepo(ctx)
+				if err := e.handleArchivedRepo(ctx); err != nil {
+					return errors.Wrap(err, "handling archived repo")
+				}
+				return errcode.MakeNonRetryable(errors.New("cannot push to an archived repo"))
 			}
 		}
 	}
