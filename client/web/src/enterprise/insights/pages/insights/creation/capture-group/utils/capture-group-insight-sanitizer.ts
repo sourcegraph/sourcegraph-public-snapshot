@@ -3,7 +3,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
+import { getSanitizedRepositories } from '../../../../../components'
 import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
 import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CaptureGroupFormFields } from '../types'

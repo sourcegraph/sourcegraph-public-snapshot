@@ -44,8 +44,9 @@ The symbols container recognizes these environment variables:
 - `REQUEST_BUFFER_SIZE`: defaults to `8192`, maximum size of buffered parser request channel
 - `PROCESSING_TIMEOUT`: defaults to `2h`, maximum time to spend processing a repository
 - `MAX_TOTAL_PATHS_LENGTH`: defaults to `100000`, maximum sum of lengths of all paths in a single call to git archive
-- `USE_ROCKSKIP`: defaults to `false`, enables [Rockskip](rockskip.md) for fast symbol searches and search-based code intelligence on big repositories specified in `ROCKSKIP_REPOS`
+- `USE_ROCKSKIP`: defaults to `false`, enables [Rockskip](rockskip.md) for fast symbol searches and search-based code intelligence on repositories specified in `ROCKSKIP_REPOS`, or respositories over `ROCKSKIP_MIN_REPO_SIZE_MB` in size
 - `ROCKSKIP_REPOS`: no default, in combination with `USE_ROCKSKIP=true` this specifies a comma separated list of repositories to index using [Rockskip](rockskip.md) (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)
+- `ROCKSKIP_MIN_REPO_SIZE_MB`: no default, in combination with `USE_ROCKSKIP=true` all repos that are at least this big will be indexed using Rockskip
 - `MAX_CONCURRENTLY_INDEXING`: defaults to `4`, maximum number of repositories being indexed at a time by [Rockskip](rockskip.md) (also limits ctags processes)
 
 The defaults come from [`config.go`](https://github.com/sourcegraph/sourcegraph/blob/eea895ae1a8acef08370a5cc6f24bdc7c66cb4ed/cmd/symbols/config.go#L42-L59).

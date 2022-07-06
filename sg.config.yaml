@@ -115,6 +115,14 @@ env:
   ENABLE_STREAMING_REPOS_SYNCER: true
 
 commands:
+  server:
+    cmd: ./dev/run-server-image.sh
+    env:
+      TAG: insiders
+      CLEAN: 'true'
+      DATA: '/tmp/sourcegraph-data'
+      URL: 'http://localhost:7080'
+
   oss-frontend:
     cmd: .bin/oss-frontend
     install: |
@@ -137,6 +145,9 @@ commands:
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+
       .bin/enterprise-frontend
     install: |
       if [ -n "$DELVE" ]; then
@@ -149,7 +160,6 @@ commands:
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
@@ -321,7 +331,9 @@ commands:
 
   web-standalone-http:
     cmd: yarn workspace @sourcegraph/web serve:dev --color
-    install: yarn --no-progress
+    install: |
+      yarn --no-progress
+      yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -652,6 +664,25 @@ commands:
       LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
+  otel-collector:
+    cmd: |
+      JAEGER_HOST='host.docker.internal'
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        # Jaeger generally runs outside of Docker, so to access it we need to be
+        # able to access ports on the host, because the Docker host only exists on
+        # MacOS. --net=host is a very dirty way of enabling this.
+        DOCKER_NET="--net=host"
+        JAEGER_HOST="localhost"
+      fi
+
+      docker run --rm --name=otel-collector $DOCKER_NET \
+        -p 4317:4317 -p 55679:55679 \
+        -e JAEGER_HOST=$JAEGER_HOST \
+        -v "$(pwd)"/dev/otel-collector/config.yaml:/etc/otel-collector/config.yaml \
+        otel/opentelemetry-collector:${OTEL_COLLECTOR_VERISON} --config /etc/otel-collector/config.yaml
+    env:
+      OTEL_COLLECTOR_VERISON: '0.54.0'
+
   storybook:
     cmd: yarn storybook
     install: yarn
@@ -897,6 +928,14 @@ commandsets:
       - web-standalone-http-prod
       - caddy
 
+  # For testing out OpenTelemetry stack
+  otel:
+    checks:
+      - docker
+    commands:
+      - otel-collector
+      - jaeger
+
 tests:
   # These can be run with `sg test [name]`
   backend:
@@ -935,11 +974,19 @@ tests:
 
   frontend-e2e:
     preamble: |
-      'sg start enterprise-e2e' must be already running for these tests to work.
+      A Sourcegraph isntance must be already running for these tests to work, most
+      commonly with:
+
+        sg start enterprise-e2e
+
+      You can also run tests against an existing server image (note that this test must
+      be run with SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' for the following to work):
+
+        TAG=insiders sg run server
 
       If you run into authentication issues, you can run the following commands to fix them:
 
-        sg db reset-pg && sg db add-user --username 'test' --password 'supersecurepassword'
+        sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
 
       The above command resets the database and creates a user like so:
 

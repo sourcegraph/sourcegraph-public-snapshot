@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -22,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestStaleSourcedCommits(t *testing.T) {
+func TestGetStaleSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
@@ -39,7 +38,7 @@ func TestStaleSourcedCommits(t *testing.T) {
 		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8)},
 	)
 
-	sourcedCommits, err := store.StaleSourcedCommits(context.Background(), time.Minute, 5, now)
+	sourcedCommits, err := store.GetStaleSourcedCommits(context.Background(), time.Minute, 5, now)
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
@@ -62,7 +61,7 @@ func TestStaleSourcedCommits(t *testing.T) {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
-	sourcedCommits, err = store.StaleSourcedCommits(context.Background(), time.Minute, 5, now.Add(time.Minute*2))
+	sourcedCommits, err = store.GetStaleSourcedCommits(context.Background(), time.Minute, 5, now.Add(time.Minute*2))
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
@@ -165,38 +164,6 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 }
 
-func TestSetRepositoryAsDirty(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
-	tx := basestore.NewWithHandle(db.Handle())
-
-	for _, id := range []int{50, 51, 52} {
-		insertRepo(t, db, id, "")
-	}
-
-	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
-		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID, tx); err != nil {
-			t.Errorf("unexpected error marking repository as dirty: %s", err)
-		}
-	}
-
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
-	}
-
-	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
-	}
-	sort.Ints(keys)
-
-	if diff := cmp.Diff([]int{50, 51, 52}, keys); diff != "" {
-		t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
-	}
-}
-
 // insertUploads populates the lsif_uploads table with the given upload models.
 func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
 	for _, upload := range uploads {
@@ -270,6 +237,55 @@ func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
 	}
 }
 
+func updateUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
+	for _, upload := range uploads {
+		query := sqlf.Sprintf(`
+			UPDATE lsif_uploads
+			SET
+				commit = COALESCE(NULLIF(%s, ''), commit),
+				root = COALESCE(NULLIF(%s, ''), root),
+				uploaded_at = COALESCE(NULLIF(%s, '0001-01-01 00:00:00+00'::timestamptz), uploaded_at),
+				state = COALESCE(NULLIF(%s, ''), state),
+				failure_message  = COALESCE(%s, failure_message),
+				started_at = COALESCE(%s, started_at),
+				finished_at = COALESCE(%s, finished_at),
+				process_after = COALESCE(%s, process_after),
+				num_resets = COALESCE(NULLIF(%s, 0), num_resets),
+				num_failures = COALESCE(NULLIF(%s, 0), num_failures),
+				repository_id = COALESCE(NULLIF(%s, 0), repository_id),
+				indexer = COALESCE(NULLIF(%s, ''), indexer),
+				indexer_version = COALESCE(NULLIF(%s, ''), indexer_version),
+				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
+				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
+				upload_size = COALESCE(%s, upload_size),
+				associated_index_id = COALESCE(%s, associated_index_id)
+			WHERE id = %s
+		`,
+			upload.Commit,
+			upload.Root,
+			upload.UploadedAt,
+			upload.State,
+			upload.FailureMessage,
+			upload.StartedAt,
+			upload.FinishedAt,
+			upload.ProcessAfter,
+			upload.NumResets,
+			upload.NumFailures,
+			upload.RepositoryID,
+			upload.Indexer,
+			upload.IndexerVersion,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
+			upload.AssociatedIndexID,
+			upload.ID)
+
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while updating upload: %s", err)
+		}
+	}
+}
+
 func deleteUploads(t testing.TB, db database.DB, uploads ...int) {
 	for _, upload := range uploads {
 		query := sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, upload)
@@ -318,36 +334,6 @@ func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 	)
 
 	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
-}
-
-// insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
-// with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
-// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
-// insertVisibleAtTipNonDefaultBranch method instead.
-func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
-}
-
-// insertVisibleAtTipNonDefaultBranch populates rows of the lsif_uploads_visible_at_tip table for the
-// given repository with the given identifiers. Each upload is assumed to refer to the tip of a branch
-// distinct from the default branch or a tag.
-func insertVisibleAtTipNonDefaultBranch(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, false, uploadIDs...)
-}
-
-func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
-	var rows []*sqlf.Query
-	for _, uploadID := range uploadIDs {
-		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, isDefaultBranch))
-	}
-
-	query := sqlf.Sprintf(
-		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
-	}
 }
 
 // scanStates scans pairs of id/states from the return value of `*Store.query`.

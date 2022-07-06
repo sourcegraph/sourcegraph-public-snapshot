@@ -1,5 +1,5 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
+import { getSanitizedRepositories } from '../../../../../components'
 import {
     MinimalSearchBasedInsightData,
     InsightExecutionType,
@@ -7,9 +7,9 @@ import {
     SearchBasedInsightSeries,
 } from '../../../../../core'
 import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
-import { CreateInsightFormFields, EditableDataSeries } from '../types'
+import { CreateInsightFormFields } from '../types'
 
-export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
+export function getSanitizedLine(line: SearchBasedInsightSeries): SearchBasedInsightSeries {
     return {
         id: line.id,
         name: line.name.trim(),
@@ -22,7 +22,7 @@ export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSe
     }
 }
 
-export function getSanitizedSeries(rawSeries: EditableDataSeries[]): SearchBasedInsightSeries[] {
+export function getSanitizedSeries(rawSeries: SearchBasedInsightSeries[]): SearchBasedInsightSeries[] {
     return rawSeries.map(getSanitizedLine)
 }
 

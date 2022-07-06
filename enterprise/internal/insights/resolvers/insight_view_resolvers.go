@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
@@ -1019,9 +1020,15 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	}
 
 	var groupBy *string
+	var nextRecordingAfter time.Time
+	var oldestHistoricalAt time.Time
 	if series.GroupBy != nil {
 		temp := strings.ToLower(*series.GroupBy)
 		groupBy = &temp
+		// We want to disable interval recording for compute types.
+		// December 31, 9999 is the maximum possible date in postgres.
+		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+		oldestHistoricalAt = time.Now()
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
@@ -1054,11 +1061,28 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
 			GenerationMethod:           searchGenerationMethod(series),
 			GroupBy:                    groupBy,
+			NextRecordingAfter:         nextRecordingAfter,
+			OldestHistoricalAt:         oldestHistoricalAt,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
-		if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
+		if groupBy != nil {
+			enqueueQueryRunnerJob := func(ctx context.Context, job *queryrunner.Job) error {
+				_, err := queryrunner.EnqueueJob(ctx, tx.Store, job)
+				return err
+			}
+			insightEnqueuer := background.NewInsightEnqueuer(time.Now, enqueueQueryRunnerJob)
+			if err := insightEnqueuer.EnqueueSingle(ctx, seriesToAdd, store.SnapshotMode, tx.StampSnapshot); err != nil {
+				return nil, errors.Wrap(err, "GroupBy.EnqueueSingle")
+			}
+			// We stamp backfill even without queueing up a backfill because we only want a single
+			// point in time.
+			_, err = tx.StampBackfill(ctx, seriesToAdd)
+			if err != nil {
+				return nil, errors.Wrap(err, "GroupBy.StampBackfill")
+			}
+		} else if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
 			err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{seriesToAdd})
 			if err != nil {
 				return nil, errors.Wrap(err, "ScopedBackfill")
