@@ -57,8 +57,8 @@ func (l *LimitJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (l *LimitJob) Children() []job.DescriptiveJob {
-	return []job.DescriptiveJob{l.child}
+func (l *LimitJob) Children() []job.Describer {
+	return []job.Describer{l.child}
 }
 
 type limitStream struct {

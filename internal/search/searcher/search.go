@@ -147,7 +147,7 @@ func (s *TextSearchJob) Tags(job.Verbosity) []otlog.Field {
 	}
 }
 
-func (s *TextSearchJob) Children() []job.DescriptiveJob { return nil }
+func (s *TextSearchJob) Children() []job.Describer { return nil }
 
 var MockSearchFilesInRepo func(
 	ctx context.Context,

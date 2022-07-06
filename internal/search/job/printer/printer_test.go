@@ -33,8 +33,8 @@ func (tj *testJob) withChildren(children ...*testJob) *testJob {
 func (tj *testJob) Name() string                     { return tj.name }
 func (tj *testJob) Tags(job.Verbosity) []otlog.Field { return tj.tags }
 
-func (tj *testJob) Children() []job.DescriptiveJob {
-	res := make([]job.DescriptiveJob, len(tj.children))
+func (tj *testJob) Children() []job.Describer {
+	res := make([]job.Describer, len(tj.children))
 	for i := range tj.children {
 		res[i] = tj.children[i]
 	}

@@ -44,4 +44,4 @@ func (c *ComputeExcludedJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (c *ComputeExcludedJob) Children() []job.DescriptiveJob { return nil }
+func (c *ComputeExcludedJob) Children() []job.Describer { return nil }

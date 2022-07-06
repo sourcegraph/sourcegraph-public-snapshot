@@ -23,7 +23,7 @@ import (
 // timeout). Calling Run on a job object runs a search.
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
-	DescriptiveJob
+	Describer
 }
 
 // PartialJob is a partially constructed job that needs information only
@@ -38,12 +38,12 @@ type PartialJob[T any] interface {
 	// available at runtime.
 	Resolve(T) Job
 
-	DescriptiveJob
+	Describer
 }
 
-type DescriptiveJob interface {
+type Describer interface {
 	Name() string
-	Children() []DescriptiveJob
+	Children() []Describer
 	Tags(Verbosity) []otlog.Field
 }
 

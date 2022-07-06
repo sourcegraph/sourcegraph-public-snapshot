@@ -86,8 +86,8 @@ func (j *alertJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (j *alertJob) Children() []job.DescriptiveJob {
-	return []job.DescriptiveJob{j.child}
+func (j *alertJob) Children() []job.Describer {
+	return []job.Describer{j.child}
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

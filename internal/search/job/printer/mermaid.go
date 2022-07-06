@@ -10,18 +10,18 @@ import (
 )
 
 // Mermaid outputs a Mermaid flowchart. See https://mermaid-js.github.io.
-func Mermaid(j job.DescriptiveJob) string {
+func Mermaid(j job.Describer) string {
 	return MermaidVerbose(j, job.VerbosityNone)
 }
 
-func MermaidVerbose(j job.DescriptiveJob, verbosity job.Verbosity) string {
+func MermaidVerbose(j job.Describer, verbosity job.Verbosity) string {
 	depth := 0
 	id := 0
 	b := new(bytes.Buffer)
 	b.WriteString("flowchart TB\n")
 
-	var writeMermaid func(job.DescriptiveJob)
-	writeMermaid = func(j job.DescriptiveJob) {
+	var writeMermaid func(job.Describer)
+	writeMermaid = func(j job.Describer) {
 		if j == nil {
 			return
 		}
@@ -67,7 +67,7 @@ func writeNode(b *bytes.Buffer, depth int, style NodeStyle, id *int, label strin
 	*id++
 }
 
-func buildLabel(j job.DescriptiveJob, v job.Verbosity) string {
+func buildLabel(j job.Describer, v job.Verbosity) string {
 	b := new(strings.Builder)
 	b.WriteString(trimmedUpperName(j.Name()))
 	if v > job.VerbosityNone {

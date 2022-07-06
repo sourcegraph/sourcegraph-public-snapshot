@@ -8,17 +8,17 @@ import (
 )
 
 // Sexp outputs the s-expression on a single line.
-func Sexp(j job.DescriptiveJob) string {
+func Sexp(j job.Describer) string {
 	return SexpVerbose(j, job.VerbosityNone, false)
 }
 
 // Sexp outputs a pretty-printed s-expression with basic verbosity
-func SexpPretty(j job.DescriptiveJob) string {
+func SexpPretty(j job.Describer) string {
 	return SexpVerbose(j, job.VerbosityBasic, true)
 }
 
 // SexpVerbose outputs a formatted s-expression with two spaces of indentation, potentially spanning multiple lines.
-func SexpVerbose(j job.DescriptiveJob, verbosity job.Verbosity, pretty bool) string {
+func SexpVerbose(j job.Describer, verbosity job.Verbosity, pretty bool) string {
 	if pretty {
 		return SexpFormat(j, verbosity, "\n", "  ")
 	} else {
@@ -26,12 +26,12 @@ func SexpVerbose(j job.DescriptiveJob, verbosity job.Verbosity, pretty bool) str
 	}
 }
 
-func SexpFormat(j job.DescriptiveJob, verbosity job.Verbosity, sep, indent string) string {
+func SexpFormat(j job.Describer, verbosity job.Verbosity, sep, indent string) string {
 	b := new(bytes.Buffer)
 	depth := 0
 
-	var writeSexp func(job.DescriptiveJob)
-	writeSexp = func(j job.DescriptiveJob) {
+	var writeSexp func(job.Describer)
+	writeSexp = func(j job.Describer) {
 		if j == nil {
 			return
 		}

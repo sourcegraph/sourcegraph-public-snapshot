@@ -42,8 +42,8 @@ func (j *selectJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (j *selectJob) Children() []job.DescriptiveJob {
-	return []job.DescriptiveJob{j.child}
+func (j *selectJob) Children() []job.Describer {
+	return []job.Describer{j.child}
 }
 
 // newSelectingStream returns a child Stream of parent that runs the select operation

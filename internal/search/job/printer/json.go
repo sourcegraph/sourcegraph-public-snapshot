@@ -10,12 +10,12 @@ import (
 )
 
 // JSON returns a summary of a job in formatted JSON.
-func JSON(j job.DescriptiveJob) string {
+func JSON(j job.Describer) string {
 	return JSONVerbose(j, job.VerbosityNone)
 }
 
 // JSONVerbose returns the full fidelity of values that comprise a job in formatted JSON.
-func JSONVerbose(j job.DescriptiveJob, verbosity job.Verbosity) string {
+func JSONVerbose(j job.Describer, verbosity job.Verbosity) string {
 	result, err := json.MarshalIndent(toNode(j, verbosity), "", "  ")
 	if err != nil {
 		panic(err)
@@ -60,7 +60,7 @@ func (n node) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func toNode(j job.DescriptiveJob, v job.Verbosity) node {
+func toNode(j job.Describer, v job.Verbosity) node {
 	return node{
 		name: j.Name(),
 		tags: func() []otlog.Field {

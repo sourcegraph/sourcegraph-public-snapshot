@@ -640,7 +640,7 @@ func (z *RepoSubsetTextSearchJob) Tags(job.Verbosity) []otlog.Field {
 	return tags
 }
 
-func (*RepoSubsetTextSearchJob) Children() []job.DescriptiveJob { return nil }
+func (*RepoSubsetTextSearchJob) Children() []job.Describer { return nil }
 
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -675,4 +675,4 @@ func (t *GlobalTextSearchJob) Tags(job.Verbosity) []otlog.Field {
 	}
 }
 
-func (t *GlobalTextSearchJob) Children() []job.DescriptiveJob { return nil }
+func (t *GlobalTextSearchJob) Children() []job.Describer { return nil }

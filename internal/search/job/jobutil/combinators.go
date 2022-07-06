@@ -48,8 +48,8 @@ func (s *SequentialJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (s *SequentialJob) Children() []job.DescriptiveJob {
-	res := make([]job.DescriptiveJob, len(s.children))
+func (s *SequentialJob) Children() []job.Describer {
+	res := make([]job.Describer, len(s.children))
 	for i := range s.children {
 		res[i] = s.children[i]
 	}
@@ -120,8 +120,8 @@ func (p *ParallelJob) Name() string {
 }
 
 func (p *ParallelJob) Tags(job.Verbosity) []log.Field { return nil }
-func (p *ParallelJob) Children() []job.DescriptiveJob {
-	res := make([]job.DescriptiveJob, len(p.children))
+func (p *ParallelJob) Children() []job.Describer {
+	res := make([]job.Describer, len(p.children))
 	for i := range p.children {
 		res[i] = p.children[i]
 	}
@@ -184,8 +184,8 @@ func (t *TimeoutJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (t *TimeoutJob) Children() []job.DescriptiveJob {
-	return []job.DescriptiveJob{t.child}
+func (t *TimeoutJob) Children() []job.Describer {
+	return []job.Describer{t.child}
 }
 
 func NewNoopJob() *NoopJob {
@@ -200,4 +200,4 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 
 func (e *NoopJob) Name() string                   { return "NoopJob" }
 func (e *NoopJob) Tags(job.Verbosity) []log.Field { return nil }
-func (e *NoopJob) Children() []job.DescriptiveJob { return nil }
+func (e *NoopJob) Children() []job.Describer      { return nil }

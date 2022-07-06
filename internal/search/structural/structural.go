@@ -206,4 +206,4 @@ func (s *SearchJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (s *SearchJob) Children() []job.DescriptiveJob { return nil }
+func (s *SearchJob) Children() []job.Describer { return nil }

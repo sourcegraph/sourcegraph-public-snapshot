@@ -63,8 +63,8 @@ func (s *subRepoPermsFilterJob) Tags(job.Verbosity) []otlog.Field {
 	return []otlog.Field{}
 }
 
-func (s *subRepoPermsFilterJob) Children() []job.DescriptiveJob {
-	return []job.DescriptiveJob{s.child}
+func (s *subRepoPermsFilterJob) Children() []job.Describer {
+	return []job.Describer{s.child}
 }
 
 // applySubRepoFiltering filters a set of matches using the provided

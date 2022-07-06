@@ -45,7 +45,7 @@ func (j *reposPartialJob) Resolve(rr resolvedRepos) job.Job {
 
 func (j *reposPartialJob) Name() string                     { return "PartialReposJob" }
 func (j *reposPartialJob) Tags(job.Verbosity) []otlog.Field { return nil }
-func (j *reposPartialJob) Children() []job.DescriptiveJob   { return []job.DescriptiveJob{j.inner} }
+func (j *reposPartialJob) Children() []job.Describer        { return []job.Describer{j.inner} }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
@@ -126,6 +126,6 @@ func (p *repoPagerJob) Tags(job.Verbosity) []otlog.Field {
 	}
 }
 
-func (p *repoPagerJob) Children() []job.DescriptiveJob {
-	return []job.DescriptiveJob{p.child}
+func (p *repoPagerJob) Children() []job.Describer {
+	return []job.Describer{p.child}
 }

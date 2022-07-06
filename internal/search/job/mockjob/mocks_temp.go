@@ -39,7 +39,7 @@ type MockJob struct {
 func NewMockJob() *MockJob {
 	return &MockJob{
 		ChildrenFunc: &JobChildrenFunc{
-			defaultHook: func() (r0 []job.DescriptiveJob) {
+			defaultHook: func() (r0 []job.Describer) {
 				return
 			},
 		},
@@ -66,7 +66,7 @@ func NewMockJob() *MockJob {
 func NewStrictMockJob() *MockJob {
 	return &MockJob{
 		ChildrenFunc: &JobChildrenFunc{
-			defaultHook: func() []job.DescriptiveJob {
+			defaultHook: func() []job.Describer {
 				panic("unexpected invocation of MockJob.Children")
 			},
 		},
@@ -110,15 +110,15 @@ func NewMockJobFrom(i job.Job) *MockJob {
 // JobChildrenFunc describes the behavior when the Children method of the
 // parent MockJob instance is invoked.
 type JobChildrenFunc struct {
-	defaultHook func() []job.DescriptiveJob
-	hooks       []func() []job.DescriptiveJob
+	defaultHook func() []job.Describer
+	hooks       []func() []job.Describer
 	history     []JobChildrenFuncCall
 	mutex       sync.Mutex
 }
 
 // Children delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJob) Children() []job.DescriptiveJob {
+func (m *MockJob) Children() []job.Describer {
 	r0 := m.ChildrenFunc.nextHook()()
 	m.ChildrenFunc.appendCall(JobChildrenFuncCall{r0})
 	return r0
@@ -126,7 +126,7 @@ func (m *MockJob) Children() []job.DescriptiveJob {
 
 // SetDefaultHook sets function that is called when the Children method of
 // the parent MockJob instance is invoked and the hook queue is empty.
-func (f *JobChildrenFunc) SetDefaultHook(hook func() []job.DescriptiveJob) {
+func (f *JobChildrenFunc) SetDefaultHook(hook func() []job.Describer) {
 	f.defaultHook = hook
 }
 
@@ -134,7 +134,7 @@ func (f *JobChildrenFunc) SetDefaultHook(hook func() []job.DescriptiveJob) {
 // Children method of the parent MockJob instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *JobChildrenFunc) PushHook(hook func() []job.DescriptiveJob) {
+func (f *JobChildrenFunc) PushHook(hook func() []job.Describer) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -142,20 +142,20 @@ func (f *JobChildrenFunc) PushHook(hook func() []job.DescriptiveJob) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *JobChildrenFunc) SetDefaultReturn(r0 []job.DescriptiveJob) {
-	f.SetDefaultHook(func() []job.DescriptiveJob {
+func (f *JobChildrenFunc) SetDefaultReturn(r0 []job.Describer) {
+	f.SetDefaultHook(func() []job.Describer {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *JobChildrenFunc) PushReturn(r0 []job.DescriptiveJob) {
-	f.PushHook(func() []job.DescriptiveJob {
+func (f *JobChildrenFunc) PushReturn(r0 []job.Describer) {
+	f.PushHook(func() []job.Describer {
 		return r0
 	})
 }
 
-func (f *JobChildrenFunc) nextHook() func() []job.DescriptiveJob {
+func (f *JobChildrenFunc) nextHook() func() []job.Describer {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -190,7 +190,7 @@ func (f *JobChildrenFunc) History() []JobChildrenFuncCall {
 type JobChildrenFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []job.DescriptiveJob
+	Result0 []job.Describer
 }
 
 // Args returns an interface slice containing the arguments of this

@@ -73,7 +73,7 @@ func (z *SymbolSearchJob) Tags(job.Verbosity) []log.Field {
 	return tags
 }
 
-func (z *SymbolSearchJob) Children() []job.DescriptiveJob { return nil }
+func (z *SymbolSearchJob) Children() []job.Describer { return nil }
 
 type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -118,4 +118,4 @@ func (s *GlobalSymbolSearchJob) Tags(job.Verbosity) []log.Field {
 	}
 }
 
-func (s *GlobalSymbolSearchJob) Children() []job.DescriptiveJob { return nil }
+func (s *GlobalSymbolSearchJob) Children() []job.Describer { return nil }
