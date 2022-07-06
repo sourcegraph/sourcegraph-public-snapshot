@@ -241,7 +241,12 @@ func dbResetPGExec(ctx *cli.Context) error {
 		})
 	}
 
-	return r.Run(ctx.Context, runner.Options{
+	if err := r.Run(ctx.Context, runner.Options{
 		Operations: operations,
-	})
+	}); err != nil {
+		return err
+	}
+
+	std.Out.WriteSuccessf("Database(s) reset!")
+	return nil
 }
