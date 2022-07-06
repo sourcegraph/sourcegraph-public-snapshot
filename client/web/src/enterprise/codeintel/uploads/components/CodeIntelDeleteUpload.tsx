@@ -27,13 +27,7 @@ export const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<Co
                     : 'Delete this upload immediately'
             }
         >
-            <Button
-                type="button"
-                variant="danger"
-                onClick={deleteUpload}
-                disabled={deletionOrError === 'loading'}
-                aria-describedby="upload-delete-button-help"
-            >
+            <Button type="button" variant="danger" onClick={deleteUpload} disabled={deletionOrError === 'loading'}>
                 <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete upload
             </Button>
         </Tooltip>

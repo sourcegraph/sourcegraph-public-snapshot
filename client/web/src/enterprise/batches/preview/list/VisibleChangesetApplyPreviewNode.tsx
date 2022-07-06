@@ -129,7 +129,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Tooltip content="The commit message changed">
-                            <Icon aria-hidden={true} svgPath={mdiCardTextOutline} />
+                            <Icon aria-label="The commit message changed" svgPath={mdiCardTextOutline} />
                         </Tooltip>
                         <span className="text-nowrap">Message</span>
                     </div>
@@ -142,7 +142,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Tooltip content="The diff changed">
-                            <Icon aria-hidden={true} svgPath={mdiFileDocumentEditOutline} />
+                            <Icon aria-label="The diff changed" svgPath={mdiFileDocumentEditOutline} />
                         </Tooltip>
                         <span className="text-nowrap">Diff</span>
                     </div>
@@ -155,7 +155,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Tooltip content="The commit author details changed">
-                            <Icon aria-hidden={true} svgPath={mdiAccountEdit} />
+                            <Icon aria-label="The commit author details changed" svgPath={mdiAccountEdit} />
                         </Tooltip>
                         <span className="text-nowrap">Author</span>
                     </div>
@@ -295,7 +295,7 @@ const ExpandedSection: React.FunctionComponent<
                         <Tooltip content="Changes in this tab">
                             <small className="text-warning ml-2">
                                 <Icon
-                                    aria-hidden={true}
+                                    aria-label="Changes in this tab"
                                     className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                     svgPath={mdiCheckboxBlankCircle}
                                 />
@@ -312,7 +312,7 @@ const ExpandedSection: React.FunctionComponent<
                         <Tooltip content="Changes in this tab">
                             <small className="text-warning ml-2">
                                 <Icon
-                                    aria-hidden={true}
+                                    aria-label="Changes in this tab"
                                     className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                     svgPath={mdiCheckboxBlankCircle}
                                 />
@@ -331,7 +331,7 @@ const ExpandedSection: React.FunctionComponent<
                         <Tooltip content="Changes in this tab">
                             <small className="text-warning ml-2">
                                 <Icon
-                                    aria-hidden={true}
+                                    aria-label="Changes in this tab"
                                     className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                     svgPath={mdiCheckboxBlankCircle}
                                 />

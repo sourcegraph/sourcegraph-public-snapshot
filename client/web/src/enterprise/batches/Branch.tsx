@@ -74,7 +74,7 @@ const BranchNamespace: React.FunctionComponent<React.PropsWithChildren<BranchNam
         return (
             <>
                 <Tooltip content={iconLabel}>
-                    <Icon aria-hidden={true} svgPath={mdiAccountQuestion} />
+                    <Icon aria-label={iconLabel} svgPath={mdiAccountQuestion} />
                 </Tooltip>
                 :
             </>

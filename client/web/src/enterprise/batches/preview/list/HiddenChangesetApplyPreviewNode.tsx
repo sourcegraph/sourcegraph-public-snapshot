@@ -74,7 +74,10 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
             <span className="text-danger">
                 No action will be taken on apply.{' '}
                 <Tooltip content="You have no permissions to access this repository.">
-                    <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
+                    <Icon
+                        aria-label="You have no permissions to access this repository."
+                        svgPath={mdiInformationOutline}
+                    />
                 </Tooltip>
             </span>
         </div>

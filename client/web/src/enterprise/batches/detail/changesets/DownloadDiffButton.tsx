@@ -64,7 +64,7 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
     if (isErrorLike(state)) {
         icon = (
             <Tooltip content={state?.message}>
-                <Icon aria-hidden={true} className="icon" svgPath={mdiAlertCircle} />
+                <Icon aria-label={state?.message} className="icon" svgPath={mdiAlertCircle} />
             </Tooltip>
         )
     } else if (state === DownloadState.LOADING) {

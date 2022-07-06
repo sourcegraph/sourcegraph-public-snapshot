@@ -15,13 +15,7 @@ export const CodeIntelDeleteIndex: FunctionComponent<React.PropsWithChildren<Cod
     deletionOrError,
 }) => (
     <Tooltip content="Deleting this index will remove it from the index queue.">
-        <Button
-            type="button"
-            variant="danger"
-            onClick={deleteIndex}
-            disabled={deletionOrError === 'loading'}
-            aria-describedby="upload-delete-button-help"
-        >
+        <Button type="button" variant="danger" onClick={deleteIndex} disabled={deletionOrError === 'loading'}>
             <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
         </Button>
     </Tooltip>

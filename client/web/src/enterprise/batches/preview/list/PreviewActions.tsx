@@ -104,7 +104,7 @@ export const PreviewActionPublish: React.FunctionComponent<
 > = ({ label = 'Publish', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be published to its code host">
-            <Icon className="mr-1" aria-hidden={true} svgPath={mdiUpload} />
+            <Icon aria-label="This changeset will be published to its code host" className="mr-1" svgPath={mdiUpload} />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -115,7 +115,11 @@ export const PreviewActionPublishDraft: React.FunctionComponent<
 > = ({ label = 'Publish draft', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be published as a draft to its code host">
-            <Icon className="text-muted mr-1" aria-hidden={true} svgPath={mdiUpload} />
+            <Icon
+                aria-label="This changeset will be published as a draft to its code host"
+                className="text-muted mr-1"
+                svgPath={mdiUpload}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -126,7 +130,11 @@ export const PreviewActionImport: React.FunctionComponent<
 > = ({ label = 'Import', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be imported and tracked in this batch change">
-            <Icon className="mr-1" aria-hidden={true} svgPath={mdiImport} />
+            <Icon
+                aria-label="This changeset will be imported and tracked in this batch change"
+                className="mr-1"
+                svgPath={mdiImport}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -137,7 +145,11 @@ export const PreviewActionClose: React.FunctionComponent<
 > = ({ label = 'Close', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be closed on the code host">
-            <Icon className="text-danger mr-1" aria-hidden={true} svgPath={mdiCloseCircleOutline} />
+            <Icon
+                aria-label="This changeset will be closed on the code host"
+                className="text-danger mr-1"
+                svgPath={mdiCloseCircleOutline}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -148,7 +160,11 @@ export const PreviewActionDetach: React.FunctionComponent<
 > = ({ label = 'Detach', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be removed from the batch change">
-            <Icon className="text-danger mr-1" aria-hidden={true} svgPath={mdiDelete} />
+            <Icon
+                aria-label="This changeset will be removed from the batch change"
+                className="text-danger mr-1"
+                svgPath={mdiDelete}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -159,7 +175,11 @@ export const PreviewActionReopen: React.FunctionComponent<
 > = ({ label = 'Reopen', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be reopened on the code host">
-            <Icon className="text-success mr-1" aria-hidden={true} svgPath={mdiSourceBranchRefresh} />
+            <Icon
+                aria-label="This changeset will be reopened on the code host"
+                className="text-success mr-1"
+                svgPath={mdiSourceBranchRefresh}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -170,7 +190,11 @@ export const PreviewActionUndraft: React.FunctionComponent<
 > = ({ label = 'Undraft', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be marked as ready for review on the code host">
-            <Icon className="text-success mr-1" aria-hidden={true} svgPath={mdiSourceBranchCheck} />
+            <Icon
+                aria-label="This changeset will be marked as ready for review on the code host"
+                className="text-success mr-1"
+                svgPath={mdiSourceBranchCheck}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -181,7 +205,11 @@ export const PreviewActionUpdate: React.FunctionComponent<
 > = ({ label = 'Update', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be updated on the code host">
-            <Icon className="mr-1" aria-hidden={true} svgPath={mdiSourceBranchSync} />
+            <Icon
+                aria-label="This changeset will be updated on the code host"
+                className="mr-1"
+                svgPath={mdiSourceBranchSync}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -192,7 +220,11 @@ export const PreviewActionPush: React.FunctionComponent<
 > = ({ label = 'Push', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="A new commit will be pushed to the code host">
-            <Icon className="mr-1" aria-hidden={true} svgPath={mdiUploadNetwork} />
+            <Icon
+                aria-label="A new commit will be pushed to the code host"
+                className="mr-1"
+                svgPath={mdiUploadNetwork}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -203,7 +235,11 @@ export const PreviewActionUnknown: React.FunctionComponent<
 > = ({ operations, className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content={`The operation ${operations} can't yet be displayed.`}>
-            <Icon className="mr-1" aria-hidden={true} svgPath={mdiBeakerQuestion} />
+            <Icon
+                aria-label={`The operation ${operations} can't yet be displayed.`}
+                className="mr-1"
+                svgPath={mdiBeakerQuestion}
+            />
         </Tooltip>
         <span>Unknown</span>
     </div>
@@ -214,7 +250,11 @@ export const PreviewActionArchive: React.FunctionComponent<
 > = ({ label = 'Archive', className }) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be kept and marked as archived in this batch change">
-            <Icon className="text-muted mr-1" aria-hidden={true} svgPath={mdiArchive} />
+            <Icon
+                aria-label="This changeset will be kept and marked as archived in this batch change"
+                className="text-muted mr-1"
+                svgPath={mdiArchive}
+            />
         </Tooltip>
         <span>{label}</span>
     </div>
@@ -233,7 +273,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
         <Tooltip content={reason}>
-            <Icon className="mr-1" svgPath={mdiCheckboxBlankCircleOutline} aria-hidden={true} />
+            <Icon aria-label={reason} className="mr-1" svgPath={mdiCheckboxBlankCircleOutline} />
         </Tooltip>
         <span>No action</span>
     </div>
