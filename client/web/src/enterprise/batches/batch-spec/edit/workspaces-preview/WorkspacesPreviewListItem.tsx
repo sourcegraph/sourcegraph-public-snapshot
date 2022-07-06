@@ -65,7 +65,7 @@ const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExc
     handleExclude,
 }) => (
     <Tooltip content="Omit this repository from batch spec file">
-        <Button className="p-0 my-0 mx-2" onClick={handleExclude}>
+        <Button aria-label="Omit this repository" className="p-0 my-0 mx-2" onClick={handleExclude}>
             <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Tooltip>

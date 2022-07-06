@@ -63,7 +63,11 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                             {currentSpecID === node.id && (
                                 <>
                                     <Tooltip content="Currently applied spec">
-                                        <Icon aria-hidden={true} className="text-warning" svgPath={mdiStar} />
+                                        <Icon
+                                            aria-label="Currently applied spec"
+                                            className="text-warning"
+                                            svgPath={mdiStar}
+                                        />
                                     </Tooltip>{' '}
                                 </>
                             )}

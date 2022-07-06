@@ -62,7 +62,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                 >
                     {isErrorLike(isDeleting) && (
                         <Tooltip content={isDeleting.message} placement="left">
-                            <Icon aria-hidden={true} svgPath={mdiInformation} />
+                            <Icon aria-label={isDeleting.message} svgPath={mdiInformation} />
                         </Tooltip>
                     )}
                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete

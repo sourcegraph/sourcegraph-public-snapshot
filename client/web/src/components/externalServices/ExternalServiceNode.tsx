@@ -71,6 +71,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     </Tooltip>{' '}
                     <Tooltip content="Delete external service">
                         <Button
+                            aria-label="Delete"
                             className="test-delete-external-service-button"
                             onClick={onDelete}
                             disabled={isDeleting === true}

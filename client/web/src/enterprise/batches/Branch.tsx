@@ -72,11 +72,12 @@ const BranchNamespace: React.FunctionComponent<React.PropsWithChildren<BranchNam
         const iconLabel =
             'This branch will be pushed to a user fork. If you have configured a credential for yourself in the Batch Changes settings, this will be a fork in your code host account; otherwise the fork will be in the code host account associated with the site credential used to open changesets.'
         return (
-            <Tooltip content={iconLabel}>
-                <>
-                    <Icon aria-hidden={true} svgPath={mdiAccountQuestion} />:
-                </>
-            </Tooltip>
+            <>
+                <Tooltip content={iconLabel}>
+                    <Icon aria-hidden={true} svgPath={mdiAccountQuestion} />
+                </Tooltip>
+                :
+            </>
         )
     }
 

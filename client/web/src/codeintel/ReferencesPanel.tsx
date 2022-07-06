@@ -455,7 +455,7 @@ export const ReferencesList: React.FunctionComponent<
                                 <Button
                                     onClick={() => setActiveLocation(undefined)}
                                     className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
-                                    title="Close code view"
+                                    aria-label="Close"
                                     size="sm"
                                 >
                                     <Icon
