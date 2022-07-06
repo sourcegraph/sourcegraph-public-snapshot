@@ -83,6 +83,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		sourcerErr      error
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool
+		// Whether or not the source responds to IsArchivedPushError with true
+		isRepoArchived bool
+
+		gitClientErr error
 
 		wantCreateOnCodeHost      bool
 		wantCreateDraftOnCodeHost bool
@@ -200,7 +204,32 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				DiffStat:         state.DiffStat,
 			},
 		},
-		"push and publish to archived repo": {
+		"push and publish to archived repo, detected at push": {
+			hasCurrentSpec: true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
+				},
+			},
+			gitClientErr: &gitprotocol.CreateCommitFromPatchError{
+				CombinedOutput: "archived",
+			},
+			isRepoArchived: true,
+			sourcerErr:     repoArchivedErr,
+
+			wantCreateOnCodeHost: true,
+			wantGitserverCommit:  true,
+			wantNonRetryableErr:  true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+		},
+		"push and publish to archived repo, detected at publish": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
@@ -530,7 +559,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, cstore, changesetOpts)
 
 			// Setup gitserver dependency.
-			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+			gitClient := &ct.FakeGitserverClient{ResponseErr: tc.gitClientErr}
 			if changesetSpec != nil {
 				gitClient.Response = changesetSpec.Spec.HeadRef
 			}
@@ -538,9 +567,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
 			fakeSource := &stesting.FakeChangesetSource{
-				Svc:             extSvc,
-				Err:             tc.sourcerErr,
-				ChangesetExists: tc.alreadyExists,
+				Svc:                     extSvc,
+				Err:                     tc.sourcerErr,
+				ChangesetExists:         tc.alreadyExists,
+				IsArchivedPushErrorTrue: tc.isRepoArchived,
 			}
 
 			if tc.sourcerMetadata != nil {
