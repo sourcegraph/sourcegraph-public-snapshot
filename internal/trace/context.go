@@ -6,6 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log/otfields"
 	"github.com/uber/jaeger-client-go"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
@@ -45,20 +46,11 @@ func CopyContext(ctx context.Context, from context.Context) context.Context {
 // ID returns a trace ID, if any, found in the given context. If you need both trace and
 // span ID, use trace.Context.
 func ID(ctx context.Context) string {
-	span := opentracing.SpanFromContext(ctx)
+	span := Context(ctx)
 	if span == nil {
 		return ""
 	}
-	return IDFromSpan(span)
-}
-
-// IDFromSpan returns a trace ID, if any, found in the given span.
-func IDFromSpan(span opentracing.Span) string {
-	traceCtx := ContextFromSpan(span)
-	if traceCtx == nil {
-		return ""
-	}
-	return traceCtx.TraceID
+	return span.TraceID
 }
 
 // Context retrieves the full trace context, if any, from context - this includes
@@ -68,19 +60,23 @@ func Context(ctx context.Context) *otfields.TraceContext {
 	if span == nil {
 		return nil
 	}
-	return ContextFromSpan(span)
-}
 
-// Context retrieves the full trace context, if any, from the span - this includes
-// both TraceID and SpanID.
-func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
-	spanCtx, ok := span.Context().(jaeger.SpanContext)
-	if ok {
+	// try Jaeger ("opentracing") span
+	if jaegerSpan, ok := span.Context().(jaeger.SpanContext); ok {
 		return &otfields.TraceContext{
-			TraceID: spanCtx.TraceID().String(),
-			SpanID:  spanCtx.SpanID().String(),
+			TraceID: jaegerSpan.TraceID().String(),
+			SpanID:  jaegerSpan.SpanID().String(),
 		}
 	}
 
+	// try bridged OpenTelemetry span
+	if otelSpan := oteltrace.SpanFromContext(ctx).SpanContext(); otelSpan.IsValid() {
+		return &otfields.TraceContext{
+			TraceID: otelSpan.TraceID().String(),
+			SpanID:  otelSpan.SpanID().String(),
+		}
+	}
+
+	// no span found
 	return nil
 }

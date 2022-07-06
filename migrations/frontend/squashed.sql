@@ -383,6 +383,21 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
     END;
 $$;
 
+CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+    DECLARE
+        trans hstore;
+    BEGIN
+      FOREACH trans IN ARRAY arrayhstore
+      LOOP
+          internal := internal || hstore(trans->'column', trans->'new');
+      END LOOP;
+
+      RETURN internal;
+    END;
+$$;
+
 CREATE FUNCTION repo_block(reason text, at timestamp with time zone) RETURNS jsonb
     LANGUAGE sql IMMUTABLE STRICT
     AS $$
@@ -477,6 +492,12 @@ BEGIN
     NEW.first_version = NEW.version;
     RETURN NEW;
 END $$;
+
+CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
+    SFUNC = merge_audit_log_transitions,
+    STYPE = hstore,
+    INITCOND = ''
+);
 
 CREATE TABLE access_tokens (
     id bigint NOT NULL,
@@ -3590,7 +3611,7 @@ CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (e
 
 CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE (org_id IS NOT NULL);
 
-CREATE INDEX external_service_sync_jobs_state_idx ON external_service_sync_jobs USING btree (state);
+CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at);
 
 CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE (user_id IS NOT NULL);
 
@@ -3713,6 +3734,8 @@ CREATE INDEX repo_archived ON repo USING btree (archived);
 CREATE INDEX repo_blocked_idx ON repo USING btree (((blocked IS NOT NULL)));
 
 CREATE INDEX repo_created_at ON repo USING btree (created_at);
+
+CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
 
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 

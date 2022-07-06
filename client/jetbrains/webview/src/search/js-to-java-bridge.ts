@@ -68,6 +68,7 @@ interface LoadLastSearchRequest {
 
 interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
+    arguments: { wasServerAccessSuccessful: boolean; wasAuthenticationSuccessful: boolean }
 }
 
 interface WindowCloseRequest {
@@ -94,7 +95,7 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
     } catch (error) {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
-            instanceURL: 'https://sourcegraph.com',
+            instanceURL: 'https://sourcegraph.com/',
             isGlobbingEnabled: false,
             accessToken: null,
             anonymousUserId: 'no-user-id',
@@ -115,9 +116,15 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
     }
 }
 
-export async function indicateFinishedLoading(): Promise<void> {
+export async function indicateFinishedLoading(
+    wasServerAccessSuccessful: boolean,
+    wasAuthenticationSuccessful: boolean
+): Promise<void> {
     try {
-        await callJava({ action: 'indicateFinishedLoading' })
+        await callJava({
+            action: 'indicateFinishedLoading',
+            arguments: { wasServerAccessSuccessful, wasAuthenticationSuccessful },
+        })
     } catch (error) {
         console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
     }

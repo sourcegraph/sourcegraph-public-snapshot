@@ -448,12 +448,6 @@ type CustomGitFetchMapping struct {
 	Fetch string `json:"fetch"`
 }
 
-// Datadog description: Datadog configuration
-type Datadog struct {
-	// RUM description: Datadog RUM configuration
-	RUM *RUM `json:"RUM,omitempty"`
-}
-
 // DebugLog description: Turns on debug logging for specific debugging scenarios.
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
@@ -1258,19 +1252,13 @@ type ObservabilityAlerts struct {
 	Owners []string `json:"owners,omitempty"`
 }
 
-// ObservabilityLogging description: Configuration for logging to external services.
-type ObservabilityLogging struct {
-	// Datadog description: Datadog configuration
-	Datadog *Datadog `json:"datadog,omitempty"`
-}
-
 // ObservabilityTracing description: Controls the settings for distributed tracing.
 type ObservabilityTracing struct {
-	// Debug description: Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.
+	// Debug description: Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.
 	Debug bool `json:"debug,omitempty"`
-	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)
+	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. An appropriate tracing backend must be running for traces to be collected (for "opentracing", a Jaeger instance must be running as described in the Sourcegraph installation instructions). Additional downsampling can be configured in tracing backend (for Jaeger, see https://www.jaegertracing.io/docs/1.17/sampling).
 	Sampling string `json:"sampling,omitempty"`
-	// Type description: Determines what tracing provider to enable. Supports "opentracing" ("datadog" support is deprecated)
+	// Type description: Determines what tracing provider to enable. For "opentracing", the required backend is a Jaeger instance. For "opentelemetry" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. "datadog" support has been removed, and the configuration option will be removed in a future release.
 	Type string `json:"type,omitempty"`
 }
 
@@ -1488,14 +1476,6 @@ type QuickLink struct {
 	Name string `json:"name"`
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
-}
-
-// RUM description: Datadog RUM configuration
-type RUM struct {
-	// ApplicationId description: Datadog application ID required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).
-	ApplicationId string `json:"applicationId"`
-	// ClientToken description: Datadog client token required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).
-	ClientToken string `json:"clientToken"`
 }
 
 // Ranking description: Experimental search result ranking options.
@@ -1779,7 +1759,7 @@ type SettingsExperimentalFeatures struct {
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowOnboardingTour description: Enables the onboarding tour.
+	// ShowOnboardingTour description: REMOVED.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
 	// ShowQueryBuilder description: REMOVED. Previously, enabled the search query builder page. This page has been removed.
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
@@ -1965,8 +1945,6 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
-	// ObservabilityLogging description: Configuration for logging to external services.
-	ObservabilityLogging *ObservabilityLogging `json:"observability.logging,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.

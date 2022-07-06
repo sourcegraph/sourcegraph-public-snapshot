@@ -1692,26 +1692,6 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
-"@datadog/browser-core@4.7.1":
-  version "4.7.1"
-  resolved "https://registry.npmjs.org/@datadog/browser-core/-/browser-core-4.7.1.tgz#5c78028217df455ad2fc981b51035144c25ac7ab"
-  integrity sha512-PmHrTFYGvegheaub4sdbHmcFxwoCy2Ot/PBblSIJjfRddpbElBiSvBAOfFi3Wx8AK50a2yq0/YX9Nd/oL3Q0Dw==
-
-"@datadog/browser-rum-core@4.7.1":
-  version "4.7.1"
-  resolved "https://registry.npmjs.org/@datadog/browser-rum-core/-/browser-rum-core-4.7.1.tgz#252dfc7c72a8aa5157d27c0427c22bd28d7bc281"
-  integrity sha512-USlAHIvMpNczCbtpwLkn6D41GnewuP6X2D+Rn34F3PzQ16CeCXEvXrC+8cJvjy/pcsYUeDK06ATRfK0gInd0tA==
-  dependencies:
-    "@datadog/browser-core" "4.7.1"
-
-"@datadog/browser-rum-slim@^4.7.1":
-  version "4.7.1"
-  resolved "https://registry.npmjs.org/@datadog/browser-rum-slim/-/browser-rum-slim-4.7.1.tgz#d8ff6e103085615d69a0124d585b0723dc645654"
-  integrity sha512-EmRIEu0LW698hnX707lwlORRgH1nsI3wtyuo/zqBDLR6rUrntIb4rNE9SL5fC6pZTg9eCb9V21sndDgIRxXn9w==
-  dependencies:
-    "@datadog/browser-core" "4.7.1"
-    "@datadog/browser-rum-core" "4.7.1"
-
 "@devicefarmer/adbkit-logcat@^1.1.0":
   version "1.1.0"
   resolved "https://registry.npmjs.org/@devicefarmer/adbkit-logcat/-/adbkit-logcat-1.1.0.tgz#866d3406dc9f3791446adfe3ae622ffc48607db4"
@@ -3411,11 +3391,6 @@
   dependencies:
     qs "^6.7.0"
     url-parse "^1.4.7"
-
-"@popperjs/core@^2.9.2":
-  version "2.10.2"
-  resolved "https://registry.npmjs.org/@popperjs/core/-/core-2.10.2.tgz#0798c03351f0dea1a5a4cabddf26a55a7cbee590"
-  integrity sha512-IXf3XA7+XyN7CP9gGh/XB0UxVMlvARGEgGXLubFICsUMGz6Q+DU+i4gGlpOxTjKvXjkJDJC8YdqdKkDj9qZHEQ==
 
 "@radix-ui/popper@0.1.0":
   version "0.1.0"
@@ -22221,15 +22196,6 @@ shellwords@^0.1.1:
   resolved "https://registry.npmjs.org/shellwords/-/shellwords-0.1.1.tgz#d6b9181c1a48d397324c84871efbcfc73fc0654b"
   integrity sha512-vFwSUfQvqybiICwZY5+DAWIPLKsWO31Q91JSKl3UYv+K5c2QRPzn0qzec6QPu1Qc9eHYItiP3NdJqNVqetYAww==
 
-shepherd.js@^8.3.1:
-  version "8.3.1"
-  resolved "https://registry.npmjs.org/shepherd.js/-/shepherd.js-8.3.1.tgz#131eeefc5eb2bc44c9e23d0da139db46b2b55339"
-  integrity sha512-IhxZNhnK2m/pNTXudNfYrcwvcZNWkeYngQbQee8nC3xJ2GjeIatGqivhdZAMZ+LeogZvKMakB931d/V534uhrw==
-  dependencies:
-    "@popperjs/core" "^2.9.2"
-    deepmerge "^4.2.2"
-    smoothscroll-polyfill "^0.4.4"
-
 side-channel@^1.0.2, side-channel@^1.0.4:
   version "1.0.4"
   resolved "https://registry.npmjs.org/side-channel/-/side-channel-1.0.4.tgz#efce5c8fdc104ee751b25c58d4290011fa5ea2cf"
@@ -22390,11 +22356,6 @@ slugify@^1.3.4:
   version "1.4.5"
   resolved "https://registry.npmjs.org/slugify/-/slugify-1.4.5.tgz#a7517acf5f4c02a4df41e735354b660a4ed1efcf"
   integrity sha512-WpECLAgYaxHoEAJ8Q1Lo8HOs1ngn7LN7QjXgOLbmmfkcWvosyk4ZTXkTzKyhngK640USTZUlgoQJfED1kz5fnQ==
-
-smoothscroll-polyfill@^0.4.4:
-  version "0.4.4"
-  resolved "https://registry.npmjs.org/smoothscroll-polyfill/-/smoothscroll-polyfill-0.4.4.tgz#3a259131dc6930e6ca80003e1cb03b603b69abf8"
-  integrity sha512-TK5ZA9U5RqCwMpfoMq/l1mrH0JAR7y7KRvOBx0n2869aLxch+gT9GhN3yUfjiw+d/DiF1mKo14+hd62JyMmoBg==
 
 snake-case@^3.0.4:
   version "3.0.4"
@@ -24607,6 +24568,11 @@ use-callback-ref@^1.2.3, use-callback-ref@^1.2.5:
   version "1.2.5"
   resolved "https://registry.npmjs.org/use-callback-ref/-/use-callback-ref-1.2.5.tgz#6115ed242cfbaed5915499c0a9842ca2912f38a5"
   integrity sha512-gN3vgMISAgacF7sqsLPByqoePooY3n2emTH59Ur5d/M8eg4WTWu1xp8i8DHjohftIyEx0S08RiYxbffr4j8Peg==
+
+use-debounce@^8.0.1:
+  version "8.0.1"
+  resolved "https://registry.npmjs.org/use-debounce/-/use-debounce-8.0.1.tgz#5f3e11b067bdf9f2c554a20b4764e38b48022664"
+  integrity sha512-6tGAFJKJ0qCalecaV7/gm/M6n238nmitNppvR89ff1yfwSFjwFKR7IQZzIZf1KZRQhqNireBzytzU6jgb29oVg==
 
 use-deep-compare-effect@^1.6.1:
   version "1.6.1"

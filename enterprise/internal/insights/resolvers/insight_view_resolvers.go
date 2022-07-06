@@ -9,17 +9,18 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/segmentio/ksuid"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -327,7 +328,7 @@ func filterRepositories(ctx context.Context, filters types.InsightViewFilters, r
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
 	if i.view.PresentationType == types.Pie {
-		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view, log: log.Scoped("pieChartInsightViewPresentation", "")}
+		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view}
 		return &insightPresentationUnionResolver{resolver: pieChartPresentation}, nil
 	} else {
 		lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
@@ -528,7 +529,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			}
 		}
 		for _, dashboardId := range dashboardIds {
-			r.logger.Debug("AddView", log.String("insightId", view.UniqueID), log.Int("dashboardId", dashboardId))
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
 			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
@@ -713,7 +714,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 			}
 		}
 		for _, dashboardId := range dashboardIds {
-			r.logger.Debug("AddView", log.String("insightId", view.UniqueID), log.Int("dashboardId", dashboardId))
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
 			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
@@ -776,7 +777,6 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 
 type pieChartInsightViewPresentation struct {
 	view *types.Insight
-	log  log.Logger
 }
 
 func (p *pieChartInsightViewPresentation) Title(ctx context.Context) (string, error) {
@@ -785,7 +785,7 @@ func (p *pieChartInsightViewPresentation) Title(ctx context.Context) (string, er
 
 func (p *pieChartInsightViewPresentation) OtherThreshold(ctx context.Context) (float64, error) {
 	if p.view.OtherThreshold == nil {
-		p.log.Warn("Returning a pie chart with no threshold set. This should never happen!", log.String("id", p.view.UniqueID))
+		log15.Warn("Returning a pie chart with no threshold set. This should never happen!", "id", p.view.UniqueID)
 		return 0, nil
 	}
 	return *p.view.OtherThreshold, nil
@@ -865,7 +865,6 @@ func (r *Resolver) InsightViews(ctx context.Context, args *graphqlbackend.Insigh
 	return &InsightViewQueryConnectionResolver{
 		baseInsightResolver: r.baseInsightResolver,
 		args:                args,
-		log:                 log.Scoped("InsightViewQueryConnectionResolver", ""),
 	}, nil
 }
 
@@ -879,7 +878,6 @@ type InsightViewQueryConnectionResolver struct {
 	views []types.Insight
 	next  string
 	err   error
-	log   log.Logger
 }
 
 func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
@@ -968,7 +966,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			if r.err != nil {
 				return
 			}
-			r.log.Info("unique_id", log.String("id", unique))
+			log15.Info("unique_id", "id", unique)
 			args.UniqueID = unique
 		}
 
@@ -1022,9 +1020,15 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	}
 
 	var groupBy *string
+	var nextRecordingAfter time.Time
+	var oldestHistoricalAt time.Time
 	if series.GroupBy != nil {
 		temp := strings.ToLower(*series.GroupBy)
 		groupBy = &temp
+		// We want to disable interval recording for compute types.
+		// December 31, 9999 is the maximum possible date in postgres.
+		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+		oldestHistoricalAt = time.Now()
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
@@ -1057,11 +1061,28 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
 			GenerationMethod:           searchGenerationMethod(series),
 			GroupBy:                    groupBy,
+			NextRecordingAfter:         nextRecordingAfter,
+			OldestHistoricalAt:         oldestHistoricalAt,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
-		if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
+		if groupBy != nil {
+			enqueueQueryRunnerJob := func(ctx context.Context, job *queryrunner.Job) error {
+				_, err := queryrunner.EnqueueJob(ctx, tx.Store, job)
+				return err
+			}
+			insightEnqueuer := background.NewInsightEnqueuer(time.Now, enqueueQueryRunnerJob)
+			if err := insightEnqueuer.EnqueueSingle(ctx, seriesToAdd, store.SnapshotMode, tx.StampSnapshot); err != nil {
+				return nil, errors.Wrap(err, "GroupBy.EnqueueSingle")
+			}
+			// We stamp backfill even without queueing up a backfill because we only want a single
+			// point in time.
+			_, err = tx.StampBackfill(ctx, seriesToAdd)
+			if err != nil {
+				return nil, errors.Wrap(err, "GroupBy.StampBackfill")
+			}
+		} else if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
 			err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{seriesToAdd})
 			if err != nil {
 				return nil, errors.Wrap(err, "ScopedBackfill")

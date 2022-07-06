@@ -285,7 +285,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	// Create context and span based on the root context
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(policy.WithShouldTrace(w.rootCtx, true), w.options.Name)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
-	processLog := w.options.Metrics.logger.WithTrace(log.TraceContext{TraceID: trace.IDFromSpan(workerSpan)})
+	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {
