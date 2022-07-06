@@ -25,7 +25,7 @@ changesetTemplate:
   title: Run in each workspace of a monorepo
   body: |
     Run in each workspace of a monorepo
-# Each bracnh needs to be unique, so we're using templating to define them
+# Each branch needs to be unique, so we're using templating to define them
 # https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
   branch: batch-changes/monorepo/${{ replace steps.path "/" "-" }}
   commit:
