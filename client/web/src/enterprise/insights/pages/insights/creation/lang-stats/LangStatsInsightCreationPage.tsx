@@ -15,7 +15,7 @@ import { CodeInsightTrackType } from '../../../../pings'
 import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
-} from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
+} from './components/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 

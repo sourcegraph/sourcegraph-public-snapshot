@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
-import { LangStatsInsight } from '../../../../core/types'
-import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
-import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
+import { SubmissionErrors } from '../../../../components'
+import { MinimalLangStatsInsightData, LangStatsInsight } from '../../../../core'
+import { LangStatsCreationFormFields } from '../../creation/lang-stats'
+import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/LangStatsInsightCreationContent'
 import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/insight-sanitizer'
 
 export interface EditLangStatsInsightProps {

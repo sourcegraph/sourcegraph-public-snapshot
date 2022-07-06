@@ -4,11 +4,8 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, H3 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { getDefaultInputProps } from '../../../../../form/getDefaultInputProps'
-import { useAsyncInsightTitleValidator } from '../../../../../form/hooks/use-async-insight-title-validator'
-import { useField } from '../../../../../form/hooks/useField'
+import { getDefaultInputProps, useField, createRequiredValidator } from '../../../../../form'
 import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../form/validators'
 
 export interface DrillDownInsightCreationFormValues {
     insightName: string
@@ -34,15 +31,10 @@ export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCre
         onSubmit: onCreateInsight,
     })
 
-    const titleDuplicationValidator = useAsyncInsightTitleValidator({
-        initialTitle: '',
-        mode: 'creation',
-    })
-
     const insightName = useField({
         name: 'insightName',
         formApi: formAPI,
-        validators: { sync: insightRequiredValidator, async: titleDuplicationValidator },
+        validators: { sync: insightRequiredValidator },
     })
 
     return (

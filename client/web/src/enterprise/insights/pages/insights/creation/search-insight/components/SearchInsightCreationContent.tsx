@@ -10,14 +10,14 @@ import {
     SubmissionErrors,
     createDefaultEditSeries,
     EditableDataSeries,
-} from '../../../../../../components'
-import { Insight } from '../../../../../../core'
-import { LineChartLivePreview, LivePreviewSeries } from '../../../LineChartLivePreview'
-import { CreateInsightFormFields } from '../../types'
-import { getSanitizedSeries } from '../../utils/insight-sanitizer'
-import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
+} from '../../../../../components'
+import { Insight } from '../../../../../core'
+import { LineChartLivePreview, LivePreviewSeries } from '../../LineChartLivePreview'
+import { CreateInsightFormFields } from '../types'
+import { getSanitizedSeries } from '../utils/insight-sanitizer'
 
-import { useInsightCreationForm } from './hooks/use-insight-creation-form'
+import { SearchInsightCreationForm } from './SearchInsightCreationForm'
+import { useInsightCreationForm } from './use-insight-creation-form'
 
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */

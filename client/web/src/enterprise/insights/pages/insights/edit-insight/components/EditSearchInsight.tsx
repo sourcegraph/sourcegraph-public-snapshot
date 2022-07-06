@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { SubmissionErrors, createDefaultEditSeries } from '../../../../components'
 import { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
-import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
+import { SearchInsightCreationContent } from '../../creation/search-insight/components/SearchInsightCreationContent'
 import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/insight-sanitizer'
 
 interface EditSearchBasedInsightProps {
