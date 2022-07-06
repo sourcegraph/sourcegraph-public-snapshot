@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix an issue where updating the title or body of a Bitbucket Cloud pull request opened by a batch change could fail when the pull request was not on a fork of the target repository. [#37585](https://github.com/sourcegraph/sourcegraph/issues/37585)
 - A bug where some complex `repo:` regexes only returned a subset of repository results. [#37925](https://github.com/sourcegraph/sourcegraph/pull/37925)
+- Fix a bug when selecting all the changesets on the Preview Batch Change Page only selected the recently loaded changesets. [#38041](https://github.com/sourcegraph/sourcegraph/pull/38041)
 - Fix a bug with bad code insights chart data points links. [#38102](https://github.com/sourcegraph/sourcegraph/pull/38102)
 - Code Insights: the commit indexer no longer errors when fetching commits from empty repositories and marks them as successfully indexed. [#39081](https://github.com/sourcegraph/sourcegraph/pull/38091)
 - The file view does not jump to the first selected line anymore when selecting multiple lines and the first selected line was out of view. [#38175](https://github.com/sourcegraph/sourcegraph/pull/38175)
