@@ -107,10 +107,19 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
 
+    root.style.setProperty('--dropdown-bg', intelliJTheme['List.background'])
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 
+    root.style.setProperty('--jb-button-bg', intelliJTheme['Button.startBackground'])
+    root.style.setProperty('--jb-text-color', intelliJTheme.text)
+    root.style.setProperty('--jb-inactive-text-color', intelliJTheme.textInactiveText)
+    root.style.setProperty('--jb-hover-button-bg', intelliJTheme['ActionButton.hoverBackground'])
+    root.style.setProperty('--jb-input-bg', intelliJTheme['TextField.background'])
+    root.style.setProperty('--jb-tooltip-bg', intelliJTheme['ToolTip.background'])
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
+    root.style.setProperty('--jb-focus-border-color', intelliJTheme['Component.focusedBorderColor'])
     root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
 
     // There is no color for this in the serialized theme, so I have picked this option from the

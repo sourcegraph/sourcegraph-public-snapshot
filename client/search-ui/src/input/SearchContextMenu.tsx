@@ -65,6 +65,7 @@ export const SearchContextMenuItem: React.FunctionComponent<
             onClick={setContext}
             role="menuitem"
             data-search-context-spec={spec}
+            data-selected={selected || undefined}
             onKeyDown={event => onKeyDown(event.key)}
         >
             <small
