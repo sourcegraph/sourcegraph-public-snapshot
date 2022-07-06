@@ -1,16 +1,17 @@
 import React from 'react'
 
 import {
-    mdiUpload,
-    mdiImport,
+    mdiArchive,
+    mdiBeakerQuestion,
     mdiCloseCircleOutline,
     mdiDelete,
-    mdiSourceBranchRefresh,
+    mdiImport,
+    mdiPaperclip,
     mdiSourceBranchCheck,
+    mdiSourceBranchRefresh,
     mdiSourceBranchSync,
+    mdiUpload,
     mdiUploadNetwork,
-    mdiBeakerQuestion,
-    mdiArchive,
 } from '@mdi/js'
 import classNames from 'classnames'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
@@ -262,7 +263,7 @@ export const PreviewActionReattach: React.FunctionComponent<
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be re-added to the batch change"
-            as={PaperclipIcon}
+            svgPath={mdiPaperclip}
             aria-hidden={true}
         />
         <span>{label}</span>
