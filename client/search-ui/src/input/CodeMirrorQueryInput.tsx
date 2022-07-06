@@ -118,6 +118,20 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
             callbacksField,
             autocompletion,
+            // Pressing Escape should remove focus from the input. Note that
+            // CodeMirror also uses Escape to "simplify selections" and to close
+            // the autocompletion popover. So focus will only be removed once no
+            // popover is open and there is no selection to simplify.
+            // Relevant documentation: https://codemirror.net/docs/ref/#commands.defaultKeymap
+            keymap.of([
+                {
+                    key: 'Escape',
+                    run: view => {
+                        view.contentDOM.blur()
+                        return true
+                    },
+                },
+            ]),
         ]
 
         if (preventNewLine) {
