@@ -1,15 +1,22 @@
-import { useAsyncInsightTitleValidator } from '../../../../../../../../components/form/hooks/use-async-insight-title-validator'
-import { useField, useFieldAPI } from '../../../../../../../../components/form/hooks/useField'
-import { Form, FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../../../components/form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../../../../components/form/validators'
-import { CreateInsightFormFields, EditableDataSeries, InsightStep } from '../../../../types'
-import { INITIAL_INSIGHT_VALUES } from '../../initial-insight-values'
+import {
+    useAsyncInsightTitleValidator,
+    useField,
+    useFieldAPI,
+    Form,
+    FormChangeEvent,
+    SubmissionErrors,
+    useForm,
+    createRequiredValidator,
+    EditableDataSeries,
+} from '../../../../../../../components'
+import { CreateInsightFormFields, InsightStep } from '../../../types'
+import { INITIAL_INSIGHT_VALUES } from '../initial-insight-values'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
     requiredStepValueField,
     seriesRequired,
-} from '../../validators'
+} from '../validators'
 
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 

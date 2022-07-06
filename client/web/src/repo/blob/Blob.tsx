@@ -422,36 +422,30 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    // Trigger line highlighting after React has finished putting new lines into the DOM via
-    // `dangerouslySetInnerHTML`.
-    useEffect(() => codeViewElements.next(codeViewReference.current))
-
     // Line highlighting when position in hash changes
-    useObservable(
-        useMemo(
-            () =>
-                combineLatest([locationPositions, codeViewElements.pipe(filter(isDefined))]).pipe(
-                    tap(([position, codeView]) => {
-                        const codeCells = getCodeElementsInRange({
-                            codeView,
-                            position,
-                            getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
-                        })
-                        // Remove existing highlighting
-                        for (const selected of codeView.querySelectorAll('.selected')) {
-                            selected.classList.remove('selected')
-                        }
-                        for (const { element } of codeCells) {
-                            // Highlight row
-                            const row = element.parentElement as HTMLTableRowElement
-                            row.classList.add('selected')
-                        }
-                    }),
-                    mapTo(undefined)
-                ),
-            [locationPositions, codeViewElements]
-        )
-    )
+    useEffect(() => {
+        if (codeViewReference.current) {
+            const codeCells = getCodeElementsInRange({
+                codeView: codeViewReference.current,
+                position: parsedHash,
+                getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
+            })
+            // Remove existing highlighting
+            for (const selected of codeViewReference.current.querySelectorAll('.selected')) {
+                selected.classList.remove('selected')
+            }
+            for (const { element } of codeCells) {
+                // Highlight row
+                const row = element.parentElement as HTMLTableRowElement
+                row.classList.add('selected')
+            }
+        }
+        // It looks like `parsedHash` is updated _before_ `blobInfo` when
+        // navigating between files. That means we have to make this effect
+        // dependent on `blobInfo` even if it is not used inside the effect,
+        // otherwise the highlighting would not be updated when the new file
+        // content is available.
+    }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
 
