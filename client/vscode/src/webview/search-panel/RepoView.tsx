@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiArrowLeft, mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
+import { mdiArrowLeft, mdiFileDocumentOutline, mdiFolderOutline, mdiSourceRepository } from '@mdi/js'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { catchError } from 'rxjs/operators'
 
 import { QueryState } from '@sourcegraph/search'
@@ -98,7 +97,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                 </button>
             )}
             <PageHeader
-                path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repositoryMatch.repository) }]}
+                path={[{ icon: mdiSourceRepository, text: displayRepoName(repositoryMatch.repository) }]}
                 className="mb-1 mt-3 test-tree-page-title"
             />
             {repositoryMatch.description && <Text className="mt-0 text-muted">{repositoryMatch.description}</Text>}

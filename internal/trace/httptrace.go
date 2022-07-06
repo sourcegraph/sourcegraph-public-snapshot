@@ -158,7 +158,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		defer span.Finish()
 
 		// get trace ID
-		trace := ContextFromSpan(span)
+		trace := Context(ctx)
 		var traceURL string
 		if trace != nil && trace.TraceID != "" {
 			var traceType string

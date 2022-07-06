@@ -1,4 +1,5 @@
-export { useLazyParallelRequest, LazyQueryState, LazyQueryResult } from './use-parallel-requests/use-parallel-request'
+export { useLazyParallelRequest } from './use-parallel-requests/use-parallel-request'
+export type { LazyQueryState, LazyQueryResult } from './use-parallel-requests/use-parallel-request'
 export { useApi } from './use-api'
 export { useCopyURLHandler } from './use-copy-url-handler'
 export { useDeleteInsight } from './use-delete-insight'

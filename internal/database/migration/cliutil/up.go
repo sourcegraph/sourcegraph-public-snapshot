@@ -6,7 +6,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -18,12 +22,18 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
 		Name:  "unprivileged-only",
-		Usage: `Do not apply privileged migrations.`,
+		Usage: "Do not apply privileged migrations.",
 		Value: false,
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: `Ignore a previously failed attempt if it will be immediately retried by this operation.`,
+		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
+		Value: development,
+	}
+	skipUpgradeValidationFlag := &cli.BoolFlag{
+		Name:  "skip-upgrade-validation",
+		Usage: "Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.",
+		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
 		Value: development,
 	}
 
@@ -56,6 +66,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
+		if !skipUpgradeValidationFlag.Get(cmd) {
+			if err := validateUpgrade(ctx, r, version.Version()); err != nil {
+				return err
+			}
+		}
+
 		return r.Run(ctx, makeOptions(cmd, schemaNames))
 	})
 
@@ -69,6 +85,23 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			schemaNamesFlag,
 			unprivilegedOnlyFlag,
 			ignoreSingleDirtyLogFlag,
+			skipUpgradeValidationFlag,
 		},
 	}
+}
+
+func validateUpgrade(ctx context.Context, r Runner, version string) error {
+	store, err := r.Store(ctx, "frontend")
+	if err != nil {
+		return err
+	}
+
+	// NOTE: this is a dynamic type check as embedding basestore.ShareableStore
+	// into the store interface causes a cyclic import in db connection packages.
+	shareableStore, ok := store.(basestore.ShareableStore)
+	if !ok {
+		return errors.New("store does not support direct database handle access")
+	}
+
+	return upgradestore.NewWith(shareableStore.Handle()).ValidateUpgrade(ctx, "frontend", version)
 }

@@ -98,6 +98,6 @@ func ComputeMatchContextStream(ctx context.Context, query string, decoder client
 	return genericComputeStream(ctx, decoder.ReadAll, query, "InsightsComputeStreamSearch")
 }
 
-func ComputeTextStream(ctx context.Context, query string, decoder client.ComputeTextStreamDecoder) (err error) {
+func ComputeTextExtraStream(ctx context.Context, query string, decoder client.ComputeTextExtraStreamDecoder) (err error) {
 	return genericComputeStream(ctx, decoder.ReadAll, query, "InsightsComputeTextSearch")
 }
