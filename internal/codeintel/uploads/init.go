@@ -9,9 +9,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,7 +28,7 @@ var (
 
 // GetService creates or returns an already-initialized uploads service. If the service is
 // new, it will use the given database handle.
-func GetService(db, codeIntelDB database.DB) *Service {
+func GetService(db, codeIntelDB database.DB, gsc shared.GitserverClient) *Service {
 	svcOnce.Do(func() {
 		lg := func(name string) log.Logger {
 			return log.Scoped("uploads."+name, "codeintel uploads "+name)
@@ -44,7 +44,6 @@ func GetService(db, codeIntelDB database.DB) *Service {
 
 		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
 		store := store.New(db, oc("store"))
-		gsc := gitserver.New(db, store, oc("gitserver"))
 		locker := locker.NewWith(db, "codeintel")
 
 		svc = newService(store, lsifstore, gsc, locker, oc("service"))
