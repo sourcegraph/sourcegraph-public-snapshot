@@ -145,6 +145,9 @@ commands:
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+
       .bin/enterprise-frontend
     install: |
       if [ -n "$DELVE" ]; then
@@ -157,7 +160,6 @@ commands:
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
@@ -972,14 +974,19 @@ tests:
 
   frontend-e2e:
     preamble: |
-      'sg start enterprise-e2e' must be already running for these tests to work. You can also
-      run tests against an existing server image:
+      A Sourcegraph isntance must be already running for these tests to work, most
+      commonly with:
+
+        sg start enterprise-e2e
+
+      You can also run tests against an existing server image (note that this test must
+      be run with SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' for the following to work):
 
         TAG=insiders sg run server
 
       If you run into authentication issues, you can run the following commands to fix them:
 
-        sg db reset-pg && sg db add-user --username 'test' --password 'supersecurepassword'
+        sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
 
       The above command resets the database and creates a user like so:
 
