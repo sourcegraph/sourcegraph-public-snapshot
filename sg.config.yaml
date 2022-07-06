@@ -115,6 +115,14 @@ env:
   ENABLE_STREAMING_REPOS_SYNCER: true
 
 commands:
+  server:
+    cmd: ./dev/run-server-image.sh
+    env:
+      TAG: insiders
+      CLEAN: 'true'
+      DATA: '/tmp/sourcegraph-data'
+      URL: 'http://localhost:7080'
+
   oss-frontend:
     cmd: .bin/oss-frontend
     install: |
@@ -964,7 +972,10 @@ tests:
 
   frontend-e2e:
     preamble: |
-      'sg start enterprise-e2e' must be already running for these tests to work.
+      'sg start enterprise-e2e' must be already running for these tests to work. You can also
+      run tests against an existing server image:
+
+        TAG=insiders sg run server
 
       If you run into authentication issues, you can run the following commands to fix them:
 

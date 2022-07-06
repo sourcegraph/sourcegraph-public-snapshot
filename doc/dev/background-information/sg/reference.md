@@ -108,6 +108,7 @@ Available commands in `sg.config.yaml`:
 * redis-postgres
 * repo-updater
 * searcher
+* server
 * storybook
 * symbols
 * syntax-highlighter
