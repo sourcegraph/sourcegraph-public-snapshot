@@ -266,7 +266,7 @@ export function createDefaultSuggestionSources(options: {
                 // if the filter already has a value _and_ is configured for
                 // dynamic suggestions.
                 // That's because dynamic suggestions are not filtered (filter: false)
-                // which CodeMirror alwaays displays above filtered suggestions.
+                // which CodeMirror always displays above filtered suggestions.
                 if (insidePredicate || (value && hasDynamicSuggestions)) {
                     return null
                 }
@@ -294,8 +294,8 @@ export function createDefaultSuggestionSources(options: {
                                 // field will move the cursor after the filter value and not move focus outside the input
                                 apply: asSnippet ? snippet(apply + '${}') : apply,
                                 // Setting boost this way has the effect of
-                                // displaying matching suggestions in the the
-                                // same order as they have been defined in code.
+                                // displaying matching suggestions in the same
+                                // order as they have been defined in code.
                                 boost: index * -1,
                             }
                         }),
