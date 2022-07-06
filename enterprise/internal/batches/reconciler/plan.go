@@ -139,7 +139,9 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 	}
 
 	if ch.Closing {
-		pl.AddOp(btypes.ReconcilerOperationClose)
+		if ch.ExternalState != btypes.ChangesetExternalStateReadOnly {
+			pl.AddOp(btypes.ReconcilerOperationClose)
+		}
 		// Close is a final operation, nothing else should overwrite it.
 		return pl, nil
 	} else if wantDetachFromOwnerBatchChange || wantArchive || isArchived {
