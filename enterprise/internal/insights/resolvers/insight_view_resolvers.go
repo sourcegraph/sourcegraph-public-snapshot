@@ -1032,7 +1032,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
-	if len(series.RepositoryScope.Repositories) == 0 {
+	if len(series.RepositoryScope.Repositories) == 0 && groupBy == nil {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
