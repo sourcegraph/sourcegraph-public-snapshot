@@ -453,10 +453,11 @@ export const ReferencesList: React.FunctionComponent<
                         <small>
                             <Tooltip content="Close code view" placement="left">
                                 <Button
+                                    aria-label="Close"
                                     onClick={() => setActiveLocation(undefined)}
                                     className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
-                                    aria-label="Close"
                                     size="sm"
+                                    data-testid="close-code-view"
                                 >
                                     <Icon
                                         aria-hidden={true}
