@@ -2,7 +2,7 @@ package zoekt
 
 import (
 	"context"
-	"encoding/utf8"
+	"unicode/utf8"
 	"strings"
 	"time"
 
