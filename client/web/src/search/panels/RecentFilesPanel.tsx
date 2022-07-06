@@ -43,7 +43,6 @@ export const recentFilesFragment = gql`
         }
     }
 `
-
 export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     recentFilesFragment,
