@@ -88,7 +88,7 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 }
 
 const getConfigurationPoliciesCountQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
+-- source: internal/codeintel/policies/internal/store/store_configuration.go:GetConfigurationPolicies
 SELECT COUNT(*)
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
@@ -96,7 +96,7 @@ WHERE %s
 `
 
 const getConfigurationPoliciesUnlimitedQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
+-- source: internal/codeintel/policies/internal/store/store_configuration.go:GetConfigurationPolicies
 SELECT
 	p.id,
 	p.repository_id,
@@ -160,7 +160,7 @@ func (s *store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 }
 
 const updateReposMatchingPatternsQuery = `
--- source: internal/codeintel/stores/dbstore/repo.go:UpdateReposMatchingPatterns
+-- source: internal/codeintel/policies/internal/store/store_configuration.go:UpdateReposMatchingPatterns
 WITH
 matching_repositories AS (
 	SELECT id AS repo_id

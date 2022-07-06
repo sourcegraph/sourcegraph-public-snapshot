@@ -224,7 +224,7 @@ func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit i
 }
 
 const commitsVisibleToUploadQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:CommitsVisibleToUpload
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetCommitsVisibleToUpload
 WITH
 direct_commits AS (
 	SELECT nu.repository_id, nu.commit_bytea
