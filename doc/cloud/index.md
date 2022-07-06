@@ -17,5 +17,4 @@ Sourcegraph Cloud allows individuals to search their personal code as well as mo
 - [Creating an Organization on Sourcegraph Cloud](./organizations/creating_your_org_on_cloud.md)
 - [Searching organizational code on Sourcegraph Cloud](./organizations/searching_org_repo_sourcegraph_cloud.md)
 - [Inviting Users to an organization on Sourcegraph Cloud](./organizations/inviting_users_to_org_on_sourcegraph_cloud.md)
-- [Code Visibility for organizational repositories on Sourcegraph Cloud](./organizations/creating_your_org_on_cloud.md)
 - [Deleting an organization on Sourcegraph Cloud](./organizations/deleting_org_on_cloud.md)
