@@ -352,6 +352,7 @@ export function createDefaultSuggestionSources(options: {
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
+                    getMatch: options.globbing ? undefined : createMatchFunction(token),
                 }
             })
         )
@@ -449,6 +450,28 @@ const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FIL
         boost: insertText.startsWith('-') ? 1 : 2, // demote negated filters
     })
 )
+
+/**
+ * This helper function creates a function suitable for CodeMirro's 'getMatch'
+ * option. This is used to allow CodeMirror to highlight the matching part of
+ * the label.
+ * See https://codemirror.net/docs/ref/#autocomplete.CompletionResult.getMatch
+ */
+function createMatchFunction(token: Filter): ((completion: Completion) => number[]) | undefined {
+    if (!token.value?.value) {
+        return undefined
+    }
+    const pattern = new RegExp(token.value.value, 'ig')
+    return completion => Array.from(completion.label.matchAll(pattern), matchToIndexTupel).flat()
+}
+
+/**
+ * Converts a regular expression match into an (possibly empty) number tuple
+ * representing the start index and the end index of the match.
+ */
+function matchToIndexTupel(match: RegExpMatchArray): number[] {
+    return match.index !== undefined ? [match.index, match.index + match[0].length] : []
+}
 
 // Looks like there might be a bug with how the end range for a field is
 // computed? Need to add 1 to make this work properly.
