@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
@@ -60,7 +58,6 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		}
 		repoIds[repository] = repo.ID
 	}
-	log15.Debug("Generated repoIds", "repoids", repoIds)
 
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {
@@ -70,7 +67,6 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		}
 		modifiedQuery = querybuilder.SingleRepoQueryIndexed(modifiedQuery, repository)
 
-		log15.Debug("executing query", "query", modifiedQuery)
 		grouped, err := c.computeSearch(ctx, modifiedQuery)
 		if err != nil {
 			errorMsg := "failed to execute capture group search for repository:" + repository
