@@ -640,6 +640,8 @@ func (z *RepoSubsetTextSearchJob) Tags() []otlog.Field {
 	return tags
 }
 
+func (*RepoSubsetTextSearchJob) Children() []job.DescriptiveJob { return nil }
+
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
@@ -672,3 +674,5 @@ func (t *GlobalTextSearchJob) Tags() []otlog.Field {
 		trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
 	}
 }
+
+func (t *GlobalTextSearchJob) Children() []job.DescriptiveJob { return nil }

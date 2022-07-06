@@ -68,6 +68,8 @@ func (s *RepoSearchJob) Tags() []log.Field {
 	}
 }
 
+func (s *RepoSearchJob) Children() []job.DescriptiveJob { return nil }
+
 func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {

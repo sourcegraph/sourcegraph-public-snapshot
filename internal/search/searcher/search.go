@@ -147,6 +147,8 @@ func (s *TextSearchJob) Tags() []otlog.Field {
 	}
 }
 
+func (s *TextSearchJob) Children() []job.DescriptiveJob { return nil }
+
 var MockSearchFilesInRepo func(
 	ctx context.Context,
 	repo types.MinimalRepo,

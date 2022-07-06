@@ -63,6 +63,10 @@ func (s *subRepoPermsFilterJob) Tags() []otlog.Field {
 	return []otlog.Field{}
 }
 
+func (s *subRepoPermsFilterJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{s.child}
+}
+
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
 func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {

@@ -20,6 +20,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/search/job) used for unit
 // testing.
 type MockJob struct {
+	// ChildrenFunc is an instance of a mock function object controlling the
+	// behavior of the method Children.
+	ChildrenFunc *JobChildrenFunc
 	// NameFunc is an instance of a mock function object controlling the
 	// behavior of the method Name.
 	NameFunc *JobNameFunc
@@ -35,6 +38,11 @@ type MockJob struct {
 // zero values for all results, unless overwritten.
 func NewMockJob() *MockJob {
 	return &MockJob{
+		ChildrenFunc: &JobChildrenFunc{
+			defaultHook: func() (r0 []job.DescriptiveJob) {
+				return
+			},
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: func() (r0 string) {
 				return
@@ -57,6 +65,11 @@ func NewMockJob() *MockJob {
 // panic on invocation, unless overwritten.
 func NewStrictMockJob() *MockJob {
 	return &MockJob{
+		ChildrenFunc: &JobChildrenFunc{
+			defaultHook: func() []job.DescriptiveJob {
+				panic("unexpected invocation of MockJob.Children")
+			},
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: func() string {
 				panic("unexpected invocation of MockJob.Name")
@@ -79,6 +92,9 @@ func NewStrictMockJob() *MockJob {
 // delegate to the given implementation, unless overwritten.
 func NewMockJobFrom(i job.Job) *MockJob {
 	return &MockJob{
+		ChildrenFunc: &JobChildrenFunc{
+			defaultHook: i.Children,
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: i.Name,
 		},
@@ -89,6 +105,104 @@ func NewMockJobFrom(i job.Job) *MockJob {
 			defaultHook: i.Tags,
 		},
 	}
+}
+
+// JobChildrenFunc describes the behavior when the Children method of the
+// parent MockJob instance is invoked.
+type JobChildrenFunc struct {
+	defaultHook func() []job.DescriptiveJob
+	hooks       []func() []job.DescriptiveJob
+	history     []JobChildrenFuncCall
+	mutex       sync.Mutex
+}
+
+// Children delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJob) Children() []job.DescriptiveJob {
+	r0 := m.ChildrenFunc.nextHook()()
+	m.ChildrenFunc.appendCall(JobChildrenFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Children method of
+// the parent MockJob instance is invoked and the hook queue is empty.
+func (f *JobChildrenFunc) SetDefaultHook(hook func() []job.DescriptiveJob) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Children method of the parent MockJob instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *JobChildrenFunc) PushHook(hook func() []job.DescriptiveJob) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobChildrenFunc) SetDefaultReturn(r0 []job.DescriptiveJob) {
+	f.SetDefaultHook(func() []job.DescriptiveJob {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobChildrenFunc) PushReturn(r0 []job.DescriptiveJob) {
+	f.PushHook(func() []job.DescriptiveJob {
+		return r0
+	})
+}
+
+func (f *JobChildrenFunc) nextHook() func() []job.DescriptiveJob {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobChildrenFunc) appendCall(r0 JobChildrenFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobChildrenFuncCall objects describing the
+// invocations of this function.
+func (f *JobChildrenFunc) History() []JobChildrenFuncCall {
+	f.mutex.Lock()
+	history := make([]JobChildrenFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobChildrenFuncCall is an object that describes an invocation of method
+// Children on an instance of MockJob.
+type JobChildrenFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []job.DescriptiveJob
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobChildrenFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobChildrenFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // JobNameFunc describes the behavior when the Name method of the parent

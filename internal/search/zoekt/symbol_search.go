@@ -73,6 +73,8 @@ func (z *SymbolSearchJob) Tags() []log.Field {
 	return tags
 }
 
+func (z *SymbolSearchJob) Children() []job.DescriptiveJob { return nil }
+
 type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
@@ -115,3 +117,5 @@ func (s *GlobalSymbolSearchJob) Tags() []log.Field {
 		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 	}
 }
+
+func (s *GlobalSymbolSearchJob) Children() []job.DescriptiveJob { return nil }

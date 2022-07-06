@@ -23,8 +23,7 @@ import (
 // timeout). Calling Run on a job object runs a search.
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
-	Name() string
-	Tags() []otlog.Field
+	DescriptiveJob
 }
 
 // PartialJob is a partially constructed job that needs information only
@@ -38,7 +37,23 @@ type PartialJob[T any] interface {
 	// Resolve returns the fully constructed job using information that is only
 	// available at runtime.
 	Resolve(T) Job
+
+	DescriptiveJob
 }
+
+type DescriptiveJob interface {
+	Name() string
+	Children() []DescriptiveJob
+	Tags() []otlog.Field
+}
+
+type VerbosityLevel int
+
+const (
+	VerbosityLow VerbosityLevel = iota + 1
+	VerbosityMedium
+	VerbosityHigh
+)
 
 type RuntimeClients struct {
 	Logger       log.Logger

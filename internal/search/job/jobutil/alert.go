@@ -86,6 +86,10 @@ func (j *alertJob) Tags() []log.Field {
 	}
 }
 
+func (j *alertJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{j.child}
+}
+
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
 func longer(n int, dt time.Duration) time.Duration {
 	dt2 := func() time.Duration {

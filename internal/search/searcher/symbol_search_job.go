@@ -86,6 +86,8 @@ func (s *SymbolSearchJob) Tags() []log.Field {
 	}
 }
 
+func (s *SymbolSearchJob) Children() []job.DescriptiveJob { return nil }
+
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {

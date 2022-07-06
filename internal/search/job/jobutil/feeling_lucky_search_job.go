@@ -152,6 +152,10 @@ func (f *FeelingLuckySearchJob) Tags() []log.Field {
 	return []log.Field{}
 }
 
+func (f *FeelingLuckySearchJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{f.initialJob}
+}
+
 // autoQuery is an automatically generated query with associated data (e.g., description).
 type autoQuery struct {
 	description string
@@ -556,4 +560,8 @@ func (g *generatedSearchJob) Name() string {
 
 func (g *generatedSearchJob) Tags() []log.Field {
 	return []log.Field{}
+}
+
+func (g *generatedSearchJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{g.Child}
 }

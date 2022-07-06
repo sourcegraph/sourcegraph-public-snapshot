@@ -130,6 +130,8 @@ func (j *SearchJob) Tags() []log.Field {
 	}
 }
 
+func (j *SearchJob) Children() []job.DescriptiveJob { return nil }
+
 func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {

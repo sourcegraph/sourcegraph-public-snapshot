@@ -48,6 +48,14 @@ func (s *SequentialJob) Tags() []log.Field {
 	}
 }
 
+func (s *SequentialJob) Children() []job.DescriptiveJob {
+	res := make([]job.DescriptiveJob, len(s.children))
+	for i := range s.children {
+		res[i] = s.children[i]
+	}
+	return res
+}
+
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, s)
 	defer func() { finish(alert, err) }()
@@ -111,8 +119,13 @@ func (p *ParallelJob) Name() string {
 	return "ParallelJob"
 }
 
-func (p *ParallelJob) Tags() []log.Field {
-	return []log.Field{}
+func (p *ParallelJob) Tags() []log.Field { return nil }
+func (p *ParallelJob) Children() []job.DescriptiveJob {
+	res := make([]job.DescriptiveJob, len(p.children))
+	for i := range p.children {
+		res[i] = p.children[i]
+	}
+	return res
 }
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
@@ -171,6 +184,10 @@ func (t *TimeoutJob) Tags() []log.Field {
 	}
 }
 
+func (t *TimeoutJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{t.child}
+}
+
 func NewNoopJob() *NoopJob {
 	return &NoopJob{}
 }
@@ -181,8 +198,6 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 	return nil, nil
 }
 
-func (e *NoopJob) Name() string { return "NoopJob" }
-
-func (e *NoopJob) Tags() []log.Field {
-	return []log.Field{}
-}
+func (e *NoopJob) Name() string                   { return "NoopJob" }
+func (e *NoopJob) Tags() []log.Field              { return nil }
+func (e *NoopJob) Children() []job.DescriptiveJob { return nil }

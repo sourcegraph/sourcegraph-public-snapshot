@@ -57,6 +57,10 @@ func (l *LimitJob) Tags() []log.Field {
 	}
 }
 
+func (l *LimitJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{l.child}
+}
+
 type limitStream struct {
 	s         streaming.Sender
 	cancel    context.CancelFunc

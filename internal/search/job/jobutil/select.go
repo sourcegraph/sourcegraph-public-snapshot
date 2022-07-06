@@ -42,6 +42,10 @@ func (j *selectJob) Tags() []log.Field {
 	}
 }
 
+func (j *selectJob) Children() []job.DescriptiveJob {
+	return []job.DescriptiveJob{j.child}
+}
+
 // newSelectingStream returns a child Stream of parent that runs the select operation
 // on each event, deduplicating where possible.
 func newSelectingStream(parent streaming.Sender, s filter.SelectPath) streaming.Sender {

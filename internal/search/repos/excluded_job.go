@@ -43,3 +43,5 @@ func (c *ComputeExcludedJob) Tags() []log.Field {
 		trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
 	}
 }
+
+func (c *ComputeExcludedJob) Children() []job.DescriptiveJob { return nil }

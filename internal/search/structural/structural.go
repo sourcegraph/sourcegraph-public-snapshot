@@ -205,3 +205,5 @@ func (s *SearchJob) Tags() []log.Field {
 		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 	}
 }
+
+func (s *SearchJob) Children() []job.DescriptiveJob { return nil }
