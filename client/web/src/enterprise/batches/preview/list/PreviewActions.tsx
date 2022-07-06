@@ -3,6 +3,7 @@ import React from 'react'
 import {
     mdiArchive,
     mdiBeakerQuestion,
+    mdiCheckboxBlankCircleOutline,
     mdiCloseCircleOutline,
     mdiDelete,
     mdiImport,
@@ -14,7 +15,6 @@ import {
     mdiUploadNetwork,
 } from '@mdi/js'
 import classNames from 'classnames'
-import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -282,7 +282,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; reason?: string }>
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} aria-hidden={true} />
+        <Icon className="mr-1" data-tooltip={reason} svgPath={mdiCheckboxBlankCircleOutline} aria-hidden={true} />
         <span>No action</span>
     </div>
 )
