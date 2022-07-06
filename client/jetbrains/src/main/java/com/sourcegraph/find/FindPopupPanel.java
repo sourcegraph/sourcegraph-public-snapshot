@@ -55,16 +55,16 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         if (browser != null) {
             browserAndLoadingPanel.setBrowser(browser);
         }
-
-        headerPanel = new HeaderPanel(project);
-
-        BorderLayoutPanel topPanel = new BorderLayoutPanel();
         // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
         // doesn't properly pass the mouse events to Swing.
         // 4px is the minimum amount to make it work for the window resize, the splitter works without a padding.
         if (OS.isMacOSX()) {
-            topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+            browserAndLoadingPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
         }
+
+        headerPanel = new HeaderPanel(project);
+
+        BorderLayoutPanel topPanel = new BorderLayoutPanel();
         topPanel.add(headerPanel, BorderLayout.NORTH);
         topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
         topPanel.setMinimumSize(JBUI.size(750, 200));
