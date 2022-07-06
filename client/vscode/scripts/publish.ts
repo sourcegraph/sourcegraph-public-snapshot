@@ -31,7 +31,7 @@ const commands = {
     // To publish to VS Code Marketplace
     vscode_publish: `yarn vsce publish ${isPreRelease} --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation`,
     // To package the extension without publishing
-    vscode_pacakage: `yarn vsce package ${isPreRelease} --yarn --allow-star-activation`,
+    vscode_package: `yarn vsce package ${isPreRelease} --yarn --allow-star-activation`,
     // To publish to the open-vsx registry
     openvsx_publish: 'yarn npx --yes ovsx publish --yarn -p $VSCODE_OPENVSX_TOKEN',
 }
