@@ -146,9 +146,7 @@ commands:
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
-      if [ -z ${var+x} ]; then echo "var is unset"; else echo "var is set to '$var'"; fi
       export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
-      echo $EXTSVC_CONFIG_FILE
 
       .bin/enterprise-frontend
     install: |
