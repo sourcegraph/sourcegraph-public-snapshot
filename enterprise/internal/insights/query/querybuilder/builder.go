@@ -95,7 +95,7 @@ func SingleRepoQuery(query, repo, revision string, defaultParams searchquery.Par
 	return modified, nil
 }
 
-// TODO used right now for live preview compute
+// SingleRepoQueryIndexed generates a query against the current index for one repo
 func SingleRepoQueryIndexed(query, repo string) (string, error) {
 	modified := withCountAll(query)
 	modified = forRepos(modified, []string{repo})
