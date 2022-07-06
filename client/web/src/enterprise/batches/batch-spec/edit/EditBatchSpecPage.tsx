@@ -22,7 +22,9 @@ import {
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
+import { SearchTemplatesBanner } from '../../create/SearchTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
+import { useSearchTemplate } from '../../create/useSearchTemplate'
 import { BatchSpecContextProvider, useBatchSpecContext, BatchSpecContextState } from '../BatchSpecContext'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
@@ -126,6 +128,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     const history = useHistory()
 
     const { insightTitle } = useInsightTemplates(settingsCascade)
+    const { searchQuery } = useSearchTemplate()
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
     const tabsConfig = useMemo<TabsConfig[]>(
@@ -250,6 +253,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
 
     return (
         <div className={layoutStyles.pageContainer}>
+            {searchQuery && <SearchTemplatesBanner />}
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader

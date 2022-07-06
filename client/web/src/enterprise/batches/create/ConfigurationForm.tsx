@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { useHistory } from 'react-router'
+import { useHistory, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -99,9 +99,10 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     }, [])
 
     const history = useHistory()
+    const location = useLocation()
     const handleCancel = (): void => history.goBack()
     const handleCreate = (): void => {
-        const redirectSearchParameters = new URLSearchParams()
+        const redirectSearchParameters = new URLSearchParams(location.search)
         if (insightTitle) {
             redirectSearchParameters.set('title', insightTitle)
         }
