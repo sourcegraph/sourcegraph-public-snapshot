@@ -9,6 +9,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func BenchmarkBatchingStream(b *testing.B) {
@@ -114,15 +115,13 @@ func TestBatchingStream(t *testing.T) {
 			count.Add(int64(len(event.Results)))
 		}))
 
-		var wg sync.WaitGroup
-		wg.Add(10)
+		g := group.New()
 		for i := 0; i < 10; i++ {
-			go func() {
+			g.Go(func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
-				wg.Done()
-			}()
+			})
 		}
-		wg.Wait()
+		g.Wait()
 
 		// One should be sent immediately
 		require.Equal(t, count.Load(), int64(1))

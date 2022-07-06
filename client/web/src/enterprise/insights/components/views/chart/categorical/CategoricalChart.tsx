@@ -1,8 +1,12 @@
 import React, { SVGProps } from 'react'
 
 import { CategoricalLikeChart, PieChart } from '../../../../../../charts'
-import { CategoricalBasedChartTypes } from '../../types'
 import { LockedChart } from '../locked/LockedChart'
+
+export enum CategoricalBasedChartTypes {
+    Pie,
+    Bar,
+}
 
 export interface CategoricalChartProps<Datum>
     extends CategoricalLikeChart<Datum>,

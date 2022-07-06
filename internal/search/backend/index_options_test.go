@@ -9,8 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -260,7 +258,7 @@ func TestGetIndexOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			getSearchContextRevisions := func(int32) ([]string, error) { return tc.searchContextRevs, nil }
 
-			b := GetIndexOptions(logtest.Scoped(t), &tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
+			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -332,7 +330,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 				}, nil
 			}
 
-			b := GetIndexOptions(logtest.Scoped(t), &conf, getRepoIndexOptions, getSearchContextRevs, 1)
+			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -387,7 +385,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 
 	getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
 
-	b := GetIndexOptions(logtest.Scoped(t), &schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
+	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
 	got := make([]zoektIndexOptions, len(repos))
 	for i := range repos {

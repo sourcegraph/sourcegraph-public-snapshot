@@ -15,9 +15,8 @@ import (
 )
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.ComputeResolver = resolvers.NewResolver(db)
-	enterpriseServices.NewComputeStreamHandler = func() http.Handler {
-		return streaming.NewComputeStreamHandler(log.Scoped("Init", "NewComputeStreamHandler"), db)
-	}
+	logger := log.Scoped("compute", "")
+	enterpriseServices.ComputeResolver = resolvers.NewResolver(logger, db)
+	enterpriseServices.NewComputeStreamHandler = func() http.Handler { return streaming.NewComputeStreamHandler(logger, db) }
 	return nil
 }

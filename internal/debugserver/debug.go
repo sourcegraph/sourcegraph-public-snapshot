@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var CurrentMetrics map[string][]*dto.MetricFamily
@@ -76,14 +75,10 @@ type Service struct {
 	DefaultPath string
 }
 
-type ExternalServicesStore interface {
-	GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error)
-}
-
 // Dumper is a service which can dump its state for debugging.
 type Dumper interface {
 	// DebugDump returns a snapshot of the current state.
-	DebugDump(ctx context.Context, esStore ExternalServicesStore) any
+	DebugDump(ctx context.Context) any
 }
 
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.

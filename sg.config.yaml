@@ -46,6 +46,7 @@ env:
   SRC_PROF_SERVICES: |
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
+      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver", "Host": "127.0.0.1:6068" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
@@ -112,6 +113,14 @@ env:
   ENABLE_STREAMING_REPOS_SYNCER: true
 
 commands:
+  server:
+    cmd: ./dev/run-server-image.sh
+    env:
+      TAG: insiders
+      CLEAN: 'true'
+      DATA: '/tmp/sourcegraph-data'
+      URL: 'http://localhost:7080'
+
   oss-frontend:
     cmd: .bin/oss-frontend
     install: |
@@ -119,7 +128,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/oss-frontend github.com/sourcegraph/sourcegraph/cmd/frontend
-    checkBinary: .bin/oss-frontend
+    checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -255,7 +264,7 @@ commands:
 
       ./cmd/symbols/build-ctags.sh &&
       go build -gcflags="$GCFLAGS" -o .bin/oss-symbols github.com/sourcegraph/sourcegraph/cmd/symbols
-    checkBinary: .bin/oss-symbols
+    checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
@@ -318,7 +327,9 @@ commands:
 
   web-standalone-http:
     cmd: yarn workspace @sourcegraph/web serve:dev --color
-    install: yarn --no-progress
+    install: |
+      yarn --no-progress
+      yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -649,6 +660,25 @@ commands:
       LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
+  otel-collector:
+    cmd: |
+      JAEGER_HOST='host.docker.internal'
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        # Jaeger generally runs outside of Docker, so to access it we need to be
+        # able to access ports on the host, because the Docker host only exists on
+        # MacOS. --net=host is a very dirty way of enabling this.
+        DOCKER_NET="--net=host"
+        JAEGER_HOST="localhost"
+      fi
+
+      docker run --rm --name=otel-collector $DOCKER_NET \
+        -p 4317:4317 -p 55679:55679 \
+        -e JAEGER_HOST=$JAEGER_HOST \
+        -v "$(pwd)"/dev/otel-collector/config.yaml:/etc/otel-collector/config.yaml \
+        otel/opentelemetry-collector:${OTEL_COLLECTOR_VERISON} --config /etc/otel-collector/config.yaml
+    env:
+      OTEL_COLLECTOR_VERISON: '0.54.0'
+
   storybook:
     cmd: yarn storybook
     install: yarn
@@ -894,6 +924,14 @@ commandsets:
       - web-standalone-http-prod
       - caddy
 
+  # For testing out OpenTelemetry stack
+  otel:
+    checks:
+      - docker
+    commands:
+      - otel-collector
+      - jaeger
+
 tests:
   # These can be run with `sg test [name]`
   backend:
@@ -932,7 +970,10 @@ tests:
 
   frontend-e2e:
     preamble: |
-      'sg start enterprise-e2e' must be already running for these tests to work.
+      'sg start enterprise-e2e' must be already running for these tests to work. You can also
+      run tests against an existing server image:
+
+        TAG=insiders sg run server
 
       If you run into authentication issues, you can run the following commands to fix them:
 

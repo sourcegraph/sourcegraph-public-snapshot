@@ -17,22 +17,31 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
+- Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
 
 ### Changed
 
 - Updated minimum required veresion of `git` to 2.35.2 in `gitserver` and `server` Docker image. This addresses a few vulnerabilities disclosed in https://github.blog/2022-04-12-git-security-vulnerability-announced/.
 - Search: Pasting a query with line breaks into the main search query input will now replace them with spaces instead of removing them. [#37674](https://github.com/sourcegraph/sourcegraph/pull/37674)
 - Rewrite resource estimator using the latest metrics [#37869](https://github.com/sourcegraph/sourcegraph/pull/37869)
+- Selecting a line multiple times in the file view will only add a single browser history entry [#38204](https://github.com/sourcegraph/sourcegraph/pull/38204)
 
 ### Fixed
 
 - Fix an issue where updating the title or body of a Bitbucket Cloud pull request opened by a batch change could fail when the pull request was not on a fork of the target repository. [#37585](https://github.com/sourcegraph/sourcegraph/issues/37585)
 - A bug where some complex `repo:` regexes only returned a subset of repository results. [#37925](https://github.com/sourcegraph/sourcegraph/pull/37925)
+- Fix a bug when selecting all the changesets on the Preview Batch Change Page only selected the recently loaded changesets. [#38041](https://github.com/sourcegraph/sourcegraph/pull/38041)
+- Fix a bug with bad code insights chart data points links. [#38102](https://github.com/sourcegraph/sourcegraph/pull/38102)
+- Code Insights: the commit indexer no longer errors when fetching commits from empty repositories and marks them as successfully indexed. [#39081](https://github.com/sourcegraph/sourcegraph/pull/38091)
+- The file view does not jump to the first selected line anymore when selecting multiple lines and the first selected line was out of view. [#38175](https://github.com/sourcegraph/sourcegraph/pull/38175)
+- Fixed an issue where multiple activations of the back button are required to navigate back to a previously selected line in a file [#38193](https://github.com/sourcegraph/sourcegraph/pull/38193)
+- Support timestamps with numeric timezone format from Gitlab's Webhook payload [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
 
 ### Removed
 
 - The direct DataDog trace export integration has been removed. ([#37654](https://github.com/sourcegraph/sourcegraph/pull/37654))
+- Removed the deprecated git exec forwarder. [#38092](https://github.com/sourcegraph/sourcegraph/pull/38092)
 
 ## 3.41.0
 
