@@ -556,21 +556,35 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 // handleArchivedRepo updates the changeset and repo once it has been
 // determined that the repo has been archived.
 func (e *executor) handleArchivedRepo(ctx context.Context) error {
-	// We need to mark the repo as archived so that the later check for whether
-	// the repo is still archived isn't confused.
 	repo, err := e.remoteRepo(ctx)
 	if err != nil {
 		return errors.Wrap(err, "getting the archived remote repo")
 	}
 
+	return handleArchivedRepo(
+		ctx,
+		repos.NewStore(e.logger, e.tx.DatabaseDB()),
+		repo,
+		e.ch,
+	)
+}
+
+func handleArchivedRepo(
+	ctx context.Context,
+	store repos.Store,
+	repo *types.Repo,
+	ch *btypes.Changeset,
+) error {
+	// We need to mark the repo as archived so that the later check for whether
+	// the repo is still archived isn't confused.
 	repo.Archived = true
-	if _, err := repos.NewStore(e.logger, e.tx.DatabaseDB()).UpdateRepo(ctx, repo); err != nil {
+	if _, err := store.UpdateRepo(ctx, repo); err != nil {
 		return errors.Wrapf(err, "updating archived status of repo %d", int(repo.ID))
 	}
 
 	// Now we can set the ExternalState, and SetDerivedState will do the rest
 	// later with that and the updated repo.
-	e.ch.ExternalState = btypes.ChangesetExternalStateReadOnly
+	ch.ExternalState = btypes.ChangesetExternalStateReadOnly
 
 	return nil
 }
