@@ -272,6 +272,17 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
         }
     }
 
+    // Without this two consecutive closing grouping parenthesis would be
+    // represented as
+    // [..., {type: 'closingParen'}, {type: 'pattern', value: ""}, {type: 'closingParen'}]
+    if (start === adjustedStart) {
+        return {
+            type: 'error',
+            expected: 'non-empty pattern',
+            at: adjustedStart,
+        }
+    }
+
     return {
         type: 'success',
         term: createLiteral(result.join(''), { start, end: adjustedStart }),
