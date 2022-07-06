@@ -93,6 +93,9 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 ### Publishing from your local machine
 
 1. Update `pluginVersion` in `gradle.properties`
+
+- Pre-release builds with the same version as a previous one need to append a number. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md`
 3. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
 
