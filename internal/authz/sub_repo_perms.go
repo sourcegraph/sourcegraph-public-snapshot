@@ -206,7 +206,7 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		// If we make it this far it implies that we have access at the repo level.
 		// Having any empty set of rules here implies that we can access the whole repo.
 		// Repos that support sub-repo permissions will only have an entry in our
-		// repo_permissions table if after all sub-repo permissions have been processed.
+		// repo_permissions table after all sub-repo permissions have been processed.
 		return Read, nil
 	}
 
