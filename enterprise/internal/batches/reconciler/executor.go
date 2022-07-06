@@ -183,16 +183,9 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
-		if s, ok := css.(interface{ IsPushResponseArchived(s string) bool }); ok {
-			if s.IsPushResponseArchived(pce.CombinedOutput) {
-				remoteRepo.Archived = true
-				_, err := repos.NewStore(e.logger, e.tx.DatabaseDB()).UpdateRepo(ctx, remoteRepo)
-				if err != nil {
-					return errors.Wrapf(err, "updating archived status of repo %d", int(e.ch.RepoID))
-				}
-
-				e.ch.ExternalState = btypes.ChangesetExternalStateReadOnly
-				return nil
+		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
+			if acss.IsArchivedPushError(pce.CombinedOutput) {
+				return e.handleArchivedRepo(ctx)
 			}
 		}
 	}
@@ -349,21 +342,8 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
 		if errcode.IsArchived(err) {
-			// We set the ExternalState here, and then SetDerivedState will do the
-			// rest later.
-			e.ch.ExternalState = btypes.ChangesetExternalStateReadOnly
-
-			// We also need to mark the repo as archived so that the later check for
-			// whether the repo is still archived isn't confused.
-			r, err := e.tx.Repos().Get(ctx, cs.RepoID)
-			if err != nil {
-				return errors.Wrapf(err, "retrieving repo %d to update its archived status", int(cs.RepoID))
-			}
-
-			r.Archived = true
-			r, err = repos.NewStore(e.logger, e.tx.DatabaseDB()).UpdateRepo(ctx, r)
-			if err != nil {
-				return errors.Wrapf(err, "updating archived status of repo %d", int(cs.RepoID))
+			if err := e.handleArchivedRepo(ctx); err != nil {
+				return err
 			}
 		} else {
 			return errors.Wrap(err, "updating changeset")
@@ -569,6 +549,28 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 		}
 		return err
 	}
+
+	return nil
+}
+
+// handleArchivedRepo updates the changeset and repo once it has been
+// determined that the repo has been archived.
+func (e *executor) handleArchivedRepo(ctx context.Context) error {
+	// We need to mark the repo as archived so that the later check for whether
+	// the repo is still archived isn't confused.
+	repo, err := e.remoteRepo(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting the archived remote repo")
+	}
+
+	repo.Archived = true
+	if _, err := repos.NewStore(e.logger, e.tx.DatabaseDB()).UpdateRepo(ctx, repo); err != nil {
+		return errors.Wrapf(err, "updating archived status of repo %d", int(repo.ID))
+	}
+
+	// Now we can set the ExternalState, and SetDerivedState will do the rest
+	// later with that and the updated repo.
+	e.ch.ExternalState = btypes.ChangesetExternalStateReadOnly
 
 	return nil
 }
