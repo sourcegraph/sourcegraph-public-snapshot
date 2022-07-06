@@ -10,7 +10,9 @@ export { FormRadioInput } from './form-radio-input/FormRadioInput'
 export { FormGroup } from './form-group/FormGroup'
 
 // form hooks
-export { useForm, Form, FORM_ERROR, SubmissionErrors, FormChangeEvent } from './hooks/useForm'
-export { useField, useFieldAPI } from './hooks/useField'
+export { useForm, FORM_ERROR } from './hooks/useForm'
+export type { Form, SubmissionErrors, FormChangeEvent } from './hooks/useForm'
+export { useField } from './hooks/useField'
+export type { useFieldAPI } from './hooks/useField'
 export { useCheckboxes } from './hooks/useCheckboxes'
 export { useAsyncInsightTitleValidator } from './hooks/use-async-insight-title-validator'

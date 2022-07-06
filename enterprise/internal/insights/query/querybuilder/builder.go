@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+
 	"github.com/grafana/regexp"
 
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -71,7 +73,7 @@ func forRepoRevision(query, repo, revision string) string {
 	return fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repo), revision)
 }
 
-//forRepos appends a single repo filter making an OR condition for all repos passed
+// forRepos appends a single repo filter making an OR condition for all repos passed
 func forRepos(query string, repos []string) string {
 	escapedRepos := make([]string, len(repos))
 	for i, repo := range repos {
@@ -114,4 +116,28 @@ func MultiRepoQuery(query string, repos []string, defaultParams searchquery.Para
 	modified = forRepos(modified, repos)
 
 	return modified, nil
+}
+
+type MapType string
+
+const (
+	Lang   MapType = "lang"
+	Repo   MapType = "repo"
+	Path   MapType = "path"
+	Author MapType = "author"
+	Date   MapType = "date"
+)
+
+// This is the compute command that corresponds to the execution for Code Insights.
+const insightsComputeCommand = "output.extra"
+
+// ComputeInsightCommandQuery will convert a standard Sourcegraph search query into a compute "map type" insight query. This command type will group by
+// certain fields. The original search query semantic should be preserved, although any new limitations or restrictions in Compute will apply.
+func ComputeInsightCommandQuery(query string, mapType MapType) (string, error) {
+	q, err := compute.Parse(query)
+	if err != nil {
+		return "", err
+	}
+	pattern := q.Command.ToSearchPattern()
+	return searchquery.AddRegexpField(q.Parameters, searchquery.FieldContent, fmt.Sprintf("%s(%s -> $%s)", insightsComputeCommand, pattern, mapType)), nil
 }

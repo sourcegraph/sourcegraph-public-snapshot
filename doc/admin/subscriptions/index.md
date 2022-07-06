@@ -12,7 +12,13 @@ You can [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to pu
 
 ## Pricing model
 
-[Sourcegraph's pricing](https://about.sourcegraph.com/pricing) is based on a combination of the [number of lines of code indexed](#how-lines-of-code-are-counted) and [total active user accounts](#how-user-accounts-are-counted). 
+[Sourcegraph's pricing](https://about.sourcegraph.com/pricing) is based primarily on [total active user accounts](#how-user-accounts-are-counted). In certain situations, it is also a combination of the [number of lines of code indexed](#how-lines-of-code-are-counted). Please [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to answer specific questions about our pricing model for your use. 
+
+## How user accounts are counted
+
+This count is maintained on your Sourcegraph instance, viewable and auditable on the **Site admin > Users** page, and is reported back in aggregate to Sourcegraph.com via [pings](https://docs.sourcegraph.com/admin/pings).
+
+A Sourcegraph user account is created when a user signs up or signs in for the first time. Sourcegraph user accounts can be deleted by administrators via the **Site admin > Users** page, or using the [GraphQL API](../../api/graphql/index.md) or the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli).
 
 ## How lines of code are counted
 
@@ -21,12 +27,6 @@ We count the number of newlines (`\n`) appearing in the text search index. Our t
 Our text search index deduplicates for paths that are the same across branches. We only count the newlines once per unique file. Forks are separately indexed. They are included in the count of new lines.
 
 Sourcegraph administrators can view the lines of code count for each repository by visiting the repository and clicking on **Settings > Indexing**.
-
-## How user accounts are counted
-
-This count is maintained on your Sourcegraph instance, viewable and auditable on the **Site admin > Users** page, and is reported back in aggregate to Sourcegraph.com via [pings](https://docs.sourcegraph.com/admin/pings).
-
-A Sourcegraph user account is created when a user signs up or signs in for the first time. Sourcegraph user accounts can be deleted by administrators via the **Site admin > Users** page, or using the [GraphQL API](../../api/graphql/index.md) or the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli).
 
 ## Updating your license key
 
