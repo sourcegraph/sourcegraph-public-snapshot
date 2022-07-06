@@ -43,11 +43,16 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
             )
 
+            // Transform display options into format compatible with our input forms
+            // TODO: Remove when we consume GQL types directly
             const seriesDisplayOptions = {
-                limit: `${insight.appliedSeriesDisplayOptions.limit ?? MAX_NUMBER_OF_SERIES}`,
+                limit: `${Math.min(
+                    baseInsight.seriesDisplayOptions?.limit ?? MAX_NUMBER_OF_SERIES,
+                    MAX_NUMBER_OF_SERIES
+                )}`,
                 sortOptions: {
-                    direction: insight.appliedSeriesDisplayOptions.sortOptions.direction ?? SeriesSortDirection.DESC,
-                    mode: insight.appliedSeriesDisplayOptions.sortOptions.mode ?? SeriesSortMode.RESULT_COUNT,
+                    direction: baseInsight.seriesDisplayOptions?.sortOptions?.direction ?? SeriesSortDirection.DESC,
+                    mode: baseInsight.seriesDisplayOptions?.sortOptions?.mode ?? SeriesSortMode.RESULT_COUNT,
                 },
             }
 
