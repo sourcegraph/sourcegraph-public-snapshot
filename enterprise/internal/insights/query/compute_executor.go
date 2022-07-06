@@ -107,6 +107,25 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		})
 		seriesCount++
 	}
+	return sortAndLimitComputedGroups(timeSeries), nil
+}
 
-	return timeSeries, nil
+// Simple sort/limit with reasonable defaults for v1.
+func sortAndLimitComputedGroups(timeSeries []GeneratedTimeSeries) []GeneratedTimeSeries {
+	descValueSort := func(i, j int) bool {
+		if len(timeSeries[i].Points) == 0 || len(timeSeries[j].Points) == 0 {
+			return false
+		}
+		return timeSeries[i].Points[0].Count > timeSeries[j].Points[0].Count
+	}
+	sort.SliceStable(timeSeries, descValueSort)
+	limit := minInt(20, len(timeSeries))
+	return timeSeries[:limit]
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
