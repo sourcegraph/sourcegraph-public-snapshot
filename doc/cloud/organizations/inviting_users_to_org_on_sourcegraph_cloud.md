@@ -1,6 +1,8 @@
 # Invite others to join your organization on Sourcegraph Cloud
 
-Invite others to join your organization on Sourcegraph Cloud and search across [your organization’s repositories synced to Sourcegraph Cloud](./adding_your_org_repos_to_cloud.md):
+> WARNING: [Private code on Sourcegraph.com is no longer supported](https://about.sourcegraph.com/blog/single-tenant-cloud) and all previously synced code will be removed on August 1.
+
+Invite others to join your organization on Sourcegraph Cloud and search across your organization’s repositories synced to Sourcegraph Cloud:
 
 1. Go to User menu > Settings in the top navigation bar.
 2. Go to your organization in the sidebar navigation.
@@ -16,7 +18,7 @@ Note that during early access for organizations on Sourcegraph Cloud, only exist
 
 ### Repositories from GitHub.com are missing or not showing up in search results
 
-If your [organization’s repositories synced to Sourcegraph Cloud](./adding_your_org_repos_to_cloud.md) are missing or not showing up in search results for a member of your team, that team member may need to [add or update their personal code host connection](../../code_search/how-to/adding_repositories_to_cloud.md).
+If your organization’s repositories synced to Sourcegraph Cloud are missing or not showing up in search results for a member of your team, that team member may need to [add or update their personal code host connection](../../code_search/how-to/adding_repositories_to_cloud.md).
 
 This is because Sourcegraph respects repository permissions on the code host, and [user-centric permissions](../../admin/repo/permissions.md) to determine which repositories a user has access to, from that user’s point of view. To determine which user has access to which repository on the code host, Sourcegraph relies on personal code host connections to uniquely associate a user on Sourcegraph with their account on the code host.
 

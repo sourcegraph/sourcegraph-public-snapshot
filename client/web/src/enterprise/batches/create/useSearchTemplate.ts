@@ -4,6 +4,7 @@ import helloWorldSample from '../batch-spec/edit/library/hello-world.batch.yaml'
 import { insertQueryIntoLibraryItem, insertNameIntoLibraryItem } from '../batch-spec/yaml-util'
 
 interface UseSearchTemplateResult {
+    searchQuery?: string
     renderTemplate?: (title: string) => string
 }
 
@@ -31,8 +32,8 @@ export const useSearchTemplate = (): UseSearchTemplateResult => {
     if (query) {
         const searchQuery = `${query} ${patternType ? `patternType:${patternType}` : ''}`
         const renderTemplate = createRenderTemplate(searchQuery)
-        return { renderTemplate }
+        return { renderTemplate, searchQuery }
     }
 
-    return { renderTemplate: undefined }
+    return { renderTemplate: undefined, searchQuery: undefined }
 }
