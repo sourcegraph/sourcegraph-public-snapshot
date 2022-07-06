@@ -57,7 +57,7 @@ func TestWithDefaults(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := withDefaults(test.input, test.defaults)
+			got, err := withDefaults(BasicQuery(test.input), test.defaults)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -214,7 +214,7 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := ComputeInsightCommandQuery(test.inputQuery, test.mapType)
+			got, err := ComputeInsightCommandQuery(BasicQuery(test.inputQuery), test.mapType)
 			if err != nil {
 				t.Error(err)
 			}
