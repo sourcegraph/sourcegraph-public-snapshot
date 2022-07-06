@@ -18,6 +18,8 @@ export function stripURLParameters(url: string, parametersToRemove: string[] = [
  * leaking sensitive information from Sourcegraph Cloud, while maintaining
  * non-sensitive query parameters used for attribution tracking.
  *
+ * Note that URL redaction also happens in internal/usagestats/event_handlers.go.
+ *
  * @param url the original, full URL
  */
 export function redactSensitiveInfoFromAppURL(url: string): string {
@@ -27,12 +29,16 @@ export function redactSensitiveInfoFromAppURL(url: string): string {
         return url
     }
 
-    // Capture urls for notebook pages
-    if (sourceURL.pathname.startsWith('/notebooks')) {
+    // Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
+    if (sourceURL.pathname.startsWith('/github.com')) {
+        sourceURL.pathname = '/github.com/redacted'
+    } else if (sourceURL.pathname.startsWith('/gitlab.com')) {
+        sourceURL.pathname = '/gitlab.com/redacted'
+    } else if (sourceURL.pathname.startsWith('/search')) {
+        sourceURL.pathname = '/search/redacted'
+    } else {
         return url
     }
-    // Ensure we do not leak repo and file names in the URL
-    sourceURL.pathname = '/redacted'
 
     const marketingQueryParameters = new Set([
         'utm_source',

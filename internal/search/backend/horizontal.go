@@ -18,8 +18,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,11 +49,10 @@ type HorizontalSearcher struct {
 	Map interface {
 		Endpoints() ([]string, error)
 	}
-	Dial func(logger log.Logger, endpoint string) zoekt.Streamer
+	Dial func(endpoint string) zoekt.Streamer
 
 	mu      sync.RWMutex
 	clients map[string]zoekt.Streamer // addr -> client
-	Log     log.Logger
 }
 
 // StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
@@ -447,7 +444,7 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) 
 		// Try re-use
 		client, ok := s.clients[addr]
 		if !ok {
-			client = s.Dial(s.Log, addr)
+			client = s.Dial(addr)
 		}
 		clients[addr] = client
 	}

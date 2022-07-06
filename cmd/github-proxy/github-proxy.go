@@ -128,7 +128,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	if err := s.ListenAndServe(); err != nil {
+	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Fatal(err.Error())
 	}
 }
