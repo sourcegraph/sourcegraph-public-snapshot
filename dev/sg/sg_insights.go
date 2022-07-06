@@ -115,6 +115,10 @@ func decodeIDIntoUniqueViewID(id string) (string, error) {
 	if err != nil {
 		return "", errors.Newf("could not decode id %q: %v", id, err)
 	}
+	sDecoded := string(decoded)
 	// an insight view id is encoded in this format: `insight_view:"[id]"`
-	return strings.Trim(strings.TrimLeft(string(decoded), "insight_view:"), "\""), nil
+	if !strings.Contains(sDecoded, "insight_view") {
+		return "", errors.Newf("decoded id is not an insight_view id: %s", sDecoded)
+	}
+	return strings.Trim(strings.TrimLeft(sDecoded, "insight_view:"), "\""), nil
 }
