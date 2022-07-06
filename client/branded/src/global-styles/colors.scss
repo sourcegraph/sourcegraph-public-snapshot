@@ -145,10 +145,38 @@ $theme-colors: (
     --border-color-2: var(--gray-04);
     --border-active-color: var(--primary);
     --border-primary-color: #0f59aa; // = dark variant of primary-2
+    // Start query highlighting
     --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
     --search-filter-separator-color: var(--oc-gray-6);
+    --search-path-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--purple);
+    --search-regexp-meta-assertion-color: var(--oc-red-9);
+    --search-regexp-meta-delimited-color: var(--oc-red-9);
+    --search-regexp-meta-lazy-quantifier-color: var(--oc-red-9);
+    --search-regexp-meta-escaped-character-color: var(--oc-red-9);
+    --search-regexp-meta-character-set-color: var(--purple);
+    --search-regexp-meta-character-class-color: var(--purple);
+    --search-regexp-meta-character-class-member-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-hyphen-color: var(--search-query-text-color);
+    --search-regexp-meta-range-quantifier-color: var(--oc-cyan-7);
+    --search-regexp-meta-alternative-color: var(--oc-cyan-7);
+    --search-revision-separator-color: var(--oc-orange-9);
+    --search-revision-include-glob-marker-color: var(--oc-red-9);
+    --search-revision-exclude-glob-marker-color: var(--oc-red-9);
+    --search-revision-commit-hash-color: var(--search-query-text-color);
+    --search-revision-label-color: var(--search-query-text-color);
+    --search-revision-reference-path-color: var(--search-query-text-color);
+    --search-revision-wildcard-color: var(--oc-cyan-7);
+    --search-predicate-name-access-color: var(--search-keyword-color);
+    --search-predicate-dot-color: var(--search-query-text-color);
+    --search-predicate-parenthesis-color: var(--oc-orange-9);
+    --search-structural-hole-color: var(--oc-red-9);
+    --search-structural-regexp-hole-color: var(--oc-red-9);
+    --search-structural-variable-color: var(--search-query-text-color);
+    --search-structural-regexp-separator-color: var(--oc-orange-9);
+    // End query highlighting
     --infobar-warning-color: var(--oc-red-8);
     --icon-color: var(--gray-06);
     --icon-muted: var(--gray-05);
@@ -209,10 +237,38 @@ $theme-colors: (
     --border-color-2: var(--gray-08);
     --border-active-color: #4393e7;
     --border-primary-color: #0f59aa; // = dark variant of primary-2
+    // Start query highlighting
     --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
     --search-filter-separator-color: var(--oc-gray-6);
+    --search-path-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--pink);
+    --search-regexp-meta-assertion-color: var(--oc-red-5);
+    --search-regexp-meta-delimited-color: var(--oc-red-5);
+    --search-regexp-meta-lazy-quantifier-color: var(--oc-red-5);
+    --search-regexp-meta-escaped-character-color: var(--oc-red-3);
+    --search-regexp-meta-character-set-color: var(--pink);
+    --search-regexp-meta-character-class-color: var(--oc-grape-4);
+    --search-regexp-meta-character-class-member-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-hyphen-color: var(--search-query-text-color);
+    --search-regexp-meta-range-quantifier-color: var(--oc-cyan-4);
+    --search-regexp-meta-alternative-color: var(--oc-cyan-4);
+    --search-revision-separator-color: var(--oc-orange-4);
+    --search-revision-include-glob-marker-color: var(--oc-red-5);
+    --search-revision-exclude-glob-marker-color: var(--oc-red-5);
+    --search-revision-commit-hash-color: var(--search-query-text-color);
+    --search-revision-label-color: var(--search-query-text-color);
+    --search-revision-reference-path-color: var(--search-query-text-color);
+    --search-revision-wildcard-color: var(--oc-cyan-4);
+    --search-predicate-name-access-color: var(--search-keyword-color);
+    --search-predicate-dot-color: var(--search-query-text-color);
+    --search-predicate-parenthesis-color: var(--oc-orange-4);
+    --search-structural-hole-color: var(--oc-red-5);
+    --search-structural-regexp-hole-color: var(--oc-red-5);
+    --search-structural-variable-color: var(--search-query-text-color);
+    --search-structural-regexp-separator-color: var(--oc-orange-4);
+    // End query highlighting
     --infobar-warning-color: #f05151;
     --icon-color: var(--gray-05);
     --icon-muted: var(--gray-07);

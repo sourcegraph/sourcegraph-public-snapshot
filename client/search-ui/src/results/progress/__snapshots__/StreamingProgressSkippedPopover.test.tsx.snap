@@ -357,7 +357,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             >
               :
             </span>
-            2m
+            <span
+              class="search-query-text"
+            >
+              2m
+            </span>
           </span>
           )
         </label>
@@ -381,7 +385,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <span
             class="text-monospace search-query-link"
           >
-            forked:yes
+            <span
+              class="search-query-text"
+            >
+              forked:yes
+            </span>
           </span>
           )
         </label>
@@ -415,7 +423,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             >
               :
             </span>
-            yes
+            <span
+              class="search-query-text"
+            >
+              yes
+            </span>
           </span>
           )
         </label>
@@ -449,7 +461,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             >
               :
             </span>
-            yes
+            <span
+              class="search-query-text"
+            >
+              yes
+            </span>
           </span>
           )
         </label>

@@ -51,7 +51,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -91,7 +95,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -175,7 +183,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -215,7 +227,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -305,7 +321,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -345,7 +365,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -419,7 +443,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -459,7 +487,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
