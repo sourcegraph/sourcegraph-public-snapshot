@@ -57,7 +57,7 @@ func graphQLCompute(ctx context.Context, query string) ([]GroupedResults, error)
 }
 
 func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) {
-	decoder, streamResults := streaming.ComputeDecoder()
+	decoder, streamResults := streaming.MatchContextComputeDecoder()
 	err := streaming.ComputeMatchContextStream(ctx, query, decoder)
 	if err != nil {
 		return nil, err

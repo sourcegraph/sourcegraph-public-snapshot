@@ -19,6 +19,7 @@ public class SettingsComponent {
     private final JBTextField defaultBranchNameTextField;
     private final JBTextField remoteUrlReplacementsTextField;
     private final JBCheckBox globbingCheckBox;
+    private final JBCheckBox isUrlNotificationDismissedCheckBox;
 
     public SettingsComponent() {
         JBLabel sourcegraphUrlLabel = new JBLabel("Sourcegraph URL:");
@@ -50,12 +51,15 @@ public class SettingsComponent {
 
         globbingCheckBox = new JBCheckBox("Enable globbing");
 
+        isUrlNotificationDismissedCheckBox = new JBCheckBox("Never show the \"No Sourcegraph URL set\" notification for this project");
+
         panel = FormBuilder.createFormBuilder()
             .addLabeledComponent(sourcegraphUrlLabel, sourcegraphUrlTextField, 1, false)
             .addLabeledComponent(accessTokenLabel, accessTokenTextField, 1, false)
             .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField, 1, false)
             .addLabeledComponent(remoteUrlReplacementsLabel, remoteUrlReplacementsTextField, 1, false)
             .addComponent(globbingCheckBox, 1)
+            .addComponent(isUrlNotificationDismissedCheckBox, 1)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
     }
@@ -112,4 +116,11 @@ public class SettingsComponent {
         globbingCheckBox.setSelected(value);
     }
 
+    public boolean isUrlNotificationDismissed() {
+        return isUrlNotificationDismissedCheckBox.isSelected();
+    }
+
+    public void setUrlNotificationDismissedEnabled(boolean value) {
+        isUrlNotificationDismissedCheckBox.setSelected(value);
+    }
 }

@@ -116,10 +116,16 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		} else {
 			modifiedQuery, err = querybuilder.GlobalQuery(series.Query, defaultQueryParams)
 		}
-
 		if err != nil {
 			multi = errors.Append(multi, errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID))
 			continue
+		}
+		if series.GroupBy != nil {
+			modifiedQuery, err = querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy))
+			if err != nil {
+				multi = errors.Append(multi, errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID))
+				continue
+			}
 		}
 
 		err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{

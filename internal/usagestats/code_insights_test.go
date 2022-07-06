@@ -46,7 +46,6 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 			(6, 'InsightEdit', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
 			(7, 'InsightAddition', '{"insightType": "codeStatsInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '8 days'),
 			(8, 'CodeInsightsSearchBasedCreationPageSubmitClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
-
 	`, now)
 	if err != nil {
 		t.Fatal(err)
@@ -73,6 +72,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 			Hovers:           &zeroInt,
 			UICustomizations: &zeroInt,
 			DataPointClicks:  &zeroInt,
+			FiltersChange:    &zeroInt,
 		},
 		{
 			InsightType:      &searchInsightsType,
@@ -82,24 +82,31 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 			Hovers:           &zeroInt,
 			UICustomizations: &zeroInt,
 			DataPointClicks:  &zeroInt,
+			FiltersChange:    &zeroInt,
 		},
 	}
 
 	want := &types.CodeInsightsUsageStatistics{
-		WeeklyUsageStatisticsByInsight:          weeklyUsageStatisticsByInsight,
-		WeeklyInsightsPageViews:                 &twoInt,
-		WeeklyInsightsGetStartedPageViews:       &zeroInt,
-		WeeklyInsightsUniquePageViews:           &oneInt,
-		WeeklyInsightsGetStartedUniquePageViews: &zeroInt,
-		WeeklyInsightConfigureClick:             &zeroInt,
-		WeeklyInsightAddMoreClick:               &zeroInt,
-		WeekStart:                               weekStart,
-		WeeklyInsightCreators:                   &twoInt,
-		WeeklyFirstTimeInsightCreators:          &oneInt,
-		WeeklyGetStartedTabClickByTab:           []types.InsightGetStartedTabClickPing{},
-		WeeklyGetStartedTabMoreClickByTab:       []types.InsightGetStartedTabClickPing{},
-		TotalDashboardCount:                     &zeroInt,
-		TotalOrgsWithDashboard:                  &zeroInt,
+		WeeklyUsageStatisticsByInsight:               weeklyUsageStatisticsByInsight,
+		WeeklyInsightsPageViews:                      &twoInt,
+		WeeklyInsightsGetStartedPageViews:            &zeroInt,
+		WeeklyInsightsUniquePageViews:                &oneInt,
+		WeeklyInsightsGetStartedUniquePageViews:      &zeroInt,
+		WeeklyInsightConfigureClick:                  &zeroInt,
+		WeeklyInsightAddMoreClick:                    &zeroInt,
+		WeekStart:                                    weekStart,
+		WeeklyInsightCreators:                        &twoInt,
+		WeeklyFirstTimeInsightCreators:               &oneInt,
+		WeeklyGetStartedTabClickByTab:                []types.InsightGetStartedTabClickPing{},
+		WeeklyGetStartedTabMoreClickByTab:            []types.InsightGetStartedTabClickPing{},
+		TotalDashboardCount:                          &zeroInt,
+		TotalOrgsWithDashboard:                       &zeroInt,
+		WeeklyStandaloneDashboardClicks:              &zeroInt,
+		WeeklyStandaloneInsightUniqueEditClicks:      &zeroInt,
+		WeeklyStandaloneInsightUniquePageViews:       &zeroInt,
+		WeeklyStandaloneInsightUniqueDashboardClicks: &zeroInt,
+		WeeklyStandaloneInsightPageViews:             &zeroInt,
+		WeeklyStandaloneEditClicks:                   &zeroInt,
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{
