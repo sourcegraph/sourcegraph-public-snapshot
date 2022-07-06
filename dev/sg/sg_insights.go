@@ -23,7 +23,7 @@ var (
 	insightsCommand = &cli.Command{
 		Name:     "insights",
 		Usage:    "Tools to interact with Code Insights data",
-		Category: CategoryUtil,
+		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			{
 				Name:        "decode-id",
@@ -44,7 +44,7 @@ var (
 func decodeInsightIDAction(cmd *cli.Context) error {
 	ids := cmd.Args().Slice()
 	if len(ids) == 0 {
-		return errors.New("Expected at least 1 id to decode")
+		return errors.New("expected at least 1 id to decode")
 	}
 	std.Out.WriteNoticef("Decoding %d IDs into unique view IDs", len(ids))
 	for _, id := range ids {
@@ -60,17 +60,17 @@ func decodeInsightIDAction(cmd *cli.Context) error {
 func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	ids := cmd.Args().Slice()
 	if len(ids) != 1 {
-		return errors.New("Expected 1 id to decode")
+		return errors.New("expected 1 id to decode")
 	}
-	std.Out.WriteNoticef("Finding the series_ids for %s", ids[0])
+	std.Out.WriteNoticef("Finding the Series IDs for %s", ids[0])
 
 	ctx := cmd.Context
 	logger := log.Scoped("getInsightSeriesIDsAction", "")
 
 	// Read the configuration.
-	conf, _ := sgconf.Get(configFile, configOverwriteFile)
-	if conf == nil {
-		return errors.New("Failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+	conf, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		return err
 	}
 
 	// Connect to the database.
@@ -97,11 +97,11 @@ SELECT series_id from insight_series where id IN
 	q := sqlf.Sprintf(getInsightSeriesIDQuery, cleanDecoded)
 	seriesIds, err := basestore.ScanStrings(db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
-		return errors.Errorf("Got an error when querying database: %v", err)
+		return errors.Errorf("got an error when querying database: %v", err)
 	}
 
 	if len(seriesIds) == 0 {
-		std.Out.WriteSkippedf("No IDs found")
+		std.Out.WriteSkippedf("No Series IDs found")
 	}
 	for _, id := range seriesIds {
 		std.Out.WriteSuccessf("%s", id)
@@ -113,7 +113,7 @@ SELECT series_id from insight_series where id IN
 func decodeIDIntoUniqueViewID(id string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(id)
 	if err != nil {
-		return "", errors.Newf("Could not decode id %q: %v", id, err)
+		return "", errors.Newf("could not decode id %q: %v", id, err)
 	}
 	// an insight view id is encoded in this format: `insight_view:"[id]"`
 	return strings.Trim(strings.TrimLeft(string(decoded), "insight_view:"), "\""), nil
