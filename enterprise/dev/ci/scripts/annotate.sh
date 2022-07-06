@@ -18,7 +18,7 @@ generate_grafana_link() {
     # embedded as a value in other json (aka the query we send to grafana)
     expression="$(cat <<-EOF | jq -sR .
     {app="buildkite", build="$BUILDKITE_BUILD_NUMBER", branch="main", state="failed", job="$BUILDKITE_JOB_ID"} # to search the whole build remove the job id here!\n
-    |~ "(?i)failed|panic|" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
+    |~ "(?i)failed|panic|(FAIL:)" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
     EOF
     )"
     # On Darwin use gdate
