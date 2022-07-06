@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestReverseProxySimple(t *testing.T) {
+func TestGitserverProxySimple(t *testing.T) {
 	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 	}))
@@ -21,7 +21,10 @@ func TestReverseProxySimple(t *testing.T) {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
-	proxyServer := httptest.NewServer(reverseProxy(url))
+	gs := NewMockGitserverClient()
+	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+
+	proxyServer := httptest.NewServer(gitserverProxy(gs, "/info/refs"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -38,13 +41,13 @@ func TestReverseProxySimple(t *testing.T) {
 	}
 }
 
-func TestReverseProxyTargetPath(t *testing.T) {
-	oldGetRest := getRest
-	getRest = func(r *http.Request) string { return "/bar/baz" }
-	defer func() { getRest = oldGetRest }()
+func TestGitserverProxyTargetPath(t *testing.T) {
+	oldGetRepoName := getRepoName
+	getRepoName = func(r *http.Request) string { return "/bar/baz" }
+	defer func() { getRepoName = oldGetRepoName }()
 
 	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/foo/bar/baz" {
+		if r.URL.Path != "/git/bar/baz/foo" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -52,12 +55,15 @@ func TestReverseProxyTargetPath(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL + "/foo")
+	url, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
-	proxyServer := httptest.NewServer(reverseProxy(url))
+	gs := NewMockGitserverClient()
+	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+
+	proxyServer := httptest.NewServer(gitserverProxy(gs, "/foo"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -74,7 +80,7 @@ func TestReverseProxyTargetPath(t *testing.T) {
 	}
 }
 
-func TestReverseProxyHeaders(t *testing.T) {
+func TestGitserverProxyHeaders(t *testing.T) {
 	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("baz", r.Header.Get("foo"))
 		w.WriteHeader(http.StatusTeapot)
@@ -86,7 +92,10 @@ func TestReverseProxyHeaders(t *testing.T) {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
-	proxyServer := httptest.NewServer(reverseProxy(url))
+	gs := NewMockGitserverClient()
+	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+
+	proxyServer := httptest.NewServer(gitserverProxy(gs, "/test"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -107,10 +116,10 @@ func TestReverseProxyHeaders(t *testing.T) {
 	}
 }
 
-func TestReverseProxyRedirectWithPayload(t *testing.T) {
+func TestGitserverProxyRedirectWithPayload(t *testing.T) {
 	var originServer *httptest.Server
 	originServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/foo/foo/foo" {
+		if r.URL.Path != "/git/test/foo" {
 			http.Redirect(w, r, originServer.URL+filepath.Join(r.URL.Path, "foo"), http.StatusTemporaryRedirect)
 			return
 		}
@@ -131,7 +140,10 @@ func TestReverseProxyRedirectWithPayload(t *testing.T) {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
-	proxyServer := httptest.NewServer(reverseProxy(url))
+	gs := NewMockGitserverClient()
+	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+
+	proxyServer := httptest.NewServer(gitserverProxy(gs, "/test"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("POST", proxyServer.URL, bytes.NewReader([]byte("foobarbaz")))
