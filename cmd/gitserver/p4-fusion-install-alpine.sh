@@ -49,7 +49,7 @@ echo "--- p4-fusion prebuilt binary check"
 if wget https://storage.googleapis.com/sourcegraph-artifacts/p4-fusion/p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64; then
   src=p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64
   cat <<EOF | grep "$src" | sha256sum -c
-4e4b6468461e083631f1db01ba20348d0e30eb719b406318e378cf2eb51dc8eb p4-fusion-v1.10-musl-x86_64
+4e4b6468461e083631f1db01ba20348d0e30eb719b406318e378cf2eb51dc8eb  p4-fusion-v1.10-musl-x86_64
 EOF
   chmod +x "$src"
   mv "$src" /usr/local/bin/p4-fusion
