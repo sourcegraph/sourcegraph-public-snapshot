@@ -93,7 +93,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            job,
+					child:            &reposPartialJob{job},
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -117,7 +117,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            job,
+					child:            &reposPartialJob{job},
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -212,7 +212,7 @@ func orderSearcherJob(j job.Job) job.Job {
 	collector := Mapper{
 		MapJob: func(current job.Job) job.Job {
 			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.(*searcher.TextSearchJob); ok {
+				if _, ok := pager.child.Partial().(*searcher.TextSearchJob); ok {
 					pagedSearcherJob = pager
 					return &NoopJob{}
 				}
@@ -234,7 +234,7 @@ func orderSearcherJob(j job.Job) job.Job {
 	orderer := Mapper{
 		MapJob: func(current job.Job) job.Job {
 			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
+				if _, ok := pager.child.Partial().(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
 					seenZoektRepoSearch = true
 					return NewSequentialJob(false, current, pagedSearcherJob)
 				}
@@ -299,7 +299,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				}
 
 				addJob(&repoPagerJob{
-					child:            searcherJob,
+					child:            &reposPartialJob{searcherJob},
 					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
@@ -317,7 +317,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				}
 
 				addJob(&repoPagerJob{
-					child:            symbolSearchJob,
+					child:            &reposPartialJob{symbolSearchJob},
 					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),

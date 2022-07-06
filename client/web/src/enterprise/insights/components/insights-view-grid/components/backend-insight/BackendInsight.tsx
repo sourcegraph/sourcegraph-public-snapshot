@@ -66,7 +66,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
-    const { wasEverVisible } = useVisibility(insightCardReference)
+    const { isVisible, wasEverVisible } = useVisibility(insightCardReference)
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -101,7 +101,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
-            skip: !wasEverVisible,
+            skip: !wasEverVisible || (insightData && (!insightData.isFetchingHistoricalData || !isVisible)),
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
@@ -198,7 +198,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     </Link>
                 }
             >
-                {wasEverVisible && (
+                {isVisible && (
                     <>
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
@@ -230,7 +230,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 <InsightCardBanner>Resizing</InsightCardBanner>
             ) : error ? (
                 <BackendInsightErrorAlert error={error} />
-            ) : loading || !wasEverVisible || !insightData ? (
+            ) : loading || !isVisible || !insightData ? (
                 <InsightCardLoading>Loading code insight</InsightCardLoading>
             ) : (
                 <BackendInsightChart
@@ -244,7 +244,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                wasEverVisible && otherProps.children
+                isVisible && otherProps.children
             }
         </InsightCard>
     )

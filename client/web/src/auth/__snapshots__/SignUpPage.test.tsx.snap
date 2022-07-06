@@ -86,7 +86,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           Or, 
           <a
             class="anchorLink"
-            href="/?showEmail=true"
+            href="/sign-up?showEmail=true"
           >
             continue with email
           </a>

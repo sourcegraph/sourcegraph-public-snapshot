@@ -2,7 +2,7 @@
   "extends": ["../../.stylelintrc.json"],
   "overrides": [
     {
-      "files": ["./src/SourcegraphWebApp.scss", "./src/api/**/*.scss", "./src/search/ShepherdTour.scss"],
+      "files": ["./src/SourcegraphWebApp.scss", "./src/api/**/*.scss"],
       "rules": {
         "@sourcegraph/filenames-match-regex": null
       }
