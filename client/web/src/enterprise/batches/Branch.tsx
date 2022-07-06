@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { mdiSourceFork, mdiAccountQuestion } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Badge, Icon, BadgeProps } from '@sourcegraph/wildcard'
@@ -29,6 +30,7 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : undefined}
     >
+        <VisuallyHidden>{deleted && 'Deleted'} Branch:</VisuallyHidden>{' '}
         {!forkTarget || forkTarget.namespace === null ? (
             name
         ) : (
@@ -54,7 +56,10 @@ export const BranchMerge: React.FunctionComponent<React.PropsWithChildren<Branch
 }) => (
     <div className="d-block d-sm-inline-block">
         <Branch name={baseRef} />
-        <span className="p-1">&larr;</span>
+        <VisuallyHidden>Update with</VisuallyHidden>
+        <span className="p-1" aria-hidden={true}>
+            &larr;
+        </span>
         <Branch name={headRef} forkTarget={forkTarget} />
     </div>
 )
