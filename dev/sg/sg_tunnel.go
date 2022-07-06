@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os/exec"
 
 	"github.com/urfave/cli/v2"
@@ -17,11 +18,6 @@ var tunnelCommand = &cli.Command{
 	Category: CategoryDev,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "host-header",
-			Usage: "modify host header to hostname of url",
-			Value: "rewrite",
-		},
-		&cli.StringFlag{
 			Name:    "url",
 			Aliases: []string{"u"},
 			Usage:   "URL to forward request to. (default: https://sourcegraph.test:3443)",
@@ -35,9 +31,14 @@ var tunnelCommand = &cli.Command{
 			return err
 		}
 
+		u, err := url.Parse(cmd.String("url"))
+		if err != nil {
+			return err
+		}
+
 		args := []string{
 			"http",
-			fmt.Sprintf("--host-header=%s", cmd.String("host-header")),
+			fmt.Sprintf("--host-header=%s", u.Host),
 			cmd.String("url"),
 		}
 
