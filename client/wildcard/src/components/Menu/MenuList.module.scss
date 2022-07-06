@@ -1,0 +1,5 @@
+.menuList {
+    &:focus-visible {
+        box-shadow: var(--focus-box-shadow);
+    }
+}
