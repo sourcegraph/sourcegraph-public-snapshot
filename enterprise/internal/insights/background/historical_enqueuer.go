@@ -688,8 +688,8 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	}
 	newQueryStr = modifiedQuery.String()
 	if bctx.series.GroupBy != nil {
-		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
-		if err != nil {
+		computeQuery, computeErr := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
+		if computeErr != nil {
 			err = errors.Append(err, errors.Wrap(err, "ComputeInsightCommandQuery"))
 			return
 		}
