@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -84,8 +84,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
-    const tourContainer = useRef<HTMLDivElement>(null)
-
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             const query = props.hiddenQueryPrefix
@@ -135,7 +133,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    <div ref={tourContainer} />
                     <SearchBox
                         {...props}
                         editorComponent={editorComponent}
