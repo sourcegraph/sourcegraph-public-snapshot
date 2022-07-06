@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1001,22 +1002,90 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 }
 
 func TestPermsSyncer_syncPerms(t *testing.T) {
-	request := &syncRequest{
-		requestMeta: &requestMeta{
-			Type: 3,
-			ID:   1,
-		},
-		acquired: true,
-	}
+	ctx := context.Background()
 
-	// Request should be removed from the queue even if error occurred.
-	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-	s.queue.Push(request)
+	t.Run("invalid type", func(t *testing.T) {
+		request := &syncRequest{
+			requestMeta: &requestMeta{
+				Type: 3,
+				ID:   1,
+			},
+			acquired: true,
+		}
 
-	s.syncPerms(context.Background(), logtest.NoOp(t), nil, request)
-	if s.queue.Len() != 0 {
-		t.Fatalf("queue length: want 0 but got %d", s.queue.Len())
-	}
+		// Request should be removed from the queue even if error occurred.
+		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
+		s.queue.Push(request)
+
+		s.syncPerms(context.Background(), logtest.NoOp(t), nil, request)
+		assert.Equal(t, 0, s.queue.Len())
+	})
+
+	t.Run("max concurrency", func(t *testing.T) {
+		// Enough buffer to make two goroutines to send data without being blocked by
+		// default, but our imposed max concurrency (1, default) should have one
+		// goroutine blocked.
+		called := make(chan struct{}, 2)
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			called <- struct{}{}
+			return nil, errors.New("fail")
+		})
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		s := NewPermsSyncer(logtest.Scoped(t), db, nil, nil, timeutil.Now, nil)
+
+		syncGroups := map[requestType]group.ContextGroup{
+			requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(1),
+		}
+
+		request1 := &syncRequest{
+			requestMeta: &requestMeta{
+				Type: requestTypeUser,
+				ID:   1,
+			},
+			acquired: true,
+		}
+		request2 := &syncRequest{
+			requestMeta: &requestMeta{
+				Type: requestTypeUser,
+				ID:   2,
+			},
+			acquired: true,
+		}
+		s.queue.Push(request1)
+		s.queue.Push(request2)
+
+		started := make(chan struct{}, 2)
+		go func() {
+			started <- struct{}{}
+			s.syncPerms(ctx, logtest.NoOp(t), syncGroups, request1)
+		}()
+		go func() {
+			started <- struct{}{}
+			s.syncPerms(ctx, logtest.NoOp(t), syncGroups, request2)
+		}()
+
+		getOrFail := func(c <-chan struct{}) {
+			select {
+			case <-c:
+			case <-time.After(time.Second): // Fail fast if something went wrong
+			}
+		}
+
+		// Wait until two goroutine are started
+		getOrFail(started)
+		getOrFail(started)
+
+		// Only one goroutine should have been called
+		getOrFail(called)
+		mockrequire.CalledN(t, users.GetByIDFunc, 1)
+
+		// Now unblock the second goroutine
+		getOrFail(called)
+		mockrequire.CalledN(t, users.GetByIDFunc, 2)
+	})
 }
 
 func TestPermsSyncer_maybeRefreshGitLabOAuthTokenFromAccount(t *testing.T) {
