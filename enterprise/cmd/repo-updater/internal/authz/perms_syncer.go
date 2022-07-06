@@ -1076,6 +1076,9 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 	// The call is blocked if reached max concurrency
 	syncGroups[request.Type].Go(
 		func(ctx context.Context) error {
+			metricsConcurrentSyncs.WithLabelValues(request.Type.String()).Inc()
+			defer metricsConcurrentSyncs.WithLabelValues(request.Type.String()).Dec()
+
 			err := runSync()
 			if err != nil {
 				logger.Error("failed to sync permissions",
