@@ -47,7 +47,7 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_sourced_commits.go:DeleteIndexesWithoutRepository
+-- source: internal/codeintel/autoindexing/internal/store/store_indexes.go:DeleteIndexesWithoutRepository
 WITH
 candidates AS (
 	SELECT u.id

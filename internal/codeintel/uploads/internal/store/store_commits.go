@@ -224,7 +224,7 @@ func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit i
 }
 
 const commitsVisibleToUploadQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:CommitsVisibleToUpload
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetCommitsVisibleToUpload
 WITH
 direct_commits AS (
 	SELECT nu.repository_id, nu.commit_bytea
@@ -266,6 +266,6 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 // that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
 // having pristine database.
 const getOldestCommitDateQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:GetOldestCommitDate
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetOldestCommitDate
 SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
 `

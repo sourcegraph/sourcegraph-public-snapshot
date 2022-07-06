@@ -59,7 +59,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 }
 
 const findClosestDumpsQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:FindClosestDumps
+-- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumps
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -143,7 +143,7 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 }
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:FindClosestDumpsFromGraphFragment
+-- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumpsFromGraphFragment
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -156,7 +156,7 @@ JOIN lsif_uploads u ON u.id = vu.upload_id
 `
 
 const findClosestDumpsFromGraphFragmentQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:FindClosestDumpsFromGraphFragment
+-- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumpsFromGraphFragment
 SELECT
 	u.id,
 	u.commit,
@@ -202,7 +202,7 @@ func makeVisibleUploadsQuery(repositoryID int, commit string) *sqlf.Query {
 }
 
 const visibleUploadsQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:makeVisibleUploadsQuery
+-- source: internal/codeintel/uploads/internal/store/store_dumps.go:makeVisibleUploadsQuery
 SELECT
 	t.upload_id
 FROM (
@@ -235,7 +235,7 @@ func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf
 }
 
 const visibleUploadCandidatesQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:makeVisibleUploadCandidatesQuery
+-- source: internal/codeintel/uploads/internal/store/store_dumps.go:makeVisibleUploadCandidatesQuery
 SELECT
 	nu.repository_id,
 	upload_id::integer,

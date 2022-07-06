@@ -760,17 +760,17 @@ func (s *store) UpdateUploadsVisibleToCommits(
 }
 
 const calculateVisibleUploadsCommitGraphQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadsVisibleToCommits
 SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance FROM lsif_uploads WHERE state = 'completed' AND repository_id = %s
 `
 
 const calculateVisibleUploadsDirtyRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadsVisibleToCommits
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
 `
 
 const calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadsVisibleToCommits
 WITH
 candidates AS (
 	SELECT u.id
@@ -1018,7 +1018,7 @@ func (s *store) persistNearestUploads(ctx context.Context, repositoryID int, tx 
 }
 
 const nearestUploadsInsertQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistNearestUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploads
 INSERT INTO lsif_nearest_uploads
 SELECT %s, source.commit_bytea, source.uploads
 FROM t_lsif_nearest_uploads source
@@ -1026,7 +1026,7 @@ WHERE source.commit_bytea NOT IN (SELECT nu.commit_bytea FROM lsif_nearest_uploa
 `
 
 const nearestUploadsUpdateQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistNearestUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploads
 UPDATE lsif_nearest_uploads nu
 SET uploads = source.uploads
 FROM t_lsif_nearest_uploads source
@@ -1037,7 +1037,7 @@ WHERE
 `
 
 const nearestUploadsDeleteQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistNearestUploads
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploads
 DELETE FROM lsif_nearest_uploads nu
 WHERE
 	nu.repository_id = %s AND
@@ -1070,7 +1070,7 @@ func (s *store) persistNearestUploadsLinks(ctx context.Context, repositoryID int
 }
 
 const nearestUploadsLinksInsertQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistNearestUploadsLinks
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploadsLinks
 INSERT INTO lsif_nearest_uploads_links
 SELECT %s, source.commit_bytea, source.ancestor_commit_bytea, source.distance
 FROM t_lsif_nearest_uploads_links source
@@ -1078,7 +1078,7 @@ WHERE source.commit_bytea NOT IN (SELECT nul.commit_bytea FROM lsif_nearest_uplo
 `
 
 const nearestUploadsLinksUpdateQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistNearestUploadsLinks
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploadsLinks
 UPDATE lsif_nearest_uploads_links nul
 SET ancestor_commit_bytea = source.ancestor_commit_bytea, distance = source.distance
 FROM t_lsif_nearest_uploads_links source
@@ -1090,7 +1090,7 @@ WHERE
 `
 
 const nearestUploadsLinksDeleteQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistNearestUploadsLinks
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploadsLinks
 DELETE FROM lsif_nearest_uploads_links nul
 WHERE
 	nul.repository_id = %s AND
@@ -1120,7 +1120,7 @@ func (s *store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int
 }
 
 const uploadsVisibleAtTipInsertQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistUploadsVisibleAtTip
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistUploadsVisibleAtTip
 INSERT INTO lsif_uploads_visible_at_tip
 SELECT %s, source.upload_id, source.branch_or_tag_name, source.is_default_branch
 FROM t_lsif_uploads_visible_at_tip source
@@ -1136,7 +1136,7 @@ WHERE NOT EXISTS (
 `
 
 const uploadsVisibleAtTipDeleteQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:persistUploadsVisibleAtTip
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistUploadsVisibleAtTip
 DELETE FROM lsif_uploads_visible_at_tip vat
 WHERE
 	vat.repository_id = %s AND
@@ -1179,7 +1179,7 @@ func (s *store) bulkTransfer(ctx context.Context, insertQuery, updateQuery, dele
 }
 
 const bulkTransferQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:bulkTransfer
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:bulkTransfer
 WITH
 	ins AS (%s),
 	upd AS (%s),
@@ -1207,7 +1207,7 @@ func (s *store) createTemporaryNearestUploadsTables(ctx context.Context, tx *bas
 }
 
 const temporaryNearestUploadsTableQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
 	commit_bytea bytea NOT NULL,
 	uploads      jsonb NOT NULL
@@ -1215,7 +1215,7 @@ CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
 `
 
 const temporaryNearestUploadsLinksTableQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
 	commit_bytea          bytea NOT NULL,
 	ancestor_commit_bytea bytea NOT NULL,
@@ -1224,7 +1224,7 @@ CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
 `
 
 const temporaryUploadsVisibleAtTipTableQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 	upload_id integer NOT NULL,
 	branch_or_tag_name text NOT NULL,
