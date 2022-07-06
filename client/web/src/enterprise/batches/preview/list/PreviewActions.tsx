@@ -273,7 +273,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
         <Tooltip content={reason}>
-            <Icon aria-label={reason} className="mr-1" svgPath={mdiCheckboxBlankCircleOutline} />
+            <Icon aria-label={reason ?? ''} className="mr-1" svgPath={mdiCheckboxBlankCircleOutline} />
         </Tooltip>
         <span>No action</span>
     </div>
