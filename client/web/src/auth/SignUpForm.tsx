@@ -284,6 +284,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                 <>
                                     Try Sourcegraph Enterprise free for
                                     <span className="text-nowrap">
+                                        {' '}
                                         30 days{' '}
                                         <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
                                             <Icon as={HelpCircleOutlineIcon} aria-label="See Sourcegraph pricing" />

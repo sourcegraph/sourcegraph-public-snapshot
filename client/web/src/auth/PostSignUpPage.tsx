@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -67,11 +67,11 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
 
     const isOAuthCall = useRef(false)
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const debug = new URLSearchParams(location.search).get('debug')
 
-    const goToSearch = (): void => history.push(getReturnTo(location))
+    const goToSearch = (): void => navigate(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
