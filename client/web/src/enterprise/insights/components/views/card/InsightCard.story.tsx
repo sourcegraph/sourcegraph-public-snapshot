@@ -9,8 +9,7 @@ import { Button, Menu, MenuButton, MenuItem, MenuList, H2 } from '@sourcegraph/w
 import { getLineColor, LegendItem, LegendList, ParentSize, Series } from '../../../../../charts'
 import { WebStory } from '../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
-import { SeriesChart } from '../chart'
-import { SeriesBasedChartTypes } from '../types'
+import { SeriesBasedChartTypes, SeriesChart } from '../chart'
 
 import * as Card from './InsightCard'
 

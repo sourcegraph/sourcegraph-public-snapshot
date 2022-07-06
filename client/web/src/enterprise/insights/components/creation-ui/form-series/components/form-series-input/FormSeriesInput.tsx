@@ -1,54 +1,42 @@
-import React from 'react'
+import { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { Button, Card, Input, Code } from '@sourcegraph/wildcard'
 
-import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
-import { useField } from '../../../../../../components/form/hooks/useField'
-import { useForm, ValidationResult } from '../../../../../../components/form/hooks/useForm'
-import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
-import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { searchQueryValidator } from '../../../capture-group/utils/search-query-validator'
-import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../../../../constants'
+import { getDefaultInputProps, useField, InsightQueryInput, useForm } from '../../../../form'
 import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
 
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
-
-const requiredNameField = createRequiredValidator('Name is a required field for data series.')
-const validQuery = (value: string | undefined, validity: ValidityState | null | undefined): ValidationResult => {
-    const result = createRequiredValidator('Query is a required field for data series.')(value, validity)
-    if (result) {
-        return result
-    }
-    const { isNotContext, isNotRepo } = searchQueryValidator(value || '', true)
-
-    if (!isNotContext) {
-        return 'The `context:` filter is not supported; instead, run over all repositories and use the `context:` on the filter panel after creation'
-    }
-
-    if (!isNotRepo) {
-        return 'Do not include a `repo:` filter; add targeted repositories above, or filter repos on the filter panel after creation'
-    }
-}
+import { requiredNameField, validQuery } from './validators'
 
 interface FormSeriesInputProps {
+    series: EditableDataSeries
+
     /** Series index. */
     index: number
 
-    /**
-     * Show all validation error of all fields within the form.
-     */
+    /** Show all validation error of all fields within the form. */
     showValidationErrorsOnMount?: boolean
 
-    series: EditableDataSeries
-
-    /** Code Insight repositories field string value - repo1, repo2, ... */
+    /**
+     * Code Insight repositories field string value - repo1, repo2, ...
+     * This prop is used in order to generate a proper link for the query preview button.
+     */
     repositories: string
 
-    /** Enable autofocus behavior of first input of form. */
+    /**
+     * This field is only needed for specifying a special compute-specific
+     * query field description when this component is used on the compute-powered insight.
+     * This prop should be removed when we will have a better form series management
+     * solution, see https://github.com/sourcegraph/sourcegraph/issues/38236
+     */
+    queryFieldDescription?: ReactNode
+
+    /** Enable autofocus behavior of the first input element of series form. */
     autofocus?: boolean
 
     /** Enable cancel button. */
@@ -67,7 +55,7 @@ interface FormSeriesInputProps {
     onChange?: (formValues: EditableDataSeries, valid: boolean) => void
 }
 
-export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<FormSeriesInputProps>> = props => {
+export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
     const {
         index,
         series,
@@ -76,6 +64,7 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
         cancel = false,
         autofocus = true,
         repositories,
+        queryFieldDescription,
         onCancel = noop,
         onSubmit = noop,
         onChange = noop,
@@ -147,7 +136,14 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
                 repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                message={<QueryFieldDescription />}
+                message={
+                    queryFieldDescription ?? (
+                        <span>
+                            Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed,{' '}
+                            <Code>repo:</Code> will be added automatically.
+                        </span>
+                    )
+                }
                 className="mt-4"
                 {...getDefaultInputProps(queryField)}
             />
@@ -179,10 +175,3 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
         </Card>
     )
 }
-
-const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <span>
-        Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed, <Code>repo:</Code> will be
-        added automatically.
-    </span>
-)

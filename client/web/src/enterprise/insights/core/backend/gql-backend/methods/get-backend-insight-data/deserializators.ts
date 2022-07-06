@@ -1,5 +1,5 @@
 import { InsightDataNode } from '../../../../../../../graphql-operations'
-import { DATA_SERIES_COLORS } from '../../../../../pages/insights/creation/search-insight'
+import { DATA_SERIES_COLORS } from '../../../../../constants'
 import { BackendInsight } from '../../../../types'
 import { BackendInsightData } from '../../../code-insights-backend-types'
 import { createLineChartContent } from '../../../utils/create-line-chart-content'

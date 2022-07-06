@@ -25,7 +25,7 @@ export interface Validators<FieldValue> {
 /**
  * Subset of native input props that useField can set to the native input element.
  */
-interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange'> {
+export interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange'> {
     onChange?: (value: Value) => void
 }
 
@@ -75,7 +75,7 @@ export type UseFieldProps<FormValues, Key, Value> = {
  *
  * Should be used with useForm hook to connect field and form component's states.
  */
-export function useField<FormValues, Key extends keyof FormAPI<FormValues>['initialValues']>(
+export function useField<FormValues, Key extends keyof FormValues>(
     props: UseFieldProps<FormValues, Key, FormValues[Key]>
 ): useFieldAPI<FormValues[Key]> {
     const { formApi, name, validators, onChange = noop, ...inputProps } = props
@@ -130,7 +130,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
         }
 
         if (async) {
-            // Due the call of start async validation in useLayoutEffect we have to
+            // Due to the call of start async validation in useLayoutEffect we have to
             // schedule the async validation event in the next tick to be able run
             // observable pipeline validation since useAsyncValidation hook use
             // useObservable hook internally which calls '.subscribe' in useEffect.
@@ -189,7 +189,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
 
 type FieldStateTransformer<Value> = (previousState: FieldState<Value>) => FieldState<Value>
 
-function useFormFieldState<FormValues, Key extends keyof FormAPI<FormValues>['initialValues']>(
+function useFormFieldState<FormValues, Key extends keyof FormValues>(
     name: Key,
     formAPI: FormAPI<FormValues>
 ): [FieldState<FormValues[Key]>, Dispatch<FieldStateTransformer<FormValues[Key]>>] {

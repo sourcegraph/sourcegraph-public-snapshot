@@ -2,61 +2,63 @@ import { useState } from 'react'
 
 import * as uuid from 'uuid'
 
-import { useFieldAPI } from '../../../../../../../components/form/hooks/useField'
 import { DEFAULT_DATA_SERIES_COLOR } from '../../../constants'
-import { CreateInsightFormFields, EditableDataSeries } from '../../../types'
+import { useFieldAPI } from '../../form'
 
-import { remove, replace } from './helpers'
-
-const EDIT_SERIES_PREFIX = 'runtime-series'
+import { EditableDataSeries } from './types'
 
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
-    id: `${EDIT_SERIES_PREFIX}.${uuid.v4()}`,
-    ...defaultEditSeries,
+    id: `runtime-series.${uuid.v4()}`,
+    ...DEFAULT_EDITABLE_SERIES,
     ...series,
 })
 
-const defaultEditSeries = {
+const DEFAULT_EDITABLE_SERIES = {
     valid: false,
     edit: false,
+    autofocus: false,
     name: '',
     query: '',
     stroke: DEFAULT_DATA_SERIES_COLOR,
 }
 
-export interface UseEditableSeriesProps {
-    series: useFieldAPI<CreateInsightFormFields['series']>
-}
-
 export interface UseEditableSeriesAPI {
     /**
-     * Edit series array used below for rendering series edit form.
-     * In case of some element has undefined value we're showing
-     * series card with data instead of form.
-     * */
-    editSeries: CreateInsightFormFields['series']
+     * A list of editable data series. Basically, this is just a
+     * sorted/filtered list of original data series but with
+     * additional logic around create/updated/delete actions for
+     * series list.
+     */
+    series: EditableDataSeries[]
 
-    /**
-     * Handler to listen latest values of particular sereis form.
-     * */
-    listen: (liveSeries: EditableDataSeries, valid: boolean, index: number) => void
+    /** Call whenever the user changes any fields (title, query, color) of series */
+    changeSeries: (liveSeries: EditableDataSeries, valid: boolean, index: number) => void
 
-    /**
-     * Handlers for CRUD operations over series.
-     * */
+    /** Call whenever the user clicks the edit series button  in series preview card. */
     editRequest: (seriesId?: string) => void
+
+    /** Call whenever the user clicks the save series button */
     editCommit: (editedSeries: EditableDataSeries) => void
+
+    /**
+     * Call whenever the user cancel series editing by clicking cancel button
+     * in series form.
+     */
     cancelEdit: (seriesId: string) => void
+
+    /**
+     * Call whenever the user tries to delete series by clicking delete button
+     * in series preview card.
+     */
     deleteSeries: (series: string) => void
 }
 
 /**
- * Implementation of CRUD operation over insight series. Used in form to manage
- * edit, delete, add, and cancel series forms.
+ * Basically this is just a stateful selector function over series that simplifies work
+ * with editable series and its special UX actions like delete series through preview card,
+ * edit series through form, create new series through add more series button.
  */
-export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSeriesAPI {
-    const { series } = props
-
+export function useEditableSeries(series: useFieldAPI<EditableDataSeries[]>): UseEditableSeriesAPI {
     const [seriesBeforeEdit, setSeriesBeforeEdit] = useState<Record<string, EditableDataSeries>>({})
 
     const handleSeriesLiveChange = (liveSeries: EditableDataSeries, valid: boolean): void => {
@@ -79,7 +81,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
         const index = newEditSeries.findIndex(series => series.id === seriesId)
 
         if (index !== -1) {
-            newEditSeries[index] = { ...seriesValue[index], edit: true }
+            newEditSeries[index] = { ...seriesValue[index], edit: true, autofocus: true }
 
             const newSeriesID = newEditSeries[index].id
 
@@ -92,7 +94,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
                 })
             }
         } else {
-            newEditSeries.push(createDefaultEditSeries({ edit: true }))
+            newEditSeries.push(createDefaultEditSeries({ edit: true, autofocus: true }))
         }
 
         series.meta.setState(state => ({ ...state, value: newEditSeries }))
@@ -163,11 +165,21 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     }
 
     return {
-        editSeries: series.input.value,
-        listen: handleSeriesLiveChange,
+        series: series.input.value,
+        changeSeries: handleSeriesLiveChange,
         editRequest: handleEditSeriesRequest,
         editCommit: handleEditSeriesCommit,
         cancelEdit: handleEditSeriesCancel,
         deleteSeries: handleRemoveSeries,
     }
+}
+
+/** Helper replace element in array by index and return new array. */
+function replace<Element>(list: Element[], index: number, newElement: Element): Element[] {
+    return [...list.slice(0, index), newElement, ...list.slice(index + 1)]
+}
+
+/** Helper remove element from array by index. */
+function remove<Element>(list: Element[], index: number): Element[] {
+    return [...list.slice(0, index), ...list.slice(index + 1)]
 }

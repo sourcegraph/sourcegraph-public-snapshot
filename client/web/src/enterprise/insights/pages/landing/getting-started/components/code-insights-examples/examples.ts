@@ -1,4 +1,4 @@
-import { DATA_SERIES_COLORS } from '../../../../insights/creation/search-insight'
+import { DATA_SERIES_COLORS } from '../../../../../constants'
 
 import { CaptureGroupExampleContent, SearchInsightExampleContent } from './types'
 

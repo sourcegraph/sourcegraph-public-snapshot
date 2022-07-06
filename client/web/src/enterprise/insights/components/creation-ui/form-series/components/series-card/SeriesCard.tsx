@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Button, Card } from '@sourcegraph/wildcard'
 
-import { DEFAULT_DATA_SERIES_COLOR } from '../../../../constants'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../../../../constants'
 
 import styles from './SeriesCard.module.scss'
 

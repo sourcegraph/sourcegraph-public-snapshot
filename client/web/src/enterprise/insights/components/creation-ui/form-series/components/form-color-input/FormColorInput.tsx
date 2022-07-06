@@ -6,7 +6,7 @@ import { noop } from 'rxjs'
 
 import { Label } from '@sourcegraph/wildcard'
 
-import { DATA_SERIES_COLORS } from '../../constants'
+import { DATA_SERIES_COLORS } from '../../../../../constants'
 
 import styles from './FormColorInput.module.scss'
 

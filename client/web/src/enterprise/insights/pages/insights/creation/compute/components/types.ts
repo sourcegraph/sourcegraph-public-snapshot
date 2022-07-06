@@ -1,4 +1,4 @@
-import { EditableDataSeries } from '../../search-insight'
+import { EditableDataSeries } from '../../../../../components'
 
 export interface CreateComputeInsightFormFields {
     /**
