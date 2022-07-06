@@ -3,7 +3,7 @@
 ### This changelog should always be read on `main` branch. Its contents on version     ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
 ### To update the changelog add your changes to the appropriate section under the      ###
-### "Unreleased" heading. ###
+### "Unreleased" heading.                                                              ###
 ##########################################################################################
 -->
 
@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- New site configuration option `"permissions.syncUsersMaxConcurrency"` to control the maximum number of user-centric permissions syncing jobs could be spawned concurrently. [#37918](https://github.com/sourcegraph/sourcegraph/issues/37918)
 
 ### Changed
 
