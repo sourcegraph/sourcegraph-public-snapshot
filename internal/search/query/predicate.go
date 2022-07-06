@@ -325,7 +325,7 @@ type RepoDescriptionPredicate struct{}
 
 func (f *RepoDescriptionPredicate) ParseParams(params string) (err error) {
 	if _, err := regexp.Compile(params); err != nil {
-		return errors.Errorf("repo:description argument: %w", err)
+		return errors.Errorf("invalid repo:description argument: %w", err)
 	}
 	if len(params) == 0 {
 		return errors.New("empty repo:description predicate parameter")
