@@ -68,10 +68,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		if err != nil {
 			return nil, errors.Wrap(err, "ComputeInsightCommandQuery")
 		}
-		modifiedQuery, err = querybuilder.SingleRepoQueryIndexed(modifiedQuery, repository)
-		if err != nil {
-			return nil, errors.Wrap(err, "SingleRepoQueryIndexed")
-		}
+		modifiedQuery = querybuilder.SingleRepoQueryIndexed(modifiedQuery, repository)
 
 		log15.Debug("executing query", "query", modifiedQuery)
 		grouped, err := c.computeSearch(ctx, modifiedQuery)

@@ -96,10 +96,10 @@ func SingleRepoQuery(query, repo, revision string, defaultParams searchquery.Par
 }
 
 // SingleRepoQueryIndexed generates a query against the current index for one repo
-func SingleRepoQueryIndexed(query, repo string) (string, error) {
+func SingleRepoQueryIndexed(query, repo string) string {
 	modified := withCountAll(query)
 	modified = forRepos(modified, []string{repo})
-	return modified, nil
+	return modified
 }
 
 // GlobalQuery generates a Sourcegraph query with the provided default values given a user specified query. This query will be global (against all visible repositories).
