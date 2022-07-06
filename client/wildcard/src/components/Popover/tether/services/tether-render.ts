@@ -23,6 +23,12 @@ import { Tether } from './types'
  * size measuring.
  */
 export function render(tether: Tether, eventTarget: HTMLElement | null, preserveSize?: boolean): void {
+    if (tether.forceHidden || !isVisible(tether.target)) {
+        setVisibility(tether.element, false)
+        setVisibility((tether.marker as HTMLElement) ?? null, false)
+        return
+    }
+
     const positions = getScrollPositions(tether.element)
 
     if (!positions.points.has(eventTarget as Element) && !preserveSize) {
@@ -36,7 +42,7 @@ export function render(tether: Tether, eventTarget: HTMLElement | null, preserve
     const layout = getLayout(tether)
     const state = getState(layout)
 
-    if (state === null || !isVisible(tether.target) || tether.forceHidden) {
+    if (state === null) {
         setVisibility(tether.element, false)
         setVisibility((tether.marker as HTMLElement) ?? null, false)
 
