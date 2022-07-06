@@ -67,7 +67,7 @@ public class FindPopupDialog extends DialogWrapper {
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        return JBUI.Panels.simplePanel().addToCenter(mainPanel);
+        return mainPanel;
     }
 
     // This adds behaviors found in JetBrain's native FindPopupPanel:
