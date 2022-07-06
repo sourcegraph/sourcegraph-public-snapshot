@@ -22,13 +22,12 @@ For Docker Compose:
 
 ```yaml
 services:
-
   symbols-0:
     environment:
       # 👇 Enables Rockskip
       - USE_ROCKSKIP=true
-      # 👇 Uses Rockskip for the repositories in the comma separated list
-      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
+      # 👇 Uses Rockskip for all the repositories over 1GB
+      - ROCKSKIP_MIN_REPO_SIZE_MB=1000
 ```
 
 For Helm:
@@ -59,9 +58,9 @@ spec:
         # 👇 Enables Rockskip
         - name: USE_ROCKSKIP
           value: "true"
-        # 👇 Uses Rockskip for the repositories in the comma separated list
-        - name: ROCKSKIP_REPOS
-          value: "github.com/torvalds/linux,github.com/pallets/flask"
+        # 👇 Uses Rockskip for all the repositories over 1GB
+        - name: ROCKSKIP_MIN_REPO_SIZE_MB
+          value: "1000"
 ```
 
 For all deployments, make sure that:
