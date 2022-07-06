@@ -35,14 +35,21 @@ import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/q
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { Node } from '@sourcegraph/shared/src/search/query/parser'
+import { Filter, KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
-import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
+import {
+    decoratedTokens,
+    queryTokens,
+    parseInputAsQuery,
+    setQueryParseOptions,
+    parsedQuery,
+} from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
@@ -463,7 +470,7 @@ const highlightFocusedFilter = ViewPlugin.define(
         update(update) {
             if (update.docChanged || update.selectionSet || update.focusChanged) {
                 if (update.view.hasFocus) {
-                    const query = update.state.facet(parsedQuery)
+                    const query = update.state.facet(queryTokens)
                     const position = update.state.selection.main.head
                     const focusedFilter = query.tokens.find(
                         (token): token is Filter =>
@@ -535,6 +542,21 @@ function tokenInfo(): Extension {
                     case 'metaPredicate':
                         // These are the tokens we show hover information for
                         break
+                    case 'keyword': {
+                        // Find operator (AND and OR are supported)
+                        const operator = findOperatorNode(position, state.facet(parsedQuery))
+                        if (operator) {
+                            return Decoration.set([
+                                focusedFilterDeco.range(
+                                    (operator.groupRange ?? operator.range).start,
+                                    (operator.groupRange ?? operator.range).end
+                                ),
+                            ])
+                        }
+                        // Highlight operator keyword only
+                        break
+                    }
+
                     default:
                         tokenAtPosition = undefined
                         break
@@ -635,6 +657,17 @@ function getTokensTooltipInformation(
                 values.push(toHover(token))
                 range = token.groupRange ? token.groupRange : token.range
                 break
+            case 'keyword':
+                switch (token.kind) {
+                    case KeywordKind.Or:
+                        values.push('Find results which match both the left and the right expression.')
+                        range = token.range
+                        break
+                    case KeywordKind.And:
+                        values.push('Find results which match the left or the right expression.')
+                        range = token.range
+                        break
+                }
         }
     }
 
@@ -658,8 +691,8 @@ const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
 }
 const queryDiagnostic: Extension = [
     // Compute diagnostics when query changes
-    diagnostics.compute([parsedQuery], state => {
-        const query = state.facet(parsedQuery)
+    diagnostics.compute([queryTokens], state => {
+        const query = state.facet(queryTokens)
         return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType) : []
     }),
     // Generate diagnostic markers
@@ -702,6 +735,19 @@ const queryDiagnostic: Extension = [
         }
     ),
 ]
+
+function findOperatorNode(position: number, node: Node | null): Extract<Node, { type: 'operator' }> | null {
+    if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
+        return null
+    }
+    for (const operand of node.operands) {
+        const result = findOperatorNode(position, operand)
+        if (result) {
+            return result
+        }
+    }
+    return node
+}
 
 function isTokenInRange(position: number, token: Pick<DecoratedToken, 'type' | 'range'>): boolean {
     return token.range.start <= position && getEndPosition(token) > position

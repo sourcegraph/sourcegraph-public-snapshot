@@ -55,7 +55,7 @@ import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/provide
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { parsedQuery } from './parsedQuery'
+import { queryTokens } from './parsedQuery'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
 
@@ -134,7 +134,7 @@ export function searchQueryAutocompletion(
 ): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
-        const query = context.state.facet(parsedQuery)
+        const query = context.state.facet(queryTokens)
         const token = query.tokens.find(token => isTokenInRange(token, position))
         return source(
             { position, onAbort: listener => context.addEventListener('abort', listener) },
@@ -173,7 +173,7 @@ export function searchQueryAutocompletion(
             // If a filter was completed, show the completion list again for
             // filter values.
             if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-                const query = update.state.facet(parsedQuery)
+                const query = update.state.facet(queryTokens)
                 const token = query.tokens.find(token => isTokenInRange(token, update.state.selection.main.anchor - 1))
                 if (token) {
                     startCompletion(update.view)

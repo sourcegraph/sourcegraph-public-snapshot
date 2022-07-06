@@ -205,8 +205,8 @@ export const parseOr = (tokens: Token[]): State => {
 /**
  * Produces a parse tree from a search query.
  */
-export const parseSearchQuery = (input: string): ParseResult => {
-    const result = scanSearchQuery(input)
+export const parseSearchQuery = (input: string | ScanResult<Token[]>): ParseResult => {
+    const result = typeof input === 'string' ? scanSearchQuery(input) : input
     if (result.type === 'error') {
         return {
             type: 'error',
