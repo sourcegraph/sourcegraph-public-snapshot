@@ -159,19 +159,23 @@ func (r *siteAnalyticsUsersResolver) Activity(ctx context.Context) (*siteAnalyti
 }
 
 func (r *siteAnalyticsUsersResolver) Frequencies(ctx context.Context) ([]*adminanalytics.UsersFrequencyNode, error) {
-	fetcher, err := r.store.Frequency()
-
-	if err != nil {
-		return nil, err
-	}
-
-	frequenceis, err := fetcher.GetFrequencies(ctx, false)
+	frequenceis, err := r.store.Frequencies(ctx, false)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return frequenceis, nil
+}
+
+func (r *siteAnalyticsUsersResolver) Summary(ctx context.Context) (*adminanalytics.UsersSummary, error) {
+	summary, err := r.store.Summary(ctx, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return summary, nil
 }
 
 /* Code-intel Analytics */

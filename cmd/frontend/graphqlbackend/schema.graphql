@@ -5988,6 +5988,12 @@ type AnalyticsUsersFrequencyItem {
     percentage: Float!
 }
 
+type AnalyticsUsersSummaryResult {
+    avgDAU: AnalyticsStatItemSummary!
+    avgWAU: AnalyticsStatItemSummary!
+    avgMAU: AnalyticsStatItemSummary!
+}
+
 """
 Users' analytics.
 """
@@ -6000,6 +6006,7 @@ type AnalyticsUsersResult {
     Frequency of usage by day.
     """
     frequencies: [AnalyticsUsersFrequencyItem!]!
+    summary: AnalyticsUsersSummaryResult!
 }
 
 """

@@ -14,6 +14,14 @@ const analyticsStatItemFragment = gql`
     }
 `
 
+const analyticsStatItemSummaryFragment = gql`
+    fragment AnalyticsStatItemSummaryFragment on AnalyticsStatItemSummary {
+        totalCount
+        totalUniqueUsers
+        totalRegisteredUsers
+    }
+`
+
 export const SEARCH_STATISTICS = gql`
     query SearchStatistics($dateRange: AnalyticsDateRange!) {
         site {
@@ -67,6 +75,17 @@ export const USERS_STATISTICS = gql`
         site {
             analytics {
                 users(dateRange: $dateRange) {
+                    summary {
+                        avgDAU {
+                            ...AnalyticsStatItemSummaryFragment
+                        }
+                        avgWAU {
+                            ...AnalyticsStatItemSummaryFragment
+                        }
+                        avgMAU {
+                            ...AnalyticsStatItemSummaryFragment
+                        }
+                    }
                     activity {
                         ...AnalyticsStatItemFragment
                     }
@@ -87,6 +106,7 @@ export const USERS_STATISTICS = gql`
             totalCount
         }
     }
+    ${analyticsStatItemSummaryFragment}
     ${analyticsStatItemFragment}
 `
 

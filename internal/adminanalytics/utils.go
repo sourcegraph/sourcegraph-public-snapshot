@@ -24,23 +24,35 @@ func makeStringsInExpression(values []string) *sqlf.Query {
 
 func makeDateParameters(dateRange string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
 	now := time.Now()
-	var from time.Time
+	from, err := getFromDate(dateRange, now)
+	if err != nil {
+		return nil, nil, err
+	}
 	var groupBy string
 
 	if dateRange == LastThreeMonths {
-		from = now.AddDate(0, -3, 0)
 		groupBy = "week"
 	} else if dateRange == LastMonth {
-		from = now.AddDate(0, -1, 0)
 		groupBy = "day"
 	} else if dateRange == LastWeek {
-		from = now.AddDate(0, 0, -7)
 		groupBy = "day"
 	} else {
 		return nil, nil, errors.New("Invalid date range")
 	}
 
 	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', %s::date)`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
+}
+
+func getFromDate(dateRange string, now time.Time) (time.Time, error) {
+	if dateRange == LastThreeMonths {
+		return now.AddDate(0, -3, 0), nil
+	} else if dateRange == LastMonth {
+		return now.AddDate(0, -1, 0), nil
+	} else if dateRange == LastWeek {
+		return now.AddDate(0, 0, -7), nil
+	}
+
+	return now, errors.New("Invalid date range")
 }
 
 var eventLogsNodesQuery = `

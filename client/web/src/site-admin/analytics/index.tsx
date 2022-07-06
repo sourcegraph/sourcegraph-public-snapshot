@@ -846,6 +846,27 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         return activities
     }, [data, eventAggregation, dateRange])
 
+    const summary = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { avgDAU, avgWAU, avgMAU } = data.site.analytics.users.summary
+        return [
+            {
+                value: avgDAU.totalUniqueUsers,
+                label: 'DAU',
+            },
+            {
+                value: avgWAU.totalUniqueUsers,
+                label: 'WAU',
+            },
+            {
+                value: avgMAU.totalUniqueUsers,
+                label: 'MAU',
+            },
+        ]
+    }, [data])
+
     if (error) {
         throw error
     }
@@ -901,20 +922,50 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                         </div>
                     </div>
                 )}
-                {frequencies && (
-                    <ChartContainer title="Frequency of use" labelX="Days used" labelY="Users">
-                        {width => (
-                            <BarChart
-                                width={width}
-                                height={300}
-                                data={frequencies}
-                                getDatumName={datum => datum.label}
-                                getDatumValue={datum => datum.value}
-                                getDatumColor={() => 'var(--oc-blue-2)'}
-                            />
+                <div className="d-flex">
+                    <div>
+                        {summary && (
+                            <ChartContainer
+                                title="Average user activity by period"
+                                className="mb-5"
+                                labelX="Average DAU/WAU/MAU"
+                                labelY="Unique users"
+                            >
+                                {width => (
+                                    <BarChart
+                                        width={width}
+                                        height={300}
+                                        data={summary}
+                                        getDatumName={datum => datum.label}
+                                        getDatumValue={datum => datum.value}
+                                        getDatumColor={() => 'var(--oc-blue-2)'}
+                                    />
+                                )}
+                            </ChartContainer>
                         )}
-                    </ChartContainer>
-                )}
+                    </div>
+                    <div className="flex-1">
+                        {frequencies && (
+                            <ChartContainer
+                                className="mb-5"
+                                title="Frequency of use"
+                                labelX="Days used"
+                                labelY="Unique users"
+                            >
+                                {width => (
+                                    <BarChart
+                                        width={width}
+                                        height={300}
+                                        data={frequencies}
+                                        getDatumName={datum => datum.label}
+                                        getDatumValue={datum => datum.value}
+                                        getDatumColor={() => 'var(--oc-blue-2)'}
+                                    />
+                                )}
+                            </ChartContainer>
+                        )}
+                    </div>
+                </div>
             </Card>
         </>
     )
