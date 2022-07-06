@@ -1,8 +1,10 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
-import { mdiCodeJson, mdiCog, mdiFolder, mdiSourceRepository } from '@mdi/js'
+import { mdiCodeJson, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
+import FolderIcon from 'mdi-react/FolderIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
@@ -257,7 +259,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             <div className="d-flex justify-content-between align-items-center">
                 <div>
                     <PageHeader
-                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repo.name) }]}
+                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
                         className="mb-3 test-tree-page-title"
                     />
                     {repo.description && <Text>{repo.description}</Text>}
@@ -343,7 +345,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 <RootHeaderSection tree={treeOrError} />
                             ) : (
                                 <PageHeader
-                                    path={[{ icon: mdiFolder, text: filePath }]}
+                                    path={[{ icon: FolderIcon, text: filePath }]}
                                     className="mb-3 mr-2 test-tree-page-title"
                                 />
                             )}

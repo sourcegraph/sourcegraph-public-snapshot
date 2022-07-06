@@ -1,5 +1,6 @@
-import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
+import { mdiMagnify, mdiPlus } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -25,7 +26,7 @@ export default config
 
 export const BasicHeader: Story = () => (
     <PageHeader
-        path={[{ icon: mdiPuzzleOutline, text: 'Header' }]}
+        path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
             <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
                 <Icon aria-hidden={true} svgPath={mdiMagnify} /> Button with icon
@@ -66,7 +67,7 @@ export const ComplexHeader: Story = () => (
         }
     >
         <PageHeader.Heading as="h2" styleAs="h1">
-            <PageHeader.Breadcrumb to="/level-0" icon={mdiPuzzleOutline} />
+            <PageHeader.Breadcrumb to="/level-0" icon={PuzzleOutlineIcon} />
             <PageHeader.Breadcrumb to="/level-1">Level 1</PageHeader.Breadcrumb>
             <PageHeader.Breadcrumb>Level 2</PageHeader.Breadcrumb>
             <PageHeader.Breadcrumb>Level 3</PageHeader.Breadcrumb>

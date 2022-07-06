@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiPuzzleOutline } from '@mdi/js'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
@@ -29,7 +29,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<
     <div className="container">
         {props.isPrimaryHeader && (
             <PageHeader
-                path={[{ icon: mdiPuzzleOutline, text: 'Extensions' }]}
+                path={[{ icon: PuzzleOutlineIcon, text: 'Extensions' }]}
                 actions={props.actionButtons.map(
                     ({ condition = () => true, to, icon: ButtonIcon, label, tooltip }) =>
                         condition(props) && (
