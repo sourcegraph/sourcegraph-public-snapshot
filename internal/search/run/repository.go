@@ -58,7 +58,7 @@ func (*RepoSearchJob) Name() string {
 	return "RepoSearchJob"
 }
 
-func (s *RepoSearchJob) Tags() []log.Field {
+func (s *RepoSearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 		trace.Printf("filePatternsReposMustInclude", "%q", s.FilePatternsReposMustInclude),

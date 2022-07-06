@@ -36,7 +36,7 @@ func (j *selectJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 func (j *selectJob) Name() string {
 	return "SelectJob"
 }
-func (j *selectJob) Tags() []log.Field {
+func (j *selectJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Printf("select", "%q", j.path),
 	}

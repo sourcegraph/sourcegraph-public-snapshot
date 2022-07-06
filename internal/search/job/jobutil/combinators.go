@@ -42,7 +42,7 @@ func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
-func (s *SequentialJob) Tags() []log.Field {
+func (s *SequentialJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		log.Bool("ensureUnique", s.ensureUnique),
 	}
@@ -119,7 +119,7 @@ func (p *ParallelJob) Name() string {
 	return "ParallelJob"
 }
 
-func (p *ParallelJob) Tags() []log.Field { return nil }
+func (p *ParallelJob) Tags(job.Verbosity) []log.Field { return nil }
 func (p *ParallelJob) Children() []job.DescriptiveJob {
 	res := make([]job.DescriptiveJob, len(p.children))
 	for i := range p.children {
@@ -178,7 +178,7 @@ func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
 }
 
-func (t *TimeoutJob) Tags() []log.Field {
+func (t *TimeoutJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Stringer("timeout", t.timeout),
 	}
@@ -199,5 +199,5 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 }
 
 func (e *NoopJob) Name() string                   { return "NoopJob" }
-func (e *NoopJob) Tags() []log.Field              { return nil }
+func (e *NoopJob) Tags(job.Verbosity) []log.Field { return nil }
 func (e *NoopJob) Children() []job.DescriptiveJob { return nil }

@@ -138,7 +138,7 @@ func (s *TextSearchJob) Name() string {
 	return "SearcherTextSearchJob"
 }
 
-func (s *TextSearchJob) Tags() []otlog.Field {
+func (s *TextSearchJob) Tags(job.Verbosity) []otlog.Field {
 	return []otlog.Field{
 		trace.Stringer("patternInfo", s.PatternInfo),
 		otlog.Int("numRepos", len(s.Repos)),

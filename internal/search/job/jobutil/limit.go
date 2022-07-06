@@ -51,7 +51,7 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func (l *LimitJob) Tags() []log.Field {
+func (l *LimitJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		log.Int("limit", l.limit),
 	}

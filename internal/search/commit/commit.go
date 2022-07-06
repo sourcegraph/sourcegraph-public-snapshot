@@ -120,7 +120,7 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Tags() []log.Field {
+func (j *SearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Stringer("query", j.Query),
 		trace.Stringer("repoOpts", &j.RepoOpts),

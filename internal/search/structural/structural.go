@@ -192,7 +192,7 @@ func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *SearchJob) Tags() []log.Field {
+func (s *SearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Stringer("query", s.ZoektArgs.Query),
 		log.String("type", string(s.ZoektArgs.Typ)),

@@ -78,7 +78,7 @@ func (s *SymbolSearchJob) Name() string {
 	return "SearcherSymbolSearchJob"
 }
 
-func (s *SymbolSearchJob) Tags() []log.Field {
+func (s *SymbolSearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Stringer("patternInfo", s.PatternInfo),
 		log.Int("numRepos", len(s.Repos)),

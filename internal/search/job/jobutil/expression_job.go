@@ -80,7 +80,7 @@ func (a *AndJob) Name() string {
 	return "AndJob"
 }
 
-func (a *AndJob) Tags() []log.Field { return nil }
+func (a *AndJob) Tags(job.Verbosity) []log.Field { return nil }
 
 func (a *AndJob) Children() []job.DescriptiveJob {
 	res := make([]job.DescriptiveJob, len(a.children))
@@ -183,7 +183,7 @@ func (j *OrJob) Name() string {
 	return "OrJob"
 }
 
-func (j *OrJob) Tags() []log.Field {
+func (j *OrJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{}
 }
 

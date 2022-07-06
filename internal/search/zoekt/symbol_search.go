@@ -59,7 +59,7 @@ func (z *SymbolSearchJob) Name() string {
 	return "ZoektSymbolSearchJob"
 }
 
-func (z *SymbolSearchJob) Tags() []log.Field {
+func (z *SymbolSearchJob) Tags(job.Verbosity) []log.Field {
 	tags := []log.Field{
 		trace.Stringer("query", z.Query),
 		log.Int32("fileMatchLimit", z.FileMatchLimit),
@@ -106,7 +106,7 @@ func (*GlobalSymbolSearchJob) Name() string {
 	return "ZoektGlobalSymbolSearchJob"
 }
 
-func (s *GlobalSymbolSearchJob) Tags() []log.Field {
+func (s *GlobalSymbolSearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Stringer("query", s.GlobalZoektQuery.Query),
 		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),

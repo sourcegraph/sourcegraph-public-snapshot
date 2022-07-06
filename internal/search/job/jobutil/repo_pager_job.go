@@ -43,9 +43,9 @@ func (j *reposPartialJob) Resolve(rr resolvedRepos) job.Job {
 	return setRepos(j.inner, rr.indexed, rr.unindexed)
 }
 
-func (j *reposPartialJob) Name() string                   { return "PartialReposJob" }
-func (j *reposPartialJob) Tags() []otlog.Field            { return nil }
-func (j *reposPartialJob) Children() []job.DescriptiveJob { return []job.DescriptiveJob{j.inner} }
+func (j *reposPartialJob) Name() string                     { return "PartialReposJob" }
+func (j *reposPartialJob) Tags(job.Verbosity) []otlog.Field { return nil }
+func (j *reposPartialJob) Children() []job.DescriptiveJob   { return []job.DescriptiveJob{j.inner} }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
@@ -118,7 +118,7 @@ func (p *repoPagerJob) Name() string {
 	return "RepoPagerJob"
 }
 
-func (p *repoPagerJob) Tags() []otlog.Field {
+func (p *repoPagerJob) Tags(job.Verbosity) []otlog.Field {
 	return []otlog.Field{
 		trace.Scoped("repoOpts", p.repoOpts.Tags()...),
 		otlog.String("useIndex", string(p.useIndex)),

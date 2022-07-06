@@ -625,7 +625,7 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Tags() []otlog.Field {
+func (z *RepoSubsetTextSearchJob) Tags(job.Verbosity) []otlog.Field {
 	tags := []otlog.Field{
 		trace.Stringer("query", z.Query),
 		otlog.String("type", string(z.Typ)),
@@ -663,7 +663,7 @@ func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Tags() []otlog.Field {
+func (t *GlobalTextSearchJob) Tags(job.Verbosity) []otlog.Field {
 	return []otlog.Field{
 		trace.Stringer("query", t.GlobalZoektQuery.Query),
 		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),

@@ -75,7 +75,7 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Tags() []log.Field {
+func (j *alertJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Stringer("query", j.inputs.Query),
 		log.String("originalQuery", j.inputs.OriginalQuery),

@@ -148,7 +148,7 @@ func (f *FeelingLuckySearchJob) Name() string {
 	return "FeelingLuckySearchJob"
 }
 
-func (f *FeelingLuckySearchJob) Tags() []log.Field {
+func (f *FeelingLuckySearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{}
 }
 
@@ -558,7 +558,7 @@ func (g *generatedSearchJob) Name() string {
 	return "GeneratedSearchJob"
 }
 
-func (g *generatedSearchJob) Tags() []log.Field {
+func (g *generatedSearchJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{}
 }
 

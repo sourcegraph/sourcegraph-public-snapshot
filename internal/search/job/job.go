@@ -44,15 +44,15 @@ type PartialJob[T any] interface {
 type DescriptiveJob interface {
 	Name() string
 	Children() []DescriptiveJob
-	Tags() []otlog.Field
+	Tags(Verbosity) []otlog.Field
 }
 
-type VerbosityLevel int
+type Verbosity int
 
 const (
-	VerbosityLow VerbosityLevel = iota + 1
-	VerbosityMedium
-	VerbosityHigh
+	VerbosityNone Verbosity = iota
+	VerbosityBasic
+	VerbosityMax
 )
 
 type RuntimeClients struct {

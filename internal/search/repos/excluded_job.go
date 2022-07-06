@@ -38,7 +38,7 @@ func (c *ComputeExcludedJob) Name() string {
 	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedJob) Tags() []log.Field {
+func (c *ComputeExcludedJob) Tags(job.Verbosity) []log.Field {
 	return []log.Field{
 		trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
 	}
