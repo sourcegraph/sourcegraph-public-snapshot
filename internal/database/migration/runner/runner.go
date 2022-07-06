@@ -15,9 +15,9 @@ import (
 )
 
 type Runner struct {
-	logger         log.Logger
-	storeFactories map[string]StoreFactory
-	schemas        []*schemas.Schema
+	logger             log.Logger
+	storeFactoryCaches map[string]*storeFactoryCache
+	schemas            []*schemas.Schema
 }
 
 type StoreFactory func(ctx context.Context) (Store, error)
@@ -27,11 +27,48 @@ func NewRunner(logger log.Logger, storeFactories map[string]StoreFactory) *Runne
 }
 
 func NewRunnerWithSchemas(logger log.Logger, storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
-	return &Runner{
-		logger:         logger,
-		storeFactories: storeFactories,
-		schemas:        schemas,
+	storeFactoryCaches := make(map[string]*storeFactoryCache, len(storeFactories))
+	for name, factory := range storeFactories {
+		storeFactoryCaches[name] = &storeFactoryCache{factory: factory}
 	}
+
+	return &Runner{
+		logger:             logger,
+		storeFactoryCaches: storeFactoryCaches,
+		schemas:            schemas,
+	}
+}
+
+type storeFactoryCache struct {
+	sync.Mutex
+	factory StoreFactory
+	store   Store
+}
+
+func (fc *storeFactoryCache) get(ctx context.Context) (Store, error) {
+	fc.Lock()
+	defer fc.Unlock()
+
+	if fc.store != nil {
+		return fc.store, nil
+	}
+
+	store, err := fc.factory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fc.store = store
+	return store, nil
+}
+
+// Store returns the store associated with the given schema.
+func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
+	if factoryCache, ok := r.storeFactoryCaches[schemaName]; ok {
+		return factoryCache.get(ctx)
+	}
+
+	return nil, errors.Newf("unknown schema %q", schemaName)
 }
 
 type schemaContext struct {
@@ -48,16 +85,6 @@ type schemaVersion struct {
 }
 
 type visitFunc func(ctx context.Context, schemaContext schemaContext) error
-
-// Store returns the store associated with the given schema.
-func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
-	if factory, ok := r.storeFactories[schemaName]; ok {
-		return factory(ctx)
-
-	}
-
-	return nil, errors.Newf("unknown store %q", schemaName)
-}
 
 // forEachSchema invokes the given function once for each schema in the given list, with
 // store instances initialized for each given schema name. Each function invocation occurs
@@ -139,12 +166,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	storeMap := make(map[string]Store, len(schemaNames))
 
 	for _, schemaName := range schemaNames {
-		storeFactory, ok := r.storeFactories[schemaName]
-		if !ok {
-			return nil, errors.Newf("unknown schema %q", schemaName)
-		}
-
-		store, err := storeFactory(ctx)
+		store, err := r.Store(ctx, schemaName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to establish database connection for schema %q", schemaName)
 		}
