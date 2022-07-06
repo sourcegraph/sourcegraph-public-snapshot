@@ -1049,7 +1049,7 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 // syncPerms processes the permissions syncing request and removes the request
 // from the queue once the process is done (regardless of success or failure).
 // The given sync groups are used to control the max concurrency, this method
-// only returns when the sync process is spawned, and blocks when reached max
+// only returns when the sync process is spawned, and blocks when it reaches max
 // concurrency defined by the sync group.
 func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	defer s.queue.remove(request.Type, request.ID, true)
