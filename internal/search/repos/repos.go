@@ -10,8 +10,8 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -832,7 +832,7 @@ func (e MissingLockfileIndexing) Error() string {
 // Get all private repos for the the current actor. On sourcegraph.com, those are
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
-func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
@@ -862,7 +862,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	})
 
 	if err != nil {
-		log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
+		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

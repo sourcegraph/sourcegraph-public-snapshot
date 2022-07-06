@@ -40,7 +40,7 @@ import { Key } from 'ts-key-enum'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
+import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
 import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'
 import { PositionEvent, SupportedMouseEvent } from './positions'
@@ -444,7 +444,7 @@ export function createHoverifier<C extends object, D, A>({
     const allPositionsFromEvents = new Subject<MouseEventTrigger>()
 
     // This keeps the overlay open while the mouse moves over another token on the way to the overlay
-    // eslint-disable-next-line unicorn/consistent-function-scoping
+
     const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => observable =>
         observable.pipe(
             withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
@@ -1071,7 +1071,16 @@ export function createHoverifier<C extends object, D, A>({
                 }
                 // Scroll into view
                 if (codeElements.length > 0) {
-                    scrollIntoCenterIfNeeded(scrollElement, codeView, codeElements[0].element)
+                    // We assume that the first element is always the top most
+                    // element and the last element is the bottom most element.
+                    const topRectangle = codeElements[0].element.getBoundingClientRect()
+                    const bottomRectangle = codeElements[codeElements.length - 1].element.getBoundingClientRect()
+                    const rectangle = {
+                        top: topRectangle.top,
+                        bottom: bottomRectangle.bottom,
+                        height: bottomRectangle.bottom - topRectangle.top,
+                    }
+                    scrollRectangleIntoCenterIfNeeded(scrollElement, codeView, rectangle)
                 }
             }
         )

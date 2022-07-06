@@ -23,6 +23,7 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     @Nullable
     public String anonymousUserId;
     public boolean isInstallEventLogged;
+    public boolean isUrlNotificationDismissed;
 
     @NotNull
     public static SourcegraphApplicationService getInstance() {
@@ -63,6 +64,10 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         return isInstallEventLogged;
     }
 
+    public boolean isUrlNotificationDismissed() {
+        return isUrlNotificationDismissed;
+    }
+
     @Nullable
     @Override
     public SourcegraphApplicationService getState() {
@@ -77,5 +82,6 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
         this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.anonymousUserId = settings.anonymousUserId;
+        this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     }
 }
