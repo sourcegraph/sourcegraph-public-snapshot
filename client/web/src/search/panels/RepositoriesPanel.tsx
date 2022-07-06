@@ -325,6 +325,7 @@ function processRepositories(eventLogResult?: EventLogResult): RecentRepo[] | nu
                     if (isRepoFilter(token) && token.value && !recentlySearchedRepos.includes(token.value.value)) {
                         recentlySearchedRepos.push(token.value.value)
                     }
+
                 }
             }
         }
