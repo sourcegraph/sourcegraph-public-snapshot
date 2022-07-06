@@ -145,6 +145,11 @@ commands:
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      if [ -z ${var+x} ]; then echo "var is unset"; else echo "var is set to '$var'"; fi
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+      echo $EXTSVC_CONFIG_FILE
+
       .bin/enterprise-frontend
     install: |
       if [ -n "$DELVE" ]; then
@@ -157,7 +162,6 @@ commands:
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
@@ -747,7 +751,7 @@ commandsets:
 
   enterprise-e2e:
     <<: *enterprise_set
-    envOverrides:
+    env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
       EXTSVC_CONFIG_FILE: ""
