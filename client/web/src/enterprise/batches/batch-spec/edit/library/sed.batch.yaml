@@ -17,7 +17,7 @@ steps:
 changesetTemplate:
   title: Apply  a regex
   body: Apply a regex using sed
-  branch: campaigns/regex
+  branch: batch-changes/regex
   commit:
     message: batch changes -  apply regex
 
