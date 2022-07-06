@@ -161,7 +161,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
-                        onFilterValuesChange={trackFilterChanges}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
                         seriesCount={insight.seriesCount}
