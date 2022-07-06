@@ -171,10 +171,12 @@ const triggerDashboardMenuItem = async (
     const dashboardMenu = await waitFor(() => screen.getByTestId('dashboard-context-menu'))
     user.click(dashboardMenu)
 
+    const dashboardMenuItem = screen.getByTestId(testId)
+
     // We're simulating keyboard navigation here to circumvent a bug in ReachUI
     // does not respond to programmatic click events on menu items
-    screen.getByTestId(testId).closest<HTMLButtonElement>('[role="menuitem"]')?.focus()
-    user.keyboard('{enter}')
+    dashboardMenuItem.focus()
+    user.keyboard(' ')
 }
 
 beforeEach(() => {
@@ -241,7 +243,8 @@ describe('DashboardsContent', () => {
 
         await triggerDashboardMenuItem(screen, 'delete')
 
-        await waitFor(() => expect(screen.getByRole('heading', { name: /Delete/ })).toBeInTheDocument())
+        const addInsightHeader = await waitFor(() => screen.getByRole('heading', { name: /Delete/ }))
+        expect(addInsightHeader).toBeInTheDocument()
     })
 
     // copies dashboard url
@@ -250,6 +253,6 @@ describe('DashboardsContent', () => {
 
         await triggerDashboardMenuItem(screen, 'copy-link')
 
-        await waitFor(() => sinon.assert.calledOnce(mockCopyURL))
+        sinon.assert.calledOnce(mockCopyURL)
     })
 })
