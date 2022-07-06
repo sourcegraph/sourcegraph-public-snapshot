@@ -391,7 +391,6 @@ func (s *InsightStore) GetJustInTimeSearchSeriesToBackfill(ctx context.Context) 
 	preds := make([]*sqlf.Query, 0, 1)
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
-	preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
 	preds = append(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
 	preds = append(preds, sqlf.Sprintf("just_in_time = true"))
 	preds = append(preds, sqlf.Sprintf("backfill_attempts < 10"))

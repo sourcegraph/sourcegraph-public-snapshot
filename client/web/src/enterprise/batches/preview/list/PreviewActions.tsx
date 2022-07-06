@@ -1,18 +1,20 @@
 import React from 'react'
 
+import {
+    mdiArchive,
+    mdiBeakerQuestion,
+    mdiCheckboxBlankCircleOutline,
+    mdiCloseCircleOutline,
+    mdiDelete,
+    mdiImport,
+    mdiPaperclip,
+    mdiSourceBranchCheck,
+    mdiSourceBranchRefresh,
+    mdiSourceBranchSync,
+    mdiUpload,
+    mdiUploadNetwork,
+} from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import BeakerQuestionIcon from 'mdi-react/BeakerQuestionIcon'
-import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
-import ImportIcon from 'mdi-react/ImportIcon'
-import PaperclipIcon from 'mdi-react/PaperclipIcon'
-import SourceBranchCheckIcon from 'mdi-react/SourceBranchCheckIcon'
-import SourceBranchRefreshIcon from 'mdi-react/SourceBranchRefreshIcon'
-import SourceBranchSyncIcon from 'mdi-react/SourceBranchSyncIcon'
-import TrashIcon from 'mdi-react/TrashIcon'
-import UploadIcon from 'mdi-react/UploadIcon'
-import UploadNetworkIcon from 'mdi-react/UploadNetworkIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -107,8 +109,8 @@ export const PreviewActionPublish: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be published to its code host"
-            as={UploadIcon}
             aria-hidden={true}
+            svgPath={mdiUpload}
         />
         <span>{label}</span>
     </div>
@@ -121,8 +123,8 @@ export const PreviewActionPublishDraft: React.FunctionComponent<
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be published as a draft to its code host"
-            as={UploadIcon}
             aria-hidden={true}
+            svgPath={mdiUpload}
         />
         <span>{label}</span>
     </div>
@@ -135,8 +137,8 @@ export const PreviewActionImport: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be imported and tracked in this batch change"
-            as={ImportIcon}
             aria-hidden={true}
+            svgPath={mdiImport}
         />
         <span>{label}</span>
     </div>
@@ -149,8 +151,8 @@ export const PreviewActionClose: React.FunctionComponent<
         <Icon
             className="text-danger mr-1"
             data-tooltip="This changeset will be closed on the code host"
-            as={CloseCircleOutlineIcon}
             aria-hidden={true}
+            svgPath={mdiCloseCircleOutline}
         />
         <span>{label}</span>
     </div>
@@ -163,8 +165,8 @@ export const PreviewActionDetach: React.FunctionComponent<
         <Icon
             className="text-danger mr-1"
             data-tooltip="This changeset will be removed from the batch change"
-            as={TrashIcon}
             aria-hidden={true}
+            svgPath={mdiDelete}
         />
         <span>{label}</span>
     </div>
@@ -177,8 +179,8 @@ export const PreviewActionReopen: React.FunctionComponent<
         <Icon
             className="text-success mr-1"
             data-tooltip="This changeset will be reopened on the code host"
-            as={SourceBranchRefreshIcon}
             aria-hidden={true}
+            svgPath={mdiSourceBranchRefresh}
         />
         <span>{label}</span>
     </div>
@@ -191,8 +193,8 @@ export const PreviewActionUndraft: React.FunctionComponent<
         <Icon
             className="text-success mr-1"
             data-tooltip="This changeset will be marked as ready for review on the code host"
-            as={SourceBranchCheckIcon}
             aria-hidden={true}
+            svgPath={mdiSourceBranchCheck}
         />
         <span>{label}</span>
     </div>
@@ -205,8 +207,8 @@ export const PreviewActionUpdate: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be updated on the code host"
-            as={SourceBranchSyncIcon}
             aria-hidden={true}
+            svgPath={mdiSourceBranchSync}
         />
         <span>{label}</span>
     </div>
@@ -219,8 +221,8 @@ export const PreviewActionPush: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="A new commit will be pushed to the code host"
-            as={UploadNetworkIcon}
             aria-hidden={true}
+            svgPath={mdiUploadNetwork}
         />
         <span>{label}</span>
     </div>
@@ -233,8 +235,8 @@ export const PreviewActionUnknown: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip={`The operation ${operations} can't yet be displayed.`}
-            as={BeakerQuestionIcon}
             aria-hidden={true}
+            svgPath={mdiBeakerQuestion}
         />
         <span>Unknown</span>
     </div>
@@ -247,8 +249,8 @@ export const PreviewActionArchive: React.FunctionComponent<
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be kept and marked as archived in this batch change"
-            as={ArchiveIcon}
             aria-hidden={true}
+            svgPath={mdiArchive}
         />
         <span>{label}</span>
     </div>
@@ -261,7 +263,7 @@ export const PreviewActionReattach: React.FunctionComponent<
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be re-added to the batch change"
-            as={PaperclipIcon}
+            svgPath={mdiPaperclip}
             aria-hidden={true}
         />
         <span>{label}</span>
@@ -280,7 +282,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; reason?: string }>
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} aria-hidden={true} />
+        <Icon className="mr-1" data-tooltip={reason} svgPath={mdiCheckboxBlankCircleOutline} aria-hidden={true} />
         <span>No action</span>
     </div>
 )
