@@ -205,7 +205,7 @@ func (s *Service) UpdateDirtyRepositories(ctx context.Context, maxAgeForNonStale
 
 	var updateErr error
 	for repositoryID, dirtyFlag := range repositoryIDs {
-		if err := s.tryUpdate(ctx, repositoryID, dirtyFlag, maxAgeForNonStaleBranches, maxAgeForNonStaleTags); err != nil {
+		if err := s.lockAndUpdateUploadsVisibleToCommits(ctx, repositoryID, dirtyFlag, maxAgeForNonStaleBranches, maxAgeForNonStaleTags); err != nil {
 			if updateErr == nil {
 				updateErr = err
 			} else {
@@ -217,10 +217,17 @@ func (s *Service) UpdateDirtyRepositories(ctx context.Context, maxAgeForNonStale
 	return updateErr
 }
 
-// tryUpdate will call update while holding an advisory lock to give exclusive access to the
-// update procedure for this repository. If the lock is already held, this method will simply
-// do nothing.
-func (s *Service) tryUpdate(ctx context.Context, repositoryID, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+// lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
+// update procedure for this repository. If the lock is already held, this method will simply do nothing.
+func (s *Service) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repositoryID, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.Int("dirtyToken", dirtyToken),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	ok, unlock, err := s.locker.Lock(ctx, int32(repositoryID), false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "locker.Lock")
@@ -229,24 +236,13 @@ func (s *Service) tryUpdate(ctx context.Context, repositoryID, dirtyToken int, m
 		err = unlock(err)
 	}()
 
-	return s.update(ctx, repositoryID, dirtyToken, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
-}
-
-// update pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
-// upload objects for the given repository from Postgres, and correlates them into a visibility
-// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
-//
-// The user should supply a dirty token that is associated with the given repository so that
-// the repository can be unmarked as long as the repository is not marked as dirty again before
-// the update completes.
-func (s *Service) update(ctx context.Context, repositoryID, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
-	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", repositoryID),
-			log.Int("dirtyToken", dirtyToken),
-		},
-	})
-	defer endObservation(1, observation.Args{})
+	// update pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
+	// upload objects for the given repository from Postgres, and correlates them into a visibility
+	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	//
+	// The user should supply a dirty token that is associated with the given repository so that
+	// the repository can be unmarked as long as the repository is not marked as dirty again before
+	// the update completes.
 
 	// Construct a view of the git graph that we will later decorate with upload information.
 	commitGraph, err := s.getCommitGraph(ctx, repositoryID)

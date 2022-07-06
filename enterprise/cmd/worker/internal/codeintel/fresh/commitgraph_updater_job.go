@@ -47,13 +47,13 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 	}
 	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore))
 
-	operations := commitgraph.NewOperations(uploadSvc, &observation.Context{
+	commitgraph.NewOperations(uploadSvc, &observation.Context{
 		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	})
 
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(uploadSvc, operations),
+		commitgraph.NewUpdater(uploadSvc),
 	}, nil
 }

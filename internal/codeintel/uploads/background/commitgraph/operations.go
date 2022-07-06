@@ -10,9 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct{}
-
-func NewOperations(uploadSvc UploadService, observationContext *observation.Context) *operations {
+func NewOperations(uploadSvc UploadService, observationContext *observation.Context) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
@@ -37,6 +35,4 @@ func NewOperations(uploadSvc UploadService, observationContext *observation.Cont
 
 		return float64(age) / float64(time.Second)
 	}))
-
-	return &operations{}
 }
