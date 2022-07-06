@@ -3735,6 +3735,8 @@ CREATE INDEX repo_blocked_idx ON repo USING btree (((blocked IS NOT NULL)));
 
 CREATE INDEX repo_created_at ON repo USING btree (created_at);
 
+CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
+
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 
 CREATE INDEX repo_fork ON repo USING btree (fork);
