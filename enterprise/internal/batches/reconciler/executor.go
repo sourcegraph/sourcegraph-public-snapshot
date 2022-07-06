@@ -143,6 +143,8 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
+var errCannotPushToArchivedRepo = errcode.MakeNonRetryable(errors.New("cannot push to an archived repo"))
+
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
@@ -171,6 +173,13 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+
+	// Short circuit any attempt to push to an archived repo, since we can save
+	// gitserver the work (and it'll keep retrying).
+	if remoteRepo.Archived {
+		return errCannotPushToArchivedRepo
+	}
+
 	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), remoteRepo)
 	if err != nil {
 		return err
@@ -188,7 +197,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 				if err := e.handleArchivedRepo(ctx); err != nil {
 					return errors.Wrap(err, "handling archived repo")
 				}
-				return errcode.MakeNonRetryable(errors.New("cannot push to an archived repo"))
+				return errCannotPushToArchivedRepo
 			}
 		}
 	}
