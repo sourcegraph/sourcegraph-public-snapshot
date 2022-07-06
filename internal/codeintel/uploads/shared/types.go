@@ -1,6 +1,12 @@
 package shared
 
-import "time"
+import (
+	"context"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+)
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
@@ -99,3 +105,8 @@ const (
 	DependencyReferenceCountUpdateTypeAdd
 	DependencyReferenceCountUpdateTypeRemove
 )
+
+type GitserverClient interface {
+	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
+	RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error)
+}
