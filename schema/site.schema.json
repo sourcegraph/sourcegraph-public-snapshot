@@ -899,7 +899,7 @@
       "default": 60
     },
     "permissions.syncUsersMaxConcurrency": {
-      "description": "The maximum number of user-centric permissions syncing jobs could be spawned concurrently.",
+      "description": "The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.",
       "type": "integer",
       "default": 1
     },

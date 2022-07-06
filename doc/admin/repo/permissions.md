@@ -353,6 +353,7 @@ There are variety of options in the site configuration to tune how the permissio
   // Don't sync a repo's permissions if it has synced within the last n seconds.
   "permissions.syncReposBackoffSeconds": 60,
   // The maximum number of user-centric permissions syncing jobs that can be spawned concurrently.
+  // Service restart is required to take effect for changes.
   "permissions.syncUsersMaxConcurrency": 1,
 }
 ```
