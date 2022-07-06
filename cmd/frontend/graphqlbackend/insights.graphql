@@ -1157,7 +1157,7 @@ input SearchSeriesPreviewInput {
     generatedFromCaptureGroups: Boolean!
 
     """
-    Use this field to specify a compute insight.
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
     """
     groupBy: GroupByField
 }
