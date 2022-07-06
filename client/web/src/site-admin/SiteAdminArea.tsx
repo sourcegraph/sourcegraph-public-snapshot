@@ -127,12 +127,12 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
         exact: true,
     },
     {
         path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
         exact: true,
     },
     {
@@ -142,12 +142,12 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
         exact: true,
     },
     {
         path: '/analytics',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsComingSoon'),
+        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
         exact: true,
     },
 ]
