@@ -69,3 +69,8 @@ type RuntimeClients struct {
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
 }
+
+func Map(j Job, f func(Job) Job) Job {
+	j = j.MapChildren(f)
+	return f(j)
+}
