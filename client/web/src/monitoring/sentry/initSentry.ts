@@ -15,10 +15,9 @@ declare global {
 
 export function initSentry(): void {
     if (
-        // typeof Sentry !== 'undefined' &&
-        // window.context.sentryDSN &&
-        // (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
-      true
+        typeof Sentry !== 'undefined' &&
+        window.context.sentryDSN &&
+        (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
     ) {
         const { sentryDSN, version } = window.context
 

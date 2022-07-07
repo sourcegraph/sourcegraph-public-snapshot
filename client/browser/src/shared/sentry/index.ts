@@ -33,9 +33,9 @@ const callSentryInit = once((extensionID: string) => {
 
 /** Initialize Sentry for error reporting. */
 export function initSentry(script: 'content' | 'options' | 'background', codeHost?: string): void {
-    // if (process.env.NODE_ENV !== 'production') {
-    //     return
-    // }
+    if (process.env.NODE_ENV !== 'production') {
+        return
+    }
 
     observeOptionFlag('allowErrorReporting').subscribe(allowed => {
         // Don't initialize if user hasn't allowed us to report errors or in Phabricator.
