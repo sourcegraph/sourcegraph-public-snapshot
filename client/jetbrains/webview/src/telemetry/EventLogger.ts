@@ -138,7 +138,7 @@ export class EventLogger implements TelemetryService {
         return () => this.listeners.delete(callback)
     }
 
-    private tracker(eventName: number, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
+    private tracker(eventName: string, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
         for (const listener of this.listeners) {
             listener(eventName)
         }
