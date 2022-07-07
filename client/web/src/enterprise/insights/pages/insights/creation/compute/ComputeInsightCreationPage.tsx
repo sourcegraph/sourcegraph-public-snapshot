@@ -9,7 +9,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsPage, FormChangeEvent } from '../../../../components'
 
 import { ComputeInsightCreationContent } from './components/ComputeInsightCreationContent'
-import { CreateComputeInsightFormFields } from './components/types'
+import { CreateComputeInsightFormFields } from './types'
 
 export interface InsightCreateEvent {
     // TODO: It will be improved in https://github.com/sourcegraph/sourcegraph/issues/37965

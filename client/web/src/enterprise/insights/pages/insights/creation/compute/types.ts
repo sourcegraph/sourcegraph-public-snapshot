@@ -1,4 +1,11 @@
-import { EditableDataSeries } from '../../../../../components'
+import { EditableDataSeries } from '../../../../components'
+
+export enum ComputeInsightMap {
+    Repositories = 'repositories',
+    Path = 'path',
+    Author = 'author',
+    Date = 'date',
+}
 
 export interface CreateComputeInsightFormFields {
     /**
@@ -20,4 +27,6 @@ export interface CreateComputeInsightFormFields {
      * The total number of dashboards on which this insight is referenced.
      */
     dashboardReferenceCount: number
+
+    groupBy: ComputeInsightMap
 }

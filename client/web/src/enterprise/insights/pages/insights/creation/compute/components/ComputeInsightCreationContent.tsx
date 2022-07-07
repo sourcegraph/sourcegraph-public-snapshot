@@ -1,32 +1,34 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { Code, Input } from '@sourcegraph/wildcard'
+import { Code, Input, Link } from '@sourcegraph/wildcard'
 
 import {
-    CreationUiLayout,
+    createDefaultEditSeries,
     CreationUIForm,
+    CreationUiLayout,
     CreationUIPreview,
     FormChangeEvent,
-    SubmissionErrors,
-    FormSeries,
     FormGroup,
-    useForm,
-    createDefaultEditSeries,
-    useField,
-    insightTitleValidator,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
-    RepositoriesField,
+    FormSeries,
     getDefaultInputProps,
+    insightRepositoriesAsyncValidator,
+    insightRepositoriesValidator,
+    insightTitleValidator,
+    RepositoriesField,
+    SubmissionErrors,
+    useField,
+    useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
+import { ComputeInsightMap, CreateComputeInsightFormFields } from '../types'
 
-import { CreateComputeInsightFormFields } from './types'
+import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
 
 const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     series: [createDefaultEditSeries({ edit: true })],
     title: '',
     repositories: '',
+    groupBy: ComputeInsightMap.Repositories,
     dashboardReferenceCount: 0,
 }
 
@@ -45,7 +47,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
     const { licensed } = useUiFeatures()
 
-    const form = useForm<CreateComputeInsightFormFields>({
+    const { formAPI, ref, handleSubmit } = useForm<CreateComputeInsightFormFields>({
         initialValues: { ...INITIAL_INSIGHT_VALUES, ...initialValue },
         onSubmit,
         onChange,
@@ -54,15 +56,15 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     const title = useField({
         name: 'title',
-        formApi: form.formAPI,
+        formApi: formAPI,
         validators: { sync: insightTitleValidator },
     })
 
     const repositories = useField({
         name: 'repositories',
-        formApi: form.formAPI,
+        formApi: formAPI,
         validators: {
-            // Turn off any validations for the repositories field in we are in all repos mode
+            // Turn off any validations for the repositories' field in we are in all repos mode
             sync: insightRepositoriesValidator,
             async: insightRepositoriesAsyncValidator,
         },
@@ -70,12 +72,17 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     const series = useField({
         name: 'series',
-        formApi: form.formAPI,
+        formApi: formAPI,
+    })
+
+    const groupBy = useField({
+        name: 'groupBy',
+        formApi: formAPI,
     })
 
     return (
         <CreationUiLayout {...attributes}>
-            <CreationUIForm>
+            <CreationUIForm as="form" ref={ref} onSubmit={handleSubmit}>
                 <FormGroup
                     name="insight repositories"
                     title="Targeted repositories"
@@ -93,7 +100,10 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
+                <hr className="my-4 w-100" />
+
                 <FormGroup
+                    innerRef={series.input.ref}
                     name="data series group"
                     title="Data series"
                     subtitle={
@@ -101,7 +111,6 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                             ? 'Add any number of data series to your chart'
                             : 'Add up to 10 data series to your chart'
                     }
-                    innerRef={series.input.ref}
                 >
                     <FormSeries
                         seriesField={series}
@@ -123,6 +132,18 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         }
                     />
                 </FormGroup>
+
+                <hr className="my-4 w-100" />
+
+                <FormGroup name="map result" title="Map result">
+                    <ComputeInsightMapPicker series={series.input.value} {...groupBy.input} />
+
+                    <small className="text-muted mt-3">
+                        Learn more about <Link to="">grouping results</Link>
+                    </small>
+                </FormGroup>
+
+                <hr className="my-4 w-100" />
 
                 <FormGroup name="chart settings group" title="Chart settings">
                     <Input
