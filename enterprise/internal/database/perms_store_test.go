@@ -2694,19 +2694,31 @@ func testPermsStore_RepoIDsWithNoPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		s := perms(logger, db, time.Now)
+		ctx := context.Background()
 		t.Cleanup(func() {
-			cleanupReposTable(t, s)
 			cleanupPermsTables(t, s)
+
+			if t.Failed() {
+				return
+			}
+
+			q := `TRUNCATE TABLE external_services, repo CASCADE`
+			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+				t.Fatal(err)
+			}
 		})
 
-		ctx := context.Background()
-
-		// Create three test repositories
+		// Create five test repositories, one of which belongs to an external service
+		// with auto sync disabled
 		qs := []*sqlf.Query{
 			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),                      // ID=1
 			sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                                      // ID=2
 			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`),                    // ID=3
 			sqlf.Sprintf(`INSERT INTO repo(name, private, deleted_at) VALUES('private_repo_3', TRUE, NOW())`), // ID=4
+			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_4', TRUE)`),                    // ID=5
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{"automaticRepoPermissionsSync": false}')`),
+			sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+                                 VALUES(5, 1, '')`),
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2891,9 +2903,11 @@ func testPermsStore_ReposIDsWithOldestPerms(db database.DB) func(*testing.T) {
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
-			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
+			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'private_repo_4', TRUE)`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{"automaticRepoPermissionsSync": true}')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(2, 'GitHub #2', 'GITHUB', '{"automaticRepoPermissionsSync": false}')`),
 			sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
-                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, '')`),
+                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, ''), (4, 2, '')`),
 		}
 
 		for _, q := range qs {
@@ -2915,6 +2929,10 @@ func testPermsStore_ReposIDsWithOldestPerms(db database.DB) func(*testing.T) {
 				RepoID:  3,
 				Perm:    authz.Read,
 				UserIDs: toMapset(1),
+			}, {
+				RepoID:  4,
+				Perm:    authz.Read,
+				UserIDs: toMapset(1),
 			},
 		}
 		for _, perm := range perms {
@@ -2932,6 +2950,8 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 		if err := s.execute(ctx, q); err != nil {
 			t.Fatal(err)
 		}
+
+		// Repo 4 should never be returned since its external service has disabled automatic repo perms syncing
 
 		// Should only get repo 1 back
 		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 0)

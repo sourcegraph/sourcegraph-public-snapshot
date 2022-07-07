@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -1595,16 +1596,30 @@ AND (
 }
 
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
+	excludedExternalServices, err := s.loadExternalServiceIDsWithAutoSyncDisabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	excludedExternalServicesClause := sqlf.Sprintf("TRUE")
+	if len(excludedExternalServices) > 0 {
+		excludedExternalServicesList := strings.Trim(strings.Replace(fmt.Sprint(excludedExternalServices), " ", ",", -1), "[]")
+		excludedExternalServicesClause = sqlf.Sprintf(fmt.Sprintf("(extsvc_repos.external_service_id IS NULL OR extsvc_repos.external_service_id NOT IN (%s))", excludedExternalServicesList))
+	}
+
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.RepoIDsWithNoPerms
 SELECT repo.id, NULL FROM repo
+LEFT JOIN external_service_repos AS extsvc_repos
+ON repo.id = extsvc_repos.repo_id
 WHERE repo.deleted_at IS NULL
 AND repo.private = TRUE
 AND repo.id NOT IN
 	(SELECT perms.repo_id FROM repo_permissions AS perms
 	 UNION
 	 SELECT pending.repo_id FROM repo_pending_permissions AS pending)
-`)
+	 AND %s
+`, excludedExternalServicesClause)
 
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
@@ -1646,16 +1661,31 @@ func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age
 		cutoff := s.clock().Add(-1 * age)
 		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
 	}
+
+	excludedExternalServices, err := s.loadExternalServiceIDsWithAutoSyncDisabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	excludedExternalServicesClause := sqlf.Sprintf("TRUE")
+	if len(excludedExternalServices) > 0 {
+		excludedExternalServicesList := strings.Trim(strings.Replace(fmt.Sprint(excludedExternalServices), " ", ",", -1), "[]")
+		excludedExternalServicesClause = sqlf.Sprintf(fmt.Sprintf("(extsvc_repos.external_service_id IS NULL OR extsvc_repos.external_service_id NOT IN (%s))", excludedExternalServicesList))
+	}
+
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.ReposIDsWithOldestPerms
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
+LEFT JOIN external_service_repos AS extsvc_repos
+ON perms.repo_id = extsvc_repos.repo_id
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
 	 WHERE repo.deleted_at IS NULL)
+	AND %s
 AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
-`, cutoffClause, limit)
+`, excludedExternalServicesClause, cutoffClause, limit)
 
 	pairs, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
@@ -1692,6 +1722,46 @@ func (s *permsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[in
 	}
 
 	return results, nil
+}
+
+// loadExternalServiceWithConfig runs the query and returns a list of external services along with their configurations
+func (s *permsStore) loadExternalServiceIDsWithAutoSyncDisabled(ctx context.Context) ([]int64, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/database/prems_store.go:PermsStore.ReposIDsWithOldestPerms
+SELECT extsvcs.id, extsvcs.kind, extsvcs.config FROM external_services AS extsvcs
+WHERE extsvcs.deleted_at IS NULL
+	`)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var excludedExternalServices []int64
+	for rows.Next() {
+		var externalService api.ExternalService
+		if err = rows.Scan(&externalService.ID, &externalService.Kind, &externalService.Config); err != nil {
+			return nil, err
+		}
+
+		parsed, err := extsvc.ParseConfig(externalService.Kind, externalService.Config)
+		if err != nil {
+			continue // Ignore error and continue loop, as that would be the default behaviour
+		}
+
+		switch c := parsed.(type) {
+		case *schema.GitHubConnection:
+			if !c.AutomaticRepoPermissionsSync {
+				excludedExternalServices = append(excludedExternalServices, externalService.ID)
+			}
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return excludedExternalServices, nil
 }
 
 func (s *permsStore) UserIsMemberOfOrgHasCodeHostConnection(ctx context.Context, userID int32) (has bool, err error) {
