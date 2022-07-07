@@ -786,6 +786,37 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
 
+## sg insights
+
+Tools to interact with Code Insights data.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights decode-id
+
+Decodes an encoded insight ID found on the frontend into a view unique_id.
+
+Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights series-ids
+
+Gets all insight series ID from the base64 encoded frontend ID.
+
+Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ## sg doctor
 
 DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.
