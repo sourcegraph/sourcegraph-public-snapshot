@@ -27,7 +27,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Fatal("Expected Count to be 0.")
 	}
 
-	_, err = SurveyResponses(db).Create(ctx, nil, nil, 10, nil, nil, nil)
+	_, err = SurveyResponses(db).Create(ctx, nil, nil, 10, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

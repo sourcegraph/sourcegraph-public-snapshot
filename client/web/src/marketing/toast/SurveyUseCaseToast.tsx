@@ -42,7 +42,6 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
         toastContentClassName="mt-0"
         cta={
             <SurveyUseCaseForm
-                title="What do you use Sourcegraph for?"
                 authenticatedUser={authenticatedUser}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={onChangeOtherUseCase}

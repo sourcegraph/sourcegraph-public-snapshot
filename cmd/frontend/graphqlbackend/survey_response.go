@@ -71,7 +71,7 @@ type SurveySubmissionInput struct {
 	Email *string
 	// Score is the user's likelihood of recommending Sourcegraph to a friend, from 0-10.
 	Score int32
-	// OtherUseCase is the answer to "What else do you use Sourcegraph to do?".
+	// OtherUseCase is the answer to "What do you use Sourcegraph for?".
 	OtherUseCase *string
 	// Better is the answer to "What can Sourcegraph do to provide a better product"
 	Better *string

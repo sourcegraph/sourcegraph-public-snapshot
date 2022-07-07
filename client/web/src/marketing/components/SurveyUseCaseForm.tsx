@@ -12,7 +12,6 @@ import styles from './SurveyUseCaseForm.module.scss'
 interface SurveyUseCaseFormProps extends UseCaseFeedbackState, UseCaseFeedbackModifiers {
     formLabelClassName?: string
     className?: string
-    title: string
     authenticatedUser?: AuthenticatedUser | null
 }
 
@@ -25,7 +24,6 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
     onChangeEmail,
     formLabelClassName,
     className,
-    title,
     authenticatedUser,
 }) => (
     <div className={classNames('mb-2', className)}>
@@ -34,8 +32,8 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             maxRows={6}
             containerClassName="mt-3"
             label={
-                <H4 id="usecase-group" className={classNames('d-flex', styles.title, formLabelClassName)}>
-                    {title}
+                <H4 as="span" className={classNames('d-flex', styles.title, formLabelClassName)}>
+                    What do you use Sourcegraph for?
                 </H4>
             }
             onChange={event => onChangeOtherUseCase(event.target.value)}
@@ -46,9 +44,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             maxRows={6}
             containerClassName="mt-3"
             label={
-                <Text size="small" className={formLabelClassName}>
+                <H4 as="span" className={classNames('d-flex', styles.title, formLabelClassName)}>
                     What would make Sourcegraph better?
-                </Text>
+                </H4>
             }
             onChange={event => onChangeBetter(event.target.value)}
             value={better}
