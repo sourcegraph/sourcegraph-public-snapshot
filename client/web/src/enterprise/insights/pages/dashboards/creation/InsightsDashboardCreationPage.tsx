@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -90,17 +90,18 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
                                 Cancel
                             </Button>
 
-                            <LoaderButton
-                                alwaysShowLabel={true}
-                                data-testid="insight-save-button"
-                                loading={formAPI.submitting}
-                                label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
-                                type="submit"
-                                disabled={dashboard.createPermissions.submit.disabled || formAPI.submitting}
-                                data-tooltip={dashboard.createPermissions.submit.tooltip}
-                                className="ml-2 mb-2"
-                                variant="primary"
-                            />
+                            <Tooltip content={dashboard.createPermissions.submit.tooltip}>
+                                <LoaderButton
+                                    alwaysShowLabel={true}
+                                    data-testid="insight-save-button"
+                                    loading={formAPI.submitting}
+                                    label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
+                                    type="submit"
+                                    disabled={dashboard.createPermissions.submit.disabled || formAPI.submitting}
+                                    className="ml-2 mb-2"
+                                    variant="primary"
+                                />
+                            </Tooltip>
                         </>
                     )}
                 </InsightsDashboardCreationContent>

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -63,21 +63,21 @@ export const MonitorLogNode: React.FunctionComponent<
                         <ChevronRightIcon className="mr-2 flex-shrink-0" />
                     )}
                     {hasError ? (
-                        <Icon
-                            className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
-                            aria-label="One or more runs of this code monitor have an error"
-                            data-tooltip="One or more runs of this code monitor have an error"
-                            data-placement="top"
-                            svgPath={mdiAlertCircle}
-                        />
+                        <Tooltip content="One or more runs of this code monitor have an error" placement="top">
+                            <Icon
+                                aria-label="One or more runs of this code monitor have an error"
+                                svgPath={mdiAlertCircle}
+                                className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
+                            />
+                        </Tooltip>
                     ) : (
-                        <Icon
-                            className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
-                            aria-label="Monitor running as normal"
-                            data-tooltip="Monitor running as normal"
-                            data-placement="top"
-                            svgPath={mdiCheckBold}
-                        />
+                        <Tooltip content="Monitor running as normal" placement="top">
+                            <Icon
+                                aria-label="Monitor running as normal"
+                                svgPath={mdiCheckBold}
+                                className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
+                            />
+                        </Tooltip>
                     )}
                     {monitor.description}
                     {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}

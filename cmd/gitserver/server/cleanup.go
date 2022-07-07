@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -462,12 +463,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 	// Repo sizes are set only once during the first janitor run.
 	// There is no need for a second run because all repo sizes will be set until this moment
-	s.setRepoSizesOnce.Do(func() {
-		err = s.setRepoSizes(context.Background(), repoToSize)
-		if err != nil {
-			cleanupLogger.Error("setting repo sizes", log.Error(err))
-		}
-	})
+	err = s.setRepoSizes(context.Background(), repoToSize)
+	if err != nil {
+		cleanupLogger.Error("setting repo sizes", log.Error(err))
+	}
 
 	if s.DiskSizer == nil {
 		s.DiskSizer = &StatDiskSizer{}
@@ -481,40 +480,41 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 }
 
-// setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
+// setRepoSizes uses calculated sizes of repos to update database entries of repos with actual sizes
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
 	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
 
-	if len(repoToSize) == 0 {
+	reposNumber := len(repoToSize)
+	if reposNumber == 0 {
 		logger.Info("file system walk didn't yield any directory sizes")
 		return nil
 	}
 
 	logger.Info("directory sizes calculated during file system walk",
-		log.Int("repoToSize", len(repoToSize)))
+		log.Int("repoToSize", reposNumber))
 
-	db := s.DB
-	gitserverRepos := db.GitserverRepos()
-	// getting all the repos without size
-	reposWithoutSize, err := gitserverRepos.ListReposWithoutSize(ctx)
+	// repos number is limited in order not to overwhelm the database with massive batch updates
+	// of every single row of `gitserver_repos` table. This will lead to eventual consistency of
+	// repo sizes in the database, but this is totally acceptable.
+	if reposNumber > 10000 {
+		reposNumber = 10000
+	}
+
+	// getting repo IDs for given repo names
+	foundRepos, err := s.fetchRepos(ctx, repoToSize, reposNumber)
 	if err != nil {
 		return err
 	}
-	if len(reposWithoutSize) == 0 {
-		logger.Info("all repos in the DB have their sizes")
-		return nil
-	}
 
-	// preparing a mapping of repoID to its size which should be inserted
 	reposToUpdate := make(map[api.RepoID]int64)
-	for repoName, repoID := range reposWithoutSize {
-		if size, exists := repoToSize[repoName]; exists {
-			reposToUpdate[repoID] = size
+	for _, repo := range foundRepos {
+		if size, exists := repoToSize[repo.Name]; exists {
+			reposToUpdate[repo.ID] = size
 		}
 	}
 
 	// updating repos
-	err = gitserverRepos.UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	err = s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
 	if err != nil {
 		return err
 	}
@@ -522,6 +522,30 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		log.Int("reposToUpdate", len(reposToUpdate)))
 
 	return nil
+}
+
+// fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
+func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]*types.Repo, error) {
+	reposToUpdateNames := make([]string, count)
+	idx := 0
+	// random nature of map traversal yields a different subset of repos every time this function is called
+	for repoName := range repoToSize {
+		if idx >= count {
+			break
+		}
+		reposToUpdateNames[idx] = string(repoName)
+		idx++
+	}
+
+	foundRepos, err := s.DB.Repos().List(ctx, database.ReposListOptions{
+		Names:          reposToUpdateNames,
+		LimitOffset:    &database.LimitOffset{Limit: count},
+		IncludeBlocked: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return foundRepos, nil
 }
 
 // DiskSizer gets information about disk size and free space.
