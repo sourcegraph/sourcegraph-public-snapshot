@@ -135,6 +135,26 @@ export const CODEINTEL_STATISTICS = gql`
                             totalRegisteredUsers
                         }
                     }
+                    hovers {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    searchBasedEvents {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    preciseEvents {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    crossRepoEvents {
+                        summary {
+                            totalCount
+                        }
+                    }
                 }
             }
         }

@@ -646,11 +646,18 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             },
         }
     )
-    const [stats, legends] = useMemo(() => {
+    const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
         }
-        const { referenceClicks, definitionClicks } = data.site.analytics.codeIntel
+        const {
+            referenceClicks,
+            definitionClicks,
+            hovers,
+            searchBasedEvents,
+            preciseEvents,
+            crossRepoEvents,
+        } = data.site.analytics.codeIntel
         const stats: Series<StandardDatum>[] = [
             {
                 id: 'references',
@@ -698,7 +705,45 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             },
         ]
 
-        return [stats, legends]
+        const totalEvents = definitionClicks.summary.totalCount + referenceClicks.summary.totalCount
+
+        const calculatorProps = {
+            label: 'Intel Events',
+            color: 'var(--purple)',
+            description: `Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.`,
+            value: totalEvents,
+            items: [
+                {
+                    label: 'Search based',
+                    minPerItem: 0.5,
+                    value: Math.floor(
+                        (searchBasedEvents.summary.totalCount * totalEvents) / hovers.summary.totalCount || 0
+                    ),
+                    description:
+                        'Searched based code intel reconizes symbols and is supported across all languages. Search intel events are not exact, thus their time savings is not as high as precise events. ',
+                },
+                {
+                    label: 'Precise events',
+                    minPerItem: 1,
+                    value: Math.floor(
+                        (preciseEvents.summary.totalCount * totalEvents) / hovers.summary.totalCount || 0
+                    ),
+                    description:
+                        'Precise code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant time savings.',
+                },
+                {
+                    label: 'Cross repository <br/> code intel events',
+                    minPerItem: 3,
+                    value: Math.floor(
+                        (crossRepoEvents.summary.totalCount * totalEvents) / hovers.summary.totalCount || 0
+                    ),
+                    description:
+                        'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
+                },
+            ],
+        }
+
+        return [stats, legends, calculatorProps]
     }, [data, dateRange, eventAggregation])
 
     if (error) {
@@ -763,6 +808,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         </div>
                     </div>
                 )}
+                <H3 className="my-3">Time saved</H3>
+                {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
                 <H4 className="my-3">Suggestions</H4>
                 <div className={classNames(styles.border, 'mb-3')} />
                 <ul className="mb-3 pl-3">

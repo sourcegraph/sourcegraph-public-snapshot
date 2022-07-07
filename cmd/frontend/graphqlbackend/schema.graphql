@@ -6010,7 +6010,7 @@ type AnalyticsUsersResult {
 }
 
 """
-Users' analytics.
+CodeIntel' analytics.
 """
 type AnalyticsCodeIntelResult {
     """
@@ -6025,6 +6025,22 @@ type AnalyticsCodeIntelResult {
     Browser extension installs
     """
     browserExtensionInstalls: AnalyticsStatItem!
+    """
+    Hover events
+    """
+    hovers: AnalyticsStatItem!
+    """
+    Search based events
+    """
+    searchBasedEvents: AnalyticsStatItem!
+    """
+    Precise events
+    """
+    preciseEvents: AnalyticsStatItem!
+    """
+    Cross-repo events
+    """
+    crossRepoEvents: AnalyticsStatItem!
 }
 
 type AnalyticsReposSummartResult {

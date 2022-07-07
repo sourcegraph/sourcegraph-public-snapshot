@@ -121,13 +121,13 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                 </div>
             </Card>
             <div className={styles.calculatorList}>
-                {memoizedItems.map(({ label, percentage, minPerItem, hoursSaved }, index) => (
+                {memoizedItems.map(({ label, percentage, minPerItem, hoursSaved, value, description }, index) => (
                     <React.Fragment key={label}>
                         <Text
                             className="text-nowrap d-flex align-items-center"
                             dangerouslySetInnerHTML={{ __html: label }}
                         />
-                        {percentage >= 0 && (
+                        {percentage >= 0 ? (
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <Input
                                     type="number"
@@ -136,6 +136,15 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                     onChange={e => updatePercentage(index, Number(e.target.value))}
                                 />
                                 <Text as="span">% of total</Text>
+                            </div>
+                        ) : (
+                            <div className="d-flex flex-column align-items-center justify-content-center">
+                                <Text as="span" weight="bold" className={styles.countBoxValue}>
+                                    {formatNumber(value)}
+                                </Text>
+                                <Text as="span" alignment="center">
+                                    events
+                                </Text>
                             </div>
                         )}
                         <div className="d-flex flex-column align-items-center justify-content-center">
@@ -150,7 +159,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                             </Text>
                         </div>
                         <div className="d-flex flex-column align-items-center justify-content-center">
-                            <Text as="span" weight="bold">
+                            <Text as="span" weight="bold" className={styles.countBoxValue}>
                                 {formatNumber(hoursSaved)}
                             </Text>
                             <Text as="span" alignment="center">
