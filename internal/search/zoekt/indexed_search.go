@@ -2,9 +2,9 @@ package zoekt
 
 import (
 	"context"
-	"unicode/utf8"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
