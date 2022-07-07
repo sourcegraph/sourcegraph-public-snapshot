@@ -31,7 +31,10 @@ exports[`LoaderInput should render a loading spinner when loading prop is true 1
       />
     </div>
     <div
+      aria-label="Loading"
+      aria-live="polite"
       class="loadingSpinner spinner"
+      role="img"
     />
   </div>
 </DocumentFragment>

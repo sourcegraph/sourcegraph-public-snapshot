@@ -202,7 +202,10 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       data-testid="action-item-spinner"
     >
       <div
+        aria-label="Loading"
+        aria-live="polite"
         class="loadingSpinner"
+        role="img"
       />
     </div>
   </button>
