@@ -38,8 +38,8 @@ type Provider struct {
 
 	// NOTE: We do not need mutex because there is no concurrent access to these
 	// 	fields in the current implementation.
-	cachedAllUserEmails map[string]string   // username <-> email
-	cachedGroupMembers  map[string][]string // group <-> members
+	cachedAllUserEmails map[string]string   // username -> email
+	cachedGroupMembers  map[string][]string // group -> members
 }
 
 type p4Execer interface {
@@ -99,13 +99,10 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
-		// e.g. alice <alice@example.com> (Alice) accessed 2020/12/04
-		fields := strings.Fields(scanner.Text())
-		if len(fields) < 2 {
+		username, email, ok := scanEmail(scanner)
+		if !ok {
 			continue
 		}
-		username := fields[0]                  // e.g. alice
-		email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
 
 		if _, ok := emailSet[email]; ok {
 			accountData, err := jsoniter.Marshal(
@@ -186,7 +183,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchUserPermsByToken"}
 }
 
-// getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
+// getAllUserEmails returns a set of username -> email pairs of all users in the Perforce server.
 func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
 	if p.cachedAllUserEmails != nil {
 		return p.cachedAllUserEmails, nil
@@ -201,14 +198,10 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
-		// e.g. alice <alice@example.com> (Alice) accessed 2020/12/04
-		fields := strings.Fields(scanner.Text())
-		if len(fields) < 2 {
+		username, email, ok := scanEmail(scanner)
+		if !ok {
 			continue
 		}
-		username := fields[0]                  // e.g. alice
-		email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
-
 		userEmails[username] = email
 	}
 	if err = scanner.Err(); err != nil {
@@ -344,4 +337,14 @@ func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
 		return []string{"the user does not have super access"}
 	}
 	return []string{"validate user access level: " + err.Error()}
+}
+
+func scanEmail(s *bufio.Scanner) (string, string, bool) {
+	fields := strings.Fields(s.Text())
+	if len(fields) < 2 {
+		return "", "", false
+	}
+	username := fields[0]                  // e.g. alice
+	email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
+	return username, email, true
 }
