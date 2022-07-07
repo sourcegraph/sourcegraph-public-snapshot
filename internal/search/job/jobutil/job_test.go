@@ -29,9 +29,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -42,32 +39,22 @@ func TestNewPlanJob(t *testing.T) {
           (REPOPAGER
             (repoOpts.searchContextSpec . @userA)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (ZOEKTREPOSUBSETTEXTSEARCH
                 (query . substr:"foo")
-                (type . text)
-                (fileMatchLimit . 500)
-                (select . ))))
+                (type . text))))
           (REPOPAGER
             (repoOpts.searchContextSpec . @userA)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (patternInfo . TextPatternInfo{"foo",re,filematchlimit:500})
-                (numRepos . 0)
-                (indexed . false)
-                (useFullDeadline . true)))))
+                (indexed . false)))))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.searchContextSpec . @userA))
         (PARALLEL
           NoopJob
           (REPOSEARCH
             (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . @userA)
-            (filePatternsReposMustInclude . [])
-            (filePatternsReposMustExclude . [])
-            (contentBasedLangFilters . false)
             (mode . None)))))))`),
 	}, {
 		query:      `foo context:global`,
@@ -78,9 +65,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -88,19 +72,12 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . substr:"foo")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           (repoOpts.searchContextSpec . global))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.searchContextSpec . global))
         (REPOSEARCH
           (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . global)
-          (filePatternsReposMustInclude . [])
-          (filePatternsReposMustExclude . [])
-          (contentBasedLangFilters . false)
           (mode . SkipUnindexed))))))`),
 	}, {
 		query:      `foo`,
@@ -111,9 +88,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -121,19 +95,12 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . substr:"foo")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
         (REPOSEARCH
           (repoOpts.repoFilters.0 . foo)
-          (filePatternsReposMustInclude . [])
-          (filePatternsReposMustExclude . [])
-          (contentBasedLangFilters . false)
           (mode . SkipUnindexed))))))`),
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
@@ -144,9 +111,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -157,32 +121,22 @@ func TestNewPlanJob(t *testing.T) {
           (REPOPAGER
             (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (ZOEKTREPOSUBSETTEXTSEARCH
                 (query . substr:"foo")
-                (type . text)
-                (fileMatchLimit . 500)
-                (select . ))))
+                (type . text))))
           (REPOPAGER
             (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (patternInfo . TextPatternInfo{"foo",re,filematchlimit:500})
-                (numRepos . 0)
-                (indexed . false)
-                (useFullDeadline . true)))))
+                (indexed . false)))))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.repoFilters.0 . sourcegraph/sourcegraph))
         (PARALLEL
           NoopJob
           (REPOSEARCH
             (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)(repoOpts.repoFilters.1 . foo)
-            (filePatternsReposMustInclude . [])
-            (filePatternsReposMustExclude . [])
-            (contentBasedLangFilters . false)
             (mode . None)))))))`),
 	}, {
 		query:      `ok ok`,
@@ -193,9 +147,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -203,19 +154,12 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . regex:"ok(?-s:.)*?ok")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
         (REPOSEARCH
           (repoOpts.repoFilters.0 . (?:ok).*?(?:ok))
-          (filePatternsReposMustInclude . [])
-          (filePatternsReposMustExclude . [])
-          (contentBasedLangFilters . false)
           (mode . SkipUnindexed))))))`),
 	}, {
 		query:      `ok @thing`,
@@ -226,9 +170,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -236,19 +177,12 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . substr:"ok @thing")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
         (REPOSEARCH
           (repoOpts.repoFilters.0 . ok )
-          (filePatternsReposMustInclude . [])
-          (filePatternsReposMustExclude . [])
-          (contentBasedLangFilters . false)
           (mode . SkipUnindexed))))))`),
 	}, {
 		query:      `@nope`,
@@ -259,9 +193,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -269,11 +200,7 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . substr:"@nope")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
@@ -287,9 +214,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -297,11 +221,7 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . regex:"foo(?-s:.)*?@bar")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
@@ -315,9 +235,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -325,11 +242,7 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (ZOEKTGLOBALSYMBOLSEARCH
           (query . sym:substr:"test")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . symbol)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
@@ -343,9 +256,6 @@ func TestNewPlanJob(t *testing.T) {
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -353,17 +263,9 @@ func TestNewPlanJob(t *testing.T) {
       (PARALLEL
         (COMMITSEARCH
           (query . *protocol.MessageMatches(test))
-          (repoOpts . RepoFilters: []
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+          (repoOpts.onlyCloned . true)
           (diff . false)
-          (limit . 500)
-          (includeModifiedFiles . false))
+          (limit . 500))
         (REPOSCOMPUTEEXCLUDED
           )
         NoopJob))))`),
@@ -376,9 +278,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -386,17 +285,9 @@ NoArchived: true
       (PARALLEL
         (DIFFSEARCH
           (query . *protocol.DiffMatches(test))
-          (repoOpts . RepoFilters: []
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+          (repoOpts.onlyCloned . true)
           (diff . true)
-          (limit . 500)
-          (includeModifiedFiles . false))
+          (limit . 500))
         (REPOSCOMPUTEEXCLUDED
           )
         NoopJob))))`),
@@ -409,9 +300,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -419,25 +307,13 @@ NoArchived: true
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . content_substr:"test")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (COMMITSEARCH
           (query . *protocol.MessageMatches(test))
-          (repoOpts . RepoFilters: []
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+          (repoOpts.onlyCloned . true)
           (diff . false)
-          (limit . 500)
-          (includeModifiedFiles . false))
+          (limit . 500))
         (REPOSCOMPUTEEXCLUDED
           )
         NoopJob))))`),
@@ -450,9 +326,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -463,45 +336,27 @@ NoArchived: true
           (REPOPAGER
             (repoOpts.repoFilters.0 . test)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (ZOEKTREPOSUBSETTEXTSEARCH
                 (query . substr:"test")
-                (type . text)
-                (fileMatchLimit . 500)
-                (select . ))))
+                (type . text))))
           (REPOPAGER
             (repoOpts.repoFilters.0 . test)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (patternInfo . TextPatternInfo{"test",re,filematchlimit:500})
-                (numRepos . 0)
-                (indexed . false)
-                (useFullDeadline . true)))))
+                (indexed . false)))))
         (REPOPAGER
           (repoOpts.repoFilters.0 . test)
           (useIndex . yes)
-          (containsRefGlobs . false)
           (PARTIALREPOS
             (ZOEKTSYMBOLSEARCH
-              (query . sym:substr:"test")
-              (fileMatchLimit . 500)
-              (select . ))))
+              (query . sym:substr:"test"))))
         (COMMITSEARCH
           (query . *protocol.MessageMatches(test))
-          (repoOpts . RepoFilters: ["test"]
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+          (repoOpts.repoFilters.0 . test)(repoOpts.onlyCloned . true)
           (diff . false)
-          (limit . 500)
-          (includeModifiedFiles . false))
+          (limit . 500))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.repoFilters.0 . test))
         (PARALLEL
@@ -509,17 +364,13 @@ NoArchived: true
           (REPOPAGER
             (repoOpts.repoFilters.0 . test)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (SEARCHERSYMBOLSEARCH
-                (patternInfo . TextPatternInfo{"test",re,filematchlimit:500})
+                (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
                 (numRepos . 0)
                 (limit . 500))))
           (REPOSEARCH
             (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
-            (filePatternsReposMustInclude . [])
-            (filePatternsReposMustExclude . [])
-            (contentBasedLangFilters . false)
             (mode . None)))))))`),
 	}, {
 		query:      `type:file type:commit test`,
@@ -530,9 +381,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -540,25 +388,13 @@ NoArchived: true
       (PARALLEL
         (ZOEKTGLOBALTEXTSEARCH
           (query . content_substr:"test")
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . text)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (COMMITSEARCH
           (query . *protocol.MessageMatches(test))
-          (repoOpts . RepoFilters: []
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+          (repoOpts.onlyCloned . true)
           (diff . false)
-          (limit . 500)
-          (includeModifiedFiles . false))
+          (limit . 500))
         (REPOSCOMPUTEEXCLUDED
           )
         NoopJob))))`),
@@ -571,9 +407,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -584,45 +417,27 @@ NoArchived: true
           (REPOPAGER
             (repoOpts.repoFilters.0 . test)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (ZOEKTREPOSUBSETTEXTSEARCH
                 (query . substr:"test")
-                (type . text)
-                (fileMatchLimit . 500)
-                (select . ))))
+                (type . text))))
           (REPOPAGER
             (repoOpts.repoFilters.0 . test)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (patternInfo . TextPatternInfo{"test",re,filematchlimit:500})
-                (numRepos . 0)
-                (indexed . false)
-                (useFullDeadline . true)))))
+                (indexed . false)))))
         (REPOPAGER
           (repoOpts.repoFilters.0 . test)
           (useIndex . yes)
-          (containsRefGlobs . false)
           (PARTIALREPOS
             (ZOEKTSYMBOLSEARCH
-              (query . sym:substr:"test")
-              (fileMatchLimit . 500)
-              (select . ))))
+              (query . sym:substr:"test"))))
         (COMMITSEARCH
           (query . *protocol.MessageMatches(test))
-          (repoOpts . RepoFilters: ["test"]
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+          (repoOpts.repoFilters.0 . test)(repoOpts.onlyCloned . true)
           (diff . false)
-          (limit . 500)
-          (includeModifiedFiles . false))
+          (limit . 500))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.repoFilters.0 . test))
         (PARALLEL
@@ -630,17 +445,13 @@ NoArchived: true
           (REPOPAGER
             (repoOpts.repoFilters.0 . test)
             (useIndex . yes)
-            (containsRefGlobs . false)
             (PARTIALREPOS
               (SEARCHERSYMBOLSEARCH
-                (patternInfo . TextPatternInfo{"test",re,filematchlimit:500})
+                (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
                 (numRepos . 0)
                 (limit . 500))))
           (REPOSEARCH
             (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
-            (filePatternsReposMustInclude . [])
-            (filePatternsReposMustExclude . [])
-            (contentBasedLangFilters . false)
             (mode . None)))))))`),
 	}, {
 		query:      `(type:commit or type:diff) (a or b)`,
@@ -652,9 +463,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (OR
     (TIMEOUT
       (timeout . 20s)
@@ -663,17 +471,9 @@ NoArchived: true
         (PARALLEL
           (COMMITSEARCH
             (query . (*protocol.MessageMatches((?:a)|(?:b))))
-            (repoOpts . RepoFilters: []
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+            (repoOpts.onlyCloned . true)
             (diff . false)
-            (limit . 500)
-            (includeModifiedFiles . false))
+            (limit . 500))
           (REPOSCOMPUTEEXCLUDED
             )
           (OR
@@ -686,17 +486,9 @@ NoArchived: true
         (PARALLEL
           (DIFFSEARCH
             (query . (*protocol.DiffMatches((?:a)|(?:b))))
-            (repoOpts . RepoFilters: []
-MinusRepoFilters: []
-CommitAfter:
-Visibility: Any
-NoForks: true
-OnlyCloned: true
-NoArchived: true
-)
+            (repoOpts.onlyCloned . true)
             (diff . true)
-            (limit . 500)
-            (includeModifiedFiles . false))
+            (limit . 500))
           (REPOSCOMPUTEEXCLUDED
             )
           (OR
@@ -711,9 +503,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (OR
     (TIMEOUT
       (timeout . 20s)
@@ -724,9 +513,6 @@ NoArchived: true
             )
           (REPOSEARCH
             (repoOpts.repoFilters.0 . a)
-            (filePatternsReposMustInclude . [])
-            (filePatternsReposMustExclude . [])
-            (contentBasedLangFilters . false)
             (mode . None)))))
     (TIMEOUT
       (timeout . 20s)
@@ -735,11 +521,7 @@ NoArchived: true
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"b")
-            (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-            (includePrivate . true)
             (type . text)
-            (fileMatchLimit . 500)
-            (select . )
             )
           (REPOSCOMPUTEEXCLUDED
             )
@@ -753,9 +535,6 @@ NoArchived: true
   (query . )
   (originalQuery . )
   (patternType . literal)
-  (onSourcegraphDotCom . true)
-  (protocol . Streaming)
-  (features . )
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -763,11 +542,7 @@ NoArchived: true
       (PARALLEL
         (ZOEKTGLOBALSYMBOLSEARCH
           (query . (or sym:substr:"a" sym:substr:"b"))
-          (repoScope . ["(and branch=\"HEAD\" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)"])
-          (includePrivate . true)
           (type . symbol)
-          (fileMatchLimit . 500)
-          (select . )
           )
         (REPOSCOMPUTEEXCLUDED
           )
@@ -814,18 +589,12 @@ func TestToEvaluateJob(t *testing.T) {
 	autogold.Want("root limit for streaming search", `
 (REPOSEARCH
   (repoOpts.repoFilters.0 . foo)
-  (filePatternsReposMustInclude . [])
-  (filePatternsReposMustExclude . [])
-  (contentBasedLangFilters . false)
   (mode . SkipUnindexed))
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
 (REPOSEARCH
   (repoOpts.repoFilters.0 . foo)
-  (filePatternsReposMustInclude . [])
-  (filePatternsReposMustExclude . [])
-  (contentBasedLangFilters . false)
   (mode . SkipUnindexed))
 `).Equal(t, test("foo", search.Batch))
 }
