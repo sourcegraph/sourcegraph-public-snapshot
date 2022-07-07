@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,9 +19,73 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
+func testSyncWebhookWorker(repoStore repos.Store) func(t *testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		// testSvc := &types.ExternalService{
+		// 	Kind:        extsvc.KindGitHub,
+		// 	DisplayName: "TestService",
+		// 	Config:      "{}",
+		// }
+
+		// err := repoStore.ExternalServiceStore().Upsert(ctx, testSvc)
+		// if err != nil {
+		// 	t.Fatal(err)
+		// }
+		// t.Logf("Test service created, ID: %d", testSvc.ID)
+
+		testRepo := &types.Repo{
+			Name:     "github.com/susantoscott/Task-Tracker",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "hi-mom-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+		fmt.Printf("testRepo:%+v\n", testRepo)
+
+		q := sqlf.Sprintf(`insert into create_webhook_jobs (repo) values (%s);`, testRepo.Name)
+		result, err := repoStore.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("result:%+v\n", result)
+		rowsAffected, err := result.RowsAffected()
+		if rowsAffected != 1 {
+			t.Fatalf("Expected 1 row to be affected, got %d", rowsAffected)
+		}
+		fmt.Printf("rowsAffected:%+v\n", rowsAffected)
+		jobChan := make(chan *repos.CreateWebhookJob)
+
+		h := &fakeWebhookCreationHandler{
+			jobChan: jobChan,
+		}
+		worker, resetter := repos.NewWebhookCreatingWorker(ctx, repoStore.Handle(), h, repos.WebhookCreatingWorkerOpts{
+			NumHandlers:    3,
+			WorkerInterval: 1 * time.Millisecond,
+		})
+		go worker.Start()
+		go resetter.Start()
+
+		defer worker.Stop()
+		defer resetter.Stop()
+
+		select {
+		case <-jobChan:
+			t.Log("Job received")
+		case <-time.After(5 * time.Second):
+			t.Fatal("Timeout")
+		}
+
+	}
+}
+
+func testOldSyncWebhookWorker(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		servicesPerKind := createExternalServices(t, s)
 		githubService := servicesPerKind[extsvc.KindGitHub]
@@ -233,5 +298,22 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 				// typestest.Assert.ReposEqual(want...)(t, have)
 			}))
 		}
+	}
+}
+
+type fakeWebhookCreationHandler struct {
+	jobChan chan *repos.CreateWebhookJob
+}
+
+func (h *fakeWebhookCreationHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	cwj, ok := record.(*repos.CreateWebhookJob)
+	if !ok {
+		return errors.Errorf("expected repos.CreateWebhookJob, got %T", record)
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case h.jobChan <- cwj:
+		return nil
 	}
 }

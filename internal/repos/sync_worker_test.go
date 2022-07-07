@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -51,19 +52,19 @@ func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 		h := &fakeRepoSyncHandler{
 			jobChan: jobChan,
 		}
-		worker, resetter := repos.NewSyncWorker(ctx, repoStore.Handle(), h, repos.SyncWorkerOptions{
+		worker, _ := repos.NewSyncWorker(ctx, repoStore.Handle(), h, repos.SyncWorkerOptions{
 			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})
 		go worker.Start()
-		go resetter.Start()
+		// go resetter.Start()
 
 		// There is a race between the worker being stopped and the worker util
 		// finalising the row which means that when running tests in verbose mode we'll
 		// see "sql: transaction has already been committed or rolled back". These
 		// errors can be ignored.
 		defer worker.Stop()
-		defer resetter.Stop()
+		// defer resetter.Stop()
 
 		var job *repos.SyncJob
 		select {
@@ -84,7 +85,9 @@ type fakeRepoSyncHandler struct {
 }
 
 func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	fmt.Println("in the fake Handle")
 	sj, ok := record.(*repos.SyncJob)
+	fmt.Printf("sj:%+v\n", sj)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
@@ -92,6 +95,7 @@ func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, rec
 	case <-ctx.Done():
 		return ctx.Err()
 	case h.jobChan <- sj:
+		fmt.Println("putting sync job in channel")
 		return nil
 	}
 }

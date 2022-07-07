@@ -76,7 +76,7 @@ func NewWebhookCreatingWorker(
 	ctx context.Context,
 	dbHandle basestore.TransactableHandle,
 	handler workerutil.Handler,
-	opts SyncWorkerOptions,
+	opts WebhookCreatingWorkerOpts,
 ) (*workerutil.Worker, *dbworker.Resetter) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
@@ -159,7 +159,7 @@ type CreateWebhookJob struct {
 	ProcessAfter   *time.Time
 	NumResets      int
 	NumFailures    int
-	Repo           *types.Repo
+	RepoName       string
 	Secret         string
 	Token          string
 }
@@ -191,7 +191,7 @@ func (cw *CreateWebhookJob) RecordID() int {
 // }
 
 func CreateSyncWebhook(repoURL string, secret string, token string) error { // will need secret, token, client
-	// fmt.Println("Creating webhook...")
+	fmt.Println("Creating webhook:", repoURL)
 
 	// HOW TO GENERATE THE SECRET
 	// EXTRACTING THE TOKEN FROM THE USER
