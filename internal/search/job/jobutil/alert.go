@@ -88,7 +88,7 @@ func (j *alertJob) Fields(v job.Verbosity) (res []log.Field) {
 		res = append(res,
 			trace.Stringer("query", j.inputs.Query),
 			log.String("originalQuery", j.inputs.OriginalQuery),
-			trace.Scoped("patternType", j.inputs.PatternType),
+			trace.Stringer("patternType", j.inputs.PatternType),
 		)
 	}
 	return res
