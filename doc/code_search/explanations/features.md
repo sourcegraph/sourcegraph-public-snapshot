@@ -48,9 +48,13 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-**Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all).
+**Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all) that include:
 
-If no search context is specified, then the `context:global` is used, which searches over all code connected to Sourcegraph.com
+- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
+- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
+- Search contexts for various software communities like [CNCF](https://sourcegraph.com/search?q=context:cncf), [crates.io](https://sourcegraph.com/search?q=context:crates.io), [jvm](https://sourcegraph.com/search?q=context:jvm), and more.  
+
+If no search context is specified, `context:global` is used.
 
 **Private Sourcegraph instances** support custom search contexts:
 
