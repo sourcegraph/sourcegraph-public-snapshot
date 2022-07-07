@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -72,6 +73,7 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 // ForChangeset returns a ChangesetSource for the given changeset. The changeset.RepoID
 // is used to find the matching code host.
 func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
+	ctx = metrics.ContextWithTask(ctx, "Batches.Changeset")
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -81,12 +83,14 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 
 // ForRepo returns a ChangesetSource for the given repo.
 func (s *sourcer) ForRepo(ctx context.Context, tx SourcerStore, repo *types.Repo) (ChangesetSource, error) {
+	ctx = metrics.ContextWithTask(ctx, "Batches.Repo")
 	// Consider all available external services for this repo.
 	return s.loadBatchesSource(ctx, tx, repo.ExternalServiceIDs())
 }
 
 // ForExternalService returns a ChangesetSource based on the provided external service opts.
 func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+	ctx = metrics.ContextWithTask(ctx, "Batches.ExternalService")
 	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
