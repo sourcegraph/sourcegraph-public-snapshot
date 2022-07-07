@@ -15,6 +15,7 @@ import org.jdesktop.swingx.util.OS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.Date;
 
@@ -58,15 +59,17 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
         // doesn't properly pass the mouse events to Swing.
         // 4px is the minimum amount to make it work for the window resize, the splitter works without a padding.
+        JPanel browserContainerForOptionalBorder = new JPanel(new BorderLayout());
         if (OS.isMacOSX()) {
-            browserAndLoadingPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+            browserContainerForOptionalBorder.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
         }
+        browserContainerForOptionalBorder.add(browserAndLoadingPanel, BorderLayout.CENTER);
 
         headerPanel = new HeaderPanel(project);
 
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
         topPanel.add(headerPanel, BorderLayout.NORTH);
-        topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
+        topPanel.add(browserContainerForOptionalBorder, BorderLayout.CENTER);
         topPanel.setMinimumSize(JBUI.size(750, 200));
 
         splitter.setFirstComponent(topPanel);
