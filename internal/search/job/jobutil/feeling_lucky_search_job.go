@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -558,10 +559,6 @@ func (g *generatedSearchJob) Name() string {
 	return "GeneratedSearchJob"
 }
 
-func (g *generatedSearchJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{}
-}
+func (g *generatedSearchJob) Tags(job.Verbosity) []log.Field { return nil }
 
-func (g *generatedSearchJob) Children() []job.Describer {
-	return []job.Describer{g.Child}
-}
+func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
