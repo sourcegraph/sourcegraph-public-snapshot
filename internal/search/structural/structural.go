@@ -202,6 +202,6 @@ func (s *SearchJob) Tags() []log.Field {
 		log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
 		log.String("useIndex", string(s.UseIndex)),
 		log.Bool("containsRefGlobs", s.ContainsRefGlobs),
-		trace.Stringer("repoOpts", &s.RepoOpts),
+		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 	}
 }

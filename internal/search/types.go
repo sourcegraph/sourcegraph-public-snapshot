@@ -5,11 +5,13 @@ import (
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -279,6 +281,66 @@ type RepoOptions struct {
 	ArchivedSet  bool
 	NoArchived   bool
 	OnlyArchived bool
+}
+
+func (op *RepoOptions) Tags() []otlog.Field {
+	res := make([]otlog.Field, 0, 8)
+	add := func(f otlog.Field) {
+		res = append(res, f)
+	}
+
+	if len(op.RepoFilters) > 0 {
+		add(trace.Strings("repoFilters", op.RepoFilters))
+	}
+	if len(op.MinusRepoFilters) > 0 {
+		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
+	}
+	if len(op.Dependencies) > 0 {
+		add(trace.Strings("dependencies", op.Dependencies))
+	}
+	if len(op.Dependents) > 0 {
+		add(trace.Strings("dependents", op.Dependents))
+	}
+	if op.CaseSensitiveRepoFilters {
+		add(otlog.Bool("caseSensitiveRepoFilters", true))
+	}
+	if op.SearchContextSpec != "" {
+		add(otlog.String("searchContextSpec", op.SearchContextSpec))
+	}
+	if op.CommitAfter != "" {
+		add(otlog.String("commitAfter", op.CommitAfter))
+	}
+	if op.Visibility != query.Any {
+		add(otlog.String("visibility", string(op.Visibility)))
+	}
+	if op.Limit > 0 {
+		add(otlog.Int("limit", op.Limit))
+	}
+	if len(op.Cursors) > 0 {
+		add(trace.Printf("cursors", "%+v", op.Cursors))
+	}
+	if op.ForkSet {
+		add(otlog.Bool("forkSet", op.ForkSet))
+	}
+	if !op.NoForks { // default value is true
+		add(otlog.Bool("noForks", op.NoForks))
+	}
+	if op.OnlyForks {
+		add(otlog.Bool("onlyForks", op.OnlyForks))
+	}
+	if op.OnlyCloned {
+		add(otlog.Bool("onlyCloned", op.OnlyCloned))
+	}
+	if op.ArchivedSet {
+		add(otlog.Bool("archivedSet", op.ArchivedSet))
+	}
+	if !op.NoArchived { // default value is true
+		add(otlog.Bool("noArchived", op.NoArchived))
+	}
+	if op.OnlyArchived {
+		add(otlog.Bool("onlyArchived", op.OnlyArchived))
+	}
+	return res
 }
 
 func (op *RepoOptions) String() string {

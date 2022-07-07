@@ -40,6 +40,6 @@ func (c *ComputeExcludedJob) Name() string {
 
 func (c *ComputeExcludedJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("repoOpts", &c.RepoOpts),
+		trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
 	}
 }
