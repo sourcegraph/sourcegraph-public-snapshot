@@ -74,7 +74,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
         }
     }
 
-    const [submitSurvey, { loading: isSubmitting }] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(
+    const [submitSurvey, { loading: isSubmitting, error }] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(
         SUBMIT_SURVEY,
         { onCompleted: setFutureVisibility }
     )
@@ -133,6 +133,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     onChangeEmail={email => setUserFeedback(current => ({ ...current, email }))}
                     onDismiss={handleDismiss}
                     onDone={handleUseCaseDone}
+                    error={error}
                     authenticatedUser={authenticatedUser}
                 />
             )

@@ -1,6 +1,8 @@
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ApolloError } from '@apollo/client'
+
+import { Alert, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
@@ -23,6 +25,7 @@ interface SurveyUseCaseFormToastProps extends UseCaseFeedbackState, UseCaseFeedb
     onDismiss: () => void
     onDone: () => Promise<void>
     authenticatedUser: AuthenticatedUser | null
+    error?: ApolloError
 }
 
 export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastProps> = ({
@@ -36,6 +39,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
     email,
     onChangeEmail,
     authenticatedUser,
+    error,
 }) => (
     <Toast
         toastBodyClassName={styles.toastBody}
@@ -52,11 +56,18 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
             />
         }
         footer={
-            <div className="d-flex justify-content-end">
-                <Button variant="primary" size="sm" onClick={onDone} disabled={isSubmitting}>
-                    Done
-                </Button>
-            </div>
+            <>
+                {error && (
+                    <div className="d-flex">
+                        <Alert variant="danger">Error: {error.message}</Alert>
+                    </div>
+                )}
+                <div className="d-flex justify-content-end">
+                    <Button variant="primary" size="sm" onClick={onDone} disabled={isSubmitting}>
+                        Done
+                    </Button>
+                </div>
+            </>
         }
         onDismiss={onDismiss}
     />
