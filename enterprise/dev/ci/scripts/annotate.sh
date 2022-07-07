@@ -14,19 +14,28 @@ print_usage() {
 }
 
 generate_grafana_link() {
-    expression=$(echo "{app=\"buildkite\", build=\"$BUILDKITE_BUILD_NUMBER\", job=\"$BUILDKITE_JOB_ID\"}" | sed 's/\"/\\"/g')
+    # -sR in the jq command below is "slurp" and "raw" tells jq to escape the json as a raw string since it will be
+    # embedded as a value in other json (aka the query we send to grafana)
+    expression="$(cat <<EOF | jq -sR .
+{app="buildkite", build="$BUILDKITE_BUILD_NUMBER", branch="main", state="failed", job="$BUILDKITE_JOB_ID"} # to search the whole build remove the job id here!
+|~ "(?i)failed|panic|(FAIL:)" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
+EOF
+    )"
     # On Darwin use gdate
     begin=$(date -d '1 hour ago' "+%s")000
     end=$(date "+%s")000
-    payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":"%s"}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
+    payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":%s}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
 
     echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo "$payload" | jq -s -R -r @uri)"
 }
 
 print_heading() {
-    logs="[View Grafana logs]($(generate_grafana_link))"
-    output="[View job output](#$BUILDKITE_JOB_ID)"
-    printf "**%s** &bull; %s &bull; %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
+    logs=""
+    output="&bull; [View job output](#$BUILDKITE_JOB_ID)"
+    if [[ $BUILDKITE_BRANCH == "main" ]]; then
+        logs="&bull; [View Grafana logs]($(generate_grafana_link))"
+    fi
+    printf "**%s** %s %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
 }
 
 if [ $# -eq 0 ]; then
