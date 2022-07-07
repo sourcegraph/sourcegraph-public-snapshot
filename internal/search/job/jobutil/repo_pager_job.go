@@ -131,7 +131,7 @@ func (p *repoPagerJob) Children() []job.Describer {
 	return []job.Describer{p.child}
 }
 
-func (p *repoPagerJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (p *repoPagerJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *p
 	cp.child = p.child.MapChildren(fn)
 	return &cp

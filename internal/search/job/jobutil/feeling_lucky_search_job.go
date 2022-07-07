@@ -155,7 +155,7 @@ func (f *FeelingLuckySearchJob) Children() []job.Describer {
 	return []job.Describer{f.initialJob}
 }
 
-func (f *FeelingLuckySearchJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (f *FeelingLuckySearchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *f
 	cp.initialJob = job.Map(f.initialJob, fn)
 	return &cp
@@ -567,7 +567,7 @@ func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer
 
 func (g *generatedSearchJob) Fields(job.Verbosity) []log.Field { return nil }
 
-func (g *generatedSearchJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *g
 	cp.Child = job.Map(g.Child, fn)
 	return &cp

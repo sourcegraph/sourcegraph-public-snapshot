@@ -67,7 +67,7 @@ func (l *LimitJob) Children() []job.Describer {
 	return []job.Describer{l.child}
 }
 
-func (l *LimitJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (l *LimitJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *l
 	cp.child = job.Map(l.child, fn)
 	return &cp

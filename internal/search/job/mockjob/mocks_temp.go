@@ -333,7 +333,7 @@ type JobMapChildrenFunc struct {
 
 // MapChildren delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockJob) MapChildren(v0 func(job.Job) job.Job) job.Job {
+func (m *MockJob) MapChildren(v0 job.MapFunc) job.Job {
 	r0 := m.MapChildrenFunc.nextHook()(v0)
 	m.MapChildrenFunc.appendCall(JobMapChildrenFuncCall{v0, r0})
 	return r0

@@ -98,7 +98,7 @@ func (j *alertJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *alertJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (j *alertJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *j
 	cp.child = job.Map(j.child, fn)
 	return &cp

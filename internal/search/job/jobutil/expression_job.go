@@ -90,7 +90,7 @@ func (a *AndJob) Children() []job.Describer {
 	return res
 }
 
-func (a *AndJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (a *AndJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *a
 	cp.children = make([]job.Job, len(a.children))
 	for i := range a.children {
@@ -202,7 +202,7 @@ func (j *OrJob) Children() []job.Describer {
 	return res
 }
 
-func (j *OrJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (j *OrJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *j
 	cp.children = make([]job.Job, len(j.children))
 	for i := range j.children {

@@ -23,7 +23,7 @@ import (
 // timeout). Calling Run on a job object runs a search.
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
-	MapChildren(func(Job) Job) Job
+	MapChildren(MapFunc) Job
 	Describer
 }
 
@@ -39,7 +39,7 @@ type PartialJob[T any] interface {
 	// available at runtime.
 	Resolve(T) Job
 
-	MapChildren(func(Job) Job) PartialJob[T]
+	MapChildren(MapFunc) PartialJob[T]
 	Describer
 }
 
@@ -70,7 +70,9 @@ type RuntimeClients struct {
 	Gitserver    gitserver.Client
 }
 
-func Map(j Job, f func(Job) Job) Job {
+type MapFunc func(Job) Job
+
+func Map(j Job, f MapFunc) Job {
 	j = j.MapChildren(f)
 	return f(j)
 }

@@ -65,7 +65,7 @@ func (s *subRepoPermsFilterJob) Children() []job.Describer {
 	return []job.Describer{s.child}
 }
 
-func (s *subRepoPermsFilterJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+func (s *subRepoPermsFilterJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *s
 	cp.child = job.Map(s.child, fn)
 	return &cp

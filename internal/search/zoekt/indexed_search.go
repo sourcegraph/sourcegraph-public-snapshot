@@ -649,8 +649,8 @@ func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	return res
 }
 
-func (*RepoSubsetTextSearchJob) Children() []job.Describer                   { return nil }
-func (j *RepoSubsetTextSearchJob) MapChildren(func(job.Job) job.Job) job.Job { return j }
+func (*RepoSubsetTextSearchJob) Children() []job.Describer         { return nil }
+func (j *RepoSubsetTextSearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -693,5 +693,5 @@ func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	return res
 }
 
-func (t *GlobalTextSearchJob) Children() []job.Describer                 { return nil }
-func (t *GlobalTextSearchJob) MapChildren(func(job.Job) job.Job) job.Job { return t }
+func (t *GlobalTextSearchJob) Children() []job.Describer       { return nil }
+func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
