@@ -47,7 +47,9 @@ func (j *reposPartialJob) Name() string                       { return "PartialR
 func (j *reposPartialJob) Fields(job.Verbosity) []otlog.Field { return nil }
 func (j *reposPartialJob) Children() []job.Describer          { return []job.Describer{j.inner} }
 func (j *reposPartialJob) MapChildren(fn job.MapFunc) job.PartialJob[resolvedRepos] {
-	return &reposPartialJob{fn(j.inner)}
+	cp := *j
+	cp.inner = job.Map(j.inner, fn)
+	return &cp
 }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
