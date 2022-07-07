@@ -138,7 +138,7 @@ func (s *TextSearchJob) Name() string {
 	return "SearcherTextSearchJob"
 }
 
-func (s *TextSearchJob) Tags(v job.Verbosity) (res []otlog.Field) {
+func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

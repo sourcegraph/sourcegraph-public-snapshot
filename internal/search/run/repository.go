@@ -58,7 +58,7 @@ func (*RepoSearchJob) Name() string {
 	return "RepoSearchJob"
 }
 
-func (s *RepoSearchJob) Tags(v job.Verbosity) (res []log.Field) {
+func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

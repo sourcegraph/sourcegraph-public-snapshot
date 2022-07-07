@@ -120,7 +120,7 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Tags(v job.Verbosity) (res []log.Field) {
+func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

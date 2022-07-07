@@ -625,7 +625,7 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Tags(v job.Verbosity) (res []otlog.Field) {
+func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
@@ -672,7 +672,7 @@ func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Tags(v job.Verbosity) (res []otlog.Field) {
+func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

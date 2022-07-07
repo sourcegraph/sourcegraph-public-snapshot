@@ -31,7 +31,7 @@ func (tj *testJob) withChildren(children ...*testJob) *testJob {
 }
 
 func (tj *testJob) Name() string { return tj.name }
-func (tj *testJob) Tags(v job.Verbosity) []otlog.Field {
+func (tj *testJob) Fields(v job.Verbosity) []otlog.Field {
 	if v > job.VerbosityNone {
 		return tj.tags
 	}

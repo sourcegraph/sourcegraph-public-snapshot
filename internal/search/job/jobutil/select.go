@@ -36,7 +36,7 @@ func (j *selectJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 func (j *selectJob) Name() string {
 	return "SelectJob"
 }
-func (j *selectJob) Tags(v job.Verbosity) (res []log.Field) {
+func (j *selectJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough

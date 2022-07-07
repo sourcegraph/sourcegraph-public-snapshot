@@ -59,7 +59,7 @@ func (z *SymbolSearchJob) Name() string {
 	return "ZoektSymbolSearchJob"
 }
 
-func (z *SymbolSearchJob) Tags(v job.Verbosity) (res []log.Field) {
+func (z *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
@@ -115,7 +115,7 @@ func (*GlobalSymbolSearchJob) Name() string {
 	return "ZoektGlobalSymbolSearchJob"
 }
 
-func (s *GlobalSymbolSearchJob) Tags(v job.Verbosity) (res []log.Field) {
+func (s *GlobalSymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

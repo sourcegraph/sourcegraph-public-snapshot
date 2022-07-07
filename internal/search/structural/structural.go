@@ -192,7 +192,7 @@ func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *SearchJob) Tags(v job.Verbosity) (res []log.Field) {
+func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

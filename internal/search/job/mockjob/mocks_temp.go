@@ -424,7 +424,7 @@ type JobTagsFunc struct {
 
 // Tags delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJob) Tags(v0 job.Verbosity) []log.Field {
+func (m *MockJob) Fields(v0 job.Verbosity) []log.Field {
 	r0 := m.TagsFunc.nextHook()(v0)
 	m.TagsFunc.appendCall(JobTagsFuncCall{v0, r0})
 	return r0

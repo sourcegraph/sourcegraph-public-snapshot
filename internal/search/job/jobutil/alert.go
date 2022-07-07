@@ -75,7 +75,7 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Tags(job.Verbosity) (res []log.Field) {
+func (j *alertJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

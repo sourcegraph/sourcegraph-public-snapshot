@@ -38,7 +38,7 @@ func (c *ComputeExcludedJob) Name() string {
 	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedJob) Tags(v job.Verbosity) (res []log.Field) {
+func (c *ComputeExcludedJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
