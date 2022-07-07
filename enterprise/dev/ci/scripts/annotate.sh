@@ -32,9 +32,9 @@ EOF
 print_heading() {
     logs=""
     output="&bull; [View job output](#$BUILDKITE_JOB_ID)"
-    #if [[ $BUILDKITE_BRANCH == "main" ]]; then
-    logs="&bull; [View Grafana logs]($(generate_grafana_link))"
-    #fi
+    if [[ $BUILDKITE_BRANCH == "main" ]]; then
+        logs="&bull; [View Grafana logs]($(generate_grafana_link))"
+    fi
     printf "**%s** %s %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
 }
 
