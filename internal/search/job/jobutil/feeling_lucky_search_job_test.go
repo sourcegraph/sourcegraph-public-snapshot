@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"testing"
 
@@ -25,28 +26,34 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 			Protocol:     search.Streaming,
 			PatternType:  query.SearchTypeLucky,
 		}
-		var j job.Job
 		plan, _ := query.Pipeline(query.InitLiteral(q))
 		fj := NewFeelingLuckySearchJob(nil, inputs, plan)
-		generated := []job.Job{}
+		var autoQ *autoQuery
+		type want struct {
+			Description string
+			Query       string
+		}
+		generated := []want{}
 
 		for _, next := range fj.generators {
 			for {
-				j, next = next()
-				if j == nil {
+				autoQ, next = next()
+				if autoQ == nil {
 					if next == nil {
 						// No job and generator is exhausted.
 						break
 					}
 					continue
 				}
-				generated = append(generated, j)
+				generated = append(generated, want{Description: autoQ.description, Query: query.StringHuman(autoQ.query.ToParseTree())})
 				if next == nil {
 					break
 				}
 			}
 		}
-		return PrettyJSONVerbose(NewOrJob(generated...))
+
+		result, _ := json.MarshalIndent(generated, "", "  ")
+		return string(result)
 	}
 
 	t.Run("trigger unquoted rule", func(t *testing.T) {
@@ -98,9 +105,14 @@ func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
 		return nil, nil
 	})
 
+	mockAutoQuery := &autoQuery{description: "mock", query: query.Basic{}}
+
 	j := FeelingLuckySearchJob{
 		initialJob: mockJob,
-		generators: []next{func() (job.Job, next) { return mockJob, nil }},
+		generators: []next{func() (*autoQuery, next) { return mockAutoQuery, nil }},
+		createJob: func(*autoQuery) job.Job {
+			return mockJob
+		},
 	}
 
 	var sent []result.Match
