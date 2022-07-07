@@ -612,6 +612,6 @@ func (t *GlobalTextSearchJob) Tags() []otlog.Field {
 		otlog.String("type", string(t.ZoektArgs.Typ)),
 		otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", t.ZoektArgs.Select),
-		trace.Stringer("repoOpts", &t.RepoOpts),
+		trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
 	}
 }
