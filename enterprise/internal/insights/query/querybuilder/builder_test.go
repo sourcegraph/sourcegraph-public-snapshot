@@ -76,7 +76,7 @@ func TestWithDefaultsPatternTypes(t *testing.T) {
 		defaults query.Parameters
 	}{
 		{
-			// check: does this get parsed as regexp with new client?
+			// It's worth noting that we always append patterntype:regexp to capture group queries.
 			name:     "regexp query without patterntype",
 			input:    `file:go\.mod$ go\s*(\d\.\d+)`,
 			want:     `file:go\.mod$ go\s*(\d\.\d+)`,
@@ -131,7 +131,6 @@ func TestWithDefaultsPatternTypes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			println(got)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Fatalf("%s failed (want/got): %s", test.name, diff)
 			}
@@ -191,7 +190,6 @@ func TestMultiRepoQuery(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			println(got)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Fatalf("%s failed (want/got): %s", test.name, diff)
 			}
