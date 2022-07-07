@@ -1,24 +1,10 @@
-{
-  "OR": [
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply language filter for pattern",
-          "Query": "context:global lang:Python parse",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "AND patterns together",
-          "Query": "context:global (parse AND python)",
-          "PatternType": 3
-        }
-      }
-    }
-  ]
-}
+[
+  {
+    "Description": "apply language filter for pattern",
+    "Query": "context:global lang:Python parse"
+  },
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global (parse AND python)"
+  }
+]
