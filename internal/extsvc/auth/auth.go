@@ -41,9 +41,3 @@ type AuthenticatorWithSSH interface {
 	// allow access to git over SSH.
 	SSHPublicKey() (publicKey string)
 }
-
-// one attempt was adding the Authenticator here
-type AuthenticatorWithTokenRefresher interface {
-	Authenticator
-	Hash() string
-}
