@@ -9,11 +9,18 @@ import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useThe
 // Add root Tooltip for Storybook
 import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
 import webStyles from '../SourcegraphWebApp.scss'
+
+// With `StoryStoreV7` stories are isolated and window value is not shared between them.
+// Global variables should be updated for every story individually.
+if (!window.context) {
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
 
 export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<
