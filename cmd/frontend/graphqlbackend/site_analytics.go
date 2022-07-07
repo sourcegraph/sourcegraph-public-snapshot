@@ -14,7 +14,7 @@ type siteAnalyticsResolver struct {
 	db database.DB
 }
 
-var cache = false // TODO: change before merging
+var cache = true
 
 /* Analytics root resolver */
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {

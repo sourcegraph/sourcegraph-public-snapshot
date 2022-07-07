@@ -32,6 +32,7 @@ interface NavItemProps {
 
 interface NavActionsProps {
     children: React.ReactNode
+    className?: string
 }
 
 export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
@@ -93,10 +94,13 @@ export const NavActions: React.FunctionComponent<React.PropsWithChildren<NavActi
     <ul className={navActionStyles.actions}>{children}</ul>
 )
 
-export const NavAction: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({ children }) => (
+export const NavAction: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({
+    children,
+    className,
+}) => (
     <>
         {React.Children.map(children, action => (
-            <li className={navActionStyles.action}>{action}</li>
+            <li className={classNames(navActionStyles.action, className)}>{action}</li>
         ))}
     </>
 )
