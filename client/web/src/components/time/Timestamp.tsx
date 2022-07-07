@@ -4,6 +4,8 @@ import { parseISO, format } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 
+import { Tooltip } from '@sourcegraph/wildcard'
+
 interface Props {
     /** The date (if string, in ISO 8601 format). */
     date: string | Date | number
@@ -52,9 +54,9 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
     }, [date])
 
     return (
-        <span className="timestamp" data-tooltip={preferAbsolute ? label : tooltip}>
-            {preferAbsolute ? tooltip : label}
-        </span>
+        <Tooltip content={preferAbsolute ? label : tooltip}>
+            <span className="timestamp">{preferAbsolute ? tooltip : label}</span>
+        </Tooltip>
     )
 }
 

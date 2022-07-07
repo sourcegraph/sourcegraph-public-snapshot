@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { H3 } from '@sourcegraph/wildcard'
+import { H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
@@ -44,12 +44,9 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.Pr
                             className="text-muted"
                         >
                             <div className="d-flex flex-column align-items-center mr-3">
-                                <UserAvatar
-                                    inline={true}
-                                    className="mb-1"
-                                    user={previousCommit.author}
-                                    data-tooltip={formatPersonName(previousCommit.author)}
-                                />{' '}
+                                <Tooltip content={formatPersonName(previousCommit.author)}>
+                                    <UserAvatar inline={true} className="mb-1" user={previousCommit.author} />
+                                </Tooltip>{' '}
                                 <PersonLink person={previousCommit.author} className="font-weight-bold text-nowrap" />
                             </div>
                         </DeletedEntry>
@@ -66,12 +63,9 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.Pr
                     </>
                 )}
             <div className="d-flex flex-column align-items-center mr-3">
-                <UserAvatar
-                    inline={true}
-                    className="mb-1"
-                    user={commit.author}
-                    data-tooltip={formatPersonName(commit.author)}
-                />{' '}
+                <Tooltip content={formatPersonName(commit.author)}>
+                    <UserAvatar inline={true} className="mb-1" user={commit.author} />
+                </Tooltip>{' '}
                 <PersonLink person={commit.author} className="font-weight-bold text-nowrap" />
             </div>
             <div>
