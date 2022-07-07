@@ -1111,6 +1111,11 @@ input SearchInsightLivePreviewInput {
     Whether or not to generate the timeseries results from the query capture groups.
     """
     generatedFromCaptureGroups: Boolean!
+
+    """
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
+    """
+    groupBy: GroupByField
 }
 
 """
@@ -1150,6 +1155,11 @@ input SearchSeriesPreviewInput {
     Whether or not to generate the timeseries results from the query capture groups.
     """
     generatedFromCaptureGroups: Boolean!
+
+    """
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
+    """
+    groupBy: GroupByField
 }
 
 """
