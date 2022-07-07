@@ -2,10 +2,11 @@ import { Extension, Facet, StateEffect, StateField } from '@codemirror/state'
 
 import { SearchPatternType } from '@sourcegraph/search'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/search/query/parser'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 
-export interface ParsedQuery {
+export interface QueryTokens {
     patternType: SearchPatternType
     tokens: Token[]
 }
@@ -22,10 +23,16 @@ export const setQueryParseOptions = StateEffect.define<{
  * Facet representing the parsed query. Other extensions can use this to access
  * the parsed query.
  */
-export const parsedQuery = Facet.define<ParsedQuery, ParsedQuery>({
+export const queryTokens = Facet.define<QueryTokens, QueryTokens>({
     combine(input) {
         // There will always only be one extension which parses this query
         return input[0] ?? { patternType: SearchPatternType.literal, tokens: [] }
+    },
+})
+
+export const parsedQuery = Facet.define<ParseResult, Node | null>({
+    combine(input) {
+        return input[0]?.type === 'success' ? input[0].nodes[0] : null
     },
 })
 
@@ -46,7 +53,7 @@ interface ParseOptions {
 
 /**
  * Creates an extension that parses the input as search query and stores the
- * result in the {@link parsedQuery} facet.
+ * result in the {@link queryTokens} facet.
  */
 export function parseInputAsQuery(initialParseOptions: ParseOptions): Extension {
     // Editor state to keep information about how to parse the query. Can be updated
@@ -68,17 +75,23 @@ export function parseInputAsQuery(initialParseOptions: ParseOptions): Extension 
             // current input (obviously) and the current parse options. It gets
             // recomputed whenever one of those values changes.
             return [
-                parsedQuery.compute(['doc', parseOptions], state => {
+                queryTokens.compute(['doc', parseOptions], state => {
+                    const textDocument = state.sliceDoc()
                     const { patternType, interpretComments } = state.field(parseOptions)
-                    // Looks like Text overwrites toString somehow
-                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                    const result = scanSearchQuery(state.doc.toString(), interpretComments, patternType)
+                    if (!textDocument) {
+                        return { patternType, tokens: [] }
+                    }
+
+                    const result = scanSearchQuery(textDocument, interpretComments, patternType)
                     return {
                         patternType,
                         tokens: result.type === 'success' ? result.term : [],
                     }
                 }),
-                decoratedTokens.compute([parsedQuery], state => state.facet(parsedQuery).tokens.flatMap(decorate)),
+                parsedQuery.compute([queryTokens], state =>
+                    parseSearchQuery({ type: 'success', term: state.facet(queryTokens).tokens })
+                ),
+                decoratedTokens.compute([queryTokens], state => state.facet(queryTokens).tokens.flatMap(decorate)),
             ]
         },
     })
