@@ -6,7 +6,7 @@ export async function getAuthenticatedUser(
     instanceURL: string,
     accessToken: string | null
 ): Promise<AuthenticatedUser | null> {
-    if (!accessToken || !instanceURL) {
+    if (!instanceURL) {
         return null
     }
 

@@ -11,6 +11,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -307,12 +308,8 @@ func TestSearchResultsHydration(t *testing.T) {
 		RepositoryID: uint32(repoWithIDs.ID),
 		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
 		Branches:     []string{"master"},
-		LineMatches: []zoekt.LineMatch{
-			{
-				Line: nil,
-			},
-		},
-		Checksum: []byte{0, 1, 2},
+		ChunkMatches: make([]zoekt.ChunkMatch, 1),
+		Checksum:     []byte{0, 1, 2},
 	}}
 
 	z := &searchbackend.FakeSearcher{
@@ -342,6 +339,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	resolver := &searchResolver{
 		db:           db,
+		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
 		zoekt:        z,
 	}
@@ -579,6 +577,7 @@ func TestEvaluateAnd(t *testing.T) {
 
 			resolver := &searchResolver{
 				db:           db,
+				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
 				zoekt:        z,
 			}
@@ -685,6 +684,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
+				logger:       logtest.Scoped(t),
 			}
 
 			ctx := context.Background()

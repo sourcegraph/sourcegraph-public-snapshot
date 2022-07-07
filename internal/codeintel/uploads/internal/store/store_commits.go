@@ -2,8 +2,7 @@ package store
 
 import (
 	"context"
-	"database/sql"
-	"sort"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -14,13 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// StaleSourcedCommits returns a set of commits attached to repositories that have been
+// GetStaleSourcedCommits returns a set of commits attached to repositories that have been
 // least recently checked for resolvability via gitserver. We do this periodically in
 // order to determine which records in the database are unreachable by normal query
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
-func (s *store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, trace, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
+func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, trace, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
@@ -197,69 +196,76 @@ SELECT
 FROM candidate_uploads u
 `
 
-// scanSourcedCommits scans triples of repository ids/repository names/commits from the
-// return value of `*Store.query`. The output of this function is ordered by repository
-// identifier, then by commit.
-func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+// GetCommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
+// To paginate, supply the token returned from this method to the invocation for the next page.
+func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
+	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	sourcedCommitsMap := map[int]shared.SourcedCommits{}
-	for rows.Next() {
-		var repositoryID int
-		var repositoryName string
-		var commit string
-		if err := rows.Scan(&repositoryID, &repositoryName, &commit); err != nil {
-			return nil, err
-		}
-
-		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
-			RepositoryID:   repositoryID,
-			RepositoryName: repositoryName,
-			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
-		}
+	after := ""
+	if token != nil {
+		after = *token
 	}
 
-	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
-	for _, sourcedCommits := range sourcedCommitsMap {
-		sort.Strings(sourcedCommits.Commits)
-		flattened = append(flattened, sourcedCommits)
+	commits, err := basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), after, limit)))
+	if err != nil {
+		return nil, nil, err
 	}
 
-	sort.Slice(flattened, func(i, j int) bool {
-		return flattened[i].RepositoryID < flattened[j].RepositoryID
-	})
-	return flattened, nil
+	if len(commits) > 0 {
+		last := commits[len(commits)-1]
+		nextToken = &last
+	}
+
+	return commits, nextToken, nil
 }
 
-func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
-	if queryErr != nil {
-		return 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+const commitsVisibleToUploadQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetCommitsVisibleToUpload
+WITH
+direct_commits AS (
+	SELECT nu.repository_id, nu.commit_bytea
+	FROM lsif_nearest_uploads nu
+	WHERE nu.uploads ? %s
+),
+linked_commits AS (
+	SELECT ul.commit_bytea
+	FROM direct_commits dc
+	JOIN lsif_nearest_uploads_links ul
+	ON
+		ul.repository_id = dc.repository_id AND
+		ul.ancestor_commit_bytea = dc.commit_bytea
+),
+combined_commits AS (
+	SELECT dc.commit_bytea FROM direct_commits dc
+	UNION ALL
+	SELECT lc.commit_bytea FROM linked_commits lc
+)
+SELECT encode(c.commit_bytea, 'hex') as commit
+FROM combined_commits c
+WHERE decode(%s, 'hex') < c.commit_bytea
+ORDER BY c.commit_bytea
+LIMIT %s
+`
 
-	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return 0, err
-		}
-	}
+// GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
+// non-nil values, a false-valued flag is returned.
+func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	return value, nil
+	return basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
 }
 
-func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
-	if queryErr != nil {
-		return 0, 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(&value1, &value2); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return value1, value2, nil
-}
+// Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
+// that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
+// having pristine database.
+const getOldestCommitDateQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_commits.go:GetOldestCommitDate
+SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
+`

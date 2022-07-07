@@ -65,6 +65,7 @@ func TestUpdateTrigger(t *testing.T) {
 	uid2 := insertTestUser(ctx, t, db, "u2", false)
 	ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
 	fixtures := s.insertTestMonitor(ctx1, t)
+	_ = s.insertTestMonitor(ctx2, t)
 
 	// User1 can update it
 	err := s.UpdateQueryTrigger(ctx1, fixtures.query.ID, "query1")

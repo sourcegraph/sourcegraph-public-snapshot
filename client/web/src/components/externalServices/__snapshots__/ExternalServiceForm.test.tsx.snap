@@ -160,6 +160,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
     >
       <div
         aria-label="Loading"
+        aria-live="polite"
         class="iconInline loadingSpinner"
         role="img"
       />

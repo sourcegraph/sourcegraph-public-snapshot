@@ -1,9 +1,8 @@
 import React, { FunctionComponent, ReactNode, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
@@ -83,7 +82,7 @@ const TimelineStage: FunctionComponent<React.PropsWithChildren<TimelineStageProp
                 className="p-0 m-0 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
             >
                 {stageLabel}
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
             </CollapseHeader>
             <CollapsePanel className={styles.details}>{details}</CollapsePanel>
         </Collapse>

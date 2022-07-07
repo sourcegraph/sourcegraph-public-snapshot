@@ -268,7 +268,7 @@ index 51a59ef1c..493090958 100644
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
-		hunks, err := client.DiffPath(ctx, "", "sourceCommit", "", "file", checker)
+		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -296,7 +296,7 @@ index 51a59ef1c..493090958 100644
 			}
 			return authz.Read, nil
 		})
-		hunks, err := client.DiffPath(ctx, "", "sourceCommit", "", fileName, checker)
+		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
 		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -399,7 +399,7 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, repo, path, opt, checker)
+	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, checker, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return
@@ -1034,7 +1034,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for symlink := range symlinks {
-		fi, err := client.LStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		fi, err := client.lStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}
@@ -1046,7 +1046,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
 	// consistent with the FileInfo returned by lStat.
-	entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
+	entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
 	}

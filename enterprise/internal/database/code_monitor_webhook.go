@@ -35,7 +35,7 @@ WHERE
 	id = %s
 	AND EXISTS (
 		SELECT 1 FROM cm_monitors
-		WHERE cm_monitors.id = id
+		WHERE cm_monitors.id = cm_webhooks.monitor
 			AND cm_monitors.namespace_user_id = %s
 	)
 RETURNING %s;

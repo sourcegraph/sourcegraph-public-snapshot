@@ -66,7 +66,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="invalid_npm_path",reason!="internal_rate_limit"}[5m]))`,
 							Warning:     monitoring.Alert().Greater(0.5).For(10 * time.Minute),
 							Critical:    monitoring.Alert().Greater(1).For(10 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number).With(monitoring.PanelOptions.ZeroIfNoData()),
+							Panel:       monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number).With(monitoring.PanelOptions.ZeroIfNoData()),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
 							NextSteps: `
 								An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
@@ -112,7 +112,7 @@ func RepoUpdater() *monitoring.Dashboard {
 						{
 							Name:        "syncer_synced_repos",
 							Description: "repositories synced",
-							Query:       `max(max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m])))`,
+							Query:       `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
 							Warning: monitoring.Alert().LessOrEqual(0).
 								AggregateBy(monitoring.AggregatorMax).
 								For(syncDurationThreshold),
@@ -475,7 +475,7 @@ func RepoUpdater() *monitoring.Dashboard {
 						{
 							Name:           "gitlab_rest_rate_limit_wait_duration",
 							Description:    "time spent waiting for the GitLab rest API rate limiter",
-							Query:          `max by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
+							Query:          `max by (name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerRepoManagement,
 							NoAlert:        true,
