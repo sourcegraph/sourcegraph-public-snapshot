@@ -178,7 +178,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	return recordings, nil
 }
 
-func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *Job, _ *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	tabulationResult, err := r.searchStream(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 
 	searchDelegate := r.generateSearchRecordingsStream
-	recordings, err := searchDelegate(ctx, job, series, recordTime)
+	recordings, err := searchDelegate(ctx, job, recordTime)
 	if err != nil {
 		return err
 	}
