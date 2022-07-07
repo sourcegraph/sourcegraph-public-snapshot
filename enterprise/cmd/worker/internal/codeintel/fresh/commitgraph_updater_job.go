@@ -45,7 +45,12 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 	if err != nil {
 		return nil, err
 	}
-	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore))
+	gitserver, err := codeintel.InitGitserverClient()
+	if err != nil {
+		return nil, err
+	}
+
+	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore), gitserver)
 
 	commitgraph.NewOperations(uploadSvc, &observation.Context{
 		Logger:     logger,

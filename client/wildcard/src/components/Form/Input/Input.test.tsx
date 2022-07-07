@@ -28,7 +28,10 @@ describe('Input', () => {
                 value="Input value"
               />
               <div
+                aria-label="Loading"
+                aria-live="polite"
                 class="loadingSpinner spinner"
+                role="img"
               />
             </div>
         `)
@@ -66,7 +69,10 @@ describe('Input', () => {
                   value="Input value"
                 />
                 <div
+                  aria-label="Loading"
+                  aria-live="polite"
                   class="loadingSpinner spinner"
+                  role="img"
                 />
               </div>
               <small

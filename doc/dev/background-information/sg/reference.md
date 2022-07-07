@@ -654,7 +654,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration describe
@@ -785,6 +785,37 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
+
+## sg insights
+
+Tools to interact with Code Insights data.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights decode-id
+
+Decodes an encoded insight ID found on the frontend into a view unique_id.
+
+Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights series-ids
+
+Gets all insight series ID from the base64 encoded frontend ID.
+
+Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg doctor
 
