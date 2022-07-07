@@ -10,11 +10,9 @@ import { Toast } from './Toast'
 
 import styles from './SurveyUseCaseToast.module.scss'
 
-export interface UseCaseFeedbackState
-    extends Pick<TotalFeedbackState, 'useCases' | 'otherUseCase' | 'better' | 'email'> {}
+export interface UseCaseFeedbackState extends Pick<TotalFeedbackState, 'otherUseCase' | 'better' | 'email'> {}
 
 export interface UseCaseFeedbackModifiers {
-    onChangeUseCases: (useCases: TotalFeedbackState['useCases']) => void
     onChangeOtherUseCase: (otherUseCase: TotalFeedbackState['otherUseCase']) => void
     onChangeBetter: (additionalInfo: TotalFeedbackState['better']) => void
     onChangeEmail: (email: TotalFeedbackState['email']) => void
@@ -31,8 +29,6 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
     isSubmitting,
     onDismiss,
     onDone,
-    useCases,
-    onChangeUseCases,
     otherUseCase,
     onChangeOtherUseCase,
     better,
@@ -46,10 +42,8 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
         toastContentClassName="mt-0"
         cta={
             <SurveyUseCaseForm
-                title="You use Sourcegraph to..."
+                title="What do you use Sourcegraph for?"
                 authenticatedUser={authenticatedUser}
-                useCases={useCases}
-                onChangeUseCases={onChangeUseCases}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={onChangeOtherUseCase}
                 better={better}

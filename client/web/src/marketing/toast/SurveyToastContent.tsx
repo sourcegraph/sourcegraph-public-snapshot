@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 
 import { AuthenticatedUser } from '../../auth'
-import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../../graphql-operations'
+import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { SurveySuccessToast } from './SurveySuccessToast'
@@ -20,7 +20,6 @@ const SUBMIT_SURVEY = gql`
 
 export interface TotalFeedbackState {
     score: number
-    useCases: SurveyUseCase[]
     better: string
     otherUseCase: string
     email: string
@@ -50,7 +49,6 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     const [activeStep, setActiveStep] = useState<ToastSteps>(ToastSteps.rate)
     const [userFeedback, setUserFeedback] = useState<TotalFeedbackState>({
         score: -1,
-        useCases: [],
         otherUseCase: '',
         better: '',
         email: '',
@@ -127,8 +125,6 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
             return (
                 <SurveyUseCaseToast
                     isSubmitting={isSubmitting}
-                    useCases={userFeedback.useCases}
-                    onChangeUseCases={useCases => setUserFeedback(current => ({ ...current, useCases }))}
                     otherUseCase={userFeedback.otherUseCase}
                     onChangeOtherUseCase={otherUseCase => setUserFeedback(current => ({ ...current, otherUseCase }))}
                     better={userFeedback.better}
