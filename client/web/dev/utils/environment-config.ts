@@ -43,6 +43,10 @@ export const ENVIRONMENT_CONFIG = {
     SENTRY_UPLOAD_SOURCE_MAPS: getEnvironmentBoolean('SENTRY_UPLOAD_SOURCE_MAPS'),
     // Sentry authentication token
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    // Sentry organization
+    SENTRY_ORGANIZATION: process.env.SENTRY_ORGANIZATION,
+    // Sentry project
+    SENTRY_PROJECT: process.env.SENTRY_PROJECT,
 
     //  Webpack is the default web build tool, and esbuild is an experimental option (see
     //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).

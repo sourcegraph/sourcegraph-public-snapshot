@@ -45,6 +45,8 @@ const {
   SENTRY_UPLOAD_SOURCE_MAPS,
   RELEASE_CANDIDATE_VERSION,
   SENTRY_AUTH_TOKEN,
+  SENTRY_ORGANIZATION,
+  SENTRY_PROJECT,
 } = ENVIRONMENT_CONFIG
 
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
@@ -181,6 +183,8 @@ const config = {
     RELEASE_CANDIDATE_VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
+        org: SENTRY_ORGANIZATION,
+        project: SENTRY_PROJECT,
         authToken: SENTRY_AUTH_TOKEN,
         release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
         include: path.join(ROOT_PATH, 'ui', 'assets', 'scripts'),
