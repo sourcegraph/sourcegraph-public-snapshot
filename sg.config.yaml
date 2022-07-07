@@ -130,7 +130,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/oss-frontend github.com/sourcegraph/sourcegraph/cmd/frontend
-    checkBinary: .bin/frontend
+    checkBinary: .bin/oss-frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -268,7 +268,7 @@ commands:
 
       ./cmd/symbols/build-ctags.sh &&
       go build -gcflags="$GCFLAGS" -o .bin/oss-symbols github.com/sourcegraph/sourcegraph/cmd/symbols
-    checkBinary: .bin/symbols
+    checkBinary: .bin/oss-symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
