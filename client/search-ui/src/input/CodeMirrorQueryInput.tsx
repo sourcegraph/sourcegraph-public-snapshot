@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { startCompletion } from '@codemirror/autocomplete'
+import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import {
     EditorSelection,
@@ -384,6 +384,8 @@ const [callbacksField, setCallbacks] = createUpdateableField<
                     run: view => {
                         const { onSubmit } = view.state.field(callbacks)
                         if (onSubmit) {
+                            // Cancel/close any open completion popovers
+                            closeCompletion(view)
                             onSubmit()
                             return true
                         }
@@ -406,11 +408,12 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             },
         ]),
         EditorView.updateListener.of((update: ViewUpdate) => {
-            const { onChange, onFocus, onBlur, onCompletionItemSelected } = update.state.field(callbacks)
+            const { state, view } = update
+            const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
 
             if (update.docChanged) {
                 onChange({
-                    query: update.state.sliceDoc(),
+                    query: state.sliceDoc(),
                     changeSource: QueryChangeSource.userInput,
                 })
             }
@@ -420,9 +423,10 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             // the moment they are bound if the editor is already in that state ((not)
             // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
             if (update.focusChanged) {
-                if (update.view.hasFocus) {
+                if (view.hasFocus) {
                     onFocus?.()
                 } else {
+                    closeCompletion(view)
                     onBlur?.()
                 }
             }
