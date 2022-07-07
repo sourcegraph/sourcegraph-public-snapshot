@@ -1639,7 +1639,7 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible
 // string values and LIKE patterns if such a list can be determined from the pattern,
-// and (2) returns the original regexp if those patterns are not equivalent to the
+// or (2) returns the original regexp if those patterns are not equivalent to the
 // regexp.
 //
 // It allows Repos.List to optimize for the common case where a pattern like
