@@ -181,7 +181,6 @@ const config = {
     RELEASE_CANDIDATE_VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
-        dryRun: true,
         authToken: SENTRY_AUTH_TOKEN,
         release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
         include: path.join(ROOT_PATH, 'ui', 'assets', 'scripts'),
