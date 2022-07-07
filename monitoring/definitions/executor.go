@@ -46,7 +46,10 @@ func Executor() *monitoring.Dashboard {
 			shared.NewNodeExporterGroup(containerName, "(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)", "Docker Registry Mirror", ".*"),
 
 			// Resource monitoring
-			shared.NewGolangMonitoringGroup("sg_job", containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, &shared.GolangMonitoringOptions{
+				InstanceLabelName: "sg_instance",
+				JobLabelName:      "sg_job",
+			}),
 		},
 	}
 }

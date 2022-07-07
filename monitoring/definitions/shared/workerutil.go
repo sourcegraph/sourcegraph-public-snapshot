@@ -56,8 +56,8 @@ func (workerutilConstructor) ErrorRate(options ObservableConstructorOptions) sha
 //
 // Requires a gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
 func (workerutilConstructor) Handlers(options ObservableConstructorOptions) sharedObservable {
-	return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+	return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -95,19 +95,19 @@ type WorkerutilGroupOptions struct {
 func (workerutilConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options WorkerutilGroupOptions) monitoring.Group {
 	row := make(monitoring.Row, 0, 5)
 	if options.Handlers != nil {
-		row = append(row, options.Handlers(Workerutil.Handlers(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.Handlers(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.Total != nil {
-		row = append(row, options.Total(Workerutil.Total(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.Total(Workerutil.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.Duration != nil {
-		row = append(row, options.Duration(Workerutil.Duration(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.Duration(Workerutil.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.Errors != nil {
-		row = append(row, options.Errors(Workerutil.Errors(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.Errors(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.ErrorRate != nil {
-		row = append(row, options.ErrorRate(Workerutil.ErrorRate(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.ErrorRate(Workerutil.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 
 	if len(row) == 0 {

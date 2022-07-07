@@ -58,15 +58,15 @@ type ResetterGroupOptions struct {
 func (workerutilResetterConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
 	row := make(monitoring.Row, 0, 3)
 	if options.RecordResets != nil {
-		row = append(row, options.RecordResets(WorkerutilResetter.Resets(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.RecordResets(WorkerutilResetter.Resets(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.RecordResetFailures != nil {
-		row = append(row, options.RecordResetFailures(WorkerutilResetter.ResetFailures(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.RecordResetFailures(WorkerutilResetter.ResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.Errors != nil {
 		errorsOptions := options.ObservableConstructorOptions
 		errorsOptions.MetricNameRoot += "_record_reset"
-		row = append(row, options.Errors(Observation.Errors(errorsOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.Errors(Observation.Errors(errorsOptions)(containerName, owner)).Observable())
 	}
 
 	if len(row) == 0 {

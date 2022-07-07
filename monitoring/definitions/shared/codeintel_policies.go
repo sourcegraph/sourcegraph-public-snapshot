@@ -12,7 +12,7 @@ func (codeIntelligence) NewRepoMatcherTaskGroup(containerName string) monitoring
 				Standard.Count("repositories pattern matcher")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_policies_updated_total",
 					MetricDescriptionRoot: "lsif repository pattern matcher",
-				})("job", containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of configuration policies whose repository membership list was updated
 				`).Observable(),
 			},

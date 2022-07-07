@@ -30,7 +30,7 @@ import (
 )
 
 // sharedObservable defines the type all shared observable variables should have in this package.
-type sharedObservable func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable
+type sharedObservable func(containerName string, owner monitoring.ObservableOwner) Observable
 
 // Observable is a variant of normal Observables that offer convenience functions for
 // customizing shared observables.

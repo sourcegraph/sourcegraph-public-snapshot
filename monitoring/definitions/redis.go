@@ -64,8 +64,8 @@ func Redis() *monitoring.Dashboard {
 			},
 			shared.NewProvisioningIndicatorsGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup("job", redisCache, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup("job", redisStore, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
 		},
 	}
 }

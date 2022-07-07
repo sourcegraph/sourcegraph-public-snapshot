@@ -17,7 +17,7 @@ import (
 const TitleContainerMonitoring = "Container monitoring (not available on server)"
 
 var (
-	ContainerMissing sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ContainerMissing sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "container_missing",
 			Description: "container missing",
@@ -40,7 +40,7 @@ var (
 		}
 	}
 
-	ContainerMemoryUsage sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ContainerMemoryUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "container_memory_usage",
 			Description: "container memory usage by instance",
@@ -55,7 +55,7 @@ var (
 		}
 	}
 
-	ContainerCPUUsage sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ContainerCPUUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "container_cpu_usage",
 			Description: "container cpu usage total (1m average) across all cores by instance",
@@ -72,7 +72,7 @@ var (
 
 	// ContainerIOUsage monitors filesystem reads and writes, and is useful for services
 	// that use disk.
-	ContainerIOUsage sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ContainerIOUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "fs_io_operations",
 			Description: "filesystem reads and writes rate by instance over 1h",
@@ -118,17 +118,15 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		title = options.CustomTitle
 	}
 
-	containerLabel := "job"
-
 	return monitoring.Group{
 		Title:  title,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ContainerMissing.safeApply(ContainerMissing(containerLabel, containerName, owner)).Observable(),
-				options.CPUUsage.safeApply(ContainerCPUUsage(containerLabel, containerName, owner)).Observable(),
-				options.MemoryUsage.safeApply(ContainerMemoryUsage(containerLabel, containerName, owner)).Observable(),
-				options.IOUsage.safeApply(ContainerIOUsage(containerLabel, containerName, owner)).Observable(),
+				options.ContainerMissing.safeApply(ContainerMissing(containerName, owner)).Observable(),
+				options.CPUUsage.safeApply(ContainerCPUUsage(containerName, owner)).Observable(),
+				options.MemoryUsage.safeApply(ContainerMemoryUsage(containerName, owner)).Observable(),
+				options.IOUsage.safeApply(ContainerIOUsage(containerName, owner)).Observable(),
 			},
 		},
 	}

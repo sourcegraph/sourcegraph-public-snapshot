@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-var FrontendInternalAPIErrorResponses sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+var FrontendInternalAPIErrorResponses sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 	return Observable{
 		Name:        "frontend_internal_api_error_responses",
 		Description: "frontend-internal API error responses every 5m by route",
@@ -45,7 +45,7 @@ func NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName string, ow
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ErrorResponses.safeApply(FrontendInternalAPIErrorResponses("job", containerName, owner)).Observable(),
+				options.ErrorResponses.safeApply(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
 			},
 		},
 	}

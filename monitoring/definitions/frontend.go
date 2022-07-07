@@ -576,7 +576,8 @@ func Frontend() *monitoring.Dashboard {
 							Interpretation: `Account lockouts per minute`,
 						},
 					},
-				}},
+				},
+			},
 			{
 				Title:  "Organisation GraphQL API requests",
 				Hidden: true,
@@ -629,8 +630,8 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewGolangMonitoringGroup("job", containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup("job", containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			{
 				Title:  "Ranking",
 				Hidden: true,
@@ -910,11 +911,11 @@ func orgMetricRows(orgMetricSpec []struct {
 	name        string
 	route       string
 	description string
-}) []monitoring.Row {
+},
+) []monitoring.Row {
 	result := []monitoring.Row{}
 	for _, m := range orgMetricSpec {
 		result = append(result, monitoring.Row{
-
 			{
 				Name:           m.name + "_rate",
 				Description:    "rate of " + m.description,

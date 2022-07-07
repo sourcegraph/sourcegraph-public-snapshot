@@ -80,6 +80,10 @@ type ObservationGroupOptions struct {
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	rows := make([]monitoring.Row, 0, 2)
 
+	if options.JobLabel == "" {
+		options.JobLabel = "job"
+	}
+
 	if len(options.By) == 0 {
 		if options.Aggregate != nil {
 			panic("Aggregate must not be supplied when By is not set")
@@ -115,16 +119,16 @@ func (observationConstructor) NewGroup(containerName string, owner monitoring.Ob
 func (c observationConstructor) newRow(containerName string, owner monitoring.ObservableOwner, groupOptions SharedObservationGroupOptions, observableOptions ObservableConstructorOptions) monitoring.Row {
 	row := make(monitoring.Row, 0, 4)
 	if groupOptions.Total != nil {
-		row = append(row, groupOptions.Total(Observation.Total(observableOptions)("job", containerName, owner)).Observable())
+		row = append(row, groupOptions.Total(Observation.Total(observableOptions)(containerName, owner)).Observable())
 	}
 	if groupOptions.Duration != nil {
-		row = append(row, groupOptions.Duration(Observation.Duration(observableOptions)("job", containerName, owner)).Observable())
+		row = append(row, groupOptions.Duration(Observation.Duration(observableOptions)(containerName, owner)).Observable())
 	}
 	if groupOptions.Errors != nil {
-		row = append(row, groupOptions.Errors(Observation.Errors(observableOptions)("job", containerName, owner)).Observable())
+		row = append(row, groupOptions.Errors(Observation.Errors(observableOptions)(containerName, owner)).Observable())
 	}
 	if groupOptions.ErrorRate != nil {
-		row = append(row, groupOptions.ErrorRate(Observation.ErrorRate(observableOptions)("job", containerName, owner)).Observable())
+		row = append(row, groupOptions.ErrorRate(Observation.ErrorRate(observableOptions)(containerName, owner)).Observable())
 	}
 
 	return row

@@ -27,8 +27,8 @@ func (standardConstructor) Count(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
@@ -54,8 +54,8 @@ func (standardConstructor) Duration(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, _ := makeBy(append([]string{"le"}, options.By...)...)
 
 			observable := Observable{
@@ -97,8 +97,8 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
@@ -126,8 +126,8 @@ func (standardConstructor) ErrorRate(legend string) observableConstructor {
 	}
 
 	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{

@@ -84,7 +84,7 @@ func (gitServer) NewBatchLogSemaphoreWait(containerName string) monitoring.Group
 				NoAlertsOption("none")(Observation.Duration(ObservableConstructorOptions{
 					MetricNameRoot:        "batch_log_semaphore_wait",
 					MetricDescriptionRoot: "batch log semaphore",
-				})("job", containerName, monitoring.ObservableOwnerRepoManagement)).Observable(),
+				})(containerName, monitoring.ObservableOwnerRepoManagement)).Observable(),
 			},
 		},
 	}

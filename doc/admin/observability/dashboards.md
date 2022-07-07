@@ -17415,7 +17415,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_run_lock_wait_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_executor_run_lock_wait_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17436,7 +17436,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_run_lock_held_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_executor_run_lock_held_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17457,7 +17457,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17476,7 +17476,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17495,7 +17495,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100302`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17514,7 +17514,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100303`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17533,7 +17533,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17552,7 +17552,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
 
 </details>
 
@@ -17571,7 +17571,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100312`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17590,7 +17590,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100313`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17611,7 +17611,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17630,7 +17630,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17649,7 +17649,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100402`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17668,7 +17668,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17687,7 +17687,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17706,7 +17706,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
 
 </details>
 
@@ -17725,7 +17725,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100412`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17744,7 +17744,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100413`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17765,7 +17765,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17784,7 +17784,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17803,7 +17803,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17822,7 +17822,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17841,7 +17841,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17860,7 +17860,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
 
 </details>
 
@@ -17879,7 +17879,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17898,7 +17898,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17919,7 +17919,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17938,7 +17938,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100601`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17957,7 +17957,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100602`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -17976,7 +17976,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100603`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -17995,7 +17995,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100610`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -18014,7 +18014,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100611`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
 
 </details>
 
@@ -18033,7 +18033,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100612`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
 
 </details>
 
@@ -18052,7 +18052,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100613`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
 
 </details>
 
@@ -18639,7 +18639,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100900`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker)"})`
+Query: `max by(sg_instance) (go_goroutines{sg_job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker)"})`
 
 </details>
 
@@ -18658,7 +18658,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker)"})`
+Query: `max by(sg_instance) (go_gc_duration_seconds{sg_job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker)"})`
 
 </details>
 

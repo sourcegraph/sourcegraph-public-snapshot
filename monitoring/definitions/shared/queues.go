@@ -18,8 +18,8 @@ type queueConstructor struct{}
 //
 // Requires a gauge of the format `src_{options.MetricNameRoot}_total`
 func (queueConstructor) Size(options ObservableConstructorOptions) sharedObservable {
-	return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+	return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -39,8 +39,8 @@ func (queueConstructor) Size(options ObservableConstructorOptions) sharedObserva
 //   - gauge of the format `src_{options.MetricNameRoot}_total`
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
 func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedObservable {
-	return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+	return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -59,8 +59,8 @@ func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedO
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
 func (queueConstructor) MaxAge(options ObservableConstructorOptions) sharedObservable {
-	return func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+	return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -101,13 +101,13 @@ type QueueSizeGroupOptions struct {
 func (queueConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options QueueSizeGroupOptions) monitoring.Group {
 	row := make(monitoring.Row, 0, 3)
 	if options.QueueSize != nil {
-		row = append(row, options.QueueSize(Queue.Size(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.QueueSize(Queue.Size(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.QueueGrowthRate != nil {
-		row = append(row, options.QueueGrowthRate(Queue.GrowthRate(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.QueueGrowthRate(Queue.GrowthRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.QueueMaxAge != nil {
-		row = append(row, options.QueueMaxAge(Queue.MaxAge(options.ObservableConstructorOptions)("job", containerName, owner)).Observable())
+		row = append(row, options.QueueMaxAge(Queue.MaxAge(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 
 	if len(row) == 0 {

@@ -188,7 +188,6 @@ func Zoekt() *monitoring.Dashboard {
 				Title: "Git fetch durations",
 				Rows: []monitoring.Row{
 					{
-
 						{
 							Name:        "90th_percentile_successful_git_fetch_durations_5m",
 							Description: "90th percentile successful git fetch durations over 5m",
@@ -839,7 +838,7 @@ func Zoekt() *monitoring.Dashboard {
 
 			// Note:
 			// We show pod availability here for both the webserver and indexserver as they are bundled together.
-			shared.NewKubernetesMonitoringGroup("job", bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
 		},
 	}
 }

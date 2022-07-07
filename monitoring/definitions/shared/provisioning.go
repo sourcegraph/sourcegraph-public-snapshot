@@ -17,7 +17,7 @@ import (
 const TitleProvisioningIndicators = "Provisioning indicators (not available on server)"
 
 var (
-	ProvisioningCPUUsageLongTerm sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ProvisioningCPUUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "provisioning_container_cpu_usage_long_term",
 			Description: "container cpu usage total (90th percentile over 1d) across all cores by instance",
@@ -32,7 +32,7 @@ var (
 		}
 	}
 
-	ProvisioningMemoryUsageLongTerm sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ProvisioningMemoryUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "provisioning_container_memory_usage_long_term",
 			Description: "container memory usage (1d maximum) by instance",
@@ -47,7 +47,7 @@ var (
 		}
 	}
 
-	ProvisioningCPUUsageShortTerm sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ProvisioningCPUUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "provisioning_container_cpu_usage_short_term",
 			Description: "container cpu usage total (5m maximum) across all cores by instance",
@@ -62,7 +62,7 @@ var (
 		}
 	}
 
-	ProvisioningMemoryUsageShortTerm sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ProvisioningMemoryUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "provisioning_container_memory_usage_short_term",
 			Description: "container memory usage (5m maximum) by instance",
@@ -77,7 +77,7 @@ var (
 		}
 	}
 
-	ContainerOOMKILLEvents sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
+	ContainerOOMKILLEvents sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "container_oomkill_events_total",
 			Description: "container OOMKILL events total by instance",
@@ -134,13 +134,13 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.LongTermCPUUsage.safeApply(ProvisioningCPUUsageLongTerm("job", containerName, owner)).Observable(),
-				options.LongTermMemoryUsage.safeApply(ProvisioningMemoryUsageLongTerm("job", containerName, owner)).Observable(),
+				options.LongTermCPUUsage.safeApply(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermMemoryUsage.safeApply(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
 			},
 			{
-				options.ShortTermCPUUsage.safeApply(ProvisioningCPUUsageShortTerm("job", containerName, owner)).Observable(),
-				options.ShortTermMemoryUsage.safeApply(ProvisioningMemoryUsageShortTerm("job", containerName, owner)).Observable(),
-				options.OOMKILLEvents.safeApply(ContainerOOMKILLEvents("job", containerName, owner)).Observable(),
+				options.ShortTermCPUUsage.safeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
+				options.ShortTermMemoryUsage.safeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
+				options.OOMKILLEvents.safeApply(ContainerOOMKILLEvents(containerName, owner)).Observable(),
 			},
 		},
 	}

@@ -14,28 +14,32 @@ import (
 const TitleGolangMonitoring = "Golang runtime monitoring"
 
 var (
-	GoGoroutines sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:           "go_goroutines",
-			Description:    "maximum active goroutines",
-			Query:          fmt.Sprintf(`max by(instance) (go_goroutines{%s=~".*%s"})`, containerLabel, containerName),
-			Warning:        monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
-			Panel:          monitoring.Panel().LegendFormat("{{name}}"),
-			Owner:          owner,
-			Interpretation: "A high value here indicates a possible goroutine leak.",
-			NextSteps:      "none",
+	GoGoroutines = func(jobLabel, instanceLabel string) sharedObservable {
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			return Observable{
+				Name:           "go_goroutines",
+				Description:    "maximum active goroutines",
+				Query:          fmt.Sprintf(`max by(%s) (go_goroutines{%s=~".*%s"})`, instanceLabel, jobLabel, containerName),
+				Warning:        monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
+				Panel:          monitoring.Panel().LegendFormat("{{name}}"),
+				Owner:          owner,
+				Interpretation: "A high value here indicates a possible goroutine leak.",
+				NextSteps:      "none",
+			}
 		}
 	}
 
-	GoGcDuration sharedObservable = func(containerLabel, containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "go_gc_duration_seconds",
-			Description: "maximum go garbage collection duration",
-			Query:       fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{%s=~".*%s"})`, containerLabel, containerName),
-			Warning:     monitoring.Alert().GreaterOrEqual(2),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-			Owner:       owner,
-			NextSteps:   "none",
+	GoGcDuration = func(jobLabel, instanceLabel string) sharedObservable {
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			return Observable{
+				Name:        "go_gc_duration_seconds",
+				Description: "maximum go garbage collection duration",
+				Query:       fmt.Sprintf(`max by(%s) (go_gc_duration_seconds{%s=~".*%s"})`, instanceLabel, jobLabel, containerName),
+				Warning:     monitoring.Alert().GreaterOrEqual(2),
+				Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+				Owner:       owner,
+				NextSteps:   "none",
+			}
 		}
 	}
 )
@@ -46,13 +50,24 @@ type GolangMonitoringOptions struct {
 
 	// GCDuration transforms the default observable used to construct the Go GC duration panel.
 	GCDuration ObservableOption
+
+	JobLabelName string
+
+	InstanceLabelName string
 }
 
 // NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
 // metrics for the given container.
-func NewGolangMonitoringGroup(containerLabel, containerName string, owner monitoring.ObservableOwner, options *GolangMonitoringOptions) monitoring.Group {
+func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *GolangMonitoringOptions) monitoring.Group {
 	if options == nil {
 		options = &GolangMonitoringOptions{}
+	}
+
+	if options.InstanceLabelName == "" {
+		options.InstanceLabelName = "instance"
+	}
+	if options.JobLabelName == "" {
+		options.JobLabelName = "job"
 	}
 
 	return monitoring.Group{
@@ -60,8 +75,8 @@ func NewGolangMonitoringGroup(containerLabel, containerName string, owner monito
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.Goroutines.safeApply(GoGoroutines(containerLabel, containerName, owner)).Observable(),
-				options.GCDuration.safeApply(GoGcDuration(containerLabel, containerName, owner)).Observable(),
+				options.Goroutines.safeApply(GoGoroutines(options.JobLabelName, options.InstanceLabelName)(containerName, owner)).Observable(),
+				options.GCDuration.safeApply(GoGcDuration(options.JobLabelName, options.InstanceLabelName)(containerName, owner)).Observable(),
 			},
 		},
 	}
