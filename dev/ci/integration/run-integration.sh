@@ -36,6 +36,21 @@ function docker_cleanup() {
   rm -rf "$DATA"
 }
 
+function generate_markdown() {
+    if [ -f "$root_dir/server.log" ]; then
+        errors=$(egrep -i "eror|error|panic" "$root_dir/server.log")
+        annotation=$(
+        cat <<EOF
+See below for an exerpt of errors. For more info go HERE
+\`\`\`term
+$errors
+\`\`\`
+EOF
+)
+    echo $annotation >
+    fi
+}
+
 # Do a pre-run cleanup
 docker_cleanup
 

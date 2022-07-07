@@ -462,7 +462,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("IMAGE",
 				images.DevRegistryImage("server", candidateImageTag)),
-			bk.Cmd("dev/ci/integration/backend/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/backend/run.sh", bk.AnnotatedCmdOpts{}),
 			bk.ArtifactPaths("./*.log"))
 	}
 }
@@ -585,8 +585,9 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/e2e/run.sh"),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{}),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
+		)
 	}
 }
 
@@ -604,7 +605,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/qa/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/qa/run.sh", bk.AnnotatedCmdOpts{}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -644,7 +645,7 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
+			bk.AnnotatedCmd("./dev/ci/integration/cluster/run.sh", bk.AnnotatedCmdOpts{}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
 		)...)
 	}
