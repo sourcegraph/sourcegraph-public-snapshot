@@ -65,17 +65,17 @@ export const MonitorLogNode: React.FunctionComponent<
                     {hasError ? (
                         <Tooltip content="One or more runs of this code monitor have an error" placement="top">
                             <Icon
+                                aria-label="One or more runs of this code monitor have an error"
                                 svgPath={mdiAlertCircle}
                                 className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
-                                aria-hidden={true}
                             />
                         </Tooltip>
                     ) : (
                         <Tooltip content="Monitor running as normal" placement="top">
                             <Icon
+                                aria-label="Monitor running as normal"
                                 svgPath={mdiCheckBold}
                                 className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
-                                aria-hidden={true}
                             />
                         </Tooltip>
                     )}

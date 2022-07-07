@@ -53,7 +53,13 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                     data-testid="dashboard-context-menu"
                 >
                     <VisuallyHidden>Dashboard options</VisuallyHidden>
-                    <Icon svgPath={mdiDotsVertical} aria-label="Dashboard options" />
+                    <Icon
+                        svgPath={mdiDotsVertical}
+                        aria-label="Dashboard options"
+                        inline={false}
+                        height={16}
+                        width={16}
+                    />
                 </MenuButton>
             </Tooltip>
 

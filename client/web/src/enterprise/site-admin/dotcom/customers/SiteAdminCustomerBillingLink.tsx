@@ -73,7 +73,7 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWi
                 )}
                 {isErrorLike(update) && (
                     <Tooltip content={update.message}>
-                        <Icon svgPath={mdiAlertCircle} aria-hidden={true} className="text-danger mr-2" />
+                        <Icon aria-label={update.message} svgPath={mdiAlertCircle} className="text-danger mr-2" />
                     </Tooltip>
                 )}
                 <Button

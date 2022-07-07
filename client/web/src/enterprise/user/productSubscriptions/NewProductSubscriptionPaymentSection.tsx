@@ -108,7 +108,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
                         <Tooltip content={previewInvoice.message}>
-                            <Icon svgPath={mdiAlertCircle} aria-hidden={true} />
+                            <Icon aria-label={previewInvoice.message} svgPath={mdiAlertCircle} />
                         </Tooltip>{' '}
                         Error
                     </span>

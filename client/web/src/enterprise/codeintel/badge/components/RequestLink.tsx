@@ -57,6 +57,9 @@ export const RequestLink: React.FunctionComponent<React.PropsWithChildren<Reques
                     <Icon
                         aria-label="Requests are documented and contribute to our precise support roadmap"
                         svgPath={mdiInformationOutline}
+                        inline={false}
+                        height={16}
+                        width={16}
                     />
                 </Tooltip>
             </span>

@@ -9,7 +9,7 @@ import styles from './Icons.module.scss'
 
 export const CachedIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Tooltip content="A cached result was found for this workspace.">
-        <Icon aria-hidden={true} svgPath={mdiContentSave} />
+        <Icon aria-label="A cached result was found for this workspace." svgPath={mdiContentSave} />
     </Tooltip>
 )
 
@@ -18,9 +18,9 @@ export const PartiallyCachedIcon: React.FunctionComponent<React.PropsWithChildre
     return (
         <Tooltip content={label}>
             <Icon
+                aria-label={label}
                 role="img"
                 className={styles.partiallyCachedIcon}
-                aria-hidden={true}
                 svgPath={mdiContentSaveEditOutline}
             />
         </Tooltip>
@@ -29,6 +29,9 @@ export const PartiallyCachedIcon: React.FunctionComponent<React.PropsWithChildre
 
 export const ExcludeIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Tooltip content="Your batch spec was modified to exclude this workspace. Preview again to update.">
-        <Icon aria-hidden={true} svgPath={mdiDelete} />
+        <Icon
+            aria-label="Your batch spec was modified to exclude this workspace. Preview again to update."
+            svgPath={mdiDelete}
+        />
     </Tooltip>
 )
