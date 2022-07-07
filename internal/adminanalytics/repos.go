@@ -56,3 +56,11 @@ type ReposSummaryData struct {
 func (s *ReposSummary) Count() int32 { return s.Data.Count }
 
 func (s *ReposSummary) PreciseCodeIntelCount() int32 { return s.Data.PreciseCodeIntelCount }
+
+func (s *Repos) CacheAll(ctx context.Context) error {
+	if _, err := s.Summary(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}

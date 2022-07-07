@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -101,6 +102,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 			&Users{DateRange: dateRange, DB: db, Cache: true},
 			&Notebooks{DateRange: dateRange, DB: db, Cache: true},
 			&CodeIntel{DateRange: dateRange, DB: db, Cache: true},
+			&Repos{DB: db, Cache: true},
 		}
 		for _, store := range stores {
 			if err := store.CacheAll(ctx); err != nil {
@@ -116,20 +118,24 @@ var started bool
 
 func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 	logger := log.Scoped("adminanalytics:cache-refresh", "admin analytics cache refresh")
+
 	if started {
 		panic("already started")
 	}
 
 	started = true
+	ctx = featureflag.WithFlags(ctx, db.FeatureFlags())
 
-	const delay = 24 * time.Hour
+	const delay = 15 * time.Second
 	for {
-		if err := refreshAnalyticsCache(ctx, db); err != nil {
-			logger.Error("Error refreshing admin analytics cache", log.Error(err))
+		if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
+			if err := refreshAnalyticsCache(ctx, db); err != nil {
+				logger.Error("Error refreshing admin analytics cache", log.Error(err))
+			}
 		}
 
 		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(600)) * time.Second
+		randomDelay := time.Duration(rand.Intn(5)) * time.Second
 		time.Sleep(delay + randomDelay)
 	}
 }

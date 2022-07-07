@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type siteAnalyticsResolver struct {
@@ -18,6 +20,10 @@ var cache = false // TODO: change before merging
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
+		return nil, errors.New("'admin-analytics-enabled' feature flag is not enabled")
 	}
 	return &siteAnalyticsResolver{r.db}, nil
 }
