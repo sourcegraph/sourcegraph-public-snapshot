@@ -187,7 +187,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE skunk_payloads SET payload2 %s WHERE id = %s",
+			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s",
 			oldToNew(payload),
 			id,
 		)); err != nil {
