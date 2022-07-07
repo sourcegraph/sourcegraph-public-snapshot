@@ -13,12 +13,12 @@ import (
 )
 
 func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
-	staleUploads, err := j.uploadSvc.StaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
+	staleUploads, err := j.uploadSvc.GetStaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
 	}
 
-	staleIndexes, err := j.indexSvc.StaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
+	staleIndexes, err := j.indexSvc.GetStaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "indexSvc.StaleSourcedCommits")
 	}

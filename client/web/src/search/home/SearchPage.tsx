@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -17,7 +17,7 @@ import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
@@ -56,15 +56,6 @@ export interface SearchPageProps
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
-
-    const isExperimentalOnboardingTourEnabled = useExperimentalFeatures(
-        features => features.showOnboardingTour ?? false
-    )
-    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL !== '')
-    const showOnboardingTour = useMemo(
-        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !props.isSourcegraphDotCom,
-        [hasSearchQuery, isExperimentalOnboardingTourEnabled, props.isSourcegraphDotCom]
-    )
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
 
@@ -81,7 +72,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
             >
-                <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
+                <SearchPageInput {...props} source="home" />
             </div>
             <div
                 className={classNames(styles.panelsContainer, {

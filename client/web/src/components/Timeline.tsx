@@ -1,6 +1,7 @@
 import React, { FunctionComponent, ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
 
@@ -41,6 +42,7 @@ export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>>
                         <div className={styles.separator} />
                         {showDurations && (
                             <span className="flex-1 text-muted ml-4">
+                                <VisuallyHidden>Step took</VisuallyHidden>
                                 {formatDistance(new Date(stage.date), new Date(stages[stageIndex - 1]?.date))}
                             </span>
                         )}
