@@ -521,21 +521,22 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	return nil
 }
 
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, updateCount int) ([]*types.Repo, error) {
-	reposToUpdateNames := []string{}
-	count := updateCount
+// fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
+func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]*types.Repo, error) {
+	reposToUpdateNames := make([]string, count)
+	idx := 0
 	// random nature of map traversal yields a different subset of repos every time this function is called
 	for repoName := range repoToSize {
-		if count <= 0 {
+		if idx >= count {
 			break
 		}
-		reposToUpdateNames = append(reposToUpdateNames, string(repoName))
-		count--
+		reposToUpdateNames[idx] = string(repoName)
+		idx++
 	}
 
 	foundRepos, err := s.DB.Repos().List(ctx, database.ReposListOptions{
 		Names:          reposToUpdateNames,
-		LimitOffset:    &database.LimitOffset{Limit: updateCount},
+		LimitOffset:    &database.LimitOffset{Limit: count},
 		IncludeBlocked: true,
 	})
 	if err != nil {
