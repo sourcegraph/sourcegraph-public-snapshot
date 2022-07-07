@@ -741,14 +741,12 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                 <CollapseHeader
                     as={Button}
                     aria-expanded={open}
+                    aria-label={`Repository ${repoLocationGroup.repoName}`}
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
-                    )}
+                    <Icon aria-hidden="true" as={open ? ChevronDownIcon : ChevronRightIcon} />
+
                     <small>
                         <Link
                             to={repoUrl}
@@ -822,6 +820,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
                             <Link
+                                aria-label={`File path ${group.path}`}
                                 to={fileUrl}
                                 onClick={event => {
                                     event.preventDefault()
