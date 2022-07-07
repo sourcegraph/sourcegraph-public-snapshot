@@ -7,19 +7,19 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	gitlaboauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,11 +48,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	glClient := provider.GetOAuthClient(token.AccessToken, true)
 
 	///// Debugging block to test new authenticator
-	saveFunction := func(token string) { s.db.AccessTokens()//todo save new token in case its needed }
-	a := &auth.TokenWithRefresher{Token: token.AccessToken, Refresher: saveFunction}
-
-	glClient = glClient.WithAuthenticator(a)
-	////
+	saveFunction := func(token string) { s.db.AccessTokens() fmt.Println("save to the db") }
+	a := gitlaboauth.OauthBearerTokenWithRefresher{Token: token.AccessToken, Refresher: saveFunction}
+	glClient = glClient.WithCustomAuthenticator(a)
+	//
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
 	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient)

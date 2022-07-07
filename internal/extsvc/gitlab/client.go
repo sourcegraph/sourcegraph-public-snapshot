@@ -183,6 +183,7 @@ type Client struct {
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
+	CustomAuth       auth.OauthBearerTokenWithRefresher
 	rateLimitMonitor *ratelimit.Monitor
 	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
@@ -300,6 +301,17 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	cc.rateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
 	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
+
+	return &cc
+}
+
+func (c *Client) WithCustomAuthenticator(a auth.OauthBearerTokenWithRefresher) *Client {
+	tokenHash := a.Hash()
+
+	cc := *c
+	cc.rateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
+	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	cc.CustomAuth = a
 
 	return &cc
 }
