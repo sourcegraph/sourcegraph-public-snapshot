@@ -308,12 +308,8 @@ func TestSearchResultsHydration(t *testing.T) {
 		RepositoryID: uint32(repoWithIDs.ID),
 		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
 		Branches:     []string{"master"},
-		LineMatches: []zoekt.LineMatch{
-			{
-				Line: nil,
-			},
-		},
-		Checksum: []byte{0, 1, 2},
+		ChunkMatches: make([]zoekt.ChunkMatch, 1),
+		Checksum:     []byte{0, 1, 2},
 	}}
 
 	z := &searchbackend.FakeSearcher{
