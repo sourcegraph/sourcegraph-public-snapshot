@@ -258,7 +258,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                             </PopoverTrigger>
                         </ButtonGroup>
-                        {/* aria-lebelledBy does not fix the no modal title issue here, have to apply aria-label directly */}
                         <PopoverContent
                             position={Position.bottomStart}
                             className="pt-0 pb-0"
