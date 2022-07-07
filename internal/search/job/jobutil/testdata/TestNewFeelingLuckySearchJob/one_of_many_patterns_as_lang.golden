@@ -5,6 +5,6 @@
   },
   {
     "Description": "AND patterns together",
-    "Query": "context:global (parse AND python)"
+    "Query": "context:global (/parse/ AND /python/)"
   }
 ]

@@ -18,19 +18,19 @@ func TestWithDefaults(t *testing.T) {
 		{
 			name:     "no defaults",
 			input:    "repo:myrepo testquery",
-			want:     "repo:myrepo testquery",
+			want:     "repo:myrepo /testquery/",
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "no defaults with fork archived",
 			input:    "repo:myrepo testquery fork:no archived:no",
-			want:     "repo:myrepo fork:no archived:no testquery",
+			want:     "repo:myrepo fork:no archived:no /testquery/",
 			defaults: []query.Parameter{},
 		},
 		{
 			name:  "default archived",
 			input: "repo:myrepo testquery fork:no",
-			want:  "archived:yes repo:myrepo fork:no testquery",
+			want:  "archived:yes repo:myrepo fork:no /testquery/",
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.Yes),
@@ -41,7 +41,7 @@ func TestWithDefaults(t *testing.T) {
 		{
 			name:  "default fork and archived",
 			input: "repo:myrepo testquery",
-			want:  "archived:no fork:no repo:myrepo testquery",
+			want:  "archived:no fork:no repo:myrepo /testquery/",
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.No),
@@ -79,13 +79,13 @@ func TestMultiRepoQuery(t *testing.T) {
 		{
 			name:     "single repo",
 			repos:    []string{"repo1"},
-			want:     `count:99999999 testquery repo:^(repo1)$`,
+			want:     `count:99999999 /testquery/ repo:^(repo1)$`,
 			defaults: []query.Parameter{},
 		},
 		{
 			name:  "multiple repo",
 			repos: []string{"repo1", "repo2"},
-			want:  `archived:no fork:no count:99999999 testquery repo:^(repo1|repo2)$`,
+			want:  `archived:no fork:no count:99999999 /testquery/ repo:^(repo1|repo2)$`,
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.No),
@@ -101,7 +101,7 @@ func TestMultiRepoQuery(t *testing.T) {
 		{
 			name:  "multiple repo",
 			repos: []string{"github.com/myrepos/repo1", "github.com/myrepos/repo2"},
-			want:  `archived:no fork:no count:99999999 testquery repo:^(github\.com/myrepos/repo1|github\.com/myrepos/repo2)$`,
+			want:  `archived:no fork:no count:99999999 /testquery/ repo:^(github\.com/myrepos/repo1|github\.com/myrepos/repo2)$`,
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.No),

@@ -5,6 +5,6 @@
   },
   {
     "Description": "AND patterns together",
-    "Query": "context:global (fix AND commit)"
+    "Query": "context:global (/fix/ AND /commit/)"
   }
 ]
