@@ -1,9 +1,11 @@
 package com.sourcegraph.config;
 
+import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -22,6 +24,7 @@ public class SettingsComponent {
     private final JBCheckBox isUrlNotificationDismissedCheckBox;
 
     public SettingsComponent() {
+        // User authentication
         JBLabel sourcegraphUrlLabel = new JBLabel("Sourcegraph URL:");
         sourcegraphUrlTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
@@ -33,6 +36,13 @@ public class SettingsComponent {
         accessTokenTextField.getEmptyText().setText("Paste your access token here");
         accessTokenTextField.setToolTipText("Go to https://sourcegraph.example.com/users/{your-username}/settings/tokens to create a token.");
 
+        JPanel userAuthenticationPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent(sourcegraphUrlLabel, sourcegraphUrlTextField)
+            .addLabeledComponent(accessTokenLabel, accessTokenTextField)
+            .getPanel();
+        userAuthenticationPanel.setBorder(IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+
+        // Navigation settings
         JBLabel defaultBranchNameLabel = new JBLabel("Default branch name:");
         defaultBranchNameTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
@@ -50,16 +60,19 @@ public class SettingsComponent {
             "The whitespace before and after the commas doesn't matter.");
 
         globbingCheckBox = new JBCheckBox("Enable globbing");
-
         isUrlNotificationDismissedCheckBox = new JBCheckBox("Never show the \"No Sourcegraph URL set\" notification for this project");
 
+        JPanel navigationSettingsPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField)
+            .addLabeledComponent(remoteUrlReplacementsLabel, remoteUrlReplacementsTextField)
+            .addComponent(globbingCheckBox)
+            .addComponent(isUrlNotificationDismissedCheckBox, 10)
+            .getPanel();
+        navigationSettingsPanel.setBorder(IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
+
         panel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(sourcegraphUrlLabel, sourcegraphUrlTextField, 1, false)
-            .addLabeledComponent(accessTokenLabel, accessTokenTextField, 1, false)
-            .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField, 1, false)
-            .addLabeledComponent(remoteUrlReplacementsLabel, remoteUrlReplacementsTextField, 1, false)
-            .addComponent(globbingCheckBox, 1)
-            .addComponent(isUrlNotificationDismissedCheckBox, 1)
+            .addComponent(userAuthenticationPanel)
+            .addComponent(navigationSettingsPanel)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
     }
