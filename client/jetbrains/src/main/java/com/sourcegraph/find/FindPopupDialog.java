@@ -9,20 +9,17 @@ import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.DialogWrapperPeer;
 import com.intellij.openapi.ui.DialogWrapperPeerFactory;
-import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.util.DimensionService;
 import com.intellij.openapi.util.WindowStateService;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.openapi.wm.impl.IdeGlassPaneImpl;
 import com.intellij.ui.PopupBorder;
-import com.intellij.ui.TitlePanel;
 import com.intellij.ui.WindowMoveListener;
 import com.intellij.ui.WindowResizeListener;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
-import com.sourcegraph.Icons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +38,8 @@ public class FindPopupDialog extends DialogWrapper {
         this.project = project;
         this.mainPanel = myMainPanel;
 
-        setTitle("Sourcegraph");
+        setTitle("Find with Sourcegraph");
+
         getWindow().setMinimumSize(new Dimension(750, 420));
 
         init();
@@ -71,15 +69,7 @@ public class FindPopupDialog extends DialogWrapper {
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        TitlePanel titlePanel = new TitlePanel(new ActiveIcon(Icons.Logo).getRegular(), new ActiveIcon(Icons.Logo).getInactive());
-        titlePanel.setText(getTitle());
-
-        addMoveListeners(titlePanel);
-
-        // Adding the center panel
-        return JBUI.Panels.simplePanel()
-            .addToTop(titlePanel)
-            .addToCenter(mainPanel);
+        return mainPanel;
     }
 
     // This adds behaviors found in JetBrain's native FindPopupPanel:
@@ -107,6 +97,7 @@ public class FindPopupDialog extends DialogWrapper {
         }
         if (parent != null && showPoint == null) {
             int height = UISettings.getInstance().getShowNavigationBar() ? 135 : 115;
+            //noinspection UnstableApiUsage
             if (parent instanceof IdeFrameImpl && ((IdeFrameImpl) parent).isInFullScreen()) {
                 height -= 20;
             }
