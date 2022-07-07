@@ -96,7 +96,7 @@ func SingleRepoQuery(query BasicQuery, repo, revision string, defaultParams sear
 }
 
 // SingleRepoQueryIndexed generates a query against the current index for one repo
-func SingleRepoQueryIndexed(query, repo string) string {
+func SingleRepoQueryIndexed(query BasicQuery, repo string) BasicQuery {
 	modified := withCountAll(query)
 	modified = forRepos(modified, []string{repo})
 	return modified
