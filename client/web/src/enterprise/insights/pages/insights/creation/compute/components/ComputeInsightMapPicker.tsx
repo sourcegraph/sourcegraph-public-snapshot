@@ -3,10 +3,12 @@ import { FC, MouseEvent, useEffect, useMemo } from 'react'
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
-import { Button, ButtonGroup, ButtonProps } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, ButtonProps, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchBasedInsightSeries } from '../../../../../core'
 import { ComputeInsightMap } from '../types'
+
+const TOOLTIP_TEXT = 'Available only for queries with type:commit and type:diff'
 
 export interface ComputeInsightMapPickerProps {
     series: SearchBasedInsightSeries[]
@@ -68,23 +70,28 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
                 path
             </OptionButton>
 
-            <OptionButton
-                active={value === ComputeInsightMap.Author}
-                value={ComputeInsightMap.Author}
-                disabled={!hasTypeDiffOrCommit}
-                onClick={handleOptionClick}
-            >
-                author
-            </OptionButton>
+            <Tooltip content={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}>
+                <OptionButton
+                    active={value === ComputeInsightMap.Author}
+                    value={ComputeInsightMap.Author}
+                    disabled={!hasTypeDiffOrCommit}
+                    onClick={handleOptionClick}
+                >
+                    author
+                </OptionButton>
+            </Tooltip>
 
-            <OptionButton
-                active={value === ComputeInsightMap.Date}
-                value={ComputeInsightMap.Date}
-                disabled={!hasTypeDiffOrCommit}
-                onClick={handleOptionClick}
-            >
-                date
-            </OptionButton>
+            <Tooltip content={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}>
+                <OptionButton
+                    active={value === ComputeInsightMap.Date}
+                    value={ComputeInsightMap.Date}
+                    disabled={!hasTypeDiffOrCommit}
+                    data-tooltip={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}
+                    onClick={handleOptionClick}
+                >
+                    date
+                </OptionButton>
+            </Tooltip>
         </ButtonGroup>
     )
 }
