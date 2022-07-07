@@ -49,11 +49,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	glClient := provider.GetOAuthClient(token.AccessToken, true)
 
 	///// Debugging block to test new authenticator
-	saveFunction := func(token string) { fmt.Println("function that will access the db. new token set", "bli") }
+	saveFunction := func(token string) { s.db.AccessTokens()//todo save new token in case its needed }
 	a := &auth.TokenWithRefresher{Token: token.AccessToken, Refresher: saveFunction}
 
-	newTokenSaved := "im-a-new-token"
-	a.TryToSaveToken(newTokenSaved, ctx)
 	glClient = glClient.WithAuthenticator(a)
 	////
 

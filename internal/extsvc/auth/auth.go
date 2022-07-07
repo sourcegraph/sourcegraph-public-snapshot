@@ -46,5 +46,4 @@ type AuthenticatorWithSSH interface {
 type AuthenticatorWithTokenRefresher interface {
 	Authenticator
 	Hash() string
-	// TryToSaveToken()
 }

@@ -2,11 +2,8 @@ package auth
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/inconshreveable/log15"
 
@@ -180,41 +177,4 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 	}
 
 	return userID, "", nil
-}
-
-type TokenWithRefresher struct {
-	Token     string
-	Refresher func(string)
-	db        database.DB
-}
-
-type AuthenticatorWithRefresher interface {
-	Authenticate(*http.Request) error
-	Hash() string
-	TryToSaveToken(string, context.Context)
-}
-
-var _ AuthenticatorWithRefresher = &TokenWithRefresher{}
-
-func (t *TokenWithRefresher) Authenticate(req *http.Request) error {
-	req.Header.Set("Authorization", "Bearer "+t.Token)
-	fmt.Println("authenticate with new authenticator, token is:", t.Token)
-
-	// TODO: try to authenticate. if it fails with 401, retry, refresh.
-
-	return nil
-}
-
-func (t *TokenWithRefresher) Hash() string {
-	key := sha256.Sum256([]byte(t.Token))
-	return hex.EncodeToString(key[:])
-}
-
-func (t *TokenWithRefresher) TryToSaveToken(tk string, ctx context.Context) {
-	fmt.Println("try to save token -> user.go, new token is:", tk)
-
-	// TODO: save new token based on the value from tk
-	// user := actor.FromContext(ctx)
-	// opt := database.AccessTokensListOptions{SubjectUserID: user.UID}
-	// _, _ = t.db.AccessTokens().List(ctx, database.AccessTokensListOptions{SubjectUserID: user.UID})
 }
