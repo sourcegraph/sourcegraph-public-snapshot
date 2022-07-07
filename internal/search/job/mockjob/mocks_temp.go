@@ -102,7 +102,7 @@ func NewMockJobFrom(i job.Job) *MockJob {
 			defaultHook: i.Run,
 		},
 		TagsFunc: &JobTagsFunc{
-			defaultHook: i.Tags,
+			defaultHook: i.Fields,
 		},
 	}
 }

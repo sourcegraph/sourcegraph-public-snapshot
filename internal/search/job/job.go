@@ -42,17 +42,22 @@ type PartialJob[T any] interface {
 }
 
 type Describer interface {
+	// Name is the name of the job
 	Name() string
+
+	// Children is the list of the job's children
 	Children() []Describer
-	Tags(Verbosity) []otlog.Field
+
+	// Fields is the set of fields that describe the job
+	Fields(Verbosity) []otlog.Field
 }
 
 type Verbosity int
 
 const (
-	VerbosityNone Verbosity = iota
-	VerbosityBasic
-	VerbosityMax
+	VerbosityNone  Verbosity = iota // no fields
+	VerbosityBasic                  // essential fields
+	VerbosityMax                    // all possible fields
 )
 
 type RuntimeClients struct {

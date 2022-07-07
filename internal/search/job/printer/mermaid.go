@@ -71,7 +71,7 @@ func buildLabel(j job.Describer, v job.Verbosity) string {
 	b := new(strings.Builder)
 	b.WriteString(trimmedUpperName(j.Name()))
 	enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
-	for _, field := range j.Tags(v) {
+	for _, field := range j.Fields(v) {
 		b.WriteString(" <br> ")
 		field.Marshal(enc)
 	}
