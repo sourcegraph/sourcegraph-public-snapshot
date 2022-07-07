@@ -159,16 +159,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 >
                   <rect
                     class="bar"
-                    data-tooltip="8 users"
                     height="160"
+                    title="8 users"
                     width="248"
                     x="1"
                     y="39.99999999999999"
                   />
                   <rect
                     class="bar"
-                    data-tooltip="8 users"
                     height="160"
+                    title="8 users"
                     width="248"
                     x="1"
                     y="39.99999999999999"
@@ -179,16 +179,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 >
                   <rect
                     class="bar"
-                    data-tooltip="2 users"
                     height="39.99999999999999"
+                    title="2 users"
                     width="248"
                     x="1"
                     y="0"
                   />
                   <rect
                     class="bar"
-                    data-tooltip="2 users"
                     height="39.99999999999999"
+                    title="2 users"
                     width="248"
                     x="1"
                     y="0"

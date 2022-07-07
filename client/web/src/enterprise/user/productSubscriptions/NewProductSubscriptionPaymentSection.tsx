@@ -11,7 +11,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike, numberWithCommas
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Alert, Link, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -107,11 +107,9 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
-                        <Icon
-                            aria-label={previewInvoice.message}
-                            data-tooltip={previewInvoice.message}
-                            svgPath={mdiAlertCircle}
-                        />{' '}
+                        <Tooltip content={previewInvoice.message}>
+                            <Icon aria-label={previewInvoice.message} svgPath={mdiAlertCircle} />
+                        </Tooltip>{' '}
                         Error
                     </span>
                 ) : previewInvoice.beforeInvoiceItem ? (

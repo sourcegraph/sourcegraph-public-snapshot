@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { CardText, CardTitle, CardBody, Card } from '@sourcegraph/wildcard'
+import { CardText, CardTitle, CardBody, Card, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SingleValueCard.module.scss'
 
@@ -28,12 +28,13 @@ export const SingleValueCard: React.FunctionComponent<
                 {title}
             </CardTitle>
             <CardText as="small">{subTitle || ''}</CardText>
-            <CardText
-                data-tooltip={valueTooltip}
-                className={classNames(classNames('font-weight-bold text-nowrap', styles.value), valueClassName)}
-            >
-                <LinkOrSpan to={link}>{value}</LinkOrSpan>
-            </CardText>
+            <Tooltip content={valueTooltip}>
+                <CardText
+                    className={classNames(classNames('font-weight-bold text-nowrap', styles.value), valueClassName)}
+                >
+                    <LinkOrSpan to={link}>{value}</LinkOrSpan>
+                </CardText>
+            </Tooltip>
             {subText && <small>{subText}</small>}
         </CardBody>
     </Card>

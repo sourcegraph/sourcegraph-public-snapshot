@@ -28,7 +28,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>
@@ -65,7 +65,7 @@ exports[`GitCommitNodeByline author 1`] = `
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>
@@ -119,7 +119,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
        
       <span
         class="timestamp"
-        data-tooltip="1991-01-01"
+        data-state="closed"
       >
         about 15 years ago
       </span>
@@ -173,7 +173,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
        
       <span
         class="timestamp"
-        data-tooltip="1991-01-01"
+        data-state="closed"
       >
         about 15 years ago
       </span>
@@ -210,7 +210,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>
@@ -247,7 +247,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>

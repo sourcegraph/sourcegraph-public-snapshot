@@ -152,7 +152,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-01-01"
+                data-state="closed"
               >
                 in almost 14 years
               </span>
@@ -214,7 +214,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                 </span>
                 <div
                   class="d-inline-block mr-3"
-                  data-tooltip="Jan 1, 2021, 12:00:00 AM"
+                  data-state="closed"
                 >
                   <strong
                     class="text-success"
@@ -229,7 +229,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   Created 
                   <span
                     class="timestamp"
-                    data-tooltip="2020-01-01"
+                    data-state="closed"
                   >
                     in almost 14 years
                   </span>

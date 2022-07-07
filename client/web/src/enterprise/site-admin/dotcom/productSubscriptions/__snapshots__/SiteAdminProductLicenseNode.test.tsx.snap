@@ -35,7 +35,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         </span>
         <div
           class="d-inline-block mr-3"
-          data-tooltip="Jan 1, 2021, 12:00:00 AM"
+          data-state="closed"
         >
           <strong
             class="text-success"
@@ -50,7 +50,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           Created 
           <span
             class="timestamp"
-            data-tooltip="2020-01-01"
+            data-state="closed"
           >
             in almost 14 years
           </span>
@@ -147,7 +147,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         </span>
         <span
           class="text-warning font-weight-bold mr-3"
-          data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
+          data-state="closed"
         >
           Inactive
         </span>
@@ -157,7 +157,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           Created 
           <span
             class="timestamp"
-            data-tooltip="2020-01-01"
+            data-state="closed"
           >
             in almost 14 years
           </span>

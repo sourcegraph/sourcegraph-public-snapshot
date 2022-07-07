@@ -4,7 +4,7 @@ import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import {
@@ -100,20 +100,22 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                 >
                     <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
-                            <Icon
-                                className="text-success test-code-host-connection-node-enabled"
-                                data-tooltip="This code host has credentials connected."
-                                aria-label="This code host has credentials connected."
-                                svgPath={mdiCheckCircleOutline}
-                            />
+                            <Tooltip content="This code host has credentials connected.">
+                                <Icon
+                                    aria-label="This code host has credentials connected."
+                                    className="text-success test-code-host-connection-node-enabled"
+                                    svgPath={mdiCheckCircleOutline}
+                                />
+                            </Tooltip>
                         )}
                         {!isEnabled && (
-                            <Icon
-                                className="text-danger test-code-host-connection-node-disabled"
-                                data-tooltip="This code host does not have credentials configured."
-                                aria-label="This code host does not have credentials configured."
-                                svgPath={mdiCheckboxBlankCircleOutline}
-                            />
+                            <Tooltip content="This code host does not have credentials configured.">
+                                <Icon
+                                    aria-label="This code host does not have credentials configured."
+                                    className="text-danger test-code-host-connection-node-disabled"
+                                    svgPath={mdiCheckboxBlankCircleOutline}
+                                />
+                            </Tooltip>
                         )}
                         <Icon className="mx-2" aria-hidden={true} as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
