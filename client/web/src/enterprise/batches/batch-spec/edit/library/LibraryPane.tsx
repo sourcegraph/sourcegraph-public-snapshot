@@ -11,11 +11,11 @@ import { insertNameIntoLibraryItem } from '../../yaml-util'
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
-import minimalSample from './minimal.batch.yaml'
-import regexSample from './sed.batch.yaml'
 import manyCombySample from './many-comby.batch.yaml'
+import minimalSample from './minimal.batch.yaml'
 import monorepoDynamicSample from './monorepo-dynamic.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
+import regexSample from './sed.batch.yaml'
 
 import styles from './LibraryPane.module.scss'
 
