@@ -4,7 +4,6 @@ import { startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import {
     EditorSelection,
-    EditorState,
     Extension,
     Facet,
     StateEffect,
@@ -12,7 +11,6 @@ import {
     Prec,
     RangeSetBuilder,
     MapMode,
-    ChangeSpec,
     Compartment,
 } from '@codemirror/state'
 import {
@@ -33,23 +31,28 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { Node } from '@sourcegraph/shared/src/search/query/parser'
+import { Filter, KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, createUpdateableField } from './extensions'
-import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
+import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
+import {
+    decoratedTokens,
+    queryTokens,
+    parseInputAsQuery,
+    setQueryParseOptions,
+    parsedQuery,
+} from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
-
-const replacePattern = /[\n\r↵]+/g
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -90,7 +93,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // placeholder text properly. CodeMirror has built-in support for
     // placeholders.
 }) => {
-    const value = preventNewLine ? queryState.query.replace(replacePattern, ' ') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
     // reference that doesn't change across renders (and some hooks should only
@@ -126,6 +128,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         ]
 
         if (preventNewLine) {
+            // NOTE: If a submit handler is assigned to the query input then the pressing
+            // enter won't insert a line break anyway. In that case, this exnteions ensures
+            // that line breaks are stripped from pasted input.
             extensions.push(singleLine)
         } else {
             // Automatically enable line wrapping in multi-line mode
@@ -218,7 +223,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 onEditorCreated={editorCreated}
                 patternType={patternType}
                 interpretComments={interpretComments}
-                value={value}
+                value={queryState.query}
                 className={className}
                 extensions={extensions}
             />
@@ -359,36 +364,6 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 // Sometimes it's not always obvious which type of extension to use to achieve a
 // certain goal (and I don't claim that the implementation below is optimal).
 
-// Enforces that the input won't span over multiple lines by replacing or
-// removing line breaks.
-// NOTE: If a submit handler is assigned to the query input then the pressing
-// enter won't insert a line break anyway. In that case, this filter ensures
-// that line breaks are stripped from pasted input.
-const singleLine = EditorState.transactionFilter.of(transaction => {
-    if (!transaction.docChanged) {
-        return transaction
-    }
-
-    const newText = transaction.newDoc.sliceString(0)
-    const changes: ChangeSpec[] = []
-
-    // new RegExp(...) creates a copy of the regular expression so that we have
-    // our own stateful copy for using `exec` below.
-    const lineBreakPattern = new RegExp(replacePattern)
-    let match: RegExpExecArray | null = null
-    while ((match = lineBreakPattern.exec(newText))) {
-        // Insert space for line breaks following non-whitespace characters
-        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
-            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
-        } else {
-            // Otherwise remove it
-            changes.push({ from: match.index, to: match.index + match[0].length })
-        }
-    }
-
-    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
-})
-
 // Instead of deriving extensions directly form props, these event handlers are
 // configured via a field. This means that their values can be updated via
 // transactions instead of having to reconfigure the whole editor. This is
@@ -463,40 +438,15 @@ const [callbacksField, setCallbacks] = createUpdateableField<
 )
 
 // Defines decorators for syntax highlighting
-type StyleNames = keyof typeof styles
-const tokenDecorators: { [key: string]: Decoration } = Object.fromEntries(
-    (Object.keys(styles) as StyleNames[]).map(style => [style, Decoration.mark({ class: styles[style] })])
-)
+const tokenDecorators: { [key: string]: Decoration } = {}
 const emptyDecorator = Decoration.mark({})
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
 
-// Chooses the correct decorator for the decorated token. Copied (and adapted)
-// from decoratedToMonaco (decoratedToken.ts).
+// Chooses the correct decorator for the decorated token
 const decoratedToDecoration = (token: DecoratedToken): Decoration => {
-    let cssClass = 'identifier'
-    switch (token.type) {
-        case 'field':
-        case 'whitespace':
-        case 'keyword':
-        case 'comment':
-        case 'openingParen':
-        case 'closingParen':
-        case 'metaFilterSeparator':
-        case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
-            cssClass = token.type
-            break
-        case 'metaPath':
-        case 'metaRevision':
-        case 'metaRegexp':
-        case 'metaStructural':
-        case 'metaPredicate':
-            // The scopes value is derived from the token type and its kind.
-            // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
-            cssClass = `${token.type}${token.kind}`
-            break
-    }
-    return tokenDecorators[cssClass] ?? emptyDecorator
+    const className = toCSSClassName(token)
+    const decorator = tokenDecorators[className]
+    return decorator || (tokenDecorators[className] = Decoration.mark({ class: className }))
 }
 
 // This provides syntax highlighting. This is a custom solution so that we an
@@ -520,7 +470,7 @@ const highlightFocusedFilter = ViewPlugin.define(
         update(update) {
             if (update.docChanged || update.selectionSet || update.focusChanged) {
                 if (update.view.hasFocus) {
-                    const query = update.state.facet(parsedQuery)
+                    const query = update.state.facet(queryTokens)
                     const position = update.state.selection.main.head
                     const focusedFilter = query.tokens.find(
                         (token): token is Filter =>
@@ -544,7 +494,7 @@ const highlightFocusedFilter = ViewPlugin.define(
 
 // Extension for providing token information. This includes showing a popover on
 // hover and highlighting the hovered token.
-function tokenInfo(): Extension[] {
+function tokenInfo(): Extension {
     const setHighlighedTokenPosition = StateEffect.define<number | null>()
     const highlightedTokenPosition = StateField.define<number | null>({
         create() {
@@ -592,6 +542,21 @@ function tokenInfo(): Extension[] {
                     case 'metaPredicate':
                         // These are the tokens we show hover information for
                         break
+                    case 'keyword': {
+                        // Find operator (AND and OR are supported)
+                        const operator = findOperatorNode(position, state.facet(parsedQuery))
+                        if (operator) {
+                            return Decoration.set([
+                                focusedFilterDeco.range(
+                                    (operator.groupRange ?? operator.range).start,
+                                    (operator.groupRange ?? operator.range).end
+                                ),
+                            ])
+                        }
+                        // Highlight operator keyword only
+                        break
+                    }
+
                     default:
                         tokenAtPosition = undefined
                         break
@@ -692,6 +657,17 @@ function getTokensTooltipInformation(
                 values.push(toHover(token))
                 range = token.groupRange ? token.groupRange : token.range
                 break
+            case 'keyword':
+                switch (token.kind) {
+                    case KeywordKind.Or:
+                        values.push('Find results which match both the left and the right expression.')
+                        range = token.range
+                        break
+                    case KeywordKind.And:
+                        values.push('Find results which match the left or the right expression.')
+                        range = token.range
+                        break
+                }
         }
     }
 
@@ -713,10 +689,10 @@ const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
     [MarkerSeverity.Warning]: Decoration.mark({ class: styles.diagnosticWarning }),
     [MarkerSeverity.Error]: Decoration.mark({ class: styles.diagnosticError }),
 }
-const queryDiagnostic: Extension[] = [
+const queryDiagnostic: Extension = [
     // Compute diagnostics when query changes
-    diagnostics.compute([parsedQuery], state => {
-        const query = state.facet(parsedQuery)
+    diagnostics.compute([queryTokens], state => {
+        const query = state.facet(queryTokens)
         return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType) : []
     }),
     // Generate diagnostic markers
@@ -759,6 +735,19 @@ const queryDiagnostic: Extension[] = [
         }
     ),
 ]
+
+function findOperatorNode(position: number, node: Node | null): Extract<Node, { type: 'operator' }> | null {
+    if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
+        return null
+    }
+    for (const operand of node.operands) {
+        const result = findOperatorNode(position, operand)
+        if (result) {
+            return result
+        }
+    }
+    return node
+}
 
 function isTokenInRange(position: number, token: Pick<DecoratedToken, 'type' | 'range'>): boolean {
     return token.range.start <= position && getEndPosition(token) > position

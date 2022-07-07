@@ -1,5 +1,5 @@
 /* eslint-disable jsdoc/check-indentation */
-import { Extension, StateEffect, StateEffectType, StateField } from '@codemirror/state'
+import { ChangeSpec, EditorState, Extension, StateEffect, StateEffectType, StateField } from '@codemirror/state'
 import { EditorView, ViewUpdate } from '@codemirror/view'
 import { Observable } from 'rxjs'
 
@@ -7,6 +7,7 @@ import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { createDefaultSuggestionSources, searchQueryAutocompletion } from './completion'
+import { loadingIndicator } from './loading-indicator'
 
 export { createDefaultSuggestionSources, searchQueryAutocompletion }
 
@@ -21,6 +22,36 @@ export const changeListener = (callback: (value: string) => void): Extension =>
         }
     })
 
+const replacePattern = /[\n\r↵]+/g
+/**
+ * An extension that enforces that the input will be single line. Consecutive
+ * line breaks will be replaces by a single space.
+ */
+export const singleLine = EditorState.transactionFilter.of(transaction => {
+    if (!transaction.docChanged) {
+        return transaction
+    }
+
+    const newText = transaction.newDoc.sliceString(0)
+    const changes: ChangeSpec[] = []
+
+    // new RegExp(...) creates a copy of the regular expression so that we have
+    // our own stateful copy for using `exec` below.
+    const lineBreakPattern = new RegExp(replacePattern)
+    let match: RegExpExecArray | null = null
+    while ((match = lineBreakPattern.exec(newText))) {
+        // Insert space for line breaks following non-whitespace characters
+        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
+            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
+        } else {
+            // Otherwise remove it
+            changes.push({ from: match.index, to: match.index + match[0].length })
+        }
+    }
+
+    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
+})
+
 /**
  * Creates a search query suggestions extension with default suggestion sources
  * and cancable requests.
@@ -29,18 +60,26 @@ export const createDefaultSuggestions = ({
     isSourcegraphDotCom,
     globbing,
     fetchSuggestions,
+    disableFilterCompletion,
+    disableSymbolCompletion,
 }: {
     isSourcegraphDotCom: boolean
     globbing: boolean
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
-}): Extension =>
+    disableSymbolCompletion?: true
+    disableFilterCompletion?: true
+}): Extension => [
     searchQueryAutocompletion(
         createDefaultSuggestionSources({
             fetchSuggestions: createCancelableFetchSuggestions(fetchSuggestions),
             globbing,
             isSourcegraphDotCom,
+            disableSymbolCompletion,
+            disableFilterCompletion,
         })
-    )
+    ),
+    loadingIndicator(),
+]
 
 /**
  * A helper function for creating an extension that operates on the value which

@@ -7,7 +7,8 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -23,10 +24,24 @@ import (
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
 	Name() string
-	Tags() []log.Field
+	Tags() []otlog.Field
+}
+
+// PartialJob is a partially constructed job that needs information only
+// available at runtime to resolve a fully constructed job.
+type PartialJob[T any] interface {
+	// Partial returns the partially constructed job. This interface allows us
+	// to inspect the state of a parameterized job before resolving it, which
+	// happens at runtime.
+	Partial() Job
+
+	// Resolve returns the fully constructed job using information that is only
+	// available at runtime.
+	Resolve(T) Job
 }
 
 type RuntimeClients struct {
+	Logger       log.Logger
 	DB           database.DB
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map

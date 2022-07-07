@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -259,7 +259,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                     className="mb-3"
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={BookOutlineIcon}>Notebooks</PageHeader.Breadcrumb>
+                        <PageHeader.Breadcrumb icon={mdiBookOutline}>Notebooks</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
                 {isErrorLike(importState) && (

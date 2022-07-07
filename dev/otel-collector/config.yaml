@@ -1,0 +1,24 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  jaeger:
+    # Default Jaeger GRPC server
+    endpoint: "$JAEGER_HOST:14250"
+    tls:
+      insecure: true
+
+extensions:
+  health_check:
+    port: 13133
+  zpages:
+   endpoint: "localhost:55679"
+
+service:
+  extensions: [health_check,zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [jaeger]

@@ -175,6 +175,13 @@ extend type Query {
         'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         """
         after: String
+
+        """
+        When specified, merges the list of existing uploads with data from
+        uploads that have been deleted but for which audit logs still exist.
+        Only makes sense when state filter is unset or equal to 'DELETED'.
+        """
+        includeDeleted: Boolean
     ): LSIFUploadConnection!
 
     """
@@ -464,6 +471,13 @@ extend type Repository {
         'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         """
         after: String
+
+        """
+        When specified, merges the list of existing uploads with data from
+        uploads that have been deleted but for which audit logs still exist.
+        Only makes sense when state filter is unset or equal to 'DELETED'.
+        """
+        includeDeleted: Boolean
     ): LSIFUploadConnection!
 
     """
@@ -946,6 +960,12 @@ enum LSIFUploadState {
     point the upload will become unreachable.
     """
     DELETING
+
+    """
+    This upload is deleted and its metadata is reconstructed from existing
+    audit log entries.
+    """
+    DELETED
 }
 
 """

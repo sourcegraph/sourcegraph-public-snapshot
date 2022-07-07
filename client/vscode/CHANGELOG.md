@@ -10,7 +10,23 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
--
+- `Internal:` Automate release step for Open-VSX registry [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
+
+### Fixes
+
+## 2.2.7
+
+### Changes
+
+- Remove references to creating an account on cloud, or configuring a cloud account [pull/38071](https://github.com/sourcegraph/sourcegraph/pull/38071)
+
+### Fixes
+
+## 2.2.6
+
+### Changes
+
+- Remove notification to add Sourcegraph extension to the workspace [issues/37772](https://github.com/sourcegraph/sourcegraph/issues/37772)
 
 ### Fixes
 

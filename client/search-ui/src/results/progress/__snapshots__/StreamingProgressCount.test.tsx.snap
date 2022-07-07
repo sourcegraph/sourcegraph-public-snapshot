@@ -297,7 +297,7 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
     </span>
   </small>
   <small
-    class="d-flex ml-2"
+    class="d-flex align-items-center count"
   >
     <a
       class=""

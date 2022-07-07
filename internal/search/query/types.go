@@ -340,29 +340,29 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 		}
 	})
 
-	VisitField(nodes, FieldRepo, func(v string, negated bool, ann Annotation) {
-		if !ann.Labels.IsSet(IsPredicate) {
-			return
-		}
-
-		name, params := ParseAsPredicate(v)
-		if name != "contains.file" {
-			return
-		}
-
-		var p RepoContainsFilePredicate
-		if err := p.ParseParams(params); err != nil {
-			return
-		}
-
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
 		if negated {
-			exclude = append(exclude, p.Pattern)
+			exclude = append(exclude, pred.Pattern)
 		} else {
-			include = append(include, p.Pattern)
+			include = append(include, pred.Pattern)
 		}
 	})
 
 	return include, exclude
+}
+
+func (p Parameters) RepoContainsCommitAfter() (value string) {
+	nodes := toNodes(p)
+
+	// Look for values of repohascommitafter:
+	value = p.FindValue(FieldRepoHasCommitAfter)
+
+	// Look for values of repo:contains.commit.after()
+	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate, _ bool) {
+		value = pred.TimeRef
+	})
+
+	return value
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).

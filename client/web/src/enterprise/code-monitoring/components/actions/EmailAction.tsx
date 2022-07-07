@@ -96,7 +96,6 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
     return (
         <ActionEditor
             title="Send email notifications"
-            label="Send email notifications"
             subtitle="Deliver email notifications to specified recipients."
             idName="email"
             disabled={disabled}
