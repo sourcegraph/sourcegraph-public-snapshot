@@ -21,7 +21,7 @@ export function useCodeMirror(
         }
 
         const view = new EditorView({
-            state: EditorState.create({ extensions }),
+            state: EditorState.create({ doc: value, extensions }),
             parent: container,
         })
         setView(view)
