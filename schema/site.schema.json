@@ -879,24 +879,29 @@
       "default": 15
     },
     "permissions.syncOldestUsers": {
-      "description": "Number of user permissions to schedule for syncing in single scheduler iteration",
+      "description": "Number of user permissions to schedule for syncing in single scheduler iteration.",
       "type": "integer",
       "default": 10
     },
     "permissions.syncOldestRepos": {
-      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration",
+      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration.",
       "type": "integer",
       "default": 10
     },
     "permissions.syncUsersBackoffSeconds": {
-      "description": "Don't sync a user's permissions if they have synced within the last n seconds",
+      "description": "Don't sync a user's permissions if they have synced within the last n seconds.",
       "type": "integer",
       "default": 60
     },
     "permissions.syncReposBackoffSeconds": {
-      "description": "Don't sync a repo's permissions if it has synced within the last n seconds",
+      "description": "Don't sync a repo's permissions if it has synced within the last n seconds.",
       "type": "integer",
       "default": 60
+    },
+    "permissions.syncUsersMaxConcurrency": {
+      "description": "The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.",
+      "type": "integer",
+      "default": 1
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
