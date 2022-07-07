@@ -3,9 +3,8 @@ import { Meta, Story } from '@storybook/react'
 import { Series } from '../../../../../../charts'
 import { WebStory } from '../../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { SeriesBasedChartTypes } from '../../types'
 
-import { SeriesChart } from './SeriesChart'
+import { SeriesBasedChartTypes, SeriesChart } from './SeriesChart'
 
 const StoryConfig: Meta = {
     title: 'web/insights/views/SeriesChart',

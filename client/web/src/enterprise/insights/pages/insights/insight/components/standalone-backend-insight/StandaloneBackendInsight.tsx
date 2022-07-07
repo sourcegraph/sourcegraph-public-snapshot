@@ -54,6 +54,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
@@ -67,7 +68,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
     const insightCardReference = useRef<HTMLDivElement>(null)
-    const { wasEverVisible } = useVisibility(insightCardReference)
+    const { isVisible, wasEverVisible } = useVisibility(insightCardReference)
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
@@ -107,7 +108,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     )
 
-    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks, trackFilterChanges } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
@@ -163,6 +164,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
+                        onFilterValuesChange={trackFilterChanges}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
                         originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
@@ -195,7 +197,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
 
                 {error ? (
                     <BackendInsightErrorAlert error={error} />
-                ) : loading || !wasEverVisible || !insightData ? (
+                ) : loading || !isVisible || !insightData ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
                 ) : error ? (
                     <BackendInsightErrorAlert error={error} />

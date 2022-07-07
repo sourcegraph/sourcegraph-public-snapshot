@@ -43,7 +43,8 @@ public class SettingsConfigurable implements Configurable {
             || !mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project))
             || !mySettingsComponent.getDefaultBranchName().equals(ConfigUtil.getDefaultBranchName(project))
             || !mySettingsComponent.getRemoteUrlReplacements().equals(ConfigUtil.getRemoteUrlReplacements(project))
-            || mySettingsComponent.isGlobbingEnabled() != ConfigUtil.isGlobbingEnabled(project);
+            || mySettingsComponent.isGlobbingEnabled() != ConfigUtil.isGlobbingEnabled(project)
+            || mySettingsComponent.isUrlNotificationDismissed() != ConfigUtil.isUrlNotificationDismissed();
     }
 
     @Override
@@ -88,6 +89,7 @@ public class SettingsConfigurable implements Configurable {
         } else {
             aSettings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
         }
+        aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
 
         publisher.afterAction(context);
     }
@@ -102,6 +104,7 @@ public class SettingsConfigurable implements Configurable {
         String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
         mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
         mySettingsComponent.setGlobbingEnabled(ConfigUtil.isGlobbingEnabled(project));
+        mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     }
 
     @Override

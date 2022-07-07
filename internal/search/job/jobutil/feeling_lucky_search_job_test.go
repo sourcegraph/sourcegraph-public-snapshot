@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewFeelingLuckySearchJob(t *testing.T) {
@@ -82,6 +83,34 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 
 	t.Run("type and lang multi rule", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`context:global go commit monitor code`)))
+	})
+}
+
+func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
+	// Setup: A child job that sends the same result
+	mockJob := mockjob.NewMockJob()
+	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		s.Send(streaming.SearchEvent{
+			Results: []result.Match{&result.FileMatch{
+				File: result.File{Path: "haut-medoc"},
+			}},
+		})
+		return nil, nil
+	})
+
+	j := FeelingLuckySearchJob{
+		initialJob: mockJob,
+		generators: []next{func() (job.Job, next) { return mockJob, nil }},
+	}
+
+	var sent []result.Match
+	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		sent = append(sent, e.Results...)
+	})
+
+	t.Run("deduplicate results returned by generated jobs", func(t *testing.T) {
+		j.Run(context.Background(), job.RuntimeClients{}, stream)
+		require.Equal(t, 1, len(sent))
 	})
 }
 
