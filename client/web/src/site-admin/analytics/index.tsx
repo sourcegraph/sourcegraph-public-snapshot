@@ -6,7 +6,7 @@ import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H3, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
+import { Card, H3, Text, LoadingSpinner, AnchorLink, H4, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../charts'
 import { BarChart } from '../../charts/components/bar-chart/BarChart'
@@ -98,7 +98,7 @@ function buildStandardDatum(datums: StandardDatum[], dateRange: AnalyticsDateRan
 
 export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_MONTH)
     const { data, error, loading } = useQuery<SearchStatisticsResult, SearchStatisticsVariables>(SEARCH_STATISTICS, {
         variables: {
             dateRange,
@@ -175,21 +175,19 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 color: 'var(--cyan)',
             },
             {
-                value: resultClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
-                color: 'var(--purple)',
-            },
-
-            {
                 value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
             },
             {
+                value: resultClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
+                color: 'var(--purple)',
+            },
+            {
                 value: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
-                position: 'right',
             },
         ]
         return [stats, legends]
@@ -199,21 +197,21 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         if (!data) {
             return
         }
-        const { searches, fileViews, fileOpens } = data.site.analytics.search
+        const { searches, fileViews } = data.site.analytics.search
 
-        const totalCount = searches.summary.totalCount + fileViews.summary.totalCount + fileOpens.summary.totalCount
+        const totalCount = searches.summary.totalCount + fileViews.summary.totalCount
         return {
-            label: 'Searches, file views<br/>& file opens',
-            color: 'var(--purple)',
+            label: 'Searches &<br/>file views',
+            color: 'var(--blue)',
             description:
-                'Each search or file view represents a developer solving a code use problem, getting information an active incident, or other use case.',
+                'The value of code search greatly varies by use case. We’ve calculated this total value with defaults from primary use cases below.',
             value: totalCount,
             items: [
                 {
-                    label: 'Advanced searches',
+                    label: 'Complex searches',
                     minPerItem: 5,
                     description:
-                        'These searches are uniquely serviced by Sourcegraph and would  require ad-hoc scripting to accomplish otherwise.  They typically answer a very specific and valuable question such as find all projects utlizing log4j. ',
+                        'These searches that would require ad-hoc scripting to accomplish without Sourcegraph.  These searches often answer  specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
                     percentage: 3,
                     value: totalCount,
                 },
@@ -229,7 +227,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     label: 'Core workflow',
                     minPerItem: 5,
                     description:
-                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision. ',
+                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision.',
                     percentage: 75,
                     value: totalCount,
                 },
@@ -295,6 +293,21 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
+                <H4 className="my-3">Suggestions</H4>
+                <div className={classNames(styles.border, 'mb-3')} />
+                <ul className="mb-3 pl-3">
+                    <Text as="li">
+                        Promote the{' '}
+                        <AnchorLink to="https://docs.sourcegraph.com/integration/editor" target="_blank">
+                            IDE extension
+                        </AnchorLink>{' '}
+                        and{' '}
+                        <AnchorLink to="https://docs.sourcegraph.com/cli" target="_blank">
+                            SRC CLI
+                        </AnchorLink>{' '}
+                        to your users to allow them to search where they work.
+                    </Text>
+                </ul>
             </Card>
         </>
     )
@@ -302,7 +315,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_MONTH)
     const { data, error, loading } = useQuery<NotebooksStatisticsResult, NotebooksStatisticsVariables>(
         NOTEBOOKS_STATISTICS,
         {
@@ -449,7 +462,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
 
 export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('uniqueUsers')
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_MONTH)
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
             dateRange,
@@ -531,6 +544,8 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         ]
     }, [data])
 
+    const isWideScreen = useMatchMedia('(min-width: 992px)', false)
+
     if (error) {
         throw error
     }
@@ -586,49 +601,45 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                         </div>
                     </div>
                 )}
-                <div className="d-flex">
-                    <div>
-                        {summary && (
-                            <ChartContainer
-                                title="Average user activity by period"
-                                className="mb-5"
-                                labelX="Average DAU/WAU/MAU"
-                                labelY="Unique users"
-                            >
-                                {width => (
-                                    <BarChart
-                                        width={width}
-                                        height={300}
-                                        data={summary}
-                                        getDatumName={datum => datum.label}
-                                        getDatumValue={datum => datum.value}
-                                        getDatumColor={() => 'var(--oc-blue-2)'}
-                                    />
-                                )}
-                            </ChartContainer>
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        {frequencies && (
-                            <ChartContainer
-                                className="mb-5"
-                                title="Frequency of use"
-                                labelX="Days used"
-                                labelY="Unique users"
-                            >
-                                {width => (
-                                    <BarChart
-                                        width={width}
-                                        height={300}
-                                        data={frequencies}
-                                        getDatumName={datum => datum.label}
-                                        getDatumValue={datum => datum.value}
-                                        getDatumColor={() => 'var(--oc-blue-2)'}
-                                    />
-                                )}
-                            </ChartContainer>
-                        )}
-                    </div>
+                <div className={classNames(isWideScreen && 'd-flex')}>
+                    {summary && (
+                        <ChartContainer
+                            title="Average user activity by period"
+                            className="mb-5"
+                            labelX="Average DAU/WAU/MAU"
+                            labelY="Unique users"
+                        >
+                            {width => (
+                                <BarChart
+                                    width={isWideScreen ? 280 : width}
+                                    height={300}
+                                    data={summary}
+                                    getDatumName={datum => datum.label}
+                                    getDatumValue={datum => datum.value}
+                                    getDatumColor={() => 'var(--oc-blue-2)'}
+                                />
+                            )}
+                        </ChartContainer>
+                    )}
+                    {frequencies && (
+                        <ChartContainer
+                            className="mb-5"
+                            title="Frequency of use"
+                            labelX="Days used"
+                            labelY="Unique users"
+                        >
+                            {width => (
+                                <BarChart
+                                    width={isWideScreen ? 540 : width}
+                                    height={300}
+                                    data={frequencies}
+                                    getDatumName={datum => datum.label}
+                                    getDatumValue={datum => datum.value}
+                                    getDatumColor={() => 'var(--oc-blue-2)'}
+                                />
+                            )}
+                        </ChartContainer>
+                    )}
                 </div>
             </Card>
         </>
@@ -637,7 +648,7 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
 
 export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_WEEK)
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_MONTH)
     const { data, error, loading } = useQuery<CodeIntelStatisticsResult, CodeIntelStatisticsVariables>(
         CODEINTEL_STATISTICS,
         {
@@ -653,11 +664,14 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         const {
             referenceClicks,
             definitionClicks,
-            hovers,
             searchBasedEvents,
             preciseEvents,
             crossRepoEvents,
         } = data.site.analytics.codeIntel
+
+        const totalEvents = definitionClicks.summary.totalCount + referenceClicks.summary.totalCount
+        const totalHoverEvents = searchBasedEvents.summary.totalCount + preciseEvents.summary.totalCount
+
         const stats: Series<StandardDatum>[] = [
             {
                 id: 'references',
@@ -703,15 +717,19 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 description: eventAggregation === 'count' ? 'Definitions' : 'Users using definitions',
                 color: 'var(--orange)',
             },
+            {
+                value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                description: 'Cross repo events',
+                position: 'right',
+                color: 'var(--black)',
+            },
         ]
-
-        const totalEvents = definitionClicks.summary.totalCount + referenceClicks.summary.totalCount
-        const totalHoverEvents = searchBasedEvents.summary.totalCount + preciseEvents.summary.totalCount
 
         const calculatorProps = {
             label: 'Intel Events',
             color: 'var(--purple)',
-            description: `Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.`,
+            description:
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.',
             value: totalEvents,
             items: [
                 {

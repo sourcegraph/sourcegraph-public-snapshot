@@ -30,7 +30,7 @@ const calculateHoursSaved = (
 ): (TimeSavedCalculatorGroupItem & { hoursSaved: number })[] =>
     items.map(item => ({
         ...item,
-        hoursSaved: (item.minPerItem * item.value * (item.percentage ?? 100)) / 100,
+        hoursSaved: (item.minPerItem * item.value * (item.percentage ?? 100)) / (60 * 100),
     }))
 
 export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroupProps> = ({
@@ -143,7 +143,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                     {formatNumber(value)}
                                 </Text>
                                 <Text as="span" alignment="center">
-                                    events
+                                    Events
                                 </Text>
                             </div>
                         )}
@@ -152,7 +152,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                 type="number"
                                 value={minPerItem}
                                 className={classNames(styles.calculatorInput, 'mb-1')}
-                                onChange={event => updateMinPerItem(index, event.target.value)}
+                                onChange={event => updateMinPerItem(index, Number(event.target.value))}
                             />
                             <Text as="span" className="text-nowrap">
                                 Minutes per
@@ -163,7 +163,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                 {formatNumber(hoursSaved)}
                             </Text>
                             <Text as="span" alignment="center">
-                                hours saved
+                                Hours saved
                             </Text>
                         </div>
                         <Text dangerouslySetInnerHTML={{ __html: description }} className="d-flex align-items-center" />

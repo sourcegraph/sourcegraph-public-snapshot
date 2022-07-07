@@ -144,7 +144,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
             <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
                 <Badge className="mx-1" variant="merged">
-                    New
+                    Experimental
                 </Badge>
             </Link>
         </NavAction>

@@ -69,7 +69,7 @@ interface SiteAdminAreaProps
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Analytics (New)',
+        label: 'Analytics',
         icon: ChartLineIcon,
     },
     items: [
