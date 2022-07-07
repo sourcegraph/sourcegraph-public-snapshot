@@ -92,7 +92,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     class="titleInner"
                   >
                     <a
-                      aria-label="Repository github.com/foo/bar"
                       class="anchorLink"
                       href="/github.com/foo/bar"
                     >
@@ -105,7 +104,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </span>
                      
                     <a
-                      aria-label="File path "
                       class="anchorLink"
                       href="/github.com/foo/bar/-/blob/?subtree=true"
                     >
@@ -361,7 +359,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     class="titleInner"
                   >
                     <a
-                      aria-label="Repository github.com/foo/bar"
                       class="anchorLink"
                       href="/github.com/foo/bar"
                     >
@@ -374,7 +371,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </span>
                      
                     <a
-                      aria-label="File path file1.txt"
                       class="anchorLink"
                       href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                     >
@@ -584,7 +580,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     class="titleInner"
                   >
                     <a
-                      aria-label="Repository github.com/foo/bar"
                       class="anchorLink"
                       href="/github.com/foo/bar"
                     >
@@ -597,7 +592,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </span>
                      
                     <a
-                      aria-label="File path "
                       class="anchorLink"
                       href="/github.com/foo/bar/-/blob/?subtree=true"
                     >
