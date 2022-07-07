@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.JBUI;
@@ -55,7 +56,12 @@ public class HeaderPanel extends BorderLayoutPanel {
             }
         };
         Presentation presentation = new Presentation(label);
-        presentation.setIcon(icon);
-        return new ActionButton(action, presentation, "Find with Sourcegraph popup header", actionButtonSize);
+
+        ActionButton button = new ActionButton(action, presentation, "Find with Sourcegraph popup header", actionButtonSize);
+
+        Icon scaledIcon = IconUtil.scale(icon, button, 13f / 12f);
+        presentation.setIcon(scaledIcon);
+
+        return button;
     }
 }
