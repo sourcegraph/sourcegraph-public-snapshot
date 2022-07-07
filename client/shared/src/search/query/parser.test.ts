@@ -250,17 +250,22 @@ describe('parseSearchQuery', () => {
                     "range": {
                       "start": 7,
                       "end": 13
+                    },
+                    "groupRange": {
+                      "start": 6,
+                      "end": 14
                     }
                   }
                 ],
                 "kind": "AND",
                 "range": {
                   "start": 0,
-                  "end": 13
+                  "end": 14
                 }
               }
             ]
         `)
+
         expect(parse('(a or b) and c')).toMatchInlineSnapshot(`
             [
               {
@@ -296,6 +301,10 @@ describe('parseSearchQuery', () => {
                     "range": {
                       "start": 1,
                       "end": 7
+                    },
+                    "groupRange": {
+                      "start": 0,
+                      "end": 8
                     }
                   },
                   {
@@ -312,7 +321,7 @@ describe('parseSearchQuery', () => {
                 ],
                 "kind": "AND",
                 "range": {
-                  "start": 1,
+                  "start": 0,
                   "end": 14
                 }
               }
@@ -320,8 +329,8 @@ describe('parseSearchQuery', () => {
         `)
     })
 
-    test('query with mixed explicit and implicit operators inside parens', () =>
-        expect(parse('(aaa bbb and ccc)')).toMatchInlineSnapshot(`
+    test('query with nested parentheses', () =>
+        expect(parse('(a and (b or c))')).toMatchInlineSnapshot(`
             [
               {
                 "type": "operator",
@@ -329,43 +338,113 @@ describe('parseSearchQuery', () => {
                   {
                     "type": "pattern",
                     "kind": 1,
-                    "value": "aaa",
+                    "value": "a",
                     "quoted": false,
                     "negated": false,
                     "range": {
                       "start": 1,
-                      "end": 4
+                      "end": 2
                     }
                   },
                   {
-                    "type": "pattern",
-                    "kind": 1,
-                    "value": "bbb",
-                    "quoted": false,
-                    "negated": false,
+                    "type": "operator",
+                    "operands": [
+                      {
+                        "type": "pattern",
+                        "kind": 1,
+                        "value": "b",
+                        "quoted": false,
+                        "negated": false,
+                        "range": {
+                          "start": 8,
+                          "end": 9
+                        }
+                      },
+                      {
+                        "type": "pattern",
+                        "kind": 1,
+                        "value": "c",
+                        "quoted": false,
+                        "negated": false,
+                        "range": {
+                          "start": 13,
+                          "end": 14
+                        }
+                      }
+                    ],
+                    "kind": "OR",
                     "range": {
-                      "start": 5,
-                      "end": 8
-                    }
-                  },
-                  {
-                    "type": "pattern",
-                    "kind": 1,
-                    "value": "ccc",
-                    "quoted": false,
-                    "negated": false,
-                    "range": {
-                      "start": 13,
-                      "end": 16
+                      "start": 8,
+                      "end": 14
+                    },
+                    "groupRange": {
+                      "start": 7,
+                      "end": 15
                     }
                   }
                 ],
                 "kind": "AND",
                 "range": {
                   "start": 1,
+                  "end": 15
+                },
+                "groupRange": {
+                  "start": 0,
                   "end": 16
                 }
               }
             ]
-        `))
+        `)),
+        test('query with mixed explicit and implicit operators inside parens', () =>
+            expect(parse('(aaa bbb and ccc)')).toMatchInlineSnapshot(`
+                            [
+                              {
+                                "type": "operator",
+                                "operands": [
+                                  {
+                                    "type": "pattern",
+                                    "kind": 1,
+                                    "value": "aaa",
+                                    "quoted": false,
+                                    "negated": false,
+                                    "range": {
+                                      "start": 1,
+                                      "end": 4
+                                    }
+                                  },
+                                  {
+                                    "type": "pattern",
+                                    "kind": 1,
+                                    "value": "bbb",
+                                    "quoted": false,
+                                    "negated": false,
+                                    "range": {
+                                      "start": 5,
+                                      "end": 8
+                                    }
+                                  },
+                                  {
+                                    "type": "pattern",
+                                    "kind": 1,
+                                    "value": "ccc",
+                                    "quoted": false,
+                                    "negated": false,
+                                    "range": {
+                                      "start": 13,
+                                      "end": 16
+                                    }
+                                  }
+                                ],
+                                "kind": "AND",
+                                "range": {
+                                  "start": 1,
+                                  "end": 16
+                                },
+                                "groupRange": {
+                                  "start": 0,
+                                  "end": 17
+                                }
+                              }
+                            ]
+                    `))
 })

@@ -213,5 +213,10 @@ export const parseSearchQuery = (input: string): ParseResult => {
             expected: result.expected,
         }
     }
-    return parseOr(result.term.filter(token => token.type !== 'whitespace')).result
+    // Scanner can produce empty pattern tokens in some locations which break
+    // the parser. Those need to be filtered out.
+    // See https://github.com/sourcegraph/sourcegraph/issues/38384
+    return parseOr(
+        result.term.filter(token => token.type !== 'whitespace' && !(token.type === 'pattern' && token.value === ''))
+    ).result
 }
