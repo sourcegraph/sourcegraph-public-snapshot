@@ -45,7 +45,7 @@ type workHandler struct {
 	computeTextExtraSearch func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 }
 
-type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
+type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error)
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
 	var val *types.InsightSeries
@@ -213,54 +213,34 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 	return recordings, nil
 }
 
-func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
-	searchDelegate := r.generateSearchRecordingsStream
-	recordings, err := searchDelegate(ctx, job, recordTime)
+func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	recordings, err := r.generateSearchRecordingsStream(ctx, job, recordTime)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "searchHandler")
 	}
-
-	err = r.persistRecordings(ctx, job, series, recordings)
-	return err
+	return recordings, nil
 }
 
-func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
+func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	computeDelegate := func(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
 		return r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeSearchStream)
 	}
 	recordings, err := computeDelegate(ctx, job, recordTime)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "computeHandler")
 	}
-
-	err = r.persistRecordings(ctx, job, series, recordings)
-	return err
+	return recordings, nil
 }
 
-func (r *workHandler) mappingComputeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
+func (r *workHandler) mappingComputeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	recordings, err := r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeTextExtraSearch)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "mappingComputeHandler")
 	}
-
-	err = r.persistRecordings(ctx, job, series, recordings)
-	return err
+	return recordings, err
 }
 
 func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
-
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -339,6 +319,9 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if err != nil {
 		return errors.Wrap(err, "getSeries")
 	}
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
 
 	recordTime := time.Now()
 	if job.RecordTime != nil {
@@ -355,5 +338,10 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if !ok {
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
-	return executableHandler(ctx, job, series, recordTime)
+
+	recordings, err := executableHandler(ctx, job, series, recordTime)
+	if err != nil {
+		return err
+	}
+	return r.persistRecordings(ctx, job, series, recordings)
 }
