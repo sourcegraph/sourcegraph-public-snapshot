@@ -36,6 +36,7 @@ type Config struct {
 	CleanupTaskInterval        time.Duration
 	NumTotalJobs               int
 	MaxActiveTime              time.Duration
+	NodeExporterURL            string
 	WorkerHostname             string
 }
 
@@ -57,6 +58,7 @@ func (c *Config) Load() {
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
+	c.NodeExporterURL = c.Get("NODE_EXPORTER_URL", "http://localhost:9100", "The URL of the node_exporter instance, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 
 	hn := hostname.Get()

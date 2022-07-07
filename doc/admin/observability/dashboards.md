@@ -17316,7 +17316,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"})`
+Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"})`
 
 </details>
 
@@ -17335,7 +17335,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17354,7 +17354,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17373,7 +17373,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100112`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17392,7 +17392,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100113`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17415,7 +17415,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_run_lock_wait_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_executor_run_lock_wait_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17436,7 +17436,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_run_lock_held_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_executor_run_lock_held_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17457,7 +17457,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17476,7 +17476,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17495,7 +17495,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100302`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17514,7 +17514,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100303`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17533,7 +17533,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17552,7 +17552,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])))`
 
 </details>
 
@@ -17571,7 +17571,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100312`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17590,7 +17590,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100313`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17611,7 +17611,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17630,7 +17630,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17649,7 +17649,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100402`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17668,7 +17668,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17687,7 +17687,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17706,7 +17706,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])))`
 
 </details>
 
@@ -17725,7 +17725,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100412`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17744,7 +17744,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100413`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17765,7 +17765,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17784,7 +17784,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17803,7 +17803,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17822,7 +17822,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17841,7 +17841,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17860,7 +17860,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])))`
 
 </details>
 
@@ -17879,7 +17879,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17898,7 +17898,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17919,7 +17919,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17938,7 +17938,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100601`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17957,7 +17957,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100602`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -17976,7 +17976,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100603`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -17995,7 +17995,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100610`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -18014,7 +18014,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100611`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])))`
 
 </details>
 
@@ -18033,7 +18033,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100612`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))`
 
 </details>
 
@@ -18052,7 +18052,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100613`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes).*"}[5m]))) * 100`
 
 </details>
 
@@ -18074,7 +18074,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100700`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",mode!~"(idle|iowait)",instance=~"$instance"}[$__rate_interval])) by(instance) / count(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",mode="system",instance=~"$instance"}) by (instance) * 100`
+Query: `sum(rate(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",mode!~"(idle|iowait)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",mode="system",sg_instance=~"$instance"}) by (sg_instance) * 100`
 
 </details>
 
@@ -18094,7 +18094,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])`
 
 </details>
 
@@ -18114,7 +18114,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100710`
 <details>
 <summary>Technical details</summary>
 
-Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}) by (instance) / sum(node_memory_MemTotal_bytes{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}) by (instance)) * 100`
+Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}) by (sg_instance)) * 100`
 
 </details>
 
@@ -18134,7 +18134,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100711`
 <details>
 <summary>Technical details</summary>
 
-Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) * 100`
+Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) * 100`
 
 </details>
 
@@ -18154,7 +18154,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100712`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])`
 
 </details>
 
@@ -18174,7 +18174,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100720`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk) * 100`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
 
 </details>
 
@@ -18194,7 +18194,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100721`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
 
 </details>
 
@@ -18214,7 +18214,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100722`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])`
 
 </details>
 
@@ -18234,7 +18234,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100730`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance) * 8`
+Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18254,7 +18254,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100731`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_receive_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18274,7 +18274,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100732`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_receive_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18294,7 +18294,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100740`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance) * 8`
+Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18314,7 +18314,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100741`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18334,7 +18334,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100742`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18356,7 +18356,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100800`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",mode!~"(idle|iowait)",instance=~".*"}[$__rate_interval])) by(instance) / count(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",mode="system",instance=~".*"}) by (instance) * 100`
+Query: `sum(rate(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",mode!~"(idle|iowait)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",mode="system",sg_instance=~".*"}) by (sg_instance) * 100`
 
 </details>
 
@@ -18376,7 +18376,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100801`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])`
 
 </details>
 
@@ -18396,7 +18396,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100810`
 <details>
 <summary>Technical details</summary>
 
-Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}) by (instance) / sum(node_memory_MemTotal_bytes{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}) by (instance)) * 100`
+Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}) by (sg_instance)) * 100`
 
 </details>
 
@@ -18416,7 +18416,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100811`
 <details>
 <summary>Technical details</summary>
 
-Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) * 100`
+Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) * 100`
 
 </details>
 
@@ -18436,7 +18436,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100812`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])`
+Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])`
 
 </details>
 
@@ -18456,7 +18456,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100820`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk) * 100`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
 
 </details>
 
@@ -18476,7 +18476,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100821`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
 
 </details>
 
@@ -18496,7 +18496,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100822`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])`
+Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])`
 
 </details>
 
@@ -18516,7 +18516,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100830`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance) * 8`
+Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18536,7 +18536,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100831`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_receive_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18556,7 +18556,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100832`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_receive_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18576,7 +18576,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100840`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance) * 8`
+Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18596,7 +18596,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100841`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18616,7 +18616,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100842`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18639,7 +18639,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100900`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(sg_instance) (go_goroutines{sg_job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker)"})`
+Query: `max by(sg_instance) (go_goroutines{sg_job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes)"})`
 
 </details>
 
@@ -18658,7 +18658,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(sg_instance) (go_gc_duration_seconds{sg_job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker)"})`
+Query: `max by(sg_instance) (go_gc_duration_seconds{sg_job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes)"})`
 
 </details>
 

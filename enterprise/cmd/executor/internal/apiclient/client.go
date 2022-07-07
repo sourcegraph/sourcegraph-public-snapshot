@@ -47,6 +47,10 @@ type Options struct {
 
 	// TelemetryOptions captures additional parameters sent in heartbeat requests.
 	TelemetryOptions TelemetryOptions
+
+	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
+	// the /metrics path
+	NodeExporterEndpoint string
 }
 
 type EndpointOptions struct {
@@ -216,7 +220,7 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	// Add some timeout here so metrics don't wreck heartbeats.
 	metricCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	metrics, err := collectMetrics(metricCtx, c.metricsGatherer)
+	metrics, err := c.collectMetrics(metricCtx, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metrics should not prevent heartbeats.
@@ -288,7 +292,7 @@ func intsToString(ints []int) string {
 
 // collectMetrics uses the given prometheus gatherer to collect all current
 // metrics and encodes them in the text format to be sent over the wire.
-func collectMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, error) {
+func (c *Client) collectMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, error) {
 	mfs, err := gatherer.Gather()
 	if err != nil {
 		return "", errors.Wrap(err, "getting default gatherer")
@@ -304,6 +308,36 @@ func collectMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, 
 
 		if err := enc.Encode(mf); err != nil {
 			return "", errors.Wrap(err, "encoding metric family")
+		}
+	}
+
+	if c.options.NodeExporterEndpoint != "" {
+		resp, err := (&http.Client{
+			Timeout: 2 * time.Second,
+		}).Get(c.options.NodeExporterEndpoint + "/metrics")
+		if err != nil {
+			return buf.String(), err
+		}
+		defer resp.Body.Close()
+
+		var parser expfmt.TextParser
+		mfMap, err := parser.TextToMetricFamilies(resp.Body)
+		if err != nil {
+			return buf.String(), errors.Wrap(err, "parsing node_exporter metrics")
+		}
+		for key, mf := range mfMap {
+			// Check if we should stop working.
+			if ctx.Err() != nil {
+				return "", ctx.Err()
+			}
+
+			if strings.HasPrefix(key, "go_") || strings.HasPrefix(key, "promhttp_") || strings.HasPrefix(key, "process_") {
+				continue
+			}
+
+			if err := enc.Encode(mf); err != nil {
+				return "", errors.Wrap(err, "encoding node_exporter metric family")
+			}
 		}
 	}
 
