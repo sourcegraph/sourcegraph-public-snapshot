@@ -27,7 +27,7 @@ steps:
       # See https://docs.sourcegraph.com/dev/background-information/ci#pr-auditor
       name: pr-auditor
       on:
-        pull_request:
+        pull_request_target:
           types: [ closed, edited, opened, synchronize, ready_for_review ]
 
       jobs:

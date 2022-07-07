@@ -7,11 +7,13 @@ import { noop } from 'rxjs'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, Link, useObservable, useDebounce, Icon, Input, H2, H3, Text } from '@sourcegraph/wildcard'
 
-import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { useForm } from '../../../../../components/form/hooks/useForm'
-import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
+import {
+    getDefaultInputProps,
+    useField,
+    useForm,
+    InsightQueryInput,
+    RepositoriesField,
+} from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import {

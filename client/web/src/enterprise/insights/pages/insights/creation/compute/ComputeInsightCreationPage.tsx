@@ -6,8 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Link, PageHeader, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FormChangeEvent } from '../../../../components/form/hooks/useForm'
+import { CodeInsightsPage, FormChangeEvent } from '../../../../components'
 
 import { ComputeInsightCreationContent } from './components/ComputeInsightCreationContent'
 import { CreateComputeInsightFormFields } from './components/types'
@@ -42,7 +41,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     }
 
     return (
-        <CodeInsightsPage className="col-10">
+        <CodeInsightsPage className="col-12">
             <PageTitle title="Create compute insight - Code Insights" />
 
             <PageHeader

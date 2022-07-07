@@ -56,6 +56,7 @@ exports[`NewProductSubscriptionPaymentSection new subscription 1`] = `
       Total: $123.45 for 14 years (123 users)
       <div
         aria-label="Loading"
+        aria-live="polite"
         class="iconInline loadingSpinner invisible"
         role="img"
       />

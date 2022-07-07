@@ -55,8 +55,6 @@ export interface Tether {
 
     overflowToScrollParents?: boolean
     constrainToScrollParents?: boolean
-
-    forceHidden?: boolean
 }
 
 export type MarkerElement = HTMLElement | SVGElement

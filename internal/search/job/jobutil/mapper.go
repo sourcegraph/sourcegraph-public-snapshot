@@ -133,10 +133,12 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		return j
 
 	case *repoPagerJob:
-		child := m.Map(j.child)
-		j.child = child
-		if m.MapRepoPagerJob != nil {
-			j = m.MapRepoPagerJob(j)
+		if j.child != nil {
+			child := m.Map(j.child.Partial())
+			j.child = &reposPartialJob{child}
+			if m.MapRepoPagerJob != nil {
+				j = m.MapRepoPagerJob(j)
+			}
 		}
 		return j
 

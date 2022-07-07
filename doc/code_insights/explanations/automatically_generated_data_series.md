@@ -30,7 +30,7 @@ This feature has some yet-released limitations. In rough order, with limitations
 
 ### Limited to 20 matches
 
-Capture groups will only display 20 returned match values to prevent extremely large result sets from being rendered. If there are more than 20 matches, **a non-deterministic 20 series will be rendered on every reload**. Until we add controls to make this deterministic and configurable, for now we strongly recommend you refine your regular expression so that there are no more than 20 different values returned. 
+Capture groups will only display 20 returned match values to prevent extremely large result sets from being rendered. As of version 3.41.0 controls are available to make this deterministic and configurable.
 
 ### No capture groups in filter strings 
 

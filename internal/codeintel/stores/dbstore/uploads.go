@@ -522,14 +522,14 @@ SELECT
 	(snapshot->'started_at')::timestamptz AS started_at,
 	(snapshot->'finished_at')::timestamptz AS finished_at,
 	(snapshot->'process_after')::timestamptz AS process_after,
-	(snapshot->'num_resets')::integer AS num_resets,
-	(snapshot->'num_failures')::integer AS num_failures,
+	COALESCE((snapshot->'num_resets')::integer, -1) AS num_resets,
+	COALESCE((snapshot->'num_failures')::integer, -1) AS num_failures,
 	au.repository_id,
 	au.indexer, au.indexer_version,
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id,
-	(snapshot->'expired')::boolean AS expired
+	COALESCE((snapshot->'expired')::boolean, false) AS expired
 FROM (
 	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
 	FROM lsif_uploads_audit_logs

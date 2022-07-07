@@ -11,9 +11,11 @@ import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.browser.SourcegraphJBCefBrowser;
+import org.jdesktop.swingx.util.OS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.Date;
 
@@ -31,7 +33,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
         super();
 
-        setPreferredSize(JBUI.size(1200, 800));
+        setPreferredSize(JBUI.size(1000, 700));
         setBorder(PopupBorder.Factory.create(true, true));
         setFocusCycleRoot(true);
 
@@ -53,13 +55,20 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         if (browser != null) {
             browserAndLoadingPanel.setBrowser(browser);
         }
-
-        // The border is needed because without it, window and splitter resize don't work because the JCEF
+        // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
         // doesn't properly pass the mouse events to Swing.
-        // 4px is the minimum amount to make it work for the window resize, and 5px for the splitter.
+        // 4px is the minimum amount to make it work for the window resize, the splitter works without a padding.
+        JPanel browserContainerForOptionalBorder = new JPanel(new BorderLayout());
+        if (OS.isMacOSX()) {
+            browserContainerForOptionalBorder.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+        }
+        browserContainerForOptionalBorder.add(browserAndLoadingPanel, BorderLayout.CENTER);
+
+        HeaderPanel headerPanel = new HeaderPanel(project);
+
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
-        topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
-        topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
+        topPanel.add(headerPanel, BorderLayout.NORTH);
+        topPanel.add(browserContainerForOptionalBorder, BorderLayout.CENTER);
         topPanel.setMinimumSize(JBUI.size(750, 200));
 
         splitter.setFirstComponent(topPanel);
@@ -82,13 +91,14 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         browserAndLoadingPanel.setState(wasServerAccessSuccessful
             ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
             : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
-        if (!wasServerAccessSuccessful) {
+
+        if (wasServerAccessSuccessful) {
+            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
+        } else {
             selectionMetadataPanel.clearSelectionMetadataLabel();
             previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
             footerPanel.setPreviewContent(null);
-        } else {
-            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
-            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
         }
     }
 

@@ -67,7 +67,8 @@ export const NotebookTitle: React.FunctionComponent<React.PropsWithChildren<Note
             >
                 <span>{title}</span>
                 <span className={styles.titleEditIcon}>
-                    <Icon aria-hidden={true} as={PencilOutlineIcon} />
+                    {/* Dot prefix in aria-label to ensure vocal differentiation from notebook title, when read by screen reader */}
+                    <Icon aria-label=". Click to edit title" as={PencilOutlineIcon} />
                 </span>
             </button>
         )
