@@ -1603,7 +1603,7 @@ func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, erro
 
 	excludedExternalServicesClause := sqlf.Sprintf("TRUE")
 	if len(excludedExternalServices) > 0 {
-		excludedExternalServicesList := strings.Trim(strings.Replace(fmt.Sprint(excludedExternalServices), " ", ",", -1), "[]")
+		excludedExternalServicesList := strings.Trim(strings.ReplaceAll(fmt.Sprint(excludedExternalServices), " ", ","), "[]")
 		excludedExternalServicesClause = sqlf.Sprintf(fmt.Sprintf("(extsvc_repos.external_service_id IS NULL OR extsvc_repos.external_service_id NOT IN (%s))", excludedExternalServicesList))
 	}
 
@@ -1669,7 +1669,7 @@ func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age
 
 	excludedExternalServicesClause := sqlf.Sprintf("TRUE")
 	if len(excludedExternalServices) > 0 {
-		excludedExternalServicesList := strings.Trim(strings.Replace(fmt.Sprint(excludedExternalServices), " ", ",", -1), "[]")
+		excludedExternalServicesList := strings.Trim(strings.ReplaceAll(fmt.Sprint(excludedExternalServices), " ", ","), "[]")
 		excludedExternalServicesClause = sqlf.Sprintf(fmt.Sprintf("(extsvc_repos.external_service_id IS NULL OR extsvc_repos.external_service_id NOT IN (%s))", excludedExternalServicesList))
 	}
 
