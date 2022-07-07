@@ -27,7 +27,7 @@ func (e ChangesetNotFoundError) Error() string {
 
 func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
-// An ArchivableChangesetSource represents a changeset source that has a
+// ArchivableChangesetSource represents a changeset source that has a
 // concept of archived repositories.
 type ArchivableChangesetSource interface {
 	ChangesetSource

@@ -579,7 +579,7 @@ func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Rep
 
 	metadata, err := metadataColumn(r.Metadata)
 	if err != nil {
-		return nil, errors.Wrapf(err, "metadata marshalling failed")
+		return nil, errors.Wrap(err, "metadata marshalling failed")
 	}
 
 	q := sqlf.Sprintf(updateRepoQuery,
