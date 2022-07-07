@@ -207,7 +207,7 @@ func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 		res = append(res,
 			trace.Stringer("query", s.ZoektArgs.Query),
 			log.String("type", string(s.ZoektArgs.Typ)),
-			trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
+			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 		)
 	}

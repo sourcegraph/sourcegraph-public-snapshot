@@ -143,7 +143,7 @@ func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	case job.VerbosityMax:
 		res = append(res,
 			otlog.Bool("useFullDeadline", s.UseFullDeadline),
-			trace.Stringer("patternInfo", s.PatternInfo),
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
 			otlog.Int("numRepos", len(s.Repos)),
 		)
 		fallthrough
