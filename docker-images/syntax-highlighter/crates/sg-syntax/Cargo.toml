@@ -20,7 +20,7 @@ protobuf = "2.25.2"
 base64 = "0.13.0"
 anyhow = "1"
 libloading = "0.7"
-paste = "1.0.6"
+paste = "1.0.7"
 sg-macros = { path = "../sg-macros" }
 sg-lsif = { path = "../sg-lsif" }
 
