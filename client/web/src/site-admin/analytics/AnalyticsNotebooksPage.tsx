@@ -1,26 +1,21 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
-import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H3, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../charts'
-import { BarChart } from '../../charts/components/bar-chart/BarChart'
 import { AnalyticsDateRange, NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../graphql-operations'
 
 import { AnalyticsPageTitle } from './components/AnalyticsPageTitle'
 import { ChartContainer } from './components/ChartContainer'
 import { HorizontalSelect } from './components/HorizontalSelect'
-import { TimeSavedCalculatorGroup } from './components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from './components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from './components/ValueLegendList'
 import { NOTEBOOKS_STATISTICS } from './queries'
 import { StandardDatum, buildStandardDatum } from './utils'
-
-import styles from './index.module.scss'
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')

@@ -1,5 +1,6 @@
-import { AnalyticsDateRange } from '../../graphql-operations'
 import { addDays, getDayOfYear, startOfDay, startOfWeek, sub } from 'date-fns'
+
+import { AnalyticsDateRange } from '../../graphql-operations'
 
 export interface FrequencyDatum {
     label: string

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H3, Text, LoadingSpinner, AnchorLink, H4, useMatchMedia } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../charts'
 import { BarChart } from '../../charts/components/bar-chart/BarChart'
