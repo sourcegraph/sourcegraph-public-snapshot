@@ -82,7 +82,8 @@ func (z *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (z *SymbolSearchJob) Children() []job.Describer { return nil }
+func (z *SymbolSearchJob) Children() []job.Describer                 { return nil }
+func (z *SymbolSearchJob) MapChildren(func(job.Job) job.Job) job.Job { return z }
 
 type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -135,4 +136,5 @@ func (s *GlobalSymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (s *GlobalSymbolSearchJob) Children() []job.Describer { return nil }
+func (s *GlobalSymbolSearchJob) Children() []job.Describer                 { return nil }
+func (s *GlobalSymbolSearchJob) MapChildren(func(job.Job) job.Job) job.Job { return s }

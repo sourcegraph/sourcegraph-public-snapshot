@@ -155,6 +155,12 @@ func (f *FeelingLuckySearchJob) Children() []job.Describer {
 	return []job.Describer{f.initialJob}
 }
 
+func (f *FeelingLuckySearchJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+	cp := *f
+	cp.initialJob = job.Map(f.initialJob, fn)
+	return &cp
+}
+
 // autoQuery is an automatically generated query with associated data (e.g., description).
 type autoQuery struct {
 	description string
@@ -560,3 +566,9 @@ func (g *generatedSearchJob) Name() string {
 func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
 
 func (g *generatedSearchJob) Fields(job.Verbosity) []log.Field { return nil }
+
+func (g *generatedSearchJob) MapChildren(fn func(job.Job) job.Job) job.Job {
+	cp := *g
+	cp.Child = job.Map(g.Child, fn)
+	return &cp
+}

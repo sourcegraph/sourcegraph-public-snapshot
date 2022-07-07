@@ -23,6 +23,7 @@ import (
 // timeout). Calling Run on a job object runs a search.
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
+	MapChildren(func(Job) Job) Job
 	Describer
 }
 
@@ -38,6 +39,7 @@ type PartialJob[T any] interface {
 	// available at runtime.
 	Resolve(T) Job
 
+	MapChildren(func(Job) Job) PartialJob[T]
 	Describer
 }
 

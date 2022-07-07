@@ -214,4 +214,5 @@ func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (s *SearchJob) Children() []job.Describer { return nil }
+func (s *SearchJob) Children() []job.Describer                 { return nil }
+func (s *SearchJob) MapChildren(func(job.Job) job.Job) job.Job { return s }
