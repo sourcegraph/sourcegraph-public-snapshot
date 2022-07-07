@@ -1,5 +1,19 @@
 :root {
     --btn-padding-y-sm: 0.375rem;
+    --btn-font-weight: var(--font-weight-normal);
+    --btn-border-width: 1px;
+    --btn-padding-y: 0.375rem;
+    --btn-padding-x: 0.75rem;
+    --btn-line-height: var(--line-height-base);
+    --btn-border-radius: 0.25rem;
+    --btn-font-size: var(--font-size-base);
+    --btn-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out;
+    --btn-focus-box-shadow: 0 0 0 0.2rem rgba(var(--primary), 0.25);
+    --btn-active-box-shadow: inset 0 3px 5px rgba(var(--black), 0.125);
+    --btn-disabled-opacity: 0.65;
+    --btn-link-disabled-color: var(--gray-13);
+    --btn-block-spacing-y: 0.5rem;
 }
 
 // This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
@@ -212,11 +226,54 @@
 .btn {
     // Use placeholder-selector to extend only styles defined for `label`.
     @extend %label-base;
+
+    display: inline-block;
+    font-weight: var(--btn-font-weight);
+    color: var(--gray-14);
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+    background-color: transparent;
+    border: var(--btn-border-width) solid transparent;
+    padding: var(--btn-padding-y) var(--$btn-padding-x);
+    line-height: var(--btn-line-height);
+    border-radius: var(--btn-border-radius);
+    font-size: var(--btn-font-size);
+    transition: var(--btn-transition);
+
+    &:hover {
+        color: var(--body-color);
+        text-decoration: none;
+    }
+    &:focus,
+    &.focus {
+        outline: 0;
+        box-shadow: var(--btn-focus-box-shadow);
+    }
+
+    &.disabled,
     &:disabled {
+        opacity: var(--btn-disabled-opacity);
+        box-shadow: none;
         cursor: not-allowed;
+    }
+
+    &:not(:disabled):not(.disabled) {
+        cursor: pointer;
+
+        &:active,
+        &.active {
+            box-shadow: var(--btn-active-box-shadow);
+            &:focus {
+                box-shadow: var(--btn-focus-box-shadow), var(--btn-active-box-shadow);
+            }
+        }
     }
 }
 
+//
+// Button Sizes
+//
 .btn.btn-sm {
     @extend %label-base-small;
 }
@@ -263,5 +320,53 @@
                 fill: var(--icon-color);
             }
         }
+    }
+}
+
+// Make a button look and behave like a link
+.btn-link {
+    font-weight: var(--font-weight-normal);
+    color: var(--link-color);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--link-hover-color);
+        text-decoration: var(--link-hover-decoration);
+    }
+
+    &:focus,
+    &.focus {
+        text-decoration: var(--link-hover-decoration);
+    }
+
+    &:disabled,
+    &.disabled {
+        color: var(--btn-link-disabled-color);
+        pointer-events: none;
+    }
+
+    // No need for an active state here
+}
+
+//
+// Block button
+//
+
+.btn-block {
+    display: block;
+    width: 100%;
+
+    // Vertically space out multiple block buttons
+    + .btn-block {
+        margin-top: var(--btn-block-spacing-y);
+    }
+}
+
+// Specificity overrides
+input[type='submit'],
+input[type='reset'],
+input[type='button'] {
+    &.btn-block {
+        width: 100%;
     }
 }
