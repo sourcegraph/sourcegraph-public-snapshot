@@ -15,9 +15,10 @@ declare global {
 
 export function initSentry(): void {
     if (
-        typeof Sentry !== 'undefined' &&
-        window.context.sentryDSN &&
-        (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
+        // typeof Sentry !== 'undefined' &&
+        // window.context.sentryDSN &&
+        // (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
+      true
     ) {
         const { sentryDSN, version } = window.context
 
@@ -26,6 +27,7 @@ export function initSentry(): void {
         Sentry.onLoad(() => {
             Sentry.init({
                 dsn: sentryDSN,
+                tunnel: '/_sentry_tunnel',
                 release: 'frontend@' + version,
                 beforeSend(event, hint) {
                     // Use `originalException` to check if we want to ignore the error.
