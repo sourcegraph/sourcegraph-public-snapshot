@@ -6,6 +6,5 @@ import javax.swing.*;
 
 public interface Icons {
     Icon SourcegraphLogo = IconLoader.getIcon("/icons/sourcegraphLogo.png", Icons.class);
-    Icon Account = IconLoader.getIcon("/icons/account.svg", Icons.class);
     Icon GearPlain = IconLoader.getIcon("/icons/gearPlain.svg", Icons.class);
 }

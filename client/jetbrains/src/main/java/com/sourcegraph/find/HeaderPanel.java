@@ -20,33 +20,23 @@ import javax.swing.*;
 import java.awt.*;
 
 public class HeaderPanel extends BorderLayoutPanel {
-    private final ActionButton authenticateButton;
-
     public HeaderPanel(Project project) {
         super();
         setBorder(new JBEmptyBorder(5, 5, 2, 5));
-
-        authenticateButton = createActionButtonThatOpensSettings(project, "Set Up Your Sourcegraph Account", Icons.Account);
-        ActionButton settingsButton = createActionButtonThatOpensSettings(project, "Open Plugin Settings", Icons.GearPlain);
 
         JPanel title = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         title.setBorder(new JBEmptyBorder(2, 0, 0, 0));
         title.add(new JLabel("Find with Sourcegraph", Icons.SourcegraphLogo, SwingConstants.LEFT));
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        buttons.add(authenticateButton);
-        buttons.add(settingsButton);
+        buttons.add(createSettingsButton(project));
 
         add(title, BorderLayout.WEST);
         add(buttons, BorderLayout.EAST);
     }
 
-    public void setAuthenticated(boolean authenticated) {
-        authenticateButton.setVisible(!authenticated);
-    }
-
     @NotNull
-    private ActionButton createActionButtonThatOpensSettings(@NotNull Project project, @NotNull String label, @NotNull Icon icon) {
+    private ActionButton createSettingsButton(@NotNull Project project) {
         JBDimension actionButtonSize = JBUI.size(22, 22);
 
         AnAction action = new DumbAwareAction() {
@@ -55,11 +45,11 @@ public class HeaderPanel extends BorderLayoutPanel {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
             }
         };
-        Presentation presentation = new Presentation(label);
+        Presentation presentation = new Presentation("Open Plugin Settings");
 
         ActionButton button = new ActionButton(action, presentation, "Find with Sourcegraph popup header", actionButtonSize);
 
-        Icon scaledIcon = IconUtil.scale(icon, button, 13f / 12f);
+        Icon scaledIcon = IconUtil.scale(Icons.GearPlain, button, 13f / 12f);
         presentation.setIcon(scaledIcon);
 
         return button;

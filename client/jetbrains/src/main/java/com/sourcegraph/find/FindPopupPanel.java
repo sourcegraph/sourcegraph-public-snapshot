@@ -28,7 +28,6 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     private final BrowserAndLoadingPanel browserAndLoadingPanel;
     private final SelectionMetadataPanel selectionMetadataPanel;
     private final FooterPanel footerPanel;
-    private final HeaderPanel headerPanel;
     private Date lastPreviewUpdate;
 
     public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
@@ -65,7 +64,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         }
         browserContainerForOptionalBorder.add(browserAndLoadingPanel, BorderLayout.CENTER);
 
-        headerPanel = new HeaderPanel(project);
+        HeaderPanel headerPanel = new HeaderPanel(project);
 
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
         topPanel.add(headerPanel, BorderLayout.NORTH);
@@ -89,8 +88,6 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     }
 
     public void indicateAuthenticationStatus(boolean wasServerAccessSuccessful, boolean authenticated) {
-        headerPanel.setAuthenticated(authenticated);
-
         browserAndLoadingPanel.setState(wasServerAccessSuccessful
             ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
             : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
