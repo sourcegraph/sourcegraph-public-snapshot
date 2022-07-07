@@ -100,16 +100,18 @@ public class SettingsComponent {
         sourcegraphUrlTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         sourcegraphUrlTextField.getEmptyText().setText("https://sourcegraph.example.com");
-        sourcegraphUrlTextField.setToolTipText("If your company has your own Sourcegraph instance, set its URL here.\nThe default is \"https://sourcegraph.com\".");
+        sourcegraphUrlTextField.setToolTipText("The default is \"https://sourcegraph.com\".");
 
         JBLabel accessTokenLabel = new JBLabel("Access token:");
         accessTokenTextField = new JBTextField();
         accessTokenTextField.getEmptyText().setText("Paste your access token here");
-        accessTokenTextField.setToolTipText("Go to https://sourcegraph.example.com/users/{your-username}/settings/tokens to create a token.");
+        accessTokenTextField.setToolTipText("");
 
         JPanel userAuthenticationPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(sourcegraphUrlLabel, sourcegraphUrlTextField)
+            .addTooltip("If your company has your own Sourcegraph instance, set its URL here")
             .addLabeledComponent(accessTokenLabel, accessTokenTextField)
+            .addTooltip("Go to https://sourcegraph.example.com/settings | \"Access tokens\" to create a token")
             .getPanel();
         userAuthenticationPanel.setBorder(IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
         return userAuthenticationPanel;
@@ -121,24 +123,25 @@ public class SettingsComponent {
         defaultBranchNameTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         defaultBranchNameTextField.getEmptyText().setText("main");
-        defaultBranchNameTextField.setToolTipText("Usually \"main\" or \"master\", but can be any branch name");
+        defaultBranchNameTextField.setToolTipText("Usually \"main\" or \"master\", but can be any name");
 
         JBLabel remoteUrlReplacementsLabel = new JBLabel("Remote URL replacements:");
         remoteUrlReplacementsTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         remoteUrlReplacementsTextField.getEmptyText().setText("search1, replacement1, search2, replacement2, ...");
-        remoteUrlReplacementsTextField.setToolTipText("You can replace specified strings in your repo's remote URL.\n" +
-            "The format is \"search1, replacement1, search2, replacement2, ...\".\n" +
-            "Use any number of search/replacement pairs.\n" +
-            "Pairs will be replaced going from left to right.\n" +
-            "The whitespace before and after the commas doesn't matter.");
+        //remoteUrlReplacementsTextField.setToolTipText();
 
         globbingCheckBox = new JBCheckBox("Enable globbing");
         isUrlNotificationDismissedCheckBox = new JBCheckBox("Never show the \"No Sourcegraph URL set\" notification for this project");
 
         JPanel navigationSettingsPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField)
+            .addTooltip("The branch to use if the current branch is not yet pushed")
             .addLabeledComponent(remoteUrlReplacementsLabel, remoteUrlReplacementsTextField)
+            .addTooltip("You can replace specified strings in your repo's remote URL.")
+            .addTooltip("The format is \"search1, replacement1, search2, replacement2, ...\".")
+            .addTooltip("Use any number of search/replacement pairs. Pairs will be replaced going from left to right.")
+            .addTooltip("The whitespace before and after the commas doesn't matter.")
             .addComponent(globbingCheckBox)
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
