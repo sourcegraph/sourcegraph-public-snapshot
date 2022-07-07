@@ -557,20 +557,5 @@ func (g *generatedSearchJob) Name() string {
 	return "GeneratedSearchJob"
 }
 
-func (g *generatedSearchJob) Tags(v job.Verbosity) (res []log.Field) {
-	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			trace.Scoped("proposedQuery",
-				log.String("description", g.ProposedQuery.Description),
-				log.String("query", g.ProposedQuery.Query),
-				trace.Stringer("patternType", g.ProposedQuery.PatternType),
-			),
-		)
-	}
-	return res
-}
-
-func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
+func (g *generatedSearchJob) Tags(job.Verbosity) []log.Field { return nil }
+func (g *generatedSearchJob) Children() []job.Describer      { return []job.Describer{g.Child} }
