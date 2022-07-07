@@ -340,8 +340,6 @@ type BatchSpecResolver interface {
 
 	ViewerCanAdminister(context.Context) (bool, error)
 
-	ExceedsLicense(context.Context) (bool, error)
-
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
 	AppliesToBatchChange(ctx context.Context) (BatchChangeResolver, error)

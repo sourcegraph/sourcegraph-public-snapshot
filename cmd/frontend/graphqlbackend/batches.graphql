@@ -3087,11 +3087,6 @@ type BatchSpec implements Node {
     viewerCanAdminister: Boolean!
 
     """
-    When true, the batch spec exceeds the maximum number of changesets allowed for the license.
-    """
-    exceedsLicense: Boolean!
-
-    """
     The diff stat for all the changeset specs in the batch spec. Null if state is
     not COMPLETED.
     """

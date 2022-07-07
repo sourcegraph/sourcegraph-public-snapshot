@@ -55,7 +55,6 @@ export const batchSpecFragment = gql`
             url
         }
         viewerCanAdminister
-        exceedsLicense
         diffStat {
             ...DiffStatFields
         }
