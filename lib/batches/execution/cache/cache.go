@@ -92,18 +92,16 @@ func marshalAndHash(key *CacheKey, envs []map[string]string, metadata []MountMet
 // repository workspace and a *subset* of its Steps, up to and including the
 // step with index StepIndex in Task.Steps.
 type CacheKey struct {
-	Repository batches.Repository
-
-	Path               string
-	OnlyFetchWorkspace bool
-	Steps              []batches.Step
-
+	Repository            batches.Repository
+	Path                  string
+	OnlyFetchWorkspace    bool
+	Steps                 []batches.Step
 	BatchChangeAttributes *template.BatchChangeAttributes
 
 	// Ignore from serialization.
 	MetadataRetriever MetadataRetriever `json:"-"`
-
-	GlobalEnv []string
+	// Ignore from serialization.
+	GlobalEnv []string `json:"-"`
 
 	StepIndex int
 }
@@ -137,7 +135,7 @@ func (key CacheKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int) CacheKey {
+func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int) Keyer {
 	sort.Strings(r.FileMatches)
 
 	return CacheKey{
