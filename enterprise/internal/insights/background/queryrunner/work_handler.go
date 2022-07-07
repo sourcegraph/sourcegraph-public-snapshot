@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -341,11 +340,6 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 
 	searchDelegate := r.generateSearchRecordingsStream
-	useGraphQL := conf.Get().InsightsSearchGraphql
-	if useGraphQL != nil && *useGraphQL {
-		searchDelegate = r.generateSearchRecordings
-	}
-
 	recordings, err := searchDelegate(ctx, job, series, recordTime)
 	if err != nil {
 		return err
@@ -363,11 +357,6 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 	computeDelegate := func(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
 		return r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeSearchStream)
 	}
-	useGraphQL := conf.Get().InsightsComputeGraphql
-	if useGraphQL != nil && *useGraphQL {
-		computeDelegate = r.generateComputeRecordings
-	}
-
 	recordings, err := computeDelegate(ctx, job, recordTime)
 	if err != nil {
 		return err
