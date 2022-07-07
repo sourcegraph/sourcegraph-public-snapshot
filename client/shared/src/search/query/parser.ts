@@ -1,4 +1,4 @@
-import { scanSearchQuery } from './scanner'
+import { ScanResult, scanSearchQuery } from './scanner'
 import { PatternKind, Token, KeywordKind, CharacterRange } from './token'
 
 export interface Pattern {
