@@ -459,6 +459,21 @@ func typePatterns(b query.Basic) *query.Basic {
 	}
 }
 
+func NewGeneratedSearchJob(inputs *run.SearchInputs, description string, q query.Basic) (job.Job, error) {
+	child, err := NewBasicJob(inputs, q)
+	if err != nil {
+		return nil, err
+	}
+	return &generatedSearchJob{
+		Child: child,
+		ProposedQuery: &search.ProposedQuery{
+			Description: description,
+			Query:       query.StringHuman(q.ToParseTree()),
+			PatternType: query.SearchTypeLucky,
+		},
+	}, nil
+}
+
 type generatedSearchJob struct {
 	Child         job.Job
 	ProposedQuery *search.ProposedQuery
