@@ -126,7 +126,7 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 	started = true
 	ctx = featureflag.WithFlags(ctx, db.FeatureFlags())
 
-	const delay = 15 * time.Second
+	const delay = 24 * time.Hour
 	for {
 		if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
 			if err := refreshAnalyticsCache(ctx, db); err != nil {
@@ -135,7 +135,7 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 		}
 
 		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(5)) * time.Second
+		randomDelay := time.Duration(rand.Intn(600)) * time.Second
 		time.Sleep(delay + randomDelay)
 	}
 }
