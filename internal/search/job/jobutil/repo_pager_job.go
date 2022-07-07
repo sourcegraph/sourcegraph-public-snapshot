@@ -46,7 +46,7 @@ func (j *reposPartialJob) Resolve(rr resolvedRepos) job.Job {
 func (j *reposPartialJob) Name() string                       { return "PartialReposJob" }
 func (j *reposPartialJob) Fields(job.Verbosity) []otlog.Field { return nil }
 func (j *reposPartialJob) Children() []job.Describer          { return []job.Describer{j.inner} }
-func (j *reposPartialJob) MapChildren(fn func(job.Job) job.Job) job.PartialJob[resolvedRepos] {
+func (j *reposPartialJob) MapChildren(fn job.MapFunc) job.PartialJob[resolvedRepos] {
 	return &reposPartialJob{fn(j.inner)}
 }
 

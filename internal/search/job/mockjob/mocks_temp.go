@@ -52,7 +52,7 @@ func NewMockJob() *MockJob {
 			},
 		},
 		MapChildrenFunc: &JobMapChildrenFunc{
-			defaultHook: func(func(job.Job) job.Job) (r0 job.Job) {
+			defaultHook: func(job.MapFunc) (r0 job.Job) {
 				return
 			},
 		},
@@ -84,7 +84,7 @@ func NewStrictMockJob() *MockJob {
 			},
 		},
 		MapChildrenFunc: &JobMapChildrenFunc{
-			defaultHook: func(func(job.Job) job.Job) job.Job {
+			defaultHook: func(job.MapFunc) job.Job {
 				panic("unexpected invocation of MockJob.MapChildren")
 			},
 		},
@@ -325,8 +325,8 @@ func (c JobFieldsFuncCall) Results() []interface{} {
 // JobMapChildrenFunc describes the behavior when the MapChildren method of
 // the parent MockJob instance is invoked.
 type JobMapChildrenFunc struct {
-	defaultHook func(func(job.Job) job.Job) job.Job
-	hooks       []func(func(job.Job) job.Job) job.Job
+	defaultHook func(job.MapFunc) job.Job
+	hooks       []func(job.MapFunc) job.Job
 	history     []JobMapChildrenFuncCall
 	mutex       sync.Mutex
 }
@@ -341,7 +341,7 @@ func (m *MockJob) MapChildren(v0 job.MapFunc) job.Job {
 
 // SetDefaultHook sets function that is called when the MapChildren method
 // of the parent MockJob instance is invoked and the hook queue is empty.
-func (f *JobMapChildrenFunc) SetDefaultHook(hook func(func(job.Job) job.Job) job.Job) {
+func (f *JobMapChildrenFunc) SetDefaultHook(hook func(job.MapFunc) job.Job) {
 	f.defaultHook = hook
 }
 
@@ -349,7 +349,7 @@ func (f *JobMapChildrenFunc) SetDefaultHook(hook func(func(job.Job) job.Job) job
 // MapChildren method of the parent MockJob instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *JobMapChildrenFunc) PushHook(hook func(func(job.Job) job.Job) job.Job) {
+func (f *JobMapChildrenFunc) PushHook(hook func(job.MapFunc) job.Job) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -358,19 +358,19 @@ func (f *JobMapChildrenFunc) PushHook(hook func(func(job.Job) job.Job) job.Job) 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *JobMapChildrenFunc) SetDefaultReturn(r0 job.Job) {
-	f.SetDefaultHook(func(func(job.Job) job.Job) job.Job {
+	f.SetDefaultHook(func(job.MapFunc) job.Job {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *JobMapChildrenFunc) PushReturn(r0 job.Job) {
-	f.PushHook(func(func(job.Job) job.Job) job.Job {
+	f.PushHook(func(job.MapFunc) job.Job {
 		return r0
 	})
 }
 
-func (f *JobMapChildrenFunc) nextHook() func(func(job.Job) job.Job) job.Job {
+func (f *JobMapChildrenFunc) nextHook() func(job.MapFunc) job.Job {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -405,7 +405,7 @@ func (f *JobMapChildrenFunc) History() []JobMapChildrenFuncCall {
 type JobMapChildrenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 func(job.Job) job.Job
+	Arg0 job.MapFunc
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 job.Job
