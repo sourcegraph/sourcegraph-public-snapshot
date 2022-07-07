@@ -33,7 +33,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
         super();
 
-        setPreferredSize(JBUI.size(1200, 800));
+        setPreferredSize(JBUI.size(1000, 700));
         setBorder(PopupBorder.Factory.create(true, true));
         setFocusCycleRoot(true);
 
