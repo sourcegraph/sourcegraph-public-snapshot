@@ -209,7 +209,7 @@ func orderSearcherJob(j job.Job) job.Job {
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
 	var pagedSearcherJob job.Job
-	newJob := job.MapType[*repoPagerJob](j, func(pager *repoPagerJob) job.Job {
+	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
 		if job.HasDescendent[*searcher.TextSearchJob](pager) {
 			pagedSearcherJob = pager
 			return &NoopJob{}
