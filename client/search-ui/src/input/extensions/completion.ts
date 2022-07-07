@@ -347,12 +347,14 @@ export function createDefaultSuggestionSources(options: {
                     })
                     .filter(isDefined)
 
+                const insidePredicate = token.value ? PREDICATE_REGEX.test(token.value.value) : false
+
                 return {
                     from: token.value?.range.start ?? token.range.end,
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
-                    getMatch: options.globbing ? undefined : createMatchFunction(token),
+                    getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
                 }
             })
         )
@@ -461,8 +463,15 @@ function createMatchFunction(token: Filter): ((completion: Completion) => number
     if (!token.value?.value) {
         return undefined
     }
-    const pattern = new RegExp(token.value.value, 'ig')
-    return completion => Array.from(completion.label.matchAll(pattern), matchToIndexTupel).flat()
+    try {
+        // Creating a regular expression fails if the value contains special
+        // regex characters in invalid positions. In that case we don't
+        // highlight.
+        const pattern = new RegExp(token.value.value, 'ig')
+        return completion => Array.from(completion.label.matchAll(pattern), matchToIndexTupel).flat()
+    } catch {
+        return undefined
+    }
 }
 
 /**
