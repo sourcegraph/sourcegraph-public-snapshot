@@ -31,7 +31,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
@@ -431,40 +431,15 @@ const [callbacksField, setCallbacks] = createUpdateableField<
 )
 
 // Defines decorators for syntax highlighting
-type StyleNames = keyof typeof styles
-const tokenDecorators: { [key: string]: Decoration } = Object.fromEntries(
-    (Object.keys(styles) as StyleNames[]).map(style => [style, Decoration.mark({ class: styles[style] })])
-)
+const tokenDecorators: { [key: string]: Decoration } = {}
 const emptyDecorator = Decoration.mark({})
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
 
-// Chooses the correct decorator for the decorated token. Copied (and adapted)
-// from decoratedToMonaco (decoratedToken.ts).
+// Chooses the correct decorator for the decorated token
 const decoratedToDecoration = (token: DecoratedToken): Decoration => {
-    let cssClass = 'identifier'
-    switch (token.type) {
-        case 'field':
-        case 'whitespace':
-        case 'keyword':
-        case 'comment':
-        case 'openingParen':
-        case 'closingParen':
-        case 'metaFilterSeparator':
-        case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
-            cssClass = token.type
-            break
-        case 'metaPath':
-        case 'metaRevision':
-        case 'metaRegexp':
-        case 'metaStructural':
-        case 'metaPredicate':
-            // The scopes value is derived from the token type and its kind.
-            // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
-            cssClass = `${token.type}${token.kind}`
-            break
-    }
-    return tokenDecorators[cssClass] ?? emptyDecorator
+    const className = toCSSClassName(token)
+    const decorator = tokenDecorators[className]
+    return decorator || (tokenDecorators[className] = Decoration.mark({ class: className }))
 }
 
 // This provides syntax highlighting. This is a custom solution so that we an
