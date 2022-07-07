@@ -78,12 +78,18 @@ func (s *SymbolSearchJob) Name() string {
 	return "SearcherSymbolSearchJob"
 }
 
-func (s *SymbolSearchJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		trace.Stringer("patternInfo", s.PatternInfo),
-		log.Int("numRepos", len(s.Repos)),
-		log.Int("limit", s.Limit),
+func (s *SymbolSearchJob) Tags(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("patternInfo", s.PatternInfo),
+			log.Int("numRepos", len(s.Repos)),
+			log.Int("limit", s.Limit),
+		)
 	}
+	return res
 }
 
 func (s *SymbolSearchJob) Children() []job.Describer { return nil }

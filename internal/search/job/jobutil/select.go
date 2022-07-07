@@ -36,10 +36,16 @@ func (j *selectJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 func (j *selectJob) Name() string {
 	return "SelectJob"
 }
-func (j *selectJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		trace.Printf("select", "%q", j.path),
+func (j *selectJob) Tags(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Printf("select", "%q", j.path),
+		)
 	}
+	return res
 }
 
 func (j *selectJob) Children() []job.Describer {

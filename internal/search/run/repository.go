@@ -58,14 +58,22 @@ func (*RepoSearchJob) Name() string {
 	return "RepoSearchJob"
 }
 
-func (s *RepoSearchJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
-		trace.Printf("filePatternsReposMustInclude", "%q", s.FilePatternsReposMustInclude),
-		trace.Printf("filePatternsReposMustExclude", "%q", s.FilePatternsReposMustExclude),
-		log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
-		trace.Stringer("mode", s.Mode),
+func (s *RepoSearchJob) Tags(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
+			trace.Strings("filePatternsReposMustInclude", s.FilePatternsReposMustInclude),
+			trace.Strings("filePatternsReposMustExclude", s.FilePatternsReposMustExclude),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+			trace.Stringer("mode", s.Mode),
+		)
 	}
+	return res
 }
 
 func (s *RepoSearchJob) Children() []job.Describer { return nil }

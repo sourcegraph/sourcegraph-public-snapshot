@@ -51,10 +51,16 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func (l *LimitJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		log.Int("limit", l.limit),
+func (l *LimitJob) Tags(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			log.Int("limit", l.limit),
+		)
 	}
+	return res
 }
 
 func (l *LimitJob) Children() []job.Describer {

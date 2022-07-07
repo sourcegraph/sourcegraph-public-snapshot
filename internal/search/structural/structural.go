@@ -192,18 +192,26 @@ func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *SearchJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		trace.Stringer("query", s.ZoektArgs.Query),
-		log.String("type", string(s.ZoektArgs.Typ)),
-		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
-		trace.Printf("select", "%q", s.ZoektArgs.Select),
-		trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
-		log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-		log.String("useIndex", string(s.UseIndex)),
-		log.Bool("containsRefGlobs", s.ContainsRefGlobs),
-		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+func (s *SearchJob) Tags(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
+			log.String("useIndex", string(s.UseIndex)),
+			trace.Printf("select", "%q", s.ZoektArgs.Select),
+			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", s.ZoektArgs.Query),
+			log.String("type", string(s.ZoektArgs.Typ)),
+			trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
 
 func (s *SearchJob) Children() []job.Describer { return nil }

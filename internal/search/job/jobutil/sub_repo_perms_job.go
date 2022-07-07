@@ -59,9 +59,7 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
-func (s *subRepoPermsFilterJob) Tags(job.Verbosity) []otlog.Field {
-	return []otlog.Field{}
-}
+func (s *subRepoPermsFilterJob) Tags(job.Verbosity) []otlog.Field { return nil }
 
 func (s *subRepoPermsFilterJob) Children() []job.Describer {
 	return []job.Describer{s.child}

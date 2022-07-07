@@ -38,10 +38,16 @@ func (c *ComputeExcludedJob) Name() string {
 	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
+func (c *ComputeExcludedJob) Tags(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
 
 func (c *ComputeExcludedJob) Children() []job.Describer { return nil }

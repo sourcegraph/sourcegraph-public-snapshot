@@ -183,9 +183,7 @@ func (j *OrJob) Name() string {
 	return "OrJob"
 }
 
-func (j *OrJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{}
-}
+func (j *OrJob) Tags(job.Verbosity) []log.Field { return nil }
 
 func (j *OrJob) Children() []job.Describer {
 	res := make([]job.Describer, len(j.children))

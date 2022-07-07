@@ -42,10 +42,16 @@ func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
-func (s *SequentialJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		log.Bool("ensureUnique", s.ensureUnique),
+func (s *SequentialJob) Tags(job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			log.Bool("ensureUnique", s.ensureUnique),
+		)
 	}
+	return res
 }
 
 func (s *SequentialJob) Children() []job.Describer {
@@ -178,10 +184,16 @@ func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
 }
 
-func (t *TimeoutJob) Tags(job.Verbosity) []log.Field {
-	return []log.Field{
-		trace.Stringer("timeout", t.timeout),
+func (t *TimeoutJob) Tags(job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("timeout", t.timeout),
+		)
 	}
+	return res
 }
 
 func (t *TimeoutJob) Children() []job.Describer {

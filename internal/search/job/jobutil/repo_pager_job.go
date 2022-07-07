@@ -118,12 +118,20 @@ func (p *repoPagerJob) Name() string {
 	return "RepoPagerJob"
 }
 
-func (p *repoPagerJob) Tags(job.Verbosity) []otlog.Field {
-	return []otlog.Field{
-		trace.Scoped("repoOpts", p.repoOpts.Tags()...),
-		otlog.String("useIndex", string(p.useIndex)),
-		otlog.Bool("containsRefGlobs", p.containsRefGlobs),
+func (p *repoPagerJob) Tags(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Bool("containsRefGlobs", p.containsRefGlobs),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", p.repoOpts.Tags()...),
+			otlog.String("useIndex", string(p.useIndex)),
+		)
 	}
+	return res
 }
 
 func (p *repoPagerJob) Children() []job.Describer {
