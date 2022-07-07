@@ -1,7 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
 
 import { SavedSearchForm, SavedSearchFormProps } from './SavedSearchForm'
 
@@ -14,9 +13,6 @@ const config: Meta = {
 
 export default config
 
-if (!window.context) {
-    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
-}
 window.context.emailEnabled = true
 
 const commonProps: SavedSearchFormProps = {

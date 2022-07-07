@@ -258,7 +258,11 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                             </PopoverTrigger>
                         </ButtonGroup>
-                        <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
+                        <PopoverContent
+                            position={Position.bottomStart}
+                            className="pt-0 pb-0"
+                            aria-label="Change repository"
+                        >
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 telemetryService={props.telemetryService}

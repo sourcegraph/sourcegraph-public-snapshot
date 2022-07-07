@@ -3,7 +3,7 @@ import { ReactElement } from 'react'
 
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
-import { DecoratorFunction, Parameters } from '@storybook/addons'
+import { DecoratorFn, Parameters } from '@storybook/react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
@@ -12,8 +12,7 @@ import { withChromaticThemes } from './decorators/withChromaticThemes'
 import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './themes'
 import { isChromatic } from './utils/isChromatic'
 
-const withConsoleDecorator: DecoratorFunction<ReactElement> = (storyFunc, context): ReactElement =>
-    withConsole()(storyFunc)(context)
+const withConsoleDecorator: DecoratorFn = (storyFunc, context): ReactElement => withConsole()(storyFunc)(context)
 
 export const decorators = [withDesign, withConsoleDecorator, isChromatic() && withChromaticThemes].filter(Boolean)
 
@@ -54,4 +53,18 @@ if (isChromatic()) {
       }
     `
     document.head.append(style)
+}
+
+declare global {
+    interface Window {
+        STORYBOOK_ENV?: string
+    }
+}
+
+/**
+ * Since we do not use `storiesOf` API, this env variable is not set by `@storybook/react` anymore.
+ * The `withConsole` decorator relies on this env variable so we set it manually here.
+ */
+if (!window.STORYBOOK_ENV) {
+    window.STORYBOOK_ENV = 'react'
 }

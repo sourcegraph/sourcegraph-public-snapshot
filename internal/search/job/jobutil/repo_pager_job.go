@@ -116,7 +116,7 @@ func (p *repoPagerJob) Name() string {
 
 func (p *repoPagerJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("repoOpts", &p.repoOpts),
+		trace.Scoped("repoOpts", p.repoOpts.Tags()...),
 		log.String("useIndex", string(p.useIndex)),
 		log.Bool("containsRefGlobs", p.containsRefGlobs),
 	}
