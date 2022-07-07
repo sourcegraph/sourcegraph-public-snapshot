@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { FlexTextArea, H4, Input, Text } from '@sourcegraph/wildcard'
+import { FlexTextArea, H4, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { UseCaseFeedbackModifiers, UseCaseFeedbackState } from '../toast/SurveyUseCaseToast'
@@ -55,9 +55,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             <Input
                 className="mt-3"
                 label={
-                    <Text size="small" className={formLabelClassName}>
+                    <H4 as="span" className={classNames('d-flex', styles.title, formLabelClassName)}>
                         What is your email?
-                    </Text>
+                    </H4>
                 }
                 onChange={event => onChangeEmail(event.target.value)}
                 value={email}
