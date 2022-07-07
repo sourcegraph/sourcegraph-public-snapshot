@@ -25,13 +25,8 @@ const codeInsightsBackend = {
                     color: 'var(--red)',
                     data: [
                         {
-                            value: 10,
+                            value: 100,
                             dateTime: new Date('2020-01-01'),
-                            link,
-                        },
-                        {
-                            value: 20,
-                            dateTime: new Date('2020-02-01'),
                             link,
                         },
                     ],
@@ -41,11 +36,26 @@ const codeInsightsBackend = {
                 },
                 {
                     id: 'bar',
-                    name: 'Boo',
+                    name: 'Bar',
                     color: 'var(--blue)',
                     data: [
                         {
-                            value: 20,
+                            value: 200,
+                            dateTime: new Date('2020-02-01'),
+                            link,
+                        },
+                    ],
+                    getLinkURL: datum => datum.link,
+                    getYValue: datum => datum.value,
+                    getXValue: datum => datum.dateTime,
+                },
+                {
+                    id: 'baz',
+                    name: 'Baz',
+                    color: 'var(--green)',
+                    data: [
+                        {
+                            value: 150,
                             dateTime: new Date('2020-02-01'),
                             link,
                         },
@@ -60,12 +70,14 @@ const codeInsightsBackend = {
 
 export const ComputeLivePreview: Story = () => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <ComputeLivePreviewComponent
-            disabled={false}
-            repositories="sourcegraph/sourcegraph"
-            stepValue="2"
-            step="weeks"
-            series={[]}
-        />
+        <div className="m-3 px-4 py-5 bg-white">
+            <ComputeLivePreviewComponent
+                disabled={false}
+                repositories="sourcegraph/sourcegraph"
+                stepValue="2"
+                step="weeks"
+                series={[]}
+            />
+        </div>
     </CodeInsightsBackendStoryMock>
 )

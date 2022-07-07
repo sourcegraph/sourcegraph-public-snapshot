@@ -44,3 +44,70 @@ export const SERIES_MOCK_CHART: SeriesChartContent<MockSeriesDatum> = {
         },
     ],
 }
+
+interface LanguageUsageDatum {
+    name: string
+    value: number
+    fill: string
+    linkURL: string
+    group?: string
+}
+
+export const COMPUTE_MOCK_CHART: LanguageUsageDatum[] = [
+    {
+        group: 'Sourcegraph',
+        name: 'JavaScript',
+        value: 422,
+        fill: '#f1e05a',
+        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
+    },
+    {
+        group: 'Sourcegraph',
+        name: 'CSS',
+        value: 273,
+        fill: '#563d7c',
+        linkURL: 'https://en.wikipedia.org/wiki/CSS',
+    },
+    {
+        group: 'Sourcegraph',
+        name: 'HTML',
+        value: 20,
+        fill: '#e34c26',
+        linkURL: 'https://en.wikipedia.org/wiki/HTML',
+    },
+    {
+        group: 'Sourcegraph',
+        name: 'Markdown',
+        value: 135,
+        fill: '#083fa1',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        group: 'About',
+        name: 'JavaScript',
+        value: 300,
+        fill: '#f1e05a',
+        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
+    },
+    {
+        group: 'About',
+        name: 'CSS',
+        value: 150,
+        fill: '#563d7c',
+        linkURL: 'https://en.wikipedia.org/wiki/CSS',
+    },
+    {
+        group: 'About',
+        name: 'HTML',
+        value: 390,
+        fill: '#e34c26',
+        linkURL: 'https://en.wikipedia.org/wiki/HTML',
+    },
+    {
+        // group: 'About',
+        name: 'Markdown',
+        value: 300,
+        fill: '#083fa1',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+]

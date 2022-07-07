@@ -3,6 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo, Text } from '@sourcegraph/wildcard'
 
+import { Series } from '../../../../../charts'
 import { BarChart } from '../../../../../charts/components/bar-chart/BarChart'
 import {
     LivePreviewUpdateButton,
@@ -15,11 +16,10 @@ import {
     getSanitizedRepositories,
     useLivePreview,
     StateStatus,
-    SERIES_MOCK_CHART,
+    COMPUTE_MOCK_CHART,
 } from '../../../components'
-import { CodeInsightsBackendContext } from '../../../core'
+import { BackendInsightDatum, CodeInsightsBackendContext } from '../../../core'
 
-import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
 
 interface LineChartLivePreviewProps {
@@ -39,18 +39,18 @@ interface LineChartLivePreviewProps {
 export const ComputeLivePreview: React.FunctionComponent<
     React.PropsWithChildren<LineChartLivePreviewProps>
 > = props => {
+    // For the purposes of building out this component before the backend is ready
+    // we are using the standard "line series" type data.
+    // TODO after backend is merged, remove update the series value to use that structure
     const { disabled, repositories, stepValue, step, series, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
 
-    const sanitizedSeries = series.map(srs => {
-        const sanitizer = srs.generatedFromCaptureGroup ? getSanitizedCaptureQuery : (query: string) => query
-        return {
-            query: sanitizer(srs.query),
-            generatedFromCaptureGroup: srs.generatedFromCaptureGroup,
-            label: srs.label,
-            stroke: srs.stroke,
-        }
-    })
+    const sanitizedSeries = series.map(srs => ({
+        query: srs.query,
+        generatedFromCaptureGroup: srs.generatedFromCaptureGroup,
+        label: srs.label,
+        stroke: srs.stroke,
+    }))
 
     const settings = useDeepMemo({
         disabled,
@@ -69,6 +69,22 @@ export const ComputeLivePreview: React.FunctionComponent<
 
     const { state, update } = useLivePreview(getLivePreview)
 
+    interface LanguageUsageDatum {
+        name: string
+        value: number
+        fill: string
+        linkURL: string
+        group?: string
+    }
+
+    const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
+        series.map(series => ({
+            name: series.name,
+            value: series.data[0].value ?? 0,
+            fill: series.color ?? 'var(--blue)',
+            linkURL: series.data[0].link ?? '',
+        }))
+
     return (
         <aside className={className}>
             <LivePreviewUpdateButton disabled={disabled} onClick={update} />
@@ -86,10 +102,10 @@ export const ComputeLivePreview: React.FunctionComponent<
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
-                                    data={state.data.series}
+                                    data={mapSeriesToCompute(state.data.series as Series<BackendInsightDatum>[])}
                                     getDatumName={(datum: any) => datum.name}
                                     getDatumValue={(datum: any) => datum.value}
-                                    getDatumColor={(datum: any) => datum.color}
+                                    getDatumColor={(datum: any) => datum.fill}
                                 />
                             ) : (
                                 <>
@@ -97,10 +113,10 @@ export const ComputeLivePreview: React.FunctionComponent<
                                         as={BarChart}
                                         width={parent.width}
                                         height={parent.height}
-                                        data={SERIES_MOCK_CHART.series}
+                                        data={COMPUTE_MOCK_CHART}
                                         getDatumName={(datum: any) => datum.name}
                                         getDatumValue={(datum: any) => datum.value}
-                                        getDatumColor={(datum: any) => datum.color}
+                                        getDatumColor={(datum: any) => datum.fill}
                                     />
                                     <LivePreviewBanner>You’ll see your insight’s chart preview here</LivePreviewBanner>
                                 </>
@@ -113,7 +129,7 @@ export const ComputeLivePreview: React.FunctionComponent<
             </LivePreviewCard>
 
             <Text className="mt-4 pl-2">
-                <b>Timeframe:</b> May 20, 2022 - Oct 20, 2022
+                <strong>Timeframe:</strong> May 20, 2022 - Oct 20, 2022
             </Text>
         </aside>
     )
