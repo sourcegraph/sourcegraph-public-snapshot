@@ -1,21 +1,18 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql } from '@apollo/client'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { of } from 'rxjs'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Text, useObservable } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
-import { streamComputeQuery } from '../../../../shared/src/search/stream'
 import { AuthenticatedUser } from '../../auth'
 import { RecentlySearchedRepositoriesFragment } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -54,8 +51,6 @@ export const recentlySearchedRepositoriesFragment = gql`
     }
 `
 
-type ComputeParseResult = [{ kind: string; value: string }]
-
 export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     telemetryService,
@@ -76,7 +71,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     const getItemRef = useFocusOnLoadedMore(repoFilterValues?.length ?? 0)
     useEffect(() => {
         if (recentlySearchedRepos) {
-            setRepoFilterValues(processRepositories(RecentRepo))
+            setRepoFilterValues(processRepositories(recentlySearchedRepos))
         }
     }, [recentlySearchedRepos])
 
@@ -114,6 +109,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
             </small>
         </EmptyPanelContainer>
     )
+
     async function loadMoreItems(): Promise<void> {
         telemetryService.log('RepositoriesPanelShowMoreClicked')
         const newItemsToLoad = itemsToLoad + RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD
@@ -139,43 +135,6 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     const renderComputeResults = computeResults.size > 0
 
     const contentDisplay = (
-        /* <>
-            <table className={classNames('mt-2', styles.resultsTable)}>
-                <thead>
-                    <tr className={styles.resultsTableRow}>
-                        <th>
-                            <small>Search</small>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {repoFilterValues?.map((repoFilterValue, index) => (
-                        <tr
-                            // The repo is not guaranteed to be unique on its own, so we use index as well.
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={`${repoFilterValue}-${index}`}
-                            className={classNames('text-monospace text-break', styles.resultsTableRow)}
-                        >
-                            <td>
-                                <small>
-                                    <Link
-                                        to={`/search?q=repo:${repoFilterValue}`}
-                                        ref={getItemRef(index)}
-                                        onClick={logRepoClicked}
-                                    >
-                                        <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                                    </Link>
-                                </small>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more repositories</VisuallyHidden>}
-            {searchEventLogs?.pageInfo.hasNextPage && (
-                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
-            )}
-        </>*/
         <>
             <table className={classNames('mt-2', styles.resultsTable)}>
                 <thead>
@@ -237,59 +196,6 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     // If neither search event logs or git history have items, then display the empty display
     const isEmpty = repoFilterValues?.length === 0 && computeResults.size === 0
 
-    // Get the user's repos from their commit history and extract all unique repos
-    const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
-    const gitRepository = useObservable(
-        useMemo(
-            () =>
-                checkHomePanelsFeatureFlag && authenticatedUser
-                    ? streamComputeQuery(
-                          `content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`
-                      )
-                    : of([]),
-            [authenticatedUser, checkHomePanelsFeatureFlag]
-        )
-    )
-
-    const gitSet = useMemo(() => {
-        let gitRepositoryParsedString: ComputeParseResult[] = []
-        if (gitRepository) {
-            gitRepositoryParsedString = gitRepository.map(value => JSON.parse(value) as ComputeParseResult)
-        }
-        const gitReposList = gitRepositoryParsedString?.flat()
-
-        const gitSet = new Set<string>()
-        if (gitReposList) {
-            for (const git of gitReposList) {
-                if (git.value) {
-                    gitSet.add(git.value)
-                }
-            }
-        }
-
-        return gitSet
-    }, [gitRepository])
-
-    /*
-    const gitHistoryDisplay = (
-        <table className={classNames('mt-2', styles.resultsTable)}>
-            <tbody>
-                {Array.from(gitSet).map(repo => (
-                    <tr key={`${repo}`} className={classNames('text-monospace text-break', styles.resultsTableRow)}>
-                        <td>
-                            <small>
-                                <Link to={`/search?q=repo:${repo}`} onClick={logRepoClicked}>
-                                    <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
-                                </Link>
-                            </small>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    )
-    */
-
     return (
         <PanelContainer
             className={classNames(className, 'repositories-panel')}
@@ -302,18 +208,12 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     )
 }
 
-interface RecentRepo {
-    repoName: string
-    timestamp: string
-    url: string
-}
-
-function processRepositories(eventLogResult?: EventLogResult): RecentRepo[] | null {
-    if (!eventLogResult) {
+function processRepositories(eventLogResult: EventLogResult): string[] | null {
+        if (!eventLogResult) {
         return null
     }
 
-    const recentlySearchedRepos: RecentRepo[] = []
+    const recentlySearchedRepos: string[] = []
 
     for (const node of eventLogResult.nodes) {
         if (node.url) {
