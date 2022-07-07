@@ -111,7 +111,7 @@ func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
 	j := FeelingLuckySearchJob{
 		initialJob: mockJob,
 		generators: []next{func() (*autoQuery, next) { return mockAutoQuery, nil }},
-		createJob: func(*autoQuery) job.Job {
+		newGeneratedJob: func(*autoQuery) job.Job {
 			return mockJob
 		},
 	}
