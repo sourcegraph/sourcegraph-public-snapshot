@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -1029,12 +1030,12 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 		wait := make(chan struct{}, 2)
 		// Enough buffer to send data twice to avoid blocking on failing test
 		ready := make(chan struct{}, 2)
-		called := 0
+		called := atomic.NewInt32(0)
 
 		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32) (*types.User, error) {
 			wait <- struct{}{}
-			called++
+			called.Inc()
 			<-ready
 
 			// We only log errors in `syncPerms` method and return an error here would
@@ -1094,12 +1095,12 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 		// Only one goroutine should have been called
 		require.False(t, getOrFail(wait))
 		require.True(t, getOrFail(wait)) // There should be no second signal coming in
-		require.Equal(t, 1, called)
+		require.Equal(t, int32(1), called.Load())
 		ready <- struct{}{} // Unblock the execution of the first goroutine
 
 		// Now the second goroutine should be called
 		require.False(t, getOrFail(wait))
-		require.Equal(t, 2, called)
+		require.Equal(t, int32(2), called.Load())
 		ready <- struct{}{}
 	})
 }
