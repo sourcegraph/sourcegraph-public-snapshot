@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/mattn/go-isatty"
@@ -220,7 +221,7 @@ func batchDefaultTempDirPrefix() string {
 	return os.TempDir()
 }
 
-func batchOpenFileFlag(flag string) (io.ReadCloser, error) {
+func batchOpenFileFlag(flag string) (*os.File, error) {
 	if flag == "" || flag == "-" {
 		if flag != "-" {
 			// If the flag wasn't set, we want to check stdin. If it's not a TTY,
@@ -238,8 +239,13 @@ func batchOpenFileFlag(flag string) (io.ReadCloser, error) {
 				}
 			}
 		}
+		// https://github.com/golang/go/issues/24842
+		if err := syscall.SetNonblock(0, true); err != nil {
+			panic(err)
+		}
+		stdin := os.NewFile(0, "stdin")
 
-		return os.Stdin, nil
+		return stdin, nil
 	}
 
 	file, err := os.Open(flag)
@@ -292,7 +298,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 
 	// Parse flags and build up our service and executor options.
 	ui.ParsingBatchSpec()
-	batchSpec, rawSpec, err := parseBatchSpec(opts.file, svc, false)
+	batchSpec, rawSpec, err := parseBatchSpec(ctx, opts.file, svc, false)
 	if err != nil {
 		var multiErr errors.MultiError
 		if errors.As(err, &multiErr) {
@@ -481,17 +487,32 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	return nil
 }
 
+func setReadDeadlineOnCancel(ctx context.Context, f *os.File) {
+	go func() {
+		// When user cancels, we set the read deadline to now() so the runtime
+		// cancels the read and we don't block.
+		<-ctx.Done()
+		f.SetReadDeadline(time.Now())
+	}()
+}
+
 // parseBatchSpec parses and validates the given batch spec. If the spec has
 // validation errors, they are returned.
 //
 // isRemote argument is a temporary argument used to determine if the batch spec is being parsed for remote
 // (server-side) processing. Remote processing does not support mounts yet.
-func parseBatchSpec(file string, svc *service.Service, isRemote bool) (*batcheslib.BatchSpec, string, error) {
+func parseBatchSpec(ctx context.Context, file string, svc *service.Service, isRemote bool) (*batcheslib.BatchSpec, string, error) {
 	f, err := batchOpenFileFlag(file)
 	if err != nil {
 		return nil, "", err
 	}
 	defer f.Close()
+
+	// Create new ctx so we ensure that the goroutine in
+	// setReadDeadlineOnCancel exits at end of function.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	setReadDeadlineOnCancel(ctx, f)
 
 	data, err := io.ReadAll(f)
 	if err != nil {

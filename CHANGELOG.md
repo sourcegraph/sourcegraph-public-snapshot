@@ -20,6 +20,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Handle SIGINT interrupt when reading from Stdin. [#794](https://github.com/sourcegraph/src-cli/pull/794)
+
 ### Removed
 
 ## 3.41.0
