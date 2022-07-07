@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "description": "Sourcegraph for JetBrains",
   "publisher": "sourcegraph",
-  "sideEffects": true,
+  "sideEffects": false,
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
