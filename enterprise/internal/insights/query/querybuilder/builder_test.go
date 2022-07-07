@@ -61,6 +61,76 @@ func TestWithDefaults(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			}
+		})
+	}
+}
+
+func TestWithDefaultsPatternTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		want     string
+		defaults query.Parameters
+	}{
+		{
+			// check: does this get parsed as regexp with new client?
+			name:     "regexp query without patterntype",
+			input:    `file:go\.mod$ go\s*(\d\.\d+)`,
+			want:     `file:go\.mod$ go\s*(\d\.\d+)`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "regexp query with patterntype",
+			input:    `file:go\.mod$ go\s*(\d\.\d+) patterntype:regexp`,
+			want:     `file:go\.mod$ patterntype:regexp go\s*(\d\.\d+)`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "literal query without patterntype",
+			input:    `package search`,
+			want:     `package search`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "literal query with patterntype",
+			input:    `package search patterntype:literal`,
+			want:     `patterntype:literal package search`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "literal query with quotes without patterntype",
+			input:    `"license": "A`,
+			want:     `"license": "A`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "literal query with quotes with patterntype",
+			input:    `"license": "A patterntype:literal`,
+			want:     `patterntype:literal "license": "A`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "structural query without patterntype",
+			input:    `TODO(...)`,
+			want:     `TODO(...)`,
+			defaults: []query.Parameter{},
+		},
+		{
+			name:     "structural query with patterntype",
+			input:    `TODO(...) patterntype:structural`,
+			want:     `patterntype:structural TODO(...)`,
+			defaults: []query.Parameter{},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := withDefaults(test.input, test.defaults)
+			if err != nil {
+				t.Fatal(err)
+			}
 			println(got)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Fatalf("%s failed (want/got): %s", test.name, diff)
