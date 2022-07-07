@@ -10,6 +10,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var _ service = (*Service)(nil)
+
+type service interface {
+	// Not in use yet.
+	List(ctx context.Context, opts ListOpts) (jobs []IndexJob, err error)
+	Get(ctx context.Context, id int) (job IndexJob, ok bool, err error)
+	GetBatch(ctx context.Context, ids ...int) (jobs []IndexJob, err error)
+	Delete(ctx context.Context, id int) (err error)
+	Enqueue(ctx context.Context, jobs []IndexJob) (err error)
+	Infer(ctx context.Context, repoID int) (jobs []IndexJob, err error)
+	UpdateIndexingConfiguration(ctx context.Context, repoID int) (jobs []IndexJob, err error)
+
+	// Commits
+	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error)
+
+	// Indexes
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+}
+
 type Service struct {
 	autoindexingStore store.Store
 	dbStore           DBStore // TODO - roll into store
@@ -111,11 +132,11 @@ func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.T
 	return s.autoindexingStore.DeleteIndexesWithoutRepository(ctx, now)
 }
 
-func (s *Service) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, _, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
+func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.autoindexingStore.StaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+	return s.autoindexingStore.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
 }
 
 func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {

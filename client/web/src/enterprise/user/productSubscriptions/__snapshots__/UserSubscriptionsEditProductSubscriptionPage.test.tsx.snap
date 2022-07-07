@@ -79,6 +79,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
             >
               <div
                 aria-label="Loading"
+                aria-live="polite"
                 class="iconInline loadingSpinner"
                 role="img"
               />
@@ -100,6 +101,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
               >
                 <div
                   aria-label="Loading"
+                  aria-live="polite"
                   class="iconInline loadingSpinner"
                   role="img"
                 />

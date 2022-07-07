@@ -202,14 +202,22 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for release
 2. Run `yarn --cwd client/vscode release:$RELEASE_TYPE` in the root directory
    - $RELEASE_TYPE: major, minor, patch, pre
+     - Example: `yarn --cwd client/vscode release:patch`
    - This command will:
-     - Update the package.json with the next version number
+     - Update the package.json file with the next version number
      - Update the changelog format by listing everything under `Unreleased` to the updated version number
      - Make a commit for the release and push to the current branch
-3. Merge the current branch into main
+3. Open a PR to merge the current branch into main
 4. Once the main branch has the updated version number and changelog, run `git push origin main:vsce/release`
    - This will trigger the build pipeline for publishing the extension using the `yarn release` command
+   - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+   - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
    - The extension will be published with the correct package name via the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 5. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
 
-Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
+Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in:
+
+- VS Code Marketplace: [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
+- Open VSX Registry: [Namespaces Tab in User Settings](https://open-vsx.org/user-settings/namespaces)
+
+> NOTE: It might take up to 10 minutes before the new release is published.
