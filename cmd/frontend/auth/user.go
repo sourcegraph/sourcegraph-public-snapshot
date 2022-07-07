@@ -198,8 +198,10 @@ var _ AuthenticatorWithRefresher = &TokenWithRefresher{}
 
 func (t *TokenWithRefresher) Authenticate(req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+t.Token)
+	fmt.Println("authenticate with new authenticator, token is:", t.Token)
 
-	fmt.Println("auth with new authenticator")
+	// TODO: try to authenticate. if it fails with 401, retry, refresh.
+
 	return nil
 }
 
@@ -209,11 +211,10 @@ func (t *TokenWithRefresher) Hash() string {
 }
 
 func (t *TokenWithRefresher) TryToSaveToken(tk string, ctx context.Context) {
-	fmt.Println("method try to safe token -- user.go")
-	//  {"error": "handler panic: runtime error: invalid memory address or nil pointer dereference"}
-	user := actor.FromContext(ctx)
-	opt := database.AccessTokensListOptions{SubjectUserID: user.UID}
-	tokens, _ := t.db.AccessTokens().List(ctx, opt)
+	fmt.Println("try to save token -> user.go, new token is:", tk)
 
-	fmt.Println("list", tokens)
+	// TODO: save new token based on the value from tk
+	// user := actor.FromContext(ctx)
+	// opt := database.AccessTokensListOptions{SubjectUserID: user.UID}
+	// _, _ = t.db.AccessTokens().List(ctx, database.AccessTokensListOptions{SubjectUserID: user.UID})
 }

@@ -17,6 +17,7 @@ import (
 
 	// refresher "github.com/sourcegraph/sourcegraph/internal/auth" // import cycle not allowed
 	// refresher "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/common"
+	// refresher "github.com/sourcegraph/sourcegraph/cmd/frontend/auth" // could not import. import cycle not allowed
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -131,12 +132,14 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string, shouldRetryAndRefresh
 		return p.getClient(nil)
 	}
 
+	fmt.Println("get oauth function -> client...")
 	if !shouldRetryAndRefreshToken {
 		return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 	}
 
-	// return p.getClient(&refresher.TokenWithRefresher{Token: oauthToken})
+	fmt.Println("should not try to refresh...")
 	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+	// return p.getClient(&refresher.TokenWithRefresher{Token: oauthToken})
 
 }
 
@@ -243,14 +246,16 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 // doWithBaseURL will not amend the request URL.
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	// if c.Auth != nil {
-	// err := c.Auth.Authenticate(req)
-	c.Auth.Authenticate(req)
 
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "authenticating request")
+	fmt.Println("....do requeset with base url....")
+	if c.Auth != nil {
+		err := c.Auth.Authenticate(req)
+		c.Auth.Authenticate(req)
+
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "authenticating request")
+		}
 	}
-	// }
 	var resp *http.Response
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
@@ -273,6 +278,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	}
 
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
+
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 		return nil, 0, err
@@ -281,12 +287,15 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
 	c.rateLimitMonitor.Update(resp.Header)
+	fmt.Println("....do request. if it fails with a 401, check/refresh token....")
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		// We swallow the error here, because we don't want to fail. Parsing the body
 		// is just optional to provide some more context.
+
 		body, _ := io.ReadAll(resp.Body)
-		bs := string(body)
-		fmt.Println("body....", bs)
+		// bs := string(body)
+		// fmt.Println("body....", bs)
 
 		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
@@ -302,7 +311,6 @@ func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
 
 // func (c *Client) WithAuthenticator(a refresher.AuthenticatorWithRefresher) *Client {
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
-
 	fmt.Println(".....with authenticator")
 	tokenHash := a.Hash()
 
@@ -310,8 +318,6 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	cc.rateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
 	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
-
-	fmt.Println(".....with authenticator 2")
 
 	return &cc
 }
