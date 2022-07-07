@@ -3,6 +3,7 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const SentryWebpackPlugin = require('@sentry/webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const mapValues = require('lodash/mapValues')
@@ -41,6 +42,9 @@ const {
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
   WEBPACK_USE_NAMED_CHUNKS,
+  SENTRY_UPLOAD_SOURCE_MAPS,
+  RELEASE_CANDIDATE_VERSION,
+  SENTRY_AUTH_TOKEN,
 } = ENVIRONMENT_CONFIG
 
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
@@ -173,6 +177,14 @@ const config = {
          * We can fall back to dynamic gzip for these.
          */
         threshold: 10240,
+      }),
+    RELEASE_CANDIDATE_VERSION &&
+      SENTRY_UPLOAD_SOURCE_MAPS &&
+      new SentryWebpackPlugin({
+        dryRun: true,
+        authToken: SENTRY_AUTH_TOKEN,
+        release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
+        include: path.join(ROOT_PATH, 'ui', 'assets', 'scripts'),
       }),
   ].filter(Boolean),
   resolve: {
