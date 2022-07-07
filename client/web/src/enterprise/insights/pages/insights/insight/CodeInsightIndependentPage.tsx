@@ -5,7 +5,7 @@ import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard
 
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
+import { CodeInsightsPage } from '../../../components'
 import { CodeInsightsBackendContext } from '../../../core'
 
 import { CodeInsightIndependentPageActions } from './components/actions/CodeInsightIndependentPageActions'
