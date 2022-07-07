@@ -60,22 +60,6 @@ func (s *CodeIntel) BrowserExtensionInstalls() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
-func (s *CodeIntel) Hovers() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"codeintel.searchHover", "codeintel.lsifHover"})
-	if err != nil {
-		return nil, err
-	}
-
-	return &AnalyticsFetcher{
-		db:           s.DB,
-		dateRange:    s.DateRange,
-		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "CodeIntel:Hovers",
-		cache:        s.Cache,
-	}, nil
-}
-
 func (s *CodeIntel) SearchBasedEvents() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
 		"codeintel.searchDefinitions",
@@ -144,7 +128,6 @@ func (s *CodeIntel) CacheAll(ctx context.Context) error {
 		s.DefinitionClicks,
 		s.ReferenceClicks,
 		s.BrowserExtensionInstalls,
-		s.Hovers,
 		s.SearchBasedEvents,
 		s.PreciseEvents,
 		s.CrossRepoEvents,

@@ -6026,10 +6026,6 @@ type AnalyticsCodeIntelResult {
     """
     browserExtensionInstalls: AnalyticsStatItem!
     """
-    Hover events
-    """
-    hovers: AnalyticsStatItem!
-    """
     Search based events
     """
     searchBasedEvents: AnalyticsStatItem!

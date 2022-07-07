@@ -706,6 +706,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         ]
 
         const totalEvents = definitionClicks.summary.totalCount + referenceClicks.summary.totalCount
+        const totalHoverEvents = searchBasedEvents.summary.totalCount + preciseEvents.summary.totalCount
 
         const calculatorProps = {
             label: 'Intel Events',
@@ -716,27 +717,21 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 {
                     label: 'Search based',
                     minPerItem: 0.5,
-                    value: Math.floor(
-                        (searchBasedEvents.summary.totalCount * totalEvents) / hovers.summary.totalCount || 0
-                    ),
+                    value: Math.floor((searchBasedEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Searched based code intel reconizes symbols and is supported across all languages. Search intel events are not exact, thus their time savings is not as high as precise events. ',
                 },
                 {
                     label: 'Precise events',
                     minPerItem: 1,
-                    value: Math.floor(
-                        (preciseEvents.summary.totalCount * totalEvents) / hovers.summary.totalCount || 0
-                    ),
+                    value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Precise code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant time savings.',
                 },
                 {
                     label: 'Cross repository <br/> code intel events',
                     minPerItem: 3,
-                    value: Math.floor(
-                        (crossRepoEvents.summary.totalCount * totalEvents) / hovers.summary.totalCount || 0
-                    ),
+                    value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
                 },
