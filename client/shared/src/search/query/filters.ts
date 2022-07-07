@@ -188,7 +188,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
-        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
+        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
         singular: true,
     },
     [FilterType.author]: {
@@ -233,7 +233,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'path',
     },
     [FilterType.fork]: {
-        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
+        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
         description: 'Include results from forked repositories.',
         singular: true,
     },
@@ -250,7 +250,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
             `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'literal', 'structural'].map(value => ({ label: value })),
+        discreteValues: () => ['regexp', 'structural', 'literal'].map(value => ({ label: value })),
         description: 'The pattern type (regexp, literal, structural) in use',
         singular: true,
     },
