@@ -128,15 +128,11 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string, shouldRetryAndRefresh
 		return p.getClient(nil)
 	}
 
-	fmt.Println("get oauth function -> client...")
 	if !shouldRetryAndRefreshToken {
 		return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 	}
 
-	fmt.Println("should not try to refresh...")
-	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
-	// return p.getClient(&refresher.TokenWithRefresher{Token: oauthToken})
-
+	return p.getClient(&auth.OauthBearerTokenWithRefresher{Token: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
@@ -241,11 +237,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
+	// with the new authenticator, this triggers a   goroutine panic: runtime error: invalid memory address or nil pointer dereference
 	if c.Auth != nil {
 		if err := c.Auth.Authenticate(req); err != nil {
 			return nil, 0, errors.Wrap(err, "authenticating request")
 		}
 	}
+
 	var resp *http.Response
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")

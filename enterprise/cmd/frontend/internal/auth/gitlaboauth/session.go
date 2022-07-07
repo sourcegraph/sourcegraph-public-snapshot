@@ -48,7 +48,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	glClient := provider.GetOAuthClient(token.AccessToken, true)
 
 	///// Debugging block to test new authenticator
-	saveFunction := func(token string) { s.db.AccessTokens() fmt.Println("save to the db") }
+	saveFunction := func(token string) { fmt.Println("todo: save to the db") }
 	a := gitlaboauth.OauthBearerTokenWithRefresher{Token: token.AccessToken, Refresher: saveFunction}
 	glClient = glClient.WithCustomAuthenticator(a)
 	//
