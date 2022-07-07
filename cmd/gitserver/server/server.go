@@ -254,9 +254,6 @@ type Server struct {
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 
-	// Used for setRepoSizes function to run only during the first run of janitor
-	setRepoSizesOnce sync.Once
-
 	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
 	// maximum number of Git subprocesses are active for all /batch-log requests combined.
 	GlobalBatchLogSemaphore *semaphore.Weighted
