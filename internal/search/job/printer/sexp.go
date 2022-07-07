@@ -37,7 +37,7 @@ func SexpFormat(j job.Describer, verbosity job.Verbosity, sep, indent string) st
 		}
 		tags := j.Tags(verbosity)
 		children := j.Children()
-		if (len(tags) == 0 || verbosity == job.VerbosityNone) && len(children) == 0 {
+		if len(tags) == 0 && len(children) == 0 {
 			b.WriteString(j.Name())
 			return
 		}
@@ -45,7 +45,7 @@ func SexpFormat(j job.Describer, verbosity job.Verbosity, sep, indent string) st
 		b.WriteByte('(')
 		b.WriteString(trimmedUpperName(j.Name()))
 		depth++
-		if len(tags) > 0 && verbosity > job.VerbosityNone {
+		if len(tags) > 0 {
 			enc := fieldStringEncoder{sexpKeyValueWriter{b}}
 			for _, field := range tags {
 				writeSep(b, sep, indent, depth)

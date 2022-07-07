@@ -30,8 +30,13 @@ func (tj *testJob) withChildren(children ...*testJob) *testJob {
 	return tj
 }
 
-func (tj *testJob) Name() string                     { return tj.name }
-func (tj *testJob) Tags(job.Verbosity) []otlog.Field { return tj.tags }
+func (tj *testJob) Name() string { return tj.name }
+func (tj *testJob) Tags(v job.Verbosity) []otlog.Field {
+	if v > job.VerbosityNone {
+		return tj.tags
+	}
+	return nil
+}
 
 func (tj *testJob) Children() []job.Describer {
 	res := make([]job.Describer, len(tj.children))

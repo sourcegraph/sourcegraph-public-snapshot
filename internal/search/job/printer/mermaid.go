@@ -70,12 +70,10 @@ func writeNode(b *bytes.Buffer, depth int, style NodeStyle, id *int, label strin
 func buildLabel(j job.Describer, v job.Verbosity) string {
 	b := new(strings.Builder)
 	b.WriteString(trimmedUpperName(j.Name()))
-	if v > job.VerbosityNone {
-		enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
-		for _, field := range j.Tags(v) {
-			b.WriteString(" <br> ")
-			field.Marshal(enc)
-		}
+	enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
+	for _, field := range j.Tags(v) {
+		b.WriteString(" <br> ")
+		field.Marshal(enc)
 	}
 	return b.String()
 }
