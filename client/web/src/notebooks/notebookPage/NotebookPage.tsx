@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiBookOutline } from '@mdi/js'
+import { mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -279,7 +278,9 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                     {isNotebookLoaded(latestNotebook) && (
                                         <>
-                                            <CheckCircleIcon
+                                            <Icon
+                                                aria-hidden={true}
+                                                svgPath={mdiCheckCircle}
                                                 className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                             />
                                             <span>

@@ -25,12 +25,16 @@ if (isValidType) {
      */
     const releaseType: semver.ReleaseType = vsceReleaseType === 'prerelease' ? 'minor' : vsceReleaseType
     // Get the latest release version nubmer of the last release from VS Code Marketplace using the vsce cli tool
+    // We use this to compare the current package version number with the current release version number - they should be the same
     const response = childProcess.execSync('vsce show sourcegraph.sourcegraph --json').toString()
     const latestVersion: string = JSON.parse(response).versions[0].version
-    if (!semver.valid(latestVersion) || version !== latestVersion) {
+    if (!semver.valid(latestVersion)) {
         throw new Error(
-            'The current version number is not align with the version number of the latest release. Make sure you have the vsce cli tool installed.'
+            'Failed to connect to VSCE to retreive the latest extension version number. Make sure you have vsce cli tool installed.'
         )
+    }
+    if (version !== latestVersion) {
+        throw new Error('The current version number is not align with the version number of the latest release.')
     }
     // Increase minor version number by twice for minor release because ODD minor number is for pre-release
     const nextVersion =

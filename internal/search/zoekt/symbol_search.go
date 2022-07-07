@@ -112,6 +112,6 @@ func (s *GlobalSymbolSearchJob) Tags() []log.Field {
 		log.String("type", string(s.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", s.ZoektArgs.Select),
-		trace.Stringer("repoOpts", &s.RepoOpts),
+		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 	}
 }

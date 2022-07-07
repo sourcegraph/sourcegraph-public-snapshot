@@ -11,7 +11,7 @@ import (
 func Validate(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
 		Name:  "db",
-		Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
+		Usage: "The target `schema(s)` to validate. Comma-separated values are accepted. Supply \"all\" to validate all schemas.",
 		Value: cli.NewStringSlice("all"),
 	}
 
@@ -28,7 +28,12 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 			return err
 		}
 
-		return r.Validate(ctx, schemaNames...)
+		if err := r.Validate(ctx, schemaNames...); err != nil {
+			return err
+		}
+
+		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
+		return nil
 	})
 
 	return &cli.Command{

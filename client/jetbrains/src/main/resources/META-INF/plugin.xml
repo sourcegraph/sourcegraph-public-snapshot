@@ -30,7 +30,6 @@
             class="com.sourcegraph.website.OpenFile"
             text="Open Selection in Sourcegraph Web"
             description="Open selection in Sourcegraph Web">
-            <keyboard-shortcut first-keystroke="alt shift a" keymap="$default"/>
         </action>
         <action
             id="sourcegraph.searchSelection"
@@ -38,7 +37,6 @@
             text="Search Selection on Sourcegraph Web"
             description="Search selection on Sourcegraph web"
             icon="/icons/icon.png">
-            <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
         </action>
         <action
             id="sourcegraph.searchRepository"
@@ -46,7 +44,6 @@
             text="Search Selection in Repository on Sourcegraph Web"
             description="Search selection in repository on Sourcegraph web"
             icon="/icons/icon.png">
-            <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
         </action>
         <action
             id="sourcegraph.copy"
@@ -54,7 +51,6 @@
             text="Copy Sourcegraph File Link"
             description="Copy Sourcegraph file link"
             icon="/icons/icon.png">
-            <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
         </action>
         <action
             id="com.sourcegraph.website.OpenRevisionAction"
@@ -71,7 +67,7 @@
             text="Find on Sourcegraph..."
             description="Search all your repos on Sourcegraph"
             icon="/icons/icon.png">
-            <keyboard-shortcut first-keystroke="alt a" keymap="$default"/>
+            <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
             <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
 

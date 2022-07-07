@@ -24,6 +24,13 @@ import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
 
+export interface LivePreviewSeries {
+    query: string
+    label: string
+    generatedFromCaptureGroup: boolean
+    stroke: string
+}
+
 interface LineChartLivePreviewProps {
     disabled: boolean
     repositories: string
@@ -31,12 +38,7 @@ interface LineChartLivePreviewProps {
     step: InsightStep
     isAllReposMode: boolean
     className?: string
-    series: {
-        query: string
-        label: string
-        generatedFromCaptureGroup: boolean
-        stroke: string
-    }[]
+    series: LivePreviewSeries[]
 }
 
 export const LineChartLivePreview: React.FunctionComponent<
