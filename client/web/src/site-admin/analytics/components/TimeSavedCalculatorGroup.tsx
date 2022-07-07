@@ -127,13 +127,13 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                             className="text-nowrap d-flex align-items-center"
                             dangerouslySetInnerHTML={{ __html: label }}
                         />
-                        {percentage >= 0 ? (
+                        {!!percentage && percentage >= 0 ? (
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <Input
                                     type="number"
                                     value={percentage}
                                     className={classNames(styles.calculatorInput, 'mb-1')}
-                                    onChange={e => updatePercentage(index, Number(e.target.value))}
+                                    onChange={event => updatePercentage(index, Number(event.target.value))}
                                 />
                                 <Text as="span">% of total</Text>
                             </div>

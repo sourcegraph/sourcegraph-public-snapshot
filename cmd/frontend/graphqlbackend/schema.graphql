@@ -5988,9 +5988,21 @@ type AnalyticsUsersFrequencyItem {
     percentage: Float!
 }
 
+"""
+Average DAUs/WAUs/MAUs.
+"""
 type AnalyticsUsersSummaryResult {
+    """
+    Average DAUs
+    """
     avgDAU: AnalyticsStatItemSummary!
+    """
+    Average WAUs
+    """
     avgWAU: AnalyticsStatItemSummary!
+    """
+    Average MAUs
+    """
     avgMAU: AnalyticsStatItemSummary!
 }
 
@@ -6006,6 +6018,9 @@ type AnalyticsUsersResult {
     Frequency of usage by day.
     """
     frequencies: [AnalyticsUsersFrequencyItem!]!
+    """
+    Average number of active users summary.
+    """
     summary: AnalyticsUsersSummaryResult!
 }
 
@@ -6039,8 +6054,17 @@ type AnalyticsCodeIntelResult {
     crossRepoEvents: AnalyticsStatItem!
 }
 
+"""
+Repositories summary.
+"""
 type AnalyticsReposSummartResult {
+    """
+    Total number of repositories.
+    """
     count: Int!
+    """
+    Total number of repositories with precise code-intel.
+    """
     preciseCodeIntelCount: Int!
 }
 
@@ -6064,6 +6088,9 @@ type Analytics {
     Code-intelligence statistics.
     """
     codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    """
+    Repositories summary statistics.
+    """
     repos: AnalyticsReposSummartResult!
 }
 

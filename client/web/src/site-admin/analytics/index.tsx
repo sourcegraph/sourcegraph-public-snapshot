@@ -298,11 +298,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 <ul className="mb-3 pl-3">
                     <Text as="li">
                         Promote the{' '}
-                        <AnchorLink to="https://docs.sourcegraph.com/integration/editor" target="_blank">
+                        <AnchorLink to="/help/integration/editor" target="_blank">
                             IDE extension
                         </AnchorLink>{' '}
                         and{' '}
-                        <AnchorLink to="https://docs.sourcegraph.com/cli" target="_blank">
+                        <AnchorLink to="/help/cli" target="_blank">
                             SRC CLI
                         </AnchorLink>{' '}
                         to your users to allow them to search where they work.
@@ -380,23 +380,6 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
 
         return [stats, legends]
     }, [data, dateRange, eventAggregation])
-
-    const timeSavedStats = useMemo(() => {
-        if (!data) {
-            return []
-        }
-        const timeSavedStats = [
-            {
-                label: 'Views',
-                color: 'var(--body-color)',
-                minPerItem: 5,
-                description:
-                    'Notebooks reduce the time it takes to create living documentation and share it. Each notebook view accounts for time saved by both creators and consumers of notebooks.',
-                value: data.site.analytics.notebooks.views.summary.totalCount,
-            },
-        ]
-        return timeSavedStats
-    }, [data])
 
     if (error) {
         throw error
@@ -770,7 +753,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     const repos = data?.site.analytics.repos
     const orgMembersCount = data?.currentUser?.organizationMemberships?.totalCount || 0
     const browserExtensionInstalls =
-        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.registeredUsers || 0
+        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
     const browserExtensionInstallPercentage = orgMembersCount ? (browserExtensionInstalls * 100) / orgMembersCount : 0
 
     return (
@@ -828,7 +811,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 <ul className="mb-3 pl-3">
                     <Text as="li">
                         <b>{browserExtensionInstallPercentage}%</b> of users have installed the browser extension.{' '}
-                        <AnchorLink to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank">
+                        <AnchorLink to="/help/integration/browser_extension" target="_blank">
                             Promote installation of the browser extesion to increase value.
                         </AnchorLink>
                     </Text>
@@ -837,7 +820,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have precise
                             code intel.{' '}
                             <AnchorLink
-                                to="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
+                                to="/help/code_intelligence/explanations/precise_code_intelligence"
                                 target="_blank"
                             >
                                 Learn how to improve precise code intel coverage.
