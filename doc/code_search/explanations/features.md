@@ -50,7 +50,7 @@ Every search on Sourcegraph uses a search context. Search contexts can be define
 
 **Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all).
 
-If no search context is specified, `context:global` is used.
+If no search context is specified, then the `context:global` is used, which searches over all code connected to Sourcegraph.com
 
 **Private Sourcegraph instances** support custom search contexts:
 
