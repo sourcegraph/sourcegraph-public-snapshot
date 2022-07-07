@@ -8,11 +8,16 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
-import { SeriesChartContent, SearchBasedInsight } from '../../../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
+import { GetInsightViewResult } from '../../../../../../graphql-operations'
+import {
+    SeriesChartContent,
+    SearchBasedInsight,
+    CaptureGroupInsight,
+    InsightExecutionType,
+    InsightType,
+} from '../../../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types'
 
 import { BackendInsightView } from './BackendInsight'
 
@@ -287,24 +292,6 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9aNFFpTERPMGRQVUZSQWNtYnBvZ1hhWnMi',
-                        defaultSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
-                        appliedSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
                         dataSeries: [
                             {
                                 seriesId: '001',
@@ -571,24 +558,6 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9ZY1VQdThxeXpvcnR1WmJXZE9qdVh2Y2Yi',
-                        defaultSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
-                        appliedSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
                         dataSeries: [
                             {
                                 seriesId: '001',
@@ -855,24 +824,6 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9lSm8xcTZub05nUkh3aG9MWEdCdUdtN3Yi',
-                        defaultSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
-                        appliedSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
                         dataSeries: [
                             {
                                 seriesId: '25OeJqBD4dOacJDmOA1cXY97Iyb',

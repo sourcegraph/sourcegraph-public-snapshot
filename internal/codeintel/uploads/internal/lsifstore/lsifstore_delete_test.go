@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,8 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestClear(t *testing.T) {
-	logger := logtest.Scoped(t)
+func TestDeleteLsifDataByUploadIds(t *testing.T) {
+	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
+		Level: log.LevelError,
+	})
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
@@ -29,7 +32,7 @@ func TestClear(t *testing.T) {
 		}
 	}
 
-	if err := store.Clear(context.Background(), 2, 4); err != nil {
+	if err := store.DeleteLsifDataByUploadIds(context.Background(), 2, 4); err != nil {
 		t.Fatalf("unexpected error clearing bundle data: %s", err)
 	}
 

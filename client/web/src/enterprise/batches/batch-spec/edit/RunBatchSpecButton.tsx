@@ -17,6 +17,7 @@ import {
     Icon,
     H3,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ExecutionOptions } from '../BatchSpecContext'
@@ -48,14 +49,11 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
         // similarly to a native dropdown selector.
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <ButtonGroup className="mb-2">
-                <Button
-                    variant="primary"
-                    onClick={execute}
-                    disabled={!!isExecutionDisabled}
-                    data-tooltip={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}
-                >
-                    Run batch spec
-                </Button>
+                <Tooltip content={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}>
+                    <Button variant="primary" onClick={execute} disabled={!!isExecutionDisabled}>
+                        Run batch spec
+                    </Button>
+                </Tooltip>
                 <PopoverTrigger
                     as={Button}
                     variant="primary"
@@ -107,13 +105,9 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (
-        <Icon
-            className="ml-2"
-            data-tooltip={props.disabledTooltip}
-            aria-label={props.disabledTooltip}
-            tabIndex={0}
-            svgPath={mdiInformationOutline}
-        />
+        <Tooltip content={props.disabledTooltip}>
+            <Icon aria-label={props.disabledTooltip} className="ml-2" tabIndex={0} svgPath={mdiInformationOutline} />
+        </Tooltip>
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
             <Icon aria-hidden={true} svgPath={mdiInformationOutline} />

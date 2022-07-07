@@ -10,7 +10,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Code, H3 } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -69,13 +69,15 @@ const ValidQueryChecklistItem: React.FunctionComponent<
                     <>
                         <span className="sr-only"> {hint}</span>
 
-                        <span data-tooltip={hint} data-placement="bottom" className="d-inline-flex">
-                            <Icon
-                                className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
-                                aria-hidden={true}
-                                svgPath={mdiHelpCircle}
-                            />
-                        </span>
+                        <Tooltip content={hint} placement="bottom">
+                            <span className="d-inline-flex">
+                                <Icon
+                                    className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                                    aria-hidden={true}
+                                    svgPath={mdiHelpCircle}
+                                />
+                            </span>
+                        </Tooltip>
                     </>
                 )}
             </div>

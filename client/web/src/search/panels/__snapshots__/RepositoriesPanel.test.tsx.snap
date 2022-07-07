@@ -54,7 +54,11 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -82,7 +86,11 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
                     >
                       :
                     </span>
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -149,7 +157,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                     >
                       :
                     </span>
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -177,7 +189,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -205,7 +221,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                     >
                       :
                     </span>
-                    test-two
+                    <span
+                      class="search-query-text"
+                    >
+                      test-two
+                    </span>
                   </span>
                 </a>
               </small>
@@ -282,7 +302,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                     >
                       :
                     </span>
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -310,7 +334,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -338,7 +366,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                     >
                       :
                     </span>
-                    test-two
+                    <span
+                      class="search-query-text"
+                    >
+                      test-two
+                    </span>
                   </span>
                 </a>
               </small>
@@ -421,7 +453,11 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
                     >
                       :
                     </span>
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -449,7 +485,11 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>

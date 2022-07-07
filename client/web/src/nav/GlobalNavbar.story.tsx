@@ -14,15 +14,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
-
-if (!window.context) {
-    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
-}
 
 const history = createMemoryHistory()
 
