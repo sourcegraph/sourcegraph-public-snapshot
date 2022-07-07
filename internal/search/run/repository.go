@@ -60,7 +60,7 @@ func (*RepoSearchJob) Name() string {
 
 func (s *RepoSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("repoOpts", &s.RepoOpts),
+		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 		trace.Printf("filePatternsReposMustInclude", "%q", s.FilePatternsReposMustInclude),
 		trace.Printf("filePatternsReposMustExclude", "%q", s.FilePatternsReposMustExclude),
 		log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),

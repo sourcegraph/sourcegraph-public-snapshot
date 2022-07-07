@@ -2,11 +2,13 @@ package jobutil
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"testing"
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -15,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewFeelingLuckySearchJob(t *testing.T) {
@@ -24,28 +27,34 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 			Protocol:     search.Streaming,
 			PatternType:  query.SearchTypeLucky,
 		}
-		var j job.Job
 		plan, _ := query.Pipeline(query.InitLiteral(q))
 		fj := NewFeelingLuckySearchJob(nil, inputs, plan)
-		generated := []job.Job{}
+		var autoQ *autoQuery
+		type want struct {
+			Description string
+			Query       string
+		}
+		generated := []want{}
 
 		for _, next := range fj.generators {
 			for {
-				j, next = next()
-				if j == nil {
+				autoQ, next = next()
+				if autoQ == nil {
 					if next == nil {
 						// No job and generator is exhausted.
 						break
 					}
 					continue
 				}
-				generated = append(generated, j)
+				generated = append(generated, want{Description: autoQ.description, Query: query.StringHuman(autoQ.query.ToParseTree())})
 				if next == nil {
 					break
 				}
 			}
 		}
-		return PrettyJSONVerbose(NewOrJob(generated...))
+
+		result, _ := json.MarshalIndent(generated, "", "  ")
+		return string(result)
 	}
 
 	t.Run("trigger unquoted rule", func(t *testing.T) {
@@ -85,6 +94,39 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 	})
 }
 
+func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
+	// Setup: A child job that sends the same result
+	mockJob := mockjob.NewMockJob()
+	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		s.Send(streaming.SearchEvent{
+			Results: []result.Match{&result.FileMatch{
+				File: result.File{Path: "haut-medoc"},
+			}},
+		})
+		return nil, nil
+	})
+
+	mockAutoQuery := &autoQuery{description: "mock", query: query.Basic{}}
+
+	j := FeelingLuckySearchJob{
+		initialJob: mockJob,
+		generators: []next{func() (*autoQuery, next) { return mockAutoQuery, nil }},
+		createJob: func(*autoQuery) job.Job {
+			return mockJob
+		},
+	}
+
+	var sent []result.Match
+	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		sent = append(sent, e.Results...)
+	})
+
+	t.Run("deduplicate results returned by generated jobs", func(t *testing.T) {
+		j.Run(context.Background(), job.RuntimeClients{}, stream)
+		require.Equal(t, 1, len(sent))
+	})
+}
+
 func TestGeneratedSearchJob(t *testing.T) {
 	mockJob := mockjob.NewMockJob()
 	setMockJobResultSize := func(n int) {
@@ -107,12 +149,24 @@ func TestGeneratedSearchJob(t *testing.T) {
 
 	test := func(resultSize int) string {
 		setMockJobResultSize(resultSize)
-		j := generatedSearchJob{Child: mockJob, ProposedQuery: &search.ProposedQuery{}}
-		j.Run(context.Background(), job.RuntimeClients{}, streaming.NewAggregatingStream())
-		return j.ProposedQuery.Description
+		inputs := &run.SearchInputs{
+			UserSettings: &schema.Settings{},
+			Protocol:     search.Streaming,
+			PatternType:  query.SearchTypeLucky,
+		}
+
+		q, _ := query.ParseStandard("test")
+		mockQuery, _ := query.ToBasicQuery(q)
+		j, _ := NewGeneratedSearchJob(inputs, &autoQuery{description: "test", query: mockQuery})
+		j.(*generatedSearchJob).Child = mockJob
+		_, err := j.Run(context.Background(), job.RuntimeClients{}, streaming.NewAggregatingStream())
+		if err == nil {
+			return ""
+		}
+		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Description
 	}
 
 	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
-	autogold.Want("1 result", autogold.Raw(" (1 result)")).Equal(t, autogold.Raw(test(1)))
-	autogold.Want("limit results", autogold.Raw(" (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Want("1 result", autogold.Raw("test (1 result)")).Equal(t, autogold.Raw(test(1)))
+	autogold.Want("limit results", autogold.Raw("test (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }

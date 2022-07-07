@@ -29,15 +29,31 @@ func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan
 	for _, b := range plan {
 		generators = append(generators, NewGenerator(inputs, b, rules))
 	}
+
+	createJob := func(autoQ *autoQuery) job.Job {
+		j, err := NewGeneratedSearchJob(inputs, autoQ)
+		if err != nil {
+			return nil
+		}
+		return j
+	}
+
 	return &FeelingLuckySearchJob{
 		initialJob: initialJob,
 		generators: generators,
+		createJob:  createJob,
 	}
 }
 
+// FeelingLuckySearchJob represents a lucky search. Note `createJob` returns a
+// job given an autoQuery. It is a function so that generated queries can be
+// composed at runtime (with auto queries that dictate runtime control flow)
+// with static inputs (search inputs), while not exposing static inputs.
 type FeelingLuckySearchJob struct {
 	initialJob job.Job
 	generators []next
+
+	createJob func(*autoQuery) job.Job
 }
 
 func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
@@ -74,19 +90,19 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	maxAlerter.Add(alert)
 
 	generated := &alertobserver.ErrLuckyQueries{ProposedQueries: []*search.ProposedQuery{}}
-	var j job.Job
+	var autoQ *autoQuery
 	for _, next := range f.generators {
 		for {
-			j, next = next()
-			if j == nil {
+			autoQ, next = next()
+			if autoQ == nil {
 				if next == nil {
-					// No job and generator is exhausted.
+					// No query and generator is exhausted.
 					break
 				}
 				continue
 			}
 
-			alert, err = j.Run(ctx, clients, parentStream)
+			alert, err = f.createJob(autoQ).Run(ctx, clients, stream)
 			if ctx.Err() != nil {
 				// Cancellation or Deadline hit implies it's time to stop running jobs.
 				errs = errors.Append(errs, generated)
@@ -123,8 +139,14 @@ func (f *FeelingLuckySearchJob) Tags() []log.Field {
 	return []log.Field{}
 }
 
+// autoQuery is an automatically generated query with associated data (e.g., description).
+type autoQuery struct {
+	description string
+	query       query.Basic
+}
+
 // next is the continuation for the query generator.
-type next func() (job.Job, next)
+type next func() (*autoQuery, next)
 
 // NewGenerator creates a new generator using rules and a seed Basic query. It
 // returns a `next` function which, when called, returns the next job
@@ -136,32 +158,22 @@ func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next
 	var n func(i int) next // i keeps track of rule index in the continuation
 	n = func(i int) next {
 		if i >= len(rules) {
-			return func() (job.Job, next) { return nil, nil }
+			return func() (*autoQuery, next) { return nil, nil }
 		}
 
-		return func() (job.Job, next) {
+		return func() (*autoQuery, next) {
 			generated := applyTransformation(seed, rules[i].transform)
 			if generated == nil {
 				// Rule doesn't apply, go to next rule.
 				return nil, n(i + 1)
 			}
 
-			child, err := NewBasicJob(inputs, *generated)
-			if err != nil {
-				// Generated invalid job, go to next rule.
-				return nil, n(i + 1)
+			q := autoQuery{
+				description: rules[i].description,
+				query:       *generated,
 			}
 
-			j := &generatedSearchJob{
-				Child: child,
-				ProposedQuery: &search.ProposedQuery{
-					Description: rules[i].description,
-					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLucky,
-				},
-			}
-
-			return j, n(i + 1)
+			return &q, n(i + 1)
 		}
 	}
 
@@ -459,34 +471,64 @@ func typePatterns(b query.Basic) *query.Basic {
 	}
 }
 
+func NewGeneratedSearchJob(inputs *run.SearchInputs, autoQ *autoQuery) (job.Job, error) {
+	child, err := NewBasicJob(inputs, autoQ.query)
+	if err != nil {
+		return nil, err
+	}
+
+	// notify returns a notification of queries that ran, populating the
+	// description with the resulting count.
+	notify := func(count int) error {
+		var resultCountString string
+		if count == limits.DefaultMaxSearchResultsStreaming {
+			resultCountString = fmt.Sprintf("%d+ results", count)
+		} else if count == 1 {
+			resultCountString = fmt.Sprintf("1 result")
+		} else {
+			resultCountString = fmt.Sprintf("%d results", count)
+		}
+
+		return &alertobserver.ErrLuckyQueries{
+			ProposedQueries: []*search.ProposedQuery{{
+				Description: fmt.Sprintf("%s (%s)", autoQ.description, resultCountString),
+				Query:       query.StringHuman(autoQ.query.ToParseTree()),
+				PatternType: query.SearchTypeLucky,
+			}},
+		}
+	}
+
+	return &generatedSearchJob{
+		Child:              child,
+		CreateNotification: notify,
+	}, nil
+}
+
+// generatedSearchJob represents a generated search at run time. Note
+// `createJob` returns the query notifications (encoded as error) given the
+// result count of the job. It is a function so that notifications can be
+// composed at runtime (with result counts) with static inputs (query string),
+// while not exposing static inputs.
 type generatedSearchJob struct {
-	Child         job.Job
-	ProposedQuery *search.ProposedQuery
+	Child              job.Job
+	CreateNotification func(count int) error
 }
 
 func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
 	stream := streaming.NewResultCountingStream(parentStream)
 	alert, err := g.Child.Run(ctx, clients, stream)
-
 	resultCount := stream.Count()
 	if resultCount == 0 {
 		return nil, nil
 	}
 
-	var resultCountString string
-	if resultCount == limits.DefaultMaxSearchResultsStreaming {
-		resultCountString = fmt.Sprintf("%d+ results", resultCount)
-	} else if resultCount == 1 {
-		resultCountString = fmt.Sprintf("1 result")
-	} else {
-		resultCountString = fmt.Sprintf("%d results", resultCount)
+	notification := g.CreateNotification(resultCount)
+
+	if err != nil {
+		return alert, errors.Append(err, notification)
 	}
 
-	g.ProposedQuery.Description = fmt.Sprintf("%s (%s)", g.ProposedQuery.Description, resultCountString)
-	err = errors.Append(err, &alertobserver.ErrLuckyQueries{
-		ProposedQueries: []*search.ProposedQuery{g.ProposedQuery},
-	})
-	return alert, err
+	return alert, notification
 }
 
 func (g *generatedSearchJob) Name() string {

@@ -21,7 +21,7 @@ import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
-import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
+import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
@@ -58,7 +58,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // deleted when the insight is scrolled out of view
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', false)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
@@ -98,7 +98,8 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
-            skip: !wasEverVisible || (insightData && (!insightData.isFetchingHistoricalData || !isVisible)),
+            // TODO: Fix problem with offscreen pooling see https://github.com/sourcegraph/sourcegraph/issues/38425
+            skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
@@ -108,9 +109,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 seriesToggleState.setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
-            onError: () => {
-                stopPolling()
-            },
+            onError: () => stopPolling(),
         }
     )
 
