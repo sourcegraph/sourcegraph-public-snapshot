@@ -394,9 +394,10 @@ describe('parseSearchQuery', () => {
                 }
               }
             ]
-        `)),
-        test('query with mixed explicit and implicit operators inside parens', () =>
-            expect(parse('(aaa bbb and ccc)')).toMatchInlineSnapshot(`
+        `))
+
+    test('query with mixed explicit and implicit operators inside parens', () =>
+        expect(parse('(aaa bbb and ccc)')).toMatchInlineSnapshot(`
                             [
                               {
                                 "type": "operator",
