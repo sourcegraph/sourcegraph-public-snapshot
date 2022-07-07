@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -55,14 +57,25 @@ type PermsSyncer struct {
 	db database.DB
 	// The database interface for any repos and external services operations.
 	reposStore repos.Store
-	// The database interface for any permissions operations.
-	permsStore edb.PermsStore
 	// The mockable function to return the current time.
 	clock func() time.Time
 	// The rate limit registry for code hosts.
 	rateLimiterRegistry *ratelimit.Registry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
+
+	// The lock to ensure there is no concurrent updates (i.e. only one) to the
+	// permissions tables. The mutex is used to prevent any potential deadlock that
+	// could be caused by concurrent database updates, and it is a simpler and more
+	// intuitive approach than trying to solve deadlocks caused by how permissions
+	// are stored in the database at the time of writing. In a production setup with
+	// thousands of repositories and users, this approach is more effective as the
+	// biggest contributor and bottleneck of background permissions syncing slowness
+	// is the time spent on API calls (usually minutes) vs a database update
+	// operation (usually <1s).
+	permsUpdateLock sync.Mutex
+	// The database interface for any permissions operations.
+	permsStore edb.PermsStore
 }
 
 // NewPermsSyncer returns a new permissions syncing manager.
@@ -793,6 +806,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	for i := range externalServicesRepoIDs {
 		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
 	}
+
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
+	s.permsUpdateLock.Lock()
+	defer s.permsUpdateLock.Unlock()
+
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "set user permissions")
@@ -973,6 +991,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		pendingAccountIDs = append(pendingAccountIDs, aid)
 	}
 
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
+	s.permsUpdateLock.Lock()
+	defer s.permsUpdateLock.Unlock()
+
 	txs, err := s.permsStore.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
@@ -1024,31 +1046,81 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 	return nil
 }
 
-// syncPerms processes the permissions syncing request and remove the request from
-// the queue once it is done (independent of success or failure).
-func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error {
+// syncPerms processes the permissions syncing request and removes the request
+// from the queue once the process is done (regardless of success or failure).
+// The given sync groups are used to control the max concurrency, this method
+// only returns when the sync process is spawned, and blocks when it reaches max
+// concurrency defined by the sync group.
+func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	defer s.queue.remove(request.Type, request.ID, true)
 
-	var err error
+	var runSync func() error
 	switch request.Type {
 	case requestTypeUser:
-		// Ensure the job field is recorded when monitoring external API calls
-		ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
-		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
+		runSync = func() error {
+			// Ensure the job field is recorded when monitoring external API calls
+			ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
+			return s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
+		}
 	case requestTypeRepo:
-		ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
-		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
+		runSync = func() error {
+			// Ensure the job field is recorded when monitoring external API calls
+			ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
+			return s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
+		}
 	default:
-		err = errors.Errorf("unexpected request type: %v", request.Type)
+		logger.Error("unexpected request type", log.Int("type", int(request.Type)))
+		return
 	}
 
-	return err
+	// The call is blocked if reached max concurrency
+	syncGroups[request.Type].Go(
+		func(ctx context.Context) error {
+			metricsConcurrentSyncs.WithLabelValues(request.Type.String()).Inc()
+			defer metricsConcurrentSyncs.WithLabelValues(request.Type.String()).Dec()
+
+			err := runSync()
+			if err != nil {
+				logger.Error("failed to sync permissions",
+					log.Object("request",
+						log.Int("type", int(request.Type)),
+						log.Int32("id", request.ID),
+					),
+					log.Error(err),
+				)
+			}
+			return nil
+		},
+	)
+
+	// NOTE: We do not need to call Wait method of the sync group because all we need
+	// here is to control the max concurrency rather than sending out a batch of jobs
+	// and collecting their results at the same point in time. Especially true when
+	// the background permissions syncing is a never-ending process, and it is
+	// desired to abort and give up any running jobs ASAP upon quitting the program.
 }
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
-	logger.Debug("started")
 	defer logger.Info("stopped")
+
+	userMaxConcurrency := syncUsersMaxConcurrency()
+	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
+
+	syncGroups := map[requestType]group.ContextGroup{
+		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(userMaxConcurrency),
+
+		// NOTE: This is not strictly needed as part of effort for
+		// https://github.com/sourcegraph/sourcegraph/issues/37918, but doing it this way
+		// has much simpler code logic and is much easier to reason about the behavior.
+		//
+		// It is also worth noting that naively increasing the max concurrency of
+		// repo-centric syncing for GitHub may not work as intended because all sync jobs
+		// derived from the same code host connection is sharing the same personal access
+		// token and its concurrency throttled to 1 by the github-proxy in the current
+		// architecture.
+		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
+	}
 
 	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
 	notifyDequeued := make(chan struct{}, 1)
@@ -1079,16 +1151,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		notify(notifyDequeued)
 
-		err := s.syncPerms(ctx, request)
-		if err != nil {
-			logger.Error("failed to sync permissions",
-				log.Object("request",
-					log.Int("type", int(request.Type)),
-					log.Int32("id", request.ID),
-				),
-				log.Error(err))
-			continue
-		}
+		s.syncPerms(ctx, logger, syncGroups, request)
 	}
 }
 
@@ -1488,4 +1551,12 @@ func syncRepoBackoff() time.Duration {
 		return 60 * time.Second
 	}
 	return time.Duration(seconds) * time.Second
+}
+
+func syncUsersMaxConcurrency() int {
+	n := conf.Get().PermissionsSyncUsersMaxConcurrency
+	if n <= 0 {
+		return 1
+	}
+	return n
 }
