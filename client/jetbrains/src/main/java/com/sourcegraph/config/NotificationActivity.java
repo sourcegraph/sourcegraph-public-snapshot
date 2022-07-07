@@ -41,7 +41,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
                 ConfigUtil.setUrlNotificationDismissed(true);
             }
         };
-        notification.setIcon(Icons.Logo);
+        notification.setIcon(Icons.SourcegraphLogo);
         notification.addAction(setUrlAction);
         notification.addAction(cancelAction);
         notification.addAction(neverShowAgainAction);
