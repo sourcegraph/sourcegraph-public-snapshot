@@ -8,6 +8,7 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -148,12 +149,24 @@ func TestGeneratedSearchJob(t *testing.T) {
 
 	test := func(resultSize int) string {
 		setMockJobResultSize(resultSize)
-		j := generatedSearchJob{Child: mockJob, ProposedQuery: &search.ProposedQuery{}}
-		j.Run(context.Background(), job.RuntimeClients{}, streaming.NewAggregatingStream())
-		return j.ProposedQuery.Description
+		inputs := &run.SearchInputs{
+			UserSettings: &schema.Settings{},
+			Protocol:     search.Streaming,
+			PatternType:  query.SearchTypeLucky,
+		}
+
+		q, _ := query.ParseStandard("test")
+		mockQuery, _ := query.ToBasicQuery(q)
+		j, _ := NewGeneratedSearchJob(inputs, &autoQuery{description: "test", query: mockQuery})
+		j.(*generatedSearchJob).Child = mockJob
+		_, err := j.Run(context.Background(), job.RuntimeClients{}, streaming.NewAggregatingStream())
+		if err == nil {
+			return ""
+		}
+		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Description
 	}
 
 	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
-	autogold.Want("1 result", autogold.Raw(" (1 result)")).Equal(t, autogold.Raw(test(1)))
-	autogold.Want("limit results", autogold.Raw(" (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Want("1 result", autogold.Raw("test (1 result)")).Equal(t, autogold.Raw(test(1)))
+	autogold.Want("limit results", autogold.Raw("test (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
