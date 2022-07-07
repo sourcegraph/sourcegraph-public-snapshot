@@ -1,16 +1,20 @@
-package refresherer
+package auth2
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
+	// "github.com/sourcegraph/sourcegraph/internal/database"
+	// import cycle issue. the db imports already the auth package which also imports this package,
+	// so this package cannot ipmort the db..
 )
-
-type TryToSaveToken func(string) string
 
 type TokenWithRefresher struct {
 	Token     string
-	Refresher TryToSaveToken
+	Refresher func(string)
+	// db        database.DB
 }
 
 type AuthenticatorWithRefresher interface {
@@ -23,16 +27,20 @@ var _ AuthenticatorWithRefresher = &TokenWithRefresher{}
 func (t *TokenWithRefresher) Authenticate(req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+t.Token)
 
-	// TODO 1: add steps for auth, retry, refresh
-
-	saveFunction := func(string) string { return t.Token }
-	t.Refresher = saveFunction
-
-	//TODO 1: try to use the examples bellow in other parts of the code where the client is used...
-	// auth := CustomAuthenticator{token, saveFunc}
-	// client := client.WithAuthenticator(auth)
+	fmt.Println("authenticate method on auth new package")
+	// TODO 1: add steps for auth. if status is 401, token is wrong. retry, refresh
 
 	return nil
+}
+
+func (t *TokenWithRefresher) TryToSaveToken(newToken string, ctx context.Context) {
+	fmt.Println("method try to safe tk:", newToken)
+	// user := actor.FromContext(ctx)
+	// opt := database.AccessTokensListOptions{SubjectUserID: user.UID}
+	// tokens, _ := t.db.AccessTokens().List(ctx, opt)
+
+	// fmt.Println("list", tokens)
+
 }
 
 func (t *TokenWithRefresher) Hash() string {

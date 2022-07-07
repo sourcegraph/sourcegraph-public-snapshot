@@ -15,6 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	// refresher "github.com/sourcegraph/sourcegraph/internal/auth"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -44,6 +47,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
 	glClient := provider.GetOAuthClient(token.AccessToken, true)
+
+	///// Debugging block to test new authenticator
+	saveFunction := func(token string) { fmt.Println("function that will access the db. new token set", "bli") }
+	a := &auth.TokenWithRefresher{Token: token.AccessToken, Refresher: saveFunction}
+
+	newTokenSaved := "im-a-new-token"
+	a.TryToSaveToken(newTokenSaved, ctx)
+	glClient = glClient.WithAuthenticator(a)
+	////
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
 	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient)
