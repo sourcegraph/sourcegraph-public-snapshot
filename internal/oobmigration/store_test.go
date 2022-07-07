@@ -17,6 +17,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
+func TestSynchronizeMetadata(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStore(t, db)
+
+	if err := store.SynchronizeMetadata(context.Background()); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	// TODO
+}
+
 func TestList(t *testing.T) {
 	t.Parallel()
 

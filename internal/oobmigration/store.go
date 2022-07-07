@@ -3,10 +3,12 @@ package oobmigration
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -142,6 +144,101 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &Store{Store: txBase}, err
 }
+
+//
+// WIP
+//
+
+type yamlMigration struct {
+	ID                     int    `yaml:"id"`
+	Team                   string `yaml:"team"`
+	Component              string `yaml:"component"`
+	Description            string `yaml:"description"`
+	NonDestructive         bool   `yaml:"non_destructive"`
+	IsEnterprise           bool   `yaml:"is_enterprise"`
+	IntroducedVersionMajor int    `yaml:"introduced_version_major"`
+	IntroducedVersionMinor int    `yaml:"introduced_version_minor"`
+	DeprecatedVersionMajor *int   `yaml:"deprecated_version_major"`
+	DeprecatedVersionMinor *int   `yaml:"deprecated_version_minor"`
+}
+
+//go:embed oobmigrations.yaml
+var migrations embed.FS
+
+func (s *Store) SynchronizeMetadata(ctx context.Context) error {
+	contents, err := migrations.ReadFile("oobmigrations.yaml")
+	if err != nil {
+		return err
+	}
+
+	var migrations []yamlMigration
+	if err := yaml.Unmarshal(contents, &migrations); err != nil {
+		return err
+	}
+
+	for _, migration := range migrations {
+		if err := s.Exec(ctx, sqlf.Sprintf(
+			synchronizeMetadataUpsertQuery,
+			migration.ID,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			migration.IsEnterprise,
+			migration.IntroducedVersionMajor,
+			migration.IntroducedVersionMinor,
+			migration.DeprecatedVersionMajor,
+			migration.DeprecatedVersionMinor,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			migration.IsEnterprise,
+			migration.IntroducedVersionMajor,
+			migration.IntroducedVersionMinor,
+			migration.DeprecatedVersionMajor,
+			migration.DeprecatedVersionMinor,
+		)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const synchronizeMetadataUpsertQuery = `
+-- source: internal/oobmigration/store.go:SynchronizeMetadata
+INSERT INTO out_of_band_migrations
+(
+	id,
+	team,
+	component,
+	description,
+	created,
+	non_destructive,
+	is_enterprise,
+	introduced_version_major,
+	introduced_version_minor,
+	deprecated_version_major,
+	deprecated_version_minor
+)
+VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+ON CONFLICT (id) DO UPDATE SET
+	team = %s,
+	component = %s,
+	description = %s,
+	last_updated = NOW(),
+	non_destructive = %s,
+	is_enterprise = %s,
+	introduced_version_major = %s,
+	introduced_version_minor = %s,
+	deprecated_version_major = %s,
+	deprecated_version_minor = %s
+`
+
+//
+// WIP
+//
 
 // GetByID retrieves a migration by its identifier. If the migration does not exist, a false
 // valued flag is returned.
