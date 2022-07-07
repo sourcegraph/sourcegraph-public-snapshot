@@ -17,14 +17,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func PrintRowsSync(repoStore repos.Store, ctx context.Context) {
+	q := sqlf.Sprintf(`select * from external_service_sync_jobs;`)
+	rows, err := repoStore.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		fmt.Println("error printing rows")
+	}
+	var res []repos.SyncJob
+
+	for rows.Next() {
+		var dest repos.SyncJob
+		rows.Scan(dest)
+		res = append(res, dest)
+	}
+
+	fmt.Println("len:", len(res))
+	for _, r := range res {
+		fmt.Printf("r:%+v\n", r)
+	}
+}
+
 func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		testSvc := &types.ExternalService{
+			ID:          77,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "TestService",
 			Config:      "{}",
 		}
+		PrintRowsSync(repoStore, ctx)
 
 		// Create external service
 		err := repoStore.ExternalServiceStore().Upsert(ctx, testSvc)
@@ -33,12 +55,21 @@ func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 		}
 		t.Logf("Test service created, ID: %d", testSvc.ID)
 
+		fmt.Println("id:", testSvc.ID)
 		// Add item to queue
-		q := sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID)
-		result, err := repoStore.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		q1 := sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID)
+		result, err := repoStore.Handle().ExecContext(ctx, q1.Query(sqlf.PostgresBindVar), q1.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
+		PrintRowsSync(repoStore, ctx)
+		q2 := sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, 77)
+		_, err = repoStore.Handle().ExecContext(ctx, q2.Query(sqlf.PostgresBindVar), q2.Args()...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		PrintRowsSync(repoStore, ctx)
+
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
 			t.Fatal(err)

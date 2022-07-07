@@ -98,9 +98,8 @@ func NewWebhookCreatingWorker(
 		sqlf.Sprintf("create_webhook_jobs.process_after"),
 		sqlf.Sprintf("create_webhook_jobs.num_resets"),
 		sqlf.Sprintf("create_webhook_jobs.num_failures"),
-		sqlf.Sprintf("create_webhook_jobs.repo"),
-		sqlf.Sprintf("create_webhook_jobs.secret"),
-		sqlf.Sprintf("create_webhook_jobs.token"),
+		sqlf.Sprintf("create_webhook_jobs.repo_id"),
+		sqlf.Sprintf("create_webhook_jobs.repo_name"),
 	}
 
 	store := workerstore.New(dbHandle, workerstore.Options{
@@ -137,7 +136,9 @@ func NewWebhookCreatingWorker(
 }
 
 func scanWebhookCreationJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	fmt.Println("Scanning...")
 	if err != nil {
+		fmt.Println("error HERE")
 		return nil, false, err
 	}
 
@@ -159,36 +160,13 @@ type CreateWebhookJob struct {
 	ProcessAfter   *time.Time
 	NumResets      int
 	NumFailures    int
+	RepoID         int
 	RepoName       string
-	Secret         string
-	Token          string
 }
 
 func (cw *CreateWebhookJob) RecordID() int {
 	return cw.ID
 }
-
-// func (worker *SyncWebhookWorker) processQueue() error {
-// 	sq := worker.syncRequestQueue
-// 	for sq.len() > 0 {
-// 		syncReq, ok := sq.dequeue()
-// 		if !ok {
-// 			return errors.New("Error polling!")
-// 		}
-
-// 		w, err := CreateSyncWebhook(
-// 			string(syncReq.repo.Name),
-// 			syncReq.secret,
-// 			syncReq.token)
-// 		if err != nil {
-// 			return errors.New("Error creating sync webhook")
-// 		}
-// 		webhook := w.(Payload)
-// 		fmt.Println("Have:")
-// 		fmt.Printf("%+v\n", webhook)
-// 	}
-// 	return nil
-// }
 
 func CreateSyncWebhook(repoURL string, secret string, token string) error { // will need secret, token, client
 	fmt.Println("Creating webhook:", repoURL)
@@ -335,3 +313,25 @@ func (sq *syncRequestQueue) dequeue() (syncRequest, bool) {
 func (sq *syncRequestQueue) len() int {
 	return len(sq.queue)
 }
+
+// func (worker *SyncWebhookWorker) processQueue() error {
+// 	sq := worker.syncRequestQueue
+// 	for sq.len() > 0 {
+// 		syncReq, ok := sq.dequeue()
+// 		if !ok {
+// 			return errors.New("Error polling!")
+// 		}
+
+// 		w, err := CreateSyncWebhook(
+// 			string(syncReq.repo.Name),
+// 			syncReq.secret,
+// 			syncReq.token)
+// 		if err != nil {
+// 			return errors.New("Error creating sync webhook")
+// 		}
+// 		webhook := w.(Payload)
+// 		fmt.Println("Have:")
+// 		fmt.Printf("%+v\n", webhook)
+// 	}
+// 	return nil
+// }

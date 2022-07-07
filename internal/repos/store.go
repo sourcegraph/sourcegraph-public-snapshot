@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"time"
 
@@ -728,6 +729,7 @@ func (s *store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 }
 
 func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
+	fmt.Println("scanning jobs...")
 	var jobs []SyncJob
 
 	for rows.Next() {
@@ -736,6 +738,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 		var executionLogs *[]any
 
 		var job SyncJob
+		fmt.Println("rows.Scan()")
 		if err := rows.Scan(
 			&job.ID,
 			&job.State,
@@ -751,8 +754,13 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 		); err != nil {
 			return nil, err
 		}
+		fmt.Println("rows.Scan() completed")
 
 		jobs = append(jobs, job)
+	}
+	fmt.Println("jobs:")
+	for _, job := range jobs {
+		fmt.Printf("job:%+v\n", job)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

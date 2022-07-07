@@ -184,17 +184,18 @@ loop:
 
 		ok, err := w.dequeueAndHandle()
 		if err != nil {
+			break loop
 			// Note that both rootCtx and dequeueCtx are used in the dequeueAndHandle
 			// method, but only dequeueCtx errors can be forwarded. The rootCtx is only
 			// used within a Go routine, so its error cannot be returned synchronously.
-			if w.dequeueCtx.Err() != nil && errors.Is(err, w.dequeueCtx.Err()) {
-				// If the error is due to the loop being shut down, just break
-				break loop
-			}
+			// if w.dequeueCtx.Err() != nil && errors.Is(err, w.dequeueCtx.Err()) {
+			// 	// If the error is due to the loop being shut down, just break
+			// 	break loop
+			// }
 
-			w.options.Metrics.logger.Error("Failed to dequeue and handle record",
-				log.String("name", w.options.Name),
-				log.Error(err))
+			// w.options.Metrics.logger.Error("Failed to dequeue and handle record",
+			// 	log.String("name", w.options.Name),
+			// 	log.Error(err))
 		}
 
 		delay := w.options.Interval
@@ -286,7 +287,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	// Select a queued record to process and the transaction that holds it
 	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostname, extraDequeueArguments)
 	if err != nil {
-		fmt.Println("record error")
+		fmt.Println("record error:", err)
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
 	if !dequeued {

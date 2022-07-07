@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -23,22 +24,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func testSyncWebhookWorker(repoStore repos.Store) func(t *testing.T) {
+func PrintRows(db database.DB, ctx context.Context) {
+	q := sqlf.Sprintf(`select * from create_webhook_jobs;`)
+	rows, err := db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		fmt.Println("error printing rows")
+	}
+	var res []repos.CreateWebhookJob
+
+	for rows.Next() {
+		var dest repos.CreateWebhookJob
+		rows.Scan(dest)
+		res = append(res, dest)
+	}
+
+	fmt.Println("len:", len(res))
+	for _, r := range res {
+		fmt.Printf("r:%+v\n", r)
+	}
+}
+
+func testSyncWebhookWorker(db database.DB) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		// testSvc := &types.ExternalService{
-		// 	Kind:        extsvc.KindGitHub,
-		// 	DisplayName: "TestService",
-		// 	Config:      "{}",
-		// }
-
-		// err := repoStore.ExternalServiceStore().Upsert(ctx, testSvc)
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		// t.Logf("Test service created, ID: %d", testSvc.ID)
-
 		testRepo := &types.Repo{
+			ID:       33,
 			Name:     "github.com/susantoscott/Task-Tracker",
 			Metadata: &github.Repository{},
 			ExternalRepo: api.ExternalRepoSpec{
@@ -47,40 +57,49 @@ func testSyncWebhookWorker(repoStore repos.Store) func(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 			},
 		}
-		fmt.Printf("testRepo:%+v\n", testRepo)
-
-		q := sqlf.Sprintf(`insert into create_webhook_jobs (repo) values (%s);`, testRepo.Name)
-		result, err := repoStore.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		err := db.Repos().Create(ctx, testRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("result:%+v\n", result)
+		fmt.Printf("testRepo:%+v\n", testRepo)
+
+		fmt.Println("before")
+		PrintRows(db, ctx)
+		q1 := sqlf.Sprintf(`insert into create_webhook_jobs (repo_id, repo_name) values (%d, %s);`, testRepo.ID, testRepo.Name)
+		result, err := db.Handle().ExecContext(ctx, q1.Query(sqlf.PostgresBindVar), q1.Args()...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("after")
+		PrintRows(db, ctx)
 		rowsAffected, err := result.RowsAffected()
 		if rowsAffected != 1 {
 			t.Fatalf("Expected 1 row to be affected, got %d", rowsAffected)
 		}
-		fmt.Printf("rowsAffected:%+v\n", rowsAffected)
+
 		jobChan := make(chan *repos.CreateWebhookJob)
 
 		h := &fakeWebhookCreationHandler{
 			jobChan: jobChan,
 		}
-		worker, resetter := repos.NewWebhookCreatingWorker(ctx, repoStore.Handle(), h, repos.WebhookCreatingWorkerOpts{
-			NumHandlers:    3,
+		worker, _ := repos.NewWebhookCreatingWorker(ctx, db.Handle(), h, repos.WebhookCreatingWorkerOpts{
+			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})
 		go worker.Start()
-		go resetter.Start()
+		// go resetter.Start()
 
 		defer worker.Stop()
-		defer resetter.Stop()
+		// defer resetter.Stop()
 
+		var job *repos.CreateWebhookJob
 		select {
-		case <-jobChan:
+		case job = <-jobChan:
 			t.Log("Job received")
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout")
 		}
+		fmt.Printf("job:%+v\n", job)
 
 	}
 }
@@ -306,6 +325,7 @@ type fakeWebhookCreationHandler struct {
 }
 
 func (h *fakeWebhookCreationHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	fmt.Println("in the fake Handlerr")
 	cwj, ok := record.(*repos.CreateWebhookJob)
 	if !ok {
 		return errors.Errorf("expected repos.CreateWebhookJob, got %T", record)
@@ -314,6 +334,7 @@ func (h *fakeWebhookCreationHandler) Handle(ctx context.Context, logger log.Logg
 	case <-ctx.Done():
 		return ctx.Err()
 	case h.jobChan <- cwj:
-		return nil
+		fmt.Println("putting creation job in channel")
+		return repos.CreateSyncWebhook(cwj.RepoName, "secret", "token")
 	}
 }
