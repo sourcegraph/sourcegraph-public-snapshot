@@ -86,16 +86,16 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/users',
         },
         {
+            label: 'Notebooks',
+            to: '/site-admin/analytics/notebooks',
+        },
+        {
             label: 'Code insights (soon)',
             to: '/site-admin/analytics/code-insights',
         },
         {
             label: 'Batch changes (soon)',
             to: '/site-admin/analytics/batch-changes',
-        },
-        {
-            label: 'Notebooks',
-            to: '/site-admin/analytics/notebooks',
         },
         {
             label: 'Extensions (soon)',
