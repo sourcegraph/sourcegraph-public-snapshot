@@ -13,9 +13,6 @@ import {
     mdiSourceBranchSync,
     mdiUpload,
     mdiUploadNetwork,
-    mdiBeakerQuestion,
-    mdiArchive,
-    mdiCheckboxBlankCircleOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -270,12 +267,13 @@ export const PreviewActionReattach: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Reattach', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-muted mr-1"
-            data-tooltip="This changeset will be re-added to the batch change"
-            svgPath={mdiPaperclip}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be re-added to the batch change">
+            <Icon
+                aria-label="This changeset will be re-added to the batch change"
+                className="text-muted mr-1"
+                svgPath={mdiPaperclip}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
