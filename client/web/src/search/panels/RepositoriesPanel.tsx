@@ -58,9 +58,9 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     fetchMore,
     authenticatedUser,
 }) => {
-    const [recentlySearchedRepos, setRecentlySearchedRepos] = useState<null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']>(
-        recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null
-    )
+    const [recentlySearchedRepos, setRecentlySearchedRepos] = useState<
+        null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
+    >(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null)
     useEffect(() => setRecentlySearchedRepos(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null), [
         recentlySearchedRepositories?.recentlySearchedRepositoriesLogs,
     ])
@@ -147,36 +147,38 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
                 <tbody>
                     {renderComputeResults
                         ? [...computeResults].map((repoFilterValue, index) => (
-                            <tr key={index} className={classNames('text-monospace text-break', styles.resultsTableRow)}>
-                                <td>
-                                    <small>
-                                        <Link
-                                            to={`/search?q=repo:${repoFilterValue}`}
-                                            ref={getItemRef(index)}
-                                            onClick={logRepoClicked}
-                                        >
-                                            <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                                        </Link>
-                                    </small>
-                                </td>
-                            </tr>
-                        ))
+                              <tr
+                                  key={index}
+                                  className={classNames('text-monospace text-break', styles.resultsTableRow)}
+                              >
+                                  <td>
+                                      <small>
+                                          <Link
+                                              to={`/search?q=repo:${repoFilterValue}`}
+                                              ref={getItemRef(index)}
+                                              onClick={logRepoClicked}
+                                          >
+                                              <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                          </Link>
+                                      </small>
+                                  </td>
+                              </tr>
+                          ))
                         : repoFilterValues?.map((repoFilterValue, index) => (
-                            <tr key="index" className={styles.resultsTableRow}>
-                                <td>
-                                    <small>
-                                        <Link
-                                            to={`/search?q=repo:${repoFilterValue}`}
-                                            ref={getItemRef(index)}
-                                            onClick={logRepoClicked}
-                                        >
-                                            <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                                        </Link>
-                                    </small>
-                                </td>
-                            </tr>
-                        ))
-                    }
+                              <tr key="index" className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                                  <td>
+                                      <small>
+                                          <Link
+                                              to={`/search?q=repo:${repoFilterValue}`}
+                                              ref={getItemRef(index)}
+                                              onClick={logRepoClicked}
+                                          >
+                                              <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                          </Link>
+                                      </small>
+                                  </td>
+                              </tr>
+                          ))}
                 </tbody>
             </table>
 
@@ -209,7 +211,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
 }
 
 function processRepositories(eventLogResult: EventLogResult): string[] | null {
-        if (!eventLogResult) {
+    if (!eventLogResult) {
         return null
     }
 
@@ -225,7 +227,6 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
                     if (isRepoFilter(token) && token.value && !recentlySearchedRepos.includes(token.value.value)) {
                         recentlySearchedRepos.push(token.value.value)
                     }
-
                 }
             }
         }
