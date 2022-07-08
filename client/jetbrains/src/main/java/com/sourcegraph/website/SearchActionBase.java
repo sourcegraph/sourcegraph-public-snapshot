@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -20,7 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 
 public abstract class SearchActionBase extends DumbAwareAction {
-    public void actionPerformedMode(AnActionEvent e, String mode) {
+    public void actionPerformedMode(@NotNull AnActionEvent e, @NotNull String mode) {
         Logger logger = Logger.getInstance(this.getClass());
 
         // Get project, editor, document, file, and position information.
@@ -66,7 +67,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
     }
 
     @Override
-    public void update(AnActionEvent e) {
+    public void update(@NotNull AnActionEvent e) {
         final Project project = e.getProject();
         if (project == null) {
             return;
@@ -76,7 +77,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
     }
 
     @Nullable
-    private String getSelectedText(Project project) {
+    private String getSelectedText(@NotNull Project project) {
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
         if (editor == null) {
             return null;
