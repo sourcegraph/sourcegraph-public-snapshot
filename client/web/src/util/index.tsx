@@ -38,10 +38,3 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
         listElement.scrollTop += selectedRectangle.bottom - listRectangle.bottom
     }
 }
-
-export interface UserExternalServicesOrRepositoriesUpdateProps {
-    // Callback triggered when a user successfully updates their synced external services or repositories
-    onUserExternalServicesOrRepositoriesUpdate: (externalServicesCount: number, userRepoCount: number) => void
-    // Callback triggered when a user updates their synced public repos
-    onSyncedPublicRepositoriesUpdate: (publicRepositoriesCount: number) => void
-}

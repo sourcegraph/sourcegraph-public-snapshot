@@ -228,8 +228,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             patternType={lastSearch.patternType}
                             setPatternType={patternType => onSubmit({ patternType })}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            hasUserAddedExternalServices={false}
-                            hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                             structuralSearchDisabled={false}
                             queryState={userQueryState}
                             onChange={setUserQueryState}
