@@ -603,33 +603,32 @@ func NewComboGenerator(seed query.Basic, rules []rule) next {
 			return func() (*autoQuery, next) { return nil, nil }
 		}
 
-		return func() (*autoQuery, next) {
-			if cg.Next() {
-				var transform transform
-				var descriptions []string
-				for _, idx := range cg.Combination(nil) {
-					transform = append(transform, rules[idx].transform...)
-					descriptions = append(descriptions, rules[idx].description)
-				}
-				generated := applyTransformation(seed, transform)
-				if generated == nil {
-					// Rule does not apply, go to next rule.
-					continuation := n(k, cg)
-					return continuation()
-				}
+		if cg.Next() {
+			var transform transform
+			var descriptions []string
+			for _, idx := range cg.Combination(nil) {
+				transform = append(transform, rules[idx].transform...)
+				descriptions = append(descriptions, rules[idx].description)
+			}
+			generated := applyTransformation(seed, transform)
+			if generated == nil {
+				// Rule does not apply, go to next rule.
+				return n(k, cg)
+			}
 
-				q := autoQuery{
-					description: strings.Join(descriptions, " and "),
-					query:       *generated,
-				}
+			q := autoQuery{
+				description: strings.Join(descriptions, " and "),
+				query:       *generated,
+			}
 
+			return func() (*autoQuery, next) {
 				return &q, n(k, cg)
 			}
-			k -= 1
-			cg = combin.NewCombinationGenerator(len(rules), k)
-			continuation := n(k, cg)
-			return continuation()
 		}
+
+		k -= 1
+		cg = combin.NewCombinationGenerator(len(rules), k)
+		return n(k, cg)
 	}
 
 	num := len(rules)
