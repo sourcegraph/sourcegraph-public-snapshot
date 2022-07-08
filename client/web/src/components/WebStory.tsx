@@ -7,7 +7,7 @@ import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
 // Add root Tooltip for Storybook
-import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { DeprecatedTooltip, SkipLinkProvider, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
@@ -52,12 +52,14 @@ export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryP
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
                     <CompatRouter>
-                        <DeprecatedTooltip />
-                        <Children
-                            {...breadcrumbSetters}
-                            isLightTheme={isLightTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
+                        <SkipLinkProvider>
+                            <DeprecatedTooltip />
+                            <Children
+                                {...breadcrumbSetters}
+                                isLightTheme={isLightTheme}
+                                telemetryService={NOOP_TELEMETRY_SERVICE}
+                            />
+                        </SkipLinkProvider>
                     </CompatRouter>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>

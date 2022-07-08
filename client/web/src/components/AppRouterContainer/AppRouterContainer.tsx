@@ -3,6 +3,8 @@ import React, { HTMLAttributes } from 'react'
 import classNames from 'classnames'
 import { ElementScroller } from 'react-scroll-manager'
 
+import { SkipLink } from '@sourcegraph/wildcard'
+
 import styles from './AppRouterContainer.module.scss'
 
 type AppRouterContainerProps = HTMLAttributes<HTMLDivElement>
@@ -18,6 +20,7 @@ export const AppRouterContainer: React.FunctionComponent<React.PropsWithChildren
             from child levels in order to handle or react on this container scroll or other important events.
          */}
         <main data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
+            <SkipLink id="skip-to-content" name="content" />
             {children}
         </main>
     </ElementScroller>
