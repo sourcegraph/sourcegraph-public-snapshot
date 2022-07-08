@@ -33,7 +33,7 @@ func SentryTunnel(next http.Handler) http.Handler {
 		// Read the envelope.
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
-			logger.Warn("failed to read request body")
+			logger.Warn("failed to read request body", log.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -48,7 +48,7 @@ func SentryTunnel(next http.Handler) http.Handler {
 		h := sentryHeader{}
 		err = json.Unmarshal(b[0:n], &h)
 		if err != nil {
-			logger.Warn("failed to parse request body")
+			logger.Warn("failed to parse request body", log.Error(err))
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
