@@ -8,7 +8,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
@@ -51,7 +51,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
@@ -94,7 +94,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
@@ -137,7 +137,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
@@ -180,7 +180,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
@@ -223,7 +223,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
@@ -266,7 +266,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     type="button"
   >
     <svg
-      aria-hidden="true"
+      aria-label="Repositories up-to-date"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
