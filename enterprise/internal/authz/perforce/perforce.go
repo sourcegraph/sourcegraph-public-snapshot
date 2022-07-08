@@ -26,7 +26,7 @@ import (
 
 var _ authz.Provider = (*Provider)(nil)
 
-const cacheUpdateInterval = time.Hour
+const cacheTTL = time.Hour
 
 // Provider implements authz.Provider for Perforce depot permissions.
 type Provider struct {
@@ -40,18 +40,17 @@ type Provider struct {
 
 	p4Execer p4Execer
 
-	// NOTE: We do not need mutex because there is no concurrent access to these
-	// 	fields in the current implementation.
-	cachedAllUserEmails   map[string]string // username -> email
 	emailsCacheMutex      sync.RWMutex
+	cachedAllUserEmails   map[string]string // username -> email
 	emailsCacheLastUpdate time.Time
-	cachedGroupMembers    map[string][]string // group -> members
+
 	groupsCacheMutex      sync.RWMutex
+	cachedGroupMembers    map[string][]string // group -> members
 	groupsCacheLastUpdate time.Time
 }
 
 func cacheIsUpToDate(lastUpdate time.Time) bool {
-	return time.Since(lastUpdate) < cacheUpdateInterval
+	return time.Since(lastUpdate) < cacheTTL
 }
 
 type p4Execer interface {
