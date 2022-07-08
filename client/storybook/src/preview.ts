@@ -34,7 +34,7 @@ export const parameters: Parameters = {
     previewTabs: {
         'storybook/docs/panel': {
             hidden: true,
-        }
+        },
     },
     // disables snapshotting for all stories by default
     chromatic: { disableSnapshot: true },

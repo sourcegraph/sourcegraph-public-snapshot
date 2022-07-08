@@ -91,8 +91,8 @@ const config: Config = {
                     injectStoryParameters: false,
                     prettierConfig: { printWidth: 80, singleQuote: false },
                 },
-            }
-        }
+            },
+        },
     ],
 
     core: {
