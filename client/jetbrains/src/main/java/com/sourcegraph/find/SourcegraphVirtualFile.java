@@ -28,4 +28,10 @@ public class SourcegraphVirtualFile extends LightVirtualFile {
     public String getRelativePath() {
         return path;
     }
+
+    @NotNull
+    @Override
+    public String getPath() {
+        return repoUrl + " > " + path;
+    }
 }
