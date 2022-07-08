@@ -1112,6 +1112,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 
 func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
 	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+		if series.GroupBy != nil {
+			return types.MappingCompute
+		}
 		return types.SearchCompute
 	}
 	return types.Search
