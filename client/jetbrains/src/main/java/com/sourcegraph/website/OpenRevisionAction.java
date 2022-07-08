@@ -67,10 +67,16 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
         RevisionContext context = getHistoryRevision(event).or(() -> getLogRevision(event))
             .orElseThrow(() -> new RuntimeException("Unable to determine revision from history or log."));
 
+        Project project = context.getProject();
+
+        if (project.getProjectFilePath() == null) {
+            logger.warn("No project file path found (project: " + project.getName() + ")");
+            return;
+        }
+
         try {
             String productName = ApplicationInfo.getInstance().getVersionName();
             String productVersion = ApplicationInfo.getInstance().getFullVersion();
-            Project project = context.getProject();
             RepoInfo repoInfo = GitUtil.getRepoInfo(project.getProjectFilePath(), project);
 
             CommitViewUriBuilder builder = new CommitViewUriBuilder();
