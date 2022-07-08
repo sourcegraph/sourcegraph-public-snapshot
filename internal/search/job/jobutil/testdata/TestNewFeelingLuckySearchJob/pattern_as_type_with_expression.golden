@@ -5,6 +5,6 @@
   },
   {
     "Description": "AND patterns together",
-    "Query": "context:global (/code/ OR (/monitor/ AND /commit/))"
+    "Query": "context:global (code OR (monitor AND commit))"
   }
 ]

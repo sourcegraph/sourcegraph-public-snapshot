@@ -5,10 +5,10 @@
   },
   {
     "Description": "apply search type with AND patterns",
-    "Query": "context:global type:commit (/code/ AND /monitor/)"
+    "Query": "context:global type:commit (code AND monitor)"
   },
   {
     "Description": "AND patterns together",
-    "Query": "context:global (/code/ AND /monitor/ AND /commit/)"
+    "Query": "context:global (code AND monitor AND commit)"
   }
 ]
