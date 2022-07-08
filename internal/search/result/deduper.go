@@ -1,19 +1,19 @@
 package result
 
-// deduper deduplicates matches added to it with Add(). Matches are deduplicated by their key,
+// Deduper deduplicates matches added to it with Add(). Matches are deduplicated by their key,
 // and the return value of Results() is ordered in the same order results are added with Add().
-type deduper struct {
+type Deduper struct {
 	results Matches
 	seen    map[Key]Match
 }
 
-func NewDeduper() deduper {
-	return deduper{
+func NewDeduper() Deduper {
+	return Deduper{
 		seen: make(map[Key]Match),
 	}
 }
 
-func (d *deduper) Add(m Match) {
+func (d *Deduper) Add(m Match) {
 	prev, seen := d.seen[m.Key()]
 
 	if seen {
@@ -31,11 +31,11 @@ func (d *deduper) Add(m Match) {
 	d.seen[m.Key()] = m
 }
 
-func (d *deduper) Seen(m Match) bool {
+func (d *Deduper) Seen(m Match) bool {
 	_, ok := d.seen[m.Key()]
 	return ok
 }
 
-func (d *deduper) Results() Matches {
+func (d *Deduper) Results() Matches {
 	return d.results
 }

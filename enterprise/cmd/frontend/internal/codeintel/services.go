@@ -65,6 +65,10 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		logger.Fatal("Failed to initialize upload store", log.Error(err))
 	}
 
+	// Initialize gitserver client
+	gitserverClient := gitserver.New(db, dbStore, observationContext)
+	repoUpdaterClient := repoupdater.New(observationContext)
+
 	// Initialize http endpoints
 	operations := httpapi.NewOperations(observationContext)
 	newUploadHandler := func(internal bool) http.Handler {
@@ -75,7 +79,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 			// See https://github.com/sourcegraph/sourcegraph/issues/33375
 
 			lsifStore := database.NewDBWith(observationContext.Logger, codeIntelDB)
-			return uploadshttp.GetHandler(uploads.GetService(db, lsifStore))
+			return uploadshttp.GetHandler(uploads.GetService(db, lsifStore, gitserverClient))
 		}
 
 		return httpapi.NewUploadHandler(
@@ -89,10 +93,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}
 	internalUploadHandler := newUploadHandler(true)
 	externalUploadHandler := newUploadHandler(false)
-
-	// Initialize gitserver client
-	gitserverClient := gitserver.New(db, dbStore, observationContext)
-	repoUpdaterClient := repoupdater.New(observationContext)
 
 	// Initialize the index enqueuer
 	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)

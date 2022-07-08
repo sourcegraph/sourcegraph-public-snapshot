@@ -95,7 +95,7 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
     } catch (error) {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
-            instanceURL: 'https://sourcegraph.com',
+            instanceURL: 'https://sourcegraph.com/',
             isGlobbingEnabled: false,
             accessToken: null,
             anonymousUserId: 'no-user-id',

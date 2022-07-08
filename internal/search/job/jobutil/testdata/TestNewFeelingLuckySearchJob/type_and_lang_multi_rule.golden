@@ -1,74 +1,30 @@
-{
-  "OR": [
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply search type and language filter for patterns",
-          "Query": "context:global type:commit lang:Go monitor code",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply search type for pattern",
-          "Query": "context:global type:commit go monitor code",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply language filter for pattern",
-          "Query": "context:global lang:Go commit monitor code",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply search type and language filter for patterns with AND patterns",
-          "Query": "context:global type:commit lang:Go (monitor AND code)",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply search type with AND patterns",
-          "Query": "context:global type:commit (go AND monitor AND code)",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply language filter with AND patterns",
-          "Query": "context:global lang:Go (commit AND monitor AND code)",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "AND patterns together",
-          "Query": "context:global (go AND commit AND monitor AND code)",
-          "PatternType": 3
-        }
-      }
-    }
-  ]
-}
+[
+  {
+    "Description": "apply search type and language filter for patterns",
+    "Query": "context:global type:commit lang:Go monitor code"
+  },
+  {
+    "Description": "apply search type for pattern",
+    "Query": "context:global type:commit go monitor code"
+  },
+  {
+    "Description": "apply language filter for pattern",
+    "Query": "context:global lang:Go commit monitor code"
+  },
+  {
+    "Description": "apply search type and language filter for patterns with AND patterns",
+    "Query": "context:global type:commit lang:Go (monitor AND code)"
+  },
+  {
+    "Description": "apply search type with AND patterns",
+    "Query": "context:global type:commit (go AND monitor AND code)"
+  },
+  {
+    "Description": "apply language filter with AND patterns",
+    "Query": "context:global lang:Go (commit AND monitor AND code)"
+  },
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global (go AND commit AND monitor AND code)"
+  }
+]

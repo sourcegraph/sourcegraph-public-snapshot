@@ -3,7 +3,7 @@
 ### This changelog should always be read on `main` branch. Its contents on version     ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
 ### To update the changelog add your changes to the appropriate section under the      ###
-### "Unreleased" heading. ###
+### "Unreleased" heading.                                                              ###
 ##########################################################################################
 -->
 
@@ -18,7 +18,9 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Reattached changesets now display an action and factor into the stats when previewing batch changes. [#36359](https://github.com/sourcegraph/sourcegraph/issues/36359)
+- New site configuration option `"permissions.syncUsersMaxConcurrency"` to control the maximum number of user-centric permissions syncing jobs could be spawned concurrently. [#37918](https://github.com/sourcegraph/sourcegraph/issues/37918)
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
+- Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
 
 ### Changed
 
@@ -26,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search: Pasting a query with line breaks into the main search query input will now replace them with spaces instead of removing them. [#37674](https://github.com/sourcegraph/sourcegraph/pull/37674)
 - Rewrite resource estimator using the latest metrics [#37869](https://github.com/sourcegraph/sourcegraph/pull/37869)
 - Selecting a line multiple times in the file view will only add a single browser history entry [#38204](https://github.com/sourcegraph/sourcegraph/pull/38204)
+- The panels on the homepage (recent searches, etc) are now turned off by default. They can be re-enabled by setting `experimentalFeatures.showEnterpriseHomePanels` to true. [#38431](https://github.com/sourcegraph/sourcegraph/pull/38431)
 
 ### Fixed
 
