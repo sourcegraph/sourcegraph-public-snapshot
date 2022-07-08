@@ -9,7 +9,7 @@ import { GET_LICENSE_AND_USAGE_INFO } from './list/backend'
 
 export interface LicenseAlertProps {
     variant?: AlertProps['variant']
-    additionalCondition: boolean
+    additionalCondition?: boolean
     onLicenseRetrieved?: (data: GetLicenseAndUsageInfoResult) => void
 }
 
