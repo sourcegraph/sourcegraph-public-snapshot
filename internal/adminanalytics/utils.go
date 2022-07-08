@@ -14,14 +14,6 @@ var (
 	LastWeek        = "LAST_WEEK"
 )
 
-func makeStringsInExpression(values []string) *sqlf.Query {
-	var conds []*sqlf.Query
-	for _, value := range values {
-		conds = append(conds, sqlf.Sprintf("%s", value))
-	}
-	return sqlf.Join(conds, ",")
-}
-
 func makeDateParameters(dateRange string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
 	now := time.Now()
 	from, err := getFromDate(dateRange, now)
@@ -63,9 +55,7 @@ SELECT
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
-WHERE anonymous_user_id <> 'backend'
-	AND timestamp %s
-	AND name IN (%s)
+%s
 GROUP BY date
 `
 
@@ -76,10 +66,7 @@ SELECT
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
-WHERE
-	anonymous_user_id <> 'backend'
-	AND timestamp %s
-	AND name IN (%s)
+%s
 `
 
 func makeEventLogsQueries(dateRange string, events []string) (*sqlf.Query, *sqlf.Query, error) {
@@ -88,9 +75,21 @@ func makeEventLogsQueries(dateRange string, events []string) (*sqlf.Query, *sqlf
 		return nil, nil, err
 	}
 
-	eventsCond := makeStringsInExpression(events)
-	nodesQuery := sqlf.Sprintf(eventLogsNodesQuery, dateTruncExp, dateBetweenCond, eventsCond)
-	summaryQuery := sqlf.Sprintf(eventLogsSummaryQuery, dateBetweenCond, eventsCond)
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
+		sqlf.Sprintf("timestamp %s", dateBetweenCond),
+	}
+
+	if len(events) > 0 {
+		var eventNames []*sqlf.Query
+		for _, name := range events {
+			eventNames = append(eventNames, sqlf.Sprintf("%s", name))
+		}
+		conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(eventNames, ",")))
+	}
+
+	nodesQuery := sqlf.Sprintf(eventLogsNodesQuery, dateTruncExp, sqlf.Sprintf("WHERE %s", sqlf.Join(conds, " AND ")))
+	summaryQuery := sqlf.Sprintf(eventLogsSummaryQuery, sqlf.Sprintf("WHERE %s", sqlf.Join(conds, " AND ")))
 
 	return nodesQuery, summaryQuery, nil
 }
