@@ -8,7 +8,8 @@ import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, Link } from '@sourcegraph/wildcard'
 
-import { BatchSpecFields } from '../../../graphql-operations'
+import { BatchSpecFields, GetLicenseAndUsageInfoResult } from '../../../graphql-operations'
+import { LicenseAlert } from '../LicenseAlert'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { applyBatchChange, createBatchChange } from './backend'
@@ -21,13 +22,13 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
     viewerCanAdminister: boolean
-    exceedsLicense: boolean
+    totalCount: number
     history: H.History
 }
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, exceedsLicense, history, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, totalCount, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
     // `BatchChangePreviewContext` is responsible for managing the overrideable
@@ -36,6 +37,17 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     const { selected } = useContext(MultiSelectContext)
 
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+
+    const [exceedsLicense, setExceedsLicense] = useState(false)
+
+    const onLicenseRetrieved = useCallback(
+        (data: GetLicenseAndUsageInfoResult) => {
+            if (!data.batchChanges && !data.campaigns && totalCount > 5) {
+                setExceedsLicense(true)
+            }
+        },
+        [totalCount, setExceedsLicense]
+    )
 
     const canApply = selected !== 'all' && selected.size === 0 && !isLoading && viewerCanAdminister && !exceedsLicense
 
@@ -80,6 +92,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     return (
         <>
+            <LicenseAlert additionalCondition={totalCount > 5} onLicenseRetrieved={onLicenseRetrieved} />
             <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
@@ -111,7 +124,6 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 </div>
             </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-            {exceedsLicense && <ErrorAlert error="Changesets exceed maximum allowed with license" />}
         </>
     )
 }

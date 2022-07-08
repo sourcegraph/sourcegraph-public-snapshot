@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiMagnify, mdiAlert } from '@mdi/js'
+import { mdiAlert, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4 } from '@sourcegraph/wildcard'
+import { Button, H4, Icon, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -26,6 +26,7 @@ import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
 import styles from './WorkspacesPreview.module.scss'
+import { LicenseAlert } from '../../../LicenseAlert'
 
 /** Example snippet show in preview prompt if user has not yet added an on: statement. */
 const ON_STATEMENT = `on:
@@ -192,9 +193,11 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         </>
     )
 
+    const [workspaceCount, setWorkspaceCount] = useState<number>(0)
     const totalCount = useMemo(() => {
         if (shouldShowConnection) {
             if (cachedWorkspacesPreview && (showCached || !connection?.nodes.length)) {
+                setWorkspaceCount(cachedWorkspacesPreview.totalCount ?? 0)
                 return (
                     <span className={styles.totalCount}>
                         Displaying {cachedWorkspacesPreview.nodes.length} of {cachedWorkspacesPreview.totalCount}
@@ -202,6 +205,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                 )
             }
             if (connection) {
+                setWorkspaceCount(connection.totalCount ?? 0)
                 return (
                     <span className={styles.totalCount}>
                         Displaying {connection.nodes.length} of {connection?.totalCount}
@@ -210,7 +214,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             }
         }
         return null
-    }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
+    }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection, setWorkspaceCount])
 
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
@@ -229,6 +233,9 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     )}
                 {totalCount}
             </WorkspacesListHeader>
+            <LicenseAlert
+                additionalCondition={workspaceCount + (importingChangesetsConnection?.connection?.totalCount ?? 0) > 5}
+            />
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">

@@ -9,12 +9,8 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    // SettingsOrgSubject,
-    // SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton } from '@sourcegraph/wildcard'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Button, Container, Icon, Input, RadioButton } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -30,6 +26,7 @@ import { NamespaceSelector } from './NamespaceSelector'
 import { useNamespaces } from './useNamespaces'
 
 import styles from './ConfigurationForm.module.scss'
+import { LicenseAlert } from '../LicenseAlert'
 
 /* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/
@@ -138,6 +135,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Form className={styles.form} onSubmit={handleCreate}>
             <Container className="mb-4">
+                <LicenseAlert />
                 {error && <ErrorAlert error={error} />}
                 <NamespaceSelector
                     namespaces={namespaces}

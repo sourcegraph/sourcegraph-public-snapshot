@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useHistory, useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -97,7 +97,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
-                        exceedsLicense={spec.exceedsLicense}
+                        totalCount={spec.applyPreview.totalCount}
                         telemetryService={telemetryService}
                     />
                     <Description description={spec.description.description} />
@@ -180,7 +180,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
-                        exceedsLicense={spec.exceedsLicense}
+                        totalCount={spec.applyPreview.totalCount}
                         telemetryService={telemetryService}
                     />
                     <PreviewList
