@@ -9,13 +9,13 @@ import { GET_LICENSE_AND_USAGE_INFO } from './list/backend'
 
 export interface LicenseAlertProps {
     variant?: AlertProps['variant']
-    additionalCondition?: boolean
+    additionalCondition: boolean
     onLicenseRetrieved?: (data: GetLicenseAndUsageInfoResult) => void
 }
 
 export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<LicenseAlertProps>> = ({
     variant = 'info',
-    additionalCondition,
+    additionalCondition = true,
     onLicenseRetrieved,
 }) => {
     const { data: licenseAndUsageInfo } = useQuery<GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables>(
