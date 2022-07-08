@@ -737,6 +737,24 @@ const queryDiagnostic: Extension = [
             delay: 200,
         }
     ),
+    EditorView.theme({
+        '.cm-diagnosticText': {
+            display: 'block',
+        },
+        '.cm-diagnosticAction': {
+            color: 'var(--body-color)',
+            borderColor: 'var(--secondary)',
+            backgroundColor: 'var(--secondary)',
+            borderRadius: 'var(--border-radius)',
+            padding: 'var(--btn-padding-y-sm) .5rem',
+            fontSize: 'calc(min(0.75rem, 0.9166666667em))',
+            lineHeight: '1rem',
+            margin: '0.5rem 0 0 0',
+        },
+        '.cm-diagnosticAction + .cm-diagnosticAction': {
+            marginLeft: '1rem',
+        },
+    }),
 ]
 
 function renderMarkdownNode(message: string): Element {

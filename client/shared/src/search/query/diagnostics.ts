@@ -59,7 +59,7 @@ export function validFilterValue(filter: Filter): Diagnostic[] {
     if (validationResult.valid) {
         return []
     }
-    return [createDiagnostic(`Error: ${validationResult.reason}`, filter)]
+    return [createDiagnostic(validationResult.reason, filter)]
 }
 
 export function emptyFilterValue(filter: Filter): Diagnostic[] {
@@ -68,7 +68,7 @@ export function emptyFilterValue(filter: Filter): Diagnostic[] {
     }
     return [
         createDiagnostic(
-            `Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`${filter.field.value}:" a term"\`.`,
+            `This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`${filter.field.value}:" a term"\`.`,
             filter,
             'warning'
         ),
@@ -128,21 +128,16 @@ const rules: PatternOf<Token[], PatternData>[] = [
         each({
             field: { value: oneOf('author', 'before', 'until', 'after', 'since', 'message', 'msg', 'm') },
             $data: addDiagnostic(token => [
-                createDiagnostic(
-                    'Error: this filter requires `type:commit` or `type:diff` in the query',
-                    token,
-                    'error',
-                    [
-                        {
-                            label: 'Add "type:commit"',
-                            change: { from: token.range.start, insert: 'type:commit ' },
-                        },
-                        {
-                            label: 'Add "type:diff"',
-                            change: { from: token.range.start, insert: 'type:diff ' },
-                        },
-                    ]
-                ),
+                createDiagnostic('This filter requires `type:commit` or `type:diff` in the query', token, 'error', [
+                    {
+                        label: 'Add "type:commit"',
+                        change: { from: token.range.start, insert: 'type:commit ' },
+                    },
+                    {
+                        label: 'Add "type:diff"',
+                        change: { from: token.range.start, insert: 'type:diff ' },
+                    },
+                ]),
             ]),
         })
     ),
@@ -163,7 +158,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
 
                     return [
                         createDiagnostic(
-                            'Error: query contains `rev:` without `repo:`. Add a `repo:` filter.',
+                            'Query contains `rev:` without `repo:`. Add a `repo:` filter.',
                             revisionFilter,
                             'error',
                             [
@@ -185,7 +180,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
                     value: oneOf(undefined, { value: '' }),
                     $data: addDiagnostic((token, context) => {
                         const errorMessage =
-                            'Error: query contains `rev:` with an empty `repo:` filter. Add a non-empty `repo:` filter.'
+                            'Query contains `rev:` with an empty `repo:` filter. Add a non-empty `repo:` filter.'
                         const actions: Action[] = [
                             {
                                 label: 'Add "repo:" value',
@@ -206,7 +201,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
                 $data: addDiagnostic((token, context) => {
                     const repoFilter = token as Filter
                     const errorMessage =
-                        "Error: You have specified both `@<rev>` and `rev:` for a repo filter and I don't know how to interpret this. Remove either `@<rev>` or `rev:`"
+                        "You have specified both `@<rev>` and `rev:` for a repo filter and I don't know how to interpret this. Remove either `@<rev>` or `rev:`"
                     const start = repoFilter.value!.range.start
                     const actions: Action[] = [
                         {
@@ -246,7 +241,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
             field: { value: 'type' },
             $data: addDiagnostic(
                 filterDiagnosticCreator(
-                    'Error: Structural search syntax only applies to searching file contents and is not compatible with `type:`. Remove this filter or switch to a different search type.'
+                    'Structural search syntax only applies to searching file contents and is not compatible with `type:`. Remove this filter or switch to a different search type.'
                 )
             ),
         })
