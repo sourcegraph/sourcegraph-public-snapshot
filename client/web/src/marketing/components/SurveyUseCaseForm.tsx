@@ -61,6 +61,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 }
                 onChange={event => onChangeEmail(event.target.value)}
                 value={email}
+                type="email"
+                autoComplete="email"
+                name="email"
             />
         )}
     </div>
