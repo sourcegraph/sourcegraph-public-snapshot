@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.find.PreviewContent;
+import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
 import org.jetbrains.annotations.NotNull;
@@ -35,12 +36,17 @@ public abstract class FileActionBase extends DumbAwareAction {
             return;
         }
 
-        RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
-        if (repoInfo.remoteUrl.equals("")) {
-            return;
-        }
+        if (currentFile instanceof SourcegraphVirtualFile) {
+            SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
+            handleFileUri(URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+        } else {
+            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
+            if (repoInfo.remoteUrl.equals("")) {
+                return;
+            }
 
-        handleFileUri(URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+            handleFileUri(URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+        }
     }
 
     public void actionPerformedFromPreviewContent(@NotNull Project project, @Nullable PreviewContent previewContent, @Nullable LogicalPosition start, @Nullable LogicalPosition end) {

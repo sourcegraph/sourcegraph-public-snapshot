@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.intellij.testFramework.LightVirtualFile;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -174,7 +173,7 @@ public class PreviewContent {
         if (virtualFile == null) {
             assert fileName != null;
             assert content != null;
-            virtualFile = new LightVirtualFile(fileName, Objects.requireNonNull(getContent()));
+            virtualFile = new SourcegraphVirtualFile(fileName, Objects.requireNonNull(getContent()), getRepoUrl(), getCommit(), getPath());
         }
         return virtualFile;
     }
