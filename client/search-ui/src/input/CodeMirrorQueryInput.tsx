@@ -451,28 +451,27 @@ const lineWrapOnMobile = (): Extension => {
     // Unfortunatelty this media query needs to be kept in sync with
     // `--xs-breakpoint-down` (in global-styles/breakpoints.scss)
     const isMobile = window.matchMedia('(max-width: 575.98px)')
+    // Line wrapping is enabled by adding an extension. So we use a compartment
+    // to easily add or remove this extension without affecting others.
     const wrapLine = new Compartment()
 
-    return [
-        ViewPlugin.define(
-            view => {
-                const listener = (event: MediaQueryListEvent): void => {
-                    view.dispatch({ effects: wrapLine.reconfigure(event.matches ? EditorView.lineWrapping : []) })
-                }
-
-                isMobile.addEventListener('change', listener)
-
-                return {
-                    destroy() {
-                        isMobile.removeEventListener('change', listener)
-                    },
-                }
-            },
-            {
-                provide: () => wrapLine.of(isMobile.matches ? EditorView.lineWrapping : []),
+    return ViewPlugin.define(
+        view => {
+            const listener = (event: MediaQueryListEvent): void => {
+                view.dispatch({ effects: wrapLine.reconfigure(event.matches ? EditorView.lineWrapping : []) })
             }
-        ),
-    ]
+            isMobile.addEventListener('change', listener)
+
+            return {
+                destroy() {
+                    isMobile.removeEventListener('change', listener)
+                },
+            }
+        },
+        {
+            provide: () => wrapLine.of(isMobile.matches ? EditorView.lineWrapping : []),
+        }
+    )
 }
 
 // Defines decorators for syntax highlighting
