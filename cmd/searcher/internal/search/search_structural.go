@@ -187,6 +187,9 @@ func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
+			// NOTE: we must copy the content here because the reference
+			// must not outlive the backing mmap, which may be cleaned
+			// up before the match is serialized for the network.
 			Content: string(buf[firstLineStart:lastLineEnd]),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,
