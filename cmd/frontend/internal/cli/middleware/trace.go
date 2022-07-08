@@ -14,9 +14,7 @@ var httpTrace, _ = strconv.ParseBool(env.Get("HTTP_TRACE", "false", "dump HTTP r
 // Trace is an HTTP middleware that dumps the HTTP request body (to stderr) if the env var
 // `HTTP_TRACE=1`.
 func Trace(next http.Handler) http.Handler {
-	// logger := sglog.Scoped("Trace", "")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// logger.Warn("trace is here")
 		if httpTrace {
 			data, err := httputil.DumpRequest(r, true)
 			if err != nil {
