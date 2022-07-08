@@ -5,11 +5,13 @@ import { TemplateBanner } from './TemplateBanner'
 interface InsightTemplatesBannerProps {
     insightTitle: string
     type: 'create' | 'edit'
+    className?: string
 }
 
 export const InsightTemplatesBanner: React.FunctionComponent<React.PropsWithChildren<InsightTemplatesBannerProps>> = ({
     insightTitle,
     type,
+    className,
 }) => {
     const [heading, description]: [React.ReactNode, React.ReactNode] =
         type === 'create'
@@ -25,5 +27,5 @@ export const InsightTemplatesBanner: React.FunctionComponent<React.PropsWithChil
                   `Sourcegraph pre-selected a batch spec for the batch change started from ${insightTitle}.`,
               ]
 
-    return <TemplateBanner heading={heading} description={description} />
+    return <TemplateBanner heading={heading} description={description} className={className} />
 }

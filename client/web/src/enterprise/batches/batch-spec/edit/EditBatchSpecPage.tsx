@@ -253,8 +253,8 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
 
     return (
         <div className={layoutStyles.pageContainer}>
-            {searchQuery && <SearchTemplatesBanner />}
-            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" />}
+            {searchQuery && <SearchTemplatesBanner className="mb-3" />}
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader
                     namespace={{
