@@ -241,7 +241,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			workspace.Path,
 			workspace.OnlyFetchWorkspace,
 			batchSpec.Spec.Steps,
-			len(batchSpec.Spec.Steps)-1,
+			result.StepIndex,
 		)
 		rawKey, err := key.Key()
 		if err != nil {

@@ -52,6 +52,7 @@ func TestKeyer_Key(t *testing.T) {
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo"}},
+				StepIndex:  0,
 			},
 			expectedKey: "NxWM6tGwnsIG5EoaivFOsg-step-0",
 		},
@@ -63,14 +64,16 @@ func TestKeyer_Key(t *testing.T) {
 					{Run: "foo"},
 					{Run: "bar"},
 				},
+				StepIndex: 1,
 			},
-			expectedKey: "NxWM6tGwnsIG5EoaivFOsg-step-0",
+			expectedKey: "_zR95x8sdhauCYxjtOHCbA-step-1",
 		},
 		{
 			name: "step env",
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo", Env: singleStepEnv}},
+				StepIndex:  0,
 			},
 			expectedKey: "wKBVeg3u99TBq2U0qxx6cA-step-0",
 		},
@@ -79,6 +82,7 @@ func TestKeyer_Key(t *testing.T) {
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo", Env: multipleStepEnv}},
+				StepIndex:  0,
 			},
 			expectedKey: "YO88Tvj7bzCjP5pRag-9bQ-step-0",
 		},
@@ -87,6 +91,7 @@ func TestKeyer_Key(t *testing.T) {
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo", Env: nullStepEnv}},
+				StepIndex:  0,
 			},
 			expectedKey: "wFqInfgY7mpK9F4qpW2iew-step-0",
 		},
@@ -98,6 +103,7 @@ func TestKeyer_Key(t *testing.T) {
 				MetadataRetriever: testM{
 					m: []MountMetadata{{Path: "/foo/bar", Size: 100, Modified: modDate}},
 				},
+				StepIndex: 0,
 			},
 			expectedKey: "cpXzPMXfSM2ZmXYW_gAEyw-step-0",
 		},
@@ -112,6 +118,7 @@ func TestKeyer_Key(t *testing.T) {
 						{Path: "/faz/baz", Size: 100, Modified: modDate},
 					},
 				},
+				StepIndex: 0,
 			},
 			expectedKey: "ZSeYkHFJFD0TYsbKsgVjqQ-step-0",
 		},
@@ -123,42 +130,46 @@ func TestKeyer_Key(t *testing.T) {
 				MetadataRetriever: testM{
 					err: errors.New("failed to get mount metadata"),
 				},
+				StepIndex: 0,
 			},
 			expectedError: errors.New("failed to get mount metadata"),
 		},
 		{
-			name: "StepsCacheKeyWithGlobalEnv simple",
-			keyer: &CacheKey{
-				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo"}},
-				GlobalEnv:  []string{},
-			},
-			expectedKey: "NxWM6tGwnsIG5EoaivFOsg-step-0",
-		},
-		{
-			name: "StepsCacheKeyWithGlobalEnv has global env",
+			name: "with global env",
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
 				GlobalEnv:  []string{"SOME_ENV=FOO", "FAZ=BAZ"},
+				StepIndex:  0,
 			},
 			expectedKey: "sBrPdQ_SaeTHL5cNRtl0uA-step-0",
 		},
 		{
-			name: "StepsCacheKeyWithGlobalEnv env not updated",
+			name: "env var not in global env",
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
 				GlobalEnv:  []string{"FAZ=BAZ"},
+				StepIndex:  0,
 			},
 			expectedKey: "cs52Db_-N1MfDw2_0FFulw-step-0",
 		},
 		{
-			name: "StepsCacheKeyWithGlobalEnv malformed global env",
+			name: "no global env but forwarded",
+			keyer: &CacheKey{
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
+				StepIndex:  0,
+			},
+			expectedKey: "cs52Db_-N1MfDw2_0FFulw-step-0",
+		},
+		{
+			name: "malformed global env",
 			keyer: &CacheKey{
 				Repository: repo,
 				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
 				GlobalEnv:  []string{"SOME_ENV"},
+				StepIndex:  0,
 			},
 			expectedError: errors.New("resolving environment for step 0: unable to parse environment variable \"SOME_ENV\""),
 		},
