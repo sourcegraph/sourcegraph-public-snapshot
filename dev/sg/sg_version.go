@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -106,12 +105,13 @@ func changelogExec(ctx *cli.Context) error {
 	return nil
 }
 
-func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
+func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bool) error {
 	start := time.Now()
 
 	if BuildCommit == "dev" {
 		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
 		// and we don't need to display this message.
+		out.Verbose("Skipping update check on dev build")
 		return nil
 	}
 
@@ -123,9 +123,9 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
+	revOut, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
 	if err != nil {
-		if strings.Contains(out, "bad revision") {
+		if strings.Contains(revOut, "bad revision") {
 			// installed revision is not available locally, that is fine - we wait for the
 			// user to eventually do a fetch
 			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
@@ -136,40 +136,34 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 		return err
 	}
 
-	out = strings.TrimSpace(out)
-	if out == "" {
+	revOut = strings.TrimSpace(revOut)
+	if revOut == "" {
 		// No newer commits found. sg is up to date.
 		return nil
 	}
 
 	if skipUpdate {
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
-		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
 
 		analytics.LogEvent(ctx, "auto_update", []string{"skipped"}, start)
 		return nil
 	}
 
 	std.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	newPath, err := updateToPrebuiltSG(ctx)
-	if err != nil {
+	if _, err := updateToPrebuiltSG(ctx); err != nil {
 		analytics.LogEvent(ctx, "auto_update", []string{"failed"}, start)
 		return errors.Newf("failed to install update: %s", err)
 	}
-	std.Out.WriteSuccessf("sg has been updated!")
-	std.Out.Write("To see what's new, run 'sg version changelog'.")
+	out.WriteSuccessf("sg has been updated!")
+	out.Write("To see what's new, run 'sg version changelog'.")
 
 	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, start)
 
-	// syscall.Exec will cause the current command's finalizer to not run, so we make a
-	// custom call to persist to make sure the auto_update event is tracked.
-	analytics.Persist(ctx, "sg", nil)
-
-	// Run command with new binary
-	return syscall.Exec(newPath, os.Args, os.Environ())
+	return nil
 }

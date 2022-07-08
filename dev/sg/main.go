@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -150,6 +151,7 @@ var sg = &cli.App{
 		}
 
 		// Initialize context
+		cmd.Context = background.Context(cmd.Context)
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
@@ -212,18 +214,34 @@ var sg = &cli.App{
 
 		// Check for updates, unless we are running update manually.
 		if cmd.Args().First() != "update" {
-			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
-			if err != nil {
-				std.Out.WriteWarningf("update check: %s", err)
-				// Do not exit here, so we don't break user flow when they want to
-				// run `sg` but updating fails
-			}
+			background.Run(cmd.Context, func(out *std.Output) {
+				err := checkSgVersionAndUpdate(cmd.Context, out, cmd.Bool("skip-auto-update"))
+				if err != nil {
+					out.WriteWarningf("update check: %s", err)
+				}
+			}, verbose)
 		}
+
+		background.Run(cmd.Context, func(out *std.Output) {
+			out.WriteNoticef("I'm fast!")
+		}, verbose)
+
+		background.Run(cmd.Context, func(out *std.Output) {
+			out.WriteNoticef("I'm starting a background job...")
+			time.Sleep(5 * time.Second)
+			out.WriteSuccessf("I'm done!")
+		}, verbose)
 
 		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
 		}
+
+		return nil
+	},
+	After: func(cmd *cli.Context) error {
+		// Wait for background jobs to finish up
+		background.Wait(cmd.Context, std.Out)
 
 		return nil
 	},
