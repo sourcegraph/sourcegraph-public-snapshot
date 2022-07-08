@@ -567,23 +567,18 @@ func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-type simpleRule struct {
-	description string
-	transform   func(query.Basic) *query.Basic
-}
-
-var rulesMaxSet = []simpleRule{
+var rulesMaxSet = []rule{
 	{
 		description: "unquote patterns",
-		transform:   unquotePatterns,
+		transform:   transform{unquotePatterns},
 	},
 	{
 		description: "apply search type for pattern",
-		transform:   typePatterns,
+		transform:   transform{typePatterns},
 	},
 	{
 		description: "apply language filter for pattern",
-		transform:   langPatterns,
+		transform:   transform{langPatterns},
 	},
 }
 
@@ -597,7 +592,7 @@ type cg = *combin.CombinationGenerator
 // number of rules and interpretation. To avoid spending time on generator
 // invalid combinations, the generator prunes the initial rule set to only those
 // rules that do successively apply individually to the seed query.
-func NewComboGenerator(seed query.Basic, rules []simpleRule) next {
+func NewComboGenerator(seed query.Basic, rules []rule) next {
 	rules = pruneRules(seed, rules)
 	// the iterator state `n` stores:
 	// - k, the number of rules to try and apply.
@@ -613,7 +608,7 @@ func NewComboGenerator(seed query.Basic, rules []simpleRule) next {
 				var transform transform
 				var descriptions []string
 				for _, idx := range cg.Combination(nil) {
-					transform = append(transform, rules[idx].transform)
+					transform = append(transform, rules[idx].transform...)
 					descriptions = append(descriptions, rules[idx].description)
 				}
 				generated := applyTransformation(seed, transform)
@@ -643,10 +638,10 @@ func NewComboGenerator(seed query.Basic, rules []simpleRule) next {
 }
 
 // pruneRules produces a minimum set of rules that apply successfully on the seed query.
-func pruneRules(seed query.Basic, rules []simpleRule) []simpleRule {
-	applies := make([]simpleRule, 0, len(rules))
+func pruneRules(seed query.Basic, rules []rule) []rule {
+	applies := make([]rule, 0, len(rules))
 	for _, r := range rules {
-		g := applyTransformation(seed, transform{r.transform})
+		g := applyTransformation(seed, r.transform)
 		if g == nil {
 			continue
 		}
