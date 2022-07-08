@@ -103,7 +103,7 @@ public class JSToJavaBridgeRequestHandler {
                     ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(arguments.get("wasServerAccessSuccessful").getAsBoolean(), arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
                     return createSuccessResponse(null);
                 case "windowClose":
-                    ApplicationManager.getApplication().invokeLater(() -> findService.hidePopup());
+                    ApplicationManager.getApplication().invokeLater(findService::hidePopup);
                     return createSuccessResponse(null);
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
