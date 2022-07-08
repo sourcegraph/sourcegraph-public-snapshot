@@ -16,7 +16,6 @@ import { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
 import { getReturnTo } from './SignInSignUpCommon'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
@@ -32,7 +31,6 @@ interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
-    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
     setSelectedSearchContextSpec: (spec: string) => void
 }
 
@@ -57,7 +55,6 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
     authenticatedUser: user,
     context,
     telemetryService,
-    onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
@@ -201,9 +198,6 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                                 className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
-                                                onUserExternalServicesOrRepositoriesUpdate={
-                                                    onUserExternalServicesOrRepositoriesUpdate
-                                                }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
                                                 onFinish={finishWelcomeFlow}

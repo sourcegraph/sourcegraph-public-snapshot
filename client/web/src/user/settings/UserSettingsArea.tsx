@@ -22,7 +22,6 @@ import {
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
@@ -41,8 +40,7 @@ export interface UserSettingsAreaProps
     extends UserAreaRouteContext,
         RouteComponentProps<{}>,
         ThemeProps,
-        TelemetryProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]

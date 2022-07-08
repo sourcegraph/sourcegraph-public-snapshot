@@ -20,7 +20,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -75,8 +74,7 @@ interface UserAreaProps
         ActivationProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -104,8 +102,7 @@ export interface UserAreaRouteContext
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     /** The user area main URL. */
     url: string
 
