@@ -16,7 +16,12 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
         {toggleSelectAll && (
             <div className="d-flex p-2 align-items-center">
                 <Tooltip content="Click to select all changesets">
-                    <Input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />
+                    <Input
+                        aria-label="Select all changesets"
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleSelectAll}
+                    />
                 </Tooltip>
                 <span className="pl-2 d-block d-sm-none">Select all</span>
             </div>

@@ -20,6 +20,7 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
                 }
             >
                 <Input
+                    aria-label="Select all changesets"
                     type="checkbox"
                     className="ml-2"
                     checked={allSelected}

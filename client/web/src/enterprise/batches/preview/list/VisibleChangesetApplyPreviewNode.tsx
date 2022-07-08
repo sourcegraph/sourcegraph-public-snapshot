@@ -238,6 +238,7 @@ const SelectBox: React.FunctionComponent<
     const input = isPublishableResult.publishable ? (
         <Tooltip content="Click to select changeset for bulk-modifying the publication state">
             <Input
+                aria-label="Select changeset"
                 id={`select-changeset-${isPublishableResult.changesetSpecID}`}
                 type="checkbox"
                 checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
@@ -246,7 +247,13 @@ const SelectBox: React.FunctionComponent<
         </Tooltip>
     ) : (
         <Tooltip content={isPublishableResult.reason}>
-            <Input id="select-changeset-hidden" type="checkbox" checked={false} disabled={true} />
+            <Input
+                aria-label={isPublishableResult.reason}
+                id="select-changeset-hidden"
+                type="checkbox"
+                checked={false}
+                disabled={true}
+            />
         </Tooltip>
     )
 

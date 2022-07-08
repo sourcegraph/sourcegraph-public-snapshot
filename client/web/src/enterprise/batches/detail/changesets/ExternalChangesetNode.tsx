@@ -96,6 +96,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 <div className="p-2">
                     <Tooltip content={tooltipLabel}>
                         <Input
+                            aria-label="Select changeset"
                             id={`select-changeset-${node.id}`}
                             type="checkbox"
                             checked={selected}
