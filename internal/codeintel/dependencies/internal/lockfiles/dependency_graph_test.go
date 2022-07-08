@@ -42,7 +42,7 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(c, e)
 		dg.addDependency(e, f)
 
-		gold.Assert(t, "normal", []byte(dg.String()))
+		gold.AssertJson(t, "normal", dg.AsMap())
 	})
 
 	t.Run("circular", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(e, f)
 		dg.addDependency(f, c)
 
-		gold.Assert(t, "circular", []byte(dg.String()))
+		gold.AssertJson(t, "circular", dg.AsMap())
 	})
 
 	t.Run("circular root", func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(e, f)
 		dg.addDependency(f, a)
 
-		gold.Assert(t, "circular-root", []byte(dg.String()))
+		gold.AssertJson(t, "circular-root", dg.AsMap())
 	})
 }
 

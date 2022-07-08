@@ -1,35 +1,20 @@
-test/a:
-	test/b:
-		test/d
-	test/c:
-		test/e:
-			test/f:
-				test/a
-	test/g
-test/b:
-	test/d
-test/c:
-	test/e:
-		test/f:
-			test/a:
-				test/b:
-					test/d
-				test/c
-				test/g
-test/d
-test/e:
-	test/f:
-		test/a:
-			test/b:
-				test/d
-			test/c:
-				test/e
-			test/g
-test/f:
-	test/a:
-		test/b:
-			test/d
-		test/c:
-			test/e:
-				test/f
-		test/g
+{
+  "a": {
+    "b": {},
+    "c": {},
+    "g": {}
+  },
+  "b": {
+    "d": {}
+  },
+  "c": {
+    "e": {}
+  },
+  "d": {},
+  "e": {
+    "f": {}
+  },
+  "f": {
+    "a": {}
+  }
+}

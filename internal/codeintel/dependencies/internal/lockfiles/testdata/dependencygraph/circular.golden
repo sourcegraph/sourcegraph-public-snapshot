@@ -1,8 +1,15 @@
-test/a:
-	test/b:
-		test/d
-	test/c:
-		test/e:
-			test/f:
-				test/c
-	test/g
+{
+  "a": {
+    "b": {
+      "d": {}
+    },
+    "c": {
+      "e": {
+        "f": {
+          "c": {}
+        }
+      }
+    },
+    "g": {}
+  }
+}

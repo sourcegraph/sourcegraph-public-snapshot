@@ -1,8 +1,7 @@
 package lockfiles
 
 import (
-	"fmt"
-	"io"
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -59,9 +58,17 @@ func (dg *DependencyGraph) AllEdges() (edges []Edge) {
 	return edges
 }
 
+type pkgSet = map[reposource.PackageVersion]struct{}
+
 func (dg *DependencyGraph) String() string {
 	var out strings.Builder
 
+	json.NewEncoder(&out).Encode(dg.AsMap())
+
+	return out.String()
+}
+
+func (dg *DependencyGraph) AsMap() map[string]interface{} {
 	roots := dg.Roots()
 	if len(roots) == 0 {
 		// If we don't have roots (because of circular dependencies), we use
@@ -75,34 +82,65 @@ func (dg *DependencyGraph) String() string {
 			roots = append(roots, pkg)
 		}
 	}
-
 	sort.Slice(roots, func(i, j int) bool { return roots[i].Less(roots[j]) })
 
-	for _, root := range roots {
-		visited := make(map[reposource.PackageVersion]struct{}, len(dg.dependencies[root]))
-		printDependencies(&out, dg, visited, 0, root)
+	type item struct {
+		pkg reposource.PackageVersion
+		out map[string]interface{}
 	}
 
-	return out.String()
+	queue := make([]item, len(roots))
+
+	out := make(map[string]interface{}, len(roots))
+	for i, root := range roots {
+		queue[i] = item{pkg: root, out: out}
+	}
+
+	visited := pkgSet{}
+	for len(queue) != 0 {
+		var current item
+		current, queue = queue[0], queue[1:]
+
+		subOut := map[string]interface{}{}
+		// Write current item to its out map
+		current.out[string(current.pkg.PackageVersionSyntax())] = subOut
+
+		_, alreadyVisited := visited[current.pkg]
+		visited[current.pkg] = struct{}{}
+
+		deps, ok := dg.dependencies[current.pkg]
+		if !ok || len(deps) == 0 || (alreadyVisited) {
+			continue
+		}
+
+		sortedDeps := deps
+		sort.Slice(sortedDeps, func(i, j int) bool { return sortedDeps[i].Less(sortedDeps[j]) })
+
+		for _, dep := range sortedDeps {
+			queue = append(queue, item{pkg: dep, out: subOut})
+		}
+	}
+
+	return out
 }
 
-func printDependencies(out io.Writer, graph *DependencyGraph, visited map[reposource.PackageVersion]struct{}, level int, node reposource.PackageVersion) {
+func printDependenciesToMap(out map[string]interface{}, graph *DependencyGraph, visited pkgSet, node reposource.PackageVersion) {
 	_, alreadyVisited := visited[node]
 	visited[node] = struct{}{}
 
-	deps, ok := graph.dependencies[node]
-	if !ok || len(deps) == 0 || alreadyVisited {
+	key := string(node.PackageVersionSyntax())
+	val := map[string]interface{}{}
+	out[key] = val
 
-		fmt.Fprintf(out, "%s%s\n", strings.Repeat("\t", level), node.RepoName())
+	deps, ok := graph.dependencies[node]
+	if !ok || len(deps) == 0 || (alreadyVisited) {
 		return
 	}
-
-	fmt.Fprintf(out, "%s%s:\n", strings.Repeat("\t", level), node.RepoName())
 
 	sortedDeps := deps
 	sort.Slice(sortedDeps, func(i, j int) bool { return sortedDeps[i].Less(sortedDeps[j]) })
 
 	for _, dep := range sortedDeps {
-		printDependencies(out, graph, visited, level+1, dep)
+		printDependenciesToMap(val, graph, visited, dep)
 	}
 }
