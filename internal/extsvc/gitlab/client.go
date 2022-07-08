@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -79,6 +80,8 @@ type ClientProvider struct {
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
+
+	tokenRefresher oauthutil.TokenRefresher
 }
 
 type CommonOp struct {
@@ -86,7 +89,7 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *ClientProvider {
 	if cli == nil {
 		cli = httpcli.ExternalDoer
 	}
@@ -101,10 +104,11 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientPr
 	})
 
 	return &ClientProvider{
-		urn:           urn,
-		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:    cli,
-		gitlabClients: make(map[string]*Client),
+		urn:            urn,
+		baseURL:        baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:     cli,
+		gitlabClients:  make(map[string]*Client),
+		tokenRefresher: tokenRefresher,
 	}
 }
 
@@ -175,6 +179,8 @@ type Client struct {
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
 	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
+
+	tokenRefresher oauthutil.TokenRefresher
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -210,6 +216,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		Auth:             a,
 		rateLimiter:      rl,
 		rateLimitMonitor: rlm,
+		tokenRefresher:   p.tokenRefresher,
 	}
 }
 
@@ -224,6 +231,15 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	return c.doWithBaseURL(ctx, req, result)
 }
+
+/*
+
+1. Detect OAuth token expired
+2. Try to refresh the token
+3. We tell the Authenticator to use the new token
+4. Redo the same request
+
+*/
 
 // doWithBaseURL will not amend the request URL.
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
@@ -259,7 +275,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
 	c.rateLimitMonitor.Update(resp.Header)
@@ -272,6 +288,101 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	}
 
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
+}
+
+func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Request, result any, oauthCtx oauthutil.Context) (responseHeader http.Header, responseCode int, err error) {
+	var responseStatus string
+
+	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
+	span.SetTag("URL", req.URL.String())
+	defer func() {
+		if err != nil {
+			span.SetTag("error", err.Error())
+		}
+		if responseStatus != "" {
+			span.SetTag("status", responseStatus)
+		}
+		span.Finish()
+	}()
+
+	if c.rateLimiter != nil {
+		err = c.rateLimiter.Wait(ctx)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "rate limit")
+		}
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	var code int
+	var header http.Header
+	var body []byte
+	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
+	if ok {
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, oauthCtx, c.tokenRefresher)
+		if err != nil {
+			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+			return nil, 0, errors.Wrap(err, "do request")
+		}
+	} else {
+		if c.Auth != nil {
+			if err := c.Auth.Authenticate(req); err != nil {
+				return nil, 0, errors.Wrap(err, "authenticating request")
+			}
+		}
+
+		resp, err := c.httpClient.Do(req.WithContext(ctx))
+		if err != nil {
+			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+			return nil, 0, errors.Wrap(err, "do request")
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		code = resp.StatusCode
+		header = resp.Header
+
+		// We swallow the error here, because we don't want to fail. Parsing the body
+		// is just optional to provide some more context.
+		body, _ = io.ReadAll(resp.Body)
+	}
+	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", code)
+
+	//c.rateLimitMonitor.Update(header)
+	if code < 200 || code >= 400 {
+		err := NewHTTPError(code, body)
+		return nil, code, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+	}
+
+	return header, code, json.Unmarshal(body, result)
+}
+
+type oauthError struct {
+	Err              string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+
+func (e oauthError) Error() string {
+	return fmt.Sprintf("OAuth response error %q description %q", e.Err, e.ErrorDescription)
+}
+
+// getOAuthErrorDetails only returns error if it's an OAuth error. For other
+// errors like 404 we don't return error. We do this because this method is only
+// intended to be used by oauth to refresh access token on expiration.
+//
+// When it's error like 404, GitLab API doesn't return it as error so we keep
+// the similar behavior and let caller check the response status code.
+func getOAuthErrorDetails(body []byte) error {
+	var oe oauthError
+	if err := json.Unmarshal(body, &oe); err != nil {
+		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
+		return nil
+	}
+	// https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
+	// {"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}
+	if oe.Err == "invalid_token" && strings.Contains(oe.ErrorDescription, "expired") {
+		return &oe
+	}
+	return nil
 }
 
 // RateLimitMonitor exposes the rate limit monitor.

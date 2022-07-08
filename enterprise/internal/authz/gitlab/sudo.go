@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -65,8 +66,12 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 
-		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		urn: op.URN,
+		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli,
+			func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+				return "", errors.New("personal access token cannot be refreshed")
+			},
+		),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:     op.AuthnConfigID,

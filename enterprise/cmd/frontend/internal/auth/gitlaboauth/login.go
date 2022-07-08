@@ -1,6 +1,8 @@
 package gitlaboauth
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -9,8 +11,11 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -82,5 +87,11 @@ func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error)
 	baseURL.Path = ""
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
-	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil).GetOAuthClient(oauthToken), nil
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil,
+		func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+			// todo
+			fmt.Println("OAuth token refresh request")
+			return "", nil
+		},
+	).GetOAuthClient(oauthToken), nil
 }

@@ -2,12 +2,14 @@ package gitlab
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,10 +49,16 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 		token:     op.Token,
 		tokenType: op.TokenType,
 
-		urn:            op.URN,
-		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
-		clientURL:      op.BaseURL,
-		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
+		urn: op.URN,
+		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli,
+			func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+				// todo
+				fmt.Println("OAuth token refresh request")
+				return "", nil
+			},
+		),
+		clientURL: op.BaseURL,
+		codeHost:  extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 	}
 }
 

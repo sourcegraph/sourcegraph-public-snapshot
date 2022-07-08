@@ -30,6 +30,13 @@ func (token *OAuthBearerToken) Hash() string {
 	return hex.EncodeToString(key[:])
 }
 
+// todo docstring
+func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
+	return &OAuthBearerToken{
+		Token: newToken,
+	}
+}
+
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc
 // clients and holds an additional RSA keypair.
 type OAuthBearerTokenWithSSH struct {
@@ -108,4 +115,12 @@ func (token *oauthBearerTokenWithGitHubApp) Authenticate(r *http.Request) error 
 func (token *oauthBearerTokenWithGitHubApp) Hash() string {
 	shaSum := sha256.Sum256(token.rawKey)
 	return hex.EncodeToString(shaSum[:])
+}
+
+type oauthBearerTokenWithRefresher struct {
+	OAuthBearerToken
+
+	ClientID     string
+	ClientSecret string
+	RefreshToken string
 }

@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -65,7 +67,13 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 		}
 	}
 
-	provider := gitlab.NewClientProvider(urn, baseURL, cli)
+	provider := gitlab.NewClientProvider(urn, baseURL, cli,
+		func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+			// todo
+			fmt.Println("OAuth token refresh request")
+			return "", nil
+		},
+	)
 	return &GitLabSource{
 		au:     authr,
 		client: provider.GetAuthenticatorClient(authr),
