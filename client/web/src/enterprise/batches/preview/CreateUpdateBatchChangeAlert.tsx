@@ -7,6 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, Link } from '@sourcegraph/wildcard'
+import { Button, Alert, Link, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields, GetLicenseAndUsageInfoResult } from '../../../graphql-operations'
 import { LicenseAlert } from '../LicenseAlert'
@@ -109,18 +110,19 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                     all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
-                    <Button
-                        variant="primary"
-                        className={classNames(
-                            'test-batches-confirm-apply-btn text-nowrap',
-                            isLoading === true || (!viewerCanAdminister && 'disabled')
-                        )}
-                        onClick={onApply}
-                        disabled={!canApply}
-                        data-tooltip={disabledTooltip()}
-                    >
-                        Apply
-                    </Button>
+                    <Tooltip content={disabledTooltip()}>
+                        <Button
+                            variant="primary"
+                            className={classNames(
+                                'test-batches-confirm-apply-btn text-nowrap',
+                                isLoading === true || (!viewerCanAdminister && 'disabled')
+                            )}
+                            onClick={onApply}
+                            disabled={!canApply}
+                        >
+                            Apply
+                        </Button>
+                    </Tooltip>
                 </div>
             </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}

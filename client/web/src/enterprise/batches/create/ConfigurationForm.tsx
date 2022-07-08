@@ -11,6 +11,12 @@ import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Container, Icon, Input, RadioButton } from '@sourcegraph/wildcard'
+import {
+    SettingsCascadeProps,
+    // SettingsOrgSubject,
+    // SettingsUserSubject,
+} from '@sourcegraph/shared/src/settings/settings'
+import { Button, Container, Input, Icon, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -169,12 +175,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 <hr className="my-3" />
                 <strong className="d-block mb-2">
                     Visibility
-                    <Icon
-                        aria-label="Coming soon"
-                        data-tooltip="Coming soon"
-                        className="ml-1"
-                        svgPath={mdiInformationOutline}
-                    />
+                    <Tooltip content="Coming soon">
+                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                    </Tooltip>
                 </strong>
                 <div className="form-group mb-1">
                     <RadioButton
