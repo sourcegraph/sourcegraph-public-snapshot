@@ -30,18 +30,18 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
 
     @NotNull
     private Optional<RevisionContext> getHistoryRevision(@NotNull AnActionEvent event) {
-        VcsFileRevision revision = event.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
+        VcsFileRevision revisionObject = event.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
         Project project = event.getProject();
 
         if (project == null) {
             return Optional.empty();
         }
-        if (revision == null) {
+        if (revisionObject == null) {
             return Optional.empty();
         }
 
-        String rev = revision.getRevisionNumber().toString();
-        return Optional.of(new RevisionContext(project, rev));
+        String revision = revisionObject.getRevisionNumber().toString();
+        return Optional.of(new RevisionContext(project, revision));
     }
 
     @NotNull
@@ -57,8 +57,8 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
         }
 
 
-        String rev = log.getSelectedCommits().get(0).getHash().asString();
-        return Optional.of(new RevisionContext(project, rev));
+        String revision = log.getSelectedCommits().get(0).getHash().asString();
+        return Optional.of(new RevisionContext(project, revision));
     }
 
     @Override
