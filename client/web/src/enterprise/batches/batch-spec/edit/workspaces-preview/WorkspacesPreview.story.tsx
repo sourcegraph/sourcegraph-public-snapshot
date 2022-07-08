@@ -9,6 +9,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS, WORKSPACES } from '../../../create/backend'
+import { GET_LICENSE_AND_USAGE_INFO } from '../../../list/backend'
+import { getLicenseAndUsageInfoResult } from '../../../list/testData'
 import {
     mockBatchChange,
     mockBatchSpec,
@@ -21,8 +23,6 @@ import {
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { GET_LICENSE_AND_USAGE_INFO } from '../../../list/backend'
-import { getLicenseAndUsageInfoResult } from '../../../list/testData'
 
 const decorator: DecoratorFn = story => (
     <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>
