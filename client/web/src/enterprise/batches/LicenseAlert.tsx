@@ -27,7 +27,10 @@ export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<Licen
         { onCompleted: onLicenseRetrieved }
     )
 
-    if (!licenseAndUsageInfo?.batchChanges && !licenseAndUsageInfo?.campaigns && additionalCondition) {
+    if (!licenseAndUsageInfo) {
+        return <></>
+    }
+    if (!licenseAndUsageInfo.batchChanges && !licenseAndUsageInfo.campaigns && additionalCondition) {
         return (
             <Alert variant={variant}>
                 <div className="mb-2">
