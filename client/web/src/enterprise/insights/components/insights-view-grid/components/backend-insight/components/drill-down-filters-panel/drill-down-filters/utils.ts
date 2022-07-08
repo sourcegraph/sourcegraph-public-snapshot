@@ -38,15 +38,14 @@ export function getSerializedRepositoriesFilter(filter: InsightRepositoriesFilte
     return `${includeString} ${excludeString}`.trim()
 }
 
-export const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInput): string => {
+export const getSortPreview = (seriesDisplayOptions: {
+    limit: string
+    sortOptions: { direction: string; mode: string }
+}): string => {
     const { sortOptions, limit } = seriesDisplayOptions
 
-    if (!limit) {
-        throw new Error('Limit is required to parse series display options.')
-    }
-
-    const ascending = sortOptions?.direction === SeriesSortDirection.ASC
-    const mode = sortOptions?.mode
+    const ascending = sortOptions.direction === SeriesSortDirection.ASC
+    const mode = sortOptions.mode
     let sortBy
 
     switch (mode) {

@@ -17,13 +17,7 @@ import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInp
 import { FilterCollapseSection, FilterPreviewPill } from '../filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchContextFilter'
 
-import {
-    getSerializedRepositoriesFilter,
-    getSerializedSearchContextFilter,
-    getSortPreview,
-    parseSeriesDisplayOptions,
-    validRegexp,
-} from './utils'
+import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, getSortPreview, validRegexp } from './utils'
 import { createSearchContextValidator, getFilterInputStatus } from './validators'
 
 import styles from './DrillDownInsightFilters.module.scss'
@@ -67,6 +61,8 @@ interface DrillDownInsightFilters {
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
+    onFilterValuesChange?: (values: DrillDownFiltersFormValues) => void
+
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
 
@@ -86,6 +82,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         onFilterSave,
         onCreateInsightRequest,
         onVisualModeChange = noop,
+        onFilterValuesChange = noop,
         seriesCount,
     } = props
 
@@ -94,6 +91,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
         onChange: onFiltersChange,
+        onPureValueChange: onFilterValuesChange,
         onSubmit: values => onFilterSave(values),
     })
 
@@ -201,9 +199,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                     title="Sort & Limit"
                     aria-label="sort and limit filter section"
-                    preview={getSortPreview(
-                        parseSeriesDisplayOptions(seriesCount, seriesDisplayOptionsField.input.value)
-                    )}
+                    preview={getSortPreview(seriesDisplayOptionsField.input.value)}
                     hasActiveFilter={!isEqual(originalValues.seriesDisplayOptions, values.seriesDisplayOptions)}
                     withSeparators={!isHorizontalMode}
                     onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
