@@ -1,5 +1,6 @@
 package com.sourcegraph.website;
 
+import com.google.common.base.Strings;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -14,10 +15,8 @@ import com.sourcegraph.git.RepoInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
-public abstract class FileAction extends DumbAwareAction {
-    abstract void handleFileUri(@NotNull String uri);
+public abstract class FileActionBase extends DumbAwareAction {
+    abstract protected void handleFileUri(@NotNull String uri);
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -30,21 +29,29 @@ public abstract class FileAction extends DumbAwareAction {
         if (editor == null) {
             return;
         }
-        Document currentDoc = editor.getDocument();
-        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
+        Document currentDocument = editor.getDocument();
+        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
         if (currentFile == null) {
             return;
         }
 
-        // Get repo information.
         RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
-        if (Objects.equals(repoInfo.remoteUrl, "")) {
+        if (repoInfo.remoteUrl.equals("")) {
             return;
         }
 
-        String uri = URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor));
+        handleFileUri(URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+    }
 
-        handleFileUri(uri);
+    public void actionPerformedFromPreviewContent(@NotNull Project project, @Nullable PreviewContent previewContent, @Nullable LogicalPosition start, @Nullable LogicalPosition end) {
+        if (previewContent == null
+            || previewContent.getRepoUrl().isEmpty()
+            || Strings.isNullOrEmpty(previewContent.getCommit())
+            || Strings.isNullOrEmpty(previewContent.getPath())) {
+            return;
+        }
+
+        handleFileUri(URLBuilder.buildSourcegraphBlobUrl(project, previewContent.getRepoUrl(), previewContent.getCommit(), previewContent.getPath(), start, end));
     }
 
     @Nullable
@@ -59,27 +66,5 @@ public abstract class FileAction extends DumbAwareAction {
         SelectionModel sel = editor.getSelectionModel();
         VisualPosition position = sel.getSelectionEndPosition();
         return position != null ? editor.visualToLogicalPosition(position) : null;
-    }
-
-    public void actionPerformedFromPreviewContent(@NotNull Project project, @Nullable PreviewContent previewContent, @Nullable LogicalPosition start, @Nullable LogicalPosition end) {
-        if (previewContent == null) {
-            return;
-        }
-
-        if (previewContent.getRepoUrl().isEmpty()) {
-            return;
-        }
-
-        if (previewContent.getCommit() == null || previewContent.getCommit().isEmpty()) {
-            return;
-        }
-
-        if (previewContent.getPath() == null || previewContent.getPath().isEmpty()) {
-            return;
-        }
-
-        String uri = URLBuilder.buildSourcegraphBlobUrl(project, previewContent.getRepoUrl(), previewContent.getCommit(), previewContent.getPath(), start, end);
-
-        handleFileUri(uri);
     }
 }

@@ -33,18 +33,17 @@ public abstract class SearchActionBase extends DumbAwareAction {
         if (editor == null) {
             return;
         }
-        Document currentDoc = editor.getDocument();
-        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
+        Document currentDocument = editor.getDocument();
+        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
         if (currentFile == null) {
             return;
         }
-        SelectionModel sel = editor.getSelectionModel();
 
-        // Get repo information.
         RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
 
-        String q = sel.getSelectedText();
-        if (q == null || q.equals("")) {
+        SelectionModel selection = editor.getSelectionModel();
+        String selectedText = selection.getSelectedText();
+        if (selectedText == null || selectedText.equals("")) {
             return; // nothing to query
         }
 
@@ -55,7 +54,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
             branchName = repoInfo.remoteUrl;
         }
 
-        String uri = URLBuilder.buildEditorSearchUrl(project, q, remoteUrl, branchName);
+        String uri = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
 
         // Open the URL in the browser.
         try {
